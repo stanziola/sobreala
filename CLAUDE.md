@@ -52,6 +52,7 @@ panamails/
 │   │   └── reference/      # PNG original del logo, referencia visual maestra
 │   ├── favicon/            # favicon.svg, .ico y PNG 16/32/180 (generados)
 │   ├── preview/            # colores.html: editor de color y posición (generado)
+│   ├── social/             # iconos de redes (Instagram, etc.), agregados a mano
 │   └── fonts/
 ├── landing/                # → Cloudflare Pages
 └── backend/                # → Railway

@@ -19,12 +19,16 @@ brand/
 │   ├── favicon-16x16.png
 │   ├── favicon-32x32.png
 │   └── favicon-180x180.png     # apple-touch-icon (cuadrado, ver abajo)
-└── preview/
-    └── colores.html            # editor de colores y posición, en vivo
+├── preview/
+│   └── colores.html            # editor de colores y posición, en vivo
+└── social/                     # iconos de redes (Instagram, etc.), se agregan a mano
+    └── README.md               # convención de nombres y formato
 ```
 
 Todo lo de `logo/`, `favicon/` y `preview/` (salvo `reference/`) es **generado**:
-no se edita a mano, se regenera.
+no se edita a mano, se regenera. `social/` es lo contrario: ahí van los iconos
+de redes sociales, que son marcas de terceros y se agregan a mano siguiendo la
+convención de `social/README.md`.
 
 ## Decidir colores y posición
 
