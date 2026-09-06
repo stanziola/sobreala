@@ -5,14 +5,24 @@
  *   - the landing and the panels import it as a stylesheet and use var(--color-...)
  *   - brand/build_logo.py parses it to generate the logo SVG/PNG and favicons
  *
- * To change a color: edit the value here, then run
+ * This file holds the COLORS. The placement of the wing (position in the canvas,
+ * favicon framing) lives in brand/layout.json.
+ *
+ * To change a color, either edit the value here and run
  *     python brand/build_logo.py
- * to regenerate brand/logo/ and brand/favicon/. Never edit the hex codes in the
- * generated files; they are overwritten on the next build.
+ * or let the script do both at once:
+ *     python brand/build_logo.py --background "#2E5F8A"
+ *
+ * To try colors and positions before deciding, open brand/preview/colores.html
+ * in a browser: it previews the logo over a reference grid and the favicons at
+ * real size, and gives you the command to apply your choice.
+ *
+ * Never edit the hex codes in the generated files under brand/logo/ and
+ * brand/favicon/; they are overwritten on the next build.
  */
 :root {
   /* Blue background of the logo composition (primary brand color). */
-  --color-background: #3C71A3;
+  --color-background: #3166A7;
 
   /* Off-white of the wing shapes. */
   --color-logo: #EFEEEC;

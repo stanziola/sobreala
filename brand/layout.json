@@ -1,0 +1,12 @@
+{
+  "_readme": {
+    "logo_offset": "Where the wing sits in the logo canvas, in canvas units from its position in the reference image. [x, y], +x right, +y down. [0, 0] = exactly as the original.",
+    "favicon_offset": "Nudge of the wing inside the favicon, in favicon canvas units, from centered. [x, y].",
+    "favicon_fill": "Share of the favicon side taken by the wing's width (0-1). The rest is the safe area that keeps it clear of the rounded corners.",
+    "favicon_corner_radius": "Rounded corners of the favicon, as a fraction of the side. 0 = square."
+  },
+  "logo_offset": [0.0, 0.0],
+  "favicon_offset": [0.0, 0.0],
+  "favicon_fill": 0.84,
+  "favicon_corner_radius": 0.2
+}
