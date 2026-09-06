@@ -14,8 +14,7 @@
     --color-background: #3166A7;
     --color-logo: #EFEEEC;
     --color-shadow: #000000;
-    --logo-x: 0px; --logo-y: 0px;
-    --fav-x: 0px;  --fav-y: 0px;
+    --logo-x: -3px; --logo-y: -6px;
     --ui-bg: #12151a; --ui-panel: #1b2027; --ui-line: #2c333d;
     --ui-text: #e7eaee; --ui-dim: #98a2b0; --ui-accent: #6aa9e0;
   }
@@ -38,7 +37,6 @@
   .stage .ovl { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .12s; }
   .stage.show-grid .ovl { opacity: 1; }
   .wing { transform: translate(var(--logo-x), var(--logo-y)); }
-  .fav .wing { transform: translate(var(--fav-x), var(--fav-y)); }
   /* CSS rules beat presentation attributes, so the colors update live even in
      browsers that do not resolve var() inside a fill="" attribute. */
   .bg { fill: var(--color-background); }
@@ -112,9 +110,9 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 271 254" role="img" aria-label="Panamails">
   <rect class="bg" width="271" height="254" fill="var(--color-background)"/>
   <g class="wing">
-    <!-- shadow: the same wing outline, offset left and up -->
-    <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-15.7 -3.85)" d="M39.29 55.11 L222.48 77.8 C227.95 78.47 228.95 83.52 228.32 88.98 C227.15 99.04 220.71 108.08 219.12 110.3 C208 125.84 184.82 156.68 162.18 170.24 C158.31 172.56 150.91 174.28 131.54 159.81 C124.23 154.35 120.22 148.73 117.43 144.88 C118.69 144.97 128.31 145.03 128.7 145.32 C120.33 141.45 111.15 136.73 102.43 128.62 C98.53 125 96.9 122.49 95.86 117.99 C102.5 118.53 110.4 119.03 117.05 119.06 C110.13 116.32 100.39 113.14 88.88 105.72 C79.86 99.91 76.47 96.46 72.08 89.29 C79.18 89.53 94.64 91.08 94.93 91.01 C92.19 88.99 69.76 84.96 51.86 71.06 C42.96 64.14 41.2 59.1 39.29 55.11 Z"/>
-    <path class="wing-fill" fill="var(--color-logo)" d="M39.29 55.11 L222.48 77.8 C227.95 78.47 228.95 83.52 228.32 88.98 C227.15 99.04 220.71 108.08 219.12 110.3 C208 125.84 184.82 156.68 162.18 170.24 C158.31 172.56 150.91 174.28 131.54 159.81 C124.23 154.35 120.22 148.73 117.43 144.88 C118.69 144.97 128.31 145.03 128.7 145.32 C120.33 141.45 111.15 136.73 102.43 128.62 C98.53 125 96.9 122.49 95.86 117.99 C102.5 118.53 110.4 119.03 117.05 119.06 C110.13 116.32 100.39 113.14 88.88 105.72 C79.86 99.91 76.47 96.46 72.08 89.29 C79.18 89.53 94.64 91.08 94.93 91.01 C92.19 88.99 69.76 84.96 51.86 71.06 C42.96 64.14 41.2 59.1 39.29 55.11 Z"/>
+    <!-- shadow: the wing outline with a thicker top edge, offset left and up -->
+    <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-15.7 -3.85)" d="M48.92 69.26 L232.11 91.95 C237.58 92.62 238.42 99 237.79 104.46 C236.62 114.52 230.18 123.56 228.59 125.78 C217.47 141.32 194.29 172.16 171.65 185.72 C167.78 188.04 160.38 189.76 141.01 175.29 C133.7 169.83 129.69 164.21 126.9 160.36 C128.16 160.45 137.78 160.51 138.17 160.8 C129.8 156.93 120.62 152.21 111.9 144.1 C108 140.48 106.37 137.97 105.33 133.47 C111.97 134.01 119.87 134.51 126.52 134.54 C119.6 131.8 109.86 128.62 98.35 121.2 C89.33 115.39 85.94 111.94 81.55 104.77 C88.65 105.01 104.11 106.56 104.4 106.49 C101.66 104.47 79.23 100.44 61.33 86.54 C52.43 79.62 50.67 74.58 48.76 70.59 Z"/>
+    <path class="wing-fill" fill="var(--color-logo)" d="M48.76 70.59 L231.95 93.28 C237.42 93.95 238.42 99 237.79 104.46 C236.62 114.52 230.18 123.56 228.59 125.78 C217.47 141.32 194.29 172.16 171.65 185.72 C167.78 188.04 160.38 189.76 141.01 175.29 C133.7 169.83 129.69 164.21 126.9 160.36 C128.16 160.45 137.78 160.51 138.17 160.8 C129.8 156.93 120.62 152.21 111.9 144.1 C108 140.48 106.37 137.97 105.33 133.47 C111.97 134.01 119.87 134.51 126.52 134.54 C119.6 131.8 109.86 128.62 98.35 121.2 C89.33 115.39 85.94 111.94 81.55 104.77 C88.65 105.01 104.11 106.56 104.4 106.49 C101.66 104.47 79.23 100.44 61.33 86.54 C52.43 79.62 50.67 74.58 48.76 70.59 Z"/>
   </g>
 </svg>
           <div class="ovl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 271 254" width="100%" height="100%" aria-hidden="true"><g><line x1="10" y1="0" x2="10" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="20" y1="0" x2="20" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="30" y1="0" x2="30" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="40" y1="0" x2="40" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="50" y1="0" x2="50" y2="254" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="60" y1="0" x2="60" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="70" y1="0" x2="70" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="80" y1="0" x2="80" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="90" y1="0" x2="90" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="100" y1="0" x2="100" y2="254" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="110" y1="0" x2="110" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="120" y1="0" x2="120" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="130" y1="0" x2="130" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="140" y1="0" x2="140" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="150" y1="0" x2="150" y2="254" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="160" y1="0" x2="160" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="170" y1="0" x2="170" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="180" y1="0" x2="180" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="190" y1="0" x2="190" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="200" y1="0" x2="200" y2="254" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="210" y1="0" x2="210" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="220" y1="0" x2="220" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="230" y1="0" x2="230" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="240" y1="0" x2="240" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="250" y1="0" x2="250" y2="254" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="260" y1="0" x2="260" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="270" y1="0" x2="270" y2="254" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="10" x2="271" y2="10" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="20" x2="271" y2="20" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="30" x2="271" y2="30" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="40" x2="271" y2="40" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="50" x2="271" y2="50" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="0" y1="60" x2="271" y2="60" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="70" x2="271" y2="70" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="80" x2="271" y2="80" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="90" x2="271" y2="90" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="100" x2="271" y2="100" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="0" y1="110" x2="271" y2="110" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="120" x2="271" y2="120" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="130" x2="271" y2="130" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="140" x2="271" y2="140" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="150" x2="271" y2="150" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="0" y1="160" x2="271" y2="160" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="170" x2="271" y2="170" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="180" x2="271" y2="180" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="190" x2="271" y2="190" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="200" x2="271" y2="200" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/><line x1="0" y1="210" x2="271" y2="210" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="220" x2="271" y2="220" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="230" x2="271" y2="230" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="240" x2="271" y2="240" stroke="#000" stroke-opacity="0.13" stroke-width="0.4"/><line x1="0" y1="250" x2="271" y2="250" stroke="#000" stroke-opacity="0.28" stroke-width="0.6"/></g><line x1="135.5" y1="0" x2="135.5" y2="254" stroke="#FF5A36" stroke-opacity="0.85" stroke-width="0.9"/><line x1="0" y1="127.0" x2="271" y2="127.0" stroke="#FF5A36" stroke-opacity="0.85" stroke-width="0.9"/><g><text x="52" y="9" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">50</text><text x="102" y="9" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">100</text><text x="152" y="9" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">150</text><text x="202" y="9" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">200</text><text x="252" y="9" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">250</text><text x="2" y="48" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">50</text><text x="2" y="98" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">100</text><text x="2" y="148" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">150</text><text x="2" y="198" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">200</text><text x="2" y="248" font-size="7" fill="#000" fill-opacity="0.55" font-family="monospace">250</text></g><rect x="0.5" y="0.5" width="270" height="253" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="1"/></svg></div>
@@ -131,8 +129,8 @@
   <g clip-path="url(#pmR16)">
     <rect class="bg" width="244" height="244" fill="var(--color-background)"/>
     <g class="wing">
-      <!-- shadow: the same wing outline, offset left and up -->
-      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-31.4 -7.7)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
+      <!-- shadow: the wing outline with a thicker top edge, offset left and up -->
+      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-31.4 -7.7)" d="M35.58 62.93 L218.77 85.62 C224.24 86.29 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
       <path class="wing-fill" fill="var(--color-logo)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
     </g>
   </g>
@@ -143,8 +141,8 @@
   <g clip-path="url(#pmR32)">
     <rect class="bg" width="244" height="244" fill="var(--color-background)"/>
     <g class="wing">
-      <!-- shadow: the same wing outline, offset left and up -->
-      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-23.55 -5.78)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
+      <!-- shadow: the wing outline with a thicker top edge, offset left and up -->
+      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-23.55 -5.78)" d="M35.5 63.59 L218.69 86.28 C224.16 86.95 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
       <path class="wing-fill" fill="var(--color-logo)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
     </g>
   </g>
@@ -155,8 +153,8 @@
   <g clip-path="url(#pmR48)">
     <rect class="bg" width="244" height="244" fill="var(--color-background)"/>
     <g class="wing">
-      <!-- shadow: the same wing outline, offset left and up -->
-      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-19.62 -4.81)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
+      <!-- shadow: the wing outline with a thicker top edge, offset left and up -->
+      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-19.62 -4.81)" d="M35.46 63.92 L218.65 86.61 C224.12 87.28 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
       <path class="wing-fill" fill="var(--color-logo)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
     </g>
   </g>
@@ -167,8 +165,8 @@
   <g clip-path="url(#pmR180)">
     <rect class="bg" width="244" height="244" fill="var(--color-background)"/>
     <g class="wing">
-      <!-- shadow: the same wing outline, offset left and up -->
-      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-15.7 -3.85)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
+      <!-- shadow: the wing outline with a thicker top edge, offset left and up -->
+      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-15.7 -3.85)" d="M35.42 64.26 L218.61 86.95 C224.08 87.62 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
       <path class="wing-fill" fill="var(--color-logo)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
     </g>
   </g>
@@ -180,8 +178,8 @@
   <g clip-path="url(#pmRtab)">
     <rect class="bg" width="244" height="244" fill="var(--color-background)"/>
     <g class="wing">
-      <!-- shadow: the same wing outline, offset left and up -->
-      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-31.4 -7.7)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
+      <!-- shadow: the wing outline with a thicker top edge, offset left and up -->
+      <path class="wing-shadow" fill="var(--color-shadow)" transform="translate(-31.4 -7.7)" d="M35.58 62.93 L218.77 85.62 C224.24 86.29 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
       <path class="wing-fill" fill="var(--color-logo)" d="M35.26 65.59 L218.44 88.28 C223.91 88.94 224.91 94 224.28 99.46 C223.12 109.52 216.68 118.56 215.09 120.78 C203.97 136.31 180.78 167.16 158.15 180.72 C154.28 183.03 146.88 184.75 127.5 170.28 C120.2 164.82 116.19 159.2 113.4 155.35 C114.66 155.44 124.28 155.5 124.66 155.79 C116.3 151.92 107.12 147.2 98.4 139.09 C94.5 135.47 92.87 132.97 91.83 128.47 C98.47 129 106.37 129.5 113.02 129.53 C106.09 126.79 96.36 123.62 84.84 116.19 C75.83 110.38 72.44 106.94 68.05 99.77 C75.15 100 90.61 101.56 90.9 101.49 C88.16 99.47 65.73 95.44 47.83 81.53 C38.93 74.62 37.17 69.58 35.26 65.59 Z"/>
     </g>
   </g>
@@ -193,7 +191,8 @@
 
     <div>
       <div class="panel">
-        <h2>Posición del logo</h2>
+        <h2>Posición</h2>
+        <p class="note" style="margin-top:0">Mueve el ala igual en el logo y en el favicon. <b>0, 0</b> es centrada en los dos.</p>
         <div class="field">
           <label for="num-lx">Horizontal · X <span style="opacity:.7">(+ derecha)</span></label>
           <div class="row">
@@ -212,23 +211,6 @@
           <button class="btn sm" id="btn-center" type="button">Centrar</button>
           <button class="btn sm" id="btn-origin" type="button">Como el original</button>
         </div>
-      </div>
-
-      <div class="panel">
-        <h2>Posición en el favicon</h2>
-        <div class="field">
-          <div class="row"><span class="axis-tag">X</span>
-            <input type="number" id="num-fx" step="0.5" data-pos="fx">
-            <input type="range" id="rng-fx" min="-60" max="60" step="0.5" data-pos="fx">
-          </div>
-        </div>
-        <div class="field">
-          <div class="row"><span class="axis-tag">Y</span>
-            <input type="number" id="num-fy" step="0.5" data-pos="fy">
-            <input type="range" id="rng-fy" min="-60" max="60" step="0.5" data-pos="fy">
-          </div>
-        </div>
-        <div class="actions"><button class="btn sm" id="btn-fav-reset" type="button">Centrado</button></div>
       </div>
 
       <div class="panel">
@@ -284,14 +266,15 @@
 <script>
   const DEFAULTS = {
     "color-background": "#3166A7", "color-logo": "#EFEEEC", "color-shadow": "#000000",
-    lx: 0, ly: 0, fx: 0, fy: 0
+    lx: -3, ly: -6
   };
   const PRESETS = ["#3166A7", "#2E5F8A", "#1F4E79", "#14395C", "#0F2C47", "#4A82B8", "#5B93C7", "#2B6CB0", "#26566E", "#3F6B8E"];
   const CANVAS = [271, 254];             // [w, h] of the logo canvas
   const BBOX = [23.59, 51.26, 228.48, 171.79];                 // wing + shadow bbox at offset (0, 0)
-  const CENTERED = [9.47, 15.48];         // offset that centers it
+  const CENTER = [9.47, 15.48];             // translation that centers it in the logo canvas
+  const ORIGINAL = [-9.47, -15.48];         // offset that matches the reference image
   const COLOR_KEYS = ["color-background", "color-logo", "color-shadow"];
-  const POS_KEYS = ["lx", "ly", "fx", "fy"];
+  const POS_KEYS = ["lx", "ly"];
   const root = document.documentElement;
   const state = Object.assign({}, DEFAULTS);
 
@@ -315,8 +298,6 @@
     });
     root.style.setProperty("--logo-x", state.lx + "px");
     root.style.setProperty("--logo-y", state.ly + "px");
-    root.style.setProperty("--fav-x", state.fx + "px");
-    root.style.setProperty("--fav-y", state.fy + "px");
     POS_KEYS.forEach(k => {
       const n = document.getElementById("num-" + k), r = document.getElementById("rng-" + k);
       if (n && document.activeElement !== n) n.value = fmt(state[k]);
@@ -326,8 +307,9 @@
       b.setAttribute("aria-pressed", String(b.dataset.hex === state["color-background"]));
     });
 
-    const x0 = BBOX[0] + state.lx, y0 = BBOX[1] + state.ly;
-    const x1 = BBOX[2] + state.lx, y1 = BBOX[3] + state.ly;
+    const dx = CENTER[0] + state.lx, dy = CENTER[1] + state.ly;
+    const x0 = BBOX[0] + dx, y0 = BBOX[1] + dy;
+    const x1 = BBOX[2] + dx, y1 = BBOX[3] + dy;
     document.getElementById("readout").innerHTML =
       "borde: izq <b>" + fmt(x0) + "</b> · der <b>" + fmt(CANVAS[0] - x1) +
       "</b> · arriba <b>" + fmt(y0) + "</b> · abajo <b>" + fmt(CANVAS[1] - y1) +
@@ -345,8 +327,6 @@
     });
     if (state.lx !== DEFAULTS.lx) flags.push("--x " + fmt(state.lx));
     if (state.ly !== DEFAULTS.ly) flags.push("--y " + fmt(state.ly));
-    if (state.fx !== DEFAULTS.fx) flags.push("--favicon-x " + fmt(state.fx));
-    if (state.fy !== DEFAULTS.fy) flags.push("--favicon-y " + fmt(state.fy));
     document.getElementById("cmd").textContent = flags.length
       ? "python brand/build_logo.py " + flags.join(" ")
       : "python brand/build_logo.py\n\n# (sin cambios respecto a la configuración actual)";
@@ -379,11 +359,10 @@
   document.getElementById("toggle-grid").addEventListener("change", e => {
     document.getElementById("stage").classList.toggle("show-grid", e.target.checked);
   });
-  document.getElementById("btn-center").addEventListener("click", () => {
-    state.lx = CENTERED[0]; state.ly = CENTERED[1]; render();
+  document.getElementById("btn-center").addEventListener("click", () => { state.lx = 0; state.ly = 0; render(); });
+  document.getElementById("btn-origin").addEventListener("click", () => {
+    state.lx = ORIGINAL[0]; state.ly = ORIGINAL[1]; render();
   });
-  document.getElementById("btn-origin").addEventListener("click", () => { state.lx = 0; state.ly = 0; render(); });
-  document.getElementById("btn-fav-reset").addEventListener("click", () => { state.fx = 0; state.fy = 0; render(); });
   ["reset", "reset-2"].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.addEventListener("click", () => { Object.assign(state, DEFAULTS); setStatus("", ""); render(); });
@@ -396,7 +375,9 @@
   });
 
   // --- saving straight to the config files, only when served by --serve
-  const SERVED = location.protocol === "http:" || location.protocol === "https:";
+  // Injected by build_logo.py --serve; the file on disk always says false, so a
+  // generic static server (VS Code Live Server, etc.) shows the command instead.
+  const SERVED = false;
   document.getElementById("save-box").hidden = !SERVED;
   document.getElementById("cmd-box").hidden = SERVED;
   document.getElementById("sub").innerHTML = SERVED
@@ -424,10 +405,14 @@
               "color-logo": state["color-logo"],
               "color-shadow": state["color-shadow"]
             },
-            layout: { logo_offset: [state.lx, state.ly], favicon_offset: [state.fx, state.fy] }
+            layout: { offset: [state.lx, state.ly] }
           })
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (e) {
+          throw new Error("HTTP " + res.status + " sin JSON. Esta pagina no la esta sirviendo build_logo.py --serve.");
+        }
         if (!res.ok || !data.ok) throw new Error((data && data.error) || ("HTTP " + res.status));
         Object.assign(DEFAULTS, state);
         const warn = (data.warnings || []).length ? " · aviso: " + data.warnings.join("; ") : "";

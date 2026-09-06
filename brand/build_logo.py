@@ -32,11 +32,11 @@ Usage:
     python brand/build_logo.py --background "#2E5F8A"
     python brand/build_logo.py --logo "#FFFFFF" --shadow "#0B1A26"
 
-    # position of the wing inside the logo canvas, in canvas units
-    # (+x right, +y down); written into layout.json
-    python brand/build_logo.py --x 9.5 --y 15.5
-    python brand/build_logo.py --center          # center it automatically
-    python brand/build_logo.py --favicon-x -2    # nudge the wing inside the favicon
+    # position of the wing, in canvas units from centered (+x right, +y down);
+    # the same offset moves it in the logo and in the favicon. Written into layout.json
+    python brand/build_logo.py --x 4 --y -2
+    python brand/build_logo.py --center          # [0, 0]: centered in both
+    python brand/build_logo.py --original        # exactly where the reference image has it
 
     # favicon framing
     python brand/build_logo.py --favicon-fill 0.84 --favicon-radius 0.20
@@ -108,7 +108,16 @@ PIECES = [
 # The shadow is the same outline translated by this vector (left and up).
 SHADOW_OFFSET = (-15.7, -3.85)
 
-# Bounding box of wing + shadow at offset (0, 0).
+# The thin black line above the wing is the strip of the shadow copy left
+# uncovered along the straight top edge. In the reference it is ~1.9 units
+# thick; the shadow copy gets its top edge pushed outwards by this much (units,
+# perpendicular to the edge) to make that line thicker: 1.34 gives 3.25 units.
+# 0 = exact reference.
+SHADOW_TOP_LIFT = 1.34
+
+# Bounding box of wing + shadow at offset (0, 0), with the exact reference
+# geometry (SHADOW_TOP_LIFT = 0). It is the frame everything is centered in;
+# the lifted shadow edge pokes ~0.9 units above it, on purpose.
 BBOX = (23.59, 51.26, 228.48, 171.79)  # xmin, ymin, xmax, ymax
 BBOX_SIZE = (BBOX[2] - BBOX[0], BBOX[3] - BBOX[1])
 
@@ -186,16 +195,14 @@ def hex_to_rgb(h: str) -> tuple[int, int, int]:
 
 # --------------------------------------------------------------------------- layout
 DEFAULT_LAYOUT = {
-    "logo_offset": [0.0, 0.0],
-    "favicon_offset": [0.0, 0.0],
+    "offset": [0.0, 0.0],
     "favicon_fill": 0.84,
     "favicon_corner_radius": 0.20,
 }
 
 LAYOUT_DOC = {
-    "logo_offset": "Where the wing sits in the logo canvas, in canvas units from its position in "
-                   "the reference image. [x, y], +x right, +y down. [0, 0] = exactly as the original.",
-    "favicon_offset": "Nudge of the wing inside the favicon, in favicon canvas units, from centered. [x, y].",
+    "offset": "Where the wing sits, as [x, y] in canvas units from centered (+x right, +y down). "
+              "The same offset applies in the logo canvas and in the favicon. [0, 0] = centered in both.",
     "favicon_fill": "Share of the favicon side taken by the wing's width (0-1). The rest is the safe "
                     "area that keeps it clear of the rounded corners.",
     "favicon_corner_radius": "Rounded corners of the favicon, as a fraction of the side. 0 = square.",
@@ -210,11 +217,20 @@ def validate_layout(data: dict) -> tuple[dict, list[str]]:
     """
     layout = dict(DEFAULT_LAYOUT)
     errors: list[str] = []
+    data = dict(data)
+    if "offset" not in data and isinstance(data.get("logo_offset"), (list, tuple)) and len(data["logo_offset"]) == 2:
+        # legacy layout.json: logo_offset was measured from the reference position,
+        # and the favicon had its own nudge. Keep the logo where it was; the favicon follows.
+        lo, c = data["logo_offset"], centering_shift()
+        try:
+            data["offset"] = [round(float(lo[0]) - c[0], 2), round(float(lo[1]) - c[1], 2)]
+        except (TypeError, ValueError):
+            pass
     for key in DEFAULT_LAYOUT:
         if key not in data:
             continue
         value = data[key]
-        if key.endswith("_offset"):
+        if key == "offset":
             if not (isinstance(value, (list, tuple)) and len(value) == 2
                     and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in value)):
                 errors.append(f"'{key}' must be a list of two numbers, got {value!r}")
@@ -247,6 +263,8 @@ def read_layout(path: Path = LAYOUT_JSON) -> dict:
     if errors:
         sys.exit("\n".join(f"{path}: {e}" for e in errors)
                  + f"\nDelete {path.name} to regenerate it with the defaults.")
+    if "offset" not in data:
+        write_layout(layout, path)  # rewrite a legacy file in the current format
     return layout
 
 
@@ -261,15 +279,23 @@ def write_layout(layout: dict, path: Path = LAYOUT_JSON) -> dict:
     return layout
 
 
-def logo_shift(layout: dict) -> tuple[float, float]:
-    return (layout["logo_offset"][0], layout["logo_offset"][1])
-
-
-def centered_logo_offset() -> tuple[float, float]:
-    """Offset that centers wing + shadow in the logo canvas."""
+def centering_shift() -> tuple[float, float]:
+    """Translation that centers wing + shadow in the logo canvas (from the reference position)."""
     cx = (BBOX[0] + BBOX[2]) / 2
     cy = (BBOX[1] + BBOX[3]) / 2
     return (round(CANVAS[0] / 2 - cx, 2), round(CANVAS[1] / 2 - cy, 2))
+
+
+def original_offset() -> tuple[float, float]:
+    """The offset that puts the wing exactly where the reference image has it."""
+    c = centering_shift()
+    return (-c[0], -c[1])
+
+
+def logo_shift(layout: dict) -> tuple[float, float]:
+    """Where the wing goes in the logo canvas: centered, plus the configured offset."""
+    c = centering_shift()
+    return (c[0] + layout["offset"][0], c[1] + layout["offset"][1])
 
 
 def content_bbox(layout: dict) -> tuple[float, float, float, float]:
@@ -286,13 +312,13 @@ def favicon_radius(layout: dict, side: float | None = None) -> float:
 
 
 def favicon_shift(layout: dict, with_offset: bool = True) -> tuple[float, float]:
-    """Shift that centers the wing in the favicon canvas, plus the configured nudge."""
+    """Where the wing goes in the favicon canvas: centered, plus the same configured offset."""
     c = favicon_canvas(layout)
     sx = -BBOX[0] + (c - BBOX_SIZE[0]) / 2
     sy = -BBOX[1] + (c - BBOX_SIZE[1]) / 2
     if with_offset:
-        sx += layout["favicon_offset"][0]
-        sy += layout["favicon_offset"][1]
+        sx += layout["offset"][0]
+        sy += layout["offset"][1]
     return (sx, sy)
 
 
@@ -307,13 +333,33 @@ def _fmt(v: float) -> str:
     return "0" if s in ("-0", "") else s
 
 
-def path_d(shift=(0.0, 0.0), scale: float = 1.0) -> str:
+def outline(top_lift: float = 0.0):
+    """(start, pieces) of the wing, with the straight top edge pushed outwards by top_lift units.
+
+    Only the two ends of the top edge and the handle that leaves it move, so the
+    rest of the outline (feathers, bottom, right side) stays identical.
+    """
+    if not top_lift:
+        return START, PIECES
+    (sx, sy), (lx, ly) = START, PIECES[0][1]
+    tx, ty = lx - sx, ly - sy
+    length = float(np.hypot(tx, ty))
+    dx, dy = ty / length * top_lift, -tx / length * top_lift  # unit normal pointing up
+    pieces = list(PIECES)
+    pieces[0] = ("L", (lx + dx, ly + dy))
+    c = PIECES[1][1]
+    pieces[1] = ("C", (c[0] + dx, c[1] + dy) + tuple(c[2:]))
+    return (sx + dx, sy + dy), pieces
+
+
+def path_d(shift=(0.0, 0.0), scale: float = 1.0, top_lift: float = 0.0) -> str:
     """SVG path data of the wing, optionally shifted (before scaling) and scaled."""
     def tr(x, y):
         return _fmt((x + shift[0]) * scale), _fmt((y + shift[1]) * scale)
 
-    out = ["M%s %s" % tr(*START)]
-    for kind, c in PIECES:
+    start, pieces = outline(top_lift)
+    out = ["M%s %s" % tr(*start)]
+    for kind, c in pieces:
         if kind == "L":
             out.append("L%s %s" % tr(*c))
         else:
@@ -325,12 +371,13 @@ def path_d(shift=(0.0, 0.0), scale: float = 1.0) -> str:
 def wing_group(logo_fill: str, shadow_fill: str, shift=(0.0, 0.0), scale: float = 1.0,
                shadow_scale: float = 1.0, indent: str = "  ", style: str = "") -> str:
     d = path_d(shift, scale)
+    d_shadow = path_d(shift, scale, top_lift=SHADOW_TOP_LIFT * shadow_scale)
     dx, dy = SHADOW_OFFSET[0] * scale * shadow_scale, SHADOW_OFFSET[1] * scale * shadow_scale
     attrs = f" style=\"{style}\"" if style else ""
     return (
         f"{indent}<g class=\"wing\"{attrs}>\n"
-        f"{indent}  <!-- shadow: the same wing outline, offset left and up -->\n"
-        f"{indent}  <path class=\"wing-shadow\" fill=\"{shadow_fill}\" transform=\"translate({_fmt(dx)} {_fmt(dy)})\" d=\"{d}\"/>\n"
+        f"{indent}  <!-- shadow: the wing outline with a thicker top edge, offset left and up -->\n"
+        f"{indent}  <path class=\"wing-shadow\" fill=\"{shadow_fill}\" transform=\"translate({_fmt(dx)} {_fmt(dy)})\" d=\"{d_shadow}\"/>\n"
         f"{indent}  <path class=\"wing-fill\" fill=\"{logo_fill}\" d=\"{d}\"/>\n"
         f"{indent}</g>\n"
     )
@@ -396,11 +443,13 @@ def _bezier(p0, p1, p2, p3, n: int) -> np.ndarray:
     return ((1 - t) ** 3) * p0 + 3 * ((1 - t) ** 2) * t * p1 + 3 * (1 - t) * (t ** 2) * p2 + (t ** 3) * p3
 
 
-def wing_polygon(shift=(0.0, 0.0), scale: float = 1.0, samples_per_unit: float = 2.0) -> np.ndarray:
+def wing_polygon(shift=(0.0, 0.0), scale: float = 1.0, samples_per_unit: float = 2.0,
+                 top_lift: float = 0.0) -> np.ndarray:
     """Flatten the wing outline into a dense polygon (in output pixels)."""
+    start, pieces = outline(top_lift)
     pts = []
-    cur = np.array(START, float)
-    for kind, c in PIECES:
+    cur = np.array(start, float)
+    for kind, c in pieces:
         if kind == "L":
             end = np.array(c, float)
             pts.append(cur[None, :])
@@ -459,7 +508,7 @@ def render_composition(colors: dict[str, str], scale: float, shift=(0.0, 0.0), s
         size = (round(CANVAS[0] * scale), round(CANVAS[1] * scale))
     shadow_shift = (shift[0] + SHADOW_OFFSET[0] * shadow_scale, shift[1] + SHADOW_OFFSET[1] * shadow_scale)
     layers = [
-        (wing_polygon(shadow_shift, scale), hex_to_rgb(colors["color-shadow"])),
+        (wing_polygon(shadow_shift, scale, top_lift=SHADOW_TOP_LIFT * shadow_scale), hex_to_rgb(colors["color-shadow"])),
         (wing_polygon(shift, scale), hex_to_rgb(colors["color-logo"])),
     ]
     bg = hex_to_rgb(colors["color-background"]) if background else None
@@ -493,7 +542,7 @@ def check_placement(layout: dict) -> list[str]:
     r = favicon_radius(layout)
     sx, sy = favicon_shift(layout)
     pts = np.concatenate([wing_polygon((sx, sy)),
-                          wing_polygon((sx + SHADOW_OFFSET[0], sy + SHADOW_OFFSET[1]))])
+                          wing_polygon((sx + SHADOW_OFFSET[0], sy + SHADOW_OFFSET[1]), top_lift=SHADOW_TOP_LIFT)])
     cx = np.clip(pts[:, 0], r, c - r)
     cy = np.clip(pts[:, 1], r, c - r)
     clipped = int((np.hypot(pts[:, 0] - cx, pts[:, 1] - cy) > r + 1e-9).sum())
@@ -520,7 +569,6 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
     --color-logo: __LOGO__;
     --color-shadow: __SHADOW__;
     --logo-x: __LX__px; --logo-y: __LY__px;
-    --fav-x: __FX__px;  --fav-y: __FY__px;
     --ui-bg: #12151a; --ui-panel: #1b2027; --ui-line: #2c333d;
     --ui-text: #e7eaee; --ui-dim: #98a2b0; --ui-accent: #6aa9e0;
   }
@@ -543,7 +591,6 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
   .stage .ovl { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .12s; }
   .stage.show-grid .ovl { opacity: 1; }
   .wing { transform: translate(var(--logo-x), var(--logo-y)); }
-  .fav .wing { transform: translate(var(--fav-x), var(--fav-y)); }
   /* CSS rules beat presentation attributes, so the colors update live even in
      browsers that do not resolve var() inside a fill="" attribute. */
   .bg { fill: var(--color-background); }
@@ -636,7 +683,8 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
 
     <div>
       <div class="panel">
-        <h2>Posición del logo</h2>
+        <h2>Posición</h2>
+        <p class="note" style="margin-top:0">Mueve el ala igual en el logo y en el favicon. <b>0, 0</b> es centrada en los dos.</p>
         <div class="field">
           <label for="num-lx">Horizontal · X <span style="opacity:.7">(+ derecha)</span></label>
           <div class="row">
@@ -655,23 +703,6 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
           <button class="btn sm" id="btn-center" type="button">Centrar</button>
           <button class="btn sm" id="btn-origin" type="button">Como el original</button>
         </div>
-      </div>
-
-      <div class="panel">
-        <h2>Posición en el favicon</h2>
-        <div class="field">
-          <div class="row"><span class="axis-tag">X</span>
-            <input type="number" id="num-fx" step="0.5" data-pos="fx">
-            <input type="range" id="rng-fx" min="-60" max="60" step="0.5" data-pos="fx">
-          </div>
-        </div>
-        <div class="field">
-          <div class="row"><span class="axis-tag">Y</span>
-            <input type="number" id="num-fy" step="0.5" data-pos="fy">
-            <input type="range" id="rng-fy" min="-60" max="60" step="0.5" data-pos="fy">
-          </div>
-        </div>
-        <div class="actions"><button class="btn sm" id="btn-fav-reset" type="button">Centrado</button></div>
       </div>
 
       <div class="panel">
@@ -727,14 +758,15 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
 <script>
   const DEFAULTS = {
     "color-background": "__BG__", "color-logo": "__LOGO__", "color-shadow": "__SHADOW__",
-    lx: __LX__, ly: __LY__, fx: __FX__, fy: __FY__
+    lx: __LX__, ly: __LY__
   };
   const PRESETS = __PRESETS__;
   const CANVAS = __CANVAS__;             // [w, h] of the logo canvas
   const BBOX = __BBOX__;                 // wing + shadow bbox at offset (0, 0)
-  const CENTERED = __CENTERED__;         // offset that centers it
+  const CENTER = __CENTER__;             // translation that centers it in the logo canvas
+  const ORIGINAL = __ORIGINAL__;         // offset that matches the reference image
   const COLOR_KEYS = ["color-background", "color-logo", "color-shadow"];
-  const POS_KEYS = ["lx", "ly", "fx", "fy"];
+  const POS_KEYS = ["lx", "ly"];
   const root = document.documentElement;
   const state = Object.assign({}, DEFAULTS);
 
@@ -758,8 +790,6 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
     });
     root.style.setProperty("--logo-x", state.lx + "px");
     root.style.setProperty("--logo-y", state.ly + "px");
-    root.style.setProperty("--fav-x", state.fx + "px");
-    root.style.setProperty("--fav-y", state.fy + "px");
     POS_KEYS.forEach(k => {
       const n = document.getElementById("num-" + k), r = document.getElementById("rng-" + k);
       if (n && document.activeElement !== n) n.value = fmt(state[k]);
@@ -769,8 +799,9 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
       b.setAttribute("aria-pressed", String(b.dataset.hex === state["color-background"]));
     });
 
-    const x0 = BBOX[0] + state.lx, y0 = BBOX[1] + state.ly;
-    const x1 = BBOX[2] + state.lx, y1 = BBOX[3] + state.ly;
+    const dx = CENTER[0] + state.lx, dy = CENTER[1] + state.ly;
+    const x0 = BBOX[0] + dx, y0 = BBOX[1] + dy;
+    const x1 = BBOX[2] + dx, y1 = BBOX[3] + dy;
     document.getElementById("readout").innerHTML =
       "borde: izq <b>" + fmt(x0) + "</b> · der <b>" + fmt(CANVAS[0] - x1) +
       "</b> · arriba <b>" + fmt(y0) + "</b> · abajo <b>" + fmt(CANVAS[1] - y1) +
@@ -788,8 +819,6 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
     });
     if (state.lx !== DEFAULTS.lx) flags.push("--x " + fmt(state.lx));
     if (state.ly !== DEFAULTS.ly) flags.push("--y " + fmt(state.ly));
-    if (state.fx !== DEFAULTS.fx) flags.push("--favicon-x " + fmt(state.fx));
-    if (state.fy !== DEFAULTS.fy) flags.push("--favicon-y " + fmt(state.fy));
     document.getElementById("cmd").textContent = flags.length
       ? "python brand/build_logo.py " + flags.join(" ")
       : "python brand/build_logo.py\n\n# (sin cambios respecto a la configuración actual)";
@@ -822,11 +851,10 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
   document.getElementById("toggle-grid").addEventListener("change", e => {
     document.getElementById("stage").classList.toggle("show-grid", e.target.checked);
   });
-  document.getElementById("btn-center").addEventListener("click", () => {
-    state.lx = CENTERED[0]; state.ly = CENTERED[1]; render();
+  document.getElementById("btn-center").addEventListener("click", () => { state.lx = 0; state.ly = 0; render(); });
+  document.getElementById("btn-origin").addEventListener("click", () => {
+    state.lx = ORIGINAL[0]; state.ly = ORIGINAL[1]; render();
   });
-  document.getElementById("btn-origin").addEventListener("click", () => { state.lx = 0; state.ly = 0; render(); });
-  document.getElementById("btn-fav-reset").addEventListener("click", () => { state.fx = 0; state.fy = 0; render(); });
   ["reset", "reset-2"].forEach(id => {
     const b = document.getElementById(id);
     if (b) b.addEventListener("click", () => { Object.assign(state, DEFAULTS); setStatus("", ""); render(); });
@@ -839,7 +867,9 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
   });
 
   // --- saving straight to the config files, only when served by --serve
-  const SERVED = location.protocol === "http:" || location.protocol === "https:";
+  // Injected by build_logo.py --serve; the file on disk always says false, so a
+  // generic static server (VS Code Live Server, etc.) shows the command instead.
+  const SERVED = __SERVED__;
   document.getElementById("save-box").hidden = !SERVED;
   document.getElementById("cmd-box").hidden = SERVED;
   document.getElementById("sub").innerHTML = SERVED
@@ -867,10 +897,14 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
               "color-logo": state["color-logo"],
               "color-shadow": state["color-shadow"]
             },
-            layout: { logo_offset: [state.lx, state.ly], favicon_offset: [state.fx, state.fy] }
+            layout: { offset: [state.lx, state.ly] }
           })
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (e) {
+          throw new Error("HTTP " + res.status + " sin JSON. Esta pagina no la esta sirviendo build_logo.py --serve.");
+        }
         if (!res.ok || !data.ok) throw new Error((data && data.error) || ("HTTP " + res.status));
         Object.assign(DEFAULTS, state);
         const warn = (data.warnings || []).length ? " · aviso: " + data.warnings.join("; ") : "";
@@ -935,13 +969,17 @@ def grid_svg(minor: int = 10, major: int = 50) -> str:
     return "".join(out)
 
 
-def preview_html(colors: dict[str, str], layout: dict) -> str:
-    """A self-contained page that re-colors and re-positions the real geometry live."""
+def preview_html(colors: dict[str, str], layout: dict, served: bool = False) -> str:
+    """A self-contained page that re-colors and re-positions the real geometry live.
+
+    served=True enables the Save button; only the --serve handler passes it, so
+    the copy written to disk never offers a button that has no server behind it.
+    """
     logo_svg = (
         f"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {CANVAS[0]} {CANVAS[1]}\" role=\"img\" aria-label=\"Panamails\">\n"
         f"  <rect class=\"bg\" width=\"{CANVAS[0]}\" height=\"{CANVAS[1]}\" fill=\"var(--color-background)\"/>\n"
-        # offset (0,0) baked in; the live offset comes from CSS variables on .wing
-        + wing_group("var(--color-logo)", "var(--color-shadow)")
+        # centered position baked in; the live offset comes from CSS variables on .wing
+        + wing_group("var(--color-logo)", "var(--color-shadow)", shift=centering_shift())
         + "</svg>"
     )
 
@@ -955,8 +993,7 @@ def preview_html(colors: dict[str, str], layout: dict) -> str:
         return svg.replace("<svg ", "<svg class=\"fav\" ", 1)
 
     presets = [colors["color-background"]] + [p for p in PRESET_BACKGROUNDS if p != colors["color-background"]]
-    lx, ly = layout["logo_offset"]
-    fx, fy = layout["favicon_offset"]
+    lx, ly = layout["offset"]
     html = PREVIEW_TEMPLATE
     for token, value in [
         ("__LOGO_SVG__", logo_svg),
@@ -969,9 +1006,10 @@ def preview_html(colors: dict[str, str], layout: dict) -> str:
         ("__PRESETS__", "[" + ", ".join(f'"{p}"' for p in presets) + "]"),
         ("__CANVAS__", f"[{CANVAS[0]}, {CANVAS[1]}]"),
         ("__BBOX__", "[" + ", ".join(_fmt(v) for v in BBOX) + "]"),
-        ("__CENTERED__", "[" + ", ".join(_fmt(v) for v in centered_logo_offset()) + "]"),
+        ("__CENTER__", "[" + ", ".join(_fmt(v) for v in centering_shift()) + "]"),
+        ("__ORIGINAL__", "[" + ", ".join(_fmt(v) for v in original_offset()) + "]"),
+        ("__SERVED__", "true" if served else "false"),
         ("__LX__", _fmt(lx)), ("__LY__", _fmt(ly)),
-        ("__FX__", _fmt(fx)), ("__FY__", _fmt(fy)),
         ("__BG__", colors["color-background"]),
         ("__LOGO__", colors["color-logo"]),
         ("__SHADOW__", colors["color-shadow"]),
@@ -1027,9 +1065,8 @@ def describe(colors: dict[str, str], layout: dict) -> str:
     x0, y0, x1, y1 = content_bbox(layout)
     return "\n".join([
         *(f"--{k}: {v}" for k, v in colors.items()),
-        f"logo_offset:           [{_fmt(layout['logo_offset'][0])}, {_fmt(layout['logo_offset'][1])}]"
-        f"   (centrado seria [{_fmt(centered_logo_offset()[0])}, {_fmt(centered_logo_offset()[1])}])",
-        f"favicon_offset:        [{_fmt(layout['favicon_offset'][0])}, {_fmt(layout['favicon_offset'][1])}]",
+        f"offset:                [{_fmt(layout['offset'][0])}, {_fmt(layout['offset'][1])}]"
+        f"   (0, 0 = centrado; como el original seria [{_fmt(original_offset()[0])}, {_fmt(original_offset()[1])}])",
         f"favicon_fill:          {layout['favicon_fill']}",
         f"favicon_corner_radius: {layout['favicon_corner_radius']}",
         f"logo en el lienzo {CANVAS[0]}x{CANVAS[1]}: x {_fmt(x0)}..{_fmt(x1)}  y {_fmt(y0)}..{_fmt(y1)}",
@@ -1119,7 +1156,7 @@ def serve(port: int = 8765, host: str = "127.0.0.1", open_browser: bool = True) 
             if path in ("/", "/index.html", "/colores.html"):
                 # regenerate from the config on every load, so the page always
                 # opens showing what is actually saved
-                html = preview_html(read_colors(), read_layout())
+                html = preview_html(read_colors(), read_layout(), served=True)
                 self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
             elif path == "/state":
                 self._json(200, {"colors": read_colors(), "layout": read_layout()})
@@ -1156,17 +1193,23 @@ def serve(port: int = 8765, host: str = "127.0.0.1", open_browser: bool = True) 
             except Exception as exc:  # never take the server down on one bad request
                 self._json(500, {"ok": False, "error": f"{type(exc).__name__}: {exc}"})
                 return
-            if result["ok"]:
-                print(f"  guardado: {result['written']} archivos regenerados")
-                for w in result["warnings"]:
-                    print(f"  aviso: {w}")
-            else:
-                print(f"  rechazado: {result['error']}")
             self._json(200 if result["ok"] else 400, result)
+            try:
+                if result["ok"]:
+                    print(f"  guardado: {result['written']} archivos regenerados")
+                    for w in result["warnings"]:
+                        print(f"  aviso: {w}")
+                else:
+                    print(f"  rechazado: {result['error']}")
+            except OSError:
+                pass
 
         def log_message(self, fmt, *args):  # quieter than the default access log
             if self.command == "POST":
-                print(f"  {self.command} {self.path}")
+                try:
+                    print(f"  {self.command} {self.path}")
+                except OSError:
+                    pass
 
     last_error = None
     for candidate in range(port, port + 10):
@@ -1203,11 +1246,10 @@ def main(argv=None) -> int:
     ap.add_argument("--background", metavar="HEX", help="background color (#RRGGBB)")
     ap.add_argument("--logo", metavar="HEX", help="wing color (#RRGGBB)")
     ap.add_argument("--shadow", metavar="HEX", help="separations/shadow color (#RRGGBB)")
-    ap.add_argument("--x", type=float, metavar="N", help="horizontal position of the wing in the logo canvas (+ right)")
-    ap.add_argument("--y", type=float, metavar="N", help="vertical position of the wing in the logo canvas (+ down)")
-    ap.add_argument("--center", action="store_true", help="center the wing in the logo canvas")
-    ap.add_argument("--favicon-x", type=float, metavar="N", help="horizontal nudge inside the favicon")
-    ap.add_argument("--favicon-y", type=float, metavar="N", help="vertical nudge inside the favicon")
+    ap.add_argument("--x", type=float, metavar="N", help="horizontal offset of the wing from centered (+ right), logo and favicon alike")
+    ap.add_argument("--y", type=float, metavar="N", help="vertical offset of the wing from centered (+ down), logo and favicon alike")
+    ap.add_argument("--center", action="store_true", help="offset [0, 0]: centered in the logo and in the favicon")
+    ap.add_argument("--original", action="store_true", help="put the wing exactly where the reference image has it")
     ap.add_argument("--favicon-fill", type=float, metavar="F", help="share of the favicon side taken by the wing (0-1)")
     ap.add_argument("--favicon-radius", type=float, metavar="F", help="corner radius as a fraction of the side (0-0.5)")
     ap.add_argument("--show", action="store_true", help="print the current config and exit")
@@ -1239,15 +1281,13 @@ def main(argv=None) -> int:
 
     new_layout = {k: (list(v) if isinstance(v, list) else v) for k, v in layout.items()}
     if args.center:
-        new_layout["logo_offset"] = list(centered_logo_offset())
+        new_layout["offset"] = [0.0, 0.0]
+    if args.original:
+        new_layout["offset"] = list(original_offset())
     if args.x is not None:
-        new_layout["logo_offset"][0] = round(args.x, 2)
+        new_layout["offset"][0] = round(args.x, 2)
     if args.y is not None:
-        new_layout["logo_offset"][1] = round(args.y, 2)
-    if args.favicon_x is not None:
-        new_layout["favicon_offset"][0] = round(args.favicon_x, 2)
-    if args.favicon_y is not None:
-        new_layout["favicon_offset"][1] = round(args.favicon_y, 2)
+        new_layout["offset"][1] = round(args.y, 2)
     if args.favicon_fill is not None:
         new_layout["favicon_fill"] = round(args.favicon_fill, 4)
     if args.favicon_radius is not None:

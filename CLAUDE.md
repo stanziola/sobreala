@@ -46,7 +46,7 @@ panamails/
 │   └── decisiones.md
 ├── brand/
 │   ├── colors.css          # variables de color, fuente única de verdad
-│   ├── layout.json         # posición del logo y encuadre del favicon
+│   ├── layout.json         # posición del ala (logo y favicon) y encuadre del favicon
 │   ├── build_logo.py       # genera logo/, favicon/ y preview/ desde esos dos
 │   ├── logo/               # logo.svg, logo-transparent.svg, logo.png (generados)
 │   │   └── reference/      # PNG original del logo, referencia visual maestra
