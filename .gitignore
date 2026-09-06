@@ -1,0 +1,22 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Node (landing build tooling, si aplica)
+node_modules/
+
+# OS / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
