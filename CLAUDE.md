@@ -45,8 +45,11 @@ panamails/
 │   ├── arquitectura.md
 │   └── decisiones.md
 ├── brand/
-│   ├── logo/
 │   ├── colors.css          # variables de color, fuente única de verdad
+│   ├── build_logo.py       # genera logo/ y favicon/ a partir de colors.css
+│   ├── logo/               # logo.svg, logo-transparent.svg, logo.png (generados)
+│   │   └── reference/      # PNG original del logo, referencia visual maestra
+│   ├── favicon/            # favicon.svg, .ico y PNG 16/32/180 (generados)
 │   └── fonts/
 ├── landing/                # → Cloudflare Pages
 └── backend/                # → Railway
