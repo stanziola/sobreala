@@ -1,0 +1,17 @@
+# Panamails backend. Install with:  pip install -r backend/requirements.txt
+Flask>=3.1
+pymongo>=4.10
+bcrypt>=4.1
+python-dotenv>=1.0
+email-validator>=2.1
+
+# Only needed when MAIL_BACKEND=ses. Imported lazily, so development without
+# AWS credentials works with MAIL_BACKEND=file.
+boto3>=1.34
+
+# Production server, used by the Procfile on Railway.
+# Does not run on Windows: locally use `python backend/wsgi.py` instead.
+gunicorn>=21.2
+
+# Tests
+pytest>=8.0

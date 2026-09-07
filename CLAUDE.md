@@ -70,7 +70,7 @@ panamails/
     ├── config.py
     ├── requirements.txt
     ├── blueprints/
-    │   ├── auth/           # registro, login, recuperación
+    │   ├── auth/           # registro, confirmación de correo, login. HECHO
     │   ├── contacts/       # importación, etiquetas, supresiones
     │   ├── campaigns/      # crear, programar, enviar, pausar/retomar
     │   ├── analytics/      # métricas, exportar CSV/PDF
@@ -79,6 +79,8 @@ panamails/
     │   └── admin/          # panel de administración
     ├── models/
     ├── services/
+    │   ├── mailer.py       # correo del sistema: file | smtp | ses
+    │   ├── security.py     # contraseñas, CSRF, límite de intentos
     │   ├── ses.py
     │   ├── suppression.py
     │   ├── importer.py
@@ -170,9 +172,16 @@ clic). Es lo que más crece: ~3 eventos por correo, ~200 bytes cada uno.
    plan Básico.** Al subir de plan desaparece sola.
 5. **Los contactos no se duplican.** Toda importación es un upsert sobre
    `{account_id, email_normalized}`.
-6. **Nunca guardar datos de tarjeta.** El pago se hace en el checkout hospedado
+6. **De los tokens de correo solo se guarda su hash**, nunca el valor que va
+   en el enlace, y valen una sola vez y con vencimiento.
+7. **Las pantallas nunca revelan si una dirección ya tiene cuenta.** Registrarse
+   con un correo existente responde igual que uno nuevo; al dueño se le avisa
+   por correo.
+8. **Los correos del sistema son transaccionales**: sin enlace de baja y sin
+   marca de agua. Las reglas 3 y 4 son solo para campañas de clientes.
+9. **Nunca guardar datos de tarjeta.** El pago se hace en el checkout hospedado
    del proveedor; la tarjeta no toca el servidor ni la base de datos.
-7. **Toda escritura de contactos usa `bulkWrite`**, y las supresiones se
+10. **Toda escritura de contactos usa `bulkWrite`**, y las supresiones se
    consultan en lote con `$in`. Nunca una consulta por contacto.
 
 ---

@@ -1,0 +1,10 @@
+{{ t('mail_exists_heading') }}
+
+{{ t('mail_exists_body') }}
+
+{{ link }}
+
+{{ t('mail_exists_ignore') }}
+
+-- 
+{{ t('brand') }}

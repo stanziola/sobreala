@@ -1,0 +1,12 @@
+{{ t('mail_confirm_heading') }}
+
+{{ t('mail_confirm_body') }}
+
+{{ link }}
+
+{{ t('mail_confirm_expiry', hours=hours) }}
+
+{{ t('mail_confirm_ignore') }}
+
+-- 
+{{ t('brand') }}

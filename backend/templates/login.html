@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ t('login_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('login_title') }}</h1>
+
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="email">{{ t('login_email') }}</label>
+    <input id="email" name="email" type="email" value="{{ email }}"
+           autocomplete="email" required>
+
+    <label for="password">{{ t('login_password') }}</label>
+    <input id="password" name="password" type="password"
+           autocomplete="current-password" required>
+
+    <button class="btn" type="submit">{{ t('login_submit') }}</button>
+  </form>
+
+  <p class="foot">{{ t('login_no_account') }}
+    <a href="{{ url_for('auth.register') }}">{{ t('login_register_link') }}</a></p>
+</div>
+{% endblock %}

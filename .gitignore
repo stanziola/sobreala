@@ -33,6 +33,9 @@ brand/payments/**/*.eps
 brand/payments/**/*.pdf
 brand/payments/**/*.jpg
 
+# Correos guardados en desarrollo: llevan enlaces de confirmación válidos.
+backend/.mail_outbox/
+
 # Contexto de mercado: costos, márgenes por plan, precios de la competencia y
 # prospectos. Nunca debe viajar con el repositorio. Los planes y precios
 # públicos siguen en docs/pricing.md, que el sitio necesita para construirse.

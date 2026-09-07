@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ t('panel_title') }}{% endblock %}
+{% block bar_actions %}
+<form class="bar__form" method="post" action="{{ url_for('auth.logout') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn btn--quiet" type="submit">{{ t('nav_logout') }}</button>
+</form>
+{% endblock %}
+{% block content %}
+{% if not confirmed %}
+<div class="notice">
+  <p>{{ t('panel_unconfirmed') }}</p>
+  <a class="btn btn--small" href="{{ url_for('auth.resend') }}">{{ t('panel_unconfirmed_action') }}</a>
+</div>
+{% endif %}
+
+<div class="card">
+  <h1>{{ t('panel_greeting', name=account.contact_name) }}</h1>
+  <p class="lead">{{ t('panel_building') }}</p>
+  <p class="status"><b>{{ t('panel_status_label') }}:</b>
+    {{ t('panel_status_' + account.status) }}</p>
+</div>
+{% endblock %}
