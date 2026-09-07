@@ -373,7 +373,7 @@ PRICING = {
         "Negocio": {
             "pitch": "Para quien ya envía cada mes y quiere su propio diseño.",
             "featured": True,
-            "badge": "El más elegido",
+            "badge": "Recomendado",
         },
         "Empresa": {
             "pitch": "Para cooperativas y colegios con listas grandes.",
