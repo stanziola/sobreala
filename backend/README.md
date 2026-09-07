@@ -55,6 +55,31 @@ y sirve como puente mientras SES sale del modo de pruebas. Dos avisos:
 **Los correos del sistema son transaccionales**: no llevan enlace de baja ni
 marca de agua. Esas reglas son para las campañas de los clientes.
 
+## Comprobar que está vivo: `/salud`
+
+```
+curl https://panel.panamails.com/salud
+```
+
+Devuelve JSON y se lee desde fuera, sin entrar a ningún panel:
+
+```json
+{"app": "up", "database": "up", "indexes": true, "name": "panamails_app"}
+```
+
+| Lo que ves | Lo que significa |
+|---|---|
+| `200` con `database: up` | Todo bien |
+| `503` con `database: down` | La aplicación vive pero no alcanza Atlas. Casi siempre la lista de acceso de Atlas, que debe permitir cualquier origen porque Railway no tiene dirección fija |
+| `502` y ni siquiera contesta | No llega a la aplicación. Si el 502 lo firma Cloudflare, mira el proxy del registro DNS antes que el código |
+
+`indexes` dice si los índices están creados. **La aplicación no los crea al
+arrancar a propósito**: antes sí lo hacía, y una base momentáneamente inaccesible
+mataba todos los procesos al importar, lo que la plataforma reportaba como un 502
+pelado sin nada legible. Ahora se crean de forma perezosa, en la primera petición
+que lo consiga. El índice único del correo es lo que impide cuentas duplicadas,
+así que no puede faltar en silencio: por eso `/salud` lo informa.
+
 ## Base de datos
 
 `MONGODB_URI` acepta un clúster de Atlas. La contraseña va en `.env`, que está
@@ -111,8 +136,13 @@ certificado necesita que el servicio ya exista.
    Railway no tienen dirección fija; la base queda protegida por sus credenciales.
 4. En **Railway**, agregar el dominio `panel.panamails.com`. Te dará un destino.
 5. En **Cloudflare**, crear un `CNAME` de `panel` hacia ese destino, **en gris,
-   sin el proxy naranja**, para que Railway pueda emitir el certificado. Después
-   se puede encender el naranja.
+   sin el proxy naranja**, para que Railway pueda emitir el certificado.
+   **Con el proxy encendido antes de que el certificado exista, Cloudflare no
+   puede hablar con el origen y responde 502 en todas las rutas.** Ya pasó una
+   vez. Cuando el certificado esté emitido se puede encender el naranja, y
+   entonces el modo SSL tiene que ser **Full (strict)**: con «Flexible»,
+   Cloudflare habla HTTP con el origen y la galleta de sesión, que va marcada
+   como segura, no deja iniciar sesión.
 6. Poner `APP_BASE_URL=https://panel.panamails.com` y volver a desplegar.
 
 **El paso 6 es el que más se olvida.** Sin él los correos salen con enlaces a
