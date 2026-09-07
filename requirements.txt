@@ -1,3 +1,20 @@
 # Railway busca este archivo en la raíz para reconocer el proyecto como Python.
-# Las dependencias de verdad están en el backend.
--r backend/requirements.txt
+# Debe listar las dependencias reales (no un -r a backend/requirements.txt):
+# Railpack solo copia este archivo antes de instalar, así que una referencia a
+# una ruta que aún no existe en la imagen falla el build. Mantener en sync con
+# backend/requirements.txt.
+Flask>=3.1
+pymongo>=4.10
+bcrypt>=4.1
+python-dotenv>=1.0
+email-validator>=2.1
+
+# Only needed when MAIL_BACKEND=ses. Imported lazily, so development without
+# AWS credentials works with MAIL_BACKEND=file.
+boto3>=1.34
+
+# Production server, used by the Procfile on Railway.
+gunicorn>=21.2
+
+# Tests
+pytest>=8.0
