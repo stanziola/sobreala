@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.database import Database
+from pymongo.errors import OperationFailure
 
 from config import Config
 
@@ -52,11 +53,18 @@ def ensure_indexes(db: Database | None = None) -> None:
                              name="uniq_email_normalized")
     db.accounts.create_index([("status", ASCENDING)], name="by_status")
 
-    # Tokens are looked up by their hash, never by the value in the link.
-    db.account_tokens.create_index([("token_hash", ASCENDING)], unique=True,
-                                   name="uniq_token_hash")
+    # A confirmation code is looked up by the account it belongs to, because the
+    # session already says which one that is. One document per account and
+    # purpose: issue() deletes the previous one before writing the new one.
     db.account_tokens.create_index([("account_id", ASCENDING), ("purpose", ASCENDING)],
                                    name="by_account_purpose")
+    # Left over from the era of links: a unique index on a field no document has
+    # any more, which would reject the second insert as a duplicate null. Dropped
+    # here rather than by hand, so a deploy fixes itself.
+    try:
+        db.account_tokens.drop_index("uniq_token_hash")
+    except OperationFailure:
+        pass  # never existed, or already gone
     # Mongo deletes the document once purge_at passes: expiry plus a grace
     # window, so an expired link still gets a useful message.
     db.account_tokens.create_index([("purge_at", ASCENDING)], expireAfterSeconds=0,

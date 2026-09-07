@@ -105,8 +105,37 @@ a { color: var(--color-accent-strong); }
   padding: 14px clamp(16px, 4vw, 28px);
   background: var(--color-background); color: var(--color-on-dark);
 }
-.bar__brand { color: inherit; font-weight: 700; font-size: 1.15rem; text-decoration: none; }
+.bar__brand {
+  display: inline-flex; align-items: center; gap: 10px;
+  color: inherit; font-weight: 700; font-size: 1.15rem; text-decoration: none;
+}
+.bar__wing { display: block; width: 40px; flex: none; }
+.bar__wing svg { display: block; width: 100%; height: auto; }
+/* The two halves of the mark follow the theme, which is the whole reason the
+   wing is inlined instead of loaded as an image. */
+.bar__wing .wing-fill { fill: var(--color-logo); }
+.bar__wing .wing-shadow { fill: var(--color-shadow); }
+.bar__actions { display: flex; align-items: center; gap: 10px; }
 .bar__form { margin: 0; }
+
+/* Theme toggle. The icon shows the action, not the state: a sun while dark
+   (press to go light) and a moon while light, same as the public site. */
+.theme-toggle {
+  display: inline-grid; place-items: center; flex: none;
+  width: 38px; height: 38px; padding: 0;
+  color: inherit; background: transparent; cursor: pointer;
+  border: 1px solid var(--color-accent-light); border-radius: 10px;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.theme-toggle:hover { background: rgba(255, 255, 255, .14); }
+.theme-toggle > span { display: none; grid-area: 1 / 1; }
+:root[data-theme="dark"] .theme-toggle__sun { display: grid; }
+:root:not([data-theme="dark"]) .theme-toggle__moon { display: grid; }
+
+/* Circular reveal: the incoming theme grows over the outgoing one, so only the
+   new snapshot is animated and the old one stays put underneath. */
+::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 
 .wrap { width: min(100% - 32px, 620px); margin: clamp(24px, 6vw, 56px) auto; }
 
@@ -126,6 +155,13 @@ input {
   border: 1px solid var(--color-border); border-radius: 8px;
 }
 input:focus { border-color: var(--color-accent); }
+/* Six digits, read one by one: wide spacing and figures that cannot be
+   mistaken for letters. */
+.input--code {
+  max-width: 260px; padding: 14px 16px;
+  font-family: Consolas, Menlo, monospace; font-size: 1.6rem; font-weight: 700;
+  letter-spacing: .35em; text-align: center;
+}
 .hint { margin-top: 6px; font-size: .85rem; color: var(--color-ink-soft); }
 
 .btn {

@@ -58,6 +58,12 @@ def create(db, *, company_name: str, contact_name: str, email: str,
     return doc
 
 
+def delete(db, account_id) -> None:
+    """Remove an account. Only used to undo a registration whose confirmation
+    email could not be sent: half an account is worse than none."""
+    db.accounts.delete_one({"_id": account_id})
+
+
 def by_email(db, email: str) -> dict[str, Any] | None:
     return db.accounts.find_one({"email_normalized": normalize_email(email)})
 

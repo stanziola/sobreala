@@ -1,18 +1,26 @@
 {% extends "base.html" %}
-{% block title %}{{ t('confirm_' + state + '_title') }}{% endblock %}
+{% block title %}{{ t('confirm_title') }}{% endblock %}
 {% block content %}
 <div class="card card--narrow">
-  <h1>{{ t('confirm_' + state + '_title') }}</h1>
-  {% if state == 'expired' %}
-  <p class="lead">{{ t('confirm_expired_lead', hours=hours) }}</p>
-  {% else %}
-  <p class="lead">{{ t('confirm_' + state + '_lead') }}</p>
-  {% endif %}
+  <h1>{{ t('confirm_title') }}</h1>
+  <p class="lead">{{ t('confirm_lead', minutes=minutes) }}</p>
 
-  {% if state in ('ok', 'already') %}
-  <a class="btn" href="{{ url_for('auth.login') }}">{{ t('confirm_go_login') }}</a>
-  {% else %}
-  <a class="btn" href="{{ url_for('auth.resend') }}">{{ t('sent_resend') }}</a>
-  {% endif %}
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="code">{{ t('confirm_code') }}</label>
+    {# inputmode and one-time-code get the numeric keypad on a phone and let the
+       browser offer the code straight from the message. #}
+    <input id="code" name="code" class="input--code" type="text"
+           inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*"
+           maxlength="9" autofocus required>
+
+    <button class="btn" type="submit">{{ t('confirm_submit') }}</button>
+  </form>
+
+  <p class="hint">{{ t('confirm_hint') }}</p>
+  <p class="foot"><a href="{{ url_for('auth.resend') }}">{{ t('confirm_resend') }}</a></p>
 </div>
 {% endblock %}

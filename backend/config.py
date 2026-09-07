@@ -70,6 +70,10 @@ class Config:
 
     # --- links and tokens --------------------------------------------------
     APP_BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:5000").rstrip("/")
+    # Confirmation is a six digit code typed on the screen that asked for it, so
+    # it does not need to survive a day in an inbox the way a link did. Minutes,
+    # not hours: a short life is half of what makes a short code safe.
+    CONFIRMATION_CODE_MINUTES = int(os.getenv("CONFIRMATION_CODE_MINUTES", "30"))
     CONFIRMATION_TOKEN_HOURS = int(os.getenv("CONFIRMATION_TOKEN_HOURS", "24"))
     # Used tokens stay this long after expiring so an expired link can be told
     # apart from one that never existed, and answered with a useful message.

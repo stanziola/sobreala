@@ -116,10 +116,11 @@ def _send_file(to: str, subject: str, html: str, text: str) -> str:
         encoding="utf-8",
     )
 
-    # The link is what a developer actually needs; print it so the flow can be
-    # followed without opening the file.
-    for url in re.findall(r"https?://\S+", text):
-        print(f"  [correo] {to}: {url}", flush=True)
+    # The code, or the link in the messages that still carry one, is what a
+    # developer actually needs; print it so the flow can be followed without
+    # opening the file.
+    for found in re.findall(r"https?://\S+|^\d{6}$", text, flags=re.M):
+        print(f"  [correo] {to}: {found}", flush=True)
     print(f"  [correo] guardado en {outbox / (name + '.html')}", flush=True)
     return name
 

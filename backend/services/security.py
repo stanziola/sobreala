@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 from flask import session
 from pymongo import ReturnDocument
+
+from config import Config
 
 # bcrypt only looks at the first 72 bytes and silently ignores the rest, so two
 # different long passwords could open the same account. Longer input is refused
@@ -68,6 +71,41 @@ def new_token() -> tuple[str, str]:
 
 def hash_token(raw: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+# --------------------------------------------------------------------- codes
+
+CODE_DIGITS = 6
+
+
+def new_code() -> str:
+    """A confirmation code, leading zeros included."""
+    return f"{secrets.randbelow(10 ** CODE_DIGITS):0{CODE_DIGITS}d}"
+
+
+def clean_code(typed: str | None) -> str:
+    """Digits only. People paste "48 12 09" and type dashes between them."""
+    return "".join(ch for ch in (typed or "") if ch.isdigit())
+
+
+def hash_code(code: str) -> str:
+    """Keyed hash, not a bare digest.
+
+    A plain SHA-256 of six digits protects nothing: a million guesses is a
+    fraction of a second on any laptop. Under HMAC with SECRET_KEY a copy of the
+    database is not enough to turn the stored value back into a code; the
+    server's key is needed too. Rule 6 still holds — the code itself is never
+    written down.
+    """
+    return hmac.new(Config.SECRET_KEY.encode("utf-8"),
+                    clean_code(code).encode("utf-8"),
+                    hashlib.sha256).hexdigest()
+
+
+def codes_match(stored: str | None, submitted: str) -> bool:
+    if not stored:
+        return False
+    return secrets.compare_digest(stored, submitted)
 
 
 # -------------------------------------------------------------------------- CSRF

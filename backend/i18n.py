@@ -28,30 +28,19 @@ TEXTS = {
     "register_have_account": "¿Ya tienes cuenta?",
     "register_login_link": "Entra aquí",
 
-    # --- "check your inbox" ------------------------------------------------
-    "sent_title": "Revisa tu correo",
-    "sent_lead": "Te enviamos un enlace para confirmar tu dirección. "
-                 "Vence en {hours} horas.",
-    "sent_hint": "Si no lo ves, mira en la carpeta de spam.",
-    "sent_resend": "Enviar otro enlace",
-
     # --- confirmation ------------------------------------------------------
-    "confirm_ok_title": "Listo, tu correo quedó confirmado",
-    "confirm_ok_lead": "Ya puedes entrar a tu cuenta.",
-    "confirm_already_title": "Este correo ya estaba confirmado",
-    "confirm_already_lead": "No hace falta que hagas nada más.",
-    "confirm_expired_title": "El enlace venció",
-    "confirm_expired_lead": "Los enlaces de confirmación duran {hours} horas. "
-                            "Pide uno nuevo y te lo enviamos al momento.",
-    "confirm_unknown_title": "Este enlace no sirve",
-    "confirm_unknown_lead": "Puede que ya lo hayas usado o que se haya copiado "
-                            "incompleto. Pide uno nuevo desde aquí.",
-    "confirm_go_login": "Entrar",
+    "confirm_title": "Escribe tu código",
+    "confirm_lead": "Te enviamos un código de 6 dígitos a tu correo. "
+                    "Vence en {minutes} minutos.",
+    "confirm_hint": "Si no lo ves, mira en la carpeta de spam.",
+    "confirm_code": "Código de 6 dígitos",
+    "confirm_submit": "Confirmar mi correo",
+    "confirm_resend": "Pedir otro código",
 
     # --- resend ------------------------------------------------------------
-    "resend_title": "Enviar otro enlace de confirmación",
-    "resend_lead": "Escribe tu correo y te mandamos uno nuevo.",
-    "resend_submit": "Enviar enlace",
+    "resend_title": "Pedir otro código",
+    "resend_lead": "Escribe tu correo y te mandamos un código nuevo.",
+    "resend_submit": "Enviar código",
 
     # --- login -------------------------------------------------------------
     "login_title": "Entra a tu cuenta",
@@ -67,8 +56,8 @@ TEXTS = {
     "panel_building": "Estamos construyendo el panel. Por ahora solo puedes "
                       "entrar y salir; pronto podrás subir tus contactos.",
     "panel_unconfirmed": "Todavía no confirmas tu correo. Revisa tu bandeja o "
-                         "pide otro enlace.",
-    "panel_unconfirmed_action": "Pedir otro enlace",
+                         "pide otro código.",
+    "panel_unconfirmed_action": "Pedir otro código",
     "panel_status_label": "Estado de tu cuenta",
     "panel_status_registered": "Registrada. Cuando quieras enviar, escríbenos y "
                                "revisamos tu caso.",
@@ -84,6 +73,18 @@ TEXTS = {
     "error_login_failed": "El correo o la contraseña no coinciden.",
     "error_csrf": "El formulario venció. Vuelve a intentarlo.",
     "error_too_many": "Demasiados intentos. Espera unos minutos y vuelve a probar.",
+    # One message for a wrong code, one that expired and one that never existed.
+    # The three are different facts and auth_events keeps them apart, but the
+    # screen may not: telling them apart would say whether the address has an
+    # account. See rule 7.
+    "error_code_invalid": "Ese código no es correcto o ya venció. Revísalo o "
+                          "pide uno nuevo.",
+    "error_code_too_many": "Demasiados intentos con ese código. Pide uno nuevo.",
+    "error_code_used": "Ese código ya se usó. Si ya confirmaste tu correo, "
+                       "entra normalmente.",
+    "error_mail_failed": "No pudimos enviarte el código en este momento, así "
+                         "que no creamos la cuenta. Vuelve a intentarlo en unos "
+                         "minutos.",
 
     # --- error pages -------------------------------------------------------
     # Shown instead of the server's own blank error page. The technical detail
@@ -100,16 +101,13 @@ TEXTS = {
                    "escríbenos y lo revisamos.",
 
     # --- emails ------------------------------------------------------------
-    "mail_confirm_subject": "Confirma tu correo en Panamails",
+    "mail_confirm_subject": "{code} es tu código de Panamails",
     "mail_confirm_heading": "Confirma tu correo",
-    "mail_confirm_body": "Gracias por crear tu cuenta en Panamails. Pulsa el "
-                         "botón para confirmar que esta dirección es tuya.",
-    "mail_confirm_button": "Confirmar mi correo",
-    "mail_confirm_expiry": "El enlace vence en {hours} horas.",
+    "mail_confirm_body": "Gracias por crear tu cuenta en Panamails. Escribe "
+                         "este código en la página donde lo pediste:",
+    "mail_confirm_expiry": "El código vence en {minutes} minutos.",
     "mail_confirm_ignore": "Si no creaste ninguna cuenta, puedes ignorar este "
                            "mensaje: no se hará nada.",
-    "mail_confirm_fallback": "Si el botón no funciona, copia esta dirección en "
-                             "tu navegador:",
 
     # Sent when someone tries to register with an address that already has an
     # account. The screen must not reveal this, so the owner is told by email.

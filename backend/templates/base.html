@@ -1,21 +1,49 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ t('brand') }}{% endblock %} · {{ t('brand') }}</title>
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#3166A7" id="theme-color">
+<script>
+  // Runs before the stylesheet so the page never paints the wrong theme.
+  (function () {
+    var t;
+    try { t = localStorage.getItem("theme"); } catch (e) {}
+    if (t !== "dark" && t !== "light") {
+      t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.dataset.theme = t;
+    if (t === "dark") {
+      var m = document.getElementById("theme-color");
+      if (m) m.setAttribute("content", "#245285");
+    }
+  })();
+</script>
 <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/css/panel.css">
 </head>
 <body>
 <header class="bar">
-  <a class="bar__brand" href="/">{{ t('brand') }}</a>
-  {% block bar_actions %}{% endblock %}
+  <a class="bar__brand" href="/">
+    <span class="bar__wing">{% include "_wing.svg" %}</span>
+    <span>{{ t('brand') }}</span>
+  </a>
+
+  <div class="bar__actions">
+    {% block bar_actions %}{% endblock %}
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Cambiar de tema">
+      <span class="theme-toggle__sun">{% include "_icon-sun.svg" %}</span>
+      <span class="theme-toggle__moon">{% include "_icon-moon.svg" %}</span>
+    </button>
+  </div>
 </header>
 
 <main class="wrap">
 {% block content %}{% endblock %}
 </main>
+
+<script src="/static/js/panel.js"></script>
 </body>
 </html>

@@ -24,10 +24,9 @@ Queda en `http://127.0.0.1:5000/`.
 
 | Ruta | Qué hace |
 |---|---|
-| `/registro` | Crear cuenta y recibir el enlace de confirmación |
-| `/revisa-tu-correo` | Pantalla posterior al registro |
-| `/confirmar/<token>` | Confirma la dirección; el enlace vale una sola vez |
-| `/reenviar-confirmacion` | Pide otro enlace |
+| `/registro` | Crear cuenta y recibir el código de confirmación |
+| `/confirmar` | Escribir el código de 6 dígitos; vale una sola vez y entra a la cuenta |
+| `/reenviar-confirmacion` | Pide otro código |
 | `/entrar` · `/salir` | Sesión |
 | `/panel` | Panel vacío, con aviso si el correo no está confirmado |
 
@@ -37,7 +36,7 @@ Queda en `http://127.0.0.1:5000/`.
 
 | Valor | Cuándo |
 |---|---|
-| `file` | Desarrollo. Guarda el mensaje en `backend/.mail_outbox/` y escribe el enlace en la consola. No manda nada |
+| `file` | Desarrollo. Guarda el mensaje en `backend/.mail_outbox/` y escribe el código en la consola. No manda nada |
 | `smtp` | Puente. Un servidor SMTP corriente, por ejemplo Gmail con contraseña de aplicación |
 | `ses` | Producción. Amazon SES por su API |
 
@@ -99,10 +98,11 @@ petición que lo consiga, no al arrancar. Los tres que importan:
 
 - `accounts.email_normalized` **único**: impide cuentas repetidas aunque dos
   registros lleguen a la vez.
-- `account_tokens.token_hash` **único**.
-- `account_tokens.purge_at` **TTL**: Mongo borra el token pasado su vencimiento
-  más siete días de margen. Ese margen es lo que permite responder «este enlace
-  venció» en vez de «este enlace no existe».
+- `account_tokens` por `{account_id, purpose}`: un solo código vivo por cuenta,
+  porque emitir uno borra el anterior.
+- `account_tokens.purge_at` **TTL**: Mongo borra el código pasado su vencimiento
+  más siete días de margen. Ese margen es lo que permite distinguir en la
+  bitácora un código vencido de uno que nunca existió.
 
 ### Colecciones de registro
 
@@ -158,9 +158,11 @@ python -m pytest backend/tests -q
 ```
 
 Usan `MONGODB_TEST_URI`, nunca el clúster real: crean y borran su propia base.
-Cubren el correo normalizado, que la contraseña y el token no queden en claro,
-que el enlace sirva una sola vez, que uno vencido se rechace, que reenviar
-invalide el anterior, y que un correo repetido responda igual que uno nuevo.
+Cubren el correo normalizado, que la contraseña y el código no queden en claro,
+que el código sirva una sola vez, que muera a los cinco intentos, que uno
+vencido se rechace, que reenviar invalide el anterior, y que un correo repetido
+responda igual que uno nuevo — también cuando el envío falla y el registro se
+deshace.
 
 ## Desplegar en Railway
 
@@ -187,8 +189,9 @@ certificado necesita que el servicio ya exista.
    como segura, no deja iniciar sesión.
 6. Poner `APP_BASE_URL=https://panel.panamails.com` y volver a desplegar.
 
-**El paso 6 es el que más se olvida.** Sin él los correos salen con enlaces a
-`127.0.0.1` y la confirmación falla justo ahí.
+**El paso 6 es el que más se olvida.** El código de confirmación no lleva
+enlace, pero el aviso de «ya tienes una cuenta» sí, y sin este paso apunta a
+`127.0.0.1`.
 
 ### Variables para el panel de Railway
 
@@ -200,6 +203,7 @@ SECRET_KEY=            (una NUEVA, distinta a la de tu computadora)
 MONGODB_URI=           (la de Atlas)
 MONGODB_DB=panamails_app
 APP_BASE_URL=https://panel.panamails.com
+CONFIRMATION_CODE_MINUTES=30
 MAIL_BACKEND=smtp
 SYSTEM_FROM_EMAIL=panamails.info@gmail.com
 SYSTEM_FROM_NAME=Panamails

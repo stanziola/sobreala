@@ -1,11 +1,14 @@
 """Registration, email confirmation and session.
 
-Three rules run through the whole file:
+Four rules run through the whole file:
 
   * The screen never reveals whether an address has an account. Registering and
     resending answer identically either way; the owner of an existing address is
-    told by email instead.
-  * The token in a link is only ever compared as a hash, and it is spent once.
+    told by email instead. This is what shapes the confirmation screen: every
+    wrong code gets the same answer, whether or not a code was ever issued.
+  * A confirmation code is only ever compared as a hash, and it is spent once.
+  * If the email cannot be sent, a registration is undone. An account that
+    exists but can never be confirmed is worse than no account at all.
   * Every attempt is recorded in auth_events, with what really happened. The log
     knows more than the screen says, and that is the point: it is the audit
     trail, read only by the admin.
@@ -38,6 +41,13 @@ REGISTER_PER_IP = (10, 3600)
 RESEND_PER_EMAIL = (5, 3600)
 RESEND_PER_IP = (15, 3600)
 LOGIN_PER_IP = (20, 900)
+CONFIRM_PER_IP = (30, 900)
+
+# The account waiting for a code, and how many times this browser has got it
+# wrong. The counter lives in the session as well as on the code document
+# because the screen has to answer the same way when there is no code at all.
+PENDING_KEY = "pending_account_id"
+ATTEMPTS_KEY = "confirm_attempts"
 
 
 def session_account_id():
@@ -47,7 +57,10 @@ def session_account_id():
     every collection stores the real ObjectId. Converting in one place keeps the
     two types from getting mixed in the same field.
     """
-    raw = session.get("account_id")
+    return as_object_id(session.get("account_id"))
+
+
+def as_object_id(raw):
     if not raw:
         return None
     try:
@@ -67,6 +80,19 @@ def current_account() -> dict | None:
         session.clear()
         return None
     return account
+
+
+def sign_in(account: dict) -> None:
+    session.clear()
+    session["account_id"] = str(account["_id"])
+    session["session_version"] = account.get("session_version", 1)
+    session.permanent = True
+
+
+def await_code(account_id) -> None:
+    """Remember which account the next code belongs to, and start its counter."""
+    session[PENDING_KEY] = str(account_id)
+    session[ATTEMPTS_KEY] = 0
 
 
 def client_ip() -> str:
@@ -98,14 +124,15 @@ def log_auth(db, kind: str, outcome: str, *, email: str = "",
 
 
 def send_confirmation(db, account: dict) -> None:
-    raw = tokens.issue(db, account["_id"])
-    link = f"{Config.APP_BASE_URL}{url_for('auth.confirm', token=raw)}"
-    hours = Config.CONFIRMATION_TOKEN_HOURS
+    code = tokens.issue(db, account["_id"])
+    minutes = Config.CONFIRMATION_CODE_MINUTES
     mailer.send(
         to=account["email"],
-        subject=t("mail_confirm_subject"),
-        html=render_template("email/confirm.html", link=link, hours=hours),
-        text=render_template("email/confirm.txt", link=link, hours=hours),
+        # The code goes in the subject too: on a phone it is readable from the
+        # notification, without opening anything.
+        subject=t("mail_confirm_subject", code=code),
+        html=render_template("email/confirm.html", code=code, minutes=minutes),
+        text=render_template("email/confirm.txt", code=code, minutes=minutes),
         purpose=mail_log.CONFIRM,
         account_id=account["_id"],
     )
@@ -124,22 +151,24 @@ def send_already_registered(db, account: dict) -> None:
     )
 
 
-def deliver(db, send, account: dict, *, kind: str) -> None:
-    """Send a system email without letting a failure break the request.
+def deliver(db, send, account: dict, *, kind: str) -> bool:
+    """Send a system email. True if it went out.
 
-    The account already exists by the time this runs, and an unreachable mail
-    provider cannot undo it — nor change what the visitor is told, since rule 7
-    requires the same screen either way. mail_log keeps the row with the real
-    error; this adds one auth_event so the failure shows up beside the attempt
-    it belongs to.
+    The caller decides what a failure means — the registration undoes itself,
+    the resend only says so — but neither may let the exception escape: an
+    unreachable provider used to reach the visitor as a bare 502. mail_log keeps
+    the row with the real error; this adds one auth_event so the failure shows up
+    beside the attempt it belongs to.
     """
     try:
         send(db, account)
+        return True
     except Exception as exc:  # noqa: BLE001 - reported, not handled
         print(f"  [mailer] no se pudo enviar el correo a {account.get('email')}: "
               f"{type(exc).__name__}: {str(exc)[:160]}", flush=True)
         log_auth(db, kind, events.MAIL_FAILED, email=account.get("email", ""),
                  account_id=account.get("_id"))
+        return False
 
 
 # ------------------------------------------------------------------- register
@@ -195,7 +224,16 @@ def register():
                 if created:
                     log_auth(db, events.REGISTER, events.CREATED, email=email,
                              account_id=created["_id"])
-                    deliver(db, send_confirmation, created, kind=events.REGISTER)
+                    if not deliver(db, send_confirmation, created,
+                                   kind=events.REGISTER):
+                        # Undo it. The address is free again and whoever tried
+                        # can register once the mail provider answers.
+                        tokens.discard(db, created["_id"])
+                        accounts.delete(db, created["_id"])
+                        errors["form"] = t("error_mail_failed")
+                        return render_template("register.html", form=form,
+                                               errors=errors)
+                    await_code(created["_id"])
                 else:
                     # Address already registered. Same screen either way; only
                     # the log and the owner's inbox know the difference.
@@ -204,51 +242,86 @@ def register():
                              email=email,
                              account_id=existing["_id"] if existing else None)
                     if existing:
-                        deliver(db, send_already_registered, existing,
-                                kind=events.REGISTER)
-                return redirect(url_for("auth.sent"))
+                        if not deliver(db, send_already_registered, existing,
+                                       kind=events.REGISTER):
+                            # Nothing to undo here, but the visitor must not be
+                            # able to tell those two cases apart, so the failure
+                            # looks exactly the same.
+                            errors["form"] = t("error_mail_failed")
+                            return render_template("register.html", form=form,
+                                                   errors=errors)
+                        # No code was issued: this address is not getting one.
+                        # The screen still asks for it, and every answer it gives
+                        # is the same one a real pending code would get.
+                        await_code(existing["_id"])
+                return redirect(url_for("auth.confirm"))
 
     return render_template("register.html", form=form, errors=errors)
 
 
-@bp.route("/revisa-tu-correo")
-def sent():
-    return render_template("sent.html", hours=Config.CONFIRMATION_TOKEN_HOURS)
-
-
 # -------------------------------------------------------------------- confirm
 
-@bp.route("/confirmar/<token>")
-def confirm(token: str):
-    db = get_db()
-    reason, doc = tokens.check(db, token)
+@bp.route("/confirmar", methods=["GET", "POST"])
+def confirm():
+    """Ask for the six digit code and check it.
 
-    def done(state: str, account: dict | None = None, **extra):
-        """Record the outcome, then draw it. The log stores the same four
-        states the visitor is shown, so the two never disagree."""
-        log_auth(db, events.CONFIRM, state,
-                 email=(account or {}).get("email", ""),
-                 account_id=(account or {}).get("_id"))
-        return render_template("confirm.html", state=state, **extra)
+    Every refusal reads the same — a wrong code, an expired one, and an account
+    that never had one all get one message — because the difference between them
+    is exactly what rule 7 forbids showing. The real reason goes to auth_events.
+    """
+    errors: dict[str, str] = {}
+    account_id = as_object_id(session.get(PENDING_KEY))
 
-    if reason == tokens.VALID:
-        if not tokens.spend(db, doc):
-            # Someone used the same link a moment ago.
-            return done("already")
-        account = accounts.by_id(db, doc["account_id"])
-        confirmed_now = accounts.confirm_email(db, doc["account_id"]) if account else False
-        return done("ok" if confirmed_now else "already", account)
+    if request.method == "POST":
+        db = get_db()
+        typed = request.form.get("code", "")
 
-    if reason == tokens.USED:
-        account = accounts.by_id(db, doc["account_id"])
-        if accounts.is_confirmed(account):
-            return done("already", account)
-        return done("unknown", account)
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.CONFIRM, events.CSRF_FAILED, account_id=account_id)
+        elif not rate_limit(db, f"confirm:ip:{client_ip()}", *CONFIRM_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.CONFIRM, events.RATE_LIMITED, account_id=account_id)
+        else:
+            attempts = session.get(ATTEMPTS_KEY, 0) + 1
+            session[ATTEMPTS_KEY] = attempts
 
-    if reason == tokens.EXPIRED:
-        return done("expired", hours=Config.CONFIRMATION_TOKEN_HOURS)
+            if account_id is None:
+                reason, doc = tokens.UNKNOWN, None
+            else:
+                reason, doc = tokens.check(db, account_id, typed)
 
-    return done("unknown")
+            # With no code on file the document cannot run out of tries, so the
+            # session counter stands in for it. Otherwise an address that has a
+            # code and one that does not would start answering differently.
+            if reason in (tokens.UNKNOWN, tokens.INVALID) and attempts >= tokens.MAX_ATTEMPTS:
+                reason = tokens.TOO_MANY
+
+            if reason == tokens.VALID:
+                account = accounts.by_id(db, account_id)
+                if account is None:
+                    reason = tokens.UNKNOWN
+                elif not tokens.spend(db, doc):
+                    # Someone typed the same code a moment ago.
+                    reason = tokens.USED
+                else:
+                    accounts.confirm_email(db, account_id)
+                    log_auth(db, events.CONFIRM, events.OK,
+                             email=account["email"], account_id=account_id)
+                    sign_in(account)
+                    return redirect(url_for("auth.panel"))
+
+            if reason == tokens.USED:
+                errors["form"] = t("error_code_used")
+            elif reason == tokens.TOO_MANY:
+                errors["form"] = t("error_code_too_many")
+            else:
+                errors["form"] = t("error_code_invalid")
+            log_auth(db, events.CONFIRM, events.CONFIRM_OUTCOMES[reason],
+                     account_id=account_id)
+
+    return render_template("confirm.html", errors=errors,
+                           minutes=Config.CONFIRMATION_CODE_MINUTES)
 
 
 @bp.route("/reenviar-confirmacion", methods=["GET", "POST"])
@@ -285,11 +358,17 @@ def resend():
                         log_auth(db, events.RESEND, events.ALREADY_CONFIRMED,
                                  email=email, account_id=existing["_id"])
                     else:
+                        if not deliver(db, send_confirmation, existing,
+                                       kind=events.RESEND):
+                            # Nothing is undone here: the account is older than
+                            # this request and stays exactly as it was.
+                            errors["form"] = t("error_mail_failed")
+                            return render_template("resend.html", errors=errors,
+                                                   email=email_value)
                         log_auth(db, events.RESEND, events.SENT, email=email,
                                  account_id=existing["_id"])
-                        deliver(db, send_confirmation, existing,
-                                kind=events.RESEND)
-                return redirect(url_for("auth.sent"))
+                        await_code(existing["_id"])
+                return redirect(url_for("auth.confirm"))
 
     return render_template("resend.html", errors=errors, email=email_value)
 
@@ -320,10 +399,7 @@ def login():
             # Called even when there is no account, so a wrong address and a
             # wrong password take a similar amount of time.
             if verify_password(password, account and account.get("password_hash")):
-                session.clear()
-                session["account_id"] = str(account["_id"])
-                session["session_version"] = account.get("session_version", 1)
-                session.permanent = True
+                sign_in(account)
                 accounts.touch_login(db, account["_id"])
                 log_auth(db, events.LOGIN, events.OK, email=email_value,
                          account_id=account["_id"])

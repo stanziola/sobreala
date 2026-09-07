@@ -41,8 +41,18 @@ NO_ACCOUNT = "no_account"              # resend: nothing to send to
 ALREADY_CONFIRMED = "already_confirmed"  # resend: address was verified already
 MAIL_FAILED = "mail_failed"            # the account is fine, the email did not go out
 
-# The confirm route reports the same four states it shows the visitor.
-CONFIRM_OUTCOMES = ("ok", "already", "expired", "unknown")
+# What the confirm route writes down, keyed by the reason models/token.py gave.
+# The screen collapses most of these into one message, on purpose; the log keeps
+# them apart, because "there was no code" and "the code was wrong" are different
+# facts when a complaint has to be investigated.
+CONFIRM_OUTCOMES = {
+    "valid": OK,
+    "invalid": "invalid_code",
+    "unknown": "no_code",
+    "expired": "expired",
+    "used": "already",
+    "too_many": "too_many",
+}
 
 # Long enough to identify a browser, short enough that a hostile client cannot
 # grow the collection with one header.

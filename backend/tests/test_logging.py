@@ -9,11 +9,12 @@ the screen keeps its answers identical even though the log knows the difference.
 
 from __future__ import annotations
 
+import re
 from datetime import timedelta
-from urllib.parse import urlparse
 
 import pytest
-from conftest import link_from_outbox, login, logout, register
+from conftest import (code_from_outbox, confirm, login, logout, page_shape,
+                      register)
 
 import db as db_module
 from config import Config
@@ -24,8 +25,8 @@ from services import mailer
 from services.security import now
 
 
-def path_of(url: str) -> str:
-    return urlparse(url).path
+def has_a_code(body: str) -> bool:
+    return bool(re.search(r"^\d{6}$", body, re.M))
 
 
 def outcomes(database, kind: str) -> list[str]:
@@ -47,9 +48,10 @@ def test_the_confirmation_mail_is_recorded_with_its_body(client, database, outbo
     assert row["to_normalized"] == "ana@ejemplo.com"
     assert row["error"] is None
     assert row["provider_id"]
-    # The body is kept so the exact message, link included, can be read back.
-    assert "/confirmar/" in row["text"]
-    assert "/confirmar/" in row["html"]
+    # The body is kept so the exact message, code included, can be read back.
+    code = code_from_outbox(outbox)
+    assert code in row["text"]
+    assert code in row["html"]
 
     account = accounts.by_email(database, "ana@ejemplo.com")
     assert row["account_id"] == account["_id"]
@@ -72,31 +74,57 @@ def test_the_already_registered_notice_is_recorded_too(client, database, outbox)
     assert "ya tiene una cuenta" in notice["text"]
 
 
-def test_a_failed_send_is_recorded_and_registration_still_completes(
-        client, database, outbox, monkeypatch):
+def test_a_failed_send_undoes_the_registration(client, database, outbox,
+                                              monkeypatch):
     def explode(*args, **kwargs):
         raise RuntimeError("el proveedor rechazo el mensaje")
 
     monkeypatch.setattr(mailer, "_send_file", explode)
 
-    # The provider being unreachable is not the visitor's problem: the account
-    # exists, so the same screen is shown and the failure lives in the log.
     response = register(client)
-    assert response.status_code == 302
-    assert response.headers["Location"].endswith("/revisa-tu-correo")
+    assert response.status_code == 200
+    assert "no creamos la cuenta" in response.get_data(as_text=True)
+
+    # Nothing is left behind: no account, and no code pointing at one.
+    assert accounts.by_email(database, "ana@ejemplo.com") is None
+    assert database.accounts.count_documents({}) == 0
+    assert database.account_tokens.count_documents({}) == 0
 
     row = database.mail_log.find_one({})
     assert row["status"] == mail_log.FAILED
     assert "RuntimeError" in row["error"]
     assert "rechazo" in row["error"]
     assert row["provider_id"] is None
-    # The body is kept on failure as well, which is what makes a retry possible.
-    assert "/confirmar/" in row["text"]
+    # The body is kept on failure as well, which is what keeps the attempt
+    # readable afterwards even though the account is gone.
+    assert has_a_code(row["text"])
 
-    # And the trail shows the account did get created before the mail failed:
-    # that pairing is the whole point of recording both.
-    assert accounts.by_email(database, "ana@ejemplo.com") is not None
+    # And the trail tells the whole story: created, then the mail failed. The
+    # account no longer exists; these two rows are what say it ever did.
     assert outcomes(database, events.REGISTER) == [events.CREATED, events.MAIL_FAILED]
+
+
+def test_a_failed_send_reads_the_same_for_an_address_that_exists(
+        client, database, outbox, monkeypatch):
+    """Rule 7 when the mail provider is down.
+
+    A new address is created and then undone; an address that already has an
+    account is left alone. Both answers have to be the same page.
+    """
+    register(client)  # ana@ejemplo.com exists, from back when mail worked
+
+    def explode(*args, **kwargs):
+        raise RuntimeError("el proveedor rechazo el mensaje")
+
+    monkeypatch.setattr(mailer, "_send_file", explode)
+
+    taken = register(client)
+    fresh = register(client.application.test_client(), email="beto@ejemplo.com")
+
+    assert taken.status_code == fresh.status_code == 200
+    assert page_shape(taken) == page_shape(fresh)
+    # Only the account that already existed is still there.
+    assert database.accounts.count_documents({}) == 1
 
 
 def test_a_log_failure_never_stops_the_mail(client, database, outbox, monkeypatch):
@@ -108,7 +136,7 @@ def test_a_log_failure_never_stops_the_mail(client, database, outbox, monkeypatc
     response = register(client)
     assert response.status_code == 302
     # The mail went out even though nothing could be written about it.
-    assert link_from_outbox(outbox)
+    assert code_from_outbox(outbox)
     assert database.mail_log.count_documents({}) == 0
 
 
@@ -220,33 +248,37 @@ def test_the_three_resend_outcomes(client, database, outbox):
     unknown = ask("nadie@ejemplo.com")
     register(client)
     pending = ask("ana@ejemplo.com")
-    client.get(path_of(link_from_outbox(outbox)))
+    confirm(client, code_from_outbox(outbox))
     confirmed = ask("ana@ejemplo.com")
 
     assert outcomes(database, events.RESEND) == [events.NO_ACCOUNT, events.SENT,
                                                  events.ALREADY_CONFIRMED]
     # All three answer identically, whatever the log says.
     assert {r.status_code for r in (unknown, pending, confirmed)} == {302}
-    assert all(r.headers["Location"].endswith("/revisa-tu-correo")
+    assert all(r.headers["Location"].endswith("/confirmar")
                for r in (unknown, pending, confirmed))
 
 
-def test_confirmation_outcomes_match_what_the_page_shows(client, database, outbox):
+def test_the_log_separates_what_the_confirmation_screen_merges(client, database,
+                                                               outbox):
     register(client)
-    link = path_of(link_from_outbox(outbox))
-    client.get(link)
-    client.get(link)
-    client.get("/confirmar/no-existe-este-token")
+    code = code_from_outbox(outbox)
+    confirm(client, "000000" if code != "000000" else "111111")
+    confirm(client, code)
+    # Signing in cleared the session, so this last one has no code waiting.
+    confirm(client, code)
 
-    assert outcomes(database, events.CONFIRM) == ["ok", "already", "unknown"]
+    # Three rows for what the visitor saw as two identical refusals around one
+    # success.
+    assert outcomes(database, events.CONFIRM) == ["invalid_code", "ok", "no_code"]
 
 
-def test_an_expired_link_is_recorded_as_expired(client, database, outbox):
+def test_an_expired_code_is_recorded_as_expired(client, database, outbox):
     register(client)
-    link = path_of(link_from_outbox(outbox))
+    code = code_from_outbox(outbox)
     database.account_tokens.update_one(
         {}, {"$set": {"expires_at": now() - timedelta(minutes=1)}})
-    client.get(link)
+    confirm(client, code)
 
     assert outcomes(database, events.CONFIRM) == ["expired"]
 

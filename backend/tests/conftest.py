@@ -91,11 +91,32 @@ def logout(client):
     return client.post("/salir", data={"csrf_token": csrf})
 
 
-def link_from_outbox(outbox) -> str:
-    """The confirmation URL, read back out of the message that was written."""
+def page_shape(response) -> str:
+    """The page with everything the visitor typed, and the CSRF field, taken out.
+
+    What is left is exactly what rule 7 governs: two answers that must be
+    indistinguishable are compared through this, since a form that echoes the
+    address back is allowed to differ and nothing else is.
+    """
+    import re
+    body = response.get_data(as_text=True)
+    return re.sub(r'value="[^"]*"', 'value=""', body)
+
+
+def code_from_outbox(outbox) -> str:
+    """The confirmation code, read back out of the message that was written."""
     texts = sorted(outbox.glob("*.txt"))
     assert texts, "no se escribió ningún correo"
     import re
-    found = re.findall(r"https?://\S+", texts[-1].read_text(encoding="utf-8"))
-    assert found, "el correo no trae enlace"
+    body = texts[-1].read_text(encoding="utf-8")
+    found = re.findall(r"^\d{6}$", body, flags=re.M)
+    assert found, "el correo no trae código"
     return found[0]
+
+
+def confirm(client, code):
+    """Type a code into the confirmation form, CSRF included."""
+    client.get("/confirmar")  # seeds the CSRF value in the session
+    with client.session_transaction() as sess:
+        csrf = sess["_csrf"]
+    return client.post("/confirmar", data={"csrf_token": csrf, "code": code})

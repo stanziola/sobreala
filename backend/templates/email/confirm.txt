@@ -2,9 +2,9 @@
 
 {{ t('mail_confirm_body') }}
 
-{{ link }}
+{{ code }}
 
-{{ t('mail_confirm_expiry', hours=hours) }}
+{{ t('mail_confirm_expiry', minutes=minutes) }}
 
 {{ t('mail_confirm_ignore') }}
 
