@@ -52,6 +52,7 @@ De dónde sale cada cosa:
 | Tipografías                 | `brand/fonts/`                  | ver `brand/fonts/README.md` |
 | Logo y favicons             | `brand/logo/`, `brand/favicon/` | `python brand/build_logo.py` |
 | Iconos de redes             | `brand/social/`                 | a mano, ver su README |
+| Logos de métodos de pago    | `brand/payments/`               | a mano, ver su README |
 | Estructura y estilos        | `landing/src/`                  | esos archivos |
 
 Después de cambiar cualquiera de ellos, regenerar y commitear también lo generado.
@@ -65,6 +66,14 @@ publica sin precio, como indica el propio archivo. Si cambia un precio, basta co
 cambiarlo en `pricing.md` y regenerar.
 
 ## Qué es solo visual
+
+Los iconos del pie son PNG en negro sobre fondo transparente que el CSS pinta con
+`currentColor`, así que salen blancos sobre el azul del pie y podrían ser de
+cualquier color en otro fondo. El build los recorta a cuadrado antes de copiarlos,
+para que ninguno salga deformado.
+
+La franja de pagos del pie muestra los logos de `brand/payments/`. Si esa carpeta
+está vacía, muestra una línea de texto en su lugar.
 
 Los botones "Hablemos por WhatsApp" abren un chat con mensaje prellenado y
 "Escribir por correo" abre el correo. No hay registro, login, panel ni pagos:

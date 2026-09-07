@@ -460,18 +460,6 @@ button { font: inherit; color: inherit; }
 details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg); }
 .faq__a { padding: 0 20px 20px; color: var(--color-ink-soft); }
 
-/* ------------------------------------------------------------------ CTA band */
-.band { background: var(--color-background); color: var(--color-surface); }
-.band__inner {
-  display: grid; gap: 24px; align-items: center;
-  padding-block: clamp(44px, 7vw, 72px);
-}
-@media (min-width: 860px) { .band__inner { grid-template-columns: 1.3fr 1fr; } }
-.band__title { font-size: clamp(1.5rem, 1.1rem + 1.8vw, 2.1rem); font-weight: 800; line-height: 1.15; letter-spacing: -.015em; }
-.band__text { margin-top: 12px; max-width: 560px; color: var(--color-accent-light); font-size: 1.05rem; }
-.band__actions { display: flex; flex-wrap: wrap; gap: 12px; }
-@media (min-width: 860px) { .band__actions { justify-content: flex-end; } }
-
 /* ------------------------------------------------------------------ prose (nosotros) */
 .prose { display: grid; gap: clamp(32px, 5vw, 52px); }
 .prose__title { font-size: 1.5rem; font-weight: 700; margin-bottom: 14px; letter-spacing: -.01em; }
@@ -499,9 +487,49 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 .site-footer__col a:hover { color: var(--color-accent-light); }
 .site-footer__soon { display: grid; gap: 4px; justify-items: start; color: rgba(255, 255, 255, .55); }
 .site-footer__soon .tag { margin-left: 0; }
-.contact-list li { display: grid; gap: 2px; }
+.contact-list li { position: relative; display: grid; gap: 2px; }
 .contact-list a { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: 100%; }
 .contact-list a span { min-width: 0; overflow-wrap: anywhere; }
 .contact-list img, .contact-list .icon { flex: none; width: 20px; height: 20px; }
-.contact-list__note { font-size: .78rem; color: rgba(255, 255, 255, .6); padding-left: 30px; }
-.site-footer__legal { margin-top: clamp(28px, 5vw, 44px); padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, .14); font-size: .88rem; color: rgba(255, 255, 255, .7); }
+/* A PNG or SVG icon painted with currentColor: its transparency is the shape,
+   so one file works white on the dark footer and any color elsewhere. */
+.icon--mask {
+  display: block; background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+          mask: var(--icon) center / contain no-repeat;
+}
+/* The address copies itself on click. The confirmation slides in to its right
+   and is taken out of flow, so it never pushes or covers the line above. */
+.copy-inline {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  justify-self: start; padding: 0; border: 0; background: none; color: inherit;
+  font: inherit; text-align: left; cursor: pointer; max-width: 100%;
+}
+.copy-inline__text { min-width: 0; overflow-wrap: anywhere; }
+.copy-inline:hover .copy-inline__text { text-decoration: underline; text-underline-offset: .18em; }
+.copy-inline__done {
+  max-width: 0; margin-left: -8px; padding: 2px 0;
+  border-radius: 999px; overflow: hidden; white-space: nowrap;
+  background: var(--color-accent); color: var(--color-ink);
+  font-size: .66rem; font-weight: 700; line-height: 1.5;
+  opacity: 0; pointer-events: none;
+  transition: max-width 220ms var(--ease), padding 220ms var(--ease),
+              margin-left 220ms var(--ease), opacity var(--fast) var(--ease);
+}
+.copy-inline.is-done .copy-inline__done {
+  max-width: 140px; margin-left: 0; padding: 2px 5px; opacity: 1;
+}
+
+.site-footer__legal {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
+  margin-top: clamp(28px, 5vw, 44px); padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+  font-size: .88rem; color: rgba(255, 255, 255, .7);
+}
+.payments { display: flex; align-items: center; gap: 10px; }
+.payments__label { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .55); }
+.payments__logo {
+  height: 28px; width: auto; opacity: .8;
+  transition: opacity var(--fast) var(--ease);
+}
+.payments__logo:hover { opacity: 1; }

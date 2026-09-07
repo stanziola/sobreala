@@ -1,55 +1,37 @@
 # Iconos de redes sociales
 
-Carpeta para los iconos de redes y contacto que se usan en el landing, los
-correos y los paneles: Instagram, Facebook, WhatsApp, LinkedIn, TikTok,
-YouTube, X, correo, teléfono.
+Kits de marca oficiales de cada red, tal como se descargan de su página de
+recursos. Se guardan completos, en una carpeta por red, y **no se editan**.
 
-**Se agregan a mano.** No los genera `build_logo.py` ni dependen de
-`colors.css`; son marcas de terceros y se usan sus versiones oficiales.
-
-## Convención
-
-| Archivo               | Formato                              |
-|-----------------------|--------------------------------------|
-| `instagram.svg`       | vector oficial, monocromo, sin fondo |
-| `facebook.svg`        | ídem                                 |
-| `whatsapp.svg`        | ídem                                 |
-| `linkedin.svg`        | ídem                                 |
-| `tiktok.svg`          | ídem                                 |
-| `youtube.svg`         | ídem                                 |
-| `x.svg`               | ídem                                 |
-| `email.svg`           | ídem                                 |
-
-- Un archivo por red, en minúsculas, sin espacios. Vale `.svg` o `.png`; el
-  generador del sitio (`landing/build_site.py`) toma el que encuentre, con
-  preferencia por el SVG. Un PNG debe llevar fondo transparente y medir 512 px
-  o más.
-- SVG cuadrado (`viewBox="0 0 24 24"`) con `fill="currentColor"`, para que el
-  color lo ponga el CSS con `var(--color-...)` de `colors.css`. Si la red exige
-  su color de marca, ese color va dentro del propio SVG, no en `colors.css`.
-- Si además hace falta un PNG (por ejemplo para correos, donde el SVG no
-  siempre se muestra), va al lado con el mismo nombre: `instagram.png`, a 64×64.
-
-## Uso en la web
-
-```html
-<a href="https://instagram.com/..." aria-label="Instagram">
-  <img src="/assets/img/social/instagram.svg" alt="" width="24" height="24">
-</a>
+```
+social/
+├── instagram/     # kit oficial: glifo en degradado, blanco y negro
+├── whatsapp/      # kit oficial: glifo, inline y apilado, en verde, blanco y negro
+└── README.md
 ```
 
-Inline, cuando se quiera colorear con CSS:
+**Se agregan a mano.** Son marcas de terceros: no las genera ningún script ni
+dependen de `colors.css`.
 
-```html
-<a href="..." class="social" aria-label="Instagram">
-  <!-- contenido de instagram.svg pegado aquí -->
-</a>
-```
+## Qué variante usa el sitio
 
-```css
-.social { color: var(--color-logo); }
-.social:hover { color: var(--color-background); }
-```
+Lo decide una sola tabla, `SOCIAL_ICONS` en `landing/build_site.py`, que apunta
+al archivo exacto dentro de cada kit. Hoy: el **glifo blanco en SVG** de cada red.
+Para cambiar de variante, cambia esa ruta y ejecuta `python landing/build_site.py`.
+
+En el sitio, el archivo se usa como **máscara**: su transparencia define la forma
+y el color lo pone el CSS con `currentColor`. Por eso da igual que el glifo sea
+blanco o negro; lo que importa es que tenga fondo transparente.
+
+## Para agregar otra red
+
+1. Descarga su kit oficial y déjalo en `social/<red>/`.
+2. Agrega la entrada en `SOCIAL_ICONS` apuntando al SVG (o PNG con fondo
+   transparente) que quieras usar.
+3. Añade el enlace en `landing/content.py` y en el pie de `landing/src/base.html.j2`.
+
+Los PNG se recortan a su contenido y se dejan cuadrados al generar el sitio, así
+que ningún icono sale deformado aunque el archivo venga en un lienzo ancho.
 
 Igual que el logo y los favicons, `landing/` se despliega solo: los iconos que
-use el landing se copian dentro de `landing/` en el paso de build o a mano.
+usa el sitio se copian a `landing/assets/img/social/` al generar.

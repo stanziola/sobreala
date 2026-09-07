@@ -20,3 +20,15 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# Kits de marca de terceros (brand/social, brand/payments): solo se versionan
+# los archivos que la web puede usar. Los originales de imprenta se quedan en
+# el disco de quien los descargó.
+brand/social/**/*.ai
+brand/social/**/*.eps
+brand/social/**/*.pdf
+brand/social/**/*.jpg
+brand/payments/**/*.ai
+brand/payments/**/*.eps
+brand/payments/**/*.pdf
+brand/payments/**/*.jpg

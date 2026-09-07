@@ -176,7 +176,22 @@ COPY_IMAGES = [
     (BRAND_DIR / "favicon" / "favicon-180x180.png", "favicon-180x180.png"),
 ]
 
-SOCIAL_ICONS = ["instagram", "whatsapp"]
+# Third-party marks. The official brand kits live untouched under brand/social/
+# and brand/payments/; this is the one place that says which variant the site
+# uses. To switch (say, to the color version), change the path here and rebuild.
+# A missing file is not an error: the footer falls back to an inline icon or to
+# a text line, and the build prints a warning.
+SOCIAL_ICONS = {
+    "instagram": BRAND_DIR / "social" / "instagram" / "02 White Glyph" / "Instagram_Glyph_White.svg",
+    "whatsapp": BRAND_DIR / "social" / "whatsapp" / "01_Glyph" / "01_Digital RGB" / "03_SVG"
+                / "Digital_Glyph_White_RGB_2026.svg",
+}
+PAYMENT_LOGOS = {
+    "yappy": BRAND_DIR / "payments" / "yappy" / "yappy-traslucid-landscape.svg",
+    "paypal": BRAND_DIR / "payments" / "paypal" / "Horizontal One Color" / "pp_h_white.png",
+}
+# Raster payment logos are shrunk to this height (4x their 28 px display size).
+PAYMENT_LOGO_PX = 112
 
 
 def build_fonts() -> list[dict]:
@@ -227,24 +242,58 @@ def write_css(faces: list[dict]) -> Path:
     return out
 
 
-def copy_assets() -> dict:
-    """Copy logo, favicons and social icons into assets/img/. Returns what exists."""
+def prepare_png(source: Path, target: Path, square: bool, max_height: int | None) -> None:
+    """Copy a PNG trimmed to its visible content, optionally squared and shrunk.
+
+    Icon files often come on a wide canvas with the glyph centered; rendered in a
+    square box that squashes the glyph, so social icons are squared here. Logos
+    keep their proportions and are only shrunk: the kits ship at print size.
+    """
+    from PIL import Image
+
+    im = Image.open(source).convert("RGBA")
+    box = im.getchannel("A").getbbox()
+    if box:
+        im = im.crop(box)
+    if square:
+        side = max(im.size)
+        canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+        canvas.paste(im, ((side - im.width) // 2, (side - im.height) // 2))
+        im = canvas
+    if max_height and im.height > max_height:
+        im = im.resize((round(im.width * max_height / im.height), max_height), Image.LANCZOS)
+    im.save(target, optimize=True)
+
+
+def copy_icon_set(sources: dict[str, Path], out_dir: Path, url_prefix: str,
+                  square: bool = False, max_height: int | None = None) -> dict:
+    """Copy the chosen kit file of each icon as <name>.<ext>. Returns name -> URL."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    available = {}
+    for name, source in sources.items():
+        if not source.exists():
+            print(f"aviso: falta {source.relative_to(ROOT)}; el sitio usa el respaldo", file=sys.stderr)
+            continue
+        target = out_dir / f"{name}{source.suffix.lower()}"
+        if source.suffix.lower() == ".png":
+            prepare_png(source, target, square=square, max_height=max_height)
+        else:
+            shutil.copy2(source, target)
+        available[name] = f"{url_prefix}/{target.name}"
+    return available
+
+
+def copy_assets() -> tuple[dict, dict]:
+    """Copy logo, favicons, social icons and payment logos. Returns what exists."""
     OUT_IMG.mkdir(parents=True, exist_ok=True)
     for source, name in COPY_IMAGES:
         if source.exists():
             shutil.copy2(source, OUT_IMG / name)
 
-    social_dir = OUT_IMG / "social"
-    social_dir.mkdir(exist_ok=True)
-    available = {}
-    for name in SOCIAL_ICONS:
-        for ext in (".svg", ".png"):
-            source = BRAND_DIR / "social" / f"{name}{ext}"
-            if source.exists():
-                shutil.copy2(source, social_dir / f"{name}{ext}")
-                available[name] = f"/assets/img/social/{name}{ext}"
-                break
-    return available
+    social = copy_icon_set(SOCIAL_ICONS, OUT_IMG / "social", "/assets/img/social", square=True)
+    payments = copy_icon_set(PAYMENT_LOGOS, OUT_IMG / "payments", "/assets/img/payments",
+                             max_height=PAYMENT_LOGO_PX)
+    return social, payments
 
 
 def read_wing_svg() -> str:
@@ -275,13 +324,22 @@ def whatsapp_url() -> str:
     return f"https://wa.me/{c['whatsapp_number']}?text={quote(c['whatsapp_message'])}"
 
 
+def mailto_url() -> str:
+    """mailto with subject and body prefilled, so the draft opens ready to send."""
+    from urllib.parse import quote
+
+    c = content.CONTACT
+    return (f"mailto:{c['email']}"
+            f"?subject={quote(c['email_subject'])}&body={quote(c['email_body'])}")
+
+
 def build() -> list[Path]:
     from jinja2 import Environment, FileSystemLoader, StrictUndefined
     from markupsafe import Markup
 
     faces = build_fonts()
     css = write_css(faces)
-    social = copy_assets()
+    social, payments = copy_assets()
     pricing = read_pricing()
 
     env = Environment(
@@ -297,12 +355,15 @@ def build() -> list[Path]:
         "nav": content.NAV,
         "contact": content.CONTACT,
         "whatsapp_url": whatsapp_url(),
+        "mailto_url": mailto_url(),
         "cta_primary": content.CTA_PRIMARY,
         "cta_secondary": content.CTA_SECONDARY,
         "footer": content.FOOTER,
         "steps": content.STEPS,
         "font_faces": faces,
         "social_icons": social,
+        # Ordered as PAYMENT_LOGOS, so the footer keeps a stable order.
+        "payment_logos": [{"name": n, "url": payments[n]} for n in PAYMENT_LOGOS if n in payments],
         "wing_svg": Markup(read_wing_svg()),  # trusted: our own generated SVG
         "pricing_data": pricing,
     }

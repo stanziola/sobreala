@@ -101,7 +101,7 @@
             <li>
               <a href="{{ whatsapp_url }}" target="_blank" rel="noopener">
                 {% if social_icons.whatsapp %}
-                <img src="{{ social_icons.whatsapp }}" alt="" width="20" height="20" loading="lazy">
+                <span class="icon icon--mask" style="--icon: url('{{ social_icons.whatsapp }}')" aria-hidden="true"></span>
                 {% else %}
                 {% include "partials/icon-chat.svg.j2" %}
                 {% endif %}
@@ -109,28 +109,41 @@
               </a>
             </li>
             <li>
-              <a href="mailto:{{ contact.email }}">
+              <button class="copy-inline" type="button" data-copy="{{ contact.email }}"
+                      aria-label="{{ contact.email_copy_label }} {{ contact.email }}">
                 {% include "partials/icon-mail.svg.j2" %}
-                <span>{{ contact.email }}</span>
-              </a>
+                <span class="copy-inline__text">{{ contact.email }}</span>
+                <span class="copy-inline__done" aria-hidden="true">{{ contact.email_copied_label }}</span>
+              </button>
+              <span class="visually-hidden" role="status" data-copy-status></span>
             </li>
             <li>
               <a href="{{ contact.instagram_url }}" target="_blank" rel="noopener">
                 {% if social_icons.instagram %}
-                <img src="{{ social_icons.instagram }}" alt="" width="20" height="20" loading="lazy">
+                <span class="icon icon--mask" style="--icon: url('{{ social_icons.instagram }}')" aria-hidden="true"></span>
                 {% endif %}
                 <span>@{{ contact.instagram_user }}</span>
               </a>
-              <span class="contact-list__note">{{ contact.instagram_note }}</span>
             </li>
           </ul>
         </div>
       </nav>
     </div>
 
-    <p class="site-footer__legal">
-      <span>&copy; <span id="year">2026</span> {{ footer.legal_note }}</span>
-    </p>
+    <div class="site-footer__legal">
+      <p><span>&copy; <span id="year">2026</span> {{ footer.legal_note }}</span></p>
+      {% if payment_logos %}
+      <p class="payments">
+        <span class="payments__label">{{ footer.payments_label }}</span>
+        {% for logo in payment_logos %}
+        <img class="payments__logo" src="{{ logo.url }}" alt="{{ logo.name|capitalize }}"
+             width="28" height="28" loading="lazy">
+        {% endfor %}
+      </p>
+      {% else %}
+      <p class="payments"><span class="payments__label">{{ footer.payments_fallback }}</span></p>
+      {% endif %}
+    </div>
   </div>
 </footer>
 

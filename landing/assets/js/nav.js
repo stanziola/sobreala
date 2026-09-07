@@ -61,4 +61,57 @@
 
   var year = document.getElementById("year");
   if (year) year.textContent = String(new Date().getFullYear());
+
+  // --- email ------------------------------------------------------------
+  // A mailto: link only does something when the device has a mail app set up.
+  // On a desktop without one the click is a dead end, so the address is always
+  // one click away from the clipboard, and the CTA reveals it after being used.
+
+  // Older path, and the fallback when the Clipboard API refuses (no permission,
+  // page not focused, insecure context).
+  function legacyCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).catch(function () {
+        return legacyCopy(text) ? Promise.resolve() : Promise.reject();
+      });
+    }
+    return legacyCopy(text) ? Promise.resolve() : Promise.reject();
+  }
+
+  document.querySelectorAll("[data-copy]").forEach(function (btn) {
+    var status = btn.parentNode.querySelector("[data-copy-status]");
+    var timer;
+    btn.addEventListener("click", function () {
+      copyText(btn.dataset.copy).then(function () {
+        btn.classList.add("is-done");
+        if (status) status.textContent = "Correo copiado";
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          btn.classList.remove("is-done");
+          if (status) status.textContent = "";
+        }, 2000);
+      }).catch(function () {
+        // Clipboard refused: select the text so it can be copied by hand.
+        var range = document.createRange();
+        range.selectNodeContents(btn.querySelector(".copy-inline__text") || btn);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
+    });
+  });
 })();

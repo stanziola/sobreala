@@ -19,7 +19,7 @@ SITE = {
     "name": "Panamails",
     "domain": "panamails.com",
     "base_url": "https://panamails.com",
-    "locale": "es_PA",
+    "locale": "es",
     "tagline": "Convierte tu lista de correos en ventas.",
 }
 
@@ -30,10 +30,13 @@ CONTACT = {
     "whatsapp_display": "+507 6893-5742",
     "whatsapp_message": "Hola, me interesa Panamails para mi negocio.",
     "email": "panamails.info@gmail.com",
-    "instagram_user": "necromante",
-    "instagram_url": "https://instagram.com/necromante",
-    # Deliberate wording: this is a personal account, not a brand account.
-    "instagram_note": "Instagram del creador",
+    # Prefilled like the WhatsApp message, so the conversation starts with context.
+    "email_subject": "Consulta sobre Panamails",
+    "email_body": "Hola, me interesa Panamails para mi negocio.",
+    "email_copy_label": "Copiar",
+    "email_copied_label": "Copiado",
+    "instagram_user": "pana.mails",
+    "instagram_url": "https://instagram.com/pana.mails",
 }
 
 NAV = [
@@ -49,19 +52,17 @@ CTA_SECONDARY = {"label": "Ver planes y precios", "url": "/precios/"}
 # --------------------------------------------------------------------------- home
 
 HOME = {
-    "meta_title": "Panamails · Email marketing para negocios de Panamá",
+    "meta_title": "Panamails · Email marketing para tu negocio",
     "meta_description": (
-        "Panamails es la plataforma de email marketing para negocios de Panamá. "
-        "Sube tus contactos, arma tu campaña y envíala desde un panel en español, "
-        "con soporte local y pago por Yappy."
+        "Email marketing sin complicaciones: sube tus contactos, escribe tu campaña "
+        "y envíala por correo a toda tu lista desde un solo panel."
     ),
     "hero": {
         "title_lead": "Convierte tu lista de correos",
         "title_accent": "en ventas.",
         "subtitle": (
-            "Panamails es la plataforma de email marketing para negocios de Panamá. "
-            "Sube tus contactos, arma la campaña y envíala desde un panel en español, "
-            "con soporte local y pago por Yappy."
+            "Sube tus contactos, escribe tu campaña y envíala por correo a toda tu "
+            "lista desde un solo panel. Sin instalar nada."
         ),
         "note": "En construcción. Escríbenos y te avisamos apenas abramos cuentas.",
     },
@@ -81,24 +82,20 @@ HOME = {
                 ),
             },
             {
-                "title": "Las herramientas de afuera cobran en otro idioma",
+                "title": "Contratar cada campaña sale caro",
                 "text": (
-                    "Interfaz en inglés, tarjeta internacional obligatoria y soporte "
-                    "en otra zona horaria. La mayoría se rinde en el registro."
+                    "Pagar por envío convierte en excepción algo que debería ser "
+                    "rutina todos los meses."
                 ),
             },
             {
-                "title": "Contratar cada campaña sale caro",
+                "title": "Hacerlo a mano cuesta horas",
                 "text": (
-                    "Pagar a una agencia por envío convierte en excepción algo que "
-                    "debería ser rutina mensual."
+                    "Mandar en tandas de cincuenta, copiar y pegar el mismo mensaje, "
+                    "y al final no saber quién lo abrió ni quién ya no quiere recibirlo."
                 ),
             },
         ],
-        "closing": (
-            "Panamails existe para que esa lista trabaje: un panel en español, pago "
-            "por Yappy y alguien local a quien escribirle cuando algo no cuadre."
-        ),
     },
     "features": {
         "eyebrow": "La plataforma",
@@ -130,7 +127,7 @@ HOME = {
                 "title": "Envío ahora o programado",
                 "text": (
                     "Eliges la lista, revisas la vista previa, te mandas una prueba a "
-                    "ti mismo y decides si sale ya o en la fecha que fijes."
+                    "ti mismo y decides si sale ya o a la hora que elijas."
                 ),
             },
             {
@@ -151,10 +148,10 @@ HOME = {
             },
             {
                 "icon": "flag",
-                "title": "Hecho para Panamá",
+                "title": "Acompañamiento en tu primera campaña",
                 "text": (
-                    "Panel y correos del sistema en español, pago por Yappy o PayPal, "
-                    "y soporte de alguien que está en el mismo país."
+                    "Revisamos tu lista contigo, probamos el envío y sales con la "
+                    "primera campaña ya enviada, no con un panel vacío."
                 ),
             },
         ],
@@ -163,13 +160,6 @@ HOME = {
         "eyebrow": "Cómo funciona",
         "title": "Cuatro pasos, de la lista al resultado",
         "cta": {"label": "Ver cómo funciona en detalle", "url": "/como-funciona/"},
-    },
-    "cta": {
-        "title": "¿Tienes una lista de correos parada?",
-        "text": (
-            "Cuéntanos de tu negocio y qué lista tienes. Te decimos si Panamails te "
-            "sirve, con qué plan empezar y qué necesitamos de tu parte."
-        ),
     },
     "faq": {
         "eyebrow": "Preguntas frecuentes",
@@ -209,9 +199,9 @@ HOME = {
             {
                 "q": "¿Cómo se paga?",
                 "a": (
-                    "Yappy y PayPal, y con tarjeta a través de PayPal. Los datos de la "
-                    "tarjeta se manejan en el sitio del proveedor de pago, nunca en "
-                    "Panamails."
+                    "Con los medios de pago que ves al pie de esta página. Los datos de "
+                    "la tarjeta se manejan siempre en el sitio del proveedor de pago, "
+                    "nunca en Panamails."
                 ),
             },
             {
@@ -245,24 +235,26 @@ STEPS = [
     {
         "number": "2",
         "title": "Arma tu mensaje",
-        "short": "Eliges una plantilla, escribes el asunto y el contenido, y lo ves como llegará.",
+        "short": "Eliges una plantilla, escribes el asunto y el contenido, y lo previsualizas antes de enviar.",
         "detail": (
             "Partes de una plantilla prediseñada y cambias textos e imágenes, o subes "
-            "tu propio HTML desde el plan Negocio. Escribes el asunto, revisas la vista "
-            "previa y te envías una prueba a tu propia dirección para verla en tu "
-            "bandeja antes de que la vea nadie más. Si prefieres no armarla tú, te "
-            "diseñamos la pieza con tu marca y la reutilizas cada mes."
+            "tu propio HTML desde el plan Negocio. La previsualización te muestra el "
+            "correo tal como va a llegar, y puedes enviarte una prueba a tu propia "
+            "dirección para verla en tu bandeja antes de que la vea nadie más. Si "
+            "prefieres no armarla tú, te diseñamos la pieza con tu marca y la "
+            "reutilizas cada mes."
         ),
     },
     {
         "number": "3",
         "title": "Envía o programa",
-        "short": "Seleccionas a quién le llega y decides si sale ahora o en una fecha.",
+        "short": "Seleccionas a quién le llega y decides si sale ahora o a la hora que elijas.",
         "detail": (
             "Eliges las etiquetas que reciben la campaña y confirmas. Puedes enviar en "
-            "el momento o fijar día y hora. El enlace de baja se agrega a cada correo "
-            "en el envío, único para cada destinatario, y quien se dio de baja o rebotó "
-            "antes se salta automáticamente, sin gastar tu cuota."
+            "el momento o dejarla programada para el día y la hora exactos que te "
+            "convengan. El enlace de baja se agrega a cada correo en el envío, único "
+            "para cada destinatario, y quien se dio de baja o rebotó antes se salta "
+            "automáticamente, sin gastar tu cuota."
         ),
     },
     {
@@ -298,16 +290,16 @@ HOW = {
         "eyebrow": "El envío",
         "title": "Sales con el nombre de tu negocio, sin configurar nada",
         "text": (
-            "La mayoría de los negocios no tiene dominio propio, así que no te pedimos "
-            "uno. Tus correos salen desde un subdominio de Panamails, pero quien los "
-            "recibe ve el nombre de tu negocio como remitente, y si responde, la "
-            "respuesta llega a tu correo de siempre."
+            "Muchos negocios no tienen dominio propio, así que no te pedimos uno. Tus "
+            "correos salen desde un subdominio de Panamails, pero quien los recibe ve "
+            "el nombre de tu negocio como remitente, y si responde, la respuesta llega "
+            "a tu correo de siempre."
         ),
         "example": {
             "from_label": "De",
-            "from_value": "Colegio San José <colegiosanjose@envios.panamails.com>",
+            "from_value": "Tu Empresa <tuempresa@envios.panamails.com>",
             "reply_label": "Responder a",
-            "reply_value": "colegiosanjose@gmail.com",
+            "reply_value": "tuempresa@gmail.com",
         },
         "note": (
             "Si ya tienes dominio propio, lo configuramos contigo durante la activación "
@@ -352,13 +344,6 @@ HOW = {
             },
         ],
     },
-    "cta": {
-        "title": "¿Te encaja esta forma de trabajar?",
-        "text": (
-            "Escríbenos y vemos juntos qué lista tienes, con qué plan empezar y qué "
-            "hace falta para tu primera campaña."
-        ),
-    },
 }
 
 # --------------------------------------------------------------------------- pricing
@@ -367,15 +352,15 @@ PRICING = {
     "meta_title": "Precios · Panamails",
     "meta_description": (
         "Planes de Panamails desde $35 al mes, con contactos, correos mensuales y "
-        "soporte en español. Plan anual con dos meses gratis."
+        "soporte que responde. Plan anual con dos meses gratis."
     ),
     "hero": {
         "eyebrow": "Precios",
-        "title": "Planes claros, sin permanencia",
+        "title": "Planes",
         "subtitle": (
-            "Eliges el plan por el tamaño de tu lista. Cada plan incluye cinco veces "
-            "ese número en correos mensuales, suficiente para cinco campañas al mes a "
-            "toda tu lista."
+            "Se ajustan a lo que necesites. Eliges por la cantidad de contactos que "
+            "tengas, y cada plan te da cinco correos por contacto al mes: suficiente "
+            "para escribirle a toda tu lista cinco veces."
         ),
     },
     # Public presentation of each plan. Prices, contact and email limits are read
@@ -428,8 +413,8 @@ PRICING = {
             "Enlace de baja de un clic en cada correo",
             "Contactos sin duplicados, aunque estén en varias listas",
             "Lista de bajas y rebotes gestionada automáticamente",
-            "Panel y correos del sistema en español",
-            "Pago por Yappy, PayPal o tarjeta vía PayPal",
+            "Estadísticas de cada campaña, exportables",
+            "Acompañamiento en tu primera campaña",
             "Sin permanencia mínima: cancelas cuando quieras",
         ],
     },
@@ -467,21 +452,14 @@ PRICING = {
                 ),
             },
             {
-                "q": "¿Cómo funciona el pago por Yappy?",
+                "q": "¿El cobro es automático cada mes?",
                 "a": (
-                    "Estamos terminando de definir el cobro recurrente por Yappy. "
-                    "Mientras tanto te enviamos el enlace de pago antes de cada "
-                    "vencimiento. Por PayPal el cobro es automático."
+                    "Depende del medio de pago que elijas. Con algunos el cobro se "
+                    "renueva solo; con otros te enviamos el enlace de pago antes de cada "
+                    "vencimiento. Te lo confirmamos al activar tu cuenta."
                 ),
             },
         ],
-    },
-    "cta": {
-        "title": "¿No sabes cuál te conviene?",
-        "text": (
-            "Dinos cuántos contactos tienes y cada cuánto quieres escribirles. Te "
-            "decimos qué plan te alcanza, sin vender de más."
-        ),
     },
 }
 
@@ -491,14 +469,14 @@ ABOUT = {
     "meta_title": "Nosotros · Panamails",
     "meta_description": (
         "Qué es Panamails, para quién lo estamos construyendo y por qué una "
-        "plataforma de email marketing hecha desde Panamá."
+        "plataforma de email marketing pensada para listas que ya existen."
     ),
     "hero": {
         "eyebrow": "Nosotros",
-        "title": "Una herramienta de correo hecha desde el interior",
+        "title": "Para las listas de correo que nadie usa",
         "subtitle": (
-            "Panamails nace en Santiago de Veraguas, para negocios y organizaciones "
-            "que ya tienen una lista de correos y no tienen cómo usarla."
+            "Panamails se construye para negocios y organizaciones que ya tienen una "
+            "lista de correos guardada en alguna parte y no tienen cómo usarla."
         ),
     },
     "sections": [
@@ -536,14 +514,15 @@ ABOUT = {
             "title": "Por qué",
             "paragraphs": [
                 (
-                    "Las herramientas que existen están pensadas para otro mercado. "
-                    "Están en inglés, piden tarjeta internacional y su soporte responde "
-                    "en otro horario. La alternativa local es contratar cada campaña, "
-                    "que sale caro y convierte en excepción algo que debería ser rutina."
+                    "Una organización con dos mil correos guardados en una hoja de "
+                    "cálculo tiene, sin saberlo, su canal más directo. No depende de un "
+                    "algoritmo, no se pierde entre publicaciones y llega a quien ya "
+                    "levantó la mano."
                 ),
                 (
-                    "En el medio queda una organización con dos mil correos guardados en "
-                    "una hoja de cálculo y ninguna forma razonable de escribirles."
+                    "Lo que falta casi nunca es la lista. Es una forma sencilla de "
+                    "escribirle sin terminar en spam ni pasar la tarde copiando y "
+                    "pegando."
                 ),
             ],
         },
@@ -551,14 +530,33 @@ ABOUT = {
             "title": "Cómo lo hacemos",
             "paragraphs": [
                 (
-                    "Todo en español, del panel a los correos automáticos. Pago por "
-                    "Yappy, como se paga aquí. Soporte de alguien que está en el mismo "
-                    "país y responde a una hora razonable."
+                    "Tus correos no salen de un servidor de correo cualquiera ni de una "
+                    "cuenta de empresa. Salen por Amazon SES, la infraestructura de "
+                    "envío masivo de Amazon, a través de su API. Un servidor propio se "
+                    "topa con unos 2,000 correos diarios y quema la reputación del "
+                    "dominio en la primera campaña grande."
                 ),
                 (
-                    "Y las reglas que protegen tu reputación vienen puestas, no como "
-                    "opción: enlace de baja en todos los correos, contactos sin "
-                    "duplicar, rebotes y quejas fuera de tus envíos para siempre."
+                    "El dominio desde el que sales va firmado con SPF, DKIM y DMARC, "
+                    "que es lo que Gmail y Outlook revisan antes de decidir si tu "
+                    "correo entra a la bandeja o al spam. Tú no configuras nada de eso: "
+                    "si no tienes dominio propio, envías desde un subdominio nuestro ya "
+                    "autenticado."
+                ),
+                (
+                    "Cada cuenta va aislada de las demás. Los envíos se separan por "
+                    "cliente, así que los rebotes de uno no arrastran la entregabilidad "
+                    "del resto, y la lista de bajas es tuya y no global: si alguien se "
+                    "da de baja de un colegio, sigue recibiendo los correos de su "
+                    "cooperativa."
+                ),
+                (
+                    "Las reglas que cuidan tu reputación vienen activadas de fábrica. "
+                    "Cada correo lleva su enlace de baja, los contactos no se duplican, "
+                    "y quien rebota o marca tu correo como spam queda fuera de tus "
+                    "envíos. Si una cuenta pasa del 3% de rebotes o del 0.05% de "
+                    "quejas, su envío se pausa solo antes de que el problema crezca. "
+                    "Nada de eso se configura ni se puede apagar."
                 ),
             ],
         },
@@ -567,32 +565,21 @@ ABOUT = {
             "paragraphs": [
                 (
                     "Panamails está en construcción. Este sitio presenta el proyecto y "
-                    "los planes; la plataforma se está desarrollando y las primeras "
-                    "cuentas se abrirán de forma gradual, acompañando a cada cliente en "
-                    "su primera campaña."
-                ),
-                (
-                    "Preferimos decirlo así, en vez de aparentar un producto terminado. "
-                    "Si te interesa, escríbenos y hablamos de tu caso."
+                    "los planes. La plataforma se está desarrollando y las primeras "
+                    "cuentas se abrirán poco a poco, acompañando a cada cliente en su "
+                    "primera campaña."
                 ),
             ],
         },
     ],
-    "cta": {
-        "title": "¿Quieres que hablemos?",
-        "text": (
-            "Cuéntanos qué organización tienes y qué lista manejas. Respondemos con lo "
-            "que Panamails puede hacer hoy por ti y lo que todavía no."
-        ),
-    },
 }
 
 # --------------------------------------------------------------------------- footer
 
 FOOTER = {
     "description": (
-        "Plataforma de email marketing para negocios y organizaciones de Panamá. "
-        "En construcción desde Santiago de Veraguas."
+        "Envía campañas de correo a toda tu lista desde un solo panel. "
+        "Actualmente en construcción."
     ),
     "columns": [
         {
@@ -618,5 +605,9 @@ FOOTER = {
         },
     ],
     "soon_label": "Próximamente",
-    "legal_note": "Panamails · Santiago de Veraguas, Panamá",
+    "legal_note": "Panamails",
+    # Payment logos live in brand/payments/. If that folder is empty the footer
+    # falls back to this line, so the site is never left half-finished.
+    "payments_label": "Pagos",
+    "payments_fallback": "Pagos con Yappy, PayPal y tarjeta",
 }

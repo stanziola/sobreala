@@ -182,8 +182,8 @@ Todos los clientes envían desde un subdominio de Panamails; **no se les exige
 configurar DNS** porque la mayoría no tiene dominio propio:
 
 ```
-De:        Colegio San José <colegiosanjose@envios.panamails.com>
-Responder: colegiosanjose@gmail.com
+De:        Tu Empresa <tuempresa@envios.panamails.com>
+Responder: tuempresa@gmail.com
 ```
 
 Al cliente que sí tiene dominio, Luis le configura el DKIM durante la
