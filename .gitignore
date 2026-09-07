@@ -32,3 +32,27 @@ brand/payments/**/*.ai
 brand/payments/**/*.eps
 brand/payments/**/*.pdf
 brand/payments/**/*.jpg
+
+# Contexto de mercado: costos, márgenes por plan, precios de la competencia y
+# prospectos. Nunca debe viajar con el repositorio. Los planes y precios
+# públicos siguen en docs/pricing.md, que el sitio necesita para construirse.
+docs/pricing-interno.md
+
+# Variantes de los kits de marca que el sitio no usa y pesan de más.
+# El glifo en degradado de Instagram son 13 MB: el SVG lleva un PNG incrustado.
+# El sitio usa el glifo blanco, que pesa 1 KB. Los archivos siguen en tu disco.
+brand/social/instagram/01 Gradient Glyph/
+
+# Credenciales y claves, por si alguna vez caen en la carpeta del proyecto.
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+.env.local
+.env.*.local
+
+# Configuración local del editor y de herramientas
+.claude/settings.local.json
+*.swp
+*~

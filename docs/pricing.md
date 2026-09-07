@@ -180,57 +180,6 @@ lote con `$in` y escritura con `bulkWrite`. El HTML que suban va sanitizado
 
 ## Contexto de mercado
 
-### Competencia real en Santiago de Veraguas
-
-| Alternativa | Precio |
-|---|---|
-| Agencia local, campaña gestionada | $280 por campaña |
-| Agencia local, autogestión | $89/mes |
-| No hacer nada / WhatsApp | $0 |
-| Mailchimp Essentials, 10,000 contactos | $110/mes |
-
-La competencia relevante es la agencia local, no Mailchimp: la mayoría de los
-prospectos no lo conoce. El precio se sostiene en soporte en español de alguien
-local, pago por Yappy y el servicio de diseño — no en el desconocimiento.
-
-### Distribución esperada de prospectos
-
-| Prospecto | Contactos | Plan |
-|---|---|---|
-| Tienda / restaurante | 300 | Básico |
-| Gimnasio / clínica dental | 600 | Básico |
-| PyME establecida | 800 | Básico |
-| Colegio privado | 1,200 | Negocio |
-| Gremio profesional | 1,500 | Negocio |
-| Cooperativa pequeña | 2,500 | Negocio |
-| Concesionario / agro-distribuidora | 3,000 | Negocio |
-| Cooperativa mediana | 4,000 | Empresa |
-| Cooperativa grande | 8,000 | Empresa |
-| Universidad regional | 10,000 | Empresa |
-
-**Mejores prospectos**: cooperativas de ahorro y crédito, colegios privados,
-gremios y universidades — son los únicos que ya tienen una lista de correos
-armada por otra razón (socios, padres, miembros, estudiantes) y con obligación
-de convocar.
-
-**Obstáculo principal del mercado**: la mayoría de los negocios pequeños **no
-tiene lista de correos**. Ayudarlos a construirla (formulario embebible, QR en
-el mostrador, importación desde su facturación) puede ser más diferenciador que
-el envío mismo.
-
-### Costos
-
-| Concepto | Costo |
-|---|---|
-| Amazon SES | $0.10 por cada 1,000 correos |
-| Railway (Hobby) | $5/mes |
-| MongoDB Atlas M0 | $0 (512 MB) |
-| Cloudflare | $0 |
-| Dominio | ~$12/año |
-| **Fijo total** | **~$6/mes** |
-
-Márgenes por plan: **99% / 98% / 96% / 92%**.
-
-**A vigilar**: los eventos de envío llenan los 512 MB del tier gratuito de Atlas
-en unos 7 meses con una cartera de 6 Básico + 3 Negocio + 1 Empresa. Presupuestar
-el salto de plan de Atlas antes de que la base deje de aceptar escrituras.
+Vive en `docs/pricing-interno.md`, fuera de git: costos, márgenes por plan,
+precios de la competencia y distribución esperada de prospectos. No debe viajar
+con el repositorio.

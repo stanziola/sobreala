@@ -43,6 +43,7 @@ panamails/
 ├── .env.example
 ├── docs/
 │   ├── pricing.md          # planes, precios y reglas de negocio
+│   ├── pricing-interno.md  # costos, márgenes, competencia (FUERA de git)
 │   ├── arquitectura.md
 │   └── decisiones.md
 ├── brand/
@@ -264,7 +265,9 @@ Además:
 
 ## Planes
 
-Ver `docs/pricing.md` para la tabla completa, límites y reglas.
+Ver `docs/pricing.md` para la tabla completa, límites y reglas. Los costos, los
+márgenes y el análisis de competencia están en `docs/pricing-interno.md`, que
+está en `.gitignore` a propósito y no debe subirse.
 
 Resumen: Básico $35 · Negocio $60 · Empresa $120 · Corporativo $300 (a la
 medida, sin precio público). `docs/pricing.md` es la fuente de verdad; el sitio
