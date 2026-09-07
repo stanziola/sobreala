@@ -9,8 +9,9 @@ Mercado principal: Santiago de Veraguas y el interior. Cliente típico:
 cooperativas de ahorro y crédito, colegios privados, gremios, universidades y
 PyMEs — organizaciones que ya tienen una lista de correos armada por otra razón.
 
-**Estado: proyecto nuevo.** Solo existe el landing desplegado. Todo el backend,
-el panel del cliente y el panel de administración están por construir.
+**Estado: proyecto nuevo.** Existen la marca (`brand/`) y el sitio público
+(`landing/`, cuatro páginas estáticas generadas con Jinja2). Todo el backend, el
+panel del cliente y el panel de administración están por construir.
 
 ---
 
@@ -54,7 +55,15 @@ panamails/
 │   ├── preview/            # colores.html: editor de color y posición (generado)
 │   ├── social/             # iconos de redes (Instagram, etc.), agregados a mano
 │   └── fonts/
-├── landing/                # → Cloudflare Pages
+├── landing/                # → Cloudflare Pages (sitio público, ver landing/README.md)
+│   ├── build_site.py       # genera las páginas; único punto de entrada
+│   ├── content.py          # todos los textos del sitio, en español
+│   ├── src/                # plantillas Jinja2 (base, parciales, páginas) y site.css
+│   ├── assets/             # css, js, fonts, img (fonts, img y css/site.css son generados)
+│   ├── index.html          # GENERADO
+│   ├── como-funciona/      # GENERADO
+│   ├── precios/            # GENERADO (precios leídos de docs/pricing.md al construir)
+│   └── nosotros/           # GENERADO
 └── backend/                # → Railway
     ├── wsgi.py
     ├── config.py
@@ -257,8 +266,9 @@ Además:
 
 Ver `docs/pricing.md` para la tabla completa, límites y reglas.
 
-Resumen: Básico $25 · Negocio $60 · Empresa $120 · Corporativo $300 (a la
-medida, sin precio público). El límite de correos es siempre **5x** el de
+Resumen: Básico $35 · Negocio $60 · Empresa $120 · Corporativo $300 (a la
+medida, sin precio público). `docs/pricing.md` es la fuente de verdad; el sitio
+público lee sus tablas al construirse, así que no hay que copiar cifras a mano. El límite de correos es siempre **5x** el de
 contactos. Anual = 2 meses gratis. Los correos no usados pasan al mes siguiente
 y vencen ahí; se consumen primero los acumulados.
 

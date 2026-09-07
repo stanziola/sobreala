@@ -1,0 +1,388 @@
+#!/usr/bin/env python3
+"""Generate the public Panamails site into landing/.
+
+Sources of truth, none of them duplicated here:
+
+    brand/colors.css     colors
+    brand/fonts/         typefaces (converted to .woff2 on the way out)
+    brand/logo/          logo SVG
+    brand/favicon/       favicons
+    brand/social/        social icons
+    docs/pricing.md      plans, limits and add-on prices
+    landing/content.py   every line of copy
+
+Everything under landing/ that this script writes is generated: the HTML pages,
+assets/fonts/ and assets/img/. Do not edit those by hand, edit the sources and
+run this again.
+
+    python landing/build_site.py            # build
+    python landing/build_site.py --serve    # build, then serve it locally
+
+Requires jinja2, and fonttools + brotli for the .woff2 conversion (all already
+used elsewhere in the project).
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import shutil
+import sys
+from pathlib import Path
+
+LANDING_DIR = Path(__file__).resolve().parent
+ROOT = LANDING_DIR.parent
+BRAND_DIR = ROOT / "brand"
+PRICING_MD = ROOT / "docs" / "pricing.md"
+
+SRC_DIR = LANDING_DIR / "src"
+ASSETS_DIR = LANDING_DIR / "assets"
+OUT_FONTS = ASSETS_DIR / "fonts"
+OUT_IMG = ASSETS_DIR / "img"
+
+sys.path.insert(0, str(LANDING_DIR))
+import content  # noqa: E402  (local module, needs the path above)
+
+
+# --------------------------------------------------------------------------- pricing
+
+# Rows of the plans table that are safe to publish, in display order, with the
+# label the visitor reads. Anything not listed here stays internal: cost per
+# email, margins, competitors and prospect lists never leave docs/pricing.md.
+PUBLIC_ROWS = [
+    ("Contactos", "Contactos"),
+    ("Correos por mes", "Correos por mes"),
+    ("Campañas a lista completa", "Campañas al mes a toda tu lista"),
+    ("Listas", "Listas"),
+    ("Plantillas prediseñadas", "Plantillas prediseñadas"),
+    ("Subir tu propio HTML", "Subir tu propio HTML"),
+    ("Correos sin marca de agua", "Correos sin marca de agua"),
+    ("Plantilla personalizada con su marca", "Plantillas personalizadas con tu marca"),
+    ("Analytics completo", "Estadísticas de cada campaña"),
+    ("Exportar CSV y PDF", "Exportar a CSV y PDF"),
+    ("Usuarios", "Usuarios de la cuenta"),
+    ("Soporte", "Soporte"),
+    ("Onboarding guiado", "Sesión de arranque guiada"),
+]
+
+# Rows shown on the plan cards, above the fold.
+CARD_ROWS = ["Contactos", "Correos por mes", "Usuarios", "Soporte"]
+
+# Plans published without a price, by the document's own instruction.
+NO_PUBLIC_PRICE = {"Corporativo"}
+
+
+def _split_row(line: str) -> list[str]:
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _parse_table(lines: list[str], start: int) -> tuple[list[str], dict[str, list[str]], int]:
+    """Read one markdown table starting at `start`. Returns header, rows, next index."""
+    header = _split_row(lines[start])
+    i = start + 2  # skip the |---|---| separator
+    rows: dict[str, list[str]] = {}
+    while i < len(lines) and lines[i].lstrip().startswith("|"):
+        cells = _split_row(lines[i])
+        rows[cells[0].replace("*", "").strip()] = cells[1:]
+        i += 1
+    return header, rows, i
+
+
+def read_pricing(path: Path = PRICING_MD) -> dict:
+    """Extract the plans and add-ons tables from docs/pricing.md.
+
+    Parsed at build time on purpose: the numbers live in exactly one file, so the
+    site can never disagree with the document.
+    """
+    lines = path.read_text(encoding="utf-8").splitlines()
+    plans_header: list[str] = []
+    plans_rows: dict[str, list[str]] = {}
+    addons: list[tuple[str, str]] = []
+
+    section = None
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("## ") or line.startswith("### "):
+            section = line.lstrip("# ").strip()
+        elif line.lstrip().startswith("|") and section in ("Planes", "Complementos"):
+            header, rows, i = _parse_table(lines, i)
+            if section == "Planes" and not plans_rows:
+                plans_header, plans_rows = header, rows
+            elif section == "Complementos" and not addons:
+                addons = [(k, v[0]) for k, v in rows.items()]
+            continue
+        i += 1
+
+    names = [n for n in plans_header[1:] if n]
+    if not names or not plans_rows:
+        sys.exit(f"{path}: could not find the plans table")
+
+    def cell(row: str, plan: str) -> str:
+        values = plans_rows.get(row)
+        if values is None:
+            sys.exit(f"{path}: missing row '{row}' in the plans table")
+        return values[names.index(plan)]
+
+    plans = []
+    for name in names:
+        extra = content.PRICING["plans"].get(name, {})
+        plans.append({
+            "name": name,
+            "monthly": cell("Precio mensual", name),
+            "yearly": cell("Precio anual (2 meses gratis)", name),
+            "has_public_price": name not in NO_PUBLIC_PRICE,
+            "highlights": [
+                {"label": dict(PUBLIC_ROWS)[r], "value": cell(r, name)} for r in CARD_ROWS
+            ],
+            **extra,
+        })
+
+    table = {
+        "plans": names,
+        "rows": [
+            {"label": label, "values": [cell(key, n) for n in names]}
+            for key, label in PUBLIC_ROWS
+            if key in plans_rows
+        ],
+    }
+
+    descriptions = content.PRICING["addons"]["descriptions"]
+    return {
+        "plans": plans,
+        "table": table,
+        "addons": [
+            {"name": n, "price": p, "text": descriptions.get(n, "")} for n, p in addons
+        ],
+    }
+
+
+# --------------------------------------------------------------------------- assets
+
+FONT_FILES = [
+    # (family name used in CSS, source file, css weight or range)
+    ("Changa One", BRAND_DIR / "fonts" / "changa-one" / "ChangaOne-Regular.ttf", "400"),
+    ("Sora", BRAND_DIR / "fonts" / "sora" / "Sora-VariableFont_wght.ttf", "100 800"),
+]
+
+COPY_IMAGES = [
+    (BRAND_DIR / "logo" / "logo-transparent.svg", "logo-wing.svg"),
+    (BRAND_DIR / "logo" / "logo.svg", "logo.svg"),
+    (BRAND_DIR / "logo" / "logo.png", "logo.png"),
+    (BRAND_DIR / "favicon" / "favicon.svg", "favicon.svg"),
+    (BRAND_DIR / "favicon" / "favicon.ico", "favicon.ico"),
+    (BRAND_DIR / "favicon" / "favicon-32x32.png", "favicon-32x32.png"),
+    (BRAND_DIR / "favicon" / "favicon-16x16.png", "favicon-16x16.png"),
+    (BRAND_DIR / "favicon" / "favicon-180x180.png", "favicon-180x180.png"),
+]
+
+SOCIAL_ICONS = ["instagram", "whatsapp"]
+
+
+def build_fonts() -> list[dict]:
+    """Convert brand fonts to .woff2 in assets/fonts/. Returns @font-face data."""
+    from fontTools.ttLib import TTFont
+
+    OUT_FONTS.mkdir(parents=True, exist_ok=True)
+    faces = []
+    for family, source, weight in FONT_FILES:
+        if not source.exists():
+            sys.exit(f"missing font: {source}\nSee brand/fonts/README.md.")
+        out = OUT_FONTS / (source.stem + ".woff2")
+        if not out.exists() or out.stat().st_mtime < source.stat().st_mtime:
+            font = TTFont(str(source))
+            font.flavor = "woff2"
+            font.save(str(out))
+            font.close()
+        faces.append({
+            "family": family,
+            "file": f"/assets/fonts/{out.name}",
+            "weight": weight,
+        })
+    return faces
+
+
+def write_css(faces: list[dict]) -> Path:
+    """assets/css/site.css = brand color variables + @font-face + src/site.css."""
+    colors = (BRAND_DIR / "colors.css").read_text(encoding="utf-8")
+    colors = re.sub(r"/\*.*?\*/\s*", "", colors, count=1, flags=re.S)  # drop the header comment
+    face_tpl = (
+        "@font-face {{\n"
+        "  font-family: \"{family}\";\n"
+        "  src: url(\"{file}\") format(\"woff2\");\n"
+        "  font-weight: {weight};\n"
+        "  font-style: normal;\n"
+        "  font-display: swap;\n"
+        "}}\n"
+    )
+    faces_css = "".join(face_tpl.format(**f) for f in faces)
+    body = (SRC_DIR / "site.css").read_text(encoding="utf-8")
+    out = ASSETS_DIR / "css" / "site.css"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    header = "/* GENERATED by landing/build_site.py. Edit brand/colors.css and landing/src/site.css instead. */\n"
+    out.write_text(
+        header + colors.strip() + "\n\n" + faces_css + "\n" + body,
+        encoding="utf-8", newline="\n",
+    )
+    return out
+
+
+def copy_assets() -> dict:
+    """Copy logo, favicons and social icons into assets/img/. Returns what exists."""
+    OUT_IMG.mkdir(parents=True, exist_ok=True)
+    for source, name in COPY_IMAGES:
+        if source.exists():
+            shutil.copy2(source, OUT_IMG / name)
+
+    social_dir = OUT_IMG / "social"
+    social_dir.mkdir(exist_ok=True)
+    available = {}
+    for name in SOCIAL_ICONS:
+        for ext in (".svg", ".png"):
+            source = BRAND_DIR / "social" / f"{name}{ext}"
+            if source.exists():
+                shutil.copy2(source, social_dir / f"{name}{ext}")
+                available[name] = f"/assets/img/social/{name}{ext}"
+                break
+    return available
+
+
+def read_wing_svg() -> str:
+    """Inline the wing so it inherits colors from CSS and needs no extra request."""
+    svg = (BRAND_DIR / "logo" / "logo-transparent.svg").read_text(encoding="utf-8")
+    svg = re.sub(r'\s(width|height)="[^"]*"', "", svg, count=2)
+    svg = re.sub(r'fill="#[0-9A-Fa-f]{6}"', "", svg)
+    svg = svg.replace('role="img"', 'aria-hidden="true" focusable="false"')
+    svg = re.sub(r"<title[^>]*>.*?</title>\s*", "", svg, flags=re.S)
+    svg = re.sub(r'\saria-labelledby="[^"]*"', "", svg)
+    return svg.strip()
+
+
+# --------------------------------------------------------------------------- render
+
+PAGES = [
+    ("index.html", "index.html.j2", "/", content.HOME),
+    ("como-funciona/index.html", "como-funciona.html.j2", "/como-funciona/", content.HOW),
+    ("precios/index.html", "precios.html.j2", "/precios/", content.PRICING),
+    ("nosotros/index.html", "nosotros.html.j2", "/nosotros/", content.ABOUT),
+]
+
+
+def whatsapp_url() -> str:
+    from urllib.parse import quote
+
+    c = content.CONTACT
+    return f"https://wa.me/{c['whatsapp_number']}?text={quote(c['whatsapp_message'])}"
+
+
+def build() -> list[Path]:
+    from jinja2 import Environment, FileSystemLoader, StrictUndefined
+    from markupsafe import Markup
+
+    faces = build_fonts()
+    css = write_css(faces)
+    social = copy_assets()
+    pricing = read_pricing()
+
+    env = Environment(
+        loader=FileSystemLoader([str(SRC_DIR), str(SRC_DIR / "pages")]),
+        autoescape=True,
+        undefined=StrictUndefined,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+
+    shared = {
+        "site": content.SITE,
+        "nav": content.NAV,
+        "contact": content.CONTACT,
+        "whatsapp_url": whatsapp_url(),
+        "cta_primary": content.CTA_PRIMARY,
+        "cta_secondary": content.CTA_SECONDARY,
+        "footer": content.FOOTER,
+        "steps": content.STEPS,
+        "font_faces": faces,
+        "social_icons": social,
+        "wing_svg": Markup(read_wing_svg()),  # trusted: our own generated SVG
+        "pricing_data": pricing,
+    }
+
+    written = [css]
+    for out_name, template, url, page in PAGES:
+        html = env.get_template(template).render(page=page, current_url=url, **shared)
+        target = LANDING_DIR / out_name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(html.rstrip() + "\n", encoding="utf-8", newline="\n")
+        written.append(target)
+
+    # Cloudflare Pages serves these from the site root.
+    for name in ("favicon.ico", "favicon.svg"):
+        source = OUT_IMG / name
+        if source.exists():
+            shutil.copy2(source, LANDING_DIR / name)
+            written.append(LANDING_DIR / name)
+
+    written.append(write_robots())
+    written.append(write_sitemap())
+    return written
+
+
+def write_robots() -> Path:
+    target = LANDING_DIR / "robots.txt"
+    target.write_text(
+        f"User-agent: *\nAllow: /\n\nSitemap: {content.SITE['base_url']}/sitemap.xml\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return target
+
+
+def write_sitemap() -> Path:
+    base = content.SITE["base_url"]
+    urls = "".join(f"  <url><loc>{base}{u}</loc></url>\n" for _, _, u, _ in PAGES)
+    target = LANDING_DIR / "sitemap.xml"
+    target.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}</urlset>\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return target
+
+
+def serve(port: int = 8080) -> int:
+    """Serve landing/ locally so the /rutas/ resolve like on Cloudflare Pages."""
+    import functools
+    import webbrowser
+    from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
+    handler = functools.partial(SimpleHTTPRequestHandler, directory=str(LANDING_DIR))
+    httpd = ThreadingHTTPServer(("127.0.0.1", port), handler)
+    url = f"http://127.0.0.1:{port}/"
+    print(f"Sitio en {url}  (Ctrl+C para parar)")
+    webbrowser.open(url)
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nservidor detenido")
+    finally:
+        httpd.server_close()
+    return 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="Generate the public Panamails site.")
+    ap.add_argument("--serve", action="store_true", help="serve the built site locally")
+    ap.add_argument("--port", type=int, default=8080, metavar="N", help="port for --serve")
+    args = ap.parse_args(argv)
+
+    for path in build():
+        print("wrote", path.relative_to(ROOT))
+    if args.serve:
+        return serve(args.port)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

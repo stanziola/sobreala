@@ -29,4 +29,26 @@
 
   /* Black separations/shadows visible between the overlapping feathers. */
   --color-shadow: #000000;
+
+  /* ---------------------------------------------------------------- website
+   * Palette of the public site. build_logo.py ignores these; it only needs the
+   * three above. Every contrast pair below was checked against WCAG AA
+   * (4.5:1 for normal text, 3:1 for large text and UI borders).
+   */
+
+  /* Sky blues: action and emphasis. The brand blue still owns the surfaces. */
+  --color-accent: #31A9E8;        /* buttons, icons, marks. Use --color-ink on top */
+  --color-accent-strong: #136A9B; /* links and hover; 5.9:1 on white and under white */
+  --color-accent-soft: #E2F1FB;   /* chips, badges, quiet highlights */
+  --color-accent-light: #CFEBFA;  /* accents over the brand blue; 4.7:1 */
+
+  /* Deep blue for dark sections; white on it reaches 13.7:1. */
+  --color-deep: #122E52;
+
+  /* Text and surfaces. */
+  --color-ink: #0E1B2A;           /* body text; 17.4:1 on white */
+  --color-ink-soft: #51617A;      /* secondary text; 6.3:1 on white */
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F1F6FC;   /* alternating section background */
+  --color-border: #D7E2EE;
 }

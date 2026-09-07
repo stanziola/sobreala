@@ -20,7 +20,10 @@ YouTube, X, correo, teléfono.
 | `x.svg`               | ídem                                 |
 | `email.svg`           | ídem                                 |
 
-- Un archivo por red, en minúsculas, sin espacios.
+- Un archivo por red, en minúsculas, sin espacios. Vale `.svg` o `.png`; el
+  generador del sitio (`landing/build_site.py`) toma el que encuentre, con
+  preferencia por el SVG. Un PNG debe llevar fondo transparente y medir 512 px
+  o más.
 - SVG cuadrado (`viewBox="0 0 24 24"`) con `fill="currentColor"`, para que el
   color lo ponga el CSS con `var(--color-...)` de `colors.css`. Si la red exige
   su color de marca, ese color va dentro del propio SVG, no en `colors.css`.

@@ -1,0 +1,131 @@
+{% extends "base.html.j2" %}
+
+{% block main %}
+
+<section class="page-hero">
+  <div class="shell shell--narrow">
+    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
+    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
+    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
+  </div>
+</section>
+
+<section class="section section--overlap" aria-labelledby="planes-title">
+  <div class="shell">
+    <h2 class="visually-hidden" id="planes-title">Planes</h2>
+    <ul class="plans">
+      {% for plan in pricing_data.plans %}
+      <li class="plan{% if plan.featured %} plan--featured{% endif %}">
+        {% if plan.get('badge') %}<span class="plan__badge">{{ plan.badge }}</span>{% endif %}
+        <h3 class="plan__name">{{ plan.name }}</h3>
+        <p class="plan__pitch">{{ plan.pitch }}</p>
+        {% if plan.has_public_price %}
+        <p class="plan__price">
+          <span class="plan__amount">{{ plan.monthly }}</span>
+          <span class="plan__period">/ mes</span>
+        </p>
+        <p class="plan__yearly">{{ plan.yearly }} al año, dos meses gratis</p>
+        {% else %}
+        <p class="plan__price"><span class="plan__amount plan__amount--custom">{{ plan.custom_price }}</span></p>
+        <p class="plan__yearly">{{ plan.custom_note }}</p>
+        {% endif %}
+        <ul class="plan__list">
+          {% for h in plan.highlights %}
+          <li><span class="plan__value">{{ h.value }}</span> <span class="plan__label">{{ h.label|lower }}</span></li>
+          {% endfor %}
+        </ul>
+        <a class="btn {% if plan.featured %}btn--primary{% else %}btn--outline{% endif %} btn--block"
+           href="{{ whatsapp_url }}" target="_blank" rel="noopener">
+          {% if plan.has_public_price %}Empezar con {{ plan.name }}{% else %}Contactar{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="plans__note">{{ page.annual_note }}</p>
+  </div>
+</section>
+
+<section class="section section--alt" aria-labelledby="tabla-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">{{ page.table.eyebrow }}</p>
+      <h2 class="section__title" id="tabla-title">{{ page.table.title }}</h2>
+    </div>
+    <p class="table-hint" aria-hidden="true">{{ page.table.scroll_hint }}</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Tabla comparativa de planes">
+      <table class="compare">
+        <thead>
+          <tr>
+            <th scope="col"><span class="visually-hidden">Característica</span></th>
+            {% for name in pricing_data.table.plans %}
+            <th scope="col">{{ name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Precio mensual</th>
+            {% for plan in pricing_data.plans %}
+            <td>{% if plan.has_public_price %}{{ plan.monthly }}{% else %}{{ plan.custom_price }}{% endif %}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <th scope="row">Precio anual</th>
+            {% for plan in pricing_data.plans %}
+            <td>{% if plan.has_public_price %}{{ plan.yearly }}{% else %}{{ plan.custom_price }}{% endif %}</td>
+            {% endfor %}
+          </tr>
+          {% for row in pricing_data.table.rows %}
+          <tr>
+            <th scope="row">{{ row.label }}</th>
+            {% for v in row['values'] %}
+            <td>
+              {% if v == '✅' %}<span class="yes" role="img" aria-label="Incluido">✓</span>
+              {% elif v == '—' %}<span class="no" role="img" aria-label="No incluido">—</span>
+              {% else %}{{ v }}{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="addons-title">
+  <div class="shell">
+    <div class="split split--wide">
+      <div>
+        <p class="eyebrow">{{ page.addons.eyebrow }}</p>
+        <h2 class="section__title" id="addons-title">{{ page.addons.title }}</h2>
+        <p class="section__intro">{{ page.addons.intro }}</p>
+        <ul class="addons">
+          {% for addon in pricing_data.addons %}
+          <li class="addon">
+            <div>
+              <h3 class="addon__name">{{ addon.name }}</h3>
+              <p class="addon__text">{{ addon.text }}</p>
+            </div>
+            <span class="addon__price">{{ addon.price }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="included">
+        <h2 class="included__title">{{ page.included.title }}</h2>
+        <ul class="included__list">
+          {% for item in page.included['items'] %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
+
+{% with block = page.cta %}{% include "partials/cta-band.html.j2" %}{% endwith %}
+
+{% endblock %}

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.meta_title }}</title>
+<meta name="description" content="{{ page.meta_description }}">
+<link rel="canonical" href="{{ site.base_url }}{{ current_url }}">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ site.name }}">
+<meta property="og:locale" content="{{ site.locale }}">
+<meta property="og:title" content="{{ page.meta_title }}">
+<meta property="og:description" content="{{ page.meta_description }}">
+<meta property="og:url" content="{{ site.base_url }}{{ current_url }}">
+<meta property="og:image" content="{{ site.base_url }}/assets/img/logo.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#3166A7">
+
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/img/favicon-180x180.png">
+
+{% for face in font_faces %}
+<link rel="preload" href="{{ face.file }}" as="font" type="font/woff2" crossorigin>
+{% endfor %}
+<link rel="stylesheet" href="/assets/css/site.css">
+</head>
+<body>
+
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<header class="site-header" id="site-header">
+  <div class="shell site-header__inner">
+    <a class="brand" href="/"{% if current_url == '/' %} aria-current="page"{% endif %}>
+      <span class="brand__wing">{{ wing_svg }}</span>
+      <span class="brand__name">Panamails</span>
+    </a>
+
+    <button class="nav-toggle" id="nav-toggle" type="button"
+            aria-expanded="false" aria-controls="site-nav">
+      <span class="nav-toggle__bars" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span class="nav-toggle__label">Menú</span>
+    </button>
+
+    <nav class="site-nav" id="site-nav" aria-label="Navegación principal">
+      <ul class="site-nav__list">
+        {% for item in nav %}
+        <li>
+          <a class="site-nav__link{% if current_url == item.url %} is-active{% endif %}"
+             href="{{ item.url }}"{% if current_url == item.url %} aria-current="page"{% endif %}>
+            {{ item.label }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      <a class="btn btn--primary site-nav__cta" href="{{ whatsapp_url }}"
+         target="_blank" rel="noopener">{{ cta_primary.label }}</a>
+    </nav>
+  </div>
+</header>
+
+<main id="contenido">
+{% block main %}{% endblock %}
+</main>
+
+<footer class="site-footer" id="contacto">
+  <div class="shell">
+    <div class="site-footer__top">
+      <div class="site-footer__brand">
+        <a class="brand brand--footer" href="/">
+          <span class="brand__wing">{{ wing_svg }}</span>
+          <span class="brand__name">Panamails</span>
+        </a>
+        <p class="site-footer__desc">{{ footer.description }}</p>
+      </div>
+
+      <nav class="site-footer__cols" aria-label="Navegación del pie">
+        {% for col in footer.columns %}
+        <div class="site-footer__col">
+          <h2 class="site-footer__title">{{ col.title }}</h2>
+          <ul>
+            {% for link in col.links %}
+            <li>
+              {% if link.url %}
+              <a href="{{ link.url }}">{{ link.label }}</a>
+              {% else %}
+              <span class="site-footer__soon">{{ link.label }}
+                <span class="tag">{{ footer.soon_label }}</span>
+              </span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+
+        <div class="site-footer__col site-footer__col--contact">
+          <h2 class="site-footer__title">Contacto</h2>
+          <ul class="contact-list">
+            <li>
+              <a href="{{ whatsapp_url }}" target="_blank" rel="noopener">
+                {% if social_icons.whatsapp %}
+                <img src="{{ social_icons.whatsapp }}" alt="" width="20" height="20" loading="lazy">
+                {% else %}
+                {% include "partials/icon-chat.svg.j2" %}
+                {% endif %}
+                <span>{{ contact.whatsapp_display }}</span>
+              </a>
+            </li>
+            <li>
+              <a href="mailto:{{ contact.email }}">
+                {% include "partials/icon-mail.svg.j2" %}
+                <span>{{ contact.email }}</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ contact.instagram_url }}" target="_blank" rel="noopener">
+                {% if social_icons.instagram %}
+                <img src="{{ social_icons.instagram }}" alt="" width="20" height="20" loading="lazy">
+                {% endif %}
+                <span>@{{ contact.instagram_user }}</span>
+              </a>
+              <span class="contact-list__note">{{ contact.instagram_note }}</span>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+
+    <p class="site-footer__legal">
+      <span>&copy; <span id="year">2026</span> {{ footer.legal_note }}</span>
+    </p>
+  </div>
+</footer>
+
+<script src="/assets/js/nav.js" defer></script>
+</body>
+</html>

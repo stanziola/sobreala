@@ -1,0 +1,14 @@
+<section class="band">
+  <div class="shell band__inner">
+    <div>
+      <h2 class="band__title">{{ block.title }}</h2>
+      <p class="band__text">{{ block.text }}</p>
+    </div>
+    <div class="band__actions">
+      <a class="btn btn--primary btn--lg" href="{{ whatsapp_url }}" target="_blank" rel="noopener">
+        {{ cta_primary.label }}
+      </a>
+      <a class="btn btn--ghost btn--lg" href="mailto:{{ contact.email }}">Escribir por correo</a>
+    </div>
+  </div>
+</section>

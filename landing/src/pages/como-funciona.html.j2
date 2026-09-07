@@ -1,0 +1,76 @@
+{% extends "base.html.j2" %}
+
+{% block main %}
+
+<section class="page-hero">
+  <div class="shell shell--narrow">
+    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
+    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
+    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="pasos-title">
+  <div class="shell">
+    <h2 class="visually-hidden" id="pasos-title">Los cuatro pasos</h2>
+    <ol class="flow">
+      {% for step in steps %}
+      <li class="flow__item">
+        <div class="flow__marker" aria-hidden="true">
+          <span class="flow__number">{{ step.number }}</span>
+        </div>
+        <div class="flow__body">
+          <h3 class="flow__title">{{ step.title }}</h3>
+          <p class="flow__lead">{{ step.short }}</p>
+          <p class="flow__text">{{ step.detail }}</p>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+
+<section class="section section--alt" aria-labelledby="envio-title">
+  <div class="shell split">
+    <div class="split__text">
+      <p class="eyebrow">{{ page.sending.eyebrow }}</p>
+      <h2 class="section__title" id="envio-title">{{ page.sending.title }}</h2>
+      <p class="section__intro">{{ page.sending.text }}</p>
+      <p class="note">{{ page.sending.note }}</p>
+    </div>
+    <div class="split__aside">
+      <div class="mail-card">
+        <p class="mail-card__row">
+          <span class="mail-card__label">{{ page.sending.example.from_label }}</span>
+          <span class="mail-card__value">{{ page.sending.example.from_value }}</span>
+        </p>
+        <p class="mail-card__row">
+          <span class="mail-card__label">{{ page.sending.example.reply_label }}</span>
+          <span class="mail-card__value">{{ page.sending.example.reply_value }}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="cuidamos-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">{{ page.care.eyebrow }}</p>
+      <h2 class="section__title" id="cuidamos-title">{{ page.care.title }}</h2>
+      <p class="section__intro">{{ page.care.intro }}</p>
+    </div>
+    <ul class="grid grid--2">
+      {% for item in page.care['items'] %}
+      <li class="note-card note-card--check">
+        <h3 class="note-card__title">{{ item.title }}</h3>
+        <p>{{ item.text }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+{% with block = page.cta %}{% include "partials/cta-band.html.j2" %}{% endwith %}
+
+{% endblock %}

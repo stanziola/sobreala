@@ -1,0 +1,91 @@
+{% extends "base.html.j2" %}
+{% from "partials/feature-icons.html.j2" import feature_icon %}
+
+{% block main %}
+
+<section class="hero">
+  <div class="shell hero__inner">
+    <div class="hero__text">
+      <h1 class="hero__title">
+        {{ page.hero.title_lead }}
+        <span class="hero__title-accent">{{ page.hero.title_accent }}</span>
+      </h1>
+      <p class="hero__subtitle">{{ page.hero.subtitle }}</p>
+      <div class="hero__actions">
+        <a class="btn btn--primary btn--lg" href="{{ whatsapp_url }}" target="_blank" rel="noopener">
+          {{ cta_primary.label }}
+        </a>
+        <a class="btn btn--outline btn--lg" href="{{ cta_secondary.url }}">{{ cta_secondary.label }}</a>
+      </div>
+      <p class="hero__note">{{ page.hero.note }}</p>
+    </div>
+    <div class="hero__art">
+      <div class="hero__wing">{{ wing_svg }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--alt" aria-labelledby="problema-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">{{ page.problem.eyebrow }}</p>
+      <h2 class="section__title" id="problema-title">{{ page.problem.title }}</h2>
+      <p class="section__intro">{{ page.problem.intro }}</p>
+    </div>
+    <ul class="grid grid--3">
+      {% for item in page.problem['items'] %}
+      <li class="note-card">
+        <h3 class="note-card__title">{{ item.title }}</h3>
+        <p>{{ item.text }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="section__closing">{{ page.problem.closing }}</p>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="features-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">{{ page.features.eyebrow }}</p>
+      <h2 class="section__title" id="features-title">{{ page.features.title }}</h2>
+      <p class="section__intro">{{ page.features.intro }}</p>
+    </div>
+    <ul class="grid grid--3">
+      {% for item in page.features['items'] %}
+      <li class="feature-card">
+        <span class="feature-card__icon">{{ feature_icon(item.icon) }}</span>
+        <h3 class="feature-card__title">{{ item.title }}</h3>
+        <p>{{ item.text }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="section section--deep" aria-labelledby="pasos-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow eyebrow--light">{{ page.steps.eyebrow }}</p>
+      <h2 class="section__title" id="pasos-title">{{ page.steps.title }}</h2>
+    </div>
+    <ol class="steps">
+      {% for step in steps %}
+      <li class="step">
+        <span class="step__number" aria-hidden="true">{{ step.number }}</span>
+        <h3 class="step__title">{{ step.title }}</h3>
+        <p class="step__text">{{ step.short }}</p>
+      </li>
+      {% endfor %}
+    </ol>
+    <p class="section__actions">
+      <a class="btn btn--light btn--lg" href="{{ page.steps.cta.url }}">{{ page.steps.cta.label }}</a>
+    </p>
+  </div>
+</section>
+
+{% with block = page.cta %}{% include "partials/cta-band.html.j2" %}{% endwith %}
+
+{% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
+
+{% endblock %}
