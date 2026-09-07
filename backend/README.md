@@ -6,11 +6,17 @@ registro, confirmación del correo, entrar y salir.
 ## Levantarlo
 
 ```
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 cp .env.example .env          # y completar MONGODB_URI y SECRET_KEY
 python backend/build_assets.py
 python backend/wsgi.py
 ```
+
+La lista de dependencias vive en la **raíz** del repositorio, no aquí: es donde
+Railpack, el constructor de Railway, la busca para reconocer el proyecto como
+Python. `backend/requirements.txt` apunta a ella, así que ese comando también
+sigue funcionando. `.python-version` fija Python 3.12 para que el despliegue no
+cambie de versión por su cuenta.
 
 Queda en `http://127.0.0.1:5000/`.
 
@@ -96,7 +102,9 @@ certificado necesita que el servicio ya exista.
 
 1. En **railway.app**, crear un proyecto desde el repositorio de GitHub. Railway
    reconoce que es Python por el `requirements.txt` de la raíz y arranca con el
-   `Procfile`.
+   `Procfile`. Ese archivo tiene que listar los paquetes uno por uno: una línea
+   `-r backend/requirements.txt` la entiende pip pero no Railpack, y el
+   despliegue falla con «could not determine how to build the app».
 2. Pegar las variables de abajo en su panel. `APP_BASE_URL` se deja para el
    paso 5.
 3. En **Atlas**, permitir la conexión desde cualquier origen. Los servidores de

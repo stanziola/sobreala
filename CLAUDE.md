@@ -56,6 +56,10 @@ panamails/
 │   ├── preview/            # colores.html: editor de color y posición (generado)
 │   ├── social/             # iconos de redes (Instagram, etc.), agregados a mano
 │   └── fonts/
+├── requirements.txt        # dependencias de Python; en la raíz porque Railway
+│                           # las busca aquí para reconocer el proyecto
+├── Procfile                # cómo arranca en Railway
+├── .python-version         # 3.12
 ├── landing/                # → Cloudflare Pages (sitio público, ver landing/README.md)
 │   ├── build_site.py       # genera las páginas; único punto de entrada
 │   ├── content.py          # todos los textos del sitio, en español
@@ -68,7 +72,7 @@ panamails/
 └── backend/                # → Railway
     ├── wsgi.py
     ├── config.py
-    ├── requirements.txt
+    ├── requirements.txt    # apunta al de la raíz, que es el de verdad
     ├── blueprints/
     │   ├── auth/           # registro, confirmación de correo, login. HECHO
     │   ├── contacts/       # importación, etiquetas, supresiones
