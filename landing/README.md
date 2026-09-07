@@ -30,8 +30,8 @@ landing/
 │   ├── pages/           # index, como-funciona, precios, nosotros
 │   └── site.css         # estilos (sin ningún HEX: usa las variables de brand/colors.css)
 ├── assets/
-│   ├── js/nav.js        # menú móvil accesible + año del pie
-│   ├── css/site.css     # GENERADO: colors.css + @font-face + src/site.css
+│   ├── js/nav.js        # menú móvil, cambio de tema y año del pie
+│   ├── css/site.css     # GENERADO: colors.css + colors-dark.css + @font-face + src/site.css
 │   ├── fonts/           # GENERADO: .woff2 a partir de brand/fonts/
 │   └── img/             # GENERADO: logo, favicons e iconos desde brand/
 ├── index.html           # GENERADO
@@ -48,7 +48,8 @@ De dónde sale cada cosa:
 |-----------------------------|---------------------------------|-------------|
 | Textos, enlaces, FAQ, contacto | `landing/content.py`         | ese archivo |
 | Planes, límites y precios   | `docs/pricing.md`               | ese archivo; el build lee sus tablas |
-| Colores                     | `brand/colors.css`              | ese archivo |
+| Colores, tema claro         | `brand/colors.css`              | ese archivo |
+| Colores, tema oscuro        | `brand/colors-dark.css`         | ese archivo |
 | Tipografías                 | `brand/fonts/`                  | ver `brand/fonts/README.md` |
 | Logo y favicons             | `brand/logo/`, `brand/favicon/` | `python brand/build_logo.py` |
 | Iconos de redes             | `brand/social/`                 | a mano, ver su README |
@@ -64,6 +65,34 @@ Después de cambiar cualquiera de ellos, regenerar y commitear también lo gener
 márgenes, competidores y prospectos nunca salen del documento. Corporativo se
 publica sin precio, como indica el propio archivo. Si cambia un precio, basta con
 cambiarlo en `pricing.md` y regenerar.
+
+## Modo oscuro
+
+Arranca según la preferencia del sistema del visitante. El botón de la cabecera
+la anula y esa elección se guarda en su navegador, así que se mantiene al navegar
+y al volver. El icono muestra la acción, no el estado: un sol cuando está oscuro,
+una luna cuando está claro.
+
+Un script mínimo en el `<head>`, antes de la hoja de estilos, aplica el tema
+antes del primer pintado. Sin él, quien tenga el sistema en oscuro vería un
+destello blanco en cada carga.
+
+Al pulsar, el tema nuevo se expande en círculo desde el botón. Si el navegador no
+soporta esa API, o si el visitante pidió reducir animaciones, el cambio es
+instantáneo.
+
+**Los colores del tema oscuro viven en `brand/colors-dark.css`, nunca en
+`colors.css`.** El generador del logo lee ese segundo archivo y se queda con el
+último valor de cada variable, así que una definición oscura ahí acabaría
+metida en el logo y los favicons.
+
+Tres variables existen precisamente porque los temas las separan:
+
+| Variable | Para qué |
+|---|---|
+| `--color-page` | Fondo de la página. En oscuro las tarjetas son un tono por encima |
+| `--color-on-dark` | Texto sobre el azul: cabecera, hero, pie. Siempre casi blanco |
+| `--color-on-accent` | Texto sobre el celeste de los botones. Siempre oscuro |
 
 ## Qué es solo visual
 
@@ -85,6 +114,7 @@ próximamente hasta que existan los textos.
 El build no valida el resultado; para eso sirve abrirlo con `--serve` y
 revisarlo en el navegador. Cosas a mirar tras un cambio de estilos: que no haya
 scroll horizontal en móvil, que el menú móvil abra y cierre (botón, Escape y clic
-fuera), y que cada página marque su enlace activo en el header.
+fuera), que cada página marque su enlace activo en el header, y que **todo se
+revise en los dos temas**, no solo en el que tengas puesto.
 
 Requisitos: `pip install jinja2 fonttools brotli`.

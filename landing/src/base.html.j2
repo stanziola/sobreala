@@ -15,7 +15,22 @@
 <meta property="og:url" content="{{ site.base_url }}{{ current_url }}">
 <meta property="og:image" content="{{ site.base_url }}/assets/img/logo.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#3166A7">
+<meta name="theme-color" content="#3166A7" id="theme-color">
+<script>
+  // Runs before the stylesheet so the page never paints the wrong theme.
+  (function () {
+    var t;
+    try { t = localStorage.getItem("theme"); } catch (e) {}
+    if (t !== "dark" && t !== "light") {
+      t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.dataset.theme = t;
+    if (t === "dark") {
+      var m = document.getElementById("theme-color");
+      if (m) m.setAttribute("content", "#245285");
+    }
+  })();
+</script>
 
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -37,11 +52,17 @@
       <span class="brand__name">Panamails</span>
     </a>
 
-    <button class="nav-toggle" id="nav-toggle" type="button"
+    <div class="header-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Cambiar de tema">
+        <span class="theme-toggle__sun">{% include "partials/icon-sun.svg.j2" %}</span>
+        <span class="theme-toggle__moon">{% include "partials/icon-moon.svg.j2" %}</span>
+      </button>
+      <button class="nav-toggle" id="nav-toggle" type="button"
             aria-expanded="false" aria-controls="site-nav">
       <span class="nav-toggle__bars" aria-hidden="true"><span></span><span></span><span></span></span>
       <span class="nav-toggle__label">Menú</span>
-    </button>
+      </button>
+    </div>
 
     <nav class="site-nav" id="site-nav" aria-label="Navegación principal">
       <ul class="site-nav__list">
@@ -59,6 +80,8 @@
     </nav>
   </div>
 </header>
+
+<span class="visually-hidden" role="status" id="theme-status"></span>
 
 <main id="contenido">
 {% block main %}{% endblock %}

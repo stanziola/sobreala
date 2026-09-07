@@ -4,7 +4,8 @@ Activos de marca: logo vectorial, favicons, paleta de colores y posición.
 
 ```
 brand/
-├── colors.css                  # fuente de verdad de los COLORES
+├── colors.css                  # fuente de verdad de los COLORES (tema claro)
+├── colors-dark.css             # los mismos nombres, valores del tema oscuro
 ├── layout.json                 # fuente de verdad de la POSICIÓN y el encuadre
 ├── build_logo.py               # genera todo lo de logo/, favicon/ y preview/
 ├── logo/
@@ -106,6 +107,11 @@ Definidos una sola vez en `colors.css` como variables CSS:
 En el landing y en los paneles, importar `colors.css` y usar las variables
 (`var(--color-background)`, etc.) en lugar de escribir los HEX. Los códigos HEX
 no están repetidos a mano en ningún otro archivo del repositorio.
+
+`colors-dark.css` repite esos mismos nombres con los valores del tema oscuro,
+dentro de `:root[data-theme="dark"]`. **Va aparte a propósito**: `build_logo.py`
+solo lee `colors.css` y se queda con el último valor de cada nombre, así que una
+definición oscura en ese archivo acabaría dentro del logo generado.
 
 ## Posición
 

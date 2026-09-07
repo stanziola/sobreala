@@ -46,7 +46,7 @@ NAV = [
     {"label": "Nosotros", "url": "/nosotros/"},
 ]
 
-CTA_PRIMARY = {"label": "Hablemos por WhatsApp", "kind": "whatsapp"}
+CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}
 CTA_SECONDARY = {"label": "Ver planes y precios", "url": "/precios/"}
 
 # --------------------------------------------------------------------------- home

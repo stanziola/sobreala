@@ -220,7 +220,13 @@ def build_fonts() -> list[dict]:
 def write_css(faces: list[dict]) -> Path:
     """assets/css/site.css = brand color variables + @font-face + src/site.css."""
     colors = (BRAND_DIR / "colors.css").read_text(encoding="utf-8")
-    colors = re.sub(r"/\*.*?\*/\s*", "", colors, count=1, flags=re.S)  # drop the header comment
+    header_comment = re.compile(r"/\*.*?\*/\s*", re.S)
+    colors = header_comment.sub("", colors, count=1)
+    # The dark palette lives in its own file so build_logo.py never sees it:
+    # that parser keeps the last value of each variable name.
+    dark = BRAND_DIR / "colors-dark.css"
+    if dark.exists():
+        colors += "\n" + header_comment.sub("", dark.read_text(encoding="utf-8"), count=1)
     face_tpl = (
         "@font-face {{\n"
         "  font-family: \"{family}\";\n"

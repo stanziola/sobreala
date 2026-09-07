@@ -48,7 +48,23 @@
   /* Text and surfaces. */
   --color-ink: #0E1B2A;           /* body text; 17.4:1 on white */
   --color-ink-soft: #51617A;      /* secondary text; 6.3:1 on white */
-  --color-surface: #FFFFFF;
+  --color-page: #FFFFFF;          /* page background */
+  --color-surface: #FFFFFF;       /* cards and panels sitting on the page */
   --color-surface-alt: #F1F6FC;   /* alternating section background */
   --color-border: #D7E2EE;
+
+  /* Text and light chips placed ON the dark blue surfaces: header, hero, deep
+   * sections and footer. Separate from --color-surface because in dark mode the
+   * cards go dark while this has to stay near-white. */
+  --color-on-dark: #FFFFFF;
+
+  /* Text on the sky-blue accent (buttons, badges, step numbers). Dark in BOTH
+   * themes: the accent stays light, so this cannot follow --color-ink. */
+  --color-on-accent: #0E1B2A;
+
+  /* Elevation. Here rather than in site.css so the dark palette can restate
+   * them: a translucent black shadow is invisible on a dark page. */
+  --shadow-sm: 0 1px 2px rgba(14, 27, 42, .06), 0 1px 3px rgba(14, 27, 42, .08);
+  --shadow: 0 6px 20px rgba(14, 27, 42, .10);
+  --shadow-lg: 0 18px 48px rgba(14, 27, 42, .16);
 }

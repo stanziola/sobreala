@@ -15,7 +15,22 @@
 <meta property="og:url" content="https://panamails.com/precios/">
 <meta property="og:image" content="https://panamails.com/assets/img/logo.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#3166A7">
+<meta name="theme-color" content="#3166A7" id="theme-color">
+<script>
+  // Runs before the stylesheet so the page never paints the wrong theme.
+  (function () {
+    var t;
+    try { t = localStorage.getItem("theme"); } catch (e) {}
+    if (t !== "dark" && t !== "light") {
+      t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.dataset.theme = t;
+    if (t === "dark") {
+      var m = document.getElementById("theme-color");
+      if (m) m.setAttribute("content", "#245285");
+    }
+  })();
+</script>
 
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -43,11 +58,17 @@
       <span class="brand__name">Panamails</span>
     </a>
 
-    <button class="nav-toggle" id="nav-toggle" type="button"
+    <div class="header-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Cambiar de tema">
+        <span class="theme-toggle__sun"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></span>
+        <span class="theme-toggle__moon"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 14.4A8.8 8.8 0 0 1 9.6 3.5a8.8 8.8 0 1 0 10.9 10.9Z"/></svg></span>
+      </button>
+      <button class="nav-toggle" id="nav-toggle" type="button"
             aria-expanded="false" aria-controls="site-nav">
       <span class="nav-toggle__bars" aria-hidden="true"><span></span><span></span><span></span></span>
       <span class="nav-toggle__label">Menú</span>
-    </button>
+      </button>
+    </div>
 
     <nav class="site-nav" id="site-nav" aria-label="Navegación principal">
       <ul class="site-nav__list">
@@ -77,10 +98,12 @@
         </li>
       </ul>
       <a class="btn btn--primary site-nav__cta" href="https://wa.me/50768935742?text=Hola%2C%20me%20interesa%20Panamails%20para%20mi%20negocio."
-         target="_blank" rel="noopener">Hablemos por WhatsApp</a>
+         target="_blank" rel="noopener">Contáctanos por WhatsApp</a>
     </nav>
   </div>
 </header>
+
+<span class="visually-hidden" role="status" id="theme-status"></span>
 
 <main id="contenido">
 

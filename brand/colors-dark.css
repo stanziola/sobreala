@@ -1,0 +1,56 @@
+/*
+ * Panamails dark palette.
+ *
+ * Same variable names as colors.css, with the values the site uses when the
+ * dark theme is active. Only the site reads this file.
+ *
+ * IMPORTANT: this must NOT be merged into colors.css. brand/build_logo.py parses
+ * that file for `--name: #RRGGBB;` declarations and keeps the LAST value of each
+ * name, so a dark redefinition of --color-background would end up baked into the
+ * generated logo and favicons.
+ *
+ * Applied when the root element carries data-theme="dark", which an inline
+ * script in the page head sets before the first paint, from the saved choice or
+ * the visitor's system preference.
+ *
+ * Every text pair below was measured against WCAG AA: at least 4.5:1 for normal
+ * text and 3:1 for large text. The surfaces form a ladder, each step visibly
+ * lighter than the one under it:
+ *
+ *     page  <  surface-alt  <  surface (cards)  <  deep  <  background
+ */
+:root[data-theme="dark"] {
+  /* Header and hero. The brand blue, darkened so it does not glare at night. */
+  --color-background: #245285;
+
+  /* The wing keeps its own colors in both themes: it is the logo. */
+  --color-logo: #EFEEEC;
+  --color-shadow: #000000;
+
+  /* Sky blues. The accent is unchanged; the link tone is lifted, because the
+   * light-mode one (#136A9B) is too dark to read on a dark background. */
+  --color-accent: #31A9E8;        /* buttons and marks; --color-ink goes on top */
+  --color-accent-strong: #5CBDF0; /* links and hover; 8.8:1 on the page */
+  --color-accent-soft: #1B3A57;   /* chips and quiet highlights */
+  --color-accent-light: #CFEBFA;  /* text over the brand blue; 6.5:1 */
+
+  /* Panels and bands: footer, the four-steps section, the table head. */
+  --color-deep: #1D3F63;
+
+  /* Text and surfaces. */
+  --color-ink: #E9EFF6;           /* body text; 16:1 on the page */
+  --color-ink-soft: #A2B4C9;      /* secondary text; 8.7:1 on the page */
+  --color-page: #0A1420;          /* page background */
+  --color-surface: #182B42;       /* cards, a visible step above the page */
+  --color-surface-alt: #101C2B;   /* alternating section background */
+  --color-border: #38577A;
+
+  /* Stays near-white: it is the text on the blue and deep surfaces. */
+  --color-on-dark: #F3F7FB;
+
+  /* Black shadows disappear on a dark page, so they are deeper and a soft ring
+   * of light does the lifting instead. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .40);
+  --shadow: 0 8px 24px rgba(0, 0, 0, .48);
+  --shadow-lg: 0 20px 52px rgba(0, 0, 0, .60);
+}
