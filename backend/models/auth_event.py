@@ -39,6 +39,7 @@ BAD_CREDENTIALS = "bad_credentials"    # login: wrong address or password
 SENT = "sent"                          # resend: a fresh link went out
 NO_ACCOUNT = "no_account"              # resend: nothing to send to
 ALREADY_CONFIRMED = "already_confirmed"  # resend: address was verified already
+MAIL_FAILED = "mail_failed"            # the account is fine, the email did not go out
 
 # The confirm route reports the same four states it shows the visitor.
 CONFIRM_OUTCOMES = ("ok", "already", "expired", "unknown")

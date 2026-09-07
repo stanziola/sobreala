@@ -34,6 +34,11 @@ from typing import Any
 from config import Config
 from models import mail_log
 
+# Every socket step gets this long at most. Kept well under gunicorn's 60s
+# request timeout: a provider that never answers has to fail inside the
+# request, because a worker killed mid-send answers the visitor with a bare 502.
+SMTP_TIMEOUT = 10
+
 
 def send(to: str, subject: str, html: str, text: str, *,
          purpose: str = "", account_id: Any = None) -> str:
@@ -161,9 +166,10 @@ def _send_smtp(to: str, subject: str, html: str, text: str) -> str:
     context = ssl.create_default_context()
     if Config.MAIL_SMTP_SSL:
         server = smtplib.SMTP_SSL(Config.MAIL_SMTP_HOST, Config.MAIL_SMTP_PORT,
-                                  context=context, timeout=20)
+                                  context=context, timeout=SMTP_TIMEOUT)
     else:
-        server = smtplib.SMTP(Config.MAIL_SMTP_HOST, Config.MAIL_SMTP_PORT, timeout=20)
+        server = smtplib.SMTP(Config.MAIL_SMTP_HOST, Config.MAIL_SMTP_PORT,
+                              timeout=SMTP_TIMEOUT)
     with server:
         if not Config.MAIL_SMTP_SSL:
             server.starttls(context=context)

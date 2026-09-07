@@ -72,15 +72,18 @@ def test_the_already_registered_notice_is_recorded_too(client, database, outbox)
     assert "ya tiene una cuenta" in notice["text"]
 
 
-def test_a_failed_send_is_recorded_and_the_error_still_travels(client, database,
-                                                               outbox, monkeypatch):
+def test_a_failed_send_is_recorded_and_registration_still_completes(
+        client, database, outbox, monkeypatch):
     def explode(*args, **kwargs):
         raise RuntimeError("el proveedor rechazo el mensaje")
 
     monkeypatch.setattr(mailer, "_send_file", explode)
 
-    with pytest.raises(RuntimeError):
-        register(client)
+    # The provider being unreachable is not the visitor's problem: the account
+    # exists, so the same screen is shown and the failure lives in the log.
+    response = register(client)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/revisa-tu-correo")
 
     row = database.mail_log.find_one({})
     assert row["status"] == mail_log.FAILED
@@ -93,7 +96,7 @@ def test_a_failed_send_is_recorded_and_the_error_still_travels(client, database,
     # And the trail shows the account did get created before the mail failed:
     # that pairing is the whole point of recording both.
     assert accounts.by_email(database, "ana@ejemplo.com") is not None
-    assert outcomes(database, events.REGISTER) == [events.CREATED]
+    assert outcomes(database, events.REGISTER) == [events.CREATED, events.MAIL_FAILED]
 
 
 def test_a_log_failure_never_stops_the_mail(client, database, outbox, monkeypatch):

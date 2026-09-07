@@ -124,6 +124,24 @@ def send_already_registered(db, account: dict) -> None:
     )
 
 
+def deliver(db, send, account: dict, *, kind: str) -> None:
+    """Send a system email without letting a failure break the request.
+
+    The account already exists by the time this runs, and an unreachable mail
+    provider cannot undo it — nor change what the visitor is told, since rule 7
+    requires the same screen either way. mail_log keeps the row with the real
+    error; this adds one auth_event so the failure shows up beside the attempt
+    it belongs to.
+    """
+    try:
+        send(db, account)
+    except Exception as exc:  # noqa: BLE001 - reported, not handled
+        print(f"  [mailer] no se pudo enviar el correo a {account.get('email')}: "
+              f"{type(exc).__name__}: {str(exc)[:160]}", flush=True)
+        log_auth(db, kind, events.MAIL_FAILED, email=account.get("email", ""),
+                 account_id=account.get("_id"))
+
+
 # ------------------------------------------------------------------- register
 
 @bp.route("/registro", methods=["GET", "POST"])
@@ -177,7 +195,7 @@ def register():
                 if created:
                     log_auth(db, events.REGISTER, events.CREATED, email=email,
                              account_id=created["_id"])
-                    send_confirmation(db, created)
+                    deliver(db, send_confirmation, created, kind=events.REGISTER)
                 else:
                     # Address already registered. Same screen either way; only
                     # the log and the owner's inbox know the difference.
@@ -186,7 +204,8 @@ def register():
                              email=email,
                              account_id=existing["_id"] if existing else None)
                     if existing:
-                        send_already_registered(db, existing)
+                        deliver(db, send_already_registered, existing,
+                                kind=events.REGISTER)
                 return redirect(url_for("auth.sent"))
 
     return render_template("register.html", form=form, errors=errors)
@@ -268,7 +287,8 @@ def resend():
                     else:
                         log_auth(db, events.RESEND, events.SENT, email=email,
                                  account_id=existing["_id"])
-                        send_confirmation(db, existing)
+                        deliver(db, send_confirmation, existing,
+                                kind=events.RESEND)
                 return redirect(url_for("auth.sent"))
 
     return render_template("resend.html", errors=errors, email=email_value)
