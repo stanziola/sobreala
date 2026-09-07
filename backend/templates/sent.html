@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ t('sent_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('sent_title') }}</h1>
+  <p class="lead">{{ t('sent_lead', hours=hours) }}</p>
+  <p class="hint">{{ t('sent_hint') }}</p>
+  <p class="foot"><a href="{{ url_for('auth.resend') }}">{{ t('sent_resend') }}</a></p>
+</div>
+{% endblock %}

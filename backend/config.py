@@ -1,0 +1,85 @@
+"""Configuration read from the environment, with development defaults.
+
+Nothing secret has a default that would work in production: SECRET_KEY refuses
+to fall back once FLASK_ENV is not development, so a deploy cannot start with a
+predictable session key by accident.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent
+
+load_dotenv(ROOT_DIR / ".env")
+
+
+def _bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    return default if raw is None else raw.strip().lower() in ("1", "true", "yes", "on")
+
+
+class Config:
+    ENV = os.getenv("FLASK_ENV", "development")
+    DEBUG = ENV == "development"
+
+    # --- session -----------------------------------------------------------
+    SECRET_KEY = os.getenv("SECRET_KEY") or ("dev-only-insecure-key" if DEBUG else "")
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = _bool("SESSION_COOKIE_SECURE", not DEBUG)
+    PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 14  # two weeks
+
+    # --- database ----------------------------------------------------------
+    # An Atlas cluster goes here as mongodb+srv://user:password@host/... The
+    # password lives in .env, which is git-ignored, and Atlas needs the server's
+    # address on its allowlist. The local server is only the fallback.
+    MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017")
+    # panamails and panamails_demo in the cluster hold two earlier attempts
+    # with a different data model; this application keeps its own database.
+    MONGODB_DB = os.getenv("MONGODB_DB", "panamails_app")
+    # Tests never touch the real cluster: they use this one and drop it.
+    MONGODB_TEST_URI = os.getenv("MONGODB_TEST_URI", "mongodb://127.0.0.1:27017")
+    MONGODB_TEST_DB = os.getenv("MONGODB_TEST_DB", "panamails_test")
+
+    # --- email -------------------------------------------------------------
+    # "file" writes the message to MAIL_OUTBOX_DIR and prints the link, so the
+    # whole flow can be exercised while SES is still in its sandbox.
+    MAIL_BACKEND = os.getenv("MAIL_BACKEND", "file")
+    MAIL_OUTBOX_DIR = os.getenv("MAIL_OUTBOX_DIR", str(BASE_DIR / ".mail_outbox"))
+    SYSTEM_FROM_EMAIL = os.getenv("SYSTEM_FROM_EMAIL", "cuenta@mail.panamails.com")
+    SYSTEM_FROM_NAME = os.getenv("SYSTEM_FROM_NAME", "Panamails")
+    # System mail keeps its own SES configuration set: a client's campaign
+    # bounces must never affect whether confirmation mail is delivered.
+    SES_TRANSACTIONAL_CONFIGURATION_SET = os.getenv("SES_TRANSACTIONAL_CONFIGURATION_SET", "")
+    AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+
+    # SMTP, only for MAIL_BACKEND=smtp. A bridge until SES leaves the sandbox.
+    # MAIL_SMTP_FROM must be the mailbox that authenticates: sending as another
+    # domain through someone else's SMTP fails SPF and DKIM and lands in spam.
+    MAIL_SMTP_HOST = os.getenv("MAIL_SMTP_HOST", "smtp.gmail.com")
+    MAIL_SMTP_PORT = int(os.getenv("MAIL_SMTP_PORT", "587"))
+    MAIL_SMTP_SSL = _bool("MAIL_SMTP_SSL", False)  # False uses STARTTLS on 587
+    MAIL_SMTP_USER = os.getenv("MAIL_SMTP_USER", "")
+    MAIL_SMTP_PASSWORD = os.getenv("MAIL_SMTP_PASSWORD", "")
+    MAIL_SMTP_FROM = os.getenv("MAIL_SMTP_FROM", "") or os.getenv("MAIL_SMTP_USER", "")
+
+    # --- links and tokens --------------------------------------------------
+    APP_BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:5000").rstrip("/")
+    CONFIRMATION_TOKEN_HOURS = int(os.getenv("CONFIRMATION_TOKEN_HOURS", "24"))
+    # Used tokens stay this long after expiring so an expired link can be told
+    # apart from one that never existed, and answered with a useful message.
+    TOKEN_GRACE_DAYS = int(os.getenv("TOKEN_GRACE_DAYS", "7"))
+
+    @classmethod
+    def check(cls) -> None:
+        if not cls.SECRET_KEY:
+            raise RuntimeError("SECRET_KEY is required outside development")
+        if cls.MAIL_BACKEND not in ("file", "smtp", "ses"):
+            raise RuntimeError(f"unknown MAIL_BACKEND: {cls.MAIL_BACKEND!r}")
+        if cls.MAIL_BACKEND == "smtp" and not cls.MAIL_SMTP_USER:
+            raise RuntimeError("MAIL_BACKEND=smtp needs MAIL_SMTP_USER and MAIL_SMTP_PASSWORD")

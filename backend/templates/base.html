@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ t('brand') }}{% endblock %} · {{ t('brand') }}</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/panel.css">
+</head>
+<body>
+<header class="bar">
+  <a class="bar__brand" href="/">{{ t('brand') }}</a>
+  {% block bar_actions %}{% endblock %}
+</header>
+
+<main class="wrap">
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>
