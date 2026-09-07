@@ -12,6 +12,9 @@ Two backends, chosen with MAIL_BACKEND:
         Read the caveat on MAIL_SMTP_* in config.py before using it.
   ses   Amazon SES over its HTTPS API, never SMTP, as decided in CLAUDE.md.
 
+Every attempt is written to the mail_log collection, whichever backend was used
+and whether or not it worked, so what left the server can be read back later.
+
 These are TRANSACTIONAL messages. They carry no unsubscribe link and no
 watermark: those rules belong to client campaigns, not to the mail that lets
 someone into their account.
@@ -26,17 +29,54 @@ from datetime import datetime, timezone
 from email.message import EmailMessage
 from email.utils import formataddr
 from pathlib import Path
+from typing import Any
 
 from config import Config
+from models import mail_log
 
 
-def send(to: str, subject: str, html: str, text: str) -> str:
-    """Send one message. Returns an identifier for the log."""
-    if Config.MAIL_BACKEND == "ses":
-        return _send_ses(to, subject, html, text)
-    if Config.MAIL_BACKEND == "smtp":
-        return _send_smtp(to, subject, html, text)
-    return _send_file(to, subject, html, text)
+def send(to: str, subject: str, html: str, text: str, *,
+         purpose: str = "", account_id: Any = None) -> str:
+    """Send one message. Returns an identifier for the log.
+
+    The attempt is recorded either way. On failure the row is written first and
+    the original exception is then allowed to travel, so the caller still sees
+    the real error while the evidence survives.
+    """
+    backend = Config.MAIL_BACKEND if Config.MAIL_BACKEND in ("ses", "smtp") else "file"
+    try:
+        if backend == "ses":
+            identifier = _send_ses(to, subject, html, text)
+        elif backend == "smtp":
+            identifier = _send_smtp(to, subject, html, text)
+        else:
+            identifier = _send_file(to, subject, html, text)
+    except Exception as exc:
+        _record(to=to, subject=subject, backend=backend, status=mail_log.FAILED,
+                html=html, text=text, purpose=purpose, account_id=account_id,
+                error=f"{type(exc).__name__}: {exc}")
+        raise
+    _record(to=to, subject=subject, backend=backend, status=mail_log.SENT,
+            html=html, text=text, purpose=purpose, account_id=account_id,
+            provider_id=str(identifier))
+    return identifier
+
+
+def _record(**fields) -> None:
+    """Write one row to mail_log. Never raises.
+
+    The message has already been handed to the provider by the time this runs,
+    so a database that is unreachable must not turn a delivered mail into a
+    failed request. The reason goes to the platform log instead.
+    """
+    try:
+        # Imported here so this module can be used, and tested, without the
+        # database being reachable at import time.
+        from db import get_db
+        mail_log.record(get_db(), **fields)
+    except Exception as exc:  # noqa: BLE001 - reported, not handled
+        print(f"  [mail_log] no se pudo registrar el correo: "
+              f"{type(exc).__name__}: {str(exc)[:160]}", flush=True)
 
 
 def _from_address() -> str:

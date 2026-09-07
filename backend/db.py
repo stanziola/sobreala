@@ -13,7 +13,7 @@ time: the platform then served an opaque 502 with nothing readable anywhere.
 
 from __future__ import annotations
 
-from pymongo import ASCENDING, MongoClient
+from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.database import Database
 
 from config import Config
@@ -65,6 +65,19 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.rate_limits.create_index([("key", ASCENDING)], name="by_key")
     db.rate_limits.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
                                 name="ttl_expires_at")
+
+    # Every system email that was attempted, body included, so a confirmation
+    # that never arrived can be read back exactly as it left.
+    db.mail_log.create_index([("to_normalized", ASCENDING)], name="by_to")
+    db.mail_log.create_index([("created_at", DESCENDING)], name="by_created_at")
+
+    # Audit trail of registration and sign-in attempts. No TTL here on purpose,
+    # unlike the two collections above: the history is kept until someone
+    # decides otherwise, because that is what an abuse report is investigated
+    # with weeks after the fact.
+    db.auth_events.create_index([("email_normalized", ASCENDING)], name="by_email")
+    db.auth_events.create_index([("ip", ASCENDING)], name="by_ip")
+    db.auth_events.create_index([("created_at", DESCENDING)], name="by_created_at")
 
 
 def indexes_ready() -> bool:

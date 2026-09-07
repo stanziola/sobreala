@@ -1,0 +1,15 @@
+{# Error page. The handler in app.py resolves every string and passes it in
+   already translated, so a missing key cannot raise while an error is already
+   being handled. No links either: when the database is down every destination
+   leads to this same page, and url_for can itself fail mid-error. #}
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ title }}</h1>
+  <p class="lead">{{ lead }}</p>
+  <p class="hint">{{ hint }}</p>
+</div>
+{% endblock %}

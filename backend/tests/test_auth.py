@@ -6,7 +6,7 @@ from datetime import timedelta
 from urllib.parse import urlparse
 
 import pytest
-from conftest import link_from_outbox, register
+from conftest import link_from_outbox, login, register
 
 from models import account as accounts
 from models import token as tokens
@@ -151,14 +151,6 @@ def test_resend_answers_the_same_for_an_unknown_address(client, database, outbox
 
 
 # ------------------------------------------------------------------------ login
-
-def login(client, email="ana@ejemplo.com", password="contrasena-larga"):
-    client.get("/entrar")
-    with client.session_transaction() as sess:
-        csrf = sess["_csrf"]
-    return client.post("/entrar", data={"csrf_token": csrf, "email": email,
-                                        "password": password})
-
 
 def test_login_and_logout(client, database):
     register(client)

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template, request
+from pymongo.errors import PyMongoError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
@@ -58,6 +59,33 @@ def create_app(overrides: dict | None = None) -> Flask:
     def index():
         from flask import redirect, url_for
         return redirect(url_for("auth.login"))
+
+    def error_page(title_key: str, lead_key: str) -> str:
+        """The error page, with a plain-text fallback.
+
+        Raising inside an error handler produces exactly the blank server page
+        this exists to replace, so nothing here may throw.
+        """
+        try:
+            return render_template("error.html", title=t(title_key),
+                                   lead=t(lead_key), hint=t("error_retry"))
+        except Exception:  # noqa: BLE001 - last resort, must not raise
+            return "El servicio no está disponible. Intenta de nuevo en unos minutos."
+
+    # An unreachable database is the one dependency that fails while the
+    # application itself is fine. It used to surface as the server's bare
+    # "Internal Server Error", which tells the visitor nothing and whoever has
+    # to fix it even less. 503 rather than 500 because it is temporary, and the
+    # exception text stays in the platform log, never on the screen.
+    @app.errorhandler(PyMongoError)
+    def database_unavailable(exc):
+        app.logger.exception("base de datos inaccesible en %s", request.path)
+        return error_page("error_db_title", "error_db_lead"), 503
+
+    @app.errorhandler(500)
+    def internal_error(exc):
+        app.logger.exception("error no manejado en %s", request.path)
+        return error_page("error_unknown_title", "error_unknown_lead"), 500
 
     @app.get("/salud")
     def salud():

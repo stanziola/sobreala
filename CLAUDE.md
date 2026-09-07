@@ -162,6 +162,23 @@ Un registro por evento de SES (enviado, entregado, rebote, queja, apertura,
 clic). Es lo que más crece: ~3 eventos por correo, ~200 bytes cada uno.
 **Retención: 12 meses en detalle, después solo totales por campaña.**
 
+### `mail_log`
+Un documento por cada **correo del sistema** que se intentó enviar, con el
+cuerpo completo: destinatario, asunto, backend usado, `sent` o `failed`, el
+error si falló, el HTML y el texto tal como salieron. Es lo que permite
+responder qué salió del servidor cuando alguien dice que no le llegó la
+confirmación. No cubre campañas de clientes, que llevan su propia contabilidad.
+
+### `auth_events`
+Un documento por cada intento de registro, entrada, reenvío, confirmación y
+salida: `kind`, `outcome`, la dirección, `account_id` cuando se conoce, IP y
+navegador. **La contraseña no se guarda nunca, en ninguna forma.**
+
+Las dos son internas, solo las lee el admin, y **ninguna tiene TTL**: el
+historial se conserva hasta que se decida otra cosa. `auth_events` registra la
+verdad, `already_registered` incluido; la regla 7 gobierna lo que se le dice al
+visitante, no lo que la plataforma sabe de su propio tráfico.
+
 ---
 
 ## Reglas que no se pueden violar

@@ -73,6 +73,13 @@ Devuelve JSON y se lee desde fuera, sin entrar a ningún panel:
 | `503` con `database: down` | La aplicación vive pero no alcanza Atlas. Casi siempre la lista de acceso de Atlas, que debe permitir cualquier origen porque Railway no tiene dirección fija |
 | `502` y ni siquiera contesta | No llega a la aplicación. Si el 502 lo firma Cloudflare, mira el proxy del registro DNS antes que el código |
 
+**Lo que ve el visitante cuando la base no responde.** Un 503 con una página en
+español que dice que el servicio no está disponible, no el «Internal Server
+Error» pelado del servidor. Las páginas que no consultan la base, como los
+formularios de entrada y registro, siguen dibujándose normalmente: por eso un
+Atlas inaccesible se veía antes como un sitio que carga pero revienta al enviar
+cualquier formulario. El detalle técnico se queda en los registros de Railway.
+
 `indexes` dice si los índices están creados. **La aplicación no los crea al
 arrancar a propósito**: antes sí lo hacía, y una base momentáneamente inaccesible
 mataba todos los procesos al importar, lo que la plataforma reportaba como un 502
@@ -87,7 +94,8 @@ en `.gitignore`, y la dirección del servidor debe estar en la lista de acceso d
 Atlas. Railway usa direcciones que cambian, así que lo habitual ahí es permitir
 cualquier origen y proteger la base con credenciales fuertes.
 
-Los índices se crean solos al arrancar, en `db.py`. Los tres que importan:
+Los índices los define `db.py` y se crean de forma perezosa, en la primera
+petición que lo consiga, no al arrancar. Los tres que importan:
 
 - `accounts.email_normalized` **único**: impide cuentas repetidas aunque dos
   registros lleguen a la vez.
@@ -95,6 +103,40 @@ Los índices se crean solos al arrancar, en `db.py`. Los tres que importan:
 - `account_tokens.purge_at` **TTL**: Mongo borra el token pasado su vencimiento
   más siete días de margen. Ese margen es lo que permite responder «este enlace
   venció» en vez de «este enlace no existe».
+
+### Colecciones de registro
+
+Dos bitácoras. Las dos son internas: solo las lee el administrador, nunca el
+cliente.
+
+| Colección | Qué guarda |
+|---|---|
+| `mail_log` | Un documento por cada correo del sistema que se intentó enviar, **con el cuerpo completo**. Destinatario, asunto, backend usado, `status` (`sent` o `failed`), el identificador que devolvió el proveedor, el error si falló, el HTML y el texto tal como salieron, y `purpose` (`confirm` o `exists`) |
+| `auth_events` | Un documento por cada intento de registro, entrada, reenvío, confirmación y salida. `kind`, `outcome`, la dirección tal como se escribió y normalizada, `account_id` cuando se conoce, IP y navegador |
+
+Se guarda el cuerpo del correo porque cuando alguien dice que no le llegó la
+confirmación, la pregunta útil es qué salió exactamente del servidor, y hay que
+poder responderla meses después.
+
+**Ninguna de las dos tiene índice TTL**, a diferencia de `account_tokens` y
+`rate_limits`. El historial se conserva hasta que se decida otra cosa: es con lo
+que se investiga un abuso o un «no puedo entrar» semanas más tarde. Cada
+documento de `auth_events` pesa unos 300 bytes, así que cien mil intentos son
+unos 30 MB.
+
+Tres cosas que conviene no perder de vista:
+
+- **La contraseña no se escribe nunca en ninguna de las dos**, ni en claro, ni
+  truncada, ni como hash. Hay una prueba que recorre los dos registros y falla
+  si aparece.
+- **`auth_events` sabe más que la pantalla, a propósito.** Guarda
+  `already_registered` y el `account_id` de un intento fallido contra una cuenta
+  real. La regla 7 de `CLAUDE.md` dice qué se le cuenta al visitante, no que la
+  plataforma deba ignorar su propio tráfico. Es lo que hace visible un ataque de
+  fuerza bruta contra una cuenta concreta.
+- **No sirven para diagnosticar una base caída.** Viven en el mismo Mongo, así
+  que si Atlas no responde no se escribe nada. Para eso están `/salud` y los
+  registros de Railway.
 
 ## Decisiones que conviene no deshacer
 

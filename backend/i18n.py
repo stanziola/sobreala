@@ -85,6 +85,20 @@ TEXTS = {
     "error_csrf": "El formulario venció. Vuelve a intentarlo.",
     "error_too_many": "Demasiados intentos. Espera unos minutos y vuelve a probar.",
 
+    # --- error pages -------------------------------------------------------
+    # Shown instead of the server's own blank error page. The technical detail
+    # stays in the platform log; the visitor gets something they can act on.
+    "error_db_title": "El servicio no está disponible",
+    "error_db_lead": "No logramos conectar con la base de datos. Es un problema "
+                     "temporal de nuestro lado: no tiene que ver con tu cuenta "
+                     "ni con tu conexión, y no se perdió nada de lo que ya "
+                     "tenías guardado.",
+    "error_unknown_title": "Algo salió mal",
+    "error_unknown_lead": "Tuvimos un problema inesperado al procesar lo que "
+                          "pediste. Ya quedó anotado de nuestro lado.",
+    "error_retry": "Vuelve a intentarlo en unos minutos. Si sigue pasando, "
+                   "escríbenos y lo revisamos.",
+
     # --- emails ------------------------------------------------------------
     "mail_confirm_subject": "Confirma tu correo en Panamails",
     "mail_confirm_heading": "Confirma tu correo",
