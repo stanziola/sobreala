@@ -196,13 +196,25 @@ input {
   border: 1px solid var(--color-border); border-radius: 8px;
 }
 input:focus { border-color: var(--color-accent); }
-/* Six digits, read one by one: wide spacing and figures that cannot be
-   mistaken for letters. */
-.input--code {
-  max-width: 260px; padding: 14px 16px;
-  font-family: Consolas, Menlo, monospace; font-size: 1.6rem; font-weight: 700;
-  letter-spacing: .35em; text-align: center;
+/* One box per digit. Monospace and centred, so the six read as six. */
+.code { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; max-width: 320px; }
+.code__box {
+  width: 100%; padding: 12px 0;
+  font-family: Consolas, Menlo, monospace; font-size: 1.5rem; font-weight: 700;
+  text-align: center; caret-color: var(--color-accent);
 }
+.code__box:disabled, .btn:disabled {
+  opacity: .5; cursor: not-allowed; filter: grayscale(.4);
+}
+.btn:disabled:hover { transform: none; filter: grayscale(.4); }
+
+/* How long the code has left. What it says decides nothing: the expiry that
+   counts is the one in the database. */
+.countdown {
+  margin-top: 14px; font-size: .95rem; font-weight: 600;
+  color: var(--color-accent-strong);
+}
+.countdown.is-expired { color: var(--color-ink-soft); font-weight: 500; }
 .hint { margin-top: 6px; font-size: .85rem; color: var(--color-ink-soft); }
 
 /* A field with a button inside it: the eye that reveals the password. */

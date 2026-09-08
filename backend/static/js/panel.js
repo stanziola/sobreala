@@ -118,3 +118,112 @@
   // The browser may fill the field on its own: the list must not lie on load.
   repasar();
 })();
+
+/* The six code boxes and the countdown above them. Third block of its own, so
+   a page without any of this does not pay for it. */
+(function () {
+  "use strict";
+
+  // --- the countdown -------------------------------------------------------
+  // The server drew the starting state; this only makes the clock run. What it
+  // shows decides nothing: the code's real expiry lives in the database.
+  var clock = document.querySelector("[data-countdown]");
+  var live = clock && clock.querySelector("[data-countdown-live]");
+  var done = clock && clock.querySelector("[data-countdown-done]");
+  var form = document.querySelector("[data-code-form]");
+  var left = clock ? parseInt(clock.dataset.countdown, 10) : 0;
+
+  function say(seconds) {
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function expire() {
+    if (live) live.hidden = true;
+    if (done) done.hidden = false;
+    if (clock) clock.classList.add("is-expired");
+    if (!form) return;
+    // Nobody should spend a try on something the server will refuse anyway.
+    Array.prototype.forEach.call(form.querySelectorAll("input.code__box, button"),
+                                 function (el) { el.disabled = true; });
+  }
+
+  if (clock && left > 0) {
+    live.textContent = clock.dataset.label.replace("{time}", say(left));
+    var tick = setInterval(function () {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(tick);
+        expire();
+        return;
+      }
+      live.textContent = clock.dataset.label.replace("{time}", say(left));
+    }, 1000);
+  }
+
+  // --- the boxes -----------------------------------------------------------
+  var group = document.querySelector("[data-code]");
+  if (!group) return;
+  var boxes = Array.prototype.slice.call(group.querySelectorAll(".code__box"));
+
+  function digitsOf(text) {
+    return (text || "").replace(/\D/g, "");
+  }
+
+  function fillFrom(index, digits) {
+    for (var i = 0; i < digits.length && index + i < boxes.length; i++) {
+      boxes[index + i].value = digits.charAt(i);
+    }
+    var last = Math.min(index + digits.length, boxes.length - 1);
+    boxes[last].focus();
+    boxes[last].select();
+    return index + digits.length >= boxes.length;
+  }
+
+  function complete() {
+    return boxes.every(function (b) { return b.value !== ""; });
+  }
+
+  boxes.forEach(function (box, index) {
+    box.addEventListener("input", function () {
+      var digits = digitsOf(box.value);
+      if (!digits) {
+        box.value = "";
+        return;
+      }
+      // Typing over a full box, or a phone dropping the whole code in at once.
+      box.value = digits.charAt(0);
+      if (digits.length > 1) fillFrom(index, digits);
+      else if (index < boxes.length - 1) boxes[index + 1].focus();
+      if (complete() && form) form.requestSubmit ? form.requestSubmit() : form.submit();
+    });
+
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Backspace" && !box.value && index > 0) {
+        // Backspace on an empty box steps back, which is what the hand expects.
+        e.preventDefault();
+        boxes[index - 1].value = "";
+        boxes[index - 1].focus();
+      } else if (e.key === "ArrowLeft" && index > 0) {
+        e.preventDefault();
+        boxes[index - 1].focus();
+      } else if (e.key === "ArrowRight" && index < boxes.length - 1) {
+        e.preventDefault();
+        boxes[index + 1].focus();
+      }
+    });
+
+    box.addEventListener("paste", function (e) {
+      var pasted = digitsOf((e.clipboardData || window.clipboardData).getData("text"));
+      if (!pasted) return;
+      e.preventDefault();
+      var filled = fillFrom(index, pasted);
+      if (filled && complete() && form) {
+        form.requestSubmit ? form.requestSubmit() : form.submit();
+      }
+    });
+
+    box.addEventListener("focus", function () { box.select(); });
+  });
+})();

@@ -43,6 +43,9 @@ TEXTS = {
     "confirm_code": "Código de 6 dígitos",
     "confirm_submit": "Confirmar mi correo",
     "confirm_resend": "Pedir otro código",
+    "confirm_countdown": "Vence en {time}",
+    "confirm_expired": "El código venció. Pide uno nuevo y te lo enviamos al "
+                       "momento.",
 
     # --- resend ------------------------------------------------------------
     "resend_title": "Pedir otro código",

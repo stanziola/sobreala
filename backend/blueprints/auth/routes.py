@@ -16,6 +16,7 @@ Four rules run through the whole file:
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from ipaddress import ip_address
 
 from bson import ObjectId
@@ -33,8 +34,8 @@ from models import mail_log
 from models import session as sessions
 from models import token as tokens
 from services import mailer
-from services.security import (csrf_ok, hash_password, password_problem,
-                               rate_limit, verify_password)
+from services.security import (csrf_ok, hash_password, now as security_now,
+                               password_problem, rate_limit, verify_password)
 
 bp = Blueprint("auth", __name__)
 
@@ -66,6 +67,7 @@ PASSWORD_MESSAGES = {
 # because the screen has to answer the same way when there is no code at all.
 PENDING_KEY = "pending_account_id"
 ATTEMPTS_KEY = "confirm_attempts"
+DEADLINE_KEY = "code_expires_at"
 # Lo único que identifica una sesión: el resto vive en la colección sessions.
 SESSION_KEY = "sid"
 
@@ -130,10 +132,36 @@ def sign_in(account: dict, *, remember: bool = True) -> None:
     session.permanent = remember
 
 
-def await_code(account_id) -> None:
-    """Remember which account the next code belongs to, and start its counter."""
-    session[PENDING_KEY] = str(account_id)
+def await_code(account_id=None) -> None:
+    """Start the wait for a code: which account it belongs to, if any, and the
+    deadline the screen counts down to.
+
+    The deadline is written even when no code was issued —an address that was
+    already taken, a resend for one that does not exist— because the screen has
+    to look the same in every case. A countdown that only appeared when a code
+    was really sent would answer, without saying it, the one question rule 7
+    forbids: whether that address has an account.
+
+    What it shows is not what decides: the code's real expiry is in
+    account_tokens, and the server checks that one.
+    """
+    if account_id is not None:
+        session[PENDING_KEY] = str(account_id)
     session[ATTEMPTS_KEY] = 0
+    session[DEADLINE_KEY] = (security_now() + timedelta(
+        minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
+
+
+def seconds_left() -> int:
+    """How long the screen says is left. Never negative."""
+    raw = session.get(DEADLINE_KEY)
+    if not raw:
+        return 0
+    try:
+        deadline = datetime.fromisoformat(raw)
+    except ValueError:
+        return 0
+    return max(0, int((deadline - security_now()).total_seconds()))
 
 
 def client_ip() -> str:
@@ -339,6 +367,7 @@ def register():
                         # an account.
                         log_auth(db, events.REGISTER, events.RATE_LIMITED,
                                  email=email, account_id=existing["_id"])
+                        await_code()
                     elif existing:
                         if not deliver(db, send_already_registered, existing,
                                        kind=events.REGISTER):
@@ -372,7 +401,9 @@ def confirm():
 
     if request.method == "POST":
         db = get_db()
-        typed = request.form.get("code", "")
+        # Six boxes share the name, so the code arrives in pieces. A single
+        # field still works: getlist() returns a list of one.
+        typed = "".join(request.form.getlist("code"))
 
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
@@ -424,7 +455,8 @@ def confirm():
                      account_id=account_id)
 
     return render_template("confirm.html", errors=errors,
-                           minutes=Config.CONFIRMATION_CODE_MINUTES)
+                           minutes=Config.CONFIRMATION_CODE_MINUTES,
+                           left=seconds_left())
 
 
 @bp.route("/reenviar-confirmacion", methods=["GET", "POST"])
@@ -453,13 +485,16 @@ def resend():
                 if not rate_limit(db, f"resend:mail:{accounts.normalize_email(email)}",
                                   *RESEND_PER_EMAIL):
                     log_auth(db, events.RESEND, events.RATE_LIMITED, email=email)
+                    await_code()
                 else:
                     existing = accounts.by_email(db, email)
                     if existing is None:
                         log_auth(db, events.RESEND, events.NO_ACCOUNT, email=email)
+                        await_code()
                     elif accounts.is_confirmed(existing):
                         log_auth(db, events.RESEND, events.ALREADY_CONFIRMED,
                                  email=email, account_id=existing["_id"])
+                        await_code()
                     else:
                         if not deliver(db, send_confirmation, existing,
                                        kind=events.RESEND):

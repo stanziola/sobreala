@@ -101,8 +101,10 @@ def page_shape(response) -> str:
     import re
     body = response.get_data(as_text=True)
     body = re.sub(r'value="[^"]*"', 'value=""', body)
-    # The CSP nonce is new on every response and says nothing about the visitor.
-    return re.sub(r'nonce="[^"]*"', 'nonce=""', body)
+    # The CSP nonce is new on every response, and the countdown ticks between
+    # two requests: neither says anything about the visitor.
+    body = re.sub(r'nonce="[^"]*"', 'nonce=""', body)
+    return re.sub(r'data-countdown="\d+"', 'data-countdown=""', body)
 
 
 def code_from_outbox(outbox) -> str:
@@ -116,9 +118,15 @@ def code_from_outbox(outbox) -> str:
     return found[0]
 
 
-def confirm(client, code):
-    """Type a code into the confirmation form, CSRF included."""
+def confirm(client, code, split=True):
+    """Type a code into the confirmation form, CSRF included.
+
+    The browser sends six fields called `code`, one per box. `split=False` sends
+    a single one, which is the same form without JavaScript.
+    """
     client.get("/confirmar")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/confirmar", data={"csrf_token": csrf, "code": code})
+    digits = "".join(ch for ch in str(code) if ch.isdigit())
+    typed = list(digits) if split and len(digits) == 6 else [str(code)]
+    return client.post("/confirmar", data={"csrf_token": csrf, "code": typed})

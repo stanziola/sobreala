@@ -217,6 +217,70 @@ def test_a_wrong_code_reads_the_same_with_and_without_an_account(client, databas
     assert without == with_code
 
 
+def test_the_code_arrives_in_six_pieces_or_in_one(client, database, outbox):
+    """The browser sends one field per box; without JavaScript, a single one.
+
+    Both have to work: the six boxes are an improvement on the screen, not a new
+    protocol.
+    """
+    register(client)
+    assert confirm(client, code_from_outbox(outbox)).headers["Location"].endswith("/panel")
+
+    fresh = client.application.test_client()
+    register(fresh, email="beto@ejemplo.com")
+    whole = confirm(fresh, code_from_outbox(outbox), split=False)
+    assert whole.headers["Location"].endswith("/panel")
+
+
+def test_the_countdown_says_the_same_in_every_case(client, database, outbox):
+    """Rule 7, now on the clock.
+
+    The code screen is reached three ways: a fresh registration, one with an
+    address that already exists, and a resend for an address that has no
+    account. Only the first issues a code. If the countdown only ran when there
+    was one, its absence would answer the question rule 7 forbids.
+    """
+    register(client)                       # ana@ejemplo.com exists now
+    register(client)                       # taken: no code issued
+    with_account = page_shape(client.get("/confirmar"))
+
+    stranger = client.application.test_client()
+    stranger.get("/reenviar-confirmacion")
+    with stranger.session_transaction() as sess:
+        csrf = sess["_csrf"]
+    stranger.post("/reenviar-confirmacion",
+                  data={"csrf_token": csrf, "email": "nadie@ejemplo.com"})
+    without_account = page_shape(stranger.get("/confirmar"))
+
+    assert "Vence en" in with_account
+    assert with_account == without_account
+
+
+def test_with_the_time_gone_the_screen_is_drawn_blocked(client, database, outbox):
+    register(client)
+    with client.session_transaction() as sess:
+        sess["code_expires_at"] = "2020-01-01T00:00:00+00:00"
+
+    body = client.get("/confirmar").get_data(as_text=True)
+    assert "El código venció" in body
+    assert 'class="code__box" type="text"' in body and "disabled" in body
+
+
+def test_the_clock_on_screen_does_not_decide(client, database, outbox):
+    """The countdown is what is shown; the database is what rules.
+
+    A code still alive in account_tokens has to work even if the session's
+    deadline already passed — the two can drift, and only one of them is the
+    authority.
+    """
+    register(client)
+    code = code_from_outbox(outbox)
+    with client.session_transaction() as sess:
+        sess["code_expires_at"] = "2020-01-01T00:00:00+00:00"
+
+    assert confirm(client, code).headers["Location"].endswith("/panel")
+
+
 def test_resending_replaces_the_previous_code(client, database, outbox):
     register(client)
     first = code_from_outbox(outbox)
