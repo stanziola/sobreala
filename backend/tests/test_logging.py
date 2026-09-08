@@ -118,12 +118,13 @@ def test_a_failed_send_undoes_the_registration(client, database, outbox,
     assert outcomes(database, events.REGISTER) == [events.CREATED, events.MAIL_FAILED]
 
 
-def test_a_failed_send_reads_the_same_for_an_address_that_exists(
+def test_a_taken_address_is_told_so_even_when_the_mail_fails(
         client, database, outbox, monkeypatch):
-    """Rule 7 when the mail provider is down.
+    """The two branches now answer different things, and neither lies.
 
-    A new address is created and then undone; an address that already has an
-    account is left alone. Both answers have to be the same page.
+    A new address whose code cannot be sent is undone and says so. A taken one
+    is not undone —there was nothing to undo— and says what is true: that the
+    account exists. The notice to its owner failing changes nothing on screen.
     """
     register(client)  # ana@ejemplo.com exists, from back when mail worked
 
@@ -135,9 +136,9 @@ def test_a_failed_send_reads_the_same_for_an_address_that_exists(
     taken = register(client)
     fresh = register(client.application.test_client(), email="beto@ejemplo.com")
 
-    assert taken.status_code == fresh.status_code == 200
-    assert page_shape(taken) == page_shape(fresh)
-    # Only the account that already existed is still there.
+    assert "Ya existe una cuenta" in taken.get_data(as_text=True)
+    assert "no creamos la cuenta" in fresh.get_data(as_text=True)
+    # The new one was undone; the old one was never touched.
     assert database.accounts.count_documents({}) == 1
 
 
@@ -171,10 +172,9 @@ def test_a_duplicate_registration_is_recorded_as_such(client, database, outbox):
     first = register(client)
     second = register(client)
 
-    # The screen cannot tell the two apart, per rule 7 in CLAUDE.md...
-    assert first.status_code == second.status_code
-    assert first.headers["Location"] == second.headers["Location"]
-    # ...but the log does, which is what it is for.
+    # The screen tells them apart now, and so does the log, which is what the
+    # log was always for.
+    assert first.status_code == 302 and second.status_code == 200
     assert outcomes(database, events.REGISTER) == [events.CREATED,
                                                    events.ALREADY_REGISTERED]
 

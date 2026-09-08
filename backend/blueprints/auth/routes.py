@@ -47,6 +47,8 @@ RESEND_PER_IP = (15, 3600)
 LOGIN_PER_IP = (20, 900)
 CONFIRM_PER_IP = (30, 900)
 PASSWORD_PER_IP = (10, 900)
+RECOVER_PER_IP = (10, 3600)
+RECOVER_PER_EMAIL = (5, 3600)
 # Registering with someone else's address sends them a notice. Without a budget
 # per address, that is a way to fill a stranger's inbox from many machines, so
 # the notice has one of its own, separate from the per-IP budget.
@@ -68,6 +70,13 @@ PASSWORD_MESSAGES = {
 PENDING_KEY = "pending_account_id"
 ATTEMPTS_KEY = "confirm_attempts"
 DEADLINE_KEY = "code_expires_at"
+# Recovering a password walks the same three steps as confirming an address, so
+# it keeps its own copies of them: whose code it is, how many tries are left,
+# until when, and —once the code is right— that this browser proved it.
+RESET_KEY = "reset_account_id"
+RESET_ATTEMPTS = "reset_attempts"
+RESET_DEADLINE = "reset_expires_at"
+RESET_VERIFIED = "reset_verified_for"
 # Lo único que identifica una sesión: el resto vive en la colección sessions.
 SESSION_KEY = "sid"
 
@@ -152,9 +161,18 @@ def await_code(account_id=None) -> None:
         minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
 
 
-def seconds_left() -> int:
+def await_reset(account_id=None) -> None:
+    """The same wait as await_code(), for the recovery code."""
+    if account_id is not None:
+        session[RESET_KEY] = str(account_id)
+    session[RESET_ATTEMPTS] = 0
+    session[RESET_DEADLINE] = (security_now() + timedelta(
+        minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
+
+
+def seconds_left(key: str = DEADLINE_KEY) -> int:
     """How long the screen says is left. Never negative."""
-    raw = session.get(DEADLINE_KEY)
+    raw = session.get(key)
     if not raw:
         return 0
     try:
@@ -235,6 +253,49 @@ def send_welcome(db, account: dict) -> None:
         text=render_template("email/welcome.txt", name=account["contact_name"],
                              panel=panel),
         purpose=mail_log.WELCOME,
+        account_id=account["_id"],
+    )
+
+
+def send_recovery(db, account: dict) -> None:
+    code = tokens.issue(db, account["_id"], purpose=tokens.PASSWORD_RESET)
+    minutes = Config.CONFIRMATION_CODE_MINUTES
+    mailer.send(
+        to=account["email"],
+        subject=t("mail_recover_subject", code=code),
+        html=render_template("email/recover.html", code=code, minutes=minutes),
+        text=render_template("email/recover.txt", code=code, minutes=minutes),
+        purpose=mail_log.RECOVER,
+        account_id=account["_id"],
+    )
+
+
+def send_new_login(db, account: dict, session_doc: dict) -> None:
+    """Tell the owner that somebody signed in from a device never used before.
+
+    The one message that matters when it was not them, so it carries what they
+    need to recognise it —device, address, when— and a way out that does not
+    require remembering the password, which is precisely what cannot be assumed
+    here.
+    """
+    raw = tokens.issue_link(db, account["_id"], tokens.SESSION_REVOKE,
+                            {"session_id": str(session_doc["_id"])})
+    link = f"{Config.APP_BASE_URL}{url_for('auth.close_from_email', token=raw)}"
+    recover = f"{Config.APP_BASE_URL}{url_for('auth.recover')}"
+    who = sessions.describe(session_doc.get("user_agent"))
+    device = (t("device_on", browser=who["browser"], system=who["system"])
+              if who["browser"] and who["system"]
+              else (who["browser"] or who["system"] or t("device_unknown")))
+    mailer.send(
+        to=account["email"],
+        subject=t("mail_login_subject"),
+        html=render_template("email/new-login.html", device=device,
+                             ip=session_doc.get("ip", ""), link=link,
+                             recover=recover),
+        text=render_template("email/new-login.txt", device=device,
+                             ip=session_doc.get("ip", ""), link=link,
+                             recover=recover),
+        purpose=mail_log.NEW_LOGIN,
         account_id=account["_id"],
     )
 
@@ -353,34 +414,25 @@ def register():
                                                errors=errors)
                     await_code(created["_id"])
                 else:
-                    # Address already registered. Same screen either way; only
-                    # the log and the owner's inbox know the difference.
+                    # The address is taken, and the screen says so. Rule 7 in
+                    # CLAUDE.md no longer covers this form: hiding it here left
+                    # people staring at a code that was never coming. Signing in
+                    # and recovering still give nothing away.
                     existing = accounts.by_email(db, email)
                     log_auth(db, events.REGISTER, events.ALREADY_REGISTERED,
                              email=email,
                              account_id=existing["_id"] if existing else None)
-                    if existing and not rate_limit(
+                    if existing and rate_limit(
                             db, f"register:mail:{accounts.normalize_email(email)}",
                             *REGISTER_PER_EMAIL):
-                        # Over budget for this address: the notice is skipped
-                        # silently, because saying so would say the address has
-                        # an account.
-                        log_auth(db, events.REGISTER, events.RATE_LIMITED,
-                                 email=email, account_id=existing["_id"])
-                        await_code()
-                    elif existing:
-                        if not deliver(db, send_already_registered, existing,
-                                       kind=events.REGISTER):
-                            # Nothing to undo here, but the visitor must not be
-                            # able to tell those two cases apart, so the failure
-                            # looks exactly the same.
-                            errors["form"] = t("error_mail_failed")
-                            return render_template("register.html", form=form,
-                                                   errors=errors)
-                        # No code was issued: this address is not getting one.
-                        # The screen still asks for it, and every answer it gives
-                        # is the same one a real pending code would get.
-                        await_code(existing["_id"])
+                        # The notice keeps its own budget per address: telling
+                        # the owner is one thing, letting a stranger fill their
+                        # inbox from this form is another.
+                        deliver(db, send_already_registered, existing,
+                                kind=events.REGISTER)
+                    errors["email"] = t("error_email_taken")
+                    return render_template("register.html", form=form,
+                                           errors=errors)
                 return redirect(url_for("auth.confirm"))
 
     return render_template("register.html", form=form, errors=errors)
@@ -459,6 +511,77 @@ def confirm():
                            left=seconds_left())
 
 
+@bp.route("/confirmar/corregir", methods=["GET", "POST"])
+def correct_email():
+    """Fix the address of an account that has not been confirmed yet.
+
+    Typing the address wrong used to be a dead end: the account exists under the
+    address with the mistake, so asking for another code with the right one
+    finds nothing and says nothing —rule 7 forbids it— and the code goes on
+    arriving at a mailbox that is not yours.
+
+    Only for the account this browser is waiting on, and only while it is
+    unconfirmed. Changing the address of a finished account is another matter
+    and deserves its own screen.
+    """
+    db = get_db()
+    account_id = as_object_id(session.get(PENDING_KEY))
+    account = accounts.by_id(db, account_id) if account_id else None
+    if account is None or accounts.is_confirmed(account):
+        return redirect(url_for("auth.confirm"))
+
+    errors: dict[str, str] = {}
+    email_value = account["email"]
+
+    if request.method == "POST":
+        email_value = request.form.get("email", "").strip()
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.CORRECT_EMAIL, events.CSRF_FAILED,
+                     account_id=account_id)
+        elif not rate_limit(db, f"correct:ip:{client_ip()}", *REGISTER_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.CORRECT_EMAIL, events.RATE_LIMITED,
+                     account_id=account_id)
+        else:
+            email = clean_email(email_value) if email_value else None
+            if not email:
+                errors["email"] = t("error_email_invalid")
+                log_auth(db, events.CORRECT_EMAIL, events.INVALID,
+                         email=email_value, account_id=account_id)
+            elif accounts.by_email(db, email) and \
+                    accounts.normalize_email(email) != account["email_normalized"]:
+                errors["email"] = t("error_email_taken")
+                log_auth(db, events.CORRECT_EMAIL, events.TAKEN, email=email,
+                         account_id=account_id)
+            elif not rate_limit(db, f"register:mail:{accounts.normalize_email(email)}",
+                                *REGISTER_PER_EMAIL):
+                # This screen sends mail to an address typed by hand, exactly
+                # like the registration form, so it shares its budget: nobody
+                # gets to fill a stranger's inbox by correcting the address over
+                # and over.
+                log_auth(db, events.CORRECT_EMAIL, events.RATE_LIMITED,
+                         email=email, account_id=account_id)
+                await_code(account_id)
+                return redirect(url_for("auth.confirm"))
+            elif not accounts.change_email(db, account_id, email):
+                errors["email"] = t("error_email_taken")
+                log_auth(db, events.CORRECT_EMAIL, events.TAKEN, email=email,
+                         account_id=account_id)
+            else:
+                # issue() throws the old code away, so the one that went to the
+                # wrong address stops working at this moment.
+                account = accounts.by_id(db, account_id)
+                deliver(db, send_confirmation, account, kind=events.CORRECT_EMAIL)
+                log_auth(db, events.CORRECT_EMAIL, events.OK, email=email,
+                         account_id=account_id)
+                await_code(account_id)
+                return redirect(url_for("auth.confirm"))
+
+    return render_template("correct-email.html", errors=errors, email=email_value)
+
+
 @bp.route("/reenviar-confirmacion", methods=["GET", "POST"])
 def resend():
     errors: dict[str, str] = {}
@@ -490,19 +613,24 @@ def resend():
                     existing = accounts.by_email(db, email)
                     if existing is None:
                         log_auth(db, events.RESEND, events.NO_ACCOUNT, email=email)
+                        # Whatever the session was waiting for, it is not this
+                        # address. Dropping the pointer changes nothing on
+                        # screen —the three cases look the same— and stops the
+                        # session from holding an account nobody asked about.
+                        session.pop(PENDING_KEY, None)
                         await_code()
                     elif accounts.is_confirmed(existing):
                         log_auth(db, events.RESEND, events.ALREADY_CONFIRMED,
                                  email=email, account_id=existing["_id"])
+                        session.pop(PENDING_KEY, None)
                         await_code()
                     else:
-                        if not deliver(db, send_confirmation, existing,
-                                       kind=events.RESEND):
-                            # Nothing is undone here: the account is older than
-                            # this request and stays exactly as it was.
-                            errors["form"] = t("error_mail_failed")
-                            return render_template("resend.html", errors=errors,
-                                                   email=email_value)
+                        # A failure here is not shown: for an address with no
+                        # account nothing is sent either, so an error message
+                        # would be the difference between the two cases. It goes
+                        # to mail_log, where it belongs.
+                        deliver(db, send_confirmation, existing,
+                                kind=events.RESEND)
                         log_auth(db, events.RESEND, events.SENT, email=email,
                                  account_id=existing["_id"])
                         await_code(existing["_id"])
@@ -540,10 +668,21 @@ def login():
             # Called even when there is no account, so a wrong address and a
             # wrong password take a similar amount of time.
             if verify_password(password, account and account.get("password_hash")):
+                # Asked before opening the session: once it exists, this device
+                # is one this account has used.
+                first_time = not sessions.is_known_device(
+                    db, account["_id"], request.headers.get("User-Agent", ""))
                 sign_in(account, remember=bool(request.form.get("remember")))
                 accounts.touch_login(db, account["_id"])
                 log_auth(db, events.LOGIN, events.OK, email=email_value,
                          account_id=account["_id"])
+                if first_time:
+                    # A failure here cannot keep anyone out of their own
+                    # account: it is a warning, not a gate.
+                    here = current_session()
+                    if here:
+                        deliver(db, lambda d, a: send_new_login(d, a, here),
+                                account, kind=events.LOGIN)
                 return redirect(url_for("auth.panel"))
             errors["form"] = t("error_login_failed")
             # One outcome for both halves of the failure, because the visitor is
@@ -575,6 +714,166 @@ def logout():
     return redirect(url_for("auth.login"))
 
 
+# -------------------------------------------------------------- recover
+
+@bp.route("/recuperar", methods=["GET", "POST"])
+def recover():
+    """Ask for the address a code should go to.
+
+    Answers the same whether or not the address has an account. Rule 7 no
+    longer covers the registration form, but it very much covers this one: a
+    recovery screen that said "no such account" would be the customer finder
+    that hiding it was meant to prevent, without even the excuse of helping
+    whoever is typing.
+
+    Signed in, the address is already known and the form does not ask for it:
+    this is also the way to change a password without remembering the old one.
+    """
+    account = current_account()
+    errors: dict[str, str] = {}
+    email_value = account["email"] if account else ""
+
+    if request.method == "POST":
+        db = get_db()
+        if account is None:
+            email_value = request.form.get("email", "").strip()
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.RECOVER, events.CSRF_FAILED, email=email_value)
+        elif not rate_limit(db, f"recover:ip:{client_ip()}", *RECOVER_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.RECOVER, events.RATE_LIMITED, email=email_value)
+        else:
+            email = clean_email(email_value) if email_value else None
+            if not email:
+                errors["email"] = t("error_email_invalid")
+                log_auth(db, events.RECOVER, events.INVALID, email=email_value)
+            else:
+                if not rate_limit(db, f"recover:mail:{accounts.normalize_email(email)}",
+                                  *RECOVER_PER_EMAIL):
+                    # Silently over budget, so the answer cannot depend on how
+                    # often this address has been asked for.
+                    log_auth(db, events.RECOVER, events.RATE_LIMITED, email=email)
+                    await_reset()
+                else:
+                    existing = accounts.by_email(db, email)
+                    if existing is None:
+                        log_auth(db, events.RECOVER, events.NO_ACCOUNT, email=email)
+                        await_reset()
+                    else:
+                        # A failure is not shown for the same reason: for an
+                        # address with no account nothing is sent either.
+                        deliver(db, send_recovery, existing, kind=events.RECOVER)
+                        log_auth(db, events.RECOVER, events.SENT, email=email,
+                                 account_id=existing["_id"])
+                        await_reset(existing["_id"])
+                return redirect(url_for("auth.recover_code"))
+
+    return render_template("recover.html", errors=errors, email=email_value,
+                           known=account is not None)
+
+
+@bp.route("/recuperar/codigo", methods=["GET", "POST"])
+def recover_code():
+    """The same six boxes as the confirmation, for the recovery code."""
+    errors: dict[str, str] = {}
+    account_id = as_object_id(session.get(RESET_KEY))
+
+    if request.method == "POST":
+        db = get_db()
+        typed = "".join(request.form.getlist("code"))
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.RECOVER, events.CSRF_FAILED, account_id=account_id)
+        elif not rate_limit(db, f"recover:code:{client_ip()}", *CONFIRM_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.RECOVER, events.RATE_LIMITED, account_id=account_id)
+        else:
+            attempts = session.get(RESET_ATTEMPTS, 0) + 1
+            session[RESET_ATTEMPTS] = attempts
+
+            if account_id is None:
+                reason, doc = tokens.UNKNOWN, None
+            else:
+                reason, doc = tokens.check(db, account_id, typed,
+                                           purpose=tokens.PASSWORD_RESET)
+
+            # Same trick as the confirmation: with no code on file the document
+            # cannot run out of tries, so the session counter stands in for it.
+            if reason in (tokens.UNKNOWN, tokens.INVALID) and attempts >= tokens.MAX_ATTEMPTS:
+                reason = tokens.TOO_MANY
+
+            if reason == tokens.VALID and tokens.spend(db, doc):
+                # Proved control of the inbox. That is what the next screen
+                # stands on, and it is spent: this cannot be replayed.
+                session[RESET_VERIFIED] = str(account_id)
+                log_auth(db, events.RECOVER, events.OK, account_id=account_id)
+                return redirect(url_for("auth.recover_new"))
+
+            if reason == tokens.USED:
+                errors["form"] = t("error_code_used")
+            elif reason == tokens.TOO_MANY:
+                errors["form"] = t("error_code_too_many")
+            else:
+                errors["form"] = t("error_code_invalid")
+            log_auth(db, events.RECOVER, events.CONFIRM_OUTCOMES[reason],
+                     account_id=account_id)
+
+    return render_template("recover-code.html", errors=errors,
+                           minutes=Config.CONFIRMATION_CODE_MINUTES,
+                           left=seconds_left(RESET_DEADLINE))
+
+
+@bp.route("/recuperar/nueva", methods=["GET", "POST"])
+def recover_new():
+    """The new password, once the code proved who is asking."""
+    account_id = as_object_id(session.get(RESET_VERIFIED))
+    db = get_db()
+    account = accounts.by_id(db, account_id) if account_id else None
+    if account is None:
+        return redirect(url_for("auth.recover"))
+
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        fresh = request.form.get("password", "")
+        repeated = request.form.get("repeat", "")
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.RECOVER, events.CSRF_FAILED,
+                     email=account["email"], account_id=account_id)
+        else:
+            problem = password_problem(fresh)
+            if problem:
+                errors["password"] = t(PASSWORD_MESSAGES[problem])
+            elif fresh != repeated:
+                errors["repeat"] = t("error_password_repeat")
+            elif accounts.password_was_used(account, fresh):
+                # Recovering with the same password puts the account back where
+                # it was: whoever knew it, knows it still.
+                errors["password"] = t("error_password_used")
+
+            if errors:
+                log_auth(db, events.RECOVER, events.INVALID,
+                         email=account["email"], account_id=account_id)
+            else:
+                accounts.set_password(db, account_id, hash_password(fresh))
+                # Every session goes, including any the person cannot see: if
+                # the password was recovered because somebody else knew it,
+                # this is what puts them out.
+                sessions.revoke_others(db, account_id)
+                log_auth(db, events.PASSWORD_CHANGE, events.OK,
+                         email=account["email"], account_id=account_id)
+                sign_in(account)
+                deliver(db, send_password_changed, account,
+                        kind=events.PASSWORD_CHANGE)
+                return redirect(url_for("auth.panel", cambiada=1))
+
+    return render_template("recover-new.html", errors=errors)
+
+
 # ---------------------------------------------------------------------- panel
 
 @bp.route("/panel")
@@ -593,6 +892,34 @@ def panel():
 
 
 # ---------------------------------------------------------------- devices
+
+@bp.route("/sesion/cerrar/<token>", methods=["GET", "POST"])
+def close_from_email(token: str):
+    """Close a session from the link in the notice, with no password.
+
+    GET only draws the page. The closing happens on POST, and that is not a
+    detail: antivirus and mail scanners open the links of the messages they
+    inspect, and a session that closed on GET would be closed by a scanner
+    before its owner ever read the mail.
+    """
+    db = get_db()
+    doc = tokens.find_link(db, token, tokens.SESSION_REVOKE)
+    if doc is None:
+        return render_template("close-session.html", state="unknown"), 410
+
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            return render_template("close-session.html", state="unknown"), 400
+        session_id = as_object_id((doc.get("data") or {}).get("session_id"))
+        if session_id:
+            sessions.revoke(db, doc["account_id"], session_id)
+        tokens.spend(db, doc)
+        log_auth(db, events.SESSION_CLOSED, events.OK,
+                 account_id=doc["account_id"])
+        return render_template("close-session.html", state="done")
+
+    return render_template("close-session.html", state="ready")
+
 
 @bp.route("/dispositivos/cerrar", methods=["POST"])
 def close_device():
@@ -662,8 +989,10 @@ def change_password():
                 errors["password"] = t(PASSWORD_MESSAGES[problem])
             elif fresh != repeated:
                 errors["repeat"] = t("error_password_repeat")
-            elif fresh == current:
-                errors["password"] = t("error_password_same")
+            elif accounts.password_was_used(account, fresh):
+                # Covers "the same as the current one" too, and every other one
+                # this account ever had.
+                errors["password"] = t("error_password_used")
 
             if errors:
                 log_auth(db, events.PASSWORD_CHANGE, events.INVALID,

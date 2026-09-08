@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ t('close_' + state + '_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('close_' + state + '_title') }}</h1>
+  <p class="lead">{{ t('close_' + state + '_lead') }}</p>
+
+  {% if state == 'ready' %}
+  {# The closing happens on POST and not on opening: mail scanners follow the
+     links of the messages they inspect, and would close the session by
+     themselves. #}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn" type="submit">{{ t('close_submit') }}</button>
+  </form>
+  {% endif %}
+
+  <p class="foot"><a href="{{ url_for('auth.recover') }}">{{ t('close_change') }}</a></p>
+</div>
+{% endblock %}

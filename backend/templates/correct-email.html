@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t('correct_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('correct_title') }}</h1>
+  <p class="lead">{{ t('correct_lead') }}</p>
+
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="email">{{ t('register_email') }}</label>
+    {# The current one is already typed in: this is a correction, not writing
+       the address again from scratch. #}
+    <input id="email" name="email" type="email" value="{{ email }}"
+           autocomplete="email" required autofocus>
+    {% if errors.email %}<p class="error">{{ errors.email }}</p>{% endif %}
+
+    <button class="btn" type="submit">{{ t('correct_submit') }}</button>
+  </form>
+
+  <p class="foot"><a href="{{ url_for('auth.confirm') }}">{{ t('confirm_title') }}</a></p>
+</div>
+{% endblock %}

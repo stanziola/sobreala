@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ t('recover_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('recover_title') }}</h1>
+  <p class="lead">{{ t('recover_lead_known') if known else t('recover_lead') }}</p>
+
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% if known %}
+    {# Con sesión abierta no hay nada que preguntar: ya sabemos a dónde va. #}
+    <p class="status">{{ t('recover_to', email=email) }}</p>
+    {% else %}
+    <label for="email">{{ t('login_email') }}</label>
+    <input id="email" name="email" type="email" value="{{ email }}"
+           autocomplete="email" required>
+    {% if errors.email %}<p class="error">{{ errors.email }}</p>{% endif %}
+    {% endif %}
+
+    <button class="btn" type="submit">{{ t('recover_submit') }}</button>
+  </form>
+
+  <p class="foot"><a href="{{ url_for('auth.login') }}">{{ t('confirm_go_back') }}</a></p>
+</div>
+{% endblock %}

@@ -29,13 +29,9 @@
   {# Dentro de la cuenta el logo lleva al panel, que es lo que espera quien
      está trabajando. Fuera, al sitio público: desde entrar o registro no había
      ninguna forma de volver a mirar la web antes de decidirse. #}
-  {# 'sid' is the cookie's only key; its presence is enough to pick a
-     destination, and if the session was closed, /panel sends them to sign in. #}
-  {% if session.get('sid') %}
-  <a class="bar__brand" href="{{ url_for('auth.panel') }}">
-  {% else %}
+  {# Always out to the public site, session or not: from inside the account it
+     is the only way back to the pages someone may want to reread. #}
   <a class="bar__brand" href="{{ site_url }}/" title="{{ t('back_to_site') }}">
-  {% endif %}
     <span class="bar__wing">{% include "_wing.svg" %}</span>
     <span class="bar__name">{{ t('brand') }}</span>
   </a>

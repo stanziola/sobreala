@@ -22,9 +22,15 @@ from pymongo import ReturnDocument
 
 from config import Config
 from services.security import (CODE_DIGITS, clean_code, codes_match,
-                               hash_code, new_code)
+                               hash_code, hash_token, new_code, new_token)
 
 EMAIL_CONFIRMATION = "email_confirmation"
+# Written generically from the start, so recovering a password only needed a
+# name: same keyed hash, same five tries, same expiry.
+PASSWORD_RESET = "password_reset"
+# Closing a session from the email that announced it. A link and not a code:
+# nobody types six digits to put out a fire, and the value travels in the URL.
+SESSION_REVOKE = "session_revoke"
 
 # Why a code was refused, so the visitor gets a useful message instead of a
 # generic error. UNKNOWN is "there is no code waiting for this account"; INVALID
@@ -68,6 +74,46 @@ def issue(db, account_id, purpose: str = EMAIL_CONFIRMATION,
         "purge_at": expires_at + timedelta(days=Config.TOKEN_GRACE_DAYS),
     })
     return code
+
+
+def issue_link(db, account_id, purpose: str, data: dict[str, Any],
+               days: int = 7) -> str:
+    """A single-use link. Returns the value that goes in the URL.
+
+    Only its hash is stored, like the codes: what travels in the email cannot be
+    read back out of the database. `data` carries what the link is about —which
+    session to close— so the route does not have to trust the URL for anything
+    but identity.
+    """
+    raw, digest = new_token()
+    moment = now()
+    expires_at = moment + timedelta(days=days)
+    db.account_tokens.insert_one({
+        "account_id": account_id,
+        "purpose": purpose,
+        "token_hash": digest,
+        "data": data,
+        "created_at": moment,
+        "expires_at": expires_at,
+        "used_at": None,
+        "purge_at": expires_at + timedelta(days=Config.TOKEN_GRACE_DAYS),
+    })
+    return raw
+
+
+def find_link(db, raw: str | None, purpose: str) -> dict[str, Any] | None:
+    """The live link behind this URL, or None.
+
+    Spent and expired answer the same: whoever holds the link does not get to
+    learn which of the two happened.
+    """
+    if not raw:
+        return None
+    doc = db.account_tokens.find_one({"token_hash": hash_token(raw),
+                                      "purpose": purpose})
+    if doc is None or doc.get("used_at") or doc["expires_at"] <= now():
+        return None
+    return doc
 
 
 def check(db, account_id, typed: str,

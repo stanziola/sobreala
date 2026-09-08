@@ -87,6 +87,22 @@ def for_account(db, account_id) -> list[dict[str, Any]]:
     }).sort("last_seen_at", -1))
 
 
+def is_known_device(db, account_id, user_agent: str | None) -> bool:
+    """Whether this account ever signed in from this device before.
+
+    Closed and expired sessions count: the question is whether the person has
+    used it, not whether they are using it now.
+
+    The comparison is the whole user-agent string, which is blunt on purpose. A
+    browser update rewrites it and earns an extra notice; comparing only
+    "Chrome on Windows" would let anyone on the same browser and system in
+    silently. One notice too many can be explained. One too few cannot.
+    """
+    return db.sessions.count_documents(
+        {"account_id": account_id, "user_agent": (user_agent or "")[:300]},
+        limit=1) > 0
+
+
 def revoke(db, account_id, session_id) -> bool:
     """Close one session. False if it was not this account's, or was closed
     already: the id comes from a form, so it is never trusted on its own."""
@@ -97,9 +113,13 @@ def revoke(db, account_id, session_id) -> bool:
     return result.modified_count == 1
 
 
-def revoke_others(db, account_id, keep_id) -> int:
+def revoke_others(db, account_id, keep_id=None) -> int:
     """Close every session of this account except the one in use. Returns how
-    many were closed."""
+    many were closed.
+
+    With no session to keep —a password recovered from a device that was not
+    signed in— every one goes, which is the point of recovering it.
+    """
     result = db.sessions.update_many(
         {"account_id": account_id, "_id": {"$ne": keep_id}, "revoked_at": None},
         {"$set": {"revoked_at": now()}},

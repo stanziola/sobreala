@@ -43,6 +43,12 @@ TEXTS = {
     "confirm_code": "Código de 6 dígitos",
     "confirm_submit": "Confirmar mi correo",
     "confirm_resend": "Pedir otro código",
+    "confirm_go_back": "Volver a entrar",
+    "confirm_wrong_email": "¿Escribiste mal tu correo?",
+    "correct_title": "Corrige tu correo",
+    "correct_lead": "Si el código va a una dirección equivocada, cámbiala aquí "
+                    "y te enviamos uno nuevo a la buena.",
+    "correct_submit": "Cambiar y enviar el código",
     "confirm_countdown": "Vence en {time}",
     "confirm_expired": "El código venció. Pide uno nuevo y te lo enviamos al "
                        "momento.",
@@ -63,6 +69,23 @@ TEXTS = {
     "password_rule_met": "cumplido",
     "password_show": "Mostrar contraseña",
     "password_hide": "Ocultar contraseña",
+
+    # --- recover -----------------------------------------------------------
+    "recover_title": "Recuperar tu cuenta",
+    "recover_lead": "Escribe tu correo y te enviamos un código para poner una "
+                    "contraseña nueva.",
+    "recover_lead_known": "Te enviamos un código para poner una contraseña "
+                          "nueva, sin necesidad de recordar la anterior.",
+    "recover_to": "El código va a {email}",
+    "recover_submit": "Enviarme el código",
+    "recover_code_title": "Escribe tu código",
+    "recover_code_submit": "Continuar",
+    "recover_new_title": "Tu nueva contraseña",
+    "recover_new_lead": "Al guardarla cerramos la sesión en todos los "
+                        "dispositivos y te avisamos por correo.",
+    "recover_new_submit": "Guardar y entrar",
+    "login_forgot": "¿Olvidaste tu contraseña?",
+    "password_forgot": "¿No recuerdas tu contraseña actual?",
 
     # --- login -------------------------------------------------------------
     "login_title": "Entra a tu cuenta",
@@ -95,6 +118,20 @@ TEXTS = {
     "when_day": "ayer",
     "when_days": "hace {n} días",
 
+    # --- closing a session from the notice ---------------------------------
+    "close_ready_title": "¿Cerrar esa sesión?",
+    "close_ready_lead": "Vamos a cerrar la sesión del dispositivo que te "
+                        "avisamos por correo. Los demás siguen abiertos.",
+    "close_submit": "Sí, cerrar esa sesión",
+    "close_done_title": "Listo, esa sesión quedó cerrada",
+    "close_done_lead": "Ese dispositivo ya no puede entrar a tu cuenta. Si no "
+                       "reconociste el ingreso, cambia también tu contraseña.",
+    "close_unknown_title": "Ese enlace ya no sirve",
+    "close_unknown_lead": "Puede que ya lo hayas usado o que haya vencido. "
+                          "Desde tu panel puedes ver y cerrar tus dispositivos "
+                          "cuando quieras.",
+    "close_change": "Cambiar mi contraseña",
+
     # --- password ----------------------------------------------------------
     "password_title": "Cambiar tu contraseña",
     "password_lead": "Al cambiarla cerramos la sesión en los demás "
@@ -124,6 +161,7 @@ TEXTS = {
     # --- errors ------------------------------------------------------------
     "error_required": "Completa este campo.",
     "error_email_invalid": "Ese correo no parece válido.",
+    "error_email_taken": "Ya existe una cuenta con ese correo.",
     "error_password_short": "La contraseña debe tener al menos 10 caracteres.",
     "error_password_long": "Esa contraseña es demasiado larga. Usa uno más corto.",
     "error_password_upper": "Agrégale al menos una letra mayúscula.",
@@ -146,7 +184,8 @@ TEXTS = {
                          "minutos.",
     "error_password_wrong": "Esa no es tu contraseña actual.",
     "error_password_repeat": "Las dos contraseñas no coinciden.",
-    "error_password_same": "Esa ya es tu contraseña. Escribe una distinta.",
+    "error_password_used": "Esa contraseña ya la usaste antes. Escribe una que "
+                           "no hayas tenido nunca.",
 
     # --- error pages -------------------------------------------------------
     # Shown instead of the server's own blank error page. The technical detail
@@ -190,6 +229,32 @@ TEXTS = {
                          "alta para todos los que envían desde Panamails.",
     "mail_welcome_help": "Si algo no te calza, escríbenos a "
                          "panamails.info@gmail.com y lo vemos.",
+
+    # The recovery code. Same shape as the confirmation one, and the subject
+    # carries it too: on a phone it is readable from the notification.
+    "mail_recover_subject": "{code} es tu código para recuperar tu cuenta",
+    "mail_recover_heading": "Recupera tu cuenta",
+    "mail_recover_body": "Pediste poner una contraseña nueva en Panamails. "
+                         "Escribe este código en la página donde lo pediste:",
+    "mail_recover_ignore": "Si no lo pediste, ignora este mensaje: tu "
+                           "contraseña no cambia hasta que alguien escriba el "
+                           "código, y solo tú lo tienes.",
+
+    # Sent when a sign-in comes from a device this account has never used. The
+    # only warning there is that somebody else got in, so it says what happened,
+    # where, and what to do about it without needing the password.
+    "mail_login_subject": "Entraron a tu cuenta desde un dispositivo nuevo",
+    "mail_login_heading": "Un ingreso desde un dispositivo nuevo",
+    "mail_login_body": "Alguien entró a tu cuenta de Panamails desde un "
+                       "dispositivo que no habías usado antes:",
+    "mail_login_ip": "Dirección IP {ip}",
+    "mail_login_alert_title": "¿No fuiste tú?",
+    "mail_login_alert": "Cierra esa sesión y cambia tu contraseña. No hace "
+                        "falta que recuerdes la anterior.",
+    "mail_login_close": "Cerrar esa sesión",
+    "mail_login_change": "Cambiar mi contraseña",
+    "mail_login_ignore": "Si fuiste tú, puedes ignorar este mensaje. No "
+                         "volveremos a avisarte desde ese dispositivo.",
 
     # The only warning someone gets when another person changed their password.
     "mail_password_subject": "Tu contraseña de Panamails cambió",

@@ -190,7 +190,7 @@ def test_an_address_cannot_be_flooded_with_notices(client, database, outbox):
 
     Without a budget of its own that is a way to fill a stranger's inbox, so the
     notice stops going out well before it becomes one — and the screen keeps
-    saying exactly what it said the first time.
+    saying exactly what it said the first time, whether the notice went or not.
     """
     register(client)                       # ana@ejemplo.com now exists
     answers = [register(client) for _ in range(8)]
@@ -200,18 +200,21 @@ def test_an_address_cannot_be_flooded_with_notices(client, database, outbox):
     assert len(notices) == 5               # REGISTER_PER_EMAIL
 
     # Every attempt, sent or skipped, answered the same.
-    assert {r.status_code for r in answers} == {302}
-    assert len({r.headers["Location"] for r in answers}) == 1
+    assert {r.status_code for r in answers} == {200}
+    assert all("Ya existe una cuenta" in r.get_data(as_text=True) for r in answers)
 
 
 def test_the_screen_does_not_change_once_the_notice_stops(client, database, outbox):
+    """Whether the owner got the notice is not the visitor's business.
+
+    Under budget the mail goes out, over budget it does not, and the form has
+    to read identically either way: otherwise the difference would say how many
+    times that address has been tried.
+    """
     register(client)
+    under_budget = register(client)
     for _ in range(6):
         register(client)
+    over_budget = register(client)
 
-    over_budget = client.get("/confirmar")
-    fresh = client.application.test_client()
-    register(fresh, email="beto@ejemplo.com")
-    with_code = fresh.get("/confirmar")
-
-    assert page_shape(over_budget) == page_shape(with_code)
+    assert page_shape(under_budget) == page_shape(over_budget)

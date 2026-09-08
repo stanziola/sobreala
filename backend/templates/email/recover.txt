@@ -1,0 +1,12 @@
+{{ t('mail_recover_heading') }}
+
+{{ t('mail_recover_body') }}
+
+{{ code }}
+
+{{ t('mail_confirm_expiry_one') if minutes == 1 else t('mail_confirm_expiry', minutes=minutes) }}
+
+{{ t('mail_recover_ignore') }}
+
+-- 
+{{ t('brand') }}

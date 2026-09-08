@@ -52,6 +52,10 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.accounts.create_index([("email_normalized", ASCENDING)], unique=True,
                              name="uniq_email_normalized")
     db.accounts.create_index([("status", ASCENDING)], name="by_status")
+    # Registrations that never get confirmed. confirm_email() removes the field,
+    # so a finished account is never a candidate.
+    db.accounts.create_index([("purge_at", ASCENDING)], expireAfterSeconds=0,
+                             name="ttl_purge_at")
 
     # A confirmation code is looked up by the account it belongs to, because the
     # session already says which one that is. One document per account and

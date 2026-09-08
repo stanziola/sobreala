@@ -29,6 +29,8 @@ CONFIRM = "confirm"
 EXISTS = "exists"
 WELCOME = "welcome"
 PASSWORD_CHANGED = "password_changed"
+RECOVER = "recover"
+NEW_LOGIN = "new_login"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"
 

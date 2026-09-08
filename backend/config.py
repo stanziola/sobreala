@@ -91,6 +91,10 @@ class Config:
     # it does not need to survive a day in an inbox the way a link did. Minutes,
     # not hours: a short life is half of what makes a short code safe.
     CONFIRMATION_CODE_MINUTES = int(os.getenv("CONFIRMATION_CODE_MINUTES", "30"))
+    # A registration that never gets confirmed is swept after this. It holds an
+    # address hostage otherwise: one typed wrong stays taken forever, and the
+    # address of a stranger can be reserved by registering it and stopping.
+    UNCONFIRMED_HOURS = int(os.getenv("UNCONFIRMED_HOURS", "24"))
     # Spent codes stay this long after expiring, so the log can tell an expired
     # code from one that never existed.
     TOKEN_GRACE_DAYS = int(os.getenv("TOKEN_GRACE_DAYS", "7"))
@@ -99,6 +103,16 @@ class Config:
     def check(cls) -> None:
         if not cls.SECRET_KEY:
             raise RuntimeError("SECRET_KEY is required outside development")
+        # Every link in the system mail hangs off this. Left at its
+        # development value, a deploy sends people to their own computer, and
+        # nothing looks broken from the inside: the mail leaves, it just cannot
+        # be used. Better to refuse to start.
+        if cls.ENV != "development" and ("127.0.0.1" in cls.APP_BASE_URL
+                                         or "localhost" in cls.APP_BASE_URL):
+            raise RuntimeError(
+                f"APP_BASE_URL sigue apuntando al servidor de desarrollo "
+                f"({cls.APP_BASE_URL}): los correos saldrian con enlaces "
+                f"inservibles")
         if cls.MAIL_BACKEND not in ("file", "smtp", "ses"):
             raise RuntimeError(f"unknown MAIL_BACKEND: {cls.MAIL_BACKEND!r}")
         if cls.MAIL_BACKEND == "smtp" and not cls.MAIL_SMTP_USER:

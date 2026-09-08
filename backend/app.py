@@ -5,8 +5,9 @@ from __future__ import annotations
 import secrets
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
-from flask import Flask, g, jsonify, render_template, request
+from flask import Flask, g, jsonify, render_template, request, session
 from pymongo.errors import PyMongoError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -14,6 +15,27 @@ from config import Config
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, t
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
+
+
+# A crumb the public site can read. It carries a single "1" and nothing else:
+# unlike the session cookie it is NOT HttpOnly, so any script on panamails.com
+# can see it, and anything with a name or an address in it would be handing that
+# to a static site with no reason to know it.
+HINT_COOKIE = "pm_in"
+
+
+def hint_domain() -> str | None:
+    """The parent domain both deploys hang off, or None when there is none.
+
+    The panel lives at panel.panamails.com and the site at panamails.com, so the
+    crumb goes on .panamails.com to be readable from both. Running locally there
+    is nothing to share —cookies ignore ports— and the domain is left out,
+    because a browser refuses one that does not match the host.
+    """
+    host = urlparse(Config.PUBLIC_SITE_URL).hostname or ""
+    if not host or host == "localhost" or host.replace(".", "").isdigit():
+        return None
+    return f".{host}"
 
 
 def asset_version() -> str:
@@ -89,6 +111,28 @@ def create_app(overrides: dict | None = None) -> Flask:
     @app.context_processor
     def _expose_nonce():
         return {"csp_nonce": g.get("csp_nonce", "")}
+
+    @app.after_request
+    def _session_hint(response):
+        """Keep the crumb in step with the session.
+
+        It is a hint, never a proof: a session closed from another device leaves
+        it behind, the public site keeps offering "Mi panel", and the panel then
+        asks whoever clicks to sign in. That is the right order — the crumb is
+        for drawing a button, not for letting anyone in.
+        """
+        from blueprints.auth.routes import SESSION_KEY
+
+        signed_in = bool(session.get(SESSION_KEY))
+        has_crumb = request.cookies.get(HINT_COOKIE) == "1"
+        if signed_in and not has_crumb:
+            response.set_cookie(
+                HINT_COOKIE, "1", max_age=app.config["PERMANENT_SESSION_LIFETIME"],
+                domain=hint_domain(), samesite="Lax", httponly=False,
+                secure=app.config.get("SESSION_COOKIE_SECURE", False))
+        elif not signed_in and has_crumb:
+            response.delete_cookie(HINT_COOKIE, domain=hint_domain())
+        return response
 
     @app.after_request
     def _security_headers(response):

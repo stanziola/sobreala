@@ -1,45 +1,15 @@
 {% extends "base.html" %}
 {% block title %}{{ t('confirm_title') }}{% endblock %}
 {% block content %}
-{% set expired = left <= 0 %}
 <div class="card card--narrow">
   <h1>{{ t('confirm_title') }}</h1>
   <p class="lead">{{ t('confirm_lead_one') if minutes == 1
                       else t('confirm_lead', minutes=minutes) }}</p>
 
-  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
-
-  {# El servidor dibuja el estado inicial; el script solo hace correr el reloj.
-     Así, con el plazo agotado, la pantalla ya nace bloqueada. #}
-  <p class="countdown{% if expired %} is-expired{% endif %}" data-countdown="{{ left }}"
-     data-label="{{ t('confirm_countdown', time='{time}') }}" role="status">
-    <span data-countdown-live{% if expired %} hidden{% endif %}></span>
-    <span data-countdown-done{% if not expired %} hidden{% endif %}>{{ t('confirm_expired') }}</span>
-  </p>
-
-  <form method="post" novalidate data-code-form>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-    <label for="code-1">{{ t('confirm_code') }}</label>
-    {# Seis casillas con el mismo nombre: el servidor las une con getlist(). Sin
-       JavaScript se tabula entre ellas y el formulario sigue funcionando; el
-       script solo añade el salto automático, el pegado y el envío al llenar la
-       última. one-time-code va en la primera, que es donde el teléfono ofrece
-       el código que acaba de llegar. #}
-    <div class="code" data-code>
-      {% for i in range(1, 7) %}
-      <input id="code-{{ i }}" name="code" class="code__box" type="text"
-             inputmode="numeric" pattern="[0-9]*" maxlength="1"
-             {% if i == 1 %}autocomplete="one-time-code" autofocus{% else %}autocomplete="off"{% endif %}
-             {% if expired %}disabled{% endif %}>
-      {% endfor %}
-    </div>
-
-    <button class="btn" type="submit"{% if expired %} disabled{% endif %}>
-      {{ t('confirm_submit') }}</button>
-  </form>
+  {% with submit = 'confirm_submit' %}{% include "_code-form.html" %}{% endwith %}
 
   <p class="hint">{{ t('confirm_hint') }}</p>
-  <p class="foot"><a href="{{ url_for('auth.resend') }}">{{ t('confirm_resend') }}</a></p>
+  <p class="foot"><a href="{{ url_for('auth.resend') }}">{{ t('confirm_resend') }}</a>
+    · <a href="{{ url_for('auth.correct_email') }}">{{ t('confirm_wrong_email') }}</a></p>
 </div>
 {% endblock %}

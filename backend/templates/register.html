@@ -23,7 +23,13 @@
     <label for="email">{{ t('register_email') }}</label>
     <input id="email" name="email" type="email" value="{{ form.email }}"
            autocomplete="email" required>
-    {% if errors.email %}<p class="error">{{ errors.email }}</p>{% endif %}
+    {% if errors.email %}
+    <p class="error">{{ errors.email }}
+      {# Decir que existe sin ofrecer qué hacer con eso deja a la persona en el
+         mismo sitio, solo que enterada. #}
+      <a href="{{ url_for('auth.login') }}">{{ t('register_login_link') }}</a>
+      · <a href="{{ url_for('auth.recover') }}">{{ t('login_forgot') }}</a></p>
+    {% endif %}
 
     <label for="phone">{{ t('register_phone') }}</label>
     <input id="phone" name="phone" type="tel" value="{{ form.phone }}" autocomplete="tel">

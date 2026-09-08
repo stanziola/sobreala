@@ -25,6 +25,14 @@ def sid(client) -> str:
         return sess.get("sid", "")
 
 
+def session_cookie(response) -> str:
+    """The Set-Cookie line for the session, ignoring any other cookie."""
+    for line in response.headers.getlist("Set-Cookie"):
+        if line.startswith("session="):
+            return line
+    return ""
+
+
 def otro(client):
     """A second browser: same application, its own cookie jar."""
     return client.application.test_client()
@@ -161,7 +169,9 @@ def test_without_the_checkbox_the_cookie_dies_with_the_browser(client, database,
         "password": "Contrasena-Larga1",
     })
 
-    galleta = respuesta.headers.get("Set-Cookie", "")
+    # The session one specifically: the same response also carries the crumb
+    # the public site reads, and that one does have an expiry.
+    galleta = session_cookie(respuesta)
     assert "Expires=" not in galleta and "Max-Age=" not in galleta
     # Y el documento tampoco se queda un mes esperando.
     doc = database.sessions.find_one({"revoked_at": None})
@@ -180,7 +190,7 @@ def test_with_the_checkbox_it_lasts_thirty_days(client, database, outbox):
         "password": "Contrasena-Larga1", "remember": "1",
     })
 
-    assert "Expires=" in respuesta.headers.get("Set-Cookie", "")
+    assert "Expires=" in session_cookie(respuesta)
     doc = database.sessions.find_one({"revoked_at": None})
     assert doc["remembered"] is True
     assert doc["expires_at"] - doc["created_at"] > timedelta(days=29)
@@ -234,7 +244,8 @@ def test_a_weak_new_password_is_refused(client, database, outbox):
     assert "mayúscula" in cambiar(navegador, nueva="contrasenalarga1!").get_data(as_text=True)
     assert "no coinciden" in cambiar(navegador, nueva="Contrasena-Nueva2!",
                                      repetir="otra").get_data(as_text=True)
-    assert "ya es tu contraseña" in cambiar(
+    # The current one is one it has used, so the history catches it.
+    assert "ya la usaste antes" in cambiar(
         navegador, nueva="Contrasena-Larga1").get_data(as_text=True)
 
 

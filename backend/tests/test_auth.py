@@ -11,11 +11,21 @@ from models import token as tokens
 from services.security import hash_code, now
 
 WRONG = "000000"
+url_for_recover = "/recuperar"
 
 
 def other_code(code: str) -> str:
     """A code that is definitely not this one."""
     return WRONG if code != WRONG else "111111"
+
+
+def ask_recovery(client, email):
+    """Ask for a recovery code and follow to the screen that comes next."""
+    client.get("/recuperar")
+    with client.session_transaction() as sess:
+        csrf = sess["_csrf"]
+    client.post("/recuperar", data={"csrf_token": csrf, "email": email})
+    return client.get("/recuperar/codigo")
 
 
 # ------------------------------------------------------------------ registration
@@ -85,11 +95,23 @@ def test_registering_without_csrf_does_nothing(client, database):
     assert database.accounts.count_documents({}) == 0
 
 
-def test_duplicate_address_answers_exactly_like_a_new_one(client, database, outbox):
+def test_a_taken_address_is_told_so(client, database, outbox):
+    """The registration form says it, and the owner is told anyway.
+
+    Hiding this used to leave people waiting for a code that was never coming.
+    Rule 7 still holds where it costs little —signing in and recovering— and is
+    lifted here, where it cost a lot.
+    """
     first = register(client)
     second = register(client)
-    assert first.headers["Location"] == second.headers["Location"]
-    assert first.status_code == second.status_code
+
+    assert first.status_code == 302                # straight to the code
+    assert second.status_code == 200               # back to the form, with news
+    body = second.get_data(as_text=True)
+    assert "Ya existe una cuenta con ese correo" in body
+    # And a way out of the dead end, not just the news.
+    assert url_for_recover in body
+
     # Still one account, and the owner was warned by email.
     assert database.accounts.count_documents({}) == 1
     assert len(list(outbox.glob("*.txt"))) == 2
@@ -197,24 +219,23 @@ def test_an_expired_code_is_refused(client, database, outbox):
     assert accounts.by_email(database, "ana@ejemplo.com")["email_confirmed_at"] is None
 
 
-def test_a_wrong_code_reads_the_same_with_and_without_an_account(client, database, outbox):
-    """Rule 7 on the confirmation screen.
+def test_recovering_reads_the_same_with_and_without_an_account(client, database,
+                                                              outbox):
+    """Rule 7 where it still stands.
 
-    Registering an address that is already taken issues no code at all, so the
-    form has nothing to compare against. That must not be visible: the answer to
-    a wrong code has to read exactly like the answer for an address that does
-    have one waiting.
+    The registration form now says when an address is taken. Recovery must not:
+    a screen that answered "no such account" would be exactly the customer
+    finder that hiding it was meant to prevent, and here nobody is helped by
+    knowing.
     """
-    register(client)                     # ana@ejemplo.com now exists
-    taken = register(client)             # same address again: no code issued
-    assert taken.status_code == 302
-    without = page_shape(confirm(client, WRONG))
+    register(client)                     # ana@ejemplo.com exists
 
-    fresh = client.application.test_client()
-    register(fresh, email="beto@ejemplo.com")
-    with_code = page_shape(confirm(fresh, other_code(code_from_outbox(outbox))))
+    real = client.application.test_client()
+    unknown = client.application.test_client()
+    con = page_shape(ask_recovery(real, "ana@ejemplo.com"))
+    sin = page_shape(ask_recovery(unknown, "nadie@ejemplo.com"))
 
-    assert without == with_code
+    assert con == sin
 
 
 def test_the_code_arrives_in_six_pieces_or_in_one(client, database, outbox):
@@ -354,20 +375,21 @@ def test_panel_warns_until_the_address_is_confirmed(client, database, outbox):
     assert "confirmas tu correo" not in client.get("/panel").get_data(as_text=True)
 
 
-def test_the_logo_leads_out_of_the_panel_and_back_into_it(client, database):
-    """Quien todavía no entró tiene que poder volver a mirar el sitio.
+def test_the_logo_always_leads_back_to_the_site(client, database, outbox):
+    """The logo is the way out to panamails.com, from every page.
 
-    Desde /entrar y /registro el logo es la única salida hacia panamails.com;
-    una vez dentro, lo que se espera de él es lo contrario, que lleve al panel.
+    Before signing in it is the only way back to the pages someone may want to
+    reread; after signing in it is still the only one, because the panel has no
+    other link out.
     """
-    fuera = client.get("/entrar").get_data(as_text=True)
-    assert 'class="bar__brand" href="https://panamails.com/"' in fuera
-    assert "Volver al sitio" in fuera
+    outside = client.get("/entrar").get_data(as_text=True)
+    assert 'class="bar__brand" href="https://panamails.com/"' in outside
+    assert "Volver al sitio" in outside
 
     register(client)
     login(client)
-    dentro = client.get("/panel").get_data(as_text=True)
-    assert 'class="bar__brand" href="/panel"' in dentro
+    inside = client.get("/panel").get_data(as_text=True)
+    assert 'class="bar__brand" href="https://panamails.com/"' in inside
 
 
 def test_panel_needs_a_session(client, database):

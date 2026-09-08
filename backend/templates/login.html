@@ -34,6 +34,7 @@
     <button class="btn" type="submit">{{ t('login_submit') }}</button>
   </form>
 
+  <p class="foot"><a href="{{ url_for('auth.recover') }}">{{ t('login_forgot') }}</a></p>
   <p class="foot">{{ t('login_no_account') }}
     <a href="{{ url_for('auth.register') }}">{{ t('login_register_link') }}</a></p>
 </div>

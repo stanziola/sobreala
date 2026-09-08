@@ -79,11 +79,18 @@
           reads as the way back in and "Registrarse" as the way to start. They
           live inside the nav so the phone puts them in the menu, where the
           header has room for nothing but the brand. -#}
-      <div class="site-nav__account">
-        <a class="btn btn--account btn--account-in" href="{{ panel.base_url }}/entrar">
-          {{ panel.login_label }}</a>
-        <a class="btn btn--account btn--account-up" href="{{ panel.base_url }}/registro">
-          {{ panel.register_label }}</a>
+      {#- All three ship drawn and the script decides: with no JavaScript the
+          usual two are what shows, which serves everybody. The site is static
+          and cannot know whether there is a session; the only thing it can read
+          is the crumb the panel leaves on the parent domain. See nav.js. -#}
+      <div class="site-nav__account" data-account>
+        <a class="btn btn--account btn--account-in" data-account-in
+           href="{{ panel.base_url }}/entrar">{{ panel.login_label }}</a>
+        <a class="btn btn--account btn--account-up" data-account-up
+           href="{{ panel.base_url }}/registro">{{ panel.register_label }}</a>
+        <a class="btn btn--account btn--account-in btn--account-mine" data-account-mine
+           href="{{ panel.base_url }}/panel" hidden>
+          {% include "partials/icon-user.svg.j2" %}<span>{{ panel.account_label }}</span></a>
       </div>
     </nav>
   </div>

@@ -130,6 +130,27 @@ Estados: `registered` → `approved` → `active` → `suspended`
 | `active` | Enviar. |
 | `suspended` | Nada. Corte automático por rebotes/quejas, o manual. |
 
+**Un registro que no se confirma se borra a las 24 horas.** `create()` escribe
+`purge_at` y `confirm_email()` lo quita, así que Mongo barre solo lo que quedó a
+medias: una dirección escrita mal no queda ocupada para siempre, y nadie puede
+reservar el correo de un tercero registrándolo y no confirmando nunca. El
+intento sigue en `auth_events`, que no tiene TTL.
+
+**Ninguna contraseña se puede repetir.** `password_history` guarda el hash de
+cada una que la cuenta usó, y cambiarla las compara todas: si alguien conoció
+una, volver a ponerla devolvería la cuenta al mismo estado.
+
+### `sessions`
+Un documento por dispositivo con sesión abierta: de la galleta solo se guarda su
+hash, y el documento lleva IP, navegador, cuándo entró y cuándo se le vio por
+última vez. Es lo que permite enseñar los dispositivos conectados y cerrar uno
+sin tocar los demás. TTL sobre `expires_at`.
+
+**Entrar desde un dispositivo que la cuenta nunca usó manda un aviso por
+correo**, con un enlace de un solo uso para cerrar esa sesión sin necesidad de
+recordar la contraseña. Solo al entrar, no al confirmar el registro ni al
+recuperar la clave, que ya avisan por su cuenta.
+
 ### `contacts`
 **Un solo documento por dirección de correo por cuenta.** Índice único sobre
 `{account_id, email_normalized}`. Normalización: sin espacios, minúsculas.
@@ -195,9 +216,12 @@ visitante, no lo que la plataforma sabe de su propio tráfico.
    `{account_id, email_normalized}`.
 6. **De los tokens de correo solo se guarda su hash**, nunca el valor que va
    en el enlace, y valen una sola vez y con vencimiento.
-7. **Las pantallas nunca revelan si una dirección ya tiene cuenta.** Registrarse
-   con un correo existente responde igual que uno nuevo; al dueño se le avisa
-   por correo.
+7. **Entrar y recuperar la cuenta nunca revelan si una dirección tiene cuenta.**
+   Las dos responden igual exista o no, para que ninguna sirva de buscador de
+   clientes. **El registro sí lo dice**: esconderlo dejaba a la persona
+   esperando un código que no iba a llegar. El aviso al dueño se manda igual,
+   con su propio límite por dirección para que el formulario no sirva para
+   llenarle el buzón a nadie.
 8. **Los correos del sistema son transaccionales**: sin enlace de baja y sin
    marca de agua. Las reglas 3 y 4 son solo para campañas de clientes.
 9. **Nunca guardar datos de tarjeta.** El pago se hace en el checkout hospedado
@@ -371,6 +395,7 @@ no se descubra el día del lanzamiento.
   ese addendum se redacta cuando aparezca.
 
 ## Pendientes de decisión
+
 
 - Confirmar con Yappy (yappy@bgeneral.com / 800-5000) si soporta cobros
   recurrentes. Si no, el recurrente va solo por PayPal y a los de Yappy se les

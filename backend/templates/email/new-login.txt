@@ -1,0 +1,20 @@
+{{ t('mail_login_heading') }}
+
+{{ t('mail_login_body') }}
+
+{{ device }}
+{{ t('mail_login_ip', ip=ip) }}
+
+{{ t('mail_login_alert_title') }}
+{{ t('mail_login_alert') }}
+
+{{ t('mail_login_close') }}:
+{{ link }}
+
+{{ t('mail_login_change') }}:
+{{ recover }}
+
+{{ t('mail_login_ignore') }}
+
+-- 
+{{ t('brand') }}

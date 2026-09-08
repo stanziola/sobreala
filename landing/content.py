@@ -52,6 +52,8 @@ PANEL = {
     "base_url": "https://panel.panamails.com",
     "login_label": "Ingresar",
     "register_label": "Registrarse",
+    # Se enseña en lugar de los dos anteriores cuando el panel dejó su migaja.
+    "account_label": "Mi panel",
 }
 
 CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}

@@ -17,6 +17,10 @@
   *, *::before, *::after { transition-duration: 0ms !important; animation: none !important; }
 }
 
+/* Same reason as on the public site: .field__eye sets a display, so without
+   this the button would show even while marked hidden. */
+[hidden] { display: none !important; }
+
 .visually-hidden {
   position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
