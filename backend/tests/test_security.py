@@ -10,7 +10,7 @@ from __future__ import annotations
 from conftest import login, page_shape, register
 
 from models import account as accounts
-from services.security import password_problem
+from services.security import MIN_PASSWORD_LENGTH, password_problem
 
 # What an operator injection looks like against Mongo: a form field that is not
 # a string but a query. Sent as a repeated key and as the bracket syntax some
@@ -129,6 +129,32 @@ def test_the_password_rules():
     assert password_problem("Contrasena-Larga1") is None
     # Punctuation from any keyboard counts, not a list of blessed characters.
     assert password_problem("Contrasena1¿") is None
+
+
+def test_the_rules_on_screen_are_the_rules_the_server_applies(client, database):
+    """The list on screen cannot promise something the server does not enforce.
+
+    For every rule drawn in the form there is a password that fails only that
+    one, and the server refuses it. Adding a tick without adding the check in
+    password_problem() breaks this.
+    """
+    import re
+
+    body = client.get("/registro").get_data(as_text=True)
+    drawn = re.findall(r'data-rule="([a-z]+)"', body)
+    assert drawn == ["length", "upper", "digit", "symbol"]
+
+    fails_only = {
+        "length": "Corta1!",
+        "upper": "contrasena1!",
+        "digit": "Contrasenaa!",
+        "symbol": "Contrasena12",
+    }
+    for rule in drawn:
+        assert password_problem(fails_only[rule]) is not None, rule
+
+    # And the minimum the list announces is the one the code requires.
+    assert f'data-min="{MIN_PASSWORD_LENGTH}"' in body
 
 
 def test_a_weak_password_never_creates_an_account(client, database):

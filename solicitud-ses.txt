@@ -1,64 +1,26 @@
-SOLICITUD DE ACCESO DE PRODUCCION EN AMAZON SES
-===============================================
-
-COMO SE USA ESTE ARCHIVO
-
-  En la consola de AWS, con la region us-east-2 (Ohio) seleccionada:
-  Amazon SES  ->  Account dashboard  ->  boton "Request production access".
-
-  Copia cada bloque en el campo que lleva su nombre. No hay nada que
-  completar ni que corregir: todo esta escrito tal como se envia.
-
-  El texto largo va en ingles a proposito. Lo lee el equipo de Trust & Safety
-  de AWS, que trabaja en ingles, y una solicitud en ingles se resuelve antes.
-
-
-------------------------------------------------------------------------------
-CAMPO 1 - Mail type
-------------------------------------------------------------------------------
-
-  Marketing
-
-  (Aunque hoy solo salgan codigos de confirmacion. La plataforma existe para
-  enviar campanas por cuenta de sus clientes, y eso empieza en cuanto se
-  apruebe la primera cuenta. Declararlo desde el principio es lo que evita una
-  suspension despues; pedir "Transactional" y luego enviar campanas es la forma
-  mas rapida de perder la cuenta.)
-
-
-------------------------------------------------------------------------------
-CAMPO 2 - Website URL
-------------------------------------------------------------------------------
-
-https://panamails.com
-
-
-------------------------------------------------------------------------------
-CAMPO 3 - Use case description
-------------------------------------------------------------------------------
-(copia todo lo que hay entre las dos lineas de guiones bajos)
-
-______________________________________________________________________________
-
 Panamails is an email marketing platform for small and medium organizations in
 Panama: savings and credit cooperatives, private schools, universities and
 trade associations, most of them in the province of Veraguas. These
-organizations already hold their own member and client lists. Panamails is the
-tool they use to write to those people.
+organizations already hold their own member and client lists, and Panamails is
+the tool they use to write to those people. Our website is
+https://panamails.com and our customer panel is at https://panel.panamails.com.
 
 WHAT WE SEND TODAY
-Transactional messages only. When someone creates an account on our panel at
-panel.panamails.com we email them a six-digit confirmation code, and we send
-account notices such as a warning to the owner of an address when somebody
-tries to register with it. Current volume is a few dozen messages per month.
+
+Transactional messages only. When someone creates an account on our panel we
+email them a six-digit confirmation code, and we send account notices such as a
+warning to the owner of an address when somebody else tries to register with
+it. Current volume is a few dozen messages per month.
 
 WHAT WE WILL SEND
-Marketing campaigns on behalf of our customers, to lists those customers own.
-We are the sending platform; the list belongs to the customer, who is
+
+Marketing campaigns on behalf of our customers, sent to lists those customers
+own. We are the sending platform; each list belongs to the customer, who is
 responsible for having obtained it lawfully. We expect fewer than 50,000
 messages per month across all customers during the first year.
 
 HOW RECIPIENTS OPT IN
+
 The lists our customers upload are their own members, students or clients, who
 gave the organization their address directly. Our terms of service
 (https://panamails.com/terminos/, sections 5 and 8) require every customer to
@@ -67,9 +29,12 @@ prove it, and forbid purchased, rented, exchanged or scraped lists.
 
 Sending is disabled by default. A new account can import contacts and draft
 campaigns but cannot send anything until we contact the organization and enable
-it by hand. No customer can start sending on their own.
+it by hand. During that conversation we ask where the list came from and how
+the addresses were collected; an organization that cannot answer that is not
+enabled. No customer can start sending on their own.
 
 HOW RECIPIENTS OPT OUT
+
 Our platform injects a one-click unsubscribe link into every campaign at the
 moment of sending. Customers cannot remove it, edit it or point it elsewhere,
 because it is added by the sending pipeline and not by the customer's HTML. We
@@ -81,6 +46,7 @@ list before the first message goes out. Anyone who writes to us asking to be
 removed is suppressed manually the same day.
 
 HOW WE HANDLE BOUNCES AND COMPLAINTS
+
 Every message we attempt and every delivery event is recorded. Hard bounces and
 complaints are added to the suppression list permanently and are never
 contacted again; an unsubscribe can only be reversed if the person subscribes
@@ -89,82 +55,21 @@ again and confirms by email.
 An account whose bounce rate goes above 3% or whose complaint rate goes above
 0.05% is paused automatically and told why. New accounts send under a reduced
 cap for their first 48 hours regardless of their plan. We are connecting SES
-event notifications through SNS so suppression happens without human
-intervention; while our volume is transactional only we also review the sending
-log by hand every day.
+event notifications through SNS so that suppression happens without human
+intervention; while our volume is transactional only, we also review the
+sending log by hand every day.
 
-AUTHENTICATION
-The domain panamails.com is verified in SES with DKIM enabled, we use a custom
-MAIL FROM domain (mail.panamails.com) and DMARC is published for the domain.
+AUTHENTICATION AND COMPLIANCE
 
-COMPLIANCE
+The domain panamails.com is verified in this account with DKIM enabled, we use
+a custom MAIL FROM domain (mail.panamails.com) and DMARC is published for the
+domain.
+
 We operate under Panama's Law 81 of 2019 on personal data protection. Campaign
 emails will carry the sender's physical postal address, as CAN-SPAM requires
 for recipients in the United States. Our privacy policy is published at
 https://panamails.com/privacidad/ and describes exactly what we store, for how
-long and with which providers.
-______________________________________________________________________________
+long, and with which providers.
 
-
-------------------------------------------------------------------------------
-CAMPO 4 - Additional contacts
-------------------------------------------------------------------------------
-
-panamails.info@gmail.com
-
-
-------------------------------------------------------------------------------
-CAMPO 5 - Preferred contact language
-------------------------------------------------------------------------------
-
-English
-
-
-------------------------------------------------------------------------------
-CASILLAS DE CONFIRMACION
-------------------------------------------------------------------------------
-
-  Marcalas todas. Las tres son ciertas en Panamails:
-
-  - Solo se envia a quien pidio recibir esos correos: los terminos lo exigen
-    al cliente y el envio no se habilita sin aprobacion manual.
-  - Hay un proceso para rebotes y quejas: lista de supresion por cuenta, pausa
-    automatica en 3% de rebotes y 0.05% de quejas.
-  - Hay forma de darse de baja: enlace de un clic inyectado en cada campana,
-    mas la cabecera List-Unsubscribe.
-
-
-------------------------------------------------------------------------------
-SI AWS RESPONDE PIDIENDO MAS DETALLES
-------------------------------------------------------------------------------
-(suele preguntar por el origen de las listas; esta respuesta ya sirve)
-
-______________________________________________________________________________
-
-Our customers do not buy or rent lists, and we do not provide lists of any
-kind. Each customer uploads addresses that were given to their own
-organization: members of a savings cooperative, parents of a private school,
-alumni of a university, members of a trade association.
-
-Before a customer can send anything, we speak with the organization and enable
-sending by hand. During that conversation we ask where the list came from and
-how the addresses were collected. An organization that cannot answer that does
-not get enabled.
-
-Every campaign carries a one-click unsubscribe link that the customer cannot
-remove, and unsubscribes, hard bounces and complaints are suppressed
-permanently per account and checked before every send. Accounts that exceed 3%
-bounces or 0.05% complaints are paused automatically.
-______________________________________________________________________________
-
-
-------------------------------------------------------------------------------
-DESPUES DE ENVIARLA
-------------------------------------------------------------------------------
-
-  AWS responde normalmente en 24 horas. Mientras tanto la cuenta sigue en
-  sandbox: solo llegan correos a direcciones verificadas una por una, con un
-  tope de 200 al dia.
-
-  Cuando la aprueben, el limite pasa a 50,000 correos diarios. No hace falta
-  cambiar nada en el codigo: ya esta configurado para enviar por SES.
+We are requesting production access to send this mail from the US East (Ohio)
+region.

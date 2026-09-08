@@ -29,9 +29,32 @@
     <input id="phone" name="phone" type="tel" value="{{ form.phone }}" autocomplete="tel">
 
     <label for="password">{{ t('register_password') }}</label>
-    <input id="password" name="password" type="password"
-           autocomplete="new-password" required minlength="10">
-    <p class="hint">{{ t('register_password_hint') }}</p>
+    <div class="field">
+      <input id="password" name="password" type="password"
+             autocomplete="new-password" required minlength="{{ password_min }}"
+             aria-describedby="password-rules">
+      {# Sin JavaScript el botón no haría nada, así que nace oculto y lo
+         enseña el propio script. #}
+      <button class="field__eye" type="button" hidden
+              data-reveal="password" aria-pressed="false"
+              data-show="{{ t('password_show') }}" data-hide="{{ t('password_hide') }}"
+              aria-label="{{ t('password_show') }}">
+        <span class="field__eye-on">{% include "_icon-eye.svg" %}</span>
+        <span class="field__eye-off">{% include "_icon-eye-off.svg" %}</span>
+      </button>
+    </div>
+
+    <p class="rules__title" id="password-rules-title">{{ t('password_rules_title') }}</p>
+    <ul class="rules" id="password-rules" data-rules data-min="{{ password_min }}">
+      {% for rule in ['length', 'upper', 'digit', 'symbol'] %}
+      <li class="rules__item" data-rule="{{ rule }}">
+        <span class="rules__check" aria-hidden="true">{% include "_icon-check.svg" %}</span>
+        {{ t('password_rule_' + rule, min=password_min) if rule == 'length'
+           else t('password_rule_' + rule) }}
+        <span class="visually-hidden" data-state></span>
+      </li>
+      {% endfor %}
+    </ul>
     {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
 
     <button class="btn" type="submit">{{ t('register_submit') }}</button>

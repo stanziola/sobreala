@@ -57,3 +57,64 @@
     }).catch(function () { /* the theme already changed; the animation is a bonus */ });
   });
 })();
+
+/* Passwords: seeing what you type, and the rules lighting up as they are met.
+   In its own function because the one above gives up when there is no theme
+   button, and this has to work all the same. */
+(function () {
+  "use strict";
+
+  // --- show the password ---------------------------------------------------
+  Array.prototype.forEach.call(document.querySelectorAll("[data-reveal]"), function (btn) {
+    var input = document.getElementById(btn.dataset.reveal);
+    if (!input) return;
+
+    // Born hidden in the HTML: without this script the button would do nothing.
+    btn.hidden = false;
+
+    btn.addEventListener("click", function () {
+      var oculta = input.type === "password";
+      input.type = oculta ? "text" : "password";
+      btn.setAttribute("aria-pressed", String(oculta));
+      btn.setAttribute("aria-label", oculta ? btn.dataset.hide : btn.dataset.show);
+      // Focus goes back to the field, with the caret at the end.
+      var fin = input.value.length;
+      input.focus({ preventScroll: true });
+      try { input.setSelectionRange(fin, fin); } catch (e) {}
+    });
+  });
+
+  // --- the four rules ------------------------------------------------------
+  // The same checks as password_problem() in services/security.py, which is the
+  // one that decides; this only shows them while you type. Unicode classes and
+  // not [A-Z] or [0-9], because over there isupper() and isdigit() understand
+  // any alphabet.
+  var lista = document.querySelector("[data-rules]");
+  var campo = lista && document.getElementById("password");
+  if (!lista || !campo) return;
+
+  var minimo = parseInt(lista.dataset.min, 10) || 10;
+  var reglas = {
+    length: function (v) { return v.length >= minimo; },
+    upper: function (v) { return /\p{Lu}/u.test(v); },
+    digit: function (v) { return /\p{Nd}/u.test(v); },
+    symbol: function (v) { return /[^\p{L}\p{N}\s]/u.test(v); }
+  };
+  var puntos = Array.prototype.slice.call(lista.querySelectorAll("[data-rule]"));
+  var cumplido = lista.dataset.metLabel || "cumplido";
+
+  function repasar() {
+    var valor = campo.value;
+    puntos.forEach(function (punto) {
+      var prueba = reglas[punto.dataset.rule];
+      var ok = prueba ? prueba(valor) : false;
+      punto.classList.toggle("is-met", ok);
+      var estado = punto.querySelector("[data-state]");
+      if (estado) estado.textContent = ok ? cumplido : "";
+    });
+  }
+
+  campo.addEventListener("input", repasar);
+  // The browser may fill the field on its own: the list must not lie on load.
+  repasar();
+})();

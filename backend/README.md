@@ -267,6 +267,7 @@ SECRET_KEY=            (una NUEVA, distinta a la de tu computadora)
 MONGODB_URI=           (la de Atlas)
 MONGODB_DB=panamails_app
 APP_BASE_URL=https://panel.panamails.com
+PUBLIC_SITE_URL=https://panamails.com
 CONFIRMATION_CODE_MINUTES=30
 MAIL_BACKEND=smtp
 SYSTEM_FROM_EMAIL=panamails.info@gmail.com

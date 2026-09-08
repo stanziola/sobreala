@@ -26,7 +26,14 @@
 </head>
 <body>
 <header class="bar">
-  <a class="bar__brand" href="/">
+  {# Dentro de la cuenta el logo lleva al panel, que es lo que espera quien
+     está trabajando. Fuera, al sitio público: desde entrar o registro no había
+     ninguna forma de volver a mirar la web antes de decidirse. #}
+  {% if session.get('account_id') %}
+  <a class="bar__brand" href="{{ url_for('auth.panel') }}">
+  {% else %}
+  <a class="bar__brand" href="{{ site_url }}/" title="{{ t('back_to_site') }}">
+  {% endif %}
     <span class="bar__wing">{% include "_wing.svg" %}</span>
     <span class="bar__name">{{ t('brand') }}</span>
   </a>

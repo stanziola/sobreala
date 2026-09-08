@@ -23,8 +23,6 @@ TEXTS = {
     "register_email": "Correo electrónico",
     "register_phone": "Teléfono (opcional)",
     "register_password": "Contraseña",
-    "register_password_hint": "Al menos 10 caracteres, con una mayúscula, un "
-                              "número y un símbolo (por ejemplo . - _ ! ?).",
     "register_submit": "Crear cuenta",
     # Partido en tres porque dos de los pedazos son enlaces. Todo el español
     # sigue aquí; la plantilla solo los une.
@@ -48,6 +46,18 @@ TEXTS = {
     "resend_title": "Pedir otro código",
     "resend_lead": "Escribe tu correo y te mandamos un código nuevo.",
     "resend_submit": "Enviar código",
+
+    # --- contraseñas -------------------------------------------------------
+    # Las mismas cuatro reglas que aplica password_problem() en
+    # services/security.py, que es la que manda. Estas son solo su nombre.
+    "password_rules_title": "Tu contraseña necesita:",
+    "password_rule_length": "Al menos {min} caracteres",
+    "password_rule_upper": "Una letra mayúscula",
+    "password_rule_digit": "Un número",
+    "password_rule_symbol": "Un símbolo, por ejemplo . - _ ! ?",
+    "password_rule_met": "cumplido",
+    "password_show": "Mostrar contraseña",
+    "password_hide": "Ocultar contraseña",
 
     # --- login -------------------------------------------------------------
     "login_title": "Entra a tu cuenta",

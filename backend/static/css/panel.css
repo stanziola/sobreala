@@ -204,6 +204,44 @@ input:focus { border-color: var(--color-accent); }
   letter-spacing: .35em; text-align: center;
 }
 .hint { margin-top: 6px; font-size: .85rem; color: var(--color-ink-soft); }
+
+/* A field with a button inside it: the eye that reveals the password. */
+.field { position: relative; }
+.field input { padding-right: 48px; }
+.field__eye {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  color: var(--color-ink-soft); background: transparent; cursor: pointer;
+  border: 0; border-radius: 8px;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+.field__eye:hover { color: var(--color-ink); background: var(--color-surface-alt); }
+.field__eye > span { display: none; grid-area: 1 / 1; }
+.field__eye[aria-pressed="false"] .field__eye-on { display: grid; }
+.field__eye[aria-pressed="true"] .field__eye-off { display: grid; }
+.field__eye[aria-pressed="true"] { color: var(--color-accent-strong); }
+
+/* The four password rules. The tick stays grey while the rule is unmet and
+   turns brand blue once it is: the progress reads without reading a word. */
+.rules__title { margin-top: 10px; font-size: .85rem; color: var(--color-ink-soft); }
+.rules { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.rules__item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .85rem; color: var(--color-ink-soft);
+  transition: color var(--fast) var(--ease);
+}
+.rules__check {
+  display: grid; place-items: center; flex: none; width: 18px; height: 18px;
+  /* Inherits the muted colour of its row: a border colour was nearly
+     invisible against the dark background. */
+  color: inherit; opacity: .55;
+  transition: color var(--fast) var(--ease), opacity var(--fast) var(--ease),
+              transform var(--fast) var(--ease);
+}
+.rules__item.is-met { color: var(--color-ink); }
+.rules__item.is-met .rules__check {
+  color: var(--color-accent); opacity: 1; transform: scale(1.12);
+}
 .hint--legal { margin-top: 14px; text-align: center; }
 
 .btn {

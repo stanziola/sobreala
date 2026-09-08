@@ -249,6 +249,22 @@ def test_panel_warns_until_the_address_is_confirmed(client, database, outbox):
     assert "confirmas tu correo" not in client.get("/panel").get_data(as_text=True)
 
 
+def test_the_logo_leads_out_of_the_panel_and_back_into_it(client, database):
+    """Quien todavía no entró tiene que poder volver a mirar el sitio.
+
+    Desde /entrar y /registro el logo es la única salida hacia panamails.com;
+    una vez dentro, lo que se espera de él es lo contrario, que lleve al panel.
+    """
+    fuera = client.get("/entrar").get_data(as_text=True)
+    assert 'class="bar__brand" href="https://panamails.com/"' in fuera
+    assert "Volver al sitio" in fuera
+
+    register(client)
+    login(client)
+    dentro = client.get("/panel").get_data(as_text=True)
+    assert 'class="bar__brand" href="/panel"' in dentro
+
+
 def test_panel_needs_a_session(client, database):
     assert client.get("/panel").status_code == 302
 

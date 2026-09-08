@@ -13,7 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import t
-from services.security import csrf_token
+from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
 
 def asset_version() -> str:
@@ -73,7 +73,10 @@ def create_app(overrides: dict | None = None) -> Flask:
     # Templates hold no Spanish of their own: they ask i18n for it.
     app.jinja_env.globals.update(t=t, csrf_token=csrf_token,
                                  asset_version=asset_version(),
-                                 site_url=Config.PUBLIC_SITE_URL)
+                                 site_url=Config.PUBLIC_SITE_URL,
+                                 # El mismo número que refuerza el servidor, para
+                                 # que la lista de la pantalla no pueda mentir.
+                                 password_min=MIN_PASSWORD_LENGTH)
 
     @app.before_request
     def _csp_nonce():

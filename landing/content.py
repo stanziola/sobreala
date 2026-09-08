@@ -590,9 +590,9 @@ ABOUT = {
 # propósito mientras no exista aviso de operación; en cuanto lo haya, se
 # escribe aquí y aparece solo en las dos páginas.
 LEGAL_HOLDER = {
-    "name": "[NOMBRE COMPLETO DEL TITULAR]",
+    "name": "Luis Stanziola",
     "identifier": "",
-    "place": "La Colorada, Santiago de Veraguas, provincia de Veraguas, Panamá",
+    "place": "Santiago de Veraguas, provincia de Veraguas, Panamá",
 }
 
 
