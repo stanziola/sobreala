@@ -74,6 +74,20 @@ def test_the_already_registered_notice_is_recorded_too(client, database, outbox)
     assert "ya tiene una cuenta" in notice["text"]
 
 
+def test_the_welcome_is_recorded_with_its_own_purpose(client, database, outbox):
+    register(client)
+    confirm(client, code_from_outbox(outbox))
+
+    row = database.mail_log.find_one({"purpose": mail_log.WELCOME})
+    assert row is not None
+    assert row["status"] == mail_log.SENT
+    assert row["to"] == "ana@ejemplo.com"
+    assert row["account_id"] == accounts.by_email(database, "ana@ejemplo.com")["_id"]
+    # The logo travels as a hosted image, not embedded: mail clients do not
+    # draw SVG and nobody wants 26 KB more of message.
+    assert "/assets/img/logo.png" in row["html"]
+
+
 def test_a_failed_send_undoes_the_registration(client, database, outbox,
                                               monkeypatch):
     def explode(*args, **kwargs):

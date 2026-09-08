@@ -129,6 +129,25 @@ TEXTS = {
     "mail_confirm_ignore": "Si no creaste ninguna cuenta, puedes ignorar este "
                            "mensaje: no se hará nada.",
 
+    # Sent once the code is typed and the address is verified: the account is
+    # complete. Transactional, like the rest of the system mail — it describes
+    # the state of an account its owner just created, it does not offer
+    # anything, so rule 8 holds and it carries no unsubscribe link.
+    "mail_welcome_subject": "Tu cuenta de Panamails está lista",
+    # Neutral on purpose: we do not know the recipient's gender.
+    "mail_welcome_heading": "Te damos la bienvenida, {name}",
+    "mail_welcome_body": "Confirmaste tu correo, así que tu cuenta ya está "
+                         "creada. Desde el panel puedes subir tus contactos, "
+                         "organizarlos por listas y dejar tus campañas armadas.",
+    "mail_welcome_button": "Entrar al panel",
+    "mail_welcome_next_title": "Antes de tu primer envío",
+    "mail_welcome_next": "Para enviar de verdad hablamos contigo primero: "
+                         "revisamos de dónde salió tu lista y activamos el "
+                         "envío a mano. Es lo que mantiene la entregabilidad "
+                         "alta para todos los que envían desde Panamails.",
+    "mail_welcome_help": "Si algo no te calza, escríbenos a "
+                         "panamails.info@gmail.com y lo vemos.",
+
     # Sent when someone tries to register with an address that already has an
     # account. The screen must not reveal this, so the owner is told by email.
     "mail_exists_subject": "Alguien intentó crear una cuenta con tu correo",

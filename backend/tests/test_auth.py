@@ -110,6 +110,47 @@ def test_confirmation_works_and_signs_in(client, database, outbox):
     assert "Hola, Ana" in client.get("/panel").get_data(as_text=True)
 
 
+def test_confirming_sends_the_welcome(client, database, outbox):
+    register(client)
+    confirm(client, code_from_outbox(outbox))
+
+    bodies = [p.read_text(encoding="utf-8") for p in sorted(outbox.glob("*.txt"))]
+    assert len(bodies) == 2, "the code and the welcome"
+    welcome = bodies[-1]
+    assert "Te damos la bienvenida, Ana" in welcome
+    assert "/panel" in welcome
+    # Transactional: no unsubscribe and no watermark, as rule 8 requires.
+    assert "baja" not in welcome.lower()
+    assert "Enviado con Panamails" not in welcome
+
+
+def test_a_failed_welcome_does_not_lock_anyone_out(client, database, outbox,
+                                                   monkeypatch):
+    """A registration undoes itself when its mail fails; the welcome must not.
+
+    By the time it is sent the address is confirmed and the person did
+    everything right: the mail provider cannot be a reason to lock them out.
+    """
+    register(client)
+    code = code_from_outbox(outbox)
+
+    from services import mailer
+    original = mailer.send
+
+    def only_the_welcome_explodes(*args, **kwargs):
+        if kwargs.get("purpose") == "welcome":
+            raise RuntimeError("el proveedor rechazo el mensaje")
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(mailer, "send", only_the_welcome_explodes)
+
+    response = confirm(client, code)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/panel")
+    assert accounts.by_email(database, "ana@ejemplo.com")["email_confirmed_at"]
+    assert "Hola, Ana" in client.get("/panel").get_data(as_text=True)
+
+
 def test_a_used_code_does_not_work_twice(client, database, outbox):
     register(client)
     code = code_from_outbox(outbox)

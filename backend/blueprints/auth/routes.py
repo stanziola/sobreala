@@ -167,6 +167,25 @@ def send_confirmation(db, account: dict) -> None:
     )
 
 
+def send_welcome(db, account: dict) -> None:
+    """The message that closes a registration.
+
+    Says the two things nobody guesses: that the account now exists, and that
+    sending is still off until it is approved by hand.
+    """
+    panel = f"{Config.APP_BASE_URL}{url_for('auth.panel')}"
+    mailer.send(
+        to=account["email"],
+        subject=t("mail_welcome_subject"),
+        html=render_template("email/welcome.html", name=account["contact_name"],
+                             panel=panel),
+        text=render_template("email/welcome.txt", name=account["contact_name"],
+                             panel=panel),
+        purpose=mail_log.WELCOME,
+        account_id=account["_id"],
+    )
+
+
 def send_already_registered(db, account: dict) -> None:
     """Tell the owner, because the screen cannot."""
     link = f"{Config.APP_BASE_URL}{url_for('auth.login')}"
@@ -343,6 +362,11 @@ def confirm():
                     accounts.confirm_email(db, account_id)
                     log_auth(db, events.CONFIRM, events.OK,
                              email=account["email"], account_id=account_id)
+                    # The opposite of registration: a failure here undoes
+                    # nothing and locks nobody out. The account is confirmed
+                    # already and the session opens either way; the failure is
+                    # written down and that is all.
+                    deliver(db, send_welcome, account, kind=events.CONFIRM)
                     sign_in(account)
                     return redirect(url_for("auth.panel"))
 

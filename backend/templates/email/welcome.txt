@@ -1,0 +1,13 @@
+{{ t('mail_welcome_heading', name=name) }}
+
+{{ t('mail_welcome_body') }}
+
+{{ panel }}
+
+{{ t('mail_welcome_next_title') }}
+{{ t('mail_welcome_next') }}
+
+{{ t('mail_welcome_help') }}
+
+-- 
+{{ t('brand') }}
