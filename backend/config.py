@@ -32,7 +32,9 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = _bool("SESSION_COOKIE_SECURE", not DEBUG)
-    PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 14  # two weeks
+    # Only applies to a session someone asked to keep; without the checkbox the
+    # cookie dies with the browser. models/session.py holds the real expiry.
+    PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 30
 
     # --- database ----------------------------------------------------------
     # An Atlas cluster goes here as mongodb+srv://user:password@host/... The

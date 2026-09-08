@@ -45,7 +45,6 @@ def create(db, *, company_name: str, contact_name: str, email: str,
         "password_hash": hash_password(password),
         "email_confirmed_at": None,
         "status": REGISTERED,
-        "session_version": 1,
         "created_at": moment,
         "updated_at": moment,
         "last_login_at": None,
@@ -83,6 +82,12 @@ def confirm_email(db, account_id) -> bool:
 
 def touch_login(db, account_id) -> None:
     db.accounts.update_one({"_id": account_id}, {"$set": {"last_login_at": now()}})
+
+
+def set_password(db, account_id, password_hash: str) -> None:
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"password_hash": password_hash,
+                                     "updated_at": now()}})
 
 
 def is_confirmed(account: dict[str, Any] | None) -> bool:

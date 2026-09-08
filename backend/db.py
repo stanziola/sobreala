@@ -70,6 +70,15 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.account_tokens.create_index([("purge_at", ASCENDING)], expireAfterSeconds=0,
                                    name="ttl_purge_at")
 
+    # One document per signed-in device. Looked up by the hash of what the
+    # cookie carries, listed by account, and swept by Mongo when it expires.
+    db.sessions.create_index([("token_hash", ASCENDING)], unique=True,
+                             name="uniq_session_token")
+    db.sessions.create_index([("account_id", ASCENDING), ("last_seen_at", DESCENDING)],
+                             name="by_account_last_seen")
+    db.sessions.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
+                             name="ttl_expires_at")
+
     db.rate_limits.create_index([("key", ASCENDING)], name="by_key")
     db.rate_limits.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
                                 name="ttl_expires_at")

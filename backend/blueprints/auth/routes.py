@@ -30,10 +30,11 @@ from i18n import t
 from models import account as accounts
 from models import auth_event as events
 from models import mail_log
+from models import session as sessions
 from models import token as tokens
 from services import mailer
-from services.security import (csrf_ok, password_problem, rate_limit,
-                               verify_password)
+from services.security import (csrf_ok, hash_password, password_problem,
+                               rate_limit, verify_password)
 
 bp = Blueprint("auth", __name__)
 
@@ -44,6 +45,7 @@ RESEND_PER_EMAIL = (5, 3600)
 RESEND_PER_IP = (15, 3600)
 LOGIN_PER_IP = (20, 900)
 CONFIRM_PER_IP = (30, 900)
+PASSWORD_PER_IP = (10, 900)
 # Registering with someone else's address sends them a notice. Without a budget
 # per address, that is a way to fill a stranger's inbox from many machines, so
 # the notice has one of its own, separate from the per-IP budget.
@@ -64,16 +66,25 @@ PASSWORD_MESSAGES = {
 # because the screen has to answer the same way when there is no code at all.
 PENDING_KEY = "pending_account_id"
 ATTEMPTS_KEY = "confirm_attempts"
+# Lo único que identifica una sesión: el resto vive en la colección sessions.
+SESSION_KEY = "sid"
+
+
+def current_session():
+    """The live session document behind this request's cookie, or None.
+
+    The cookie carries an identifier and nothing else. Everything worth knowing
+    —which account, since when, from which device, and whether it was closed
+    from another one— lives in the sessions collection, which is what makes it
+    possible to shut one device without touching the rest.
+    """
+    return sessions.find(get_db(), session.get(SESSION_KEY))
 
 
 def session_account_id():
-    """The signed-in account's id as an ObjectId, or None.
-
-    The session cookie can only hold JSON, so the id lives there as text while
-    every collection stores the real ObjectId. Converting in one place keeps the
-    two types from getting mixed in the same field.
-    """
-    return as_object_id(session.get("account_id"))
+    """The signed-in account's id, or None."""
+    doc = current_session()
+    return doc["account_id"] if doc else None
 
 
 def as_object_id(raw):
@@ -86,23 +97,37 @@ def as_object_id(raw):
 
 
 def current_account() -> dict | None:
-    """The signed-in account, or None. Also drops a session whose account was
-    deleted, or whose password changed after it was issued."""
-    account_id = session_account_id()
-    if account_id is None:
+    """The signed-in account, or None.
+
+    A cookie whose session was closed from another device, or that outlived it,
+    is cleared here: it will never be good again and keeping it only delays the
+    sign-in screen.
+    """
+    doc = current_session()
+    if doc is None:
+        if session.get(SESSION_KEY):
+            session.clear()
         return None
-    account = accounts.by_id(get_db(), account_id)
-    if account is None or account.get("session_version", 1) != session.get("session_version"):
+    account = accounts.by_id(get_db(), doc["account_id"])
+    if account is None:
         session.clear()
         return None
+    sessions.touch(get_db(), doc)
     return account
 
 
-def sign_in(account: dict) -> None:
+def sign_in(account: dict, *, remember: bool = True) -> None:
+    """Open a session for this device.
+
+    `remember` decides two lifetimes at once: the cookie's —permanent, or gone
+    when the browser closes— and the document's. The document is the one that
+    counts, because a browser is free to keep a cookie longer than it was told.
+    """
     session.clear()
-    session["account_id"] = str(account["_id"])
-    session["session_version"] = account.get("session_version", 1)
-    session.permanent = True
+    session[SESSION_KEY] = sessions.start(
+        get_db(), account["_id"], ip=client_ip(),
+        user_agent=request.headers.get("User-Agent", ""), remember=remember)
+    session.permanent = remember
 
 
 def await_code(account_id) -> None:
@@ -186,6 +211,25 @@ def send_welcome(db, account: dict) -> None:
     )
 
 
+def send_password_changed(db, account: dict) -> None:
+    """Tell the owner that the password just changed.
+
+    The one message that matters when it was not them: it is the only warning
+    someone gets that another person is inside their account.
+    """
+    panel = f"{Config.APP_BASE_URL}{url_for('auth.panel')}"
+    mailer.send(
+        to=account["email"],
+        subject=t("mail_password_subject"),
+        html=render_template("email/password-changed.html",
+                             name=account["contact_name"], panel=panel),
+        text=render_template("email/password-changed.txt",
+                             name=account["contact_name"], panel=panel),
+        purpose=mail_log.PASSWORD_CHANGED,
+        account_id=account["_id"],
+    )
+
+
 def send_already_registered(db, account: dict) -> None:
     """Tell the owner, because the screen cannot."""
     link = f"{Config.APP_BASE_URL}{url_for('auth.login')}"
@@ -223,7 +267,7 @@ def deliver(db, send, account: dict, *, kind: str) -> bool:
 
 @bp.route("/registro", methods=["GET", "POST"])
 def register():
-    if session.get("account_id"):
+    if current_session():
         return redirect(url_for("auth.panel"))
 
     form = {"company_name": "", "contact_name": "", "email": "", "phone": ""}
@@ -436,16 +480,19 @@ def resend():
 
 @bp.route("/entrar", methods=["GET", "POST"])
 def login():
-    if session.get("account_id"):
+    if current_session():
         return redirect(url_for("auth.panel"))
 
     errors: dict[str, str] = {}
     email_value = ""
+    # Ticked by default the first time; after a failure, whatever was left.
+    remember = True
 
     if request.method == "POST":
         db = get_db()
         email_value = request.form.get("email", "").strip()
         password = request.form.get("password", "")
+        remember = bool(request.form.get("remember"))
 
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
@@ -458,7 +505,7 @@ def login():
             # Called even when there is no account, so a wrong address and a
             # wrong password take a similar amount of time.
             if verify_password(password, account and account.get("password_hash")):
-                sign_in(account)
+                sign_in(account, remember=bool(request.form.get("remember")))
                 accounts.touch_login(db, account["_id"])
                 log_auth(db, events.LOGIN, events.OK, email=email_value,
                          account_id=account["_id"])
@@ -472,19 +519,24 @@ def login():
             log_auth(db, events.LOGIN, events.BAD_CREDENTIALS, email=email_value,
                      account_id=account["_id"] if account else None)
 
-    return render_template("login.html", errors=errors, email=email_value)
+    return render_template("login.html", errors=errors, email=email_value,
+                           remember=remember)
 
 
 @bp.route("/salir", methods=["POST"])
 def logout():
-    # The session holds the id as text; the log stores ObjectId everywhere else,
-    # so convert rather than mix the two types in one field.
-    account_id = session_account_id()
+    db = get_db()
+    doc = current_session()
+    account_id = doc["account_id"] if doc else None
     if csrf_ok(request.form.get("csrf_token")):
+        # Close it for real instead of just forgetting the cookie: whoever
+        # copied its value no longer holds anything.
+        if doc:
+            sessions.revoke(db, account_id, doc["_id"])
         session.clear()
-        log_auth(get_db(), events.LOGOUT, events.OK, account_id=account_id)
+        log_auth(db, events.LOGOUT, events.OK, account_id=account_id)
     else:
-        log_auth(get_db(), events.LOGOUT, events.CSRF_FAILED, account_id=account_id)
+        log_auth(db, events.LOGOUT, events.CSRF_FAILED, account_id=account_id)
     return redirect(url_for("auth.login"))
 
 
@@ -495,5 +547,103 @@ def panel():
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
-    return render_template("panel.html", account=account,
-                           confirmed=accounts.is_confirmed(account))
+    here = current_session()
+    return render_template(
+        "panel.html", account=account,
+        confirmed=accounts.is_confirmed(account),
+        devices=sessions.for_account(get_db(), account["_id"]),
+        here=here["_id"] if here else None,
+        describe=sessions.describe,
+    )
+
+
+# ---------------------------------------------------------------- devices
+
+@bp.route("/dispositivos/cerrar", methods=["POST"])
+def close_device():
+    """Close one session, or every one but this.
+
+    The id comes from a form, so models/session.py scopes the update to the
+    signed-in account: an id from somebody else's account matches nothing.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    if not csrf_ok(request.form.get("csrf_token")):
+        log_auth(db, events.SESSION_CLOSED, events.CSRF_FAILED,
+                 email=account["email"], account_id=account["_id"])
+        return redirect(url_for("auth.panel"))
+
+    here = current_session()
+    wanted = request.form.get("session_id", "")
+    if wanted == "otras":
+        closed = sessions.revoke_others(db, account["_id"], here["_id"] if here else None)
+        log_auth(db, events.SESSION_CLOSED, f"others:{closed}",
+                 email=account["email"], account_id=account["_id"])
+    else:
+        target = as_object_id(wanted)
+        if target and sessions.revoke(db, account["_id"], target):
+            log_auth(db, events.SESSION_CLOSED, events.OK,
+                     email=account["email"], account_id=account["_id"])
+        # Closing the one in use is signing out, so the cookie goes with it.
+        if here and target == here["_id"]:
+            session.clear()
+            return redirect(url_for("auth.login"))
+    return redirect(url_for("auth.panel"))
+
+
+# --------------------------------------------------------------- password
+
+@bp.route("/cambiar-contrasena", methods=["GET", "POST"])
+def change_password():
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        db = get_db()
+        current = request.form.get("current", "")
+        fresh = request.form.get("password", "")
+        repeated = request.form.get("repeat", "")
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.PASSWORD_CHANGE, events.CSRF_FAILED,
+                     email=account["email"], account_id=account["_id"])
+        elif not rate_limit(db, f"password:ip:{client_ip()}", *PASSWORD_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.PASSWORD_CHANGE, events.RATE_LIMITED,
+                     email=account["email"], account_id=account["_id"])
+        elif not verify_password(current, account.get("password_hash")):
+            errors["current"] = t("error_password_wrong")
+            log_auth(db, events.PASSWORD_CHANGE, events.BAD_CURRENT,
+                     email=account["email"], account_id=account["_id"])
+        else:
+            problem = password_problem(fresh)
+            if problem:
+                errors["password"] = t(PASSWORD_MESSAGES[problem])
+            elif fresh != repeated:
+                errors["repeat"] = t("error_password_repeat")
+            elif fresh == current:
+                errors["password"] = t("error_password_same")
+
+            if errors:
+                log_auth(db, events.PASSWORD_CHANGE, events.INVALID,
+                         email=account["email"], account_id=account["_id"])
+            else:
+                accounts.set_password(db, account["_id"], hash_password(fresh))
+                # Whoever knew the old password stops being inside. This session
+                # survives because it is the one that proved it knew it.
+                here = current_session()
+                sessions.revoke_others(db, account["_id"], here["_id"] if here else None)
+                log_auth(db, events.PASSWORD_CHANGE, events.OK,
+                         email=account["email"], account_id=account["_id"])
+                # A failed notice cannot undo a password that already changed.
+                deliver(db, send_password_changed, account,
+                        kind=events.PASSWORD_CHANGE)
+                return redirect(url_for("auth.panel", cambiada=1))
+
+    return render_template("password.html", errors=errors)

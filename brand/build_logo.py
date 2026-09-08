@@ -1042,6 +1042,16 @@ def build(colors: dict[str, str] | None = None, layout: dict | None = None) -> l
     render_composition(colors, scale=4.0, shift=logo_shift(layout)).convert("RGB").save(png, optimize=True)
     written.append(png)
 
+    # The wing with no background, cropped to what it draws. Email clients in
+    # dark mode repaint the backgrounds declared in the HTML and leave images
+    # alone, so a logo with its own background shows up as a box floating on a
+    # bar of a different colour. This one has nothing to repaint.
+    wing = LOGO_DIR / "logo-wing.png"
+    transparent = render_composition(colors, scale=4.0, shift=logo_shift(layout),
+                                     background=False)
+    transparent.crop(transparent.getbbox()).save(wing, optimize=True)
+    written.append(wing)
+
     for px in FAVICON_PNG_SIZES:
         p = FAVICON_DIR / f"favicon-{px}x{px}.png"
         rounded = APPLE_TOUCH_ROUNDED if px == APPLE_TOUCH_SIZE else True

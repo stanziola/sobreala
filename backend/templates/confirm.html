@@ -3,7 +3,8 @@
 {% block content %}
 <div class="card card--narrow">
   <h1>{{ t('confirm_title') }}</h1>
-  <p class="lead">{{ t('confirm_lead', minutes=minutes) }}</p>
+  <p class="lead">{{ t('confirm_lead_one') if minutes == 1
+                      else t('confirm_lead', minutes=minutes) }}</p>
 
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 

@@ -26,6 +26,11 @@
       </button>
     </div>
 
+    <label class="check">
+      <input type="checkbox" name="remember" value="1"{% if remember %} checked{% endif %}>
+      <span>{{ t('login_remember') }}</span>
+    </label>
+
     <button class="btn" type="submit">{{ t('login_submit') }}</button>
   </form>
 

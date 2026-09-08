@@ -9,12 +9,13 @@
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
            style="max-width:520px;background:#FFFFFF;border-radius:14px;
                   font-family:Helvetica,Arial,sans-serif;color:#0E1B2A;">
-      {#- El fondo del PNG es el mismo azul de esta celda, así que el ala se ve
-          recortada aunque no lo esté. Y va con alt vacío a propósito: el nombre
-          de la marca ya está en texto al lado, así que si el cliente bloquea
-          imágenes no se lee "Panamails" dos veces. -#}
+      {#- El ala va sin fondo a propósito: en modo oscuro el cliente de correo
+          repinta el fondo que declara esta celda y no toca las imágenes, así
+          que un PNG con su propio fondo se ve como un recuadro flotando. Y con
+          alt vacío porque el nombre de la marca ya está en texto al lado: si el
+          cliente bloquea imágenes, no se lee "Panamails" dos veces. -#}
       <tr><td style="background:#3166A7;border-radius:14px 14px 0 0;padding:16px 24px;">
-        <img src="{{ site_url }}/assets/img/logo.png" width="52" height="49" alt=""
+        <img src="{{ site_url }}/assets/img/logo-wing.png" width="44" height="26" alt=""
              style="display:inline-block;vertical-align:middle;border:0;">
         <span style="display:inline-block;vertical-align:middle;padding-left:10px;
                      color:#FFFFFF;font-size:20px;font-weight:bold;">{{ t('brand') }}</span>

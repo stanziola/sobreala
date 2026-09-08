@@ -24,6 +24,8 @@ from models.account import normalize_email
 # What was attempted.
 REGISTER = "register"
 LOGIN = "login"
+PASSWORD_CHANGE = "password_change"
+SESSION_CLOSED = "session_closed"
 RESEND = "resend"
 CONFIRM = "confirm"
 LOGOUT = "logout"
@@ -39,6 +41,7 @@ BAD_CREDENTIALS = "bad_credentials"    # login: wrong address or password
 SENT = "sent"                          # resend: a fresh link went out
 NO_ACCOUNT = "no_account"              # resend: nothing to send to
 ALREADY_CONFIRMED = "already_confirmed"  # resend: address was verified already
+BAD_CURRENT = "bad_current"            # password change: the old one was wrong
 MAIL_FAILED = "mail_failed"            # the account is fine, the email did not go out
 
 # What the confirm route writes down, keyed by the reason models/token.py gave.

@@ -167,6 +167,8 @@ FONT_FILES = [
 
 COPY_IMAGES = [
     (BRAND_DIR / "logo" / "logo-transparent.svg", "logo-wing.svg"),
+    # For the emails: the <img> in their header. Clients do not draw SVG.
+    (BRAND_DIR / "logo" / "logo-wing.png", "logo-wing.png"),
     (BRAND_DIR / "logo" / "logo.svg", "logo.svg"),
     (BRAND_DIR / "logo" / "logo.png", "logo.png"),
     (BRAND_DIR / "favicon" / "favicon.svg", "favicon.svg"),

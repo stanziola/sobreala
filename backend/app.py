@@ -12,7 +12,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
 from db import ensure_indexes_once, health, indexes_ready
-from i18n import t
+from i18n import ago, t
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
 
@@ -77,6 +77,7 @@ def create_app(overrides: dict | None = None) -> Flask:
                                  # El mismo número que refuerza el servidor, para
                                  # que la lista de la pantalla no pueda mentir.
                                  password_min=MIN_PASSWORD_LENGTH)
+    app.jinja_env.filters["ago"] = ago
 
     @app.before_request
     def _csp_nonce():

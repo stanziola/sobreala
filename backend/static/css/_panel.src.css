@@ -163,6 +163,38 @@ input:focus { border-color: var(--color-accent); }
 }
 .btn--quiet { transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease); }
 .btn--small { margin-top: 12px; padding: 8px 14px; font-size: .9rem; }
+/* For buttons inside a card, where the white-on-blue quiet button would be
+   invisible. */
+.btn--outline {
+  background: transparent; color: var(--color-accent-strong);
+  border: 1px solid var(--color-border);
+}
+.btn--outline:hover { background: var(--color-surface-alt); filter: none; transform: none; }
+
+/* "Keep me signed in": a checkbox, not a field, so it does not inherit the
+   full-width input rules above. */
+.check { display: flex; align-items: center; gap: 10px; margin-top: 18px;
+         font-weight: 500; font-size: .95rem; cursor: pointer; }
+.check input { width: auto; margin: 0; accent-color: var(--color-accent); }
+
+/* The devices an account is open on. */
+.card--loose { margin-top: 18px; }
+.card__title { margin: 0 0 8px; font-size: 1.2rem; font-weight: 700; }
+.devices { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.device {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 12px;
+}
+.device__name { font-weight: 600; }
+.device__meta { margin-top: 2px; font-size: .85rem; color: var(--color-ink-soft); }
+.device form { margin: 0; }
+.device .btn { margin-top: 0; }
+.tag {
+  display: inline-block; margin-left: 8px; padding: 2px 8px; vertical-align: middle;
+  font-size: .75rem; font-weight: 600; border-radius: 999px;
+  color: var(--color-on-accent); background: var(--color-accent);
+}
+.notice--ok { border-color: var(--color-accent); }
 
 .error { margin-top: 6px; font-size: .9rem; font-weight: 600; color: var(--color-accent-strong); }
 .error--form {

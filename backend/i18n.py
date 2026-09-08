@@ -37,6 +37,8 @@ TEXTS = {
     "confirm_title": "Escribe tu código",
     "confirm_lead": "Te enviamos un código de 6 dígitos a tu correo. "
                     "Vence en {minutes} minutos.",
+    "confirm_lead_one": "Te enviamos un código de 6 dígitos a tu correo. "
+                        "Vence en un minuto.",
     "confirm_hint": "Si no lo ves, mira en la carpeta de spam.",
     "confirm_code": "Código de 6 dígitos",
     "confirm_submit": "Confirmar mi correo",
@@ -64,8 +66,42 @@ TEXTS = {
     "login_email": "Correo electrónico",
     "login_password": "Contraseña",
     "login_submit": "Entrar",
+    "login_remember": "Mantener mi sesión iniciada 30 días",
     "login_no_account": "¿Todavía no tienes cuenta?",
     "login_register_link": "Créala aquí",
+
+    # --- devices -----------------------------------------------------------
+    "devices_title": "Tus dispositivos",
+    "devices_lead": "Donde tu cuenta está abierta ahora mismo. Si ves algo que "
+                    "no reconoces, ciérralo y cambia tu contraseña.",
+    # Browser and system are proper nouns; the only thing translated is how
+    # they are joined.
+    "device_on": "{browser} en {system}",
+    "device_unknown": "Dispositivo desconocido",
+    "device_here": "Este dispositivo",
+    "device_seen": "Última actividad: {when}",
+    "device_since": "Desde {when}",
+    "device_close": "Cerrar",
+    "device_close_others": "Cerrar sesión en los demás dispositivos",
+    "device_alone": "Es el único dispositivo con tu cuenta abierta.",
+    "when_now": "hace un momento",
+    "when_minute": "hace un minuto",
+    "when_minutes": "hace {n} minutos",
+    "when_hour": "hace una hora",
+    "when_hours": "hace {n} horas",
+    "when_day": "ayer",
+    "when_days": "hace {n} días",
+
+    # --- password ----------------------------------------------------------
+    "password_title": "Cambiar tu contraseña",
+    "password_lead": "Al cambiarla cerramos la sesión en los demás "
+                     "dispositivos y te avisamos por correo.",
+    "password_current": "Contraseña actual",
+    "password_new": "Nueva contraseña",
+    "password_repeat": "Repite la nueva contraseña",
+    "password_submit": "Guardar la nueva contraseña",
+    "password_changed_ok": "Listo, tu contraseña quedó cambiada.",
+    "panel_password_link": "Cambiar mi contraseña",
 
     # --- panel -------------------------------------------------------------
     "panel_title": "Tu panel",
@@ -105,6 +141,9 @@ TEXTS = {
     "error_mail_failed": "No pudimos enviarte el código en este momento, así "
                          "que no creamos la cuenta. Vuelve a intentarlo en unos "
                          "minutos.",
+    "error_password_wrong": "Esa no es tu contraseña actual.",
+    "error_password_repeat": "Las dos contraseñas no coinciden.",
+    "error_password_same": "Esa ya es tu contraseña. Escribe una distinta.",
 
     # --- error pages -------------------------------------------------------
     # Shown instead of the server's own blank error page. The technical detail
@@ -126,6 +165,7 @@ TEXTS = {
     "mail_confirm_body": "Gracias por crear tu cuenta en Panamails. Escribe "
                          "este código en la página donde lo pediste:",
     "mail_confirm_expiry": "El código vence en {minutes} minutos.",
+    "mail_confirm_expiry_one": "El código vence en un minuto.",
     "mail_confirm_ignore": "Si no creaste ninguna cuenta, puedes ignorar este "
                            "mensaje: no se hará nada.",
 
@@ -148,6 +188,19 @@ TEXTS = {
     "mail_welcome_help": "Si algo no te calza, escríbenos a "
                          "panamails.info@gmail.com y lo vemos.",
 
+    # The only warning someone gets when another person changed their password.
+    "mail_password_subject": "Tu contraseña de Panamails cambió",
+    "mail_password_heading": "Tu contraseña cambió",
+    "mail_password_body": "Acabamos de cambiar la contraseña de tu cuenta y "
+                          "cerramos la sesión en los demás dispositivos.",
+    "mail_password_ok": "Si fuiste tú, no tienes que hacer nada más.",
+    "mail_password_alert_title": "¿No fuiste tú?",
+    "mail_password_alert": "Escríbenos de inmediato a panamails.info@gmail.com. "
+                           "Quien haya entrado conoce tu contraseña anterior, "
+                           "así que conviene revisar también el correo con el "
+                           "que abriste la cuenta.",
+    "mail_password_button": "Entrar al panel",
+
     # Sent when someone tries to register with an address that already has an
     # account. The screen must not reveal this, so the owner is told by email.
     "mail_exists_subject": "Alguien intentó crear una cuenta con tu correo",
@@ -164,3 +217,26 @@ TEXTS = {
 def t(key: str, **kwargs) -> str:
     text = TEXTS[key]
     return text.format(**kwargs) if kwargs else text
+
+
+def ago(moment) -> str:
+    """How long ago that was, in words.
+
+    Rounds down and stops at days: on this screen the question is "was that me,
+    this morning?", not how many seconds have passed.
+    """
+    if moment is None:
+        return ""
+    from datetime import datetime, timezone
+
+    seconds = (datetime.now(timezone.utc) - moment).total_seconds()
+    if seconds < 90:
+        return t("when_now")
+    minutes = int(seconds // 60)
+    if minutes < 60:
+        return t("when_minute") if minutes == 1 else t("when_minutes", n=minutes)
+    hours = minutes // 60
+    if hours < 24:
+        return t("when_hour") if hours == 1 else t("when_hours", n=hours)
+    days = hours // 24
+    return t("when_day") if days == 1 else t("when_days", n=days)

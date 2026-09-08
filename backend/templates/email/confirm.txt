@@ -4,7 +4,7 @@
 
 {{ code }}
 
-{{ t('mail_confirm_expiry', minutes=minutes) }}
+{{ t('mail_confirm_expiry_one') if minutes == 1 else t('mail_confirm_expiry', minutes=minutes) }}
 
 {{ t('mail_confirm_ignore') }}
 
