@@ -140,6 +140,18 @@ intento sigue en `auth_events`, que no tiene TTL.
 cada una que la cuenta usó, y cambiarla las compara todas: si alguien conoció
 una, volver a ponerla devolvería la cuenta al mismo estado.
 
+**Verificación en dos pasos, opcional para cada cliente.** `two_factor` guarda
+el secreto de la app de códigos —TOTP: el servidor tiene que calcular los mismos
+dígitos que el teléfono, así que ese sí va tal cual y no como hash—, el último
+intervalo usado, para que un código no sirva dos veces, y los **hashes** de ocho
+códigos de respaldo de un solo uso. Activarla y desactivarla piden la
+contraseña: sin eso, quien encuentre una sesión abierta se queda con la cuenta.
+
+### `trusted_devices`
+Dispositivos que ya respondieron el código una vez y no tienen que volver a
+hacerlo en 30 días. Su propia galleta, porque debe sobrevivir a cerrar sesión;
+de ella solo se guarda el hash. TTL sobre `expires_at`.
+
 ### `sessions`
 Un documento por dispositivo con sesión abierta: de la galleta solo se guarda su
 hash, y el documento lleva IP, navegador, cuándo entró y cuándo se le vio por

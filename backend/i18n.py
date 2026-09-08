@@ -40,6 +40,8 @@ TEXTS = {
     "confirm_lead_one": "Te enviamos un código de 6 dígitos a tu correo. "
                         "Vence en un minuto.",
     "confirm_hint": "Si no lo ves, mira en la carpeta de spam.",
+    "recover_hint": "Si no lo ves, mira en la carpeta de spam. Y si no llega, "
+                    "vuelve a pedirlo revisando que sea el correo de tu cuenta.",
     "confirm_code": "Código de 6 dígitos",
     "confirm_submit": "Confirmar mi correo",
     "confirm_resend": "Pedir otro código",
@@ -72,8 +74,11 @@ TEXTS = {
 
     # --- recover -----------------------------------------------------------
     "recover_title": "Recuperar tu cuenta",
-    "recover_lead": "Escribe tu correo y te enviamos un código para poner una "
-                    "contraseña nueva.",
+    # "Si esa dirección tiene una cuenta" no es un rodeo: es lo que deja ser
+    # claro sin decir cuáles existen, que es lo que protege la regla 7 aquí.
+    "recover_lead": "Escribe el correo con el que creaste tu cuenta. Si esa "
+                    "dirección tiene una cuenta, te llega un código en un "
+                    "minuto.",
     "recover_lead_known": "Te enviamos un código para poner una contraseña "
                           "nueva, sin necesidad de recordar la anterior.",
     "recover_to": "El código va a {email}",
@@ -131,6 +136,51 @@ TEXTS = {
                           "Desde tu panel puedes ver y cerrar tus dispositivos "
                           "cuando quieras.",
     "close_change": "Cambiar mi contraseña",
+
+    # --- two-step verification ---------------------------------------------
+    "two_step_title": "Verificación en dos pasos",
+    "two_step_off_lead": "Añade un segundo candado a tu cuenta: además de tu "
+                         "contraseña, un código que genera una app en tu "
+                         "teléfono y cambia cada 30 segundos.",
+    "two_step_on_lead": "Está activada. Al entrar desde un dispositivo nuevo te "
+                        "pediremos el código de tu app.",
+    "two_step_step_app": "Instala una app de códigos: Google Authenticator, "
+                         "Microsoft Authenticator o la que ya uses.",
+    "two_step_step_scan": "Escanea este código con la app.",
+    "two_step_step_code": "Escribe el código de 6 dígitos que te muestre, para "
+                          "comprobar que quedó bien.",
+    "two_step_manual": "¿No puedes escanear? Escribe esta clave en la app:",
+    "two_step_code_label": "Código de tu app",
+    "two_step_why_password": "Pedimos tu contraseña para que nadie active ni "
+                             "desactive esto desde una sesión que dejaste "
+                             "abierta.",
+    "two_step_enable": "Activar la verificación",
+    "two_step_disable": "Desactivar",
+    "two_step_regenerate": "Generar códigos nuevos",
+    "two_step_recovery_left": "Te quedan {n} códigos de respaldo sin usar.",
+
+    "two_step_codes_title": "Guarda estos códigos de respaldo",
+    "two_step_codes_lead": "Sirven para entrar si pierdes el teléfono. Cada uno "
+                           "vale una sola vez.",
+    "two_step_codes_hint": "Solo los verás ahora: guardamos únicamente una "
+                           "huella suya, así que ni nosotros podemos "
+                           "enseñártelos otra vez. Apúntalos en papel o en tu "
+                           "gestor de contraseñas.",
+    "two_step_codes_done": "Ya los guardé",
+
+    "two_step_code_title": "Escribe el código de tu app",
+    "two_step_code_lead": "Tu cuenta tiene verificación en dos pasos. Abre la "
+                          "app en tu teléfono y escribe el código que muestra.",
+    "two_step_trust": "No volver a pedirlo en este dispositivo durante 30 días",
+    "two_step_submit": "Entrar",
+    "two_step_lost": "No tengo mi teléfono",
+    "two_step_recovery_label": "Escribe uno de tus códigos de respaldo",
+
+    "panel_two_step_link": "Verificación en dos pasos",
+    "panel_two_step_on": "activada",
+    "panel_two_step_off": "desactivada",
+    "two_step_turned_off": "Listo, la verificación en dos pasos quedó "
+                           "desactivada.",
 
     # --- password ----------------------------------------------------------
     "password_title": "Cambiar tu contraseña",

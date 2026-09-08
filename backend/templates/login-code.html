@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ t('two_step_code_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('two_step_code_title') }}</h1>
+  <p class="lead">{{ t('two_step_code_lead') }}</p>
+
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="code-1">{{ t('two_step_code_label') }}</label>
+    {# The same six boxes as everywhere else: the app's code is six digits too,
+       and the script that hops between them does not care where they came
+       from. No auto-submit here, because the checkbox below has to be read
+       before sending. #}
+    <div class="code" data-code>
+      {% for i in range(1, 7) %}
+      <input id="code-{{ i }}" name="code" class="code__box" type="text"
+             inputmode="numeric" pattern="[0-9]*" maxlength="1"
+             {% if i == 1 %}autocomplete="one-time-code" autofocus{% else %}autocomplete="off"{% endif %}>
+      {% endfor %}
+    </div>
+
+    <label class="check">
+      <input type="checkbox" name="trust" value="1" checked>
+      <span>{{ t('two_step_trust') }}</span>
+    </label>
+
+    <button class="btn" type="submit">{{ t('two_step_submit') }}</button>
+
+    {# The backup goes behind a summary: it is for the day the phone was lost,
+       not for every day. #}
+    <details class="recovery">
+      <summary>{{ t('two_step_lost') }}</summary>
+      <label for="recovery">{{ t('two_step_recovery_label') }}</label>
+      <input id="recovery" name="recovery" type="text" autocomplete="off"
+             placeholder="XXXX-XXXX">
+      <p class="hint">{{ t('two_step_recovery_left', n=recovery_left) }}</p>
+    </details>
+  </form>
+
+  <p class="foot"><a href="{{ url_for('auth.login') }}">{{ t('confirm_go_back') }}</a></p>
+</div>
+{% endblock %}

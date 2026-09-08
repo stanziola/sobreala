@@ -22,8 +22,9 @@ from ipaddress import ip_address
 from bson import ObjectId
 from bson.errors import InvalidId
 from email_validator import EmailNotValidError, validate_email
-from flask import (Blueprint, redirect, render_template, request, session,
-                   url_for)
+from flask import (Blueprint, current_app, redirect, render_template, request,
+                   session, url_for)
+from markupsafe import Markup
 
 from config import Config
 from db import get_db
@@ -33,6 +34,8 @@ from models import auth_event as events
 from models import mail_log
 from models import session as sessions
 from models import token as tokens
+from models import trusted_device as trusted
+from services import totp
 from services import mailer
 from services.security import (csrf_ok, hash_password, now as security_now,
                                password_problem, rate_limit, verify_password)
@@ -45,6 +48,7 @@ REGISTER_PER_IP = (10, 3600)
 RESEND_PER_EMAIL = (5, 3600)
 RESEND_PER_IP = (15, 3600)
 LOGIN_PER_IP = (20, 900)
+TWO_FACTOR_PER_IP = (20, 900)
 CONFIRM_PER_IP = (30, 900)
 PASSWORD_PER_IP = (10, 900)
 RECOVER_PER_IP = (10, 3600)
@@ -77,6 +81,12 @@ RESET_KEY = "reset_account_id"
 RESET_ATTEMPTS = "reset_attempts"
 RESET_DEADLINE = "reset_expires_at"
 RESET_VERIFIED = "reset_verified_for"
+# Between the password and the second step there is a moment where the password
+# was right and the session is not open yet. That waiting room lives here.
+PENDING_2FA = "pending_two_factor"
+PENDING_REMEMBER = "pending_remember"
+# The secret while it is being set up, before any code proved it works.
+SETUP_KEY = "two_factor_setup"
 # Lo único que identifica una sesión: el resto vive en la colección sessions.
 SESSION_KEY = "sid"
 
@@ -668,11 +678,23 @@ def login():
             # Called even when there is no account, so a wrong address and a
             # wrong password take a similar amount of time.
             if verify_password(password, account and account.get("password_hash")):
+                remember = bool(request.form.get("remember"))
+                # The password was right. Whether that is enough depends on the
+                # account: with two-step on, and a device that has not answered
+                # a code before, nothing is opened yet.
+                if accounts.two_factor_on(account) and not trusted.is_trusted(
+                        db, account["_id"], request.cookies.get(trusted.COOKIE)):
+                    session[PENDING_2FA] = str(account["_id"])
+                    session[PENDING_REMEMBER] = remember
+                    log_auth(db, events.LOGIN, events.SECOND_STEP,
+                             email=email_value, account_id=account["_id"])
+                    return redirect(url_for("auth.login_code"))
+
                 # Asked before opening the session: once it exists, this device
                 # is one this account has used.
                 first_time = not sessions.is_known_device(
                     db, account["_id"], request.headers.get("User-Agent", ""))
-                sign_in(account, remember=bool(request.form.get("remember")))
+                sign_in(account, remember=remember)
                 accounts.touch_login(db, account["_id"])
                 log_auth(db, events.LOGIN, events.OK, email=email_value,
                          account_id=account["_id"])
@@ -695,6 +717,82 @@ def login():
 
     return render_template("login.html", errors=errors, email=email_value,
                            remember=remember)
+
+
+@bp.route("/entrar/codigo", methods=["GET", "POST"])
+def login_code():
+    """The second step: the code from the app, or one of the recovery codes.
+
+    Nothing is open while this screen is up. The password alone got the visitor
+    this far and no further, which is the whole point of the second factor.
+    """
+    db = get_db()
+    account_id = as_object_id(session.get(PENDING_2FA))
+    account = accounts.by_id(db, account_id) if account_id else None
+    if account is None or not accounts.two_factor_on(account):
+        return redirect(url_for("auth.login"))
+
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        typed = "".join(request.form.getlist("code"))
+        backup = request.form.get("recovery", "").strip()
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.LOGIN, events.CSRF_FAILED, account_id=account_id)
+        elif not rate_limit(db, f"2fa:ip:{client_ip()}", *TWO_FACTOR_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.LOGIN, events.RATE_LIMITED, account_id=account_id)
+        else:
+            secret = account["two_factor"]["secret"]
+            counter = totp.counter_for(secret, typed) if typed else None
+            used_backup = False
+
+            if backup:
+                used_backup = accounts.use_recovery_code(
+                    db, account_id, totp.hash_recovery(backup))
+            elif counter is not None:
+                # Spending the window is what stops the same six digits from
+                # working twice, for anyone who saw them.
+                counter = counter if accounts.use_counter(db, account_id, counter) else None
+
+            if used_backup or counter is not None:
+                session.pop(PENDING_2FA, None)
+                remember = bool(session.pop(PENDING_REMEMBER, True))
+                first_time = not sessions.is_known_device(
+                    db, account["_id"], request.headers.get("User-Agent", ""))
+                sign_in(account, remember=remember)
+                accounts.touch_login(db, account["_id"])
+                log_auth(db, events.LOGIN,
+                         events.RECOVERY_USED if used_backup else events.OK,
+                         email=account["email"], account_id=account_id)
+
+                answer = redirect(url_for("auth.panel"))
+                if request.form.get("trust"):
+                    raw = trusted.remember(
+                        db, account["_id"], ip=client_ip(),
+                        user_agent=request.headers.get("User-Agent", ""))
+                    answer.set_cookie(
+                        trusted.COOKIE, raw,
+                        max_age=trusted.REMEMBER_DAYS * 24 * 3600,
+                        httponly=True, samesite="Lax",
+                        secure=current_app.config.get("SESSION_COOKIE_SECURE", False))
+                if first_time:
+                    # After the second step, never before: warning about a
+                    # sign-in that had not happened yet is noise in the one
+                    # message that has to be read.
+                    here = current_session()
+                    if here:
+                        deliver(db, lambda d, a: send_new_login(d, a, here),
+                                account, kind=events.LOGIN)
+                return answer
+
+            errors["form"] = t("error_code_invalid")
+            log_auth(db, events.LOGIN, events.BAD_CREDENTIALS,
+                     email=account["email"], account_id=account_id)
+
+    return render_template("login-code.html", errors=errors,
+                           recovery_left=len(account["two_factor"].get("recovery", [])))
 
 
 @bp.route("/salir", methods=["POST"])
@@ -886,6 +984,7 @@ def panel():
         "panel.html", account=account,
         confirmed=accounts.is_confirmed(account),
         devices=sessions.for_account(get_db(), account["_id"]),
+        two_step=accounts.two_factor_on(account),
         here=here["_id"] if here else None,
         describe=sessions.describe,
     )
@@ -957,6 +1056,83 @@ def close_device():
 
 
 # --------------------------------------------------------------- password
+
+@bp.route("/cuenta/dos-pasos", methods=["GET", "POST"])
+def two_factor():
+    """Turn two-step verification on or off.
+
+    Both directions ask for the password, and that is not paperwork: without it,
+    anyone who finds an open session turns two-step on with *their own* phone
+    and locks the owner out of their own account for good. The password is the
+    one thing a passer-by does not have.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    on = accounts.two_factor_on(account)
+    errors: dict[str, str] = {}
+    # The secret is held in the cookie while it is being set up: it is not
+    # anybody's yet, and it only becomes the account's once a code proves the
+    # app really has it.
+    secret = session.get(SETUP_KEY) or totp.new_secret()
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        password = request.form.get("password", "")
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.TWO_FACTOR, events.CSRF_FAILED,
+                     email=account["email"], account_id=account["_id"])
+        elif not rate_limit(db, f"2fa:setup:{client_ip()}", *PASSWORD_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.TWO_FACTOR, events.RATE_LIMITED,
+                     email=account["email"], account_id=account["_id"])
+        elif not verify_password(password, account.get("password_hash")):
+            errors["password"] = t("error_password_wrong")
+            log_auth(db, events.TWO_FACTOR, events.BAD_CURRENT,
+                     email=account["email"], account_id=account["_id"])
+        elif action == "disable" and on:
+            accounts.disable_two_factor(db, account["_id"])
+            # Nothing may survive it: a device trusted while it was on would
+            # keep walking in without a code the day it is turned back on.
+            trusted.forget_all(db, account["_id"])
+            session.pop(SETUP_KEY, None)
+            log_auth(db, events.TWO_FACTOR, events.DISABLED,
+                     email=account["email"], account_id=account["_id"])
+            return redirect(url_for("auth.panel", dospasos="off"))
+        elif action == "regenerate" and on:
+            codes = totp.new_recovery_codes()
+            accounts.set_recovery_codes(db, account["_id"], totp.hash_all(codes))
+            log_auth(db, events.TWO_FACTOR, events.REGENERATED,
+                     email=account["email"], account_id=account["_id"])
+            return render_template("two-factor-codes.html", codes=codes)
+        elif action == "enable" and not on:
+            if totp.counter_for(secret, "".join(request.form.getlist("code"))) is None:
+                # Asked before turning it on so nobody locks themselves out by
+                # scanning badly: the app has to prove it holds the secret.
+                errors["code"] = t("error_code_invalid")
+                log_auth(db, events.TWO_FACTOR, events.INVALID,
+                         email=account["email"], account_id=account["_id"])
+            else:
+                codes = totp.new_recovery_codes()
+                accounts.enable_two_factor(db, account["_id"], secret,
+                                           totp.hash_all(codes))
+                trusted.forget_all(db, account["_id"])
+                session.pop(SETUP_KEY, None)
+                log_auth(db, events.TWO_FACTOR, events.OK,
+                         email=account["email"], account_id=account["_id"])
+                return render_template("two-factor-codes.html", codes=codes)
+
+    if not on:
+        session[SETUP_KEY] = secret
+
+    return render_template(
+        "two-factor.html", errors=errors, on=on, secret=secret,
+        qr=Markup(totp.qr_svg(secret, account["email"])) if not on else None,
+        recovery_left=len((account.get("two_factor") or {}).get("recovery", [])))
 
 @bp.route("/cambiar-contrasena", methods=["GET", "POST"])
 def change_password():

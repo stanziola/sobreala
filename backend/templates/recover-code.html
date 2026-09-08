@@ -8,7 +8,7 @@
 
   {% with submit = 'recover_code_submit' %}{% include "_code-form.html" %}{% endwith %}
 
-  <p class="hint">{{ t('confirm_hint') }}</p>
+  <p class="hint">{{ t('recover_hint') }}</p>
   <p class="foot"><a href="{{ url_for('auth.recover') }}">{{ t('confirm_resend') }}</a></p>
 </div>
 {% endblock %}

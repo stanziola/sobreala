@@ -27,6 +27,7 @@ LOGIN = "login"
 PASSWORD_CHANGE = "password_change"
 RECOVER = "recover"
 CORRECT_EMAIL = "correct_email"
+TWO_FACTOR = "two_factor"
 SESSION_CLOSED = "session_closed"
 RESEND = "resend"
 CONFIRM = "confirm"
@@ -45,6 +46,10 @@ NO_ACCOUNT = "no_account"              # resend: nothing to send to
 ALREADY_CONFIRMED = "already_confirmed"  # resend: address was verified already
 BAD_CURRENT = "bad_current"            # password change: the old one was wrong
 TAKEN = "taken"                        # correcting: the new address has an account
+SECOND_STEP = "second_step"            # login: the password was right, the code is missing
+RECOVERY_USED = "recovery_used"        # login: got in with a backup code
+DISABLED = "disabled"                  # two-step: turned off
+REGENERATED = "regenerated"            # two-step: new recovery codes
 MAIL_FAILED = "mail_failed"            # the account is fine, the email did not go out
 
 # What the confirm route writes down, keyed by the reason models/token.py gave.

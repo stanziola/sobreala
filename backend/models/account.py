@@ -115,6 +115,65 @@ def touch_login(db, account_id) -> None:
     db.accounts.update_one({"_id": account_id}, {"$set": {"last_login_at": now()}})
 
 
+# ------------------------------------------------------- two-step verification
+
+def two_factor_on(account: dict[str, Any] | None) -> bool:
+    return bool((account or {}).get("two_factor", {}).get("enabled_at"))
+
+
+def enable_two_factor(db, account_id, secret: str, recovery: list[str]) -> None:
+    """Turn it on, with the secret the app scanned and the recovery codes.
+
+    The secret goes in as it is because TOTP needs it that way —see
+    services/totp.py— and the recovery codes go in hashed, like every other code
+    in this project.
+    """
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "two_factor": {
+            "secret": secret,
+            "enabled_at": now(),
+            "recovery": recovery,
+            "last_counter": 0,
+        },
+        "updated_at": now(),
+    }})
+
+
+def disable_two_factor(db, account_id) -> None:
+    db.accounts.update_one({"_id": account_id},
+                           {"$unset": {"two_factor": ""},
+                            "$set": {"updated_at": now()}})
+
+
+def set_recovery_codes(db, account_id, recovery: list[str]) -> None:
+    """Replace the recovery codes. The old ones stop working at once."""
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"two_factor.recovery": recovery,
+                                     "updated_at": now()}})
+
+
+def use_counter(db, account_id, counter: int) -> bool:
+    """Spend the 30-second window a code belonged to.
+
+    False when that window, or a later one, was already used: a code someone
+    read over a shoulder stops working the moment its owner types it.
+    """
+    result = db.accounts.update_one(
+        {"_id": account_id, "two_factor.last_counter": {"$lt": counter}},
+        {"$set": {"two_factor.last_counter": counter}},
+    )
+    return result.modified_count == 1
+
+
+def use_recovery_code(db, account_id, hashed: str) -> bool:
+    """Spend one recovery code. False if it was not there to spend."""
+    result = db.accounts.update_one(
+        {"_id": account_id, "two_factor.recovery": hashed},
+        {"$pull": {"two_factor.recovery": hashed}},
+    )
+    return result.modified_count == 1
+
+
 def password_was_used(account: dict[str, Any], password: str) -> bool:
     """Whether this account has ever had this password.
 

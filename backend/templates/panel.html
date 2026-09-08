@@ -10,6 +10,9 @@
 {% if request.args.get('cambiada') %}
 <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
 {% endif %}
+{% if request.args.get('dospasos') == 'off' %}
+<p class="notice notice--ok">{{ t('two_step_turned_off') }}</p>
+{% endif %}
 
 {% if not confirmed %}
 <div class="notice">
@@ -67,6 +70,8 @@
   <p class="hint">{{ t('device_alone') }}</p>
   {% endif %}
 
-  <p class="foot"><a href="{{ url_for('auth.change_password') }}">{{ t('panel_password_link') }}</a></p>
+  <p class="foot"><a href="{{ url_for('auth.change_password') }}">{{ t('panel_password_link') }}</a>
+    · <a href="{{ url_for('auth.two_factor') }}">{{ t('panel_two_step_link') }}</a>
+    ({{ t('panel_two_step_on') if two_step else t('panel_two_step_off') }})</p>
 </div>
 {% endblock %}

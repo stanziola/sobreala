@@ -109,18 +109,22 @@ def clean_code(typed: str | None) -> str:
     return "".join(ch for ch in (typed or "") if ch.isdigit())
 
 
-def hash_code(code: str) -> str:
-    """Keyed hash, not a bare digest.
+def hash_keyed(value: str) -> str:
+    """Keyed hash of a short secret, not a bare digest.
 
     A plain SHA-256 of six digits protects nothing: a million guesses is a
     fraction of a second on any laptop. Under HMAC with SECRET_KEY a copy of the
-    database is not enough to turn the stored value back into a code; the
-    server's key is needed too. Rule 6 still holds — the code itself is never
-    written down.
+    database is not enough to turn the stored value back into what was typed;
+    the server's key is needed too.
     """
     return hmac.new(Config.SECRET_KEY.encode("utf-8"),
-                    clean_code(code).encode("utf-8"),
+                    value.encode("utf-8"),
                     hashlib.sha256).hexdigest()
+
+
+def hash_code(code: str) -> str:
+    """The keyed hash of a confirmation code. Rule 6: the code is never stored."""
+    return hash_keyed(clean_code(code))
 
 
 def codes_match(stored: str | None, submitted: str) -> bool:

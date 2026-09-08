@@ -212,6 +212,32 @@ input:focus { border-color: var(--color-accent); }
 }
 .notice--ok { border-color: var(--color-accent); }
 
+/* Two-step verification: the QR, the secret to type by hand, and the recovery
+   codes. The QR keeps its white box in both themes, because a scanner needs
+   the contrast more than the page needs to match. */
+.qr {
+  display: inline-block; margin-top: 16px; padding: 10px;
+  background: #FFFFFF; border-radius: 12px; line-height: 0;
+}
+.secret {
+  margin-top: 6px; padding: 10px 12px; border-radius: 8px;
+  font-family: Consolas, Menlo, monospace; font-size: 1rem; letter-spacing: .08em;
+  word-break: break-all; background: var(--color-surface-alt);
+}
+.steps { margin: 14px 0 0; padding-left: 20px; display: grid; gap: 6px;
+         color: var(--color-ink-soft); }
+.codes {
+  margin: 16px 0 0; padding: 16px; list-style: none;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+  font-family: Consolas, Menlo, monospace; font-size: 1.05rem; font-weight: 700;
+  text-align: center; background: var(--color-surface-alt); border-radius: 12px;
+}
+.recovery { margin-top: 18px; }
+.recovery summary { cursor: pointer; color: var(--color-accent-strong);
+                    font-size: .9rem; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; }
+.row .btn { margin-top: 14px; }
+
 .error { margin-top: 6px; font-size: .9rem; font-weight: 600; color: var(--color-accent-strong); }
 .error--form {
   margin: 0 0 6px; padding: 12px 14px; border-radius: 8px;

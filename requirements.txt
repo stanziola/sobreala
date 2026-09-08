@@ -22,5 +22,11 @@ gunicorn>=21.2
 # desarrollar sin credenciales de AWS funciona con MAIL_BACKEND=file.
 boto3>=1.34
 
+# Verificación en dos pasos. Los dos son Python puro y pesan poco: pyotp calcula
+# los códigos de la app y segno dibuja el QR como SVG en la propia página, sin
+# pedirle una imagen a ningún servidor.
+pyotp>=2.9
+segno>=1.6
+
 # Pruebas
 pytest>=8.0

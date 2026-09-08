@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ t('two_step_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('two_step_title') }}</h1>
+
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  {% if on %}
+  <p class="lead">{{ t('two_step_on_lead') }}</p>
+  <p class="status">{{ t('two_step_recovery_left', n=recovery_left) }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="password">{{ t('password_current') }}</label>
+    <div class="field">
+      <input id="password" name="password" type="password"
+             autocomplete="current-password" required>
+      <button class="field__eye" type="button" hidden
+              data-reveal="password" aria-pressed="false"
+              data-show="{{ t('password_show') }}" data-hide="{{ t('password_hide') }}"
+              aria-label="{{ t('password_show') }}">
+        <span class="field__eye-on">{% include "_icon-eye.svg" %}</span>
+        <span class="field__eye-off">{% include "_icon-eye-off.svg" %}</span>
+      </button>
+    </div>
+    {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
+
+    <div class="row">
+      <button class="btn btn--small btn--outline" type="submit"
+              name="action" value="regenerate">{{ t('two_step_regenerate') }}</button>
+      <button class="btn btn--small btn--outline" type="submit"
+              name="action" value="disable">{{ t('two_step_disable') }}</button>
+    </div>
+  </form>
+
+  {% else %}
+  <p class="lead">{{ t('two_step_off_lead') }}</p>
+
+  <ol class="steps">
+    <li>{{ t('two_step_step_app') }}</li>
+    <li>{{ t('two_step_step_scan') }}</li>
+    <li>{{ t('two_step_step_code') }}</li>
+  </ol>
+
+  {# The QR is SVG in the page itself: no image is fetched from anywhere, and it
+     is dark on white always, because a scanner needs that contrast. #}
+  <div class="qr">{{ qr }}</div>
+  <p class="hint">{{ t('two_step_manual') }}</p>
+  <p class="secret">{{ secret }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="code-1">{{ t('two_step_code_label') }}</label>
+    <div class="code" data-code>
+      {% for i in range(1, 7) %}
+      <input id="code-{{ i }}" name="code" class="code__box" type="text"
+             inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
+      {% endfor %}
+    </div>
+    {% if errors.code %}<p class="error">{{ errors.code }}</p>{% endif %}
+
+    <label for="password">{{ t('password_current') }}</label>
+    <div class="field">
+      <input id="password" name="password" type="password"
+             autocomplete="current-password" required>
+      <button class="field__eye" type="button" hidden
+              data-reveal="password" aria-pressed="false"
+              data-show="{{ t('password_show') }}" data-hide="{{ t('password_hide') }}"
+              aria-label="{{ t('password_show') }}">
+        <span class="field__eye-on">{% include "_icon-eye.svg" %}</span>
+        <span class="field__eye-off">{% include "_icon-eye-off.svg" %}</span>
+      </button>
+    </div>
+    <p class="hint">{{ t('two_step_why_password') }}</p>
+    {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
+
+    <button class="btn" type="submit" name="action" value="enable">
+      {{ t('two_step_enable') }}</button>
+  </form>
+  {% endif %}
+
+  <p class="foot"><a href="{{ url_for('auth.panel') }}">{{ t('nav_panel') }}</a></p>
+</div>
+{% endblock %}

@@ -83,6 +83,15 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.sessions.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
                              name="ttl_expires_at")
 
+    # Devices that already answered the two-step code once. Its own cookie,
+    # because it has to survive signing out.
+    db.trusted_devices.create_index([("token_hash", ASCENDING)], unique=True,
+                                    name="uniq_trusted_token")
+    db.trusted_devices.create_index([("account_id", ASCENDING)],
+                                    name="by_account")
+    db.trusted_devices.create_index([("expires_at", ASCENDING)],
+                                    expireAfterSeconds=0, name="ttl_expires_at")
+
     db.rate_limits.create_index([("key", ASCENDING)], name="by_key")
     db.rate_limits.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
                                 name="ttl_expires_at")

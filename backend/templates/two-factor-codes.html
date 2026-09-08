@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ t('two_step_codes_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('two_step_codes_title') }}</h1>
+  <p class="lead">{{ t('two_step_codes_lead') }}</p>
+
+  {# Shown once and only once: the database keeps their hashes, so not even we
+     can read them back. #}
+  <ul class="codes">
+    {% for code in codes %}<li>{{ code }}</li>{% endfor %}
+  </ul>
+
+  <p class="hint">{{ t('two_step_codes_hint') }}</p>
+  <a class="btn" href="{{ url_for('auth.panel') }}">{{ t('two_step_codes_done') }}</a>
+</div>
+{% endblock %}
