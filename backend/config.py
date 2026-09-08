@@ -89,9 +89,8 @@ class Config:
     # it does not need to survive a day in an inbox the way a link did. Minutes,
     # not hours: a short life is half of what makes a short code safe.
     CONFIRMATION_CODE_MINUTES = int(os.getenv("CONFIRMATION_CODE_MINUTES", "30"))
-    CONFIRMATION_TOKEN_HOURS = int(os.getenv("CONFIRMATION_TOKEN_HOURS", "24"))
-    # Used tokens stay this long after expiring so an expired link can be told
-    # apart from one that never existed, and answered with a useful message.
+    # Spent codes stay this long after expiring, so the log can tell an expired
+    # code from one that never existed.
     TOKEN_GRACE_DAYS = int(os.getenv("TOKEN_GRACE_DAYS", "7"))
 
     @classmethod
