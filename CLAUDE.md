@@ -331,6 +331,45 @@ Nunca commitear el `.env`. En Railway van como variables del servicio.
 
 ---
 
+## Antes de la primera campaña real
+
+El correo del sistema y las campañas son dos caminos distintos. Lo de abajo no
+hace falta para que alguien reciba su código de confirmación, y **sí** hace
+falta antes de que salga la primera campaña de un cliente. Está aquí para que
+no se descubra el día del lanzamiento.
+
+- **Dirección postal física en el pie de cada campaña.** La CAN-SPAM de Estados
+  Unidos la exige en todo correo publicitario, y basta un destinatario con
+  Gmail o Hotmail para caer en su ámbito. Va inyectada al enviar, junto a la
+  baja y a la marca de agua, no en el HTML del cliente. Hoy no existe. Un
+  apartado postal de Correos de Panamá cumple el requisito sin publicar un
+  domicilio particular.
+- **Aviso de operación.** Hace falta para operar y facturar en Panamá
+  (panamaemprende.gob.pa). En cuanto exista se escribe en `LEGAL_HOLDER` de
+  `landing/content.py` y aparece solo en las dos páginas legales.
+- **Webhook de SNS para rebotes y quejas** (blueprint `webhooks/`). Es lo que
+  llena `suppressions` sin intervención y lo que hace ciertas las defensas
+  automáticas de la tabla de arriba. Sin él, una queja no bloquea el reenvío y
+  la pausa por umbrales depende de mirar los datos a mano. Es lo primero que
+  AWS revisa si algo va mal.
+- **Verificar `envios.panamails.com`** como identidad aparte en SES, con su
+  propio configuration set. El correo del sistema sale por `panamails.com`
+  (MAIL FROM `mail.panamails.com`, ya configurado); separar los dos es lo que
+  impide que la reputación de las campañas arrastre a los códigos de
+  confirmación.
+- **Tenants de SES por cliente**, para aislar reputación y supresión. Ya está
+  decidido más arriba; el momento de montarlo es este.
+- **Registro de consentimiento por contacto.** Guardar de dónde salió cada
+  dirección y cuándo, en el propio documento del contacto. Hoy el importador no
+  lo pide, y es exactamente lo que hay que enseñar cuando alguien reclame.
+- **Revisar la solicitud de producción de SES ya enviada** (`solicitud-ses.txt`
+  en la raíz): lo que se prometió ahí sobre bajas, supresiones y umbrales tiene
+  que estar funcionando de verdad cuando empiecen las campañas.
+- **Contrato de encargo para clientes grandes.** El tratamiento de datos de
+  terceros ya está pactado en los términos públicos (§8), que se aceptan al
+  registrarse. Una cooperativa grande puede pedir además un documento firmado;
+  ese addendum se redacta cuando aparezca.
+
 ## Pendientes de decisión
 
 - Confirmar con Yappy (yappy@bgeneral.com / 800-5000) si soporta cobros

@@ -271,14 +271,6 @@ button { font: inherit; color: inherit; }
 .btn--account-up { background: transparent; color: var(--color-on-dark); border-color: rgba(255, 255, 255, .4); }
 .btn--account-up:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .7); }
 
-/* Below 1200 the bar cannot hold the links, WhatsApp and both account buttons.
-   WhatsApp is the one that steps aside: it is still in the hero, in the footer
-   and inside the menu once the nav collapses at 960. Getting into the account
-   has nowhere else to go. */
-@media (max-width: 1200px) and (min-width: 960px) {
-  .site-nav__cta { display: none; }
-}
-
 /* In the menu they stack full width, like the WhatsApp button below them. */
 @media (max-width: 959.98px) {
   .site-nav__account { flex-direction: column; align-self: stretch; gap: 10px; }

@@ -584,14 +584,24 @@ ABOUT = {
 
 # --------------------------------------------------------------------------- legal
 
-# Las dos páginas legales. Los datos del titular van entre corchetes hasta que
-# estén confirmados: es preferible que se vea qué falta a publicar un dato
-# inventado en el documento que dice quién responde por los datos de la gente.
+# Quién responde por los datos. La ley pide que sea identificable y
+# contactable, no que publique su domicilio: por eso el lugar llega hasta el
+# corregimiento y el contacto es el correo. `identifier` queda vacío a
+# propósito mientras no exista aviso de operación; en cuanto lo haya, se
+# escribe aquí y aparece solo en las dos páginas.
 LEGAL_HOLDER = {
     "name": "[NOMBRE COMPLETO DEL TITULAR]",
-    "id": "[AVISO DE OPERACIÓN O RUC]",
-    "address": "[DIRECCIÓN], Santiago de Veraguas, Panamá",
+    "identifier": "",
+    "place": "La Colorada, Santiago de Veraguas, provincia de Veraguas, Panamá",
 }
+
+
+def holder_line() -> str:
+    """La frase de apertura de las dos páginas legales."""
+    quien = f"Panamails es el nombre comercial de {LEGAL_HOLDER['name']}"
+    if LEGAL_HOLDER["identifier"]:
+        quien += f", {LEGAL_HOLDER['identifier']}"
+    return f"{quien}, en {LEGAL_HOLDER['place']}."
 
 UPDATED = "7 de septiembre de 2026"
 
@@ -614,9 +624,9 @@ PRIVACY = {
         {
             "title": "Quién responde por tus datos",
             "paragraphs": [
-                "Panamails es el nombre comercial de {name}, {id}, con domicilio "
-                "en {address}. Escríbenos a panamails.info@gmail.com para "
-                "cualquier asunto de esta política.".format(**LEGAL_HOLDER),
+                holder_line() + " Escríbenos a panamails.info@gmail.com "
+                "para cualquier asunto de esta política, incluido el ejercicio "
+                "de tus derechos.",
                 "Esta política se rige por la Ley 81 de 2019 sobre protección de "
                 "datos personales de la República de Panamá y su reglamento.",
             ],
@@ -823,9 +833,8 @@ TERMS = {
         {
             "title": "1. Quién presta el servicio",
             "paragraphs": [
-                "Panamails es el nombre comercial de {name}, {id}, con domicilio "
-                "en {address}. Al crear una cuenta aceptas estos términos y la "
-                "política de privacidad.".format(**LEGAL_HOLDER),
+                holder_line() + " Al crear una cuenta aceptas estos términos "
+                "y la política de privacidad.",
             ],
         },
         {
