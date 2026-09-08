@@ -1,0 +1,46 @@
+{% extends "base.html.j2" %}
+
+{# La política de privacidad y los términos comparten esta plantilla: son el
+   mismo documento largo con secciones de párrafos, listas y alguna nota. #}
+
+{% block main %}
+
+<section class="page-hero">
+  <div class="shell shell--narrow">
+    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
+    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
+    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell shell--narrow prose">
+    <p class="legal-updated">Última actualización: {{ page.updated }}</p>
+
+    {% for block in page.sections %}
+    <section class="prose__block">
+      <h2 class="prose__title">{{ block.title }}</h2>
+
+      {% for p in block['paragraphs'] | default([]) %}
+      <p>{{ p | strong }}</p>
+      {% endfor %}
+
+      {# block['items'] y no block.items: en un diccionario, el punto encuentra
+         primero el método items() de Python. #}
+      {% if 'items' in block %}
+      <ul class="prose__list">
+        {% for item in block['items'] %}
+        <li>{{ item | strong }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if 'note' in block %}
+      <p class="prose__note">{{ block.note | strong }}</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

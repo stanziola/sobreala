@@ -35,6 +35,13 @@
     {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
 
     <button class="btn" type="submit">{{ t('register_submit') }}</button>
+
+    {# Aceptar los términos es parte de crear la cuenta, así que se dice aquí,
+       donde se decide, y no en una casilla que nadie lee. #}
+    <p class="hint hint--legal">{{ t('register_legal') }}
+      <a href="{{ site_url }}/terminos/" target="_blank" rel="noopener">{{ t('register_legal_terms') }}</a>
+      {{ t('register_legal_join') }}
+      <a href="{{ site_url }}/privacidad/" target="_blank" rel="noopener">{{ t('register_legal_privacy') }}</a>.</p>
   </form>
 
   <p class="foot">{{ t('register_have_account') }}

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import secrets
 from datetime import timedelta
+from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, g, jsonify, render_template, request
 from pymongo.errors import PyMongoError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -12,6 +14,22 @@ from config import Config
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import t
 from services.security import csrf_token
+
+
+def asset_version() -> str:
+    """A short stamp that changes when the stylesheet or the script does.
+
+    Appended to their URLs so a browser holding yesterday's panel.css does not
+    keep it. Without this, a page whose colours moved into the stylesheet drew
+    with the old one: the logo, which takes its fill from a CSS variable, came
+    out black.
+    """
+    stamp = 0.0
+    for name in ("static/css/panel.css", "static/js/panel.js"):
+        path = Path(__file__).resolve().parent / name
+        if path.exists():
+            stamp = max(stamp, path.stat().st_mtime)
+    return str(int(stamp))
 
 
 def create_app(overrides: dict | None = None) -> Flask:
@@ -53,7 +71,51 @@ def create_app(overrides: dict | None = None) -> Flask:
             ensure_indexes_once()
 
     # Templates hold no Spanish of their own: they ask i18n for it.
-    app.jinja_env.globals.update(t=t, csrf_token=csrf_token)
+    app.jinja_env.globals.update(t=t, csrf_token=csrf_token,
+                                 asset_version=asset_version(),
+                                 site_url=Config.PUBLIC_SITE_URL)
+
+    @app.before_request
+    def _csp_nonce():
+        # One per response, for the single inline script in the page head: the
+        # one that picks the theme before the first paint. Everything else is a
+        # file under /static, so the policy can refuse inline code outright.
+        g.csp_nonce = secrets.token_urlsafe(16)
+
+    @app.context_processor
+    def _expose_nonce():
+        return {"csp_nonce": g.get("csp_nonce", "")}
+
+    @app.after_request
+    def _security_headers(response):
+        """What the browser is allowed to do with this page.
+
+        The policy is deliberately narrow: everything the panel loads is served
+        from this same origin, so anything injected into a page — a script tag,
+        a remote stylesheet, a form pointed somewhere else — has nowhere to go.
+        """
+        nonce = g.get("csp_nonce", "")
+        response.headers["Content-Security-Policy"] = "; ".join([
+            "default-src 'self'",
+            f"script-src 'self' 'nonce-{nonce}'",
+            "style-src 'self'",
+            "img-src 'self' data:",
+            "font-src 'self'",
+            "connect-src 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'",
+            "base-uri 'none'",
+            "object-src 'none'",
+        ])
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "same-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+        if response.mimetype == "text/html":
+            # These pages are behind a session and some carry a confirmation
+            # code; no cache should keep them, least of all a shared one.
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.get("/")
     def index():
@@ -96,7 +158,10 @@ def create_app(overrides: dict | None = None) -> Flask:
         way. Deliberately says nothing about credentials or connection strings.
         """
         state = health()
-        payload = {"app": "up", **state}
+        # Which mail backend this deploy came up with. It is the fastest way to
+        # tell from outside whether the new variables were picked up, and it
+        # names a mode, never a credential.
+        payload = {"app": "up", "mail": Config.MAIL_BACKEND, **state}
         return jsonify(payload), (200 if state["database"] == "up" else 503)
 
     return app

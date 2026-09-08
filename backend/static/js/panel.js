@@ -7,6 +7,7 @@
   // handle switching it, remembering the choice, and the reveal animation.
 
   var themeBtn = document.getElementById("theme-toggle");
+  var themeStatus = document.getElementById("theme-status");
   var themeMeta = document.getElementById("theme-color");
   var THEME_COLOR = { light: "#3166A7", dark: "#245285" };
   if (!themeBtn) return;
@@ -31,6 +32,7 @@
   themeBtn.addEventListener("click", function () {
     var next = currentTheme() === "dark" ? "light" : "dark";
     try { localStorage.setItem("theme", next); } catch (e) {}
+    if (themeStatus) themeStatus.textContent = next === "dark" ? "Modo oscuro" : "Modo claro";
 
     var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!document.startViewTransition || reduced) {

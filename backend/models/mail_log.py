@@ -27,6 +27,8 @@ FAILED = "failed"
 # What the message was for. Keeps the log readable without parsing subjects.
 CONFIRM = "confirm"
 EXISTS = "exists"
+# Sent by hand from check_mail.py, never by the application.
+CHECK = "check"
 
 
 def now() -> datetime:

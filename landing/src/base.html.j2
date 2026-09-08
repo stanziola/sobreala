@@ -75,6 +75,17 @@
         </li>
         {% endfor %}
       </ul>
+      {#- Same size and shape; only the colour separates them, so "Ingresar"
+          reads as the way back in and "Registrarse" as the way to start. They
+          live inside the nav so the phone puts them in the menu, where the
+          header has room for nothing but the brand. -#}
+      <div class="site-nav__account">
+        <a class="btn btn--account btn--account-in" href="{{ panel.base_url }}/entrar">
+          {{ panel.login_label }}</a>
+        <a class="btn btn--account btn--account-up" href="{{ panel.base_url }}/registro">
+          {{ panel.register_label }}</a>
+      </div>
+
       <a class="btn btn--primary site-nav__cta" href="{{ whatsapp_url }}"
          target="_blank" rel="noopener">{{ cta_primary.label }}</a>
     </nav>

@@ -46,6 +46,14 @@ NAV = [
     {"label": "Nosotros", "url": "/nosotros/"},
 ]
 
+# The panel is a different service on a different host: Railway, not Cloudflare
+# Pages. These two buttons are the only way in from the public site.
+PANEL = {
+    "base_url": "https://panel.panamails.com",
+    "login_label": "Ingresar",
+    "register_label": "Registrarse",
+}
+
 CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}
 CTA_SECONDARY = {"label": "Ver planes y precios", "url": "/precios/"}
 
@@ -574,6 +582,441 @@ ABOUT = {
     ],
 }
 
+# --------------------------------------------------------------------------- legal
+
+# Las dos páginas legales. Los datos del titular van entre corchetes hasta que
+# estén confirmados: es preferible que se vea qué falta a publicar un dato
+# inventado en el documento que dice quién responde por los datos de la gente.
+LEGAL_HOLDER = {
+    "name": "[NOMBRE COMPLETO DEL TITULAR]",
+    "id": "[AVISO DE OPERACIÓN O RUC]",
+    "address": "[DIRECCIÓN], Santiago de Veraguas, Panamá",
+}
+
+UPDATED = "7 de septiembre de 2026"
+
+PRIVACY = {
+    "meta_title": "Política de privacidad · Panamails",
+    "meta_description": (
+        "Qué datos trata Panamails, para qué, con quién los comparte, cuánto "
+        "tiempo los guarda y cómo ejercer tus derechos bajo la Ley 81 de 2019."
+    ),
+    "hero": {
+        "eyebrow": "Legal",
+        "title": "Política de privacidad",
+        "subtitle": (
+            "Qué datos tratamos, para qué, con quién los compartimos y cuánto "
+            "tiempo los guardamos. Escrita para que se entienda."
+        ),
+    },
+    "updated": UPDATED,
+    "sections": [
+        {
+            "title": "Quién responde por tus datos",
+            "paragraphs": [
+                "Panamails es el nombre comercial de {name}, {id}, con domicilio "
+                "en {address}. Escríbenos a panamails.info@gmail.com para "
+                "cualquier asunto de esta política.".format(**LEGAL_HOLDER),
+                "Esta política se rige por la Ley 81 de 2019 sobre protección de "
+                "datos personales de la República de Panamá y su reglamento.",
+            ],
+        },
+        {
+            "title": "Dos papeles distintos",
+            "paragraphs": [
+                "Conviene separarlos desde el principio, porque las reglas "
+                "cambian según el caso:",
+            ],
+            "items": [
+                "**De los datos de tu cuenta somos responsables.** Los pediste "
+                "tú, los usamos para prestarte el servicio y respondemos por "
+                "ellos ante ti.",
+                "**De los datos de tus contactos somos custodios.** La lista es "
+                "tuya, tú decides qué se hace con ella y nosotros solo la "
+                "guardamos y enviamos lo que nos pidas. Ni la usamos para otra "
+                "cosa ni le ofrecemos nada nuestro a esa gente.",
+            ],
+        },
+        {
+            "title": "Qué datos tratamos",
+            "items": [
+                "**De tu cuenta:** nombre del negocio, nombre de contacto, "
+                "correo y teléfono. La contraseña no se guarda: solo un hash "
+                "del que no se puede volver atrás.",
+                "**De tus contactos:** las direcciones de correo y las "
+                "etiquetas que subes, junto con las bajas y los rebotes de esa "
+                "lista.",
+                "**Técnicos:** la dirección IP y el navegador de cada intento "
+                "de registro, entrada, confirmación, reenvío y salida. Sirven "
+                "para detectar abuso y para responder cuando alguien no puede "
+                "entrar. La contraseña nunca se anota, en ninguna forma.",
+                "**Los correos que te enviamos:** guardamos el mensaje completo "
+                "—destinatario, asunto y cuerpo— de cada correo del sistema. Es "
+                "lo que nos permite responder qué salió exactamente del "
+                "servidor cuando alguien dice que no le llegó el código.",
+                "**De tus envíos:** por cada correo de campaña, si se entregó, "
+                "rebotó, generó una queja, se abrió o se hizo clic.",
+                "**De pagos:** el plan, la fecha y el resultado del cobro. "
+                "**Nunca vemos ni guardamos datos de tarjeta:** el pago ocurre "
+                "en la página de PayPal o de Yappy, no en la nuestra.",
+            ],
+        },
+        {
+            "title": "Para qué los usamos",
+            "items": [
+                "Crear tu cuenta, confirmar que la dirección es tuya y dejarte "
+                "entrar.",
+                "Enviar las campañas que tú prepares, a la lista que tú elijas.",
+                "Cobrar el plan y llevar la cuenta de tu cuota.",
+                "Proteger la entregabilidad de todos: como el dominio de envío "
+                "es compartido, vigilamos rebotes y quejas y pausamos una "
+                "cuenta cuando se pasan de los límites publicados.",
+                "Atender soporte y responder reclamos.",
+                "Cumplir obligaciones legales y contables.",
+            ],
+            "note": (
+                "No vendemos datos, no los cedemos a terceros para su propio "
+                "uso y no le enviamos publicidad nuestra a los contactos que "
+                "suben nuestros clientes."
+            ),
+        },
+        {
+            "title": "Con qué permiso",
+            "paragraphs": [
+                "Tratamos los datos de tu cuenta porque hacen falta para "
+                "ejecutar el contrato que aceptas al registrarte. Los datos "
+                "técnicos de seguridad, por interés legítimo en proteger la "
+                "plataforma. Y los datos de tus contactos, por instrucción "
+                "tuya: el consentimiento de esas personas lo obtuviste tú, y "
+                "así lo declaras al aceptar los términos.",
+            ],
+        },
+        {
+            "title": "Con quién se comparten",
+            "paragraphs": [
+                "Solo con los proveedores que hacen falta para que el servicio "
+                "funcione. Todos actúan por instrucción nuestra:",
+            ],
+            "items": [
+                "**Amazon Web Services (Amazon SES)** — envío de los correos.",
+                "**MongoDB Atlas** — base de datos.",
+                "**Railway** — servidor de la aplicación.",
+                "**Cloudflare** — dominio, protección contra ataques y "
+                "almacenamiento de las imágenes de los correos.",
+                "**PayPal y Yappy** — cobro de los planes.",
+            ],
+            "note": (
+                "Sus servidores están fuera de Panamá, principalmente en "
+                "Estados Unidos, así que usar Panamails implica una "
+                "transferencia internacional de datos hacia esos proveedores. "
+                "También podemos entregar información si una autoridad "
+                "competente lo ordena."
+            ),
+        },
+        {
+            "title": "Cuánto tiempo los guardamos",
+            "items": [
+                "**Datos de la cuenta:** mientras la cuenta exista, y después "
+                "lo que exijan las obligaciones contables y fiscales.",
+                "**Contactos:** hasta que los borres o cierres la cuenta.",
+                "**Bajas y supresiones:** de forma permanente y a propósito. Es "
+                "justamente lo que impide volver a escribirle a quien pidió no "
+                "recibir más correos, así que ni tú ni nosotros las borramos.",
+                "**Detalle de aperturas, clics, entregas y rebotes:** 12 meses; "
+                "después quedan solo los totales por campaña.",
+                "**Bitácora de accesos y de correos del sistema:** se conserva "
+                "como registro de seguridad y soporte.",
+            ],
+        },
+        {
+            "title": "Tus derechos",
+            "paragraphs": [
+                "Puedes pedir acceso a tus datos, corregirlos, cancelarlos, "
+                "oponerte a un tratamiento o llevártelos a otro servicio. "
+                "Escríbenos a panamails.info@gmail.com desde la dirección de tu "
+                "cuenta y respondemos dentro de los plazos de la Ley 81 de "
+                "2019. Si no quedas conforme, puedes acudir a la Autoridad "
+                "Nacional de Transparencia y Acceso a la Información (ANTAI).",
+                "Si llegaste aquí porque recibiste un correo de una empresa que "
+                "usa Panamails, los datos son de esa empresa y tu solicitud le "
+                "corresponde a ella; escríbenos igual y la encaminamos. Si lo "
+                "que quieres es dejar de recibir esos correos, el enlace de "
+                "baja del propio mensaje lo hace al instante, y también podemos "
+                "hacerlo nosotros a petición tuya.",
+            ],
+        },
+        {
+            "title": "Bajas",
+            "paragraphs": [
+                "Todas las campañas llevan un enlace de baja que inserta la "
+                "plataforma al momento de enviar, más la cabecera técnica que "
+                "permite darse de baja desde el propio programa de correo. "
+                "Nuestros clientes no pueden quitarlo. Una baja es inmediata, "
+                "no caduca y solo se revierte si la persona vuelve a "
+                "suscribirse y confirma por correo.",
+                "Los correos del sistema —el código de confirmación, los avisos "
+                "de tu cuenta— no llevan enlace de baja porque no son "
+                "publicidad: son parte del servicio que contrataste.",
+            ],
+        },
+        {
+            "title": "Cookies y almacenamiento en tu navegador",
+            "items": [
+                "Una **cookie de sesión** en el panel, imprescindible para "
+                "mantenerte dentro de tu cuenta. No se puede leer desde "
+                "JavaScript y caduca sola.",
+                "Un **valor guardado en tu navegador** con el tema que "
+                "elegiste, claro u oscuro. No sale de tu equipo.",
+            ],
+            "note": (
+                "No usamos cookies de publicidad, ni de redes sociales, ni de "
+                "medición de terceros."
+            ),
+        },
+        {
+            "title": "Seguridad",
+            "paragraphs": [
+                "Todo viaja cifrado por HTTPS. Las contraseñas se guardan solo "
+                "como hash con bcrypt. De los códigos y enlaces que enviamos "
+                "por correo se guarda únicamente su huella, valen una sola vez "
+                "y vencen. Hay límites por dirección IP contra los intentos "
+                "automatizados, y registro de cada acceso.",
+                "Ningún sistema es infalible. Si ocurriera una brecha que "
+                "afecte tus datos, te lo comunicaremos y lo reportaremos a la "
+                "autoridad como corresponde.",
+            ],
+        },
+        {
+            "title": "Menores de edad",
+            "paragraphs": [
+                "Panamails es un servicio para negocios y organizaciones. No "
+                "está dirigido a menores de 18 años ni recogemos sus datos a "
+                "sabiendas.",
+            ],
+        },
+        {
+            "title": "Cambios en esta política",
+            "paragraphs": [
+                "Si cambia algo importante lo avisaremos por correo o desde el "
+                "panel. La fecha de arriba indica la versión vigente.",
+            ],
+        },
+    ],
+}
+
+TERMS = {
+    "meta_title": "Términos y condiciones · Panamails",
+    "meta_description": (
+        "Condiciones de uso de Panamails: cuenta, planes y pagos, reglas de "
+        "envío, tratamiento de los datos de tus contactos y responsabilidades."
+    ),
+    "hero": {
+        "eyebrow": "Legal",
+        "title": "Términos y condiciones",
+        "subtitle": (
+            "Las reglas del servicio. Las aceptas al crear tu cuenta, así que "
+            "vale la pena leerlas: las de envío tienen consecuencias reales."
+        ),
+    },
+    "updated": UPDATED,
+    "sections": [
+        {
+            "title": "1. Quién presta el servicio",
+            "paragraphs": [
+                "Panamails es el nombre comercial de {name}, {id}, con domicilio "
+                "en {address}. Al crear una cuenta aceptas estos términos y la "
+                "política de privacidad.".format(**LEGAL_HOLDER),
+            ],
+        },
+        {
+            "title": "2. Qué es el servicio",
+            "paragraphs": [
+                "Panamails es una plataforma de email marketing: subes tus "
+                "contactos, armas una campaña y la envías desde un panel. "
+                "También ofrecemos el diseño de las piezas de correo como "
+                "servicio aparte.",
+                "La plataforma está en construcción. Algunas funciones no "
+                "existen todavía y otras pueden cambiar; los cambios "
+                "importantes se avisan.",
+            ],
+        },
+        {
+            "title": "3. Tu cuenta",
+            "items": [
+                "Los datos que registras deben ser ciertos, y el correo debe "
+                "ser uno al que tengas acceso.",
+                "La contraseña es tuya y respondes por lo que ocurra con tu "
+                "cuenta. Avísanos si crees que alguien más entró.",
+                "Una cuenta nueva queda **registrada**: puedes explorar el "
+                "panel, subir contactos y preparar campañas, pero no comprar ni "
+                "enviar. Antes de habilitar el envío hablamos contigo; es como "
+                "cuidamos que la plataforma no se use para correo no "
+                "solicitado.",
+                "Podemos suspender una cuenta que incumpla estas reglas.",
+            ],
+        },
+        {
+            "title": "4. Planes y pagos",
+            "items": [
+                "Los precios, los límites de contactos y de correos, y las "
+                "condiciones de cada plan son los publicados en la página de "
+                "precios al momento de contratar.",
+                "El cobro se hace por Yappy o PayPal. La tarjeta no pasa por "
+                "nuestros servidores.",
+                "Los correos no usados en el mes pasan al siguiente y vencen "
+                "ahí; se consumen primero los acumulados.",
+                "El plan anual se paga por adelantado con dos meses de "
+                "descuento.",
+                "Los pagos no son reembolsables, salvo un cobro duplicado o un "
+                "error nuestro, que devolvemos por el mismo medio.",
+                "Si un pago no se completa, la cuenta queda sin poder enviar "
+                "hasta regularizarlo. Los datos no se borran por eso.",
+            ],
+        },
+        {
+            "title": "5. Para qué NO puedes usar Panamails",
+            "paragraphs": [
+                "Esta es la parte que más importa. El dominio de envío es "
+                "compartido entre todos los clientes: lo que uno haga mal lo "
+                "pagan los demás en forma de correos que dejan de llegar. Por "
+                "eso estas reglas se aplican sin excepciones.",
+            ],
+            "items": [
+                "**Solo puedes escribirle a quien te dio su correo** sabiendo "
+                "que le ibas a escribir. Nada de listas compradas, alquiladas, "
+                "intercambiadas o recogidas de internet.",
+                "Nada de correo no solicitado, cadenas, ni mensajes masivos a "
+                "direcciones que no son tuyas.",
+                "Nada de contenido ilegal, engañoso o que suplante a otra "
+                "persona o empresa, ni de asuntos y remitentes que engañen "
+                "sobre quién envía o de qué trata el mensaje.",
+                "No puedes quitar, ocultar ni desviar el enlace de baja: lo "
+                "inserta la plataforma al enviar y no se puede editar.",
+                "No puedes usar la plataforma para enviar programas dañinos ni "
+                "para intentar acceder a datos de otras cuentas.",
+            ],
+        },
+        {
+            "title": "6. Envíos, límites y pausas automáticas",
+            "items": [
+                "El HTML que subas se revisa automáticamente y se rechaza si "
+                "trae guiones, marcos, formularios o recursos externos. La "
+                "primera pieza de cada cliente además la revisamos a mano.",
+                "Las primeras 48 horas de una cuenta nueva llevan un tope de "
+                "envío reducido, sea cual sea el plan.",
+                "**Si los rebotes pasan del 3% o las quejas del 0.05%, el envío "
+                "se pausa automáticamente** y te avisamos. Son los umbrales con "
+                "los que trabajan los proveedores de correo; por debajo de "
+                "ellos todo el mundo sigue recibiendo.",
+                "Podemos suspender un envío en curso si detectamos un abuso, "
+                "sin aviso previo cuando haga falta para proteger a los demás "
+                "clientes.",
+                "Hacemos lo posible por que los correos lleguen, pero la "
+                "bandeja de entrada la decide el proveedor de cada "
+                "destinatario. No podemos garantizar la entrega.",
+            ],
+        },
+        {
+            "title": "7. Tu contenido",
+            "paragraphs": [
+                "Los textos, imágenes y listas que subes siguen siendo tuyos. "
+                "Nos das permiso únicamente para guardarlos y enviarlos según "
+                "tus instrucciones, mientras uses el servicio.",
+                "Respondes por tener los derechos de lo que envías, incluidas "
+                "las imágenes y las marcas que aparezcan en tus campañas.",
+            ],
+        },
+        {
+            "title": "8. Los datos de tus contactos",
+            "paragraphs": [
+                "Cuando subes una lista, esos datos personales son de las "
+                "personas que están en ella y **tú eres el responsable** de "
+                "haberlos obtenido bien. Panamails actúa como **custodio**: los "
+                "trata solo por instrucción tuya. En concreto:",
+            ],
+            "items": [
+                "Garantizas que cada persona de tu lista te dio su correo y "
+                "podía esperar recibir mensajes tuyos, y que puedes demostrarlo "
+                "si alguien lo pregunta.",
+                "Usamos tu lista únicamente para tus envíos. No la mezclamos "
+                "con la de otros clientes, no la vendemos y no le ofrecemos "
+                "nada nuestro.",
+                "La guardamos con las medidas de seguridad descritas en la "
+                "política de privacidad, y solo la ve quien necesite verla para "
+                "darte soporte.",
+                "Si un contacto tuyo nos pide acceder, corregir o borrar sus "
+                "datos, te lo encaminamos a ti, que eres quien decide. Si lo "
+                "que pide es dejar de recibir correos, lo aplicamos de "
+                "inmediato: esa baja no la puedes revertir.",
+                "Al cerrar tu cuenta borramos la lista, salvo las supresiones, "
+                "que se conservan para que nadie vuelva a escribirle a quien "
+                "pidió no ser contactado.",
+                "Si contratamos un proveedor nuevo que trate esos datos, se le "
+                "exigen las mismas obligaciones. Los actuales están nombrados "
+                "en la política de privacidad.",
+            ],
+        },
+        {
+            "title": "9. Disponibilidad",
+            "paragraphs": [
+                "El servicio se presta tal como está. Hacemos lo razonable por "
+                "mantenerlo disponible, pero puede haber cortes, mantenimientos "
+                "y fallas de proveedores. No prometemos un porcentaje de "
+                "disponibilidad ni operación ininterrumpida.",
+            ],
+        },
+        {
+            "title": "10. Responsabilidad",
+            "paragraphs": [
+                "Respondemos por lo que hagamos mal, hasta el monto que nos "
+                "hayas pagado en los tres meses anteriores al hecho. No "
+                "respondemos por lucro cesante, pérdida de oportunidades ni "
+                "daños indirectos, ni por el contenido que tú envíes o por "
+                "cómo obtuviste tu lista.",
+            ],
+        },
+        {
+            "title": "11. Cierre de la cuenta",
+            "items": [
+                "Puedes cerrarla cuando quieras escribiéndonos.",
+                "Podemos cerrarla si incumples estas reglas, si el pago no se "
+                "regulariza o si el uso pone en riesgo la entregabilidad de la "
+                "plataforma.",
+                "Tras el cierre puedes pedir una copia de tus contactos durante "
+                "30 días. Después se borran, salvo las supresiones y lo que "
+                "debamos conservar por ley.",
+            ],
+        },
+        {
+            "title": "12. Cambios",
+            "paragraphs": [
+                "Podemos actualizar estos términos. Si el cambio es importante "
+                "lo avisaremos por correo o desde el panel antes de que entre "
+                "en vigor. Seguir usando el servicio después es aceptarlo.",
+            ],
+        },
+        {
+            "title": "13. Ley aplicable",
+            "paragraphs": [
+                "Estos términos se rigen por las leyes de la República de "
+                "Panamá, incluidas la Ley 81 de 2019 de protección de datos "
+                "personales y la Ley 51 de 2008 de comercio electrónico. "
+                "Cualquier disputa se somete a los tribunales de la ciudad de "
+                "Panamá, sin perjuicio de intentar antes una solución "
+                "conversada.",
+            ],
+        },
+        {
+            "title": "14. Contacto",
+            "paragraphs": [
+                "panamails.info@gmail.com, o el WhatsApp que aparece en el pie "
+                "de esta página.",
+            ],
+        },
+    ],
+}
+
+
 # --------------------------------------------------------------------------- footer
 
 FOOTER = {
@@ -599,8 +1042,8 @@ FOOTER = {
         {
             "title": "Legal",
             "links": [
-                {"label": "Política de privacidad", "url": None, "soon": True},
-                {"label": "Términos y condiciones", "url": None, "soon": True},
+                {"label": "Política de privacidad", "url": "/privacidad/"},
+                {"label": "Términos y condiciones", "url": "/terminos/"},
             ],
         },
     ],

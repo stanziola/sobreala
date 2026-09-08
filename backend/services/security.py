@@ -29,12 +29,33 @@ def now() -> datetime:
 # --------------------------------------------------------------------- passwords
 
 def password_problem(password: str) -> str | None:
-    """Return the reason a password is unacceptable, or None if it is fine."""
+    """Return the reason a password is unacceptable, or None if it is fine.
+
+    Length first, because it is the one that matters most and the one the person
+    can fix without reading the rest. Only the first problem is returned; the
+    form lists every rule underneath the field, so nobody has to discover them
+    one refusal at a time.
+    """
     if len(password) < MIN_PASSWORD_LENGTH:
         return "too_short"
     if len(password.encode("utf-8")) > MAX_PASSWORD_BYTES:
         return "too_long"
+    if not any(ch.isupper() for ch in password):
+        return "no_upper"
+    if not any(ch.isdigit() for ch in password):
+        return "no_digit"
+    if not any(is_symbol(ch) for ch in password):
+        return "no_symbol"
     return None
+
+
+def is_symbol(ch: str) -> bool:
+    """Anything that is not a letter, a digit or a space.
+
+    Written as "not the others" rather than as a list of allowed characters, so
+    a keyboard from another language is not punished for its punctuation.
+    """
+    return not ch.isalnum() and not ch.isspace()
 
 
 def hash_password(password: str) -> str:

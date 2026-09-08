@@ -39,9 +39,9 @@ def test_email_is_normalised(client, database):
 
 
 def test_password_is_never_stored_in_the_clear(client, database):
-    register(client, password="contrasena-larga")
+    register(client, password="Contrasena-Larga1")
     account = accounts.by_email(database, "ana@ejemplo.com")
-    assert "contrasena-larga" not in str(account)
+    assert "Contrasena-Larga1" not in str(account)
     assert account["password_hash"].startswith("$2")
 
 
@@ -80,7 +80,7 @@ def test_password_over_the_bcrypt_limit_is_refused(client, database):
 def test_registering_without_csrf_does_nothing(client, database):
     client.post("/registro", data={
         "company_name": "X", "contact_name": "Y",
-        "email": "sin@ejemplo.com", "password": "contrasena-larga",
+        "email": "sin@ejemplo.com", "password": "Contrasena-Larga1",
     })
     assert database.accounts.count_documents({}) == 0
 
@@ -258,12 +258,12 @@ def test_panel_needs_a_session(client, database):
 def test_unique_index_rejects_a_repeated_address(client, database):
     register(client)
     assert accounts.create(database, company_name="Otra", contact_name="Beto",
-                           email="ANA@ejemplo.com", password="contrasena-larga") is None
+                           email="ANA@ejemplo.com", password="Contrasena-Larga1") is None
 
 
 def test_code_is_single_use_at_the_model_level(database):
     account = accounts.create(database, company_name="X", contact_name="Y",
-                              email="uno@ejemplo.com", password="contrasena-larga")
+                              email="uno@ejemplo.com", password="Contrasena-Larga1")
     code = tokens.issue(database, account["_id"])
     reason, doc = tokens.check(database, account["_id"], code)
     assert reason == tokens.VALID
@@ -274,7 +274,7 @@ def test_code_is_single_use_at_the_model_level(database):
 
 def test_an_account_without_a_code_is_not_told_so_at_the_model_level(database):
     account = accounts.create(database, company_name="X", contact_name="Y",
-                              email="dos@ejemplo.com", password="contrasena-larga")
+                              email="dos@ejemplo.com", password="Contrasena-Larga1")
     # The distinction exists here, in the log's language, and dies at the screen.
     assert tokens.check(database, account["_id"], WRONG)[0] == tokens.UNKNOWN
     tokens.issue(database, account["_id"])
@@ -283,7 +283,7 @@ def test_an_account_without_a_code_is_not_told_so_at_the_model_level(database):
 
 def test_discard_throws_the_code_away(database):
     account = accounts.create(database, company_name="X", contact_name="Y",
-                              email="tres@ejemplo.com", password="contrasena-larga")
+                              email="tres@ejemplo.com", password="Contrasena-Larga1")
     tokens.issue(database, account["_id"])
     tokens.discard(database, account["_id"])
     assert database.account_tokens.count_documents({}) == 0

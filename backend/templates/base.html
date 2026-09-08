@@ -6,7 +6,7 @@
 <title>{% block title %}{{ t('brand') }}{% endblock %} · {{ t('brand') }}</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#3166A7" id="theme-color">
-<script>
+<script nonce="{{ csp_nonce }}">
   // Runs before the stylesheet so the page never paints the wrong theme.
   (function () {
     var t;
@@ -22,13 +22,13 @@
   })();
 </script>
 <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/static/css/panel.css">
+<link rel="stylesheet" href="/static/css/panel.css?v={{ asset_version }}">
 </head>
 <body>
 <header class="bar">
   <a class="bar__brand" href="/">
     <span class="bar__wing">{% include "_wing.svg" %}</span>
-    <span>{{ t('brand') }}</span>
+    <span class="bar__name">{{ t('brand') }}</span>
   </a>
 
   <div class="bar__actions">
@@ -40,10 +40,12 @@
   </div>
 </header>
 
+<span class="visually-hidden" role="status" id="theme-status"></span>
+
 <main class="wrap">
 {% block content %}{% endblock %}
 </main>
 
-<script src="/static/js/panel.js"></script>
+<script src="/static/js/panel.js?v={{ asset_version }}"></script>
 </body>
 </html>

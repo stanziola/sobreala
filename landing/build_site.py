@@ -320,7 +320,21 @@ PAGES = [
     ("como-funciona/index.html", "como-funciona.html.j2", "/como-funciona/", content.HOW),
     ("precios/index.html", "precios.html.j2", "/precios/", content.PRICING),
     ("nosotros/index.html", "nosotros.html.j2", "/nosotros/", content.ABOUT),
+    ("privacidad/index.html", "legal.html.j2", "/privacidad/", content.PRIVACY),
+    ("terminos/index.html", "legal.html.j2", "/terminos/", content.TERMS),
 ]
+
+
+def strong(text: str) -> "Markup":
+    """Pone en negrita lo que va entre ** en un texto de content.py.
+
+    Escapa primero y marca después, así que el contenido sigue sin poder
+    inyectar HTML: lo único que sobrevive es el <strong>. Lo usan las páginas
+    legales, donde cada punto de una lista empieza nombrando de qué habla.
+    """
+    from markupsafe import Markup, escape
+
+    return Markup(re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", str(escape(text))))
 
 
 def whatsapp_url() -> str:
@@ -355,6 +369,7 @@ def build() -> list[Path]:
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    env.filters["strong"] = strong
 
     shared = {
         "site": content.SITE,
@@ -363,6 +378,7 @@ def build() -> list[Path]:
         "whatsapp_url": whatsapp_url(),
         "mailto_url": mailto_url(),
         "cta_primary": content.CTA_PRIMARY,
+        "panel": content.PANEL,
         "cta_secondary": content.CTA_SECONDARY,
         "footer": content.FOOTER,
         "steps": content.STEPS,

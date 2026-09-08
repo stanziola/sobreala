@@ -179,7 +179,7 @@ def test_an_invalid_form_is_recorded(client, database):
 def test_a_form_without_csrf_is_recorded(client, database):
     client.post("/registro", data={"company_name": "X", "contact_name": "Y",
                                    "email": "sin@ejemplo.com",
-                                   "password": "contrasena-larga"})
+                                   "password": "Contrasena-Larga1"})
     assert outcomes(database, events.REGISTER) == [events.CSRF_FAILED]
 
 
@@ -286,7 +286,7 @@ def test_an_expired_code_is_recorded_as_expired(client, database, outbox):
 # ------------------------------------------------------------------- the rules
 
 def test_the_password_never_reaches_either_collection(client, database, outbox):
-    secret = "contrasena-secretisima"
+    secret = "Contrasena-Secreta1!"
     register(client, password=secret)
     login(client, password=secret)
     logout(client)
@@ -327,7 +327,7 @@ def test_a_dead_database_gives_a_readable_page_not_a_bare_500(unreachable_db):
 
     response = unreachable_db.post("/entrar", data={
         "csrf_token": csrf, "email": "ana@ejemplo.com",
-        "password": "contrasena-larga"})
+        "password": "Contrasena-Larga1"})
     body = response.get_data(as_text=True)
 
     # 503, not 500: the application is fine, its database is not.

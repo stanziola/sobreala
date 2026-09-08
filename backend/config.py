@@ -51,12 +51,24 @@ class Config:
     # whole flow can be exercised while SES is still in its sandbox.
     MAIL_BACKEND = os.getenv("MAIL_BACKEND", "file")
     MAIL_OUTBOX_DIR = os.getenv("MAIL_OUTBOX_DIR", str(BASE_DIR / ".mail_outbox"))
-    SYSTEM_FROM_EMAIL = os.getenv("SYSTEM_FROM_EMAIL", "cuenta@mail.panamails.com")
+    # The identity verified in SES is the domain panamails.com, which covers its
+    # subdomains. The address is at the root and not at mail.panamails.com
+    # because that subdomain is the MAIL FROM: its MX points at the SES feedback
+    # endpoint, so a reply sent there would never reach anyone.
+    SYSTEM_FROM_EMAIL = os.getenv("SYSTEM_FROM_EMAIL", "cuenta@panamails.com")
     SYSTEM_FROM_NAME = os.getenv("SYSTEM_FROM_NAME", "Panamails")
     # System mail keeps its own SES configuration set: a client's campaign
     # bounces must never affect whether confirmation mail is delivered.
     SES_TRANSACTIONAL_CONFIGURATION_SET = os.getenv("SES_TRANSACTIONAL_CONFIGURATION_SET", "")
-    AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+    # us-east-2 (Ohio) is where the SES identity lives. SES is per region: the
+    # same domain verified elsewhere does not count, and sending against the
+    # wrong one fails with "identity not verified".
+    AWS_REGION = os.getenv("AWS_REGION", "us-east-2")
+    # boto3 finds these on its own in the environment; they are read here only
+    # so check() can refuse to start without them. A deploy that is missing a
+    # key has to say so at boot, not at the first person who tries to register.
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
 
     # SMTP, only for MAIL_BACKEND=smtp. A bridge until SES leaves the sandbox.
     # MAIL_SMTP_FROM must be the mailbox that authenticates: sending as another
@@ -70,6 +82,9 @@ class Config:
 
     # --- links and tokens --------------------------------------------------
     APP_BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:5000").rstrip("/")
+    # El sitio público es otro despliegue, en Cloudflare Pages. De ahí cuelgan
+    # los términos y la política de privacidad que se aceptan al registrarse.
+    PUBLIC_SITE_URL = os.getenv("PUBLIC_SITE_URL", "https://panamails.com").rstrip("/")
     # Confirmation is a six digit code typed on the screen that asked for it, so
     # it does not need to survive a day in an inbox the way a link did. Minutes,
     # not hours: a short life is half of what makes a short code safe.
@@ -87,3 +102,9 @@ class Config:
             raise RuntimeError(f"unknown MAIL_BACKEND: {cls.MAIL_BACKEND!r}")
         if cls.MAIL_BACKEND == "smtp" and not cls.MAIL_SMTP_USER:
             raise RuntimeError("MAIL_BACKEND=smtp needs MAIL_SMTP_USER and MAIL_SMTP_PASSWORD")
+        if cls.MAIL_BACKEND == "ses":
+            missing = [name for name in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",
+                                         "AWS_REGION", "SYSTEM_FROM_EMAIL")
+                       if not getattr(cls, name)]
+            if missing:
+                raise RuntimeError("MAIL_BACKEND=ses needs " + ", ".join(missing))

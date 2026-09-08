@@ -54,7 +54,7 @@ def client(app):
     return app.test_client()
 
 
-def register(client, email="ana@ejemplo.com", password="contrasena-larga"):
+def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1"):
     """Fill the registration form the way a browser would, CSRF included."""
     client.get("/registro")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
@@ -69,7 +69,7 @@ def register(client, email="ana@ejemplo.com", password="contrasena-larga"):
     })
 
 
-def login(client, email="ana@ejemplo.com", password="contrasena-larga"):
+def login(client, email="ana@ejemplo.com", password="Contrasena-Larga1"):
     """Sign in the way a browser would, CSRF included."""
     client.get("/entrar")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
@@ -100,7 +100,9 @@ def page_shape(response) -> str:
     """
     import re
     body = response.get_data(as_text=True)
-    return re.sub(r'value="[^"]*"', 'value=""', body)
+    body = re.sub(r'value="[^"]*"', 'value=""', body)
+    # The CSP nonce is new on every response and says nothing about the visitor.
+    return re.sub(r'nonce="[^"]*"', 'nonce=""', body)
 
 
 def code_from_outbox(outbox) -> str:

@@ -23,8 +23,15 @@ TEXTS = {
     "register_email": "Correo electrónico",
     "register_phone": "Teléfono (opcional)",
     "register_password": "Contraseña",
-    "register_password_hint": "Al menos 10 caracteres.",
+    "register_password_hint": "Al menos 10 caracteres, con una mayúscula, un "
+                              "número y un símbolo (por ejemplo . - _ ! ?).",
     "register_submit": "Crear cuenta",
+    # Partido en tres porque dos de los pedazos son enlaces. Todo el español
+    # sigue aquí; la plantilla solo los une.
+    "register_legal": "Al crear tu cuenta aceptas los",
+    "register_legal_terms": "términos y condiciones",
+    "register_legal_join": "y la",
+    "register_legal_privacy": "política de privacidad",
     "register_have_account": "¿Ya tienes cuenta?",
     "register_login_link": "Entra aquí",
 
@@ -70,6 +77,9 @@ TEXTS = {
     "error_email_invalid": "Ese correo no parece válido.",
     "error_password_short": "La contraseña debe tener al menos 10 caracteres.",
     "error_password_long": "Esa contraseña es demasiado larga. Usa uno más corto.",
+    "error_password_upper": "Agrégale al menos una letra mayúscula.",
+    "error_password_digit": "Agrégale al menos un número.",
+    "error_password_symbol": "Agrégale al menos un símbolo, por ejemplo . - _ ! ?",
     "error_login_failed": "El correo o la contraseña no coinciden.",
     "error_csrf": "El formulario venció. Vuelve a intentarlo.",
     "error_too_many": "Demasiados intentos. Espera unos minutos y vuelve a probar.",

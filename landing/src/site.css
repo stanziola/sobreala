@@ -156,6 +156,33 @@ button { font: inherit; color: inherit; }
 /* Theme toggle. The icon shows the action, not the state: a sun while dark
    (press to go light) and a moon while light, as in the reference. */
 .header-actions { display: flex; align-items: center; gap: 8px; }
+
+/* Getting in and signing up, side by side in the header. Same size, same
+   shape, same weight: the only difference between them is the colour, so one
+   reads as the main action without shouting over the other. */
+.site-nav__account { display: flex; align-items: center; gap: 8px; }
+.btn--account { min-height: 40px; padding: 8px 16px; font-size: .95rem; border-radius: 11px; white-space: nowrap; }
+/* The two buttons take room in the bar: without this, "Cómo funciona" breaks
+   into two lines to make space for them. */
+.site-nav__link { white-space: nowrap; }
+.btn--account-in { background: var(--color-accent); color: var(--color-on-accent); }
+.btn--account-in:hover { background: var(--color-accent-light); }
+.btn--account-up { background: transparent; color: var(--color-on-dark); border-color: rgba(255, 255, 255, .4); }
+.btn--account-up:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .7); }
+
+/* Below 1200 the bar cannot hold the links, WhatsApp and both account buttons.
+   WhatsApp is the one that steps aside: it is still in the hero, in the footer
+   and inside the menu once the nav collapses at 960. Getting into the account
+   has nowhere else to go. */
+@media (max-width: 1200px) and (min-width: 960px) {
+  .site-nav__cta { display: none; }
+}
+
+/* In the menu they stack full width, like the WhatsApp button below them. */
+@media (max-width: 959.98px) {
+  .site-nav__account { flex-direction: column; align-self: stretch; gap: 10px; }
+  .site-nav__account .btn--account { width: 100%; min-height: 52px; font-size: 1.04rem; }
+}
 .theme-toggle {
   display: inline-grid; place-items: center; flex: none;
   width: 40px; height: 40px; padding: 0;
@@ -458,6 +485,17 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 .prose__title { font-size: 1.5rem; font-weight: 700; margin-bottom: 14px; letter-spacing: -.01em; }
 .prose p { font-size: 1.08rem; line-height: 1.7; color: var(--color-ink); }
 .prose p + p { margin-top: 14px; }
+/* Legal pages: lists carry as much of the text as the paragraphs do. */
+/* The reset above clears list markers site-wide; these need them back. */
+.prose__list { margin: 14px 0 0; padding-left: 22px; display: grid; gap: 10px;
+               list-style: disc; }
+.prose__list li { font-size: 1.08rem; line-height: 1.65; color: var(--color-ink); }
+.prose__list li::marker { color: var(--color-accent-strong); }
+.prose__note {
+  margin-top: 16px; padding: 14px 16px; border-radius: var(--radius-sm);
+  background: var(--color-surface-alt); border-left: 3px solid var(--color-accent);
+}
+.legal-updated { font-size: .95rem; color: var(--color-ink-soft); }
 
 /* ------------------------------------------------------------------ footer */
 .site-footer { background: var(--color-deep); color: var(--color-on-dark); padding-block: clamp(44px, 6vw, 64px) 28px; }

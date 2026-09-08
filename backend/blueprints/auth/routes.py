@@ -16,6 +16,8 @@ Four rules run through the whole file:
 
 from __future__ import annotations
 
+from ipaddress import ip_address
+
 from bson import ObjectId
 from bson.errors import InvalidId
 from email_validator import EmailNotValidError, validate_email
@@ -42,6 +44,20 @@ RESEND_PER_EMAIL = (5, 3600)
 RESEND_PER_IP = (15, 3600)
 LOGIN_PER_IP = (20, 900)
 CONFIRM_PER_IP = (30, 900)
+# Registering with someone else's address sends them a notice. Without a budget
+# per address, that is a way to fill a stranger's inbox from many machines, so
+# the notice has one of its own, separate from the per-IP budget.
+REGISTER_PER_EMAIL = (5, 3600)
+
+# What to tell someone about their password. The rules themselves live in
+# services/security.py; this only names them in Spanish.
+PASSWORD_MESSAGES = {
+    "too_short": "error_password_short",
+    "too_long": "error_password_long",
+    "no_upper": "error_password_upper",
+    "no_digit": "error_password_digit",
+    "no_symbol": "error_password_symbol",
+}
 
 # The account waiting for a code, and how many times this browser has got it
 # wrong. The counter lives in the session as well as on the code document
@@ -96,8 +112,21 @@ def await_code(account_id) -> None:
 
 
 def client_ip() -> str:
-    # Cloudflare sits in front in production and sets this header.
-    return request.headers.get("CF-Connecting-IP") or request.remote_addr or "unknown"
+    """The visitor's address, for the rate limit counters.
+
+    Cloudflare sits in front in production and puts the real address in
+    CF-Connecting-IP; without it every visitor would arrive as the proxy and
+    share one budget. The header is checked for being an actual IP before it is
+    used, because it arrives from outside: anything else would let a caller
+    write whatever it liked into the keys of the rate_limits collection.
+    """
+    claimed = request.headers.get("CF-Connecting-IP", "")[:64].strip()
+    if claimed:
+        try:
+            return str(ip_address(claimed))
+        except ValueError:
+            pass  # not an address: fall back to the connection itself
+    return request.remote_addr or "unknown"
 
 
 def clean_email(raw: str) -> str | None:
@@ -205,10 +234,8 @@ def register():
                 errors["email"] = t("error_email_invalid")
 
             problem = password_problem(password)
-            if problem == "too_short":
-                errors["password"] = t("error_password_short")
-            elif problem == "too_long":
-                errors["password"] = t("error_password_long")
+            if problem:
+                errors["password"] = t(PASSWORD_MESSAGES[problem])
 
             if errors:
                 log_auth(db, events.REGISTER, events.INVALID, email=form["email"])
@@ -241,7 +268,15 @@ def register():
                     log_auth(db, events.REGISTER, events.ALREADY_REGISTERED,
                              email=email,
                              account_id=existing["_id"] if existing else None)
-                    if existing:
+                    if existing and not rate_limit(
+                            db, f"register:mail:{accounts.normalize_email(email)}",
+                            *REGISTER_PER_EMAIL):
+                        # Over budget for this address: the notice is skipped
+                        # silently, because saying so would say the address has
+                        # an account.
+                        log_auth(db, events.REGISTER, events.RATE_LIMITED,
+                                 email=email, account_id=existing["_id"])
+                    elif existing:
                         if not deliver(db, send_already_registered, existing,
                                        kind=events.REGISTER):
                             # Nothing to undo here, but the visitor must not be

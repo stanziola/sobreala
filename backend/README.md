@@ -54,6 +54,66 @@ y sirve como puente mientras SES sale del modo de pruebas. Dos avisos:
 **Los correos del sistema son transaccionales**: no llevan enlace de baja ni
 marca de agua. Esas reglas son para las campañas de los clientes.
 
+### Probar el envío: `check_mail.py`
+
+```
+python backend/check_mail.py luis@ejemplo.com
+```
+
+Manda un mensaje por el backend configurado, dice con qué ajustes lo intentó y,
+si falla, escribe la respuesta del proveedor tal cual. Es lo que convierte «no
+llega el correo» en algo accionable: SES contesta cosas como `MessageRejected:
+Email address is not verified`, que dice exactamente qué falta. El intento queda
+en `mail_log` con `purpose: "check"`.
+
+### Configurar Amazon SES
+
+Railway **no deja salir tráfico SMTP**: la conexión muere con `Network is
+unreachable` antes de abandonar el servidor. Por eso el correo del sistema tiene
+que salir por una API HTTPS, y la elegida en `CLAUDE.md` es SES.
+
+Lo que hay montado hoy, comprobable desde cualquier parte con `nslookup`:
+
+| Registro | Valor | Para qué |
+|---|---|---|
+| identidad SES | `panamails.com`, verificada en **us-east-2** | Cubre también sus subdominios |
+| `mail.panamails.com` MX | `feedback-smtp.us-east-2.amazonses.com` | MAIL FROM propio: los rebotes vuelven a SES |
+| `mail.panamails.com` TXT | `v=spf1 include:amazonses.com ~all` | SPF del sobre, alineado con el dominio |
+| `_dmarc.panamails.com` TXT | `v=DMARC1; p=none;` | DMARC observando |
+| `panamails.com` MX | Cloudflare Email Routing | Correo entrante del dominio |
+
+**La región es `us-east-2`, no `us-east-1`.** SES es por región y la identidad
+solo existe en la que se verificó; con la región equivocada, el envío falla con
+«identity not verified» aunque todo lo demás esté bien.
+
+El remitente es `cuenta@panamails.com`, del dominio raíz, **no**
+`cuenta@mail.panamails.com`: ese subdominio es el MAIL FROM y su MX apunta al
+endpoint de rebotes de SES, así que una respuesta enviada ahí no llegaría a
+nadie. Conviene crear en **Cloudflare Email Routing** una regla que lleve
+`cuenta@panamails.com` a un buzón real, para que responder al correo sirva de
+algo.
+
+Falta:
+
+1. Un usuario **IAM** solo para esto, con permiso de `ses:SendEmail` y
+   `ses:SendRawEmail` **restringido a esa identidad**. De ahí salen las claves.
+2. **Pedir acceso de producción** en SES. Tarda ~24 h. Mientras tanto la cuenta
+   está en *sandbox*: solo se puede enviar a direcciones verificadas una por una,
+   así que un registro con cualquier otra dirección va a fallar — limpiamente, y
+   deshaciendo la cuenta, que es lo que hace la aplicación cuando el correo no
+   sale.
+3. En Railway: `MAIL_BACKEND=ses`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+   `AWS_REGION=us-east-2` y `SYSTEM_FROM_EMAIL=cuenta@panamails.com`.
+
+`curl https://panel.panamails.com/salud` responde con `"mail": "ses"` cuando el
+despliegue tomó las variables. Si falta una credencial, la aplicación **no
+arranca** y lo dice en el registro de Railway: es preferible a descubrirlo con
+el primer cliente que intente registrarse.
+
+Falta todavía el webhook de SNS para rebotes y quejas (blueprint `webhooks/`),
+que es lo que llenará `suppressions` sin intervención. Para unos pocos correos
+transaccionales se revisa a mano en `mail_log`; para campañas es obligatorio.
+
 ## Comprobar que está vivo: `/salud`
 
 ```
@@ -63,8 +123,12 @@ curl https://panel.panamails.com/salud
 Devuelve JSON y se lee desde fuera, sin entrar a ningún panel:
 
 ```json
-{"app": "up", "database": "up", "indexes": true, "name": "panamails_app"}
+{"app": "up", "mail": "ses", "database": "up", "indexes": true, "name": "panamails_app"}
 ```
+
+`mail` es el backend de correo con el que arrancó el proceso. Es la forma más
+rápida de saber desde fuera si un despliegue tomó las variables nuevas, y nombra
+un modo, nunca una credencial.
 
 | Lo que ves | Lo que significa |
 |---|---|
