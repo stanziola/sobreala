@@ -138,15 +138,17 @@ a.menu__item:hover, button.menu__item:hover { background: var(--color-surface-al
 .status { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--color-border); }
 
 label { display: block; margin-top: 18px; margin-bottom: 6px; font-weight: 600; font-size: .95rem; }
+/* --color-field y no --color-border: el contorno de un campo tiene que verse
+   contra el fondo, y el de las lineas que separan no llega. */
 input {
   width: 100%; padding: 11px 13px; font: inherit;
   color: var(--color-ink); background: var(--color-surface);
-  border: 1px solid var(--color-border); border-radius: 8px;
+  border: 1px solid var(--color-field); border-radius: 8px;
 }
 select {
   width: 100%; padding: 11px 13px; font: inherit;
   color: var(--color-ink); background: var(--color-surface);
-  border: 1px solid var(--color-border); border-radius: 8px;
+  border: 1px solid var(--color-field); border-radius: 8px;
 }
 input[type="file"] { padding: 9px 11px; cursor: pointer; }
 input:focus, select:focus { border-color: var(--color-accent); }
@@ -329,7 +331,7 @@ input:focus, select:focus { border-color: var(--color-accent); }
 }
 .switch__track {
   display: block; width: 46px; height: 26px; padding: 3px;
-  background: var(--color-border); border-radius: 999px;
+  background: var(--color-field); border-radius: 999px;
   transition: background-color var(--fast) var(--ease);
 }
 .switch__knob {

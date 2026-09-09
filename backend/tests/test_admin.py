@@ -32,12 +32,16 @@ def csrf(client, url="/panel"):
 
 
 def turn_on_two_step(browser):
+    # Dos pasos: primero la contraseña, después el QR.
     browser.get("/cuenta/dos-pasos")
     with browser.session_transaction() as sess:
+        token = sess["_csrf"]
+    browser.post("/cuenta/dos-pasos", data={"csrf_token": token, "password": PASSWORD})
+    browser.get("/cuenta/dos-pasos/activar")
+    with browser.session_transaction() as sess:
         secret, token = sess["two_factor_setup"], sess["_csrf"]
-    browser.post("/cuenta/dos-pasos", data={
-        "csrf_token": token, "action": "enable", "password": PASSWORD,
-        "code": list(pyotp.TOTP(secret).now())})
+    browser.post("/cuenta/dos-pasos/activar", data={
+        "csrf_token": token, "code": list(pyotp.TOTP(secret).now())})
 
 
 def make_admin(client, database, email="jefe@ejemplo.com"):
@@ -245,6 +249,36 @@ def test_una_cuenta_que_no_existe_da_404(client, database, outbox):
     admin, _ = make_admin(client, database)
     assert admin.get("/admin/cuentas/000000000000000000000000").status_code == 404
     assert admin.get("/admin/cuentas/no-es-un-id").status_code == 404
+
+
+# ------------------------------------------------------------------ el rol
+
+def test_toda_cuenta_nace_con_su_rol(client, database, outbox):
+    """Un campo que a veces está y a veces no es fácil de equivocar."""
+    register(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+
+    assert cuenta["role"] == accounts.CLIENT
+    assert not accounts.is_admin(cuenta)
+
+
+def test_quitar_el_rol_deja_client_y_no_un_hueco(client, database, outbox):
+    _, jefe = make_admin(client, database)
+    accounts.set_role(database, jefe["_id"], None)
+
+    despues = accounts.by_id(database, jefe["_id"])
+    assert despues["role"] == accounts.CLIENT
+    assert not accounts.is_admin(despues)
+
+
+def test_un_rol_mal_escrito_no_es_administrador(client, database, outbox):
+    """Lo que decide es la comparación exacta, no que el campo tenga algo."""
+    browser, cuenta = make_client_account(client, database, "casi@ejemplo.com")
+    database.accounts.update_one({"_id": cuenta["_id"]},
+                                 {"$set": {"role": "Admin"}})
+
+    assert not accounts.is_admin(accounts.by_id(database, cuenta["_id"]))
+    assert browser.get("/admin/").status_code == 404
 
 
 def test_la_tabla_filtra_por_estado(client, database, outbox):

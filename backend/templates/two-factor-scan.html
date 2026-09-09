@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ t('two_step_scan_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('two_step_scan_title') }}</h1>
+  <p class="lead">{{ t('two_step_scan_lead') }}</p>
+
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  {# El secreto es nuevo cada vez que se activa, así que la entrada anterior en
+     la app quedó muerta. Sin decirlo, la app se queda con dos Panamails y se
+     escribe el código del que ya no sirve. #}
+  <div class="notice">
+    <p><b>{{ t('two_step_scan_note_title') }}</b></p>
+    <p>{{ t('two_step_scan_note') }}</p>
+  </div>
+
+  {# The QR is SVG in the page itself: no image is fetched from anywhere, and it
+     is dark on white always, because a scanner needs that contrast. #}
+  <div class="qr">{{ qr }}</div>
+  <p class="hint">{{ t('two_step_manual') }}</p>
+  <p class="secret">{{ secret }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="code-1">{{ t('two_step_code_label') }}</label>
+    {# Ya no hay contraseña en esta pantalla, así que el gestor del navegador no
+       tiene nada que rellenar aquí y las casillas no pueden confundirse con el
+       campo del usuario. one-time-code sigue puesto porque es lo que son. #}
+    <div class="code" data-code>
+      {% for i in range(1, 7) %}
+      <input id="code-{{ i }}" name="code" class="code__box" type="text"
+             inputmode="numeric" pattern="[0-9]*" maxlength="1"
+             autocomplete="one-time-code"{% if i == 1 %} autofocus{% endif %}>
+      {% endfor %}
+    </div>
+    {% if errors.code %}<p class="error">{{ errors.code }}</p>{% endif %}
+
+    <button class="btn" type="submit">{{ t('two_step_enable') }}</button>
+  </form>
+
+  <p class="foot"><a href="{{ url_for('auth.settings', section='seguridad') }}">
+    {{ t('two_step_to_settings') }}</a></p>
+</div>
+{% endblock %}

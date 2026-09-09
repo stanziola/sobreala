@@ -839,10 +839,6 @@ PRIVACY = {
                 "JavaScript y caduca sola.",
                 "Un **valor guardado en tu navegador** con el tema que "
                 "elegiste, claro u oscuro. No sale de tu equipo.",
-                "Una cookie de **dispositivos de confianza**, de 30 días, solo "
-                "si activas la verificación en dos pasos y pides no volver a "
-                "escribir el código en ese equipo. De ella guardamos únicamente "
-                "una huella, nunca el valor que viaja.",
                 "Una **marca de un solo dígito** que el panel deja en "
                 "panamails.com para que el sitio público sepa si dibujarte el "
                 "botón «Mi cuenta». No lleva tu nombre ni tu dirección: es un "

@@ -1,0 +1,28 @@
+{# El campo de contraseña que sirve para demostrar quién eres.
+
+   Aparece en tres pantallas —cambiar la contraseña, y activar o administrar el
+   doble factor— y las tres necesitan lo mismo: el ojo que la enseña, y la
+   defensa contra el relleno automático. Aquí una vez en vez de tres copias que
+   se separan con el tiempo.
+
+   Se importa con `with context`, porque necesita t() y el nonce de la página. #}
+{% macro proof(id, name) %}
+<div class="field">
+  <input id="{{ id }}" name="{{ name }}" type="password"
+         autocomplete="current-password" data-fill-on-click required>
+  {#- Con JavaScript el campo nace de solo lectura, y el navegador no rellena lo
+      que no se puede escribir. Es lo que impide que el gestor de contraseñas
+      ponga la guardada al abrir la página: si lo hiciera, quien encuentre esta
+      sesión abierta pasaría por aquí sin saberla, que es exactamente lo que
+      este campo existe para impedir. panel.js lo libera al primer clic, y ahí
+      el navegador sí la ofrece. Sin JavaScript no pasa nada. -#}
+  <script nonce="{{ csp_nonce }}">document.getElementById("{{ id }}").readOnly = true;</script>
+  <button class="field__eye" type="button" hidden
+          data-reveal="{{ id }}" aria-pressed="false"
+          data-show="{{ t('password_show') }}" data-hide="{{ t('password_hide') }}"
+          aria-label="{{ t('password_show') }}">
+    <span class="field__eye-on">{% include "_icon-eye.svg" %}</span>
+    <span class="field__eye-off">{% include "_icon-eye-off.svg" %}</span>
+  </button>
+</div>
+{% endmacro %}

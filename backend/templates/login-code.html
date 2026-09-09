@@ -13,8 +13,8 @@
     <label for="code-1">{{ t('two_step_code_label') }}</label>
     {# The same six boxes as everywhere else: the app's code is six digits too,
        and the script that hops between them does not care where they came
-       from. No auto-submit here, because the checkbox below has to be read
-       before sending. #}
+       from. Sin envío automático: el código de respaldo vive debajo y hay que
+       poder llegar a él sin que el formulario se vaya solo. #}
     <div class="code" data-code>
       {% for i in range(1, 7) %}
       <input id="code-{{ i }}" name="code" class="code__box" type="text"
@@ -22,11 +22,6 @@
              {% if i == 1 %}autocomplete="one-time-code" autofocus{% else %}autocomplete="off"{% endif %}>
       {% endfor %}
     </div>
-
-    <label class="check">
-      <input type="checkbox" name="trust" value="1" checked>
-      <span>{{ t('two_step_trust') }}</span>
-    </label>
 
     <button class="btn" type="submit">{{ t('two_step_submit') }}</button>
 

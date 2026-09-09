@@ -19,10 +19,17 @@ ACTIVE = "active"
 SUSPENDED = "suspended"
 STATUSES = (REGISTERED, APPROVED, ACTIVE, SUSPENDED)
 
-# Quien administra la plataforma. Una cuenta corriente no tiene el campo; al
-# primer administrador se lo pone make_admin.py a mano, porque nadie puede
+# Quién es cada cuenta. Toda cuenta lleva el campo, también las corrientes: uno
+# que a veces está y a veces no es difícil de leer en la base y fácil de
+# equivocar en una consulta.
+#
+# Lo que decide quién manda es la comparación exacta contra ADMIN, así que una
+# cuenta sin campo, con el valor mal escrito o con cualquier otra cosa no es
+# administradora. Al primero se lo pone make_admin.py a mano, porque nadie puede
 # aprobarse a sí mismo el primer día.
+CLIENT = "client"
 ADMIN = "admin"
+ROLES = (CLIENT, ADMIN)
 
 
 def normalize_email(email: str) -> str:
@@ -51,6 +58,7 @@ def create(db, *, company_name: str, contact_name: str, email: str,
         "password_hash": hash_password(password),
         "email_confirmed_at": None,
         "status": REGISTERED,
+        "role": CLIENT,
         "created_at": moment,
         "updated_at": moment,
         "last_login_at": None,
@@ -131,14 +139,15 @@ def is_suspended(account: dict[str, Any] | None) -> bool:
 
 
 def set_role(db, account_id, role: str | None) -> None:
-    """Give or take the administrator role. Only make_admin.py calls this."""
-    if role == ADMIN:
-        db.accounts.update_one({"_id": account_id},
-                               {"$set": {"role": ADMIN, "updated_at": now()}})
-    else:
-        db.accounts.update_one({"_id": account_id},
-                               {"$unset": {"role": ""},
-                                "$set": {"updated_at": now()}})
+    """Give or take the administrator role. Only make_admin.py calls this.
+
+    Quitarlo deja `client`, no deja la cuenta sin campo: el rol es una
+    propiedad de toda cuenta, y su ausencia no debería significar nada.
+    """
+    db.accounts.update_one(
+        {"_id": account_id},
+        {"$set": {"role": role if role in ROLES else CLIENT,
+                  "updated_at": now()}})
 
 
 def set_status(db, account_id, status: str) -> str | None:

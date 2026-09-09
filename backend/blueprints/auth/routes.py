@@ -34,7 +34,6 @@ from models import auth_event as events
 from models import mail_log
 from models import session as sessions
 from models import token as tokens
-from models import trusted_device as trusted
 from services import totp
 from services import mailer
 from services.security import (csrf_ok, hash_password, now as security_now,
@@ -87,6 +86,12 @@ PENDING_2FA = "pending_two_factor"
 PENDING_REMEMBER = "pending_remember"
 # The secret while it is being set up, before any code proved it works.
 SETUP_KEY = "two_factor_setup"
+# La contraseña se pide en la primera pantalla y el QR está en la segunda, así
+# que hace falta recordar entre las dos que quien mira ya demostró quién es.
+# Con vencimiento, como el código de recuperación: una pestaña olvidada abierta
+# no puede seguir sirviendo de puerta media hora después.
+TWO_FACTOR_OK = "two_factor_verified"
+TWO_FACTOR_MINUTES = 10
 # Lo único que identifica una sesión: el resto vive en la colección sessions.
 SESSION_KEY = "sid"
 
@@ -214,6 +219,27 @@ def await_reset(account_id=None) -> None:
     session[RESET_ATTEMPTS] = 0
     session[RESET_DEADLINE] = (security_now() + timedelta(
         minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
+
+
+def password_proved() -> bool:
+    """Si la contraseña se comprobó hace poco, en el primer paso.
+
+    Es lo único que abre la pantalla del QR. Sin esto, cualquiera que encuentre
+    una sesión abierta escribe la dirección a mano y se pone su propio teléfono
+    como segundo paso, que es exactamente lo que la contraseña evita.
+    """
+    raw = session.get(TWO_FACTOR_OK)
+    if not raw:
+        return False
+    try:
+        return datetime.fromisoformat(raw) > security_now()
+    except (TypeError, ValueError):
+        return False
+
+
+def prove_password() -> None:
+    session[TWO_FACTOR_OK] = (
+        security_now() + timedelta(minutes=TWO_FACTOR_MINUTES)).isoformat()
 
 
 def seconds_left(key: str = DEADLINE_KEY) -> int:
@@ -742,11 +768,12 @@ def login():
                     return render_template("login.html", errors=errors,
                                            email=email_value, remember=remember)
                 remember = bool(request.form.get("remember"))
-                # The password was right. Whether that is enough depends on the
-                # account: with two-step on, and a device that has not answered
-                # a code before, nothing is opened yet.
-                if accounts.two_factor_on(account) and not trusted.is_trusted(
-                        db, account["_id"], request.cookies.get(trusted.COOKIE)):
+                # The password was right, and with two-step on that is not
+                # enough: nothing is opened until the code from the app is
+                # typed. Every time, on every device — un dispositivo que deja
+                # de preguntar durante un mes es un segundo candado abierto
+                # durante un mes.
+                if accounts.two_factor_on(account):
                     session[PENDING_2FA] = str(account["_id"])
                     session[PENDING_REMEMBER] = remember
                     log_auth(db, events.LOGIN, events.SECOND_STEP,
@@ -833,15 +860,6 @@ def login_code():
                          email=account["email"], account_id=account_id)
 
                 answer = redirect(url_for("auth.panel"))
-                if request.form.get("trust"):
-                    raw = trusted.remember(
-                        db, account["_id"], ip=client_ip(),
-                        user_agent=request.headers.get("User-Agent", ""))
-                    answer.set_cookie(
-                        trusted.COOKIE, raw,
-                        max_age=trusted.REMEMBER_DAYS * 24 * 3600,
-                        httponly=True, samesite="Lax",
-                        secure=current_app.config.get("SESSION_COOKIE_SECURE", False))
                 if first_time:
                     # After the second step, never before: warning about a
                     # sign-in that had not happened yet is noise in the one
@@ -1185,14 +1203,22 @@ def close_device():
 
 # --------------------------------------------------------------- password
 
+# Las dos acciones que se pueden hacer sobre una verificación ya encendida.
+TWO_FACTOR_ACTIONS = ("regenerate", "disable")
+
+
 @bp.route("/cuenta/dos-pasos", methods=["GET", "POST"])
 def two_factor():
-    """Turn two-step verification on or off.
+    """La primera pantalla, que es siempre la de la contraseña.
 
-    Both directions ask for the password, and that is not paperwork: without it,
-    anyone who finds an open session turns two-step on with *their own* phone
-    and locks the owner out of their own account for good. The password is the
-    one thing a passer-by does not have.
+    Apagada, pide la contraseña y manda a escanear. Encendida, enseña las dos
+    cosas que se pueden hacer y, cuando se elige una, pide la contraseña para
+    esa: así se confirma una decisión y no un botón cualquiera.
+
+    La contraseña va en los dos caminos y no es papeleo. Sin ella, quien
+    encuentre una sesión abierta activa la verificación con *su* teléfono y deja
+    al dueño fuera de su propia cuenta para siempre, o la desactiva y se queda
+    con la puerta abierta.
     """
     account = current_account()
     if account is None:
@@ -1201,13 +1227,14 @@ def two_factor():
     db = get_db()
     on = accounts.two_factor_on(account)
     errors: dict[str, str] = {}
-    # The secret is held in the cookie while it is being set up: it is not
-    # anybody's yet, and it only becomes the account's once a code proves the
-    # app really has it.
-    secret = session.get(SETUP_KEY) or totp.new_secret()
+    # Qué se está confirmando. Viaja en la dirección para dibujar la pantalla y
+    # en el formulario para hacerla: lo que decide es el POST.
+    action = (request.form.get("action") if request.method == "POST"
+              else request.args.get("accion", "")) or ""
+    if action not in TWO_FACTOR_ACTIONS:
+        action = ""
 
     if request.method == "POST":
-        action = request.form.get("action", "")
         password = request.form.get("password", "")
 
         if not csrf_ok(request.form.get("csrf_token")):
@@ -1222,12 +1249,17 @@ def two_factor():
             errors["password"] = t("error_password_wrong")
             log_auth(db, events.TWO_FACTOR, events.BAD_CURRENT,
                      email=account["email"], account_id=account["_id"])
-        elif action == "disable" and on:
-            accounts.disable_two_factor(db, account["_id"])
-            # Nothing may survive it: a device trusted while it was on would
-            # keep walking in without a code the day it is turned back on.
-            trusted.forget_all(db, account["_id"])
+
+        elif not on:
+            # La contraseña quedó demostrada; el QR está en la otra pantalla.
+            prove_password()
             session.pop(SETUP_KEY, None)
+            return redirect(url_for("auth.two_factor_scan"))
+
+        elif action == "disable":
+            accounts.disable_two_factor(db, account["_id"])
+            session.pop(SETUP_KEY, None)
+            session.pop(TWO_FACTOR_OK, None)
             log_auth(db, events.TWO_FACTOR, events.DISABLED,
                      email=account["email"], account_id=account["_id"])
             # A notice that fails to go out cannot undo a change already made.
@@ -1235,38 +1267,76 @@ def two_factor():
                     account, kind=events.TWO_FACTOR)
             return redirect(url_for("auth.settings", section="seguridad",
                                     dospasos="off"))
-        elif action == "regenerate" and on:
+
+        elif action == "regenerate":
             codes = totp.new_recovery_codes()
             accounts.set_recovery_codes(db, account["_id"], totp.hash_all(codes))
             log_auth(db, events.TWO_FACTOR, events.REGENERATED,
                      email=account["email"], account_id=account["_id"])
             return render_template("two-factor-codes.html", codes=codes)
-        elif action == "enable" and not on:
-            if totp.counter_for(secret, "".join(request.form.getlist("code"))) is None:
-                # Asked before turning it on so nobody locks themselves out by
-                # scanning badly: the app has to prove it holds the secret.
-                errors["code"] = t("error_code_invalid")
-                log_auth(db, events.TWO_FACTOR, events.INVALID,
-                         email=account["email"], account_id=account["_id"])
-            else:
-                codes = totp.new_recovery_codes()
-                accounts.enable_two_factor(db, account["_id"], secret,
-                                           totp.hash_all(codes))
-                trusted.forget_all(db, account["_id"])
-                session.pop(SETUP_KEY, None)
-                log_auth(db, events.TWO_FACTOR, events.OK,
-                         email=account["email"], account_id=account["_id"])
-                deliver(db, lambda d, a: send_two_factor_changed(d, a, on=True),
-                        account, kind=events.TWO_FACTOR)
-                return render_template("two-factor-codes.html", codes=codes)
 
-    if not on:
-        session[SETUP_KEY] = secret
-
+    # Tres pantallas, un archivo: pedir la contraseña, elegir qué hacer, o
+    # confirmar lo elegido.
+    step = "password" if not on else ("confirm" if action else "choose")
     return render_template(
-        "two-factor.html", errors=errors, on=on, secret=secret, account=account,
-        qr=Markup(totp.qr_svg(secret, account["email"])) if not on else None,
+        "two-factor.html", errors=errors, on=on, step=step, action=action,
         recovery_left=len((account.get("two_factor") or {}).get("recovery", [])))
+
+
+@bp.route("/cuenta/dos-pasos/activar", methods=["GET", "POST"])
+def two_factor_scan():
+    """La segunda pantalla: el QR y el código que prueba que la app lo tiene.
+
+    No se llega escribiendo la dirección: hace falta haber pasado por la
+    anterior hace menos de diez minutos.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    if accounts.two_factor_on(account):
+        return redirect(url_for("auth.two_factor"))
+    if not password_proved():
+        return redirect(url_for("auth.two_factor", vencido=1))
+
+    db = get_db()
+    errors: dict[str, str] = {}
+    # El secreto vive en la galleta mientras se prepara: todavía no es de nadie,
+    # y solo pasa a ser de la cuenta cuando un código prueba que la app lo tiene.
+    secret = session.get(SETUP_KEY) or totp.new_secret()
+
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.TWO_FACTOR, events.CSRF_FAILED,
+                     email=account["email"], account_id=account["_id"])
+        elif not rate_limit(db, f"2fa:setup:{client_ip()}", *PASSWORD_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.TWO_FACTOR, events.RATE_LIMITED,
+                     email=account["email"], account_id=account["_id"])
+        elif totp.counter_for(secret, "".join(request.form.getlist("code"))) is None:
+            # Se pide antes de encenderla para que nadie se deje fuera de su
+            # cuenta por haber escaneado mal: la app tiene que demostrar que
+            # guardó el secreto.
+            errors["code"] = t("error_code_invalid")
+            log_auth(db, events.TWO_FACTOR, events.INVALID,
+                     email=account["email"], account_id=account["_id"])
+        else:
+            codes = totp.new_recovery_codes()
+            accounts.enable_two_factor(db, account["_id"], secret,
+                                       totp.hash_all(codes))
+            session.pop(SETUP_KEY, None)
+            session.pop(TWO_FACTOR_OK, None)
+            log_auth(db, events.TWO_FACTOR, events.OK,
+                     email=account["email"], account_id=account["_id"])
+            deliver(db, lambda d, a: send_two_factor_changed(d, a, on=True),
+                    account, kind=events.TWO_FACTOR)
+            return render_template("two-factor-codes.html", codes=codes)
+
+    session[SETUP_KEY] = secret
+    return render_template(
+        "two-factor-scan.html", errors=errors, secret=secret,
+        qr=Markup(totp.qr_svg(secret, account["email"])))
+
 
 @bp.route("/cambiar-contrasena", methods=["GET", "POST"])
 def change_password():

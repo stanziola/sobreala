@@ -52,6 +52,13 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.accounts.create_index([("email_normalized", ASCENDING)], unique=True,
                              name="uniq_email_normalized")
     db.accounts.create_index([("status", ASCENDING)], name="by_status")
+    # make_admin.py --lista pregunta justamente por esto.
+    db.accounts.create_index([("role", ASCENDING)], name="by_role")
+    # Las cuentas de antes de que el rol existiera. Una sola vez: a partir de
+    # ahí no encuentra ninguna. Va aquí porque es la única función que corre
+    # sola al arrancar y ya es la que deja la base como tiene que estar.
+    db.accounts.update_many({"role": {"$exists": False}},
+                            {"$set": {"role": "client"}})
     # Registrations that never get confirmed. confirm_email() removes the field,
     # so a finished account is never a candidate.
     db.accounts.create_index([("purge_at", ASCENDING)], expireAfterSeconds=0,
@@ -82,15 +89,6 @@ def ensure_indexes(db: Database | None = None) -> None:
                              name="by_account_last_seen")
     db.sessions.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
                              name="ttl_expires_at")
-
-    # Devices that already answered the two-step code once. Its own cookie,
-    # because it has to survive signing out.
-    db.trusted_devices.create_index([("token_hash", ASCENDING)], unique=True,
-                                    name="uniq_trusted_token")
-    db.trusted_devices.create_index([("account_id", ASCENDING)],
-                                    name="by_account")
-    db.trusted_devices.create_index([("expires_at", ASCENDING)],
-                                    expireAfterSeconds=0, name="ttl_expires_at")
 
     db.rate_limits.create_index([("key", ASCENDING)], name="by_key")
     db.rate_limits.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,

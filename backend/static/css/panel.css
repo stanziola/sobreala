@@ -30,7 +30,12 @@
   --color-page: #FFFFFF;          /* page background */
   --color-surface: #FFFFFF;       /* cards and panels sitting on the page */
   --color-surface-alt: #F1F6FC;   /* alternating section background */
-  --color-border: #D7E2EE;
+  --color-border: #D7E2EE;    /* lineas que separan: tarjetas, filas, bloques */
+  /* El contorno de un campo tiene que verse, y --color-border no llega: sobre
+   * blanco da 1.31:1, cuando un borde de control necesita 3:1. Este da 3.21:1.
+   * Va aparte para que oscurecer los campos no oscurezca cada linea de la
+   * pagina. */
+  --color-field: #7692B3;
 
   /* Text and light chips placed ON the dark blue surfaces: header, hero, deep
    * sections and footer. Separate from --color-surface because in dark mode the
@@ -73,6 +78,9 @@
   --color-surface: #182B42;       /* cards, a visible step above the page */
   --color-surface-alt: #101C2B;   /* alternating section background */
   --color-border: #38577A;
+  /* Mismo problema de noche: el de arriba da 1.92:1 sobre las tarjetas. Este
+   * da 3.44:1. */
+  --color-field: #5A7FA8;
 
   /* Stays near-white: it is the text on the blue and deep surfaces. */
   --color-on-dark: #F3F7FB;
@@ -239,15 +247,17 @@ a.menu__item:hover, button.menu__item:hover { background: var(--color-surface-al
 .status { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--color-border); }
 
 label { display: block; margin-top: 18px; margin-bottom: 6px; font-weight: 600; font-size: .95rem; }
+/* --color-field y no --color-border: el contorno de un campo tiene que verse
+   contra el fondo, y el de las lineas que separan no llega. */
 input {
   width: 100%; padding: 11px 13px; font: inherit;
   color: var(--color-ink); background: var(--color-surface);
-  border: 1px solid var(--color-border); border-radius: 8px;
+  border: 1px solid var(--color-field); border-radius: 8px;
 }
 select {
   width: 100%; padding: 11px 13px; font: inherit;
   color: var(--color-ink); background: var(--color-surface);
-  border: 1px solid var(--color-border); border-radius: 8px;
+  border: 1px solid var(--color-field); border-radius: 8px;
 }
 input[type="file"] { padding: 9px 11px; cursor: pointer; }
 input:focus, select:focus { border-color: var(--color-accent); }
@@ -430,7 +440,7 @@ input:focus, select:focus { border-color: var(--color-accent); }
 }
 .switch__track {
   display: block; width: 46px; height: 26px; padding: 3px;
-  background: var(--color-border); border-radius: 999px;
+  background: var(--color-field); border-radius: 999px;
   transition: background-color var(--fast) var(--ease);
 }
 .switch__knob {

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_fields.html" import proof with context %}
 {% block title %}{{ t('two_step_title') }}{% endblock %}
 {% block content %}
 <div class="card card--narrow">
@@ -7,113 +8,78 @@
   {% if request.args.get('admin') %}
   <p class="notice">{{ t('admin_two_step_needed') }}</p>
   {% endif %}
+  {% if request.args.get('vencido') %}
+  <p class="notice">{{ t('two_step_expired') }}</p>
+  {% endif %}
 
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
-  {% if on %}
-  <p class="lead">{{ t('two_step_on_lead') }}</p>
-  <p class="status">{{ t('two_step_recovery_left', n=recovery_left) }}</p>
-
-  <form method="post" novalidate>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label for="password">{{ t('password_current') }}</label>
-    <div class="field">
-      <input id="password" name="password" type="password"
-             autocomplete="current-password" data-fill-on-click required>
-      {#- Con JavaScript el campo nace de solo lectura, y el navegador no
-          rellena lo que no se puede escribir. Es lo que impide que el gestor de
-          contraseñas ponga la guardada al abrir la página: si lo hace, quien
-          encuentre esta sesión abierta puede desactivar la verificación sin saberla, que es
-          exactamente lo que este campo existe para impedir. panel.js lo libera
-          al primer clic, y ahí el navegador sí la ofrece. Sin JavaScript no
-          pasa nada y el campo funciona como siempre. -#}
-      <script nonce="{{ csp_nonce }}">document.getElementById("password").readOnly = true;</script>
-      <button class="field__eye" type="button" hidden
-              data-reveal="password" aria-pressed="false"
-              data-show="{{ t('password_show') }}" data-hide="{{ t('password_hide') }}"
-              aria-label="{{ t('password_show') }}">
-        <span class="field__eye-on">{% include "_icon-eye.svg" %}</span>
-        <span class="field__eye-off">{% include "_icon-eye-off.svg" %}</span>
-      </button>
-    </div>
-    {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
-
-    <div class="row">
-      <button class="btn btn--small btn--outline" type="submit"
-              name="action" value="regenerate">{{ t('two_step_regenerate') }}</button>
-      <button class="btn btn--small btn--outline" type="submit"
-              name="action" value="disable">{{ t('two_step_disable') }}</button>
-    </div>
-  </form>
-
-  {% else %}
+  {# ---------------------------------------------- apagada: primero quién eres
+     La contraseña va sola en esta pantalla. Pedirla junto al código de una app
+     que todavía no está configurada es pedir dos cosas a la vez, y cuando algo
+     falla no se sabe cuál de las dos fue. #}
+  {% if step == 'password' %}
   <p class="lead">{{ t('two_step_off_lead') }}</p>
 
   <ol class="steps">
+    <li>{{ t('two_step_step_password') }}</li>
     <li>{{ t('two_step_step_app') }}</li>
-    <li>{{ t('two_step_step_scan') }}</li>
     <li>{{ t('two_step_step_code') }}</li>
   </ol>
-
-  {# The QR is SVG in the page itself: no image is fetched from anywhere, and it
-     is dark on white always, because a scanner needs that contrast. #}
-  <div class="qr">{{ qr }}</div>
-  <p class="hint">{{ t('two_step_manual') }}</p>
-  <p class="secret">{{ secret }}</p>
 
   <form method="post" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    {# El gestor de contraseñas del navegador rellena la contraseña guardada y
-       escribe el usuario en el último campo de texto que encuentre antes de
-       ella. Sin este campo ese sitio era la sexta casilla del código, y el
-       correo entraba ahí recortado a una letra por el maxlength: la "b" suelta
-       que aparecía al volver a activar la verificación. El servidor no lo lee;
-       está para que el relleno automático caiga donde le corresponde. #}
-    <input class="visually-hidden" type="text" name="username" value="{{ account.email }}"
-           autocomplete="username" readonly tabindex="-1" aria-hidden="true">
-
-    <label for="code-1">{{ t('two_step_code_label') }}</label>
-    {# one-time-code en las seis, y no solo en la primera como en las demás
-       pantallas: aquí abajo hay una contraseña, y un campo con este tipo ya no
-       puede confundirse con el del usuario. #}
-    <div class="code" data-code>
-      {% for i in range(1, 7) %}
-      <input id="code-{{ i }}" name="code" class="code__box" type="text"
-             inputmode="numeric" pattern="[0-9]*" maxlength="1"
-             autocomplete="one-time-code"{% if i == 1 %} autofocus{% endif %}>
-      {% endfor %}
-    </div>
-    {% if errors.code %}<p class="error">{{ errors.code }}</p>{% endif %}
-
     <label for="password">{{ t('password_current') }}</label>
-    <div class="field">
-      <input id="password" name="password" type="password"
-             autocomplete="current-password" data-fill-on-click required>
-      {#- Con JavaScript el campo nace de solo lectura, y el navegador no
-          rellena lo que no se puede escribir. Es lo que impide que el gestor de
-          contraseñas ponga la guardada al abrir la página: si lo hace, quien
-          encuentre esta sesión abierta puede activarla con su propio teléfono sin saberla, que es
-          exactamente lo que este campo existe para impedir. panel.js lo libera
-          al primer clic, y ahí el navegador sí la ofrece. Sin JavaScript no
-          pasa nada y el campo funciona como siempre. -#}
-      <script nonce="{{ csp_nonce }}">document.getElementById("password").readOnly = true;</script>
-      <button class="field__eye" type="button" hidden
-              data-reveal="password" aria-pressed="false"
-              data-show="{{ t('password_show') }}" data-hide="{{ t('password_hide') }}"
-              aria-label="{{ t('password_show') }}">
-        <span class="field__eye-on">{% include "_icon-eye.svg" %}</span>
-        <span class="field__eye-off">{% include "_icon-eye-off.svg" %}</span>
-      </button>
-    </div>
+    {{ proof('password', 'password') }}
     <p class="hint">{{ t('two_step_why_password') }}</p>
     {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
 
-    <button class="btn" type="submit" name="action" value="enable">
-      {{ t('two_step_enable') }}</button>
+    <button class="btn" type="submit">{{ t('two_step_continue') }}</button>
   </form>
+
+  {# ---------------------------------------- encendida: primero qué vas a hacer #}
+  {% elif step == 'choose' %}
+  <p class="lead">{{ t('two_step_on_lead') }}</p>
+  <p class="status">{{ t('two_step_recovery_left', n=recovery_left) }}</p>
+
+  {% for name in ['regenerate', 'disable'] %}
+  <div class="setting">
+    <div class="setting__text">
+      <h2 class="setting__title">{{ t('two_step_' + name) }}</h2>
+      <p class="setting__desc">{{ t('two_step_' + name + '_desc') }}</p>
+    </div>
+    <div class="setting__action">
+      <a class="btn btn--small btn--outline"
+         href="{{ url_for('auth.two_factor', accion=name) }}">{{ t('two_step_choose') }}</a>
+    </div>
+  </div>
+  {% endfor %}
+
+  {# ------------------------------------------- encendida: confirmar esa misma
+     La pantalla ya dice cuál de las dos va a pasar, para que lo que se confirme
+     sea una decisión y no un botón cualquiera. #}
+  {% else %}
+  <p class="lead">{{ t('two_step_confirm_' + action) }}</p>
+  <p class="hint">{{ t('two_step_' + action + '_desc') }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {# Lo que decide es este campo, no la dirección. #}
+    <input type="hidden" name="action" value="{{ action }}">
+
+    <label for="password">{{ t('password_current') }}</label>
+    {{ proof('password', 'password') }}
+    <p class="hint">{{ t('two_step_why_password') }}</p>
+    {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
+
+    <button class="btn" type="submit">{{ t('two_step_confirm') }}</button>
+  </form>
+
+  <p class="foot"><a href="{{ url_for('auth.two_factor') }}">{{ t('two_step_back') }}</a></p>
   {% endif %}
 
-  <p class="foot"><a href="{{ url_for('auth.panel') }}">{{ t('nav_panel') }}</a></p>
+  <p class="foot"><a href="{{ url_for('auth.settings', section='seguridad') }}">
+    {{ t('two_step_to_settings') }}</a></p>
 </div>
 {% endblock %}

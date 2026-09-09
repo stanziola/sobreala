@@ -44,6 +44,9 @@
   --color-surface: #182B42;       /* cards, a visible step above the page */
   --color-surface-alt: #101C2B;   /* alternating section background */
   --color-border: #38577A;
+  /* Mismo problema de noche: el de arriba da 1.92:1 sobre las tarjetas. Este
+   * da 3.44:1. */
+  --color-field: #5A7FA8;
 
   /* Stays near-white: it is the text on the blue and deep surfaces. */
   --color-on-dark: #F3F7FB;

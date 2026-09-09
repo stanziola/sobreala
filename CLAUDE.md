@@ -151,8 +151,11 @@ cambio pide un motivo que queda escrito en `admin_events`. `suspended` no es
 decorativo: una cuenta suspendida no abre sesión, y al suspenderla se le cierran
 las que tuviera abiertas.
 
-**`role` vale `admin` o no está.** Al primero se lo pone `make_admin.py` a mano,
-porque nadie puede aprobarse a sí mismo el primer día. Las rutas de `/admin`
+**`role` está en todas las cuentas** y vale `client` o `admin`; un campo que a
+veces está y a veces no es difícil de leer y fácil de equivocar en una consulta.
+Lo que decide quién manda es la comparación exacta contra `admin`, así que un
+valor mal escrito no es administrador. Al primero se lo pone `make_admin.py` a
+mano, porque nadie puede aprobarse a sí mismo el primer día. Las rutas de `/admin`
 responden **404** a quien no lo tiene —un 403 le confirmaría a un curioso que la
 dirección existe— y exigen doble factor: es la cuenta que puede aprobar,
 suspender y leer las cifras de todos los clientes.
@@ -175,6 +178,18 @@ códigos de respaldo de un solo uso. Activarla y desactivarla piden la
 contraseña: sin eso, quien encuentre una sesión abierta se queda con la cuenta.
 Las dos cosas se avisan por correo.
 
+**Las dos pantallas van en dos pasos, y la contraseña siempre va primero.** Para
+activarla: la contraseña, y solo después el QR; entre las dos, una marca en la
+sesión con diez minutos de vida, para que la del QR no se pueda abrir sola. Para
+administrarla: primero se elige entre generar códigos nuevos o desactivar, y
+después se confirma con la contraseña, para que se confirme una decisión y no un
+botón cualquiera.
+
+**Con dos pasos activados el código se pide siempre**, en cualquier dispositivo
+y todas las veces. Hubo una opción de no volver a preguntar durante 30 días y se
+quitó: un dispositivo que deja de preguntar un mes es un segundo candado abierto
+un mes, y quien quiere esa comodidad lo que quiere es no tener dos pasos.
+
 Los campos donde se pide la contraseña para probar quién eres —cambiarla, y
 activar o desactivar los dos pasos— nacen de **solo lectura** y se liberan al
 primer clic. El gestor de contraseñas del navegador no rellena lo que no se
@@ -189,11 +204,6 @@ pueden apagar**: el código de confirmación, el de recuperación, la contraseñ
 cambiada y el doble factor activado o desactivado son los que enteran a alguien
 de que otro está entrando a su cuenta, y `set_notifications()` descarta
 cualquier campo del formulario que no sea uno de los cinco de arriba.
-
-### `trusted_devices`
-Dispositivos que ya respondieron el código una vez y no tienen que volver a
-hacerlo en 30 días. Su propia galleta, porque debe sobrevivir a cerrar sesión;
-de ella solo se guarda el hash. TTL sobre `expires_at`.
 
 ### `sessions`
 Un documento por dispositivo con sesión abierta: de la galleta solo se guarda su

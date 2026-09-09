@@ -165,22 +165,49 @@ TEXTS = {
     "two_step_off_lead": "Añade un segundo candado a tu cuenta: además de tu "
                          "contraseña, un código que genera una app en tu "
                          "teléfono y cambia cada 30 segundos.",
-    "two_step_on_lead": "Está activada. Al entrar desde un dispositivo nuevo te "
-                        "pediremos el código de tu app.",
+    "two_step_on_lead": "Está activada. Cada vez que entres te vamos a pedir el "
+                        "código de tu app, en cualquier dispositivo.",
+    "two_step_step_password": "Escribe tu contraseña, para saber que eres tú.",
     "two_step_step_app": "Instala una app de códigos: Google Authenticator, "
                          "Microsoft Authenticator o la que ya uses.",
-    "two_step_step_scan": "Escanea este código con la app.",
-    "two_step_step_code": "Escribe el código de 6 dígitos que te muestre, para "
-                          "comprobar que quedó bien.",
+    "two_step_step_code": "Escanea el código que te vamos a enseñar y escribe "
+                          "los 6 dígitos que aparezcan en la app.",
     "two_step_manual": "¿No puedes escanear? Escribe esta clave en la app:",
     "two_step_code_label": "Código de tu app",
     "two_step_why_password": "Pedimos tu contraseña para que nadie active ni "
                              "desactive esto desde una sesión que dejaste "
                              "abierta.",
     "two_step_enable": "Activar la verificación",
-    "two_step_disable": "Desactivar",
-    "two_step_regenerate": "Generar códigos nuevos",
+    "two_step_continue": "Continuar",
+    "two_step_choose": "Elegir",
+    "two_step_confirm": "Confirmar",
+    "two_step_back": "Volver atrás",
+    "two_step_to_settings": "Volver a seguridad",
+    "two_step_disable": "Desactivar la verificación",
+    "two_step_disable_desc": "Tu cuenta vuelve a entrar solo con la "
+                             "contraseña. Los códigos de respaldo dejan de "
+                             "servir.",
+    "two_step_confirm_disable": "Vas a desactivar la verificación en dos pasos.",
+    "two_step_regenerate": "Generar códigos de respaldo nuevos",
+    "two_step_regenerate_desc": "Los ocho anteriores dejan de servir al "
+                                "momento. Útil si perdiste el papel donde los "
+                                "apuntaste.",
+    "two_step_confirm_regenerate": "Vas a generar ocho códigos de respaldo "
+                                   "nuevos.",
     "two_step_recovery_left": "Te quedan {n} códigos de respaldo sin usar.",
+    "two_step_expired": "Pasó demasiado tiempo desde que escribiste tu "
+                        "contraseña. Vuelve a empezar.",
+
+    # La segunda pantalla: el QR y el código que prueba que la app lo guardó.
+    "two_step_scan_title": "Escanea este código",
+    "two_step_scan_lead": "Ábrelo con tu app de códigos. Después escribe los "
+                          "seis dígitos que te muestre, para comprobar que "
+                          "quedó bien.",
+    "two_step_scan_note_title": "Si ya tenías Panamails en tu app",
+    "two_step_scan_note": "Cada vez que activas la verificación el código es "
+                          "nuevo, así que el anterior dejó de servir. Bórralo "
+                          "de tu app antes de escanear este: tener los dos "
+                          "solo lleva a escribir el que ya no funciona.",
 
     "two_step_codes_title": "Guarda estos códigos de respaldo",
     "two_step_codes_lead": "Sirven para entrar si pierdes el teléfono. Cada uno "
@@ -194,7 +221,6 @@ TEXTS = {
     "two_step_code_title": "Escribe el código de tu app",
     "two_step_code_lead": "Tu cuenta tiene verificación en dos pasos. Abre la "
                           "app en tu teléfono y escribe el código que muestra.",
-    "two_step_trust": "No volver a pedirlo en este dispositivo durante 30 días",
     "two_step_submit": "Entrar",
     "two_step_lost": "No tengo mi teléfono",
     "two_step_recovery_label": "Escribe uno de tus códigos de respaldo",

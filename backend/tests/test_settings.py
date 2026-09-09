@@ -41,12 +41,16 @@ def save(client, **wanted):
 
 
 def turn_on_two_step(client):
+    # Dos pasos: primero la contraseña, después el QR.
     client.get("/cuenta/dos-pasos")
     with client.session_transaction() as sess:
+        token = sess["_csrf"]
+    client.post("/cuenta/dos-pasos", data={"csrf_token": token, "password": PASSWORD})
+    client.get("/cuenta/dos-pasos/activar")
+    with client.session_transaction() as sess:
         secret, token = sess["two_factor_setup"], sess["_csrf"]
-    client.post("/cuenta/dos-pasos", data={
-        "csrf_token": token, "action": "enable", "password": PASSWORD,
-        "code": list(pyotp.TOTP(secret).now())})
+    client.post("/cuenta/dos-pasos/activar", data={
+        "csrf_token": token, "code": list(pyotp.TOTP(secret).now())})
     return secret
 
 
