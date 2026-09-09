@@ -32,10 +32,13 @@ from i18n import t
 from models import account as accounts
 from models import auth_event as events
 from models import mail_log
+from models import payment as payments
 from models import session as sessions
 from models import token as tokens
-from services import totp
 from services import mailer
+from services import paypal
+from services import plans
+from services import totp
 from services.security import (csrf_ok, hash_password, now as security_now,
                                password_problem, rate_limit, verify_password)
 
@@ -1125,6 +1128,11 @@ def settings(section: str = "cuenta"):
     here = current_session()
     return render_template(
         "settings.html", section=section, account=account,
+        plans=plans.PLANS, cycles=plans.CYCLES, currency=plans.CURRENCY,
+        can_buy=account.get("status") in (accounts.APPROVED, accounts.ACTIVE),
+        paypal_ready=paypal.configured(),
+        plan_until=accounts.plan_until(account),
+        payments=payments.for_account(db, account["_id"]),
         confirmed=accounts.is_confirmed(account),
         plan=accounts.plan_of(account),
         two_step=accounts.two_factor_on(account),
@@ -1199,6 +1207,116 @@ def close_device():
             session.clear()
             return redirect(url_for("auth.login"))
     return redirect(url_for("auth.settings", section="seguridad"))
+
+
+# ------------------------------------------------------------------- pagos
+
+@bp.route("/configuracion/pagos/contratar", methods=["POST"])
+def start_payment():
+    """Crear la orden en PayPal y mandar al cliente a pagarla.
+
+    Nada se activa aquí. Lo único que hace esta ruta es anotar el intento y
+    abrir el checkout; quien decide si alguien pagó es la vuelta, comparando lo
+    que responda PayPal contra lo que ese plan cuesta.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    back = url_for("auth.settings", section="pagos")
+    plan = request.form.get("plan", "")
+    cycle = request.form.get("cycle", "")
+
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    # La regla de CLAUDE.md: registrada explora, aprobada compra. Activa
+    # también, porque una cuenta que ya pagó tiene que poder renovar y cambiar
+    # de plan; si no, el primer pago sería el último. Se comprueba aquí y no
+    # solo en la pantalla, porque un formulario se escribe a mano.
+    if account.get("status") not in (accounts.APPROVED, accounts.ACTIVE):
+        return redirect(url_for("auth.settings", section="pagos", error="estado"))
+    # Corporativo va sin precio público: comprarlo por la web pondría un precio
+    # donde docs/pricing.md dice que no hay ninguno.
+    amount = plans.amount(plan, cycle) if plans.buyable(plan) else None
+    if amount is None:
+        return redirect(url_for("auth.settings", section="pagos", error="plan"))
+    if not paypal.configured():
+        return redirect(url_for("auth.settings", section="pagos", error="paypal"))
+
+    attempt = payments.start(db, account["_id"], plan=plan, cycle=cycle,
+                             amount=amount, currency=plans.CURRENCY)
+    try:
+        order_id, approve = paypal.create(
+            amount=amount, currency=plans.CURRENCY,
+            description=f"Panamails {plans.PLANS[plan]['name']}",
+            reference=str(attempt),
+            return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_payment')}",
+            cancel_url=f"{Config.APP_BASE_URL}{back}?error=cancelado")
+    except paypal.PayPalError as exc:
+        payments.fail(db, attempt, str(exc))
+        return redirect(url_for("auth.settings", section="pagos", error="paypal"))
+
+    payments.attach_order(db, attempt, order_id)
+    log_auth(db, events.PAYMENT, events.CREATED, email=account["email"],
+             account_id=account["_id"])
+    return redirect(approve)
+
+
+@bp.route("/configuracion/pagos/volver")
+def finish_payment():
+    """La vuelta de PayPal: cobrar de verdad y, solo entonces, activar.
+
+    Lo que trae el navegador aquí es un identificador de orden y nada más. No
+    prueba que se haya pagado: lo que prueba es lo que responde PayPal cuando
+    el servidor le pide cobrarla, y por eso se compara el monto y la moneda
+    contra lo que ese plan cuesta antes de tocar la cuenta.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    back = url_for("auth.settings", section="pagos")
+    order_id = request.args.get("token", "")[:64]
+    attempt = payments.by_order(db, account["_id"], order_id) if order_id else None
+    if attempt is None:
+        return redirect(f"{back}?error=orden")
+    # Recargar esta página entra por aquí otra vez. El intento ya está cobrado,
+    # así que no se cobra ni se alarga nada: solo se dice que ya está.
+    if attempt["status"] != payments.CREATED:
+        return redirect(f"{back}?hecho=1")
+
+    try:
+        result = paypal.capture(order_id)
+    except paypal.PayPalError as exc:
+        payments.fail(db, attempt["_id"], str(exc))
+        return redirect(f"{back}?error=paypal")
+
+    esperado = plans.amount(attempt["plan"], attempt["cycle"])
+    if result["status"] != "COMPLETED":
+        payments.fail(db, attempt["_id"], f"estado {result['status']}")
+        return redirect(f"{back}?error=cobro")
+    if result["amount"] != esperado or result["currency"] != attempt["currency"]:
+        # Cobró algo distinto de lo que vale el plan: no se activa nada y queda
+        # escrito, que es lo que hace falta para reclamarlo.
+        payments.fail(db, attempt["_id"],
+                      f"cobró {result['amount']} {result['currency']}, "
+                      f"esperaba {esperado} {attempt['currency']}")
+        log_auth(db, events.PAYMENT, events.INVALID, email=account["email"],
+                 account_id=account["_id"])
+        return redirect(f"{back}?error=monto")
+
+    if not payments.complete(db, attempt["_id"]):
+        return redirect(f"{back}?hecho=1")
+
+    accounts.activate_plan(
+        db, account["_id"], attempt["plan"],
+        payments.until(attempt["cycle"],
+                       since=accounts.renews_from(account, attempt["plan"])))
+    log_auth(db, events.PAYMENT, events.OK, email=account["email"],
+             account_id=account["_id"])
+    return redirect(f"{back}?hecho=1")
 
 
 # --------------------------------------------------------------- password

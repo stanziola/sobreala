@@ -7,7 +7,7 @@ Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
 |-------------------|----------------------------|
 | `/`               | `index.html`               |
 | `/como-funciona/` | `como-funciona/index.html` |
-| `/precios/`       | `precios/index.html`       |
+| `/planes/`        | `planes/index.html`        |
 | `/nosotros/`      | `nosotros/index.html`      |
 
 ## Cómo se genera
@@ -36,7 +36,7 @@ landing/
 │   └── img/             # GENERADO: logo, favicons e iconos desde brand/
 ├── index.html           # GENERADO
 ├── como-funciona/       # GENERADO
-├── precios/             # GENERADO
+├── planes/              # GENERADO
 ├── nosotros/            # GENERADO
 ├── favicon.ico, favicon.svg, robots.txt, sitemap.xml   # GENERADOS
 └── README.md

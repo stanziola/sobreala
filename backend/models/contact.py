@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 from typing import Any, Iterable
 
 from pymongo import UpdateOne
+from pymongo.errors import DuplicateKeyError
 
 from models.account import normalize_email
 
@@ -53,7 +54,67 @@ def consent_of(source: str, note: str = "") -> dict[str, Any]:
 
 
 def count(db, account_id) -> int:
+    """Todos los que hay, anulados incluidos. Es lo que enseña la pantalla."""
     return db.contacts.count_documents({"account_id": account_id})
+
+
+def active_count(db, account_id) -> int:
+    """Los que sí pueden recibir algo. Es el número que va contra el límite.
+
+    Un anulado no puede recibir nada, así que cobrar capacidad de plan por él
+    sería cobrar por peso muerto: es la misma lógica que la regla 1, donde un
+    suprimido tampoco consume cuota al enviar. Se sigue guardando, eso sí,
+    porque la regla 2 dice que borrarlo lo resucitaría en la próxima
+    importación.
+
+    Una consulta que cruza las dos colecciones, no una por contacto.
+    """
+    found = list(db.contacts.aggregate([
+        {"$match": {"account_id": account_id}},
+        {"$lookup": {
+            "from": "suppressions",
+            "let": {"correo": "$email_normalized", "cuenta": "$account_id"},
+            "pipeline": [{"$match": {"$expr": {"$and": [
+                {"$eq": ["$account_id", "$$cuenta"]},
+                {"$eq": ["$email_normalized", "$$correo"]},
+            ]}}}, {"$limit": 1}],
+            "as": "anulado",
+        }},
+        {"$match": {"anulado": {"$size": 0}}},
+        {"$count": "n"},
+    ]))
+    return found[0]["n"] if found else 0
+
+
+def delete_suppressed(db, account_id) -> int:
+    """Borrar los contactos anulados. Sus supresiones se quedan donde están.
+
+    La confusión natural es creer que esto levanta la baja: no. La dirección
+    sigue sin poder recibir nada, y si vuelve a entrar en una importación
+    volverá a entrar marcada. Eso es la regla 2.
+    """
+    blocked = [d["email_normalized"] for d in
+               db.suppressions.find({"account_id": account_id},
+                                    {"email_normalized": 1})]
+    if not blocked:
+        return 0
+    result = db.contacts.delete_many({"account_id": account_id,
+                                      "email_normalized": {"$in": blocked}})
+    return result.deleted_count
+
+
+def all_of(db, account_id, *, search: str = "", tag: str = ""):
+    """Todos los que coinciden, uno a uno, para exportarlos.
+
+    Un cursor y no una lista: el archivo se escribe fila por fila, por la misma
+    razón por la que el importador lee así.
+    """
+    query: dict[str, Any] = {"account_id": account_id}
+    if tag:
+        query["tags"] = tag
+    if search:
+        query["email_normalized"] = {"$regex": f"^{_escape(normalize_email(search))}"}
+    return db.contacts.find(query).sort("created_at", -1)
 
 
 # Cómo entró un contacto. Los que existían antes de que este campo existiera no
@@ -157,6 +218,38 @@ def create(db, account_id, *, email: str, name: str = "",
     added, _ = upsert_many(db, account_id, [(email, name)],
                            tags=tags or [], consent=consent, added_by=MANUAL)
     return added == 1
+
+
+def by_id(db, account_id, contact_id) -> dict[str, Any] | None:
+    """Un contacto de esta cuenta. El account_id va en la consulta, no en una
+    comprobación aparte: un id de otra cuenta no encuentra nada."""
+    return db.contacts.find_one({"_id": contact_id, "account_id": account_id})
+
+
+def update(db, account_id, contact_id, *, email: str, name: str,
+           tags: list[str]) -> bool:
+    """Cambiar la dirección, el nombre y las etiquetas. False si esa dirección
+    ya la tiene otro contacto de la cuenta.
+
+    Lo que no toca: cuándo entró, por dónde entró y el origen que se declaró.
+    Eso es historia, y si se pudiera editar dejaría de servir para lo único que
+    sirve, que es responder cuando alguien reclame.
+
+    El choque de direcciones lo responde el índice único y no una consulta
+    previa: entre preguntar y escribir hay sitio para otra escritura, y solo el
+    índice ve las dos a la vez.
+    """
+    try:
+        result = db.contacts.update_one(
+            {"_id": contact_id, "account_id": account_id},
+            {"$set": {"email": email.strip(),
+                      "email_normalized": normalize_email(email),
+                      "name": name.strip()[:120],
+                      "tags": tags,
+                      "updated_at": now()}})
+    except DuplicateKeyError:
+        return False
+    return result.matched_count == 1
 
 
 def delete(db, account_id, email: str) -> bool:

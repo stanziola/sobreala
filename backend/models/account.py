@@ -231,6 +231,34 @@ def set_plan(db, account_id, plan: str | None) -> str | None:
     return before.get("plan")
 
 
+def activate_plan(db, account_id, plan: str, until) -> None:
+    """Dejar la cuenta pagada: su plan, activa, y hasta cuándo.
+
+    `approved` → `active` es lo que dice CLAUDE.md que hace un pago: aprobada
+    puede comprar, activa puede enviar.
+    """
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "plan": plan, "status": ACTIVE, "plan_until": until,
+        "updated_at": now(),
+    }})
+
+
+def plan_until(account: dict[str, Any] | None):
+    return (account or {}).get("plan_until")
+
+
+def renews_from(account: dict[str, Any] | None, plan: str):
+    """Desde cuándo cuenta lo que se acaba de pagar.
+
+    Renovar antes de tiempo el mismo plan suma al final de lo que quedaba, no
+    tira los días que faltaban. Cambiar de plan empieza hoy.
+    """
+    current = plan_until(account)
+    if plan_of(account) == plan and current and current > now():
+        return current
+    return now()
+
+
 def by_status(db) -> dict[str, int]:
     """How many accounts sit in each state, for the admin front page."""
     counted = {name: 0 for name in STATUSES}

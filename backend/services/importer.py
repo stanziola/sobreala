@@ -130,7 +130,8 @@ def run(db, account_id, stream: Any, *, tags: list[str],
     invites them to move up a plan.
     """
     counts = {"read": 0, "added": 0, "updated": 0, "invalid": 0, "suppressed": 0}
-    room = max(0, limit - contacts.count(db, account_id))
+    # Los anulados no ocupan sitio: no pueden recibir nada.
+    room = max(0, limit - contacts.active_count(db, account_id))
     stopped = False
     batch: list[tuple[str, str]] = []
     seen: set[str] = set()

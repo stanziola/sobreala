@@ -12,7 +12,8 @@
   <div class="picker">
     {% for name in tags %}
     <label class="picker__item">
-      <input type="checkbox" name="tags" value="{{ name }}">
+      <input type="checkbox" name="tags" value="{{ name }}"
+             {%- if name in chosen|default([]) %} checked{% endif %}>
       <span>{{ name }}</span>
     </label>
     {% endfor %}

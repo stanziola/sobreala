@@ -78,7 +78,7 @@
     <span class="setting__value">{{ plan }}</span>
     {% else %}
     <span class="setting__value setting__value--muted">{{ t('settings_account_no_plan') }}</span>
-    <a class="btn btn--small btn--outline" href="{{ site_url }}/precios/">{{ t('settings_account_plans') }}</a>
+    <a class="btn btn--small btn--outline" href="{{ site_url }}/planes/">{{ t('settings_account_plans') }}</a>
     {% endif %}
     {% endcall %}
 
@@ -199,15 +199,98 @@
     <h2 class="settings__title">{{ t('settings_section_payments') }}</h2>
     <p class="settings__lead">{{ t('settings_payments_lead') }}</p>
 
-    {% call row(t('settings_payments_paypal'), t('settings_payments_paypal_desc')) %}
-    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
+    {% if request.args.get('hecho') %}
+    <p class="notice notice--ok">{{ t('pay_done') }}</p>
+    {% endif %}
+    {% if request.args.get('error') %}
+    <p class="notice">{{ t('pay_error_' + request.args.get('error'), n=0)
+                          if request.args.get('error') in
+                          ['estado','plan','paypal','cancelado','orden','cobro','monto']
+                          else t('pay_error_paypal') }}</p>
+    {% endif %}
+
+    {% call row(t('settings_account_plan'), t('settings_payments_current_hint')) %}
+    {% if plan %}
+    <span class="setting__value">{{ plans[plan].name if plan in plans else plan }}</span>
+    {% if plan_until %}<span class="tag tag--quiet">{{ t('pay_until', when=plan_until|ago) }}</span>{% endif %}
+    {% else %}
+    <span class="setting__value setting__value--muted">{{ t('settings_account_no_plan') }}</span>
+    {% endif %}
     {% endcall %}
+
+    {# La regla de CLAUDE.md: registrada explora, aprobada compra. La ruta lo
+       vuelve a comprobar, porque un formulario se escribe a mano. #}
+    {% if not can_buy %}
+    <p class="notice">{{ t('pay_needs_approval') }}</p>
+    {% elif not paypal_ready %}
+    <p class="notice">{{ t('pay_not_ready') }}</p>
+    {% endif %}
+
+    <h3 class="settings__subtitle">{{ t('pay_choose') }}</h3>
+    <p class="settings__lead">{{ t('pay_choose_lead') }}</p>
+
+    {% for key, one in plans.items() %}
+    <div class="setting">
+      <div class="setting__text">
+        <h3 class="setting__title">{{ one.name }}</h3>
+        <p class="setting__desc">
+          {% if one.public %}
+          {{ t('pay_prices', month='%.2f'|format(one.monthly),
+                year='%.2f'|format(one.yearly)) }}
+          {% else %}
+          {{ t('pay_custom') }}
+          {% endif %}
+        </p>
+      </div>
+      <div class="setting__action">
+        {% if key == plan %}<span class="tag tag--on">{{ t('pay_current') }}</span>{% endif %}
+        {% if not one.public %}
+        {# Sin precio público: se acuerda hablando, no se compra por la web. #}
+        <a class="btn btn--small btn--outline" href="{{ site_url }}/contacto/">{{ t('pay_talk') }}</a>
+        {% elif can_buy and paypal_ready %}
+        <form method="post" action="{{ url_for('auth.start_payment') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="plan" value="{{ key }}">
+          <input type="hidden" name="cycle" value="monthly">
+          <button class="btn btn--small btn--outline" type="submit">{{ t('pay_monthly') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('auth.start_payment') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="plan" value="{{ key }}">
+          <input type="hidden" name="cycle" value="yearly">
+          <button class="btn btn--small btn--outline" type="submit">{{ t('pay_yearly') }}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <p class="hint">{{ t('pay_compare') }}
+      <a href="{{ site_url }}/planes/">{{ t('settings_account_plans') }}</a></p>
+    <p class="hint">{{ t('settings_payments_hint') }}</p>
 
     {% call row(t('settings_payments_yappy'), t('settings_payments_yappy_desc')) %}
     <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
     {% endcall %}
 
-    <p class="hint">{{ t('settings_payments_hint') }}</p>
+    {% if payments %}
+    <h3 class="settings__subtitle">{{ t('pay_history') }}</h3>
+    <div class="table-wrap">
+      <table class="table">
+        <tbody>
+          {% for one in payments %}
+          <tr>
+            <td>{{ plans[one.plan].name if one.plan in plans else one.plan }}</td>
+            <td class="table__quiet">{{ t('pay_cycle_' + one.cycle) }}</td>
+            <td class="table__quiet">{{ one.currency }} {{ one.amount }}</td>
+            <td class="table__quiet">{{ one.created_at|ago }}</td>
+            <td><span class="tag tag--quiet">{{ t('pay_state_' + one.status) }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
     {% endif %}
 
   </div>

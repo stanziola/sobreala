@@ -34,6 +34,7 @@ CONFIRM = "confirm"
 LOGOUT = "logout"
 SETTINGS = "settings"
 IMPORT = "import"
+PAYMENT = "payment"
 
 # How it went. Which ones are possible depends on the kind.
 CREATED = "created"                    # register: a new account exists

@@ -319,6 +319,44 @@ TEXTS = {
     "settings_payments_yappy_desc": "Para pagar desde tu banco en Panamá, sin "
                                     "tarjeta.",
     "settings_soon_tag": "Próximamente",
+    "settings_payments_current_hint": "Lo que tienes contratado ahora mismo.",
+
+    # --- pagos -------------------------------------------------------------
+    "pay_choose": "Contratar un plan",
+    "pay_choose_lead": "El pago se hace en la página de PayPal. Al volver, tu "
+                       "cuenta queda activa al momento.",
+    "pay_prices": "${month} al mes · ${year} al año, con dos meses gratis.",
+    "pay_custom": "A la medida, sin precio público. Hablamos y lo armamos "
+                  "contigo.",
+    "pay_monthly": "Pagar un mes",
+    "pay_yearly": "Pagar un año",
+    "pay_talk": "Escríbenos",
+    "pay_current": "Tu plan",
+    "pay_until": "hasta {when}",
+    "pay_compare": "La comparación completa está en el sitio:",
+    "pay_history": "Tus pagos",
+    "pay_cycle_monthly": "Un mes",
+    "pay_cycle_yearly": "Un año",
+    "pay_state_created": "Sin terminar",
+    "pay_state_completed": "Pagado",
+    "pay_state_failed": "No se cobró",
+    "pay_done": "Listo, tu plan quedó activo.",
+    "pay_needs_approval": "Todavía no puedes contratar. Hablamos contigo y "
+                          "revisamos de dónde salió tu lista antes de "
+                          "activarte el envío; escríbenos y lo vemos.",
+    "pay_not_ready": "El pago con PayPal todavía no está disponible. "
+                     "Escríbenos y lo resolvemos por otra vía.",
+    "pay_error_estado": "Tu cuenta todavía no puede contratar un plan.",
+    "pay_error_plan": "Ese plan no se contrata por aquí.",
+    "pay_error_paypal": "No pudimos hablar con PayPal en este momento. "
+                        "Vuelve a intentarlo en unos minutos.",
+    "pay_error_cancelado": "Cancelaste el pago. No se cobró nada.",
+    "pay_error_orden": "No encontramos ese pago. Si te cobraron, escríbenos "
+                       "con la fecha y lo revisamos.",
+    "pay_error_cobro": "PayPal no confirmó el cobro, así que no activamos "
+                       "nada. Si te cobraron, escríbenos.",
+    "pay_error_monto": "El monto cobrado no coincide con el del plan, así que "
+                       "no activamos nada. Escríbenos y lo revisamos.",
     "settings_payments_hint": "Panamails nunca guarda los datos de tu tarjeta: "
                               "el pago se hace en la página del proveedor.",
 
@@ -348,6 +386,17 @@ TEXTS = {
     "contacts_counter": "{total} de {limit} contactos",
     "contacts_counter_left": "Te quedan {n}.",
     "contacts_full": "Llegaste al límite de tu plan.",
+    "contacts_counter_blocked": "{n} anulados, que no cuentan.",
+    "contacts_counter_blocked_one": "1 anulado, que no cuenta.",
+    "contacts_export": "Exportar",
+    "contacts_remove_blocked": "Eliminar los anulados",
+    "contacts_remove_blocked_hint": "Eliminar los anulados borra esos "
+                                    "contactos y deja sus supresiones donde "
+                                    "están: esas direcciones siguen sin poder "
+                                    "recibir nada, y si vuelven en una "
+                                    "importación vuelven marcadas.",
+    "contacts_added_blocked": "Lo guardamos, pero esa dirección está anulada: "
+                              "no va a recibir nada.",
     "contacts_plans": "Ver los planes",
     "contacts_empty": "Todavía no tienes contactos. Sube tu lista y empezamos.",
     "contacts_empty_search": "Ningún contacto coincide con lo que buscaste.",
@@ -366,7 +415,17 @@ TEXTS = {
     "contacts_col_name": "Nombre",
     "contacts_col_tags": "Etiquetas",
     "contacts_col_added": "Agregado",
-    "contacts_delete": "Borrar",
+    "contacts_delete": "Eliminar",
+    "contacts_edit": "Editar",
+    "contacts_edit_title": "Editar el contacto",
+    "contacts_edit_lead": "Puedes cambiar su dirección, su nombre y sus "
+                          "etiquetas. Cuándo entró y por dónde no se tocan: eso "
+                          "es lo que hay que enseñar si alguien reclama.",
+    "contacts_edit_submit": "Guardar",
+    "contacts_history_title": "Lo que no se puede cambiar",
+    "contacts_history_hint": "Cuándo entró, por dónde y qué origen se declaró. "
+                             "Es lo que hay que enseñar si alguien reclama que "
+                             "no dio su correo, así que no se edita.",
     "contacts_delete_hint": "Borrarlo no levanta su supresión: si pidió la "
                             "baja, sigue dado de baja.",
     "contacts_blocked_tag": "Suprimido",
@@ -406,7 +465,7 @@ TEXTS = {
     "tags_count": "{n} contactos",
     "tags_count_one": "1 contacto",
     "tags_count_none": "Sin contactos todavía",
-    "tags_delete": "Borrar",
+    "tags_delete": "Eliminar",
     "tags_delete_hint": "Borrar una etiqueta se la quita a los contactos que "
                         "la llevaban. Los contactos se quedan.",
     "tags_saved": "Listo, la etiqueta quedó creada.",
@@ -586,6 +645,7 @@ TEXTS = {
     "error_import_unreadable": "No pudimos leer ese archivo. Revisa que sea un "
                                "CSV y que tenga una columna de correos.",
     "error_contact_email": "Ese correo no parece válido.",
+    "error_contact_taken": "Ya tienes otro contacto con esa dirección.",
     "error_contacts_full": "Llegaste al límite de contactos de tu plan.",
     "error_tag": "Ese nombre está vacío, ya lo tienes, o llegaste al máximo de "
                  "etiquetas.",

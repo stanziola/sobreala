@@ -152,7 +152,14 @@ ul, ol { padding: 0; list-style: none; }
 a { color: var(--color-accent-strong); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: .18em; }
 button { font: inherit; color: inherit; }
-:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; border-radius: 4px; }
+/* Un solo anillo al enfocar. Antes se dibujaban dos: el borde del elemento
+   cambiaba a azul y encima aparecía un contorno separado por un hueco de 3 px.
+   Ahora el contorno se pega al borde y los dos son del mismo azul, así que se
+   leen como una sola línea gruesa.
+
+   Sin border-radius aquí: el contorno ya sigue el del elemento, y ponerlo
+   cuadraba las píldoras justo al enfocarlas. */
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0ms !important; animation: none !important; }
   html { scroll-behavior: auto; }

@@ -440,6 +440,139 @@ def test_la_columna_de_estado_dice_activo_o_anulado(client, database, outbox):
     assert "Anulado" in pantalla
 
 
+# ----------------------------------------------------------------- editar
+
+def test_editar_cambia_lo_editable_y_deja_la_historia(client, database, outbox):
+    browser = inside(client)
+    make_tag(browser, "socios")
+    make_tag(browser, "junta")
+    upload(browser, LISTA, tags=["socios"])
+    cuenta = account_of(database)
+    antes = contacts.by_email(database, cuenta["_id"], "ana@coop.com")
+
+    browser.post(f"/contactos/editar/{antes['_id']}", data={
+        "csrf_token": csrf(browser, f"/contactos/editar/{antes['_id']}"),
+        "email": "ana.nueva@coop.com", "name": "Ana María", "tags": ["junta"]})
+
+    despues = contacts.by_email(database, cuenta["_id"], "ana.nueva@coop.com")
+    assert despues["name"] == "Ana María"
+    assert despues["tags"] == ["junta"]
+    # Lo que no se toca: es lo que hay que enseñar si alguien reclama.
+    assert despues["created_at"] == antes["created_at"]
+    assert despues["added_by"] == antes["added_by"]
+    assert despues["consent"]["source"] == antes["consent"]["source"]
+
+
+def test_editar_a_una_direccion_que_ya_esta_no_cambia_nada(client, database, outbox):
+    browser = inside(client)
+    upload(browser, LISTA)
+    cuenta = account_of(database)
+    ana = contacts.by_email(database, cuenta["_id"], "ana@coop.com")
+
+    respuesta = browser.post(f"/contactos/editar/{ana['_id']}", data={
+        "csrf_token": csrf(browser, f"/contactos/editar/{ana['_id']}"),
+        "email": "bea@coop.com", "name": "Ana"})
+
+    assert "otro contacto con esa dirección" in respuesta.get_data(as_text=True)
+    assert contacts.by_email(database, cuenta["_id"], "ana@coop.com") is not None
+    assert contacts.count(database, cuenta["_id"]) == 3
+
+
+def test_no_se_puede_editar_el_contacto_de_otra_cuenta(client, database, outbox):
+    una = inside(client)
+    upload(una, LISTA)
+    mia = account_of(database)
+    ana = contacts.by_email(database, mia["_id"], "ana@coop.com")
+
+    otra = inside(other(client), email="otra@ejemplo.com")
+    assert otra.get(f"/contactos/editar/{ana['_id']}").status_code == 404
+
+
+# --------------------------------------------------------------- anulados
+
+def test_un_anulado_no_cuenta_contra_el_limite(client, database, outbox,
+                                               monkeypatch):
+    """No puede recibir nada: cobrar sitio de plan por él sería peso muerto."""
+    from config import Config
+    monkeypatch.setattr(Config, "CONTACTS_FREE_LIMIT", 2)
+
+    browser = inside(client)
+    upload(browser, "correo\nana@coop.com\nbea@coop.com\n")
+    cuenta = account_of(database)
+    assert contacts.active_count(database, cuenta["_id"]) == 2
+
+    suppressions.add(database, cuenta["_id"], "ana@coop.com")
+    assert contacts.count(database, cuenta["_id"]) == 2
+    assert contacts.active_count(database, cuenta["_id"]) == 1
+
+    # Y con el hueco que dejó, entra otro.
+    upload(browser, "correo\ncarlos@coop.com\n")
+    assert contacts.count(database, cuenta["_id"]) == 3
+
+
+def test_eliminar_los_anulados_deja_las_supresiones(client, database, outbox):
+    """La confusión natural es creer que esto levanta la baja: no."""
+    browser = inside(client)
+    upload(browser, LISTA)
+    cuenta = account_of(database)
+    suppressions.add(database, cuenta["_id"], "bea@coop.com")
+
+    browser.post("/contactos/anulados/eliminar",
+                 data={"csrf_token": csrf(browser)})
+
+    assert contacts.by_email(database, cuenta["_id"], "bea@coop.com") is None
+    assert contacts.count(database, cuenta["_id"]) == 2
+    assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
+
+    # Y si vuelve en una importación, vuelve marcada.
+    upload(browser, LISTA)
+    assert "Anulado" in browser.get("/contactos").get_data(as_text=True)
+
+
+def test_agregar_a_mano_una_anulada_lo_avisa(client, database, outbox):
+    browser = inside(client)
+    cuenta = account_of(database)
+    suppressions.add(database, cuenta["_id"], "nueva@coop.com")
+
+    respuesta = browser.post("/contactos/nuevo", data={
+        "csrf_token": csrf(browser, "/contactos/nuevo"),
+        "email": "nueva@coop.com", "source": "members"})
+
+    assert "anulado=1" in respuesta.headers["Location"]
+    assert "está anulada" in browser.get("/contactos?anulado=1").get_data(as_text=True)
+
+
+# --------------------------------------------------------------- exportar
+
+def test_exportar_trae_lo_que_ensena_la_tabla(client, database, outbox):
+    browser = inside(client)
+    make_tag(browser, "socios")
+    upload(browser, LISTA, tags=["socios"])
+    cuenta = account_of(database)
+    suppressions.add(database, cuenta["_id"], "bea@coop.com")
+
+    respuesta = browser.get("/contactos/exportar")
+    assert respuesta.status_code == 200
+    assert "attachment" in respuesta.headers["Content-Disposition"]
+
+    texto = respuesta.get_data(as_text=True)
+    # Marca de orden de bytes y punto y coma: es lo que abre Excel en español.
+    assert texto.startswith("\ufeff")
+    assert "ana@coop.com;Ana;socios" in texto
+    assert "Anulado" in texto and "Activo" in texto
+
+
+def test_exportar_respeta_el_filtro(client, database, outbox):
+    browser = inside(client)
+    make_tag(browser, "junta")
+    upload(browser, "correo\nana@coop.com\n", tags=["junta"])
+    upload(browser, "correo\nbea@coop.com\n")
+
+    texto = browser.get("/contactos/exportar?etiqueta=junta").get_data(as_text=True)
+    assert "ana@coop.com" in texto
+    assert "bea@coop.com" not in texto
+
+
 def test_contactos_pide_sesion(client, database):
     for url in ("/contactos", "/contactos/nuevo", "/contactos/importar",
                 "/contactos/etiquetas", "/contactos/supresiones"):

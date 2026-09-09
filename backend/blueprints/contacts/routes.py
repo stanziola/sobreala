@@ -13,7 +13,14 @@ Three rules from CLAUDE.md run through the whole file:
 
 from __future__ import annotations
 
-from flask import Blueprint, redirect, render_template, request, url_for
+import csv
+import io
+from datetime import date
+
+from bson import ObjectId
+from bson.errors import InvalidId
+from flask import (Blueprint, Response, abort, redirect, render_template,
+                   request, url_for)
 
 from blueprints.auth.routes import current_account, log_auth
 from config import Config
@@ -38,6 +45,13 @@ def signed_in():
     return current_account()
 
 
+def as_id(raw):
+    try:
+        return ObjectId(raw)
+    except (InvalidId, TypeError):
+        return None
+
+
 def tags_chosen(account) -> list[str]:
     """Las etiquetas marcadas en el formulario, filtradas por las que existen.
 
@@ -51,11 +65,15 @@ def tags_chosen(account) -> list[str]:
 
 def shared(db, account, **extra):
     """What every contacts screen needs: the counter and the tabs."""
+    # Dos números distintos a propósito: los que hay, y los que ocupan sitio.
+    # Un anulado no puede recibir nada, así que no cuenta contra el límite.
     total = contacts.count(db, account["_id"])
+    active = contacts.active_count(db, account["_id"])
     limit = accounts.contact_limit(account)
     return {
-        "account": account, "total": total, "limit": limit,
-        "left": max(0, limit - total),
+        "account": account, "total": total, "active": active, "limit": limit,
+        "blocked_total": total - active,
+        "left": max(0, limit - active),
         "suppressed_total": suppressions.count(db, account["_id"]),
         # Del registro de la cuenta y no de los contactos: así una etiqueta
         # recién creada aparece desde ese momento, aunque no tenga a nadie.
@@ -117,7 +135,7 @@ def add_one():
             errors["email"] = t("error_contact_email")
         elif source not in contacts.SOURCES:
             errors["source"] = t("error_required")
-        elif contacts.count(db, account["_id"]) >= accounts.contact_limit(account):
+        elif contacts.active_count(db, account["_id"]) >= accounts.contact_limit(account):
             errors["form"] = t("error_contacts_full")
         else:
             contacts.create(
@@ -126,10 +144,54 @@ def add_one():
                 tags=tags_chosen(account),
                 consent=contacts.consent_of(source,
                                             request.form.get("note", "")))
+            # Si esa dirección está anulada, se guarda igual pero no va a
+            # recibir nada: mejor decirlo ahora que dejarlo descubrir.
+            if suppressions.has(db, account["_id"], address):
+                return redirect(url_for("contacts.index", anulado=1))
             return redirect(url_for("contacts.index", guardado=1))
 
     return render_template("contacts/new.html", section="lista", errors=errors,
                            **shared(db, account, sources=contacts.SOURCES))
+
+
+@bp.route("/contactos/editar/<raw>", methods=["GET", "POST"])
+def edit(raw):
+    """Cambiar la dirección, el nombre y las etiquetas de un contacto.
+
+    Existe para lo que antes obligaba a borrar y volver a crear: un nombre mal
+    escrito, una dirección a la que le falta una letra. Borrarlo y rehacerlo
+    perdía cuándo entró, por dónde y qué origen se declaró.
+    """
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    contact_id = as_id(raw)
+    row = contacts.by_id(db, account["_id"], contact_id) if contact_id else None
+    if row is None:
+        abort(404)
+
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        address = importer.clean(request.form.get("email", ""))
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif not address:
+            errors["email"] = t("error_contact_email")
+        elif not contacts.update(db, account["_id"], contact_id, email=address,
+                                 name=request.form.get("name", ""),
+                                 tags=tags_chosen(account)):
+            # Lo dice el índice único, no una consulta previa.
+            errors["email"] = t("error_contact_taken")
+        else:
+            return redirect(url_for("contacts.index", guardado=1))
+        row = contacts.by_id(db, account["_id"], contact_id)
+
+    return render_template("contacts/edit.html", section="lista", errors=errors,
+                           row=row, chosen=row.get("tags") or [],
+                           **shared(db, account))
 
 
 @bp.route("/contactos/borrar", methods=["POST"])
@@ -144,6 +206,76 @@ def remove():
         # baja somebody asked for.
         contacts.delete(get_db(), account["_id"], request.form.get("email", ""))
     return redirect(request.form.get("volver") or url_for("contacts.index"))
+
+
+@bp.route("/contactos/anulados/eliminar", methods=["POST"])
+def remove_suppressed():
+    """Borrar los contactos anulados. Las supresiones se quedan."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    if csrf_ok(request.form.get("csrf_token")):
+        contacts.delete_suppressed(get_db(), account["_id"])
+    return redirect(url_for("contacts.index"))
+
+
+@bp.route("/contactos/exportar")
+def export():
+    """Bajar lo que enseña la tabla, respetando el buscador y el filtro.
+
+    Punto y coma y marca de orden de bytes: es lo que abre Excel en español sin
+    meter todo en una columna, y es lo que nuestro propio importador lee. Y se
+    escribe fila por fila, no armando el archivo entero en memoria.
+    """
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    search = request.args.get("q", "").strip()[:120]
+    tag = request.args.get("etiqueta", "").strip()[:accounts.TAG_LENGTH]
+    rows = contacts.all_of(db, account["_id"], search=search, tag=tag)
+    blocked = {d["email_normalized"] for d in
+               db.suppressions.find({"account_id": account["_id"]},
+                                    {"email_normalized": 1})}
+
+    def lines():
+        buffer = io.StringIO()
+        writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
+
+        def flush():
+            value = buffer.getvalue()
+            buffer.seek(0)
+            buffer.truncate(0)
+            return value
+
+        yield "\ufeff"
+        writer.writerow([t("contacts_col_email"), t("contacts_col_name"),
+                         t("contacts_col_tags"), t("contacts_col_how"),
+                         t("contacts_col_added"), t("contacts_col_status")])
+        yield flush()
+        for row in rows:
+            how = row.get("added_by")
+            writer.writerow([
+                row.get("email", ""),
+                row.get("name", ""),
+                ", ".join(row.get("tags") or []),
+                t("contacts_how_" + how) if how else "",
+                (row.get("created_at").date().isoformat()
+                 if row.get("created_at") else ""),
+                t("contacts_status_blocked")
+                if row["email_normalized"] in blocked
+                else t("contacts_status_active"),
+            ])
+            yield flush()
+
+    name = f"contactos-{date.today().isoformat()}.csv"
+    # mimetype y no content_type: Flask le añade el charset, y ponerlo aquí
+    # además lo dejaba escrito dos veces en la cabecera.
+    return Response(lines(), mimetype="text/csv",
+                    headers={"Content-Disposition":
+                             f'attachment; filename="{name}"'})
 
 
 # ------------------------------------------------------------- las etiquetas

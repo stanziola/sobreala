@@ -23,13 +23,19 @@
 
     {# El contador vive aquí y no dentro de cada pantalla: es la misma cifra en
        las tres, y es la que decide si se puede seguir subiendo gente. #}
+    {# Dos números a propósito: los que ocupan sitio y los que no. Un anulado
+       no puede recibir nada, así que no cuenta contra el límite. #}
     <p class="quota{% if not left %} is-full{% endif %}">
-      <b>{{ t('contacts_counter', total=total, limit=limit) }}</b><br>
+      <b>{{ t('contacts_counter', total=active, limit=limit) }}</b><br>
       {% if left %}
       {{ t('contacts_counter_left', n=left) }}
       {% else %}
       {{ t('contacts_full') }}
-      <a href="{{ site_url }}/precios/">{{ t('contacts_plans') }}</a>
+      <a href="{{ site_url }}/planes/">{{ t('contacts_plans') }}</a>
+      {% endif %}
+      {% if blocked_total %}<br>
+      {{ t('contacts_counter_blocked_one') if blocked_total == 1
+         else t('contacts_counter_blocked', n=blocked_total) }}
       {% endif %}
     </p>
   </nav>

@@ -12,8 +12,9 @@ PyMEs — organizaciones que ya tienen una lista de correos armada por otra raz�
 **Estado.** Están la marca (`brand/`), el sitio público (`landing/`, siete
 páginas estáticas generadas con Jinja2), la cuenta entera —registro, código,
 doble factor, dispositivos, configuración—, **contactos** con su importador y
-sus supresiones, y el **panel de administración** con aprobación de cuentas.
-Faltan campañas, analítica, cobros y el webhook de rebotes.
+sus supresiones, el **panel de administración** con aprobación de cuentas, y el
+**cobro de un plan con PayPal**. Faltan campañas, analítica y el webhook de
+rebotes.
 
 ---
 
@@ -70,7 +71,7 @@ panamails/
 │   ├── assets/             # css, js, fonts, img (fonts, img y css/site.css son generados)
 │   ├── index.html          # GENERADO
 │   ├── como-funciona/      # GENERADO
-│   ├── precios/            # GENERADO (precios leídos de docs/pricing.md al construir)
+│   ├── planes/             # GENERADO (precios leídos de docs/pricing.md al construir)
 │   ├── nosotros/           # GENERADO
 │   ├── contacto/           # GENERADO
 │   ├── privacidad/         # GENERADO
@@ -96,6 +97,8 @@ panamails/
     │   ├── security.py     # contraseñas, CSRF, límite de intentos
     │   ├── totp.py         # verificación en dos pasos
     │   ├── importer.py     # CSV en streaming, upsert por lotes
+    │   ├── plans.py        # precios leídos de docs/pricing.md
+    │   ├── paypal.py       # crear y cobrar la orden, con urllib
     │   ├── ses.py
     │   └── payments/
     ├── email_templates/    # plantillas prediseñadas del producto
@@ -284,6 +287,20 @@ qué cuenta, cuándo y **por qué**. El motivo no es opcional; la pantalla no de
 aplicar un cambio sin él, porque meses después esa frase es la única respuesta
 honesta a «por qué me suspendieron». Sin TTL, como `auth_events`.
 
+### `payments`
+Un documento por **intento** de pago, escrito antes de mandar a nadie a PayPal:
+la cuenta, el plan, si fue mensual o anual, el monto que se pidió cobrar, la
+moneda, el identificador de la orden, el estado y las fechas. Se escribe antes y
+no al volver porque si alguien paga y el navegador se cierra en el camino de
+vuelta, ese intento tiene que existir para poder reconciliarlo.
+
+**De la tarjeta no hay nada, y no puede haberlo**: el pago entero ocurre en el
+checkout de PayPal. Es la regla 9.
+
+Pasar de `created` a `completed` es una **escritura condicional**, y es la única
+que decide si se alarga un plan: recargar la página de vuelta entra otra vez y
+se va con las manos vacías en lugar de regalar otro periodo.
+
 ### `campaigns`
 Incluye la **posición de envío** (hasta qué destinatario se envió), necesaria
 para pausar por límite de cuota y retomar desde ahí.
@@ -417,8 +434,9 @@ cuándo y si está activo o anulado—, la importación, las etiquetas y las
 supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
 desde un botón encima de la lista. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
-dispositivos conectados), **Notificaciones** y **Opciones de pago** (PayPal y
-Yappy, por construir).
+dispositivos conectados), **Notificaciones** y **Opciones de pago**, donde se
+contrata un plan con PayPal y se ven los pagos hechos. Yappy sigue por
+construir.
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: panel,
@@ -466,6 +484,47 @@ Además:
 
 ---
 
+## Cobrar un plan
+
+Se contrata desde **Configuración → Opciones de pago**. Hoy es un **pago suelto**
+de un mes o un año, no una suscripción: PayPal cobra una vez y el plan queda
+activo por ese periodo. La renovación se avisa a mano, igual que ya estaba
+previsto para Yappy. La suscripción que se renueva sola pide crear un producto y
+un plan por cada uno de los nuestros en el panel de PayPal, y el webhook
+funcionando; es el paso siguiente, no este.
+
+```
+Contratar  →  el servidor crea la orden  →  el navegador va a PayPal
+           →  PayPal devuelve al panel   →  el servidor cobra y comprueba
+           →  la cuenta queda activa con su plan
+```
+
+Tres cosas de ese camino que no son negociables:
+
+1. **Lo que decide es la respuesta de PayPal al servidor**, nunca lo que traiga
+   el navegador de vuelta. Ahí solo viene un identificador de orden, que no
+   prueba nada. El servidor cobra la orden por su cuenta y **compara el monto y
+   la moneda** contra lo que ese plan cuesta; si no cuadra, no se activa nada y
+   el intento queda escrito con la diferencia.
+2. **Cobrar dos veces la misma orden no da dos periodos**, por la escritura
+   condicional de `payments`.
+3. **Los precios salen de `docs/pricing.md`**, no copiados al backend:
+   `services/plans.py` lee las mismas dos filas que lee el sitio. Cambiar una
+   cifra ahí la cambia en el sitio, en el panel y en lo que se cobra.
+
+**Quién puede pagar**: `approved` y `active`. Registrada no —primero se habla con
+la organización y se revisa de dónde salió su lista—, y activa sí, porque una
+cuenta que ya pagó tiene que poder renovar y cambiar de plan. Pagar mueve la
+cuenta a `active` y escribe `plan` y `plan_until`. Renovar el mismo plan antes de
+tiempo **suma al final de lo que quedaba**; cambiar de plan empieza hoy.
+
+**Corporativo no se compra por la web.** `docs/pricing.md` dice que va sin precio
+público, a la medida: su botón lleva a contacto. Ponerlo comprable sería poner un
+precio donde el documento dice que no hay ninguno.
+
+Sin credenciales configuradas la pantalla se dibuja igual y dice que el pago no
+está disponible, en vez de romperse.
+
 ## Planes
 
 Ver `docs/pricing.md` para la tabla completa, límites y reglas. Los costos, los
@@ -494,8 +553,10 @@ R2_ACCOUNT_ID
 R2_ACCESS_KEY_ID
 R2_SECRET_ACCESS_KEY
 R2_BUCKET
+PAYPAL_ENV                # sandbox | live; en producción con sandbox no arranca
 PAYPAL_CLIENT_ID
 PAYPAL_SECRET
+PAYPAL_WEBHOOK_ID         # para comprobar los avisos; todavía sin usar
 YAPPY_MERCHANT_ID
 YAPPY_SECRET
 ```

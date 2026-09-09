@@ -42,7 +42,7 @@ CONTACT = {
 NAV = [
     {"label": "Inicio", "url": "/"},
     {"label": "Cómo funciona", "url": "/como-funciona/"},
-    {"label": "Precios", "url": "/precios/"},
+    {"label": "Planes", "url": "/planes/"},
     {"label": "Nosotros", "url": "/nosotros/"},
 ]
 
@@ -69,7 +69,7 @@ PANEL = {
 }
 
 CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}
-CTA_SECONDARY = {"label": "Ver planes y precios", "url": "/precios/"}
+CTA_SECONDARY = {"label": "Ver los planes", "url": "/planes/"}
 
 # --------------------------------------------------------------------------- home
 
@@ -1104,7 +1104,7 @@ FOOTER = {
             "title": "Producto",
             "links": [
                 {"label": "Cómo funciona", "url": "/como-funciona/"},
-                {"label": "Precios", "url": "/precios/"},
+                {"label": "Planes", "url": "/planes/"},
             ],
         },
         {

@@ -42,9 +42,17 @@ def notices(outbox):
 
 
 def link_from(body):
-    found = re.findall(r"http://[^\s]*/sesion/cerrar/[^\s]+", body)
+    """The path of the link in the notice, whatever host it was built with.
+
+    Not the development address written by hand: APP_BASE_URL comes from the
+    environment, and a .env pointing at production used to break this test
+    without anything being wrong with the code.
+    """
+    from config import Config
+
+    found = re.findall(r"https?://[^\s]*/sesion/cerrar/[^\s]+", body)
     assert found, "the notice carries no link to close the session"
-    return found[0].replace("http://127.0.0.1:5000", "")
+    return found[0].replace(Config.APP_BASE_URL, "")
 
 
 # ----------------------------------------------------------------- the notice

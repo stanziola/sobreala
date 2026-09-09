@@ -413,7 +413,7 @@ def read_wing_svg() -> str:
 PAGES = [
     ("index.html", "index.html.j2", "/", content.HOME),
     ("como-funciona/index.html", "como-funciona.html.j2", "/como-funciona/", content.HOW),
-    ("precios/index.html", "precios.html.j2", "/precios/", content.PRICING),
+    ("planes/index.html", "precios.html.j2", "/planes/", content.PRICING),
     ("nosotros/index.html", "nosotros.html.j2", "/nosotros/", content.ABOUT),
     ("contacto/index.html", "contacto.html.j2", "/contacto/", content.CONTACT_PAGE),
     ("privacidad/index.html", "legal.html.j2", "/privacidad/", content.PRIVACY),
@@ -435,7 +435,7 @@ SOCIAL_CARDS = [
 OG_IMAGES = {
     "/": "inicio",
     "/como-funciona/": "como-funciona",
-    "/precios/": "precios",
+    "/planes/": "precios",
     "/nosotros/": "nosotros",
     "/contacto/": "contacto",
 }

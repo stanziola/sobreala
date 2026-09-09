@@ -149,6 +149,13 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.admin_events.create_index([("created_at", DESCENDING)],
                                  name="by_created_at")
 
+    # Un documento por intento de pago, escrito antes de mandar a nadie a
+    # PayPal. Sin TTL: es la respuesta a «¿este cliente pagó?» meses después.
+    db.payments.create_index([("account_id", ASCENDING),
+                              ("created_at", DESCENDING)],
+                             name="by_account_created")
+    db.payments.create_index([("order_id", ASCENDING)], name="by_order")
+
 
 def indexes_ready() -> bool:
     return _indexes_ready

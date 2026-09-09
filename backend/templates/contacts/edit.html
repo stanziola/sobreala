@@ -1,0 +1,39 @@
+{% extends "contacts/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('contacts_edit_title') }}</h2>
+<p class="settings__lead">{{ t('contacts_edit_lead') }}</p>
+
+{% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label for="email">{{ t('contacts_add_email') }}</label>
+  <input id="email" name="email" type="email" autocomplete="off" required
+         value="{{ row.email }}">
+  {% if errors.email %}<p class="error">{{ errors.email }}</p>{% endif %}
+
+  <label for="name">{{ t('contacts_add_name') }}</label>
+  <input id="name" name="name" type="text" autocomplete="off"
+         value="{{ row.name or '' }}">
+
+  {% include "contacts/_tags-picker.html" %}
+
+  <button class="btn" type="submit">{{ t('contacts_edit_submit') }}</button>
+</form>
+
+{# Lo que esta pantalla no toca. Es historia, no datos: si se pudiera editar
+   dejaría de servir para lo único que sirve, que es responder cuando alguien
+   reclame que no dio su correo. #}
+<h3 class="settings__subtitle">{{ t('contacts_history_title') }}</h3>
+<ul class="counts">
+  <li><span>{{ t('contacts_col_added') }}</span> <b>{{ row.created_at|ago }}</b></li>
+  <li><span>{{ t('contacts_col_how') }}</span>
+    <b>{{ t('contacts_how_' + row.added_by) if row.added_by else '—' }}</b></li>
+  <li><span>{{ t('admin_imports_origin') }}</span>
+    <b>{{ t('consent_' + row.consent.source) if row.consent else '—' }}</b></li>
+</ul>
+<p class="hint">{{ t('contacts_history_hint') }}</p>
+
+<p class="foot"><a href="{{ url_for('contacts.index') }}">{{ t('two_step_back') }}</a></p>
+{% endblock %}

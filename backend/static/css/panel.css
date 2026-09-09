@@ -144,7 +144,14 @@ body {
 h1 { margin: 0 0 10px; font-size: 1.55rem; line-height: 1.2; letter-spacing: -.01em; }
 p { margin: 0; }
 a { color: var(--color-accent-strong); }
-:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; border-radius: 4px; }
+/* Un solo anillo al enfocar. Antes se dibujaban dos: el borde del elemento
+   cambiaba a azul y encima aparecía un contorno separado por un hueco de 3 px.
+   Ahora el contorno se pega al borde y los dos son del mismo azul, así que se
+   leen como una sola línea gruesa.
+
+   Sin border-radius aquí: el contorno ya sigue el del elemento, y ponerlo
+   cuadraba las píldoras justo al enfocarlas. */
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 0; }
 
 .bar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -243,6 +250,10 @@ a.menu__item:hover, button.menu__item:hover { background: var(--color-surface-al
 /* Configuración carries a sidebar beside its rows, and 620px is not enough
    room for both. */
 .wrap--wide { width: min(100% - 32px, 980px); }
+/* La lista de contactos tiene siete columnas y en 980 px los nombres y las
+   etiquetas se parten en dos líneas. Configuración se queda como está: tiene
+   filas, no tablas. */
+.wrap--table { width: min(100% - 32px, 1180px); }
 
 .card {
   padding: clamp(22px, 4vw, 32px); border-radius: 16px;
@@ -336,6 +347,9 @@ input:focus, select:focus { border-color: var(--color-accent); }
   transition: transform 160ms ease, filter 160ms ease;
 }
 .btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+/* El sólido no tiene borde y su fondo ya es azul: un anillo azul encima
+   no se vería, así que lleva el azul oscuro. */
+.btn:focus-visible { outline-color: var(--color-accent-strong); }
 .btn--small { margin-top: 12px; padding: 8px 14px; font-size: .9rem; }
 /* For buttons inside a card, where the white-on-blue quiet button would be
    invisible. */
@@ -461,7 +475,7 @@ input:focus, select:focus { border-color: var(--color-accent); }
 }
 .switch input:checked + .switch__track { background: var(--color-accent); }
 .switch input:checked + .switch__track .switch__knob { transform: translateX(20px); }
-.switch input:focus-visible + .switch__track { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+.switch input:focus-visible + .switch__track { outline: 2px solid var(--color-accent-strong); outline-offset: 2px; }
 
 /* Two-step verification: the QR, the secret to type by hand, and the recovery
    codes. The QR keeps its white box in both themes, because a scanner needs
@@ -486,7 +500,9 @@ input:focus, select:focus { border-color: var(--color-accent); }
 .recovery { margin-top: 18px; }
 .recovery summary { cursor: pointer; color: var(--color-accent-strong);
                     font-size: .9rem; }
-.row { display: flex; flex-wrap: wrap; gap: 10px; }
+/* Meter contactos y buscar entre los que hay son dos cosas distintas: los
+   botones no se pegan entre sí ni al buscador de abajo. */
+.row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 4px; }
 .row .btn { margin-top: 14px; }
 
 /* --------------------------------------------------------------- contactos
@@ -522,8 +538,13 @@ input:focus, select:focus { border-color: var(--color-accent); }
 }
 .table td {
   padding: 12px 12px 12px 0; vertical-align: middle;
+  /* Ninguna celda se parte en dos líneas: si no cabe, la tabla se desliza
+     dentro de su caja, que es lo que ya hace, y la página nunca se va de lado. */
+  white-space: nowrap;
   border-bottom: 1px solid var(--color-border);
 }
+/* Los dos botones de cada fila, juntos y sin que la fila crezca. */
+.table__actions { display: flex; gap: 8px; }
 .table tr:last-child td { border-bottom: 0; }
 .table__quiet { color: var(--color-ink-soft); font-size: .85rem; white-space: nowrap; }
 .table form { margin: 0; }
