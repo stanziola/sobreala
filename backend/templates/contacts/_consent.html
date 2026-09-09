@@ -1,0 +1,20 @@
+{# De dónde salió la lista. Va en las dos pantallas que crean contactos, y se
+   pregunta antes de escribir nada: es lo que hay que enseñar si alguien
+   reclama, y no se puede rellenar hacia atrás. Una lista que entró sin esto se
+   queda sin origen para siempre. #}
+<fieldset class="consent">
+  <legend>{{ t('consent_title') }}</legend>
+  <p class="hint">{{ t('consent_lead') }}</p>
+
+  <label class="visually-hidden" for="source">{{ t('consent_title') }}</label>
+  <select id="source" name="source" required>
+    <option value="">{{ t('consent_choose') }}</option>
+    {% for name in sources %}
+    <option value="{{ name }}">{{ t('consent_' + name) }}</option>
+    {% endfor %}
+  </select>
+  {% if errors is defined and errors.source %}<p class="error">{{ errors.source }}</p>{% endif %}
+
+  <label for="note">{{ t('consent_note') }}</label>
+  <input id="note" name="note" type="text" autocomplete="off" maxlength="300">
+</fieldset>

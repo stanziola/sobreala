@@ -223,6 +223,8 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 }
 .usermenu__icons > span { display: none; grid-area: 1 / 1; }
 .usermenu__group { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--color-border); }
+/* Salir va debajo del idioma: sin esta línea parecía una opción más de él. */
+.usermenu__item--out { margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--color-border); }
 .usermenu__title {
   padding: 6px 12px 2px; font-size: .78rem; font-weight: 700;
   letter-spacing: .04em; text-transform: uppercase; color: var(--color-ink-soft);

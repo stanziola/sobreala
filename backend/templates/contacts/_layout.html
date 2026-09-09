@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ t('contacts_title') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{# La misma forma que configuración: las secciones a la izquierda y el trabajo
+   a la derecha. Es el mismo producto, así que se recorre igual. #}
+{% block content %}
+<h1 class="settings__heading">{{ t('contacts_title') }}</h1>
+
+<div class="settings">
+  {% set tabs = [
+    ('lista', 'contacts_tab_list', url_for('contacts.index')),
+    ('importar', 'contacts_tab_import', url_for('contacts.upload')),
+    ('supresiones', 'contacts_tab_blocked', url_for('contacts.blocked'))] %}
+
+  <nav class="settings__nav" aria-label="{{ t('contacts_title') }}">
+    {% for slug, label, href in tabs %}
+    <a class="settings__tab{% if slug == section %} is-current{% endif %}"
+       href="{{ href }}"{% if slug == section %} aria-current="page"{% endif %}>
+      {{ t(label) }}</a>
+    {% endfor %}
+
+    {# El contador vive aquí y no dentro de cada pantalla: es la misma cifra en
+       las tres, y es la que decide si se puede seguir subiendo gente. #}
+    <p class="quota{% if not left %} is-full{% endif %}">
+      <b>{{ t('contacts_counter', total=total, limit=limit) }}</b><br>
+      {% if left %}
+      {{ t('contacts_counter_left', n=left) }}
+      {% else %}
+      {{ t('contacts_full') }}
+      <a href="{{ site_url }}/precios/">{{ t('contacts_plans') }}</a>
+      {% endif %}
+    </p>
+  </nav>
+
+  <div class="settings__pane">{% block pane %}{% endblock %}</div>
+</div>
+{% endblock %}

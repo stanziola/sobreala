@@ -82,7 +82,18 @@ def create_app(overrides: dict | None = None) -> Flask:
         Config.check()
 
     from blueprints.auth import bp as auth_bp
+    from blueprints.contacts import bp as contacts_bp
     app.register_blueprint(auth_bp)
+    app.register_blueprint(contacts_bp)
+
+    # The size limit on an imported file, enforced by Flask before the request
+    # reaches any code of ours: an oversized upload is refused without being
+    # read. The margin is for the rest of the form, which is a few hundred
+    # bytes.
+    # setdefault no vale aquí: Flask ya trae la clave puesta en None, así que
+    # nunca la escribiría y el corte no llegaría a hacerse nunca.
+    if not app.config.get("MAX_CONTENT_LENGTH"):
+        app.config["MAX_CONTENT_LENGTH"] = Config.IMPORT_MAX_BYTES + 64 * 1024
 
     @app.before_request
     def _prepare_indexes():
@@ -191,6 +202,17 @@ def create_app(overrides: dict | None = None) -> Flask:
     def database_unavailable(exc):
         app.logger.exception("base de datos inaccesible en %s", request.path)
         return error_page("error_db_title", "error_db_lead"), 503
+
+    @app.errorhandler(413)
+    def file_too_big(exc):
+        """A file over the limit never reaches the importer.
+
+        Werkzeug cuts the request off while it is still arriving, so this page
+        is what the visitor gets instead of a blank error: the whole point of
+        the limit is that a five megabyte cap is not enforced by reading five
+        megabytes first.
+        """
+        return error_page("error_upload_big_title", "error_upload_big_lead"), 413
 
     @app.errorhandler(500)
     def internal_error(exc):

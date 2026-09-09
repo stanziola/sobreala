@@ -33,6 +33,7 @@ RESEND = "resend"
 CONFIRM = "confirm"
 LOGOUT = "logout"
 SETTINGS = "settings"
+IMPORT = "import"
 
 # How it went. Which ones are possible depends on the kind.
 CREATED = "created"                    # register: a new account exists
@@ -52,6 +53,7 @@ RECOVERY_USED = "recovery_used"        # login: got in with a backup code
 DISABLED = "disabled"                  # two-step: turned off
 REGENERATED = "regenerated"            # two-step: new recovery codes
 MAIL_FAILED = "mail_failed"            # the account is fine, the email did not go out
+FAILED = "failed"                      # import: the file could not be read
 
 # What the confirm route writes down, keyed by the reason models/token.py gave.
 # The screen collapses most of these into one message, on purpose; the log keeps

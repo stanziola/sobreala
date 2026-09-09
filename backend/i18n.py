@@ -319,6 +319,112 @@ TEXTS = {
     "panel_status_active": "Activa.",
     "panel_status_suspended": "Suspendida. Escríbenos para revisarla.",
 
+    # --- contacts ----------------------------------------------------------
+    "contacts_title": "Contactos",
+    "contacts_tab_list": "Tus contactos",
+    "contacts_tab_import": "Importar",
+    "contacts_tab_blocked": "Supresiones",
+    "contacts_counter": "{total} de {limit} contactos",
+    "contacts_counter_left": "Te quedan {n}.",
+    "contacts_full": "Llegaste al límite de tu plan.",
+    "contacts_plans": "Ver los planes",
+    "contacts_empty": "Todavía no tienes contactos. Sube tu lista y empezamos.",
+    "contacts_empty_search": "Ningún contacto coincide con lo que buscaste.",
+    "contacts_import_action": "Importar una lista",
+    "contacts_search": "Buscar por correo",
+    "contacts_search_action": "Buscar",
+    "contacts_all_tags": "Todas las etiquetas",
+    "contacts_tag_filter": "Filtrar",
+    "contacts_tag_drop": "Quitar esta etiqueta de todos",
+    "contacts_tag_drop_hint": "Los contactos se quedan; solo se les quita la "
+                              "etiqueta.",
+    "contacts_showing": "{n} de {total}",
+    "contacts_newer": "Anteriores",
+    "contacts_older": "Siguientes",
+    "contacts_col_email": "Correo",
+    "contacts_col_name": "Nombre",
+    "contacts_col_tags": "Etiquetas",
+    "contacts_col_added": "Agregado",
+    "contacts_delete": "Borrar",
+    "contacts_delete_hint": "Borrarlo no levanta su supresión: si pidió la "
+                            "baja, sigue dado de baja.",
+    "contacts_blocked_tag": "Suprimido",
+    "contacts_saved": "Listo, guardamos el contacto.",
+
+    "contacts_add_title": "Agregar un contacto",
+    "contacts_add_lead": "Para la dirección que te acaban de dar. Para una "
+                         "lista entera, usa la importación.",
+    "contacts_add_email": "Correo",
+    "contacts_add_name": "Nombre (opcional)",
+    "contacts_add_tags": "Etiquetas, separadas por coma (opcional)",
+    "contacts_add_submit": "Agregar",
+
+    # De dónde salió la lista. Se pregunta antes de escribir nada porque no se
+    # puede rellenar después: una lista subida sin esto queda sin origen.
+    "consent_title": "¿De dónde salió esta lista?",
+    "consent_lead": "Lo guardamos con cada contacto. Es lo que hay que "
+                    "enseñar si alguien reclama que no dio su correo, y no se "
+                    "puede escribir después.",
+    "consent_choose": "Elige una",
+    "consent_own_form": "Se registraron en un formulario nuestro",
+    "consent_members": "Son socios o miembros de la organización",
+    "consent_customers": "Son clientes que ya nos compraron",
+    "consent_event": "Los recogimos en un evento o actividad",
+    "consent_other": "Otro origen",
+    "consent_note": "Cuéntanos en una línea (opcional)",
+
+    "import_title": "Importar contactos",
+    "import_lead": "Un archivo CSV con una columna de correos. Si trae una "
+                   "columna de nombres, también la leemos.",
+    "import_file": "Tu archivo",
+    "import_file_hint": "Hasta {mb} MB, y hasta {n} importaciones al día.",
+    "import_tags": "Etiqueta para esta lista (opcional)",
+    "import_tags_hint": "Así puedes enviarle solo a este grupo más adelante.",
+    "import_submit": "Importar",
+    "import_result_title": "Esto pasó con tu archivo",
+    "import_read": "Filas leídas",
+    "import_added": "Contactos nuevos",
+    "import_updated": "Ya estaban y se actualizaron",
+    "import_invalid": "Filas sin un correo válido",
+    "import_suppressed": "De los importados, están suprimidos",
+    "import_suppressed_hint": "Se guardan igual, pero no van a recibir nada "
+                             "hasta que dejen de estar suprimidos.",
+    "import_stopped": "Llegaste al límite de contactos de tu plan, así que la "
+                      "importación se detuvo ahí. Lo que ya había entrado se "
+                      "quedó.",
+    "import_history": "Tus importaciones",
+    "import_history_empty": "Todavía no has importado nada.",
+    "import_status_done": "Terminada",
+    "import_status_stopped": "Detenida en el límite",
+    "import_status_failed": "No se pudo leer",
+    "import_status_running": "En curso",
+
+    "blocked_title": "Supresiones",
+    "blocked_lead": "Direcciones a las que esta cuenta no le puede volver a "
+                    "escribir. Se revisan antes de cada envío, y no gastan "
+                    "cuota.",
+    "blocked_empty": "No hay ninguna. Es lo normal al empezar.",
+    "blocked_col_email": "Correo",
+    "blocked_col_reason": "Motivo",
+    "blocked_col_when": "Desde",
+    "blocked_reason_unsubscribe": "Pidió la baja",
+    "blocked_reason_hard_bounce": "La dirección no existe",
+    "blocked_reason_complaint": "La marcó como spam",
+    "blocked_reason_manual": "La agregaste tú",
+    "blocked_lift": "Quitar",
+    "blocked_locked": "No se puede quitar",
+    "blocked_locked_hint": "Un rebote o una queja son un hecho de la "
+                          "dirección, no una preferencia: no dejan de ser "
+                          "ciertos porque se pulse un botón. Solo se quita lo "
+                          "que agregaste a mano.",
+    "blocked_add_title": "Suprimir una dirección",
+    "blocked_add_lead": "Para cuando alguien te escribe pidiendo que no le "
+                        "mandes más. Queda fuera de todos tus envíos.",
+    "blocked_add_submit": "Suprimir",
+    "blocked_saved": "Listo, esa dirección quedó suprimida.",
+
+    "menu_contacts": "Contactos",
+
     # --- errors ------------------------------------------------------------
     "error_required": "Completa este campo.",
     "error_email_invalid": "Ese correo no parece válido.",
@@ -347,6 +453,14 @@ TEXTS = {
     "error_password_repeat": "Las dos contraseñas no coinciden.",
     "error_password_used": "Esa contraseña ya la usaste antes. Escribe una que "
                            "no hayas tenido nunca.",
+    "error_import_running": "Ya tienes una importación en curso. Espera a que "
+                            "termine y vuelve a intentarlo.",
+    "error_import_too_many": "Llegaste a las {n} importaciones de hoy. Vuelve "
+                             "mañana o escríbenos si necesitas más.",
+    "error_import_unreadable": "No pudimos leer ese archivo. Revisa que sea un "
+                               "CSV y que tenga una columna de correos.",
+    "error_contact_email": "Ese correo no parece válido.",
+    "error_contacts_full": "Llegaste al límite de contactos de tu plan.",
 
     # --- error pages -------------------------------------------------------
     # Shown instead of the server's own blank error page. The technical detail
@@ -356,6 +470,10 @@ TEXTS = {
                      "temporal de nuestro lado: no tiene que ver con tu cuenta "
                      "ni con tu conexión, y no se perdió nada de lo que ya "
                      "tenías guardado.",
+    "error_upload_big_title": "Ese archivo es muy grande",
+    "error_upload_big_lead": "El límite es de 5 MB por archivo. Si tu lista es "
+                             "más grande, pártela en dos y sube las mitades "
+                             "por separado.",
     "error_unknown_title": "Algo salió mal",
     "error_unknown_lead": "Tuvimos un problema inesperado al procesar lo que "
                           "pediste. Ya quedó anotado de nuestro lado.",

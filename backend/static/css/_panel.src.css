@@ -143,7 +143,13 @@ input {
   color: var(--color-ink); background: var(--color-surface);
   border: 1px solid var(--color-border); border-radius: 8px;
 }
-input:focus { border-color: var(--color-accent); }
+select {
+  width: 100%; padding: 11px 13px; font: inherit;
+  color: var(--color-ink); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: 8px;
+}
+input[type="file"] { padding: 9px 11px; cursor: pointer; }
+input:focus, select:focus { border-color: var(--color-accent); }
 /* One box per digit. Monospace and centred, so the six read as six. */
 .code { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; max-width: 320px; }
 .code__box {
@@ -361,6 +367,62 @@ input:focus { border-color: var(--color-accent); }
                     font-size: .9rem; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; }
 .row .btn { margin-top: 14px; }
+
+/* --------------------------------------------------------------- contactos
+   La misma pantalla que configuración, más una tabla y un contador. */
+
+/* Cuánto cabe todavía. Vive bajo las pestañas porque es la misma cifra en las
+   tres y es la que decide si se puede seguir subiendo gente. */
+.quota {
+  margin-top: 14px; padding: 12px 14px; border-radius: 10px;
+  font-size: .88rem; line-height: 1.5; color: var(--color-ink-soft);
+  background: var(--color-surface-alt); border: 1px solid var(--color-border);
+}
+.quota.is-full { border-color: var(--color-accent); }
+.quota b { color: var(--color-ink); }
+
+/* Buscar y filtrar, en una línea que se parte sola en el teléfono. */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+.filters input, .filters select { width: auto; flex: 1 1 180px; min-width: 0; }
+.filters .btn { margin-top: 0; }
+.filters .hint { margin-top: 0; flex: 1 1 100%; }
+
+/* Una tabla ancha se desplaza dentro de su caja: la página nunca se va de
+   lado, que en el teléfono rompe todo lo demás. */
+.table-wrap { margin-top: 16px; overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.table th {
+  padding: 8px 12px 8px 0; text-align: left; font-size: .78rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--color-ink-soft);
+  border-bottom: 1px solid var(--color-border); white-space: nowrap;
+}
+.table td {
+  padding: 12px 12px 12px 0; vertical-align: middle;
+  border-bottom: 1px solid var(--color-border);
+}
+.table tr:last-child td { border-bottom: 0; }
+.table__quiet { color: var(--color-ink-soft); font-size: .85rem; white-space: nowrap; }
+.table form { margin: 0; }
+.table .btn { margin-top: 0; }
+.table .tag { margin-left: 0; margin-right: 6px; }
+
+/* Lo que pasó con un archivo: una cifra por línea, y la cifra a la derecha. */
+.counts { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.counts li {
+  display: flex; justify-content: space-between; gap: 16px;
+  font-size: .92rem; padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+.counts li:last-child { border-bottom: 0; padding-bottom: 0; }
+
+/* De dónde salió la lista. Enmarcado porque es una pregunta aparte, no un
+   campo más del formulario. */
+.consent {
+  margin-top: 22px; padding: 14px 16px 18px;
+  border: 1px solid var(--color-border); border-radius: 12px;
+}
+.consent legend { padding: 0 6px; font-weight: 700; font-size: .95rem; }
+.consent label:first-of-type { margin-top: 10px; }
 
 .error { margin-top: 6px; font-size: .9rem; font-weight: 600; color: var(--color-accent-strong); }
 .error--form {

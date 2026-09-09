@@ -335,9 +335,11 @@ El panel (`/panel`) es la pantalla de las gráficas de envíos; hoy solo dice
 **Notificaciones** y **Opciones de pago** (PayPal y Yappy, por construir).
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
-las mismas cinco cosas en el sitio público y en el panel: configuración, modo,
-idioma, panel y cerrar sesión. Sin sesión el mismo control es un botón de tres
-líneas con las dos que sirven sin cuenta.
+las mismas cinco cosas en el sitio público y en el panel, en este orden: panel,
+configuración, modo, idioma y cerrar sesión. **El panel va primero** porque es a
+lo que se dedica la empresa; lo demás son ajustes, y se buscan cuando hacen
+falta. Sin sesión el mismo control es un botón de tres líneas con las dos que
+sirven sin cuenta.
 
 **El idioma está anunciado, no traducido.** El menú enseña «Español» y «Inglés
 (pronto)»; el inglés se hará cuando haya a quién dárselo.

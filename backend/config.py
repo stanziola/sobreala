@@ -99,6 +99,19 @@ class Config:
     # code from one that never existed.
     TOKEN_GRACE_DAYS = int(os.getenv("TOKEN_GRACE_DAYS", "7"))
 
+    # --- contacts and importing --------------------------------------------
+    # What an account with no plan may hold. The paid limits come from
+    # docs/pricing.md and live in models/account.py; this is the only number
+    # that is not written there, because a plan-less account is not a plan.
+    # Enough to try it with a real list, small enough that Básico still buys
+    # something.
+    CONTACTS_FREE_LIMIT = int(os.getenv("CONTACTS_FREE_LIMIT", "500"))
+    # The three limits from CLAUDE.md. The size is enforced by Flask before the
+    # request reaches any code of ours, so an oversized file is refused without
+    # being read.
+    IMPORT_MAX_BYTES = int(os.getenv("IMPORT_MAX_BYTES", str(5 * 1024 * 1024)))
+    IMPORTS_PER_DAY = int(os.getenv("IMPORTS_PER_DAY", "10"))
+
     @classmethod
     def check(cls) -> None:
         if not cls.SECRET_KEY:

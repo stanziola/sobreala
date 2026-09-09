@@ -104,6 +104,18 @@
         </summary>
 
         <div class="usermenu__panel">
+          {#- El panel va primero porque es a lo que se dedica la empresa: lo
+              demás son ajustes de la cuenta, y se buscan cuando hace falta. -#}
+          <a class="usermenu__item" data-account-only hidden
+             href="{{ panel.base_url }}/panel">
+            <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
+            <span>{{ panel.panel_label }}</span></a>
+
+          <a class="usermenu__item" data-account-only hidden
+             href="{{ panel.base_url }}/contactos">
+            <span class="usermenu__icons">{% include "partials/icon-people.svg.j2" %}</span>
+            <span>{{ panel.contacts_label }}</span></a>
+
           <a class="usermenu__item" data-account-only hidden
              href="{{ panel.base_url }}/configuracion">
             <span class="usermenu__icons">{% include "partials/icon-gear.svg.j2" %}</span>
@@ -130,15 +142,10 @@
               <span>{{ panel.language_soon }}</span></p>
           </div>
 
-          <a class="usermenu__item" data-account-only hidden
-             href="{{ panel.base_url }}/panel">
-            <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
-            <span>{{ panel.panel_label }}</span></a>
-
           {#- Un enlace, no un formulario: este sitio está en otro dominio y no
               lleva ningún testigo del panel. La página a la que llega es la que
               pregunta y la que cierra. -#}
-          <a class="usermenu__item" data-account-only hidden
+          <a class="usermenu__item usermenu__item--out" data-account-only hidden
              href="{{ panel.base_url }}/salir">
             <span class="usermenu__icons">{% include "partials/icon-exit.svg.j2" %}</span>
             <span>{{ panel.logout_label }}</span></a>

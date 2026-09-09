@@ -109,6 +109,33 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.auth_events.create_index([("ip", ASCENDING)], name="by_ip")
     db.auth_events.create_index([("created_at", DESCENDING)], name="by_created_at")
 
+    # One document per address per account, and the unique index is what says
+    # so: rule 5 of CLAUDE.md is enforced by the database, not by remembering
+    # to check. Every import is an upsert against exactly this pair.
+    db.contacts.create_index([("account_id", ASCENDING),
+                              ("email_normalized", ASCENDING)],
+                             unique=True, name="uniq_account_email")
+    # Lists are tags on the document, so filtering by list is a query on this.
+    db.contacts.create_index([("account_id", ASCENDING), ("tags", ASCENDING)],
+                             name="by_account_tag")
+    db.contacts.create_index([("account_id", ASCENDING), ("created_at", DESCENDING)],
+                             name="by_account_created")
+
+    # Addresses an account may never write to again. Scoped to the account and
+    # never global: a bajada in one account says nothing about the others.
+    db.suppressions.create_index([("account_id", ASCENDING),
+                                  ("email_normalized", ASCENDING)],
+                                 unique=True, name="uniq_account_email")
+    db.suppressions.create_index([("account_id", ASCENDING), ("reason", ASCENDING)],
+                                 name="by_account_reason")
+
+    # One document per uploaded file. No TTL: it is the answer to "what
+    # happened to the list I uploaded in March".
+    db.imports.create_index([("account_id", ASCENDING), ("created_at", DESCENDING)],
+                            name="by_account_created")
+    db.imports.create_index([("account_id", ASCENDING), ("status", ASCENDING)],
+                            name="by_account_status")
+
 
 def indexes_ready() -> bool:
     return _indexes_ready

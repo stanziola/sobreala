@@ -153,6 +153,27 @@ def set_notifications(db, account_id, wanted: dict[str, bool]) -> None:
     }})
 
 
+# Contactos que caben en cada plan, copiados de docs/pricing.md, que es la
+# fuente de verdad. El límite de correos es siempre 5x el de contactos, y se
+# calculará desde aquí cuando haya envíos que contar.
+PLAN_CONTACTS = {
+    "basico": 1000,
+    "negocio": 3000,
+    "empresa": 10000,
+    "corporativo": 50000,
+}
+
+
+def contact_limit(account: dict[str, Any] | None) -> int:
+    """Cuántos contactos puede tener esta cuenta.
+
+    Sin plan no hay cifra en docs/pricing.md, así que manda la del config: una
+    cuenta recién creada puede probar con una lista de verdad antes de pagar.
+    """
+    from config import Config
+    return PLAN_CONTACTS.get(plan_of(account) or "", Config.CONTACTS_FREE_LIMIT)
+
+
 def plan_of(account: dict[str, Any] | None) -> str | None:
     """The plan this account pays for, or None while it pays for none.
 

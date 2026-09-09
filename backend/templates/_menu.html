@@ -17,7 +17,17 @@
   </summary>
 
   <div class="menu__panel">
+    {# El panel va primero porque es a lo que se dedica la empresa: lo demás son
+       ajustes de la cuenta, y se buscan cuando hace falta. #}
     {% if bar_account %}
+    <a class="menu__item" href="{{ url_for('auth.panel') }}">
+      <span class="menu__icons">{% include "_icon-chart.svg" %}</span>
+      <span>{{ t('nav_panel') }}</span>
+    </a>
+    <a class="menu__item" href="{{ url_for('contacts.index') }}">
+      <span class="menu__icons">{% include "_icon-people.svg" %}</span>
+      <span>{{ t('menu_contacts') }}</span>
+    </a>
     <a class="menu__item" href="{{ url_for('auth.settings') }}">
       <span class="menu__icons">{% include "_icon-gear.svg" %}</span>
       <span>{{ t('menu_settings') }}</span>
@@ -52,11 +62,7 @@
     </div>
 
     {% if bar_account %}
-    <a class="menu__item" href="{{ url_for('auth.panel') }}">
-      <span class="menu__icons">{% include "_icon-chart.svg" %}</span>
-      <span>{{ t('nav_panel') }}</span>
-    </a>
-    <form class="menu__form" method="post" action="{{ url_for('auth.logout') }}">
+    <form class="menu__form menu__group" method="post" action="{{ url_for('auth.logout') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="menu__item" type="submit">
         <span class="menu__icons">{% include "_icon-exit.svg" %}</span>

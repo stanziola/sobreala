@@ -1,0 +1,68 @@
+{% extends "contacts/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('import_title') }}</h2>
+<p class="settings__lead">{{ t('import_lead') }}</p>
+
+{% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+{% if result %}
+<div class="notice {{ '' if result.stopped else 'notice--ok' }}">
+  <p><b>{{ t('import_result_title') }}</b></p>
+  <ul class="counts">
+    <li><span>{{ t('import_read') }}</span> <b>{{ result.counts.read }}</b></li>
+    <li><span>{{ t('import_added') }}</span> <b>{{ result.counts.added }}</b></li>
+    <li><span>{{ t('import_updated') }}</span> <b>{{ result.counts.updated }}</b></li>
+    <li><span>{{ t('import_invalid') }}</span> <b>{{ result.counts.invalid }}</b></li>
+    {% if result.counts.suppressed %}
+    <li><span>{{ t('import_suppressed') }}</span> <b>{{ result.counts.suppressed }}</b></li>
+    {% endif %}
+  </ul>
+  {% if result.counts.suppressed %}
+  <p class="hint">{{ t('import_suppressed_hint') }}</p>
+  {% endif %}
+  {% if result.stopped %}
+  <p>{{ t('import_stopped') }}</p>
+  <a class="btn btn--small btn--outline" href="{{ site_url }}/precios/">{{ t('contacts_plans') }}</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{# enctype es lo que hace que el archivo viaje; sin él llega solo el nombre. #}
+<form method="post" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label for="archivo">{{ t('import_file') }}</label>
+  <input id="archivo" name="archivo" type="file" accept=".csv,text/csv" required>
+  <p class="hint">{{ t('import_file_hint', mb=max_mb, n=per_day) }}</p>
+  {% if errors.archivo %}<p class="error">{{ errors.archivo }}</p>{% endif %}
+
+  <label for="tags">{{ t('import_tags') }}</label>
+  <input id="tags" name="tags" type="text" autocomplete="off">
+  <p class="hint">{{ t('import_tags_hint') }}</p>
+
+  {% include "contacts/_consent.html" %}
+
+  <button class="btn" type="submit">{{ t('import_submit') }}</button>
+</form>
+
+<h3 class="settings__subtitle">{{ t('import_history') }}</h3>
+{% if history %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for job in history %}
+      <tr>
+        <td>{{ job.filename }}</td>
+        <td class="table__quiet">{{ job.created_at|ago }}</td>
+        <td class="table__quiet">{{ t('import_added') }}: {{ job.added }} ·
+          {{ t('import_updated') }}: {{ job.updated }}</td>
+        <td><span class="tag tag--quiet">{{ t('import_status_' + job.status) }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('import_history_empty') }}</p>
+{% endif %}
+{% endblock %}

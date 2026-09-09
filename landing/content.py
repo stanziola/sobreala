@@ -57,6 +57,7 @@ PANEL = {
     # El menú de la barra. Sin sesión solo se ven el modo y el idioma; con
     # sesión aparecen además las tres que necesitan una cuenta.
     "options_label": "Opciones",
+    "contacts_label": "Contactos",
     "settings_label": "Configuración",
     "panel_label": "Panel",
     "logout_label": "Cerrar sesión",
