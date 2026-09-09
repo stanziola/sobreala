@@ -32,6 +32,7 @@ SESSION_CLOSED = "session_closed"
 RESEND = "resend"
 CONFIRM = "confirm"
 LOGOUT = "logout"
+SETTINGS = "settings"
 
 # How it went. Which ones are possible depends on the kind.
 CREATED = "created"                    # register: a new account exists

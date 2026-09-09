@@ -52,11 +52,9 @@
       <span class="brand__name">Panamails</span>
     </a>
 
+    {#- El botón del tema ya no vive aquí: se mudó al menú de abajo, para que
+        la barra no tenga dos controles de lo mismo en la misma esquina. -#}
     <div class="header-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Cambiar de tema">
-        <span class="theme-toggle__sun">{% include "partials/icon-sun.svg.j2" %}</span>
-        <span class="theme-toggle__moon">{% include "partials/icon-moon.svg.j2" %}</span>
-      </button>
       <button class="nav-toggle" id="nav-toggle" type="button"
             aria-expanded="false" aria-controls="site-nav">
       <span class="nav-toggle__bars" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -79,7 +77,7 @@
           reads as the way back in and "Registrarse" as the way to start. They
           live inside the nav so the phone puts them in the menu, where the
           header has room for nothing but the brand. -#}
-      {#- All three ship drawn and the script decides: with no JavaScript the
+      {#- Everything ships drawn and the script decides: with no JavaScript the
           usual two are what shows, which serves everybody. The site is static
           and cannot know whether there is a session; the only thing it can read
           is the crumb the panel leaves on the parent domain. See nav.js. -#}
@@ -88,10 +86,64 @@
            href="{{ panel.base_url }}/entrar">{{ panel.login_label }}</a>
         <a class="btn btn--account btn--account-up" data-account-up
            href="{{ panel.base_url }}/registro">{{ panel.register_label }}</a>
-        <a class="btn btn--account btn--account-in btn--account-mine" data-account-mine
-           href="{{ panel.base_url }}/panel" hidden>
-          {% include "partials/icon-user.svg.j2" %}<span>{{ panel.account_label }}</span></a>
       </div>
+
+      {#- El mismo control con dos caras: tres líneas antes de entrar, el
+          nombre de la cuenta después. Va dentro del nav a propósito — en el
+          teléfono cae dentro del menú que ya existe, al final, en vez de poner
+          una segunda hamburguesa al lado de la primera. -#}
+      <details class="usermenu" data-usermenu>
+        <summary class="usermenu__button">
+          <span class="usermenu__bars" data-usermenu-bars aria-hidden="true">
+            <span></span><span></span><span></span></span>
+          <span class="usermenu__me" data-usermenu-me hidden>
+            {% include "partials/icon-user.svg.j2" %}<span>{{ panel.account_label }}</span></span>
+          <span class="visually-hidden usermenu__label" data-usermenu-label>{{ panel.options_label }}</span>
+          <span class="usermenu__caret" aria-hidden="true">
+            {% include "partials/icon-caret.svg.j2" %}</span>
+        </summary>
+
+        <div class="usermenu__panel">
+          <a class="usermenu__item" data-account-only hidden
+             href="{{ panel.base_url }}/configuracion">
+            <span class="usermenu__icons">{% include "partials/icon-gear.svg.j2" %}</span>
+            <span>{{ panel.settings_label }}</span></a>
+
+          <button class="usermenu__item" id="theme-toggle" type="button"
+                  data-mode-dark="{{ panel.theme_dark }}"
+                  data-mode-light="{{ panel.theme_light }}">
+            <span class="usermenu__icons">
+              <span class="theme-toggle__sun">{% include "partials/icon-sun.svg.j2" %}</span>
+              <span class="theme-toggle__moon">{% include "partials/icon-moon.svg.j2" %}</span>
+            </span>
+            <span data-theme-label>{{ panel.theme_dark }}</span></button>
+
+          {#- El español es lo que hay. El inglés se anuncia y nada más: una
+              opción que todavía no hace nada lo dice en vez de fingir. -#}
+          <div class="usermenu__group">
+            <p class="usermenu__title">{{ panel.language_label }}</p>
+            <p class="usermenu__item is-on">
+              <span class="usermenu__icons">{% include "partials/icon-check.svg.j2" %}</span>
+              <span>{{ panel.language_current }}</span></p>
+            <p class="usermenu__item is-off">
+              <span class="usermenu__icons"></span>
+              <span>{{ panel.language_soon }}</span></p>
+          </div>
+
+          <a class="usermenu__item" data-account-only hidden
+             href="{{ panel.base_url }}/panel">
+            <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
+            <span>{{ panel.panel_label }}</span></a>
+
+          {#- Un enlace, no un formulario: este sitio está en otro dominio y no
+              lleva ningún testigo del panel. La página a la que llega es la que
+              pregunta y la que cierra. -#}
+          <a class="usermenu__item" data-account-only hidden
+             href="{{ panel.base_url }}/salir">
+            <span class="usermenu__icons">{% include "partials/icon-exit.svg.j2" %}</span>
+            <span>{{ panel.logout_label }}</span></a>
+        </div>
+      </details>
     </nav>
   </div>
 </header>

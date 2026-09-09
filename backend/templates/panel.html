@@ -1,17 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ t('panel_title') }}{% endblock %}
-{% block bar_actions %}
-<form class="bar__form" method="post" action="{{ url_for('auth.logout') }}">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <button class="btn btn--quiet" type="submit">{{ t('nav_logout') }}</button>
-</form>
-{% endblock %}
 {% block content %}
+{# Recuperar la contraseña deja a la persona aquí, ya dentro; cambiarla desde
+   configuración la deja en su sección. Las dos pantallas dan el mismo aviso. #}
 {% if request.args.get('cambiada') %}
 <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
-{% endif %}
-{% if request.args.get('dospasos') == 'off' %}
-<p class="notice notice--ok">{{ t('two_step_turned_off') }}</p>
 {% endif %}
 
 {% if not confirmed %}
@@ -24,54 +17,7 @@
 <div class="card">
   <h1>{{ t('panel_greeting', name=account.contact_name) }}</h1>
   <p class="lead">{{ t('panel_building') }}</p>
-  <p class="status"><b>{{ t('panel_status_label') }}:</b>
-    {{ t('panel_status_' + account.status) }}</p>
-</div>
-
-<div class="card card--loose">
-  <h2 class="card__title">{{ t('devices_title') }}</h2>
-  <p class="lead">{{ t('devices_lead') }}</p>
-
-  <ul class="devices">
-    {% for device in devices %}
-    {% set who = describe(device.user_agent) %}
-    <li class="device">
-      <div>
-        <p class="device__name">
-          {% if who.browser and who.system %}
-            {{ t('device_on', browser=who.browser, system=who.system) }}
-          {% elif who.browser or who.system %}
-            {{ who.browser or who.system }}
-          {% else %}
-            {{ t('device_unknown') }}
-          {% endif %}
-          {% if device._id == here %}<span class="tag">{{ t('device_here') }}</span>{% endif %}
-        </p>
-        <p class="device__meta">{{ t('device_seen', when=device.last_seen_at|ago) }}
-          · {{ t('device_since', when=device.created_at|ago) }} · {{ device.ip }}</p>
-      </div>
-      {# Closing the device in use is signing out, and the route treats it so. #}
-      <form method="post" action="{{ url_for('auth.close_device') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="session_id" value="{{ device._id }}">
-        <button class="btn btn--small btn--outline" type="submit">{{ t('device_close') }}</button>
-      </form>
-    </li>
-    {% endfor %}
-  </ul>
-
-  {% if devices|length > 1 %}
-  <form method="post" action="{{ url_for('auth.close_device') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="session_id" value="otras">
-    <button class="btn btn--small btn--outline" type="submit">{{ t('device_close_others') }}</button>
-  </form>
-  {% else %}
-  <p class="hint">{{ t('device_alone') }}</p>
-  {% endif %}
-
-  <p class="foot"><a href="{{ url_for('auth.change_password') }}">{{ t('panel_password_link') }}</a>
-    · <a href="{{ url_for('auth.two_factor') }}">{{ t('panel_two_step_link') }}</a>
-    ({{ t('panel_two_step_on') if two_step else t('panel_two_step_off') }})</p>
+  <p class="status"><span class="tag tag--quiet">{{ t('panel_soon_tag') }}</span></p>
+  <p class="foot"><a href="{{ url_for('auth.settings') }}">{{ t('panel_settings_link') }}</a></p>
 </div>
 {% endblock %}

@@ -173,22 +173,83 @@ button { font: inherit; color: inherit; }
 .btn--account-in:hover { background: var(--color-accent-light); }
 .btn--account-up { background: transparent; color: var(--color-on-dark); border-color: rgba(255, 255, 255, .4); }
 .btn--account-up:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .7); }
-.btn--account-mine { display: inline-flex; align-items: center; gap: 8px; }
 
 /* In the menu they stack full width, like the WhatsApp button below them. */
 @media (max-width: 959.98px) {
   .site-nav__account { flex-direction: column; align-self: stretch; gap: 10px; }
   .site-nav__account .btn--account { width: 100%; min-height: 52px; font-size: 1.04rem; }
 }
-.theme-toggle {
-  display: inline-grid; place-items: center; flex: none;
-  width: 40px; height: 40px; padding: 0;
+
+/* The options menu: three lines before signing in, the account's own face
+   after. Same button as the two beside it, so the bar reads as one row. */
+.usermenu { position: relative; }
+.usermenu__button {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 8px 12px;
+  font-weight: 600; font-size: .95rem; color: var(--color-on-dark);
   border: 1px solid rgba(255, 255, 255, .4); border-radius: 11px;
-  background: transparent; color: inherit; cursor: pointer;
+  cursor: pointer; list-style: none;
   transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
 }
-.theme-toggle:hover { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .7); }
-.theme-toggle > span { display: none; grid-area: 1 / 1; }
+.usermenu__button::-webkit-details-marker { display: none; }
+.usermenu__button:hover { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .7); }
+.usermenu__bars { display: grid; gap: 4px; width: 20px; }
+.usermenu__bars span { display: block; height: 2px; background: currentColor; border-radius: 2px; }
+.usermenu__me { display: inline-flex; align-items: center; gap: 8px; }
+.usermenu__caret { display: grid; transition: transform var(--fast) var(--ease); }
+.usermenu[open] .usermenu__caret { transform: rotate(180deg); }
+
+.usermenu__panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 60;
+  min-width: 232px; padding: 8px;
+  color: var(--color-ink); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+}
+.usermenu__item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  margin: 0; padding: 10px 12px;
+  font: inherit; font-size: .95rem; font-weight: 500; text-align: left;
+  color: var(--color-ink); background: transparent;
+  border: 0; border-radius: 9px; cursor: pointer;
+  transition: background-color var(--fast) var(--ease);
+}
+a.usermenu__item:hover, button.usermenu__item:hover {
+  background: var(--color-surface-alt); text-decoration: none;
+}
+.usermenu__icons {
+  display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px;
+  color: var(--color-ink-soft);
+}
+.usermenu__icons > span { display: none; grid-area: 1 / 1; }
+.usermenu__group { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--color-border); }
+.usermenu__title {
+  padding: 6px 12px 2px; font-size: .78rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--color-ink-soft);
+}
+/* The language that works, and the one that is only announced. */
+.usermenu__item.is-on { cursor: default; font-weight: 600; }
+.usermenu__item.is-off { cursor: default; color: var(--color-ink-soft); }
+.usermenu__item.is-on .usermenu__icons { color: var(--color-accent-strong); }
+
+/* On the phone this sits inside the menu that already exists, at the end, so
+   there are never two sets of three lines in the same bar. */
+@media (max-width: 959.98px) {
+  .usermenu { align-self: stretch; }
+  .usermenu__button { width: 100%; min-height: 52px; gap: 12px; font-size: 1.04rem; }
+  .usermenu__panel { position: static; min-width: 0; margin-top: 10px; box-shadow: none; }
+  .usermenu__caret { margin-left: auto; }
+  /* Dentro del menú, entre filas con su nombre escrito, tres líneas sueltas no
+     se entienden: aquí la palabra deja de ser solo para el lector de pantalla.
+     Cuando hay sesión el script la esconde, porque "Mi cuenta" ya la nombra. */
+  .usermenu__label {
+    position: static !important; width: auto; height: auto; margin: 0;
+    overflow: visible; clip: auto; white-space: nowrap;
+  }
+}
+
+/* The icon shows the action, not the state: a sun while dark (press to go
+   light) and a moon while light, as in the reference. */
 :root[data-theme="dark"] .theme-toggle__sun { display: grid; }
 :root:not([data-theme="dark"]) .theme-toggle__moon { display: grid; }
 

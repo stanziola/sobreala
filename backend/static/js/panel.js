@@ -1,8 +1,27 @@
-/* Theme switch for the account pages. No dependencies.
+/* The bar menu and the theme switch inside it. No dependencies.
    The same behaviour as the landing site's nav.js, without the mobile menu. */
 (function () {
   "use strict";
 
+  // --- the menu ------------------------------------------------------------
+  // It is a <details>, so it already opens, closes and reaches the keyboard on
+  // its own. This adds the two things a browser does not: Escape, and clicking
+  // somewhere else.
+  var menu = document.querySelector("[data-menu]");
+  if (menu) {
+    document.addEventListener("click", function (e) {
+      if (menu.open && !menu.contains(e.target)) menu.open = false;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && menu.open) {
+        menu.open = false;
+        var button = menu.querySelector("summary");
+        if (button) button.focus();
+      }
+    });
+  }
+
+  // --- the theme -----------------------------------------------------------
   // The head script already set data-theme before the first paint. Here we only
   // handle switching it, remembering the choice, and the reveal animation.
 
@@ -12,27 +31,29 @@
   var THEME_COLOR = { light: "#3166A7", dark: "#245285" };
   if (!themeBtn) return;
 
+  // The name of each mode, from the server, so the Spanish stays in i18n.py.
+  // The row offers the other one; the status announces the one now on.
+  var themeLabel = themeBtn.querySelector("[data-theme-label]");
+  var MODE = { light: themeBtn.dataset.modeLight, dark: themeBtn.dataset.modeDark };
+
   function currentTheme() {
     return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-  }
-
-  function labelFor(theme) {
-    // The button says what it will do, not what is on.
-    return theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
   }
 
   function paintTheme(theme) {
     document.documentElement.dataset.theme = theme;
     if (themeMeta) themeMeta.setAttribute("content", THEME_COLOR[theme]);
-    themeBtn.setAttribute("aria-label", labelFor(theme));
+    // The row says what pressing it will do, not what is on.
+    if (themeLabel) themeLabel.textContent = theme === "dark" ? MODE.light : MODE.dark;
   }
 
-  themeBtn.setAttribute("aria-label", labelFor(currentTheme()));
+  // The server drew the light-mode row; the head script may have chosen dark.
+  if (themeLabel && currentTheme() === "dark") themeLabel.textContent = MODE.light;
 
   themeBtn.addEventListener("click", function () {
     var next = currentTheme() === "dark" ? "light" : "dark";
     try { localStorage.setItem("theme", next); } catch (e) {}
-    if (themeStatus) themeStatus.textContent = next === "dark" ? "Modo oscuro" : "Modo claro";
+    if (themeStatus) themeStatus.textContent = next === "dark" ? MODE.dark : MODE.light;
 
     var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!document.startViewTransition || reduced) {
@@ -63,6 +84,24 @@
    button, and this has to work all the same. */
 (function () {
   "use strict";
+
+  // --- fields the browser may not fill by itself ---------------------------
+  // "Prove it is you" fields — the current password before changing it, and
+  // before turning two-step on or off. An inline script in the page made them
+  // read-only, so the password manager skipped them; here they open at the
+  // first touch, and from that moment the browser offers the saved one like
+  // anywhere else. What it can no longer do is answer for somebody who just
+  // sat down at an open session.
+  Array.prototype.forEach.call(document.querySelectorAll("[data-fill-on-click]"),
+                               function (input) {
+    function open() {
+      input.readOnly = false;
+      input.removeEventListener("pointerdown", open);
+      input.removeEventListener("focus", open);
+    }
+    input.addEventListener("pointerdown", open);
+    input.addEventListener("focus", open);
+  });
 
   // --- show the password ---------------------------------------------------
   Array.prototype.forEach.call(document.querySelectorAll("[data-reveal]"), function (btn) {

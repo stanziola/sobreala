@@ -22,8 +22,8 @@ from ipaddress import ip_address
 from bson import ObjectId
 from bson.errors import InvalidId
 from email_validator import EmailNotValidError, validate_email
-from flask import (Blueprint, current_app, redirect, render_template, request,
-                   session, url_for)
+from flask import (Blueprint, current_app, g, has_request_context, redirect,
+                   render_template, request, session, url_for)
 from markupsafe import Markup
 
 from config import Config
@@ -123,7 +123,18 @@ def current_account() -> dict | None:
     A cookie whose session was closed from another device, or that outlived it,
     is cleared here: it will never be good again and keeping it only delays the
     sign-in screen.
+
+    The answer is kept for the rest of the request. The bar at the top of every
+    page asks for it too, and without this each page would read the account
+    twice and write last_seen_at twice for one visit.
     """
+    if hasattr(g, "_account"):
+        return g._account
+    g._account = _load_account()
+    return g._account
+
+
+def _load_account() -> dict | None:
     doc = current_session()
     if doc is None:
         if session.get(SESSION_KEY):
@@ -135,6 +146,25 @@ def current_account() -> dict | None:
         return None
     sessions.touch(get_db(), doc)
     return account
+
+
+@bp.app_context_processor
+def bar_account():
+    """Who the bar at the top of the page belongs to, if anyone.
+
+    Every template extends base.html, and base.html draws either the menu of a
+    signed-in account or the one with just the theme and the language. Passing
+    it from each route would mean remembering to, on every screen there is.
+
+    It never raises: the error page extends the same base, and a database that
+    is down must not turn a readable error into a blank one.
+    """
+    if not has_request_context():
+        return {}
+    try:
+        return {"bar_account": current_account()}
+    except Exception:  # noqa: BLE001 - the page is worth more than the menu
+        return {"bar_account": None}
 
 
 def sign_in(account: dict, *, remember: bool = True) -> None:
@@ -325,6 +355,24 @@ def send_password_changed(db, account: dict) -> None:
         text=render_template("email/password-changed.txt",
                              name=account["contact_name"], panel=panel),
         purpose=mail_log.PASSWORD_CHANGED,
+        account_id=account["_id"],
+    )
+
+
+def send_two_factor_changed(db, account: dict, *, on: bool) -> None:
+    """Tell the owner that two-step was turned on, or off.
+
+    Both directions matter and for opposite reasons: turned on by somebody
+    else, it locks the owner out of their own account with a phone that is not
+    theirs; turned off, it is the first thing anyone does after getting in.
+    """
+    panel = f"{Config.APP_BASE_URL}{url_for('auth.panel')}"
+    mailer.send(
+        to=account["email"],
+        subject=t("mail_two_step_on_subject" if on else "mail_two_step_off_subject"),
+        html=render_template("email/two-factor.html", on=on, panel=panel),
+        text=render_template("email/two-factor.txt", on=on, panel=panel),
+        purpose=mail_log.TWO_FACTOR,
         account_id=account["_id"],
     )
 
@@ -698,9 +746,11 @@ def login():
                 accounts.touch_login(db, account["_id"])
                 log_auth(db, events.LOGIN, events.OK, email=email_value,
                          account_id=account["_id"])
-                if first_time:
-                    # A failure here cannot keep anyone out of their own
-                    # account: it is a warning, not a gate.
+                if first_time and accounts.wants(account, accounts.NEW_LOGIN):
+                    # The one notice of the four security ones that can be
+                    # turned off, from Configuración → Notificaciones. A failure
+                    # here cannot keep anyone out of their own account: it is a
+                    # warning, not a gate.
                     here = current_session()
                     if here:
                         deliver(db, lambda d, a: send_new_login(d, a, here),
@@ -795,8 +845,20 @@ def login_code():
                            recovery_left=len(account["two_factor"].get("recovery", [])))
 
 
-@bp.route("/salir", methods=["POST"])
+@bp.route("/salir", methods=["GET", "POST"])
 def logout():
+    """Close this device's session. The GET only asks.
+
+    The public site sits on another host and carries none of our tokens, so its
+    "Cerrar sesión" cannot close anything by itself: it lands here and this page
+    holds the form that does. Closing on the GET would also hand the job to
+    every mail scanner and link prefetcher that opens a URL on its own.
+    """
+    if request.method == "GET":
+        if not current_session():
+            return redirect(url_for("auth.login"))
+        return render_template("logout.html")
+
     db = get_db()
     doc = current_session()
     account_id = doc["account_id"] if doc else None
@@ -976,15 +1038,66 @@ def recover_new():
 
 @bp.route("/panel")
 def panel():
+    """What is going to be the graphs of the sends.
+
+    Everything that used to hang off it —devices, password, two-step— lives in
+    Configuración now, so nobody has to look for their settings in two places.
+    """
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
+    return render_template("panel.html", account=account,
+                           confirmed=accounts.is_confirmed(account))
+
+
+# --------------------------------------------------------------- settings
+
+# The four sections, in the order the sidebar lists them.
+SECTIONS = ("cuenta", "seguridad", "notificaciones", "pagos")
+
+
+@bp.route("/configuracion", methods=["GET", "POST"])
+@bp.route("/configuracion/<section>", methods=["GET", "POST"])
+def settings(section: str = "cuenta"):
+    """The account's own settings: one view, one template, four sections.
+
+    They differ in what they draw, not in what they need — each one wants the
+    same account beside the same sidebar — so splitting them into four views
+    would only spread the same six lines over four places.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    if section not in SECTIONS:
+        return redirect(url_for("auth.settings"))
+
+    db = get_db()
+    if request.method == "POST":
+        if section != "notificaciones":
+            return redirect(url_for("auth.settings", section=section))
+        if csrf_ok(request.form.get("csrf_token")):
+            # Only the names models/account.py knows are read. A field naming a
+            # security notice is dropped here rather than written, so no form
+            # —or anything pretending to be one— can turn the alarm off.
+            accounts.set_notifications(db, account["_id"], {
+                name: bool(request.form.get(name)) for name in accounts.NOTICES})
+            log_auth(db, events.SETTINGS, events.OK, email=account["email"],
+                     account_id=account["_id"])
+        else:
+            log_auth(db, events.SETTINGS, events.CSRF_FAILED,
+                     email=account["email"], account_id=account["_id"])
+        return redirect(url_for("auth.settings", section="notificaciones",
+                                guardado=1))
+
     here = current_session()
     return render_template(
-        "panel.html", account=account,
+        "settings.html", section=section, account=account,
         confirmed=accounts.is_confirmed(account),
-        devices=sessions.for_account(get_db(), account["_id"]),
+        plan=accounts.plan_of(account),
         two_step=accounts.two_factor_on(account),
+        notifications={name: accounts.wants(account, name)
+                       for name in accounts.NOTICES},
+        devices=sessions.for_account(db, account["_id"]),
         here=here["_id"] if here else None,
         describe=sessions.describe,
     )
@@ -1035,7 +1148,7 @@ def close_device():
     if not csrf_ok(request.form.get("csrf_token")):
         log_auth(db, events.SESSION_CLOSED, events.CSRF_FAILED,
                  email=account["email"], account_id=account["_id"])
-        return redirect(url_for("auth.panel"))
+        return redirect(url_for("auth.settings", section="seguridad"))
 
     here = current_session()
     wanted = request.form.get("session_id", "")
@@ -1052,7 +1165,7 @@ def close_device():
         if here and target == here["_id"]:
             session.clear()
             return redirect(url_for("auth.login"))
-    return redirect(url_for("auth.panel"))
+    return redirect(url_for("auth.settings", section="seguridad"))
 
 
 # --------------------------------------------------------------- password
@@ -1102,7 +1215,11 @@ def two_factor():
             session.pop(SETUP_KEY, None)
             log_auth(db, events.TWO_FACTOR, events.DISABLED,
                      email=account["email"], account_id=account["_id"])
-            return redirect(url_for("auth.panel", dospasos="off"))
+            # A notice that fails to go out cannot undo a change already made.
+            deliver(db, lambda d, a: send_two_factor_changed(d, a, on=False),
+                    account, kind=events.TWO_FACTOR)
+            return redirect(url_for("auth.settings", section="seguridad",
+                                    dospasos="off"))
         elif action == "regenerate" and on:
             codes = totp.new_recovery_codes()
             accounts.set_recovery_codes(db, account["_id"], totp.hash_all(codes))
@@ -1124,13 +1241,15 @@ def two_factor():
                 session.pop(SETUP_KEY, None)
                 log_auth(db, events.TWO_FACTOR, events.OK,
                          email=account["email"], account_id=account["_id"])
+                deliver(db, lambda d, a: send_two_factor_changed(d, a, on=True),
+                        account, kind=events.TWO_FACTOR)
                 return render_template("two-factor-codes.html", codes=codes)
 
     if not on:
         session[SETUP_KEY] = secret
 
     return render_template(
-        "two-factor.html", errors=errors, on=on, secret=secret,
+        "two-factor.html", errors=errors, on=on, secret=secret, account=account,
         qr=Markup(totp.qr_svg(secret, account["email"])) if not on else None,
         recovery_left=len((account.get("two_factor") or {}).get("recovery", [])))
 
@@ -1184,6 +1303,7 @@ def change_password():
                 # A failed notice cannot undo a password that already changed.
                 deliver(db, send_password_changed, account,
                         kind=events.PASSWORD_CHANGE)
-                return redirect(url_for("auth.panel", cambiada=1))
+                return redirect(url_for("auth.settings", section="seguridad",
+                                        cambiada=1))
 
     return render_template("password.html", errors=errors)

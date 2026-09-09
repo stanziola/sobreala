@@ -31,6 +31,7 @@ WELCOME = "welcome"
 PASSWORD_CHANGED = "password_changed"
 RECOVER = "recover"
 NEW_LOGIN = "new_login"
+TWO_FACTOR = "two_factor"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"
 

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ t('logout_title') }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('logout_title') }}</h1>
+  <p class="lead">{{ t('logout_lead') }}</p>
+
+  {# The public site cannot close a session by itself: it sits on another host
+     and carries none of our tokens. So its button brings people here and this
+     form does it — on POST, which is also what keeps a link prefetcher from
+     signing someone out on their behalf. #}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn" type="submit">{{ t('logout_submit') }}</button>
+  </form>
+
+  <p class="foot"><a href="{{ url_for('auth.panel') }}">{{ t('logout_cancel') }}</a></p>
+</div>
+{% endblock %}

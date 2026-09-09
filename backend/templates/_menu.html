@@ -1,0 +1,68 @@
+{# The one control in the bar.
+
+   Signed in it wears the company's name and holds everything an account can
+   reach; signed out it is three lines with the two things that work without
+   one. A <details>, so it opens and closes with no JavaScript at all —which
+   matters, because "Cerrar sesión" lives inside it— and panel.js only adds
+   Escape and clicking away. #}
+<details class="menu" data-menu>
+  <summary class="menu__button">
+    {% if bar_account %}
+    <span class="menu__who">{{ bar_account.company_name }}</span>
+    {% else %}
+    <span class="menu__bars" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="visually-hidden">{{ t('menu_options') }}</span>
+    {% endif %}
+    <span class="menu__caret" aria-hidden="true">{% include "_icon-caret.svg" %}</span>
+  </summary>
+
+  <div class="menu__panel">
+    {% if bar_account %}
+    <a class="menu__item" href="{{ url_for('auth.settings') }}">
+      <span class="menu__icons">{% include "_icon-gear.svg" %}</span>
+      <span>{{ t('menu_settings') }}</span>
+    </a>
+    {% endif %}
+
+    {# The label says what pressing it will do, not what is on. panel.js keeps
+       it in step; the server draws the light-mode one because that is what a
+       browser with no stored choice paints. #}
+    <button class="menu__item" id="theme-toggle" type="button"
+            data-mode-dark="{{ t('menu_theme') }}"
+            data-mode-light="{{ t('menu_theme_light') }}">
+      <span class="menu__icons">
+        <span class="theme-toggle__sun">{% include "_icon-sun.svg" %}</span>
+        <span class="theme-toggle__moon">{% include "_icon-moon.svg" %}</span>
+      </span>
+      <span data-theme-label>{{ t('menu_theme') }}</span>
+    </button>
+
+    {# Spanish is what there is. English is announced and nothing more: an
+       option that does nothing yet says so instead of pretending. #}
+    <div class="menu__group">
+      <p class="menu__title">{{ t('menu_language') }}</p>
+      <p class="menu__item is-on">
+        <span class="menu__icons">{% include "_icon-check.svg" %}</span>
+        <span>{{ t('menu_language_current') }}</span>
+      </p>
+      <p class="menu__item is-off">
+        <span class="menu__icons"></span>
+        <span>{{ t('menu_language_soon') }}</span>
+      </p>
+    </div>
+
+    {% if bar_account %}
+    <a class="menu__item" href="{{ url_for('auth.panel') }}">
+      <span class="menu__icons">{% include "_icon-chart.svg" %}</span>
+      <span>{{ t('nav_panel') }}</span>
+    </a>
+    <form class="menu__form" method="post" action="{{ url_for('auth.logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="menu__item" type="submit">
+        <span class="menu__icons">{% include "_icon-exit.svg" %}</span>
+        <span>{{ t('nav_logout') }}</span>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</details>

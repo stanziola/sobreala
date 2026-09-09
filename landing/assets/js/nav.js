@@ -67,29 +67,32 @@
   var themeStatus = document.getElementById("theme-status");
   var themeMeta = document.getElementById("theme-color");
   var THEME_COLOR = { light: "#3166A7", dark: "#245285" };
+  // The name of each mode, written by the build so the Spanish stays in
+  // content.py. The row offers the other one; the status announces the one on.
+  var themeLabel = themeBtn && themeBtn.querySelector("[data-theme-label]");
+  var MODE = themeBtn
+    ? { light: themeBtn.dataset.modeLight, dark: themeBtn.dataset.modeDark }
+    : {};
 
   function currentTheme() {
     return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
   }
 
-  function labelFor(theme) {
-    // The button says what it will do, not what is on.
-    return theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
-  }
-
   function paintTheme(theme) {
     document.documentElement.dataset.theme = theme;
     if (themeMeta) themeMeta.setAttribute("content", THEME_COLOR[theme]);
-    if (themeBtn) themeBtn.setAttribute("aria-label", labelFor(theme));
+    // The row says what pressing it will do, not what is on.
+    if (themeLabel) themeLabel.textContent = theme === "dark" ? MODE.light : MODE.dark;
   }
 
   if (themeBtn) {
-    themeBtn.setAttribute("aria-label", labelFor(currentTheme()));
+    // The build drew the light-mode row; the head script may have chosen dark.
+    if (themeLabel && currentTheme() === "dark") themeLabel.textContent = MODE.light;
 
     themeBtn.addEventListener("click", function () {
       var next = currentTheme() === "dark" ? "light" : "dark";
       try { localStorage.setItem("theme", next); } catch (e) {}
-      if (themeStatus) themeStatus.textContent = next === "dark" ? "Modo oscuro" : "Modo claro";
+      if (themeStatus) themeStatus.textContent = next === "dark" ? MODE.dark : MODE.light;
 
       var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (!document.startViewTransition || reduced) {
@@ -184,13 +187,40 @@
 (function () {
   "use strict";
 
+  // It is a <details>, so it already opens, closes and reaches the keyboard on
+  // its own. This adds the two things a browser does not.
+  var menu = document.querySelector("[data-usermenu]");
+  if (menu) {
+    document.addEventListener("click", function (e) {
+      if (menu.open && !menu.contains(e.target)) menu.open = false;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && menu.open) {
+        menu.open = false;
+        var button = menu.querySelector("summary");
+        if (button) button.focus();
+      }
+    });
+  }
+
   var grupo = document.querySelector("[data-account]");
   if (!grupo) return;
   if (!/(^|;\s*)pm_in=1(;|$)/.test(document.cookie)) return;
 
-  var mine = grupo.querySelector("[data-account-mine]");
-  if (!mine) return;
+  // Signed in: the two buttons give way to the account's own face, and the
+  // three rows that need a session appear inside the menu.
   grupo.querySelector("[data-account-in]").hidden = true;
   grupo.querySelector("[data-account-up]").hidden = true;
-  mine.hidden = false;
+  if (!menu) return;
+
+  var bars = menu.querySelector("[data-usermenu-bars]");
+  var me = menu.querySelector("[data-usermenu-me]");
+  var label = menu.querySelector("[data-usermenu-label]");
+  if (bars) bars.hidden = true;
+  // "Mi cuenta" names the button from here on, so the hidden word would only
+  // be read out twice.
+  if (label) label.hidden = true;
+  if (me) me.hidden = false;
+  Array.prototype.forEach.call(menu.querySelectorAll("[data-account-only]"),
+                               function (row) { row.hidden = false; });
 })();

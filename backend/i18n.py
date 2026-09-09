@@ -14,6 +14,29 @@ TEXTS = {
     "nav_logout": "Cerrar sesión",
     "back_to_site": "Volver al sitio",
 
+    # --- the bar menu ------------------------------------------------------
+    # Two faces of the same control: three lines before signing in, the name of
+    # the company after. What hangs from it is the same list either way, minus
+    # the entries that need an account.
+    "menu_options": "Opciones",
+    "menu_account": "Mi cuenta",
+    "menu_settings": "Configuración",
+    "menu_theme": "Modo oscuro",
+    "menu_theme_light": "Modo claro",
+    "menu_language": "Idioma",
+    "menu_language_current": "Español",
+    "menu_language_soon": "Inglés (pronto)",
+
+    # --- signing out from a link -------------------------------------------
+    # The public site cannot close a session by itself —it sits on another host
+    # and carries no token of ours— so its button lands here and this page is
+    # what actually closes it.
+    "logout_title": "¿Cerrar tu sesión?",
+    "logout_lead": "Vas a salir de tu cuenta en este dispositivo. Si la tienes "
+                   "abierta en otros, esos siguen abiertos.",
+    "logout_submit": "Sí, cerrar mi sesión",
+    "logout_cancel": "No, volver al panel",
+
     # --- registration ------------------------------------------------------
     "register_title": "Crea tu cuenta",
     "register_lead": "Con tu cuenta puedes preparar tus contactos y armar campañas. "
@@ -193,11 +216,99 @@ TEXTS = {
     "password_changed_ok": "Listo, tu contraseña quedó cambiada.",
     "panel_password_link": "Cambiar mi contraseña",
 
+    # --- settings ----------------------------------------------------------
+    "settings_title": "Configuración",
+    "settings_section_account": "Cuenta",
+    "settings_section_security": "Seguridad",
+    "settings_section_notifications": "Notificaciones",
+    "settings_section_payments": "Opciones de pago",
+
+    "settings_account_lead": "Los datos con los que abriste tu cuenta.",
+    "settings_account_contact": "Tu nombre",
+    "settings_account_company": "Empresa u organización",
+    "settings_account_email": "Correo de tu cuenta",
+    "settings_account_email_hint": "Aquí te llegan los códigos y los avisos.",
+    "settings_account_email_pending": "Sin confirmar",
+    "settings_account_status": "Estado de tu cuenta",
+    # La misma palabra que la etiqueta corta de la fila; la frase larga que la
+    # explica sigue siendo panel_status_*, que es la que ya se enseñaba.
+    "status_short_registered": "Registrada",
+    "status_short_approved": "Aprobada",
+    "status_short_active": "Activa",
+    "status_short_suspended": "Suspendida",
+    "settings_account_plan": "Tu plan",
+    "settings_account_no_plan": "Sin plan contratado",
+    "settings_account_no_plan_hint": "Puedes preparar tus contactos y armar "
+                                     "campañas sin plan. Para enviarlas de "
+                                     "verdad hace falta uno.",
+    "settings_account_plans": "Ver los planes",
+
+    "settings_security_lead": "Todo lo que decide quién puede entrar a tu "
+                              "cuenta.",
+    "settings_password_row": "Contraseña",
+    "settings_password_desc": "Cámbiala cuando quieras. Al hacerlo cerramos la "
+                              "sesión en los demás dispositivos.",
+    "settings_password_action": "Cambiar",
+    "settings_two_step_desc": "Un código de tu teléfono además de la "
+                              "contraseña, para que saberla no baste.",
+    "settings_two_step_manage": "Administrar",
+    "settings_two_step_turn_on": "Activar",
+
+    "settings_notifications_lead": "Qué correos te mandamos. Los que avisan de "
+                                   "un problema de seguridad van siempre.",
+    "settings_fixed_title": "Estos van siempre",
+    "settings_fixed_lead": "Son los que te enteran de que alguien está "
+                           "entrando a tu cuenta. Poder apagarlos sería poder "
+                           "apagar la alarma, así que no llevan interruptor.",
+    "settings_fixed_codes": "Códigos de confirmación y de recuperación",
+    "settings_fixed_password": "Tu contraseña cambió",
+    "settings_fixed_two_step": "Se activó o se desactivó la verificación en "
+                               "dos pasos",
+    "settings_fixed_tag": "Siempre activo",
+    "settings_choose_title": "Estos los eliges tú",
+    "settings_notice_new_login": "Ingreso desde un dispositivo nuevo",
+    "settings_notice_new_login_desc": "Te avisamos cuando alguien entra a tu "
+                                      "cuenta desde un dispositivo que no "
+                                      "habías usado.",
+    "settings_soon_title": "Cuando empiecen los envíos y los pagos",
+    "settings_soon_lead": "Estas cuatro cosas todavía no existen en Panamails, "
+                          "así que por ahora no te va a llegar nada. Lo que "
+                          "elijas se guarda y se respeta desde el día en que "
+                          "empiecen.",
+    "settings_notice_billing": "Pagos y plan",
+    "settings_notice_billing_desc": "Cobros, renovaciones y cambios de plan.",
+    "settings_notice_imports": "Importación de contactos",
+    "settings_notice_imports_desc": "Cuando termina de subir una lista, con "
+                                    "cuántos contactos entraron y cuántos no.",
+    "settings_notice_campaigns": "Envíos de campañas",
+    "settings_notice_campaigns_desc": "Cuando una campaña termina de enviarse, "
+                                      "o cuando se pausa sola.",
+    "settings_notice_monthly": "Resumen mensual",
+    "settings_notice_monthly_desc": "Una vez al mes: cuánto enviaste, cuánto "
+                                    "abrieron y cuánta cuota te queda.",
+    "settings_notifications_save": "Guardar",
+    "settings_notifications_saved": "Listo, guardamos lo que elegiste.",
+
+    "settings_payments_lead": "Desde dónde te vamos a cobrar el plan cuando "
+                              "contrates uno.",
+    "settings_payments_paypal": "PayPal",
+    "settings_payments_paypal_desc": "Para pagar con tarjeta o con tu cuenta "
+                                     "de PayPal, y para que se renueve solo.",
+    "settings_payments_yappy": "Yappy",
+    "settings_payments_yappy_desc": "Para pagar desde tu banco en Panamá, sin "
+                                    "tarjeta.",
+    "settings_soon_tag": "Próximamente",
+    "settings_payments_hint": "Panamails nunca guarda los datos de tu tarjeta: "
+                              "el pago se hace en la página del proveedor.",
+
     # --- panel -------------------------------------------------------------
     "panel_title": "Tu panel",
     "panel_greeting": "Hola, {name}",
-    "panel_building": "Estamos construyendo el panel. Por ahora solo puedes "
-                      "entrar y salir; pronto podrás subir tus contactos.",
+    "panel_building": "Aquí van a estar las gráficas de tus envíos: cuántos "
+                      "correos salieron, cuántos llegaron y cuántos abrieron. "
+                      "Todavía no hay nada que medir.",
+    "panel_soon_tag": "Próximamente",
+    "panel_settings_link": "Ir a configuración",
     "panel_unconfirmed": "Todavía no confirmas tu correo. Revisa tu bandeja o "
                          "pide otro código.",
     "panel_unconfirmed_action": "Pedir otro código",
@@ -318,6 +429,31 @@ TEXTS = {
                            "así que conviene revisar también el correo con el "
                            "que abriste la cuenta.",
     "mail_password_button": "Entrar al panel",
+
+    # Sent both ways, and one of the messages nobody can turn off: turning
+    # two-step on with a phone that is not the owner's is how an account gets
+    # taken away for good, and turning it off is the first thing anybody does
+    # after getting in.
+    "mail_two_step_on_subject": "Activaste la verificación en dos pasos",
+    "mail_two_step_off_subject": "Desactivaste la verificación en dos pasos",
+    "mail_two_step_on_heading": "Tu cuenta ya pide un segundo paso",
+    "mail_two_step_off_heading": "Tu cuenta dejó de pedir el segundo paso",
+    "mail_two_step_on_body": "Desde ahora, al entrar desde un dispositivo "
+                             "nuevo te vamos a pedir el código de tu app "
+                             "además de la contraseña.",
+    "mail_two_step_off_body": "Desde ahora alcanza con tu contraseña para "
+                              "entrar. También olvidamos los dispositivos que "
+                              "habías marcado como de confianza.",
+    "mail_two_step_ok": "Si fuiste tú, no tienes que hacer nada más.",
+    "mail_two_step_alert_title": "¿No fuiste tú?",
+    "mail_two_step_on_alert": "Alguien con tu contraseña acaba de poner su "
+                              "propio teléfono como segundo paso, y con eso te "
+                              "puede dejar afuera de tu cuenta. Escríbenos de "
+                              "inmediato a panamails.info@gmail.com.",
+    "mail_two_step_off_alert": "Quien lo hizo conoce tu contraseña. Cámbiala "
+                               "ahora mismo y escríbenos a "
+                               "panamails.info@gmail.com.",
+    "mail_two_step_button": "Entrar a mi cuenta",
 
     # Sent when someone tries to register with an address that already has an
     # account. The screen must not reveal this, so the owner is told by email.

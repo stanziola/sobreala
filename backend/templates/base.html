@@ -38,16 +38,13 @@
 
   <div class="bar__actions">
     {% block bar_actions %}{% endblock %}
-    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Cambiar de tema">
-      <span class="theme-toggle__sun">{% include "_icon-sun.svg" %}</span>
-      <span class="theme-toggle__moon">{% include "_icon-moon.svg" %}</span>
-    </button>
+    {% include "_menu.html" %}
   </div>
 </header>
 
 <span class="visually-hidden" role="status" id="theme-status"></span>
 
-<main class="wrap">
+<main class="wrap {% block wrap_class %}{% endblock %}">
 {% block content %}{% endblock %}
 </main>
 

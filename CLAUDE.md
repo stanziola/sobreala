@@ -146,6 +146,22 @@ dígitos que el teléfono, así que ese sí va tal cual y no como hash—, el ú
 intervalo usado, para que un código no sirva dos veces, y los **hashes** de ocho
 códigos de respaldo de un solo uso. Activarla y desactivarla piden la
 contraseña: sin eso, quien encuentre una sesión abierta se queda con la cuenta.
+Las dos cosas se avisan por correo.
+
+Los campos donde se pide la contraseña para probar quién eres —cambiarla, y
+activar o desactivar los dos pasos— nacen de **solo lectura** y se liberan al
+primer clic. El gestor de contraseñas del navegador no rellena lo que no se
+puede escribir, y así no contesta él por quien acaba de sentarse frente a una
+sesión ajena. Sin JavaScript el campo funciona como siempre.
+
+**`notifications` guarda qué correos quiere recibir la cuenta**, una clave por
+aviso. Lo que no esté escrito vale «sí»: una cuenta que nunca abrió la pantalla
+recibe todo. Solo están ahí los avisos de actividad —`new_login`, `billing`,
+`imports`, `campaigns`, `monthly`—. Los de seguridad **no tienen clave y no se
+pueden apagar**: el código de confirmación, el de recuperación, la contraseña
+cambiada y el doble factor activado o desactivado son los que enteran a alguien
+de que otro está entrando a su cuenta, y `set_notifications()` descarta
+cualquier campo del formulario que no sea uno de los cinco de arriba.
 
 ### `trusted_devices`
 Dispositivos que ya respondieron el código una vez y no tienen que volver a
@@ -309,6 +325,27 @@ habilitado. Todo HTML queda guardado y revisable desde el admin.
 Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 
 ---
+
+## Panel del cliente
+
+El panel (`/panel`) es la pantalla de las gráficas de envíos; hoy solo dice
+«próximamente», porque todavía no hay nada que medir. Todo lo demás vive en
+**`/configuracion`**, con cuatro secciones: **Cuenta** (datos, estado y plan),
+**Seguridad** (contraseña, dos pasos y dispositivos conectados),
+**Notificaciones** y **Opciones de pago** (PayPal y Yappy, por construir).
+
+La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
+las mismas cinco cosas en el sitio público y en el panel: configuración, modo,
+idioma, panel y cerrar sesión. Sin sesión el mismo control es un botón de tres
+líneas con las dos que sirven sin cuenta.
+
+**El idioma está anunciado, no traducido.** El menú enseña «Español» y «Inglés
+(pronto)»; el inglés se hará cuando haya a quién dárselo.
+
+El sitio público está en otro dominio y no lleva ningún testigo del panel, así
+que su «Cerrar sesión» no puede cerrar nada: lleva a `GET /salir`, que solo
+pregunta. Lo que cierra es el POST, y así ningún escáner de correo ni prefetch
+saca a nadie de su cuenta abriendo un enlace.
 
 ## Panel de administración
 

@@ -115,6 +115,54 @@ def touch_login(db, account_id) -> None:
     db.accounts.update_one({"_id": account_id}, {"$set": {"last_login_at": now()}})
 
 
+# ---------------------------------------------------------------- notifications
+
+# The messages an account can choose not to receive. Security notices are NOT
+# here on purpose: the confirmation code, the recovery code, "your password
+# changed" and "two-step was turned on or off" are what warns somebody that
+# another person is inside their account, and a switch for them would be a
+# switch for turning the alarm off.
+NEW_LOGIN = "new_login"
+BILLING = "billing"
+IMPORTS = "imports"
+CAMPAIGNS = "campaigns"
+MONTHLY = "monthly"
+NOTICES = (NEW_LOGIN, BILLING, IMPORTS, CAMPAIGNS, MONTHLY)
+
+
+def wants(account: dict[str, Any] | None, notice: str) -> bool:
+    """Whether this account still wants that message.
+
+    Anything not written counts as yes: an account that never opened the screen
+    —every account there is today— keeps getting everything, which is the safe
+    way round for a preference nobody has expressed.
+    """
+    return (account or {}).get("notifications", {}).get(notice, True) is not False
+
+
+def set_notifications(db, account_id, wanted: dict[str, bool]) -> None:
+    """Write the whole set from what the form said.
+
+    Only the names this module knows are written. A form field for anything
+    else —a security notice, say— is dropped here rather than stored, so no
+    request can invent a preference that turns one of them off.
+    """
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "notifications": {name: bool(wanted.get(name)) for name in NOTICES},
+        "updated_at": now(),
+    }})
+
+
+def plan_of(account: dict[str, Any] | None) -> str | None:
+    """The plan this account pays for, or None while it pays for none.
+
+    Nothing writes this field yet —billing is not built— so today it answers
+    None for everybody, and the screen says so in words instead of leaving a
+    blank where a plan should be.
+    """
+    return (account or {}).get("plan") or None
+
+
 # ------------------------------------------------------- two-step verification
 
 def two_factor_on(account: dict[str, Any] | None) -> bool:

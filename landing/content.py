@@ -53,7 +53,18 @@ PANEL = {
     "login_label": "Ingresar",
     "register_label": "Registrarse",
     # Se enseña en lugar de los dos anteriores cuando el panel dejó su migaja.
-    "account_label": "Mi panel",
+    "account_label": "Mi cuenta",
+    # El menú de la barra. Sin sesión solo se ven el modo y el idioma; con
+    # sesión aparecen además las tres que necesitan una cuenta.
+    "options_label": "Opciones",
+    "settings_label": "Configuración",
+    "panel_label": "Panel",
+    "logout_label": "Cerrar sesión",
+    "theme_dark": "Modo oscuro",
+    "theme_light": "Modo claro",
+    "language_label": "Idioma",
+    "language_current": "Español",
+    "language_soon": "Inglés (pronto)",
 }
 
 CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}

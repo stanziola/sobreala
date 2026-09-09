@@ -71,7 +71,7 @@ def test_two_devices_can_be_signed_in_at_once(client, database, outbox):
     assert computadora.get("/panel").status_code == 200
 
 
-def test_the_panel_lists_the_devices(client, database, outbox):
+def test_the_settings_screen_lists_the_devices(client, database, outbox):
     register(client)
     navegador = otro(client)
     navegador.get("/entrar")
@@ -82,7 +82,7 @@ def test_the_panel_lists_the_devices(client, database, outbox):
         "password": "Contrasena-Larga1", "remember": "1",
     }, headers={"User-Agent": "Mozilla/5.0 (iPhone) AppleWebKit Safari/605.1"})
 
-    body = navegador.get("/panel").get_data(as_text=True)
+    body = navegador.get("/configuracion/seguridad").get_data(as_text=True)
     assert "Tus dispositivos" in body
     assert "Safari en iPhone" in body
     assert "Este dispositivo" in body

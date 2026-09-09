@@ -1,0 +1,13 @@
+{{ t('mail_two_step_on_heading') if on else t('mail_two_step_off_heading') }}
+
+{{ t('mail_two_step_on_body') if on else t('mail_two_step_off_body') }}
+
+{{ t('mail_two_step_ok') }}
+
+{{ panel }}
+
+{{ t('mail_two_step_alert_title') }}
+{{ t('mail_two_step_on_alert') if on else t('mail_two_step_off_alert') }}
+
+-- 
+{{ t('brand') }}

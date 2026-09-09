@@ -56,13 +56,7 @@
   </g>
 </svg></span>
       <span class="brand__name">Panamails</span>
-    </a>
-
-    <div class="header-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Cambiar de tema">
-        <span class="theme-toggle__sun"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></span>
-        <span class="theme-toggle__moon"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 14.4A8.8 8.8 0 0 1 9.6 3.5a8.8 8.8 0 1 0 10.9 10.9Z"/></svg></span>
-      </button>
+    </a><div class="header-actions">
       <button class="nav-toggle" id="nav-toggle" type="button"
             aria-expanded="false" aria-controls="site-nav">
       <span class="nav-toggle__bars" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -101,10 +95,49 @@
            href="https://panel.panamails.com/entrar">Ingresar</a>
         <a class="btn btn--account btn--account-up" data-account-up
            href="https://panel.panamails.com/registro">Registrarse</a>
-        <a class="btn btn--account btn--account-in btn--account-mine" data-account-mine
-           href="https://panel.panamails.com/panel" hidden>
-<svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg><span>Mi panel</span></a>
-      </div>
+      </div><details class="usermenu" data-usermenu>
+        <summary class="usermenu__button">
+          <span class="usermenu__bars" data-usermenu-bars aria-hidden="true">
+            <span></span><span></span><span></span></span>
+          <span class="usermenu__me" data-usermenu-me hidden>
+<svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg><span>Mi cuenta</span></span>
+          <span class="visually-hidden usermenu__label" data-usermenu-label>Opciones</span>
+          <span class="usermenu__caret" aria-hidden="true">
+<svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9.5 12 15.5 18 9.5"/></svg></span>
+        </summary>
+
+        <div class="usermenu__panel">
+          <a class="usermenu__item" data-account-only hidden
+             href="https://panel.panamails.com/configuracion">
+            <span class="usermenu__icons"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.1-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.11a1.7 1.7 0 0 0 1.56-1.1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.11a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.88V9c.22.62.8 1.03 1.46 1.03H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49 1.03Z"/></svg></span>
+            <span>Configuración</span></a>
+
+          <button class="usermenu__item" id="theme-toggle" type="button"
+                  data-mode-dark="Modo oscuro"
+                  data-mode-light="Modo claro">
+            <span class="usermenu__icons">
+              <span class="theme-toggle__sun"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></span>
+              <span class="theme-toggle__moon"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 14.4A8.8 8.8 0 0 1 9.6 3.5a8.8 8.8 0 1 0 10.9 10.9Z"/></svg></span>
+            </span>
+            <span data-theme-label>Modo oscuro</span></button><div class="usermenu__group">
+            <p class="usermenu__title">Idioma</p>
+            <p class="usermenu__item is-on">
+              <span class="usermenu__icons"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+              <span>Español</span></p>
+            <p class="usermenu__item is-off">
+              <span class="usermenu__icons"></span>
+              <span>Inglés (pronto)</span></p>
+          </div>
+
+          <a class="usermenu__item" data-account-only hidden
+             href="https://panel.panamails.com/panel">
+            <span class="usermenu__icons"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 20v-6M12.7 20V8.5M17.4 20v-9"/></svg></span>
+            <span>Panel</span></a><a class="usermenu__item" data-account-only hidden
+             href="https://panel.panamails.com/salir">
+            <span class="usermenu__icons"><svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.5 20H6a1.8 1.8 0 0 1-1.8-1.8V5.8A1.8 1.8 0 0 1 6 4h8.5"/><path d="m18.5 15.5 3.5-3.5-3.5-3.5"/><path d="M22 12h-11"/></svg></span>
+            <span>Cerrar sesión</span></a>
+        </div>
+      </details>
     </nav>
   </div>
 </header>

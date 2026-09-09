@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}{{ t('settings_title') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{# A row: what it is on the left, what you can do about it on the right. Every
+   section is made of these, which is what keeps four different subjects
+   reading as one screen. #}
+{% macro row(title, desc, id='') %}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title"{% if id %} id="{{ id }}"{% endif %}>{{ title }}</h3>
+    {% if desc %}<p class="setting__desc">{{ desc }}</p>{% endif %}
+  </div>
+  <div class="setting__action">{{ caller() }}</div>
+</div>
+{% endmacro %}
+
+{% macro toggle(name, title, desc, on) %}
+{% call row(title, desc, id='n-' + name) %}
+<label class="switch">
+  <input type="checkbox" name="{{ name }}" aria-labelledby="n-{{ name }}"
+         {% if on %}checked{% endif %}>
+  <span class="switch__track"><span class="switch__knob"></span></span>
+</label>
+{% endcall %}
+{% endmacro %}
+
+{% block content %}
+<h1 class="settings__heading">{{ t('settings_title') }}</h1>
+
+<div class="settings">
+  {# The sections, in the order they are listed. The slugs are the URLs; the
+     Spanish beside them comes from i18n like everywhere else. #}
+  {% set tabs = [
+    ('cuenta', 'settings_section_account'),
+    ('seguridad', 'settings_section_security'),
+    ('notificaciones', 'settings_section_notifications'),
+    ('pagos', 'settings_section_payments')] %}
+
+  <nav class="settings__nav" aria-label="{{ t('settings_title') }}">
+    {% for slug, label in tabs %}
+    <a class="settings__tab{% if slug == section %} is-current{% endif %}"
+       href="{{ url_for('auth.settings', section=slug) }}"
+       {%- if slug == section %} aria-current="page"{% endif %}>{{ t(label) }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="settings__pane">
+
+    {# ------------------------------------------------------------ cuenta #}
+    {% if section == 'cuenta' %}
+    <h2 class="settings__title">{{ t('settings_section_account') }}</h2>
+    <p class="settings__lead">{{ t('settings_account_lead') }}</p>
+
+    {% call row(t('settings_account_contact'), '') %}
+    <span class="setting__value">{{ account.contact_name }}</span>
+    {% endcall %}
+
+    {% call row(t('settings_account_company'), '') %}
+    <span class="setting__value">{{ account.company_name }}</span>
+    {% endcall %}
+
+    {% call row(t('settings_account_email'), t('settings_account_email_hint')) %}
+    <span class="setting__value">{{ account.email }}</span>
+    {% if not confirmed %}<span class="tag tag--warn">{{ t('settings_account_email_pending') }}</span>{% endif %}
+    {% endcall %}
+
+    {% call row(t('settings_account_status'), t('panel_status_' + account.status)) %}
+    <span class="tag tag--quiet">{{ t('status_short_' + account.status) }}</span>
+    {% endcall %}
+
+    {# Nada escribe todavía el campo del plan, así que hoy todas las cuentas
+       caen en la rama de abajo. Dicho con palabras y no con un espacio en
+       blanco donde debería ir un plan. #}
+    {% call row(t('settings_account_plan'),
+                '' if plan else t('settings_account_no_plan_hint')) %}
+    {% if plan %}
+    <span class="setting__value">{{ plan }}</span>
+    {% else %}
+    <span class="setting__value setting__value--muted">{{ t('settings_account_no_plan') }}</span>
+    <a class="btn btn--small btn--outline" href="{{ site_url }}/precios/">{{ t('settings_account_plans') }}</a>
+    {% endif %}
+    {% endcall %}
+
+    {# --------------------------------------------------------- seguridad #}
+    {% elif section == 'seguridad' %}
+    <h2 class="settings__title">{{ t('settings_section_security') }}</h2>
+    <p class="settings__lead">{{ t('settings_security_lead') }}</p>
+
+    {% if request.args.get('cambiada') %}
+    <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
+    {% endif %}
+    {% if request.args.get('dospasos') == 'off' %}
+    <p class="notice notice--ok">{{ t('two_step_turned_off') }}</p>
+    {% endif %}
+
+    {% call row(t('settings_password_row'), t('settings_password_desc')) %}
+    <a class="btn btn--small btn--outline"
+       href="{{ url_for('auth.change_password') }}">{{ t('settings_password_action') }}</a>
+    {% endcall %}
+
+    {% call row(t('two_step_title'), t('settings_two_step_desc')) %}
+    <span class="tag {{ 'tag--on' if two_step else 'tag--quiet' }}">
+      {{ t('panel_two_step_on') if two_step else t('panel_two_step_off') }}</span>
+    <a class="btn btn--small btn--outline" href="{{ url_for('auth.two_factor') }}">
+      {{ t('settings_two_step_manage') if two_step else t('settings_two_step_turn_on') }}</a>
+    {% endcall %}
+
+    <h3 class="settings__subtitle">{{ t('devices_title') }}</h3>
+    <p class="settings__lead">{{ t('devices_lead') }}</p>
+
+    <ul class="devices">
+      {% for device in devices %}
+      {% set who = describe(device.user_agent) %}
+      <li class="device">
+        <div>
+          <p class="device__name">
+            {% if who.browser and who.system %}
+              {{ t('device_on', browser=who.browser, system=who.system) }}
+            {% elif who.browser or who.system %}
+              {{ who.browser or who.system }}
+            {% else %}
+              {{ t('device_unknown') }}
+            {% endif %}
+            {% if device._id == here %}<span class="tag">{{ t('device_here') }}</span>{% endif %}
+          </p>
+          <p class="device__meta">{{ t('device_seen', when=device.last_seen_at|ago) }}
+            · {{ t('device_since', when=device.created_at|ago) }} · {{ device.ip }}</p>
+        </div>
+        {# Closing the device in use is signing out, and the route treats it so. #}
+        <form method="post" action="{{ url_for('auth.close_device') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="session_id" value="{{ device._id }}">
+          <button class="btn btn--small btn--outline" type="submit">{{ t('device_close') }}</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+
+    {% if devices|length > 1 %}
+    <form method="post" action="{{ url_for('auth.close_device') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="session_id" value="otras">
+      <button class="btn btn--small btn--outline" type="submit">{{ t('device_close_others') }}</button>
+    </form>
+    {% else %}
+    <p class="hint">{{ t('device_alone') }}</p>
+    {% endif %}
+
+    {# ---------------------------------------------------- notificaciones #}
+    {% elif section == 'notificaciones' %}
+    <h2 class="settings__title">{{ t('settings_section_notifications') }}</h2>
+    <p class="settings__lead">{{ t('settings_notifications_lead') }}</p>
+
+    {% if request.args.get('guardado') %}
+    <p class="notice notice--ok">{{ t('settings_notifications_saved') }}</p>
+    {% endif %}
+
+    {# Sin interruptor y dicho por qué. Estos cuatro son los que avisan de que
+       alguien está entrando a una cuenta ajena: apagarlos sería apagar la
+       alarma. El servidor tampoco los lee del formulario. #}
+    <h3 class="settings__subtitle">{{ t('settings_fixed_title') }}</h3>
+    <p class="settings__lead">{{ t('settings_fixed_lead') }}</p>
+
+    <ul class="fixed">
+      {% for label in [t('settings_fixed_codes'), t('settings_fixed_password'),
+                       t('settings_fixed_two_step')] %}
+      <li class="fixed__item">
+        <span class="fixed__icon">{% include "_icon-lock.svg" %}</span>
+        <span>{{ label }}</span>
+        <span class="tag tag--quiet">{{ t('settings_fixed_tag') }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <form method="post" action="{{ url_for('auth.settings', section='notificaciones') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <h3 class="settings__subtitle">{{ t('settings_choose_title') }}</h3>
+      {{ toggle('new_login', t('settings_notice_new_login'),
+                t('settings_notice_new_login_desc'), notifications.new_login) }}
+
+      {# Se enseñan desde ya, agrupadas y dicho con claridad que todavía no
+         hay nada que avisar: lo que se elija aquí se guarda y se respeta el
+         día que esas partes existan. #}
+      <h3 class="settings__subtitle">{{ t('settings_soon_title') }}</h3>
+      <p class="settings__lead">{{ t('settings_soon_lead') }}</p>
+
+      {{ toggle('billing', t('settings_notice_billing'),
+                t('settings_notice_billing_desc'), notifications.billing) }}
+      {{ toggle('imports', t('settings_notice_imports'),
+                t('settings_notice_imports_desc'), notifications.imports) }}
+      {{ toggle('campaigns', t('settings_notice_campaigns'),
+                t('settings_notice_campaigns_desc'), notifications.campaigns) }}
+      {{ toggle('monthly', t('settings_notice_monthly'),
+                t('settings_notice_monthly_desc'), notifications.monthly) }}
+
+      <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
+    </form>
+
+    {# ------------------------------------------------------------- pagos #}
+    {% elif section == 'pagos' %}
+    <h2 class="settings__title">{{ t('settings_section_payments') }}</h2>
+    <p class="settings__lead">{{ t('settings_payments_lead') }}</p>
+
+    {% call row(t('settings_payments_paypal'), t('settings_payments_paypal_desc')) %}
+    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
+    {% endcall %}
+
+    {% call row(t('settings_payments_yappy'), t('settings_payments_yappy_desc')) %}
+    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
+    {% endcall %}
+
+    <p class="hint">{{ t('settings_payments_hint') }}</p>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
