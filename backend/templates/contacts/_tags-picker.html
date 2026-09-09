@@ -1,0 +1,24 @@
+{# Las etiquetas se marcan, no se escriben.
+
+   Crear una desde aquí es lo que acababa dejando «Socios» y «socios» como dos
+   etiquetas distintas, así que se crean en su propia pantalla y estos dos
+   formularios solo eligen entre las que existen. El servidor vuelve a filtrar
+   por el registro de la cuenta: un formulario se puede escribir a mano. #}
+<fieldset class="fieldset">
+  <legend>{{ t('tags_legend') }}</legend>
+
+  {% if tags %}
+  <p class="hint">{{ t('tags_pick_hint') }}</p>
+  <div class="picker">
+    {% for name in tags %}
+    <label class="picker__item">
+      <input type="checkbox" name="tags" value="{{ name }}">
+      <span>{{ name }}</span>
+    </label>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="hint">{{ t('tags_none_yet') }}
+    <a href="{{ url_for('contacts.tags') }}">{{ t('tags_create_first') }}</a></p>
+  {% endif %}
+</fieldset>

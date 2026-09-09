@@ -1,0 +1,59 @@
+{% extends "contacts/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('tags_title') }}</h2>
+<p class="settings__lead">{{ t('tags_lead') }}</p>
+
+{% if request.args.get('guardado') %}
+<p class="notice notice--ok">{{ t('tags_saved') }}</p>
+{% endif %}
+{% if request.args.get('error') == 'etiqueta' %}
+<p class="notice">{{ t('error_tag') }}</p>
+{% endif %}
+
+{% if tags %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for name in tags %}
+      <tr>
+        <td><span class="tag tag--quiet">{{ name }}</span></td>
+        <td class="table__quiet">
+          {# Contadas de una vez para toda la pantalla, no una consulta por
+             etiqueta. Una recién creada sale aquí con cero, que es el caso que
+             antes no aparecía en ningún lado. #}
+          {% set n = counts.get(name, 0) %}
+          {% if n == 0 %}{{ t('tags_count_none') }}
+          {% elif n == 1 %}{{ t('tags_count_one') }}
+          {% else %}{{ t('tags_count', n=n) }}{% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('contacts.drop_tag') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="etiqueta" value="{{ name }}">
+            <button class="btn btn--small btn--outline" type="submit">{{ t('tags_delete') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="hint">{{ t('tags_delete_hint') }}</p>
+{% else %}
+<p class="lead">{{ t('tags_empty') }}</p>
+{% endif %}
+
+<h3 class="settings__subtitle">{{ t('tags_new') }}</h3>
+{% if room > 0 %}
+<form method="post" action="{{ url_for('contacts.add_tag') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="etiqueta">{{ t('tags_name') }}</label>
+  <input id="etiqueta" name="etiqueta" type="text" autocomplete="off"
+         maxlength="40" required>
+  <p class="hint">{{ t('tags_room', n=room) }}</p>
+  <button class="btn" type="submit">{{ t('tags_add') }}</button>
+</form>
+{% else %}
+<p class="hint">{{ t('tags_full') }}</p>
+{% endif %}
+{% endblock %}

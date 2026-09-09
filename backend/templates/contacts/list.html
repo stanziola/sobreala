@@ -5,14 +5,16 @@
 {% if request.args.get('guardado') %}
 <p class="notice notice--ok">{{ t('contacts_saved') }}</p>
 {% endif %}
-{% if request.args.get('error') == 'correo' %}
-<p class="notice">{{ t('error_contact_email') }}</p>
-{% elif request.args.get('error') == 'lleno' %}
-<p class="notice">{{ t('error_contacts_full') }}</p>
-{% endif %}
 
-{# Buscar y filtrar por etiqueta, en un GET: la dirección de la página guarda
-   lo que estás mirando y se puede compartir o recargar. #}
+{# Las dos formas de meter contactos, arriba y a la vista. Cada una tiene su
+   pantalla; desde aquí solo se llega. #}
+<div class="row">
+  <a class="btn" href="{{ url_for('contacts.add_one') }}">{{ t('contacts_add_title') }}</a>
+  <a class="btn btn--outline" href="{{ url_for('contacts.upload') }}">{{ t('contacts_import_action') }}</a>
+</div>
+
+{# Buscar y filtrar, en un GET: la dirección de la página guarda lo que estás
+   mirando y se puede compartir o recargar. #}
 <form class="filters" method="get" action="{{ url_for('contacts.index') }}">
   <label class="visually-hidden" for="q">{{ t('contacts_search') }}</label>
   <input id="q" name="q" type="search" value="{{ search }}"
@@ -29,15 +31,6 @@
   <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_search_action') }}</button>
 </form>
 
-{% if tag %}
-<form class="filters" method="post" action="{{ url_for('contacts.drop_tag') }}">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="etiqueta" value="{{ tag }}">
-  <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_tag_drop') }}</button>
-  <span class="hint">{{ t('contacts_tag_drop_hint') }}</span>
-</form>
-{% endif %}
-
 {% if rows %}
 <p class="hint">{{ t('contacts_showing', n=rows|length, total=matching) }}</p>
 
@@ -48,25 +41,35 @@
         <th>{{ t('contacts_col_email') }}</th>
         <th>{{ t('contacts_col_name') }}</th>
         <th>{{ t('contacts_col_tags') }}</th>
+        <th>{{ t('contacts_col_how') }}</th>
         <th>{{ t('contacts_col_added') }}</th>
+        <th>{{ t('contacts_col_status') }}</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {% for row in rows %}
       <tr>
-        <td>
-          {{ row.email }}
-          {# La supresión se preguntó una sola vez para toda la página. #}
-          {% if row.email_normalized in blocked %}
-          <span class="tag tag--warn">{{ t('contacts_blocked_tag') }}</span>
-          {% endif %}
-        </td>
+        <td>{{ row.email }}</td>
         <td>{{ row.name or '' }}</td>
         <td>
           {% for name in row.tags %}<span class="tag tag--quiet">{{ name }}</span>{% endfor %}
         </td>
+        <td class="table__quiet">
+          {# Los que entraron antes de que este campo existiera no lo tienen, y
+             una raya es mejor que inventar por dónde entraron. #}
+          {{ t('contacts_how_' + row.added_by) if row.added_by else '—' }}</td>
         <td class="table__quiet">{{ row.created_at|ago }}</td>
+        <td>
+          {# La supresión se preguntó una sola vez para toda la página, y no se
+             guarda en el contacto: así no hay dos sitios que puedan decir cosas
+             distintas sobre lo mismo. #}
+          {% if row.email_normalized in blocked %}
+          <span class="tag tag--warn">{{ t('contacts_status_blocked') }}</span>
+          {% else %}
+          <span class="tag tag--quiet">{{ t('contacts_status_active') }}</span>
+          {% endif %}
+        </td>
         <td>
           <form method="post" action="{{ url_for('contacts.remove') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -80,6 +83,7 @@
   </table>
 </div>
 
+<p class="hint">{{ t('contacts_status_blocked_hint') }}</p>
 <p class="hint">{{ t('contacts_delete_hint') }}</p>
 
 {% if matching > per_page %}
@@ -99,27 +103,5 @@
 
 {% else %}
 <p class="lead">{{ t('contacts_empty_search') if search or tag else t('contacts_empty') }}</p>
-<a class="btn" href="{{ url_for('contacts.upload') }}">{{ t('contacts_import_action') }}</a>
 {% endif %}
-
-<h3 class="settings__subtitle">{{ t('contacts_add_title') }}</h3>
-<p class="settings__lead">{{ t('contacts_add_lead') }}</p>
-
-<form method="post" action="{{ url_for('contacts.add_one') }}">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-  <label for="email">{{ t('contacts_add_email') }}</label>
-  <input id="email" name="email" type="email" autocomplete="off" required>
-
-  <label for="name">{{ t('contacts_add_name') }}</label>
-  <input id="name" name="name" type="text" autocomplete="off">
-
-  <label for="tags">{{ t('contacts_add_tags') }}</label>
-  <input id="tags" name="tags" type="text" autocomplete="off"
-         value="{{ tag }}">
-
-  {% include "contacts/_consent.html" %}
-
-  <button class="btn" type="submit">{{ t('contacts_add_submit') }}</button>
-</form>
 {% endblock %}

@@ -156,12 +156,9 @@
     <p class="notice notice--ok">{{ t('settings_notifications_saved') }}</p>
     {% endif %}
 
-    {# Sin interruptor y dicho por qué. Estos cuatro son los que avisan de que
-       alguien está entrando a una cuenta ajena: apagarlos sería apagar la
-       alarma. El servidor tampoco los lee del formulario. #}
-    <h3 class="settings__subtitle">{{ t('settings_fixed_title') }}</h3>
-    <p class="settings__lead">{{ t('settings_fixed_lead') }}</p>
-
+    {# Sin título encima: que estos no se pueden apagar ya lo dice la frase de
+       arriba y lo repite el candado con su etiqueta en cada fila. Decirlo una
+       tercera vez con un encabezado sonaba a explicación de más. #}
     <ul class="fixed">
       {% for label in [t('settings_fixed_codes'), t('settings_fixed_password'),
                        t('settings_fixed_two_step')] %}
@@ -176,7 +173,6 @@
     <form method="post" action="{{ url_for('auth.settings', section='notificaciones') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-      <h3 class="settings__subtitle">{{ t('settings_choose_title') }}</h3>
       {{ toggle('new_login', t('settings_notice_new_login'),
                 t('settings_notice_new_login_desc'), notifications.new_login) }}
 

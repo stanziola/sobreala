@@ -59,6 +59,7 @@ def create(db, *, company_name: str, contact_name: str, email: str,
         "email_confirmed_at": None,
         "status": REGISTERED,
         "role": CLIENT,
+        "contact_tags": [],
         "created_at": moment,
         "updated_at": moment,
         "last_login_at": None,
@@ -126,6 +127,58 @@ def confirm_email(db, account_id) -> bool:
 
 def touch_login(db, account_id) -> None:
     db.accounts.update_one({"_id": account_id}, {"$set": {"last_login_at": now()}})
+
+
+# ------------------------------------------------------------- contact tags
+
+# El registro de qué etiquetas existen en esta cuenta. Vive aquí y no en cada
+# contacto porque una etiqueta recién creada todavía no tiene a nadie dentro, y
+# preguntándole a los contactos no aparecería hasta que lo tuviera.
+#
+# Quién lleva qué sigue siendo el arreglo del contacto. Esto solo dice cuáles
+# se pueden asignar, que es lo que impide que se escriban a mano y acaben
+# «Socios» y «socios» como dos.
+TAG_LENGTH = 40
+TAGS_MAX = 30
+
+
+def clean_tag(name: str) -> str:
+    """Un nombre de etiqueta, sin espacios de más y con un largo razonable."""
+    return " ".join((name or "").split())[:TAG_LENGTH]
+
+
+def tags_of(account: dict[str, Any] | None) -> list[str]:
+    return list((account or {}).get("contact_tags") or [])
+
+
+def add_tag(db, account_id, name: str) -> bool:
+    """Crear una etiqueta. False si el nombre está vacío, repetido o si ya no
+    caben más.
+
+    La comparación es sin mayúsculas, que es justamente lo que evita el par
+    «Socios» y «socios».
+    """
+    tag = clean_tag(name)
+    if not tag:
+        return False
+    account = by_id(db, account_id)
+    existing = tags_of(account)
+    if len(existing) >= TAGS_MAX:
+        return False
+    if any(tag.lower() == other.lower() for other in existing):
+        return False
+    db.accounts.update_one({"_id": account_id},
+                           {"$push": {"contact_tags": tag},
+                            "$set": {"updated_at": now()}})
+    return True
+
+
+def remove_tag(db, account_id, name: str) -> None:
+    """Sacar la etiqueta del registro. Quitársela a los contactos que la
+    llevaban es cosa de models/contact.py, y el que borra hace las dos."""
+    db.accounts.update_one({"_id": account_id},
+                           {"$pull": {"contact_tags": name},
+                            "$set": {"updated_at": now()}})
 
 
 # ------------------------------------------------------------- administration

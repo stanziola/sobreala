@@ -56,18 +56,27 @@
     </button>
 
     {# Spanish is what there is. English is announced and nothing more: an
-       option that does nothing yet says so instead of pretending. #}
-    <div class="menu__group">
-      <p class="menu__title">{{ t('menu_language') }}</p>
-      <p class="menu__item is-on">
-        <span class="menu__icons">{% include "_icon-check.svg" %}</span>
-        <span>{{ t('menu_language_current') }}</span>
-      </p>
-      <p class="menu__item is-off">
-        <span class="menu__icons"></span>
-        <span>{{ t('menu_language_soon') }}</span>
-      </p>
-    </div>
+       option that does nothing yet says so instead of pretending. Un <details>
+       dentro del <details> que ya es el menú, así que abre y cierra sin
+       JavaScript igual que el de fuera. #}
+    <details class="menu__sub menu__group">
+      <summary class="menu__item">
+        <span class="menu__icons">{% include "_icon-globe.svg" %}</span>
+        <span>{{ t('menu_language') }}</span>
+        <span class="menu__value">{{ t('menu_language_current') }}</span>
+        <span class="menu__caret" aria-hidden="true">{% include "_icon-caret.svg" %}</span>
+      </summary>
+      <div class="menu__subpanel">
+        <p class="menu__item is-on">
+          <span class="menu__icons">{% include "_icon-check.svg" %}</span>
+          <span>{{ t('menu_language_current') }}</span>
+        </p>
+        <p class="menu__item is-off">
+          <span class="menu__icons"></span>
+          <span>{{ t('menu_language_soon') }}</span>
+        </p>
+      </div>
+    </details>
 
     {% if bar_account %}
     <form class="menu__form menu__group" method="post" action="{{ url_for('auth.logout') }}">

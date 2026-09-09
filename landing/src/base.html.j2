@@ -135,16 +135,26 @@
             <span data-theme-label>{{ panel.theme_dark }}</span></button>
 
           {#- El español es lo que hay. El inglés se anuncia y nada más: una
-              opción que todavía no hace nada lo dice en vez de fingir. -#}
-          <div class="usermenu__group">
-            <p class="usermenu__title">{{ panel.language_label }}</p>
-            <p class="usermenu__item is-on">
-              <span class="usermenu__icons">{% include "partials/icon-check.svg.j2" %}</span>
-              <span>{{ panel.language_current }}</span></p>
-            <p class="usermenu__item is-off">
-              <span class="usermenu__icons"></span>
-              <span>{{ panel.language_soon }}</span></p>
-          </div>
+              opción que todavía no hace nada lo dice en vez de fingir. Un
+              <details> dentro del que ya es el menú, así que abre y cierra sin
+              JavaScript igual que el de fuera. -#}
+          <details class="usermenu__sub usermenu__group">
+            <summary class="usermenu__item">
+              <span class="usermenu__icons">{% include "partials/icon-globe.svg.j2" %}</span>
+              <span>{{ panel.language_label }}</span>
+              <span class="usermenu__value">{{ panel.language_current }}</span>
+              <span class="usermenu__caret" aria-hidden="true">
+                {% include "partials/icon-caret.svg.j2" %}</span>
+            </summary>
+            <div class="usermenu__subpanel">
+              <p class="usermenu__item is-on">
+                <span class="usermenu__icons">{% include "partials/icon-check.svg.j2" %}</span>
+                <span>{{ panel.language_current }}</span></p>
+              <p class="usermenu__item is-off">
+                <span class="usermenu__icons"></span>
+                <span>{{ panel.language_soon }}</span></p>
+            </div>
+          </details>
 
           {#- Un enlace, no un formulario: este sitio está en otro dominio y no
               lleva ningún testigo del panel. La página a la que llega es la que

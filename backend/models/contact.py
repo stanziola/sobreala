@@ -56,9 +56,31 @@ def count(db, account_id) -> int:
     return db.contacts.count_documents({"account_id": account_id})
 
 
-def tags_of(db, account_id) -> list[str]:
-    """Every tag this account has used, in alphabetical order."""
+# Cómo entró un contacto. Los que existían antes de que este campo existiera no
+# lo tienen, y la pantalla enseña una raya: no se puede saber hacia atrás por
+# dónde entró cada uno, y una raya es mejor que inventarlo.
+MANUAL = "manual"
+IMPORT = "import"
+
+
+def tags_in_use(db, account_id) -> list[str]:
+    """Las etiquetas que de verdad lleva puestas algún contacto.
+
+    No es la lista que se enseña —esa es el registro de la cuenta, que incluye
+    las recién creadas y todavía vacías— sino la que hace falta para rellenar
+    ese registro la primera vez.
+    """
     return sorted(db.contacts.distinct("tags", {"account_id": account_id}))
+
+
+def count_by_tag(db, account_id) -> dict[str, int]:
+    """Cuántos contactos lleva cada etiqueta, en una sola consulta."""
+    found = db.contacts.aggregate([
+        {"$match": {"account_id": account_id}},
+        {"$unwind": "$tags"},
+        {"$group": {"_id": "$tags", "n": {"$sum": 1}}},
+    ])
+    return {row["_id"]: row["n"] for row in found}
 
 
 def page(db, account_id, *, search: str = "", tag: str = "",
@@ -95,7 +117,8 @@ def by_email(db, account_id, email: str) -> dict[str, Any] | None:
 
 
 def upsert_many(db, account_id, rows: Iterable[tuple[str, str]], *,
-                tags: list[str], consent: dict[str, Any]) -> tuple[int, int]:
+                tags: list[str], consent: dict[str, Any],
+                added_by: str = IMPORT) -> tuple[int, int]:
     """Write one batch. Returns (added, updated).
 
     An upsert and not an insert, so a second import of the same file adds
@@ -111,7 +134,7 @@ def upsert_many(db, account_id, rows: Iterable[tuple[str, str]], *,
         if name:
             fresh["name"] = name.strip()[:120]
         born = {"account_id": account_id, "email_normalized": normalized,
-                "consent": consent, "created_at": moment}
+                "consent": consent, "added_by": added_by, "created_at": moment}
         update: dict[str, Any] = {"$set": fresh, "$setOnInsert": born}
         if tags:
             update["$addToSet"] = {"tags": {"$each": tags}}
@@ -132,7 +155,7 @@ def create(db, account_id, *, email: str, name: str = "",
            tags: list[str] | None = None, consent: dict[str, Any]) -> bool:
     """Add one by hand. False if that address is already in the account."""
     added, _ = upsert_many(db, account_id, [(email, name)],
-                           tags=tags or [], consent=consent)
+                           tags=tags or [], consent=consent, added_by=MANUAL)
     return added == 1
 
 

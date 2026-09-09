@@ -126,7 +126,7 @@ def account_page(account, raw):
         # Cifras y orígenes. Las direcciones de sus contactos no se listan.
         contacts_total=contacts.count(db, client["_id"]),
         suppressed_total=suppressions.count(db, client["_id"]),
-        tags=contacts.tags_of(db, client["_id"]),
+        tags=accounts.tags_of(client),
         history=imports.for_account(db, client["_id"], limit=20),
         devices=sessions.for_account(db, client["_id"]),
         decisions=decisions.for_account(db, client["_id"]),

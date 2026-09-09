@@ -282,16 +282,11 @@ TEXTS = {
 
     "settings_notifications_lead": "Qué correos te mandamos. Los que avisan de "
                                    "un problema de seguridad van siempre.",
-    "settings_fixed_title": "Estos van siempre",
-    "settings_fixed_lead": "Son los que te enteran de que alguien está "
-                           "entrando a tu cuenta. Poder apagarlos sería poder "
-                           "apagar la alarma, así que no llevan interruptor.",
     "settings_fixed_codes": "Códigos de confirmación y de recuperación",
     "settings_fixed_password": "Tu contraseña cambió",
     "settings_fixed_two_step": "Se activó o se desactivó la verificación en "
                                "dos pasos",
     "settings_fixed_tag": "Siempre activo",
-    "settings_choose_title": "Estos los eliges tú",
     "settings_notice_new_login": "Ingreso desde un dispositivo nuevo",
     "settings_notice_new_login_desc": "Te avisamos cuando alguien entra a tu "
                                       "cuenta desde un dispositivo que no "
@@ -377,13 +372,49 @@ TEXTS = {
     "contacts_blocked_tag": "Suprimido",
     "contacts_saved": "Listo, guardamos el contacto.",
 
-    "contacts_add_title": "Agregar un contacto",
-    "contacts_add_lead": "Para la dirección que te acaban de dar. Para una "
-                         "lista entera, usa la importación.",
+    "contacts_add_title": "Agregar manualmente",
     "contacts_add_email": "Correo",
     "contacts_add_name": "Nombre (opcional)",
-    "contacts_add_tags": "Etiquetas, separadas por coma (opcional)",
     "contacts_add_submit": "Agregar",
+
+    # Las columnas que faltaban en la lista.
+    "contacts_col_how": "Cómo entró",
+    "contacts_col_status": "Estado",
+    "contacts_how_manual": "A mano",
+    "contacts_how_import": "Importado",
+    "contacts_status_active": "Activo",
+    "contacts_status_blocked": "Anulado",
+    "contacts_status_blocked_hint": "Anulado quiere decir que está en tus "
+                                    "supresiones: se guarda, pero no recibe "
+                                    "nada.",
+
+    # --- etiquetas ---------------------------------------------------------
+    # Se crean aquí y después se eligen. Escribirlas en cada formulario era lo
+    # que acababa dejando «Socios» y «socios» como dos etiquetas distintas.
+    "contacts_tab_tags": "Etiquetas",
+    "tags_title": "Etiquetas",
+    "tags_lead": "Los grupos con los que organizas tus contactos. Créalos aquí "
+                 "y después los eliges al agregar o importar.",
+    "tags_new": "Nueva etiqueta",
+    "tags_name": "Nombre",
+    "tags_add": "Crear",
+    "tags_room": "Puedes crear {n} más.",
+    "tags_full": "Llegaste al máximo de etiquetas. Borra alguna para crear "
+                 "otra.",
+    "tags_empty": "Todavía no tienes ninguna. Crea la primera y podrás usarla "
+                  "al agregar contactos.",
+    "tags_count": "{n} contactos",
+    "tags_count_one": "1 contacto",
+    "tags_count_none": "Sin contactos todavía",
+    "tags_delete": "Borrar",
+    "tags_delete_hint": "Borrar una etiqueta se la quita a los contactos que "
+                        "la llevaban. Los contactos se quedan.",
+    "tags_saved": "Listo, la etiqueta quedó creada.",
+    "tags_legend": "Etiquetas",
+    "tags_pick_hint": "Marca las que le correspondan. Se crean en la pantalla "
+                      "de Etiquetas.",
+    "tags_none_yet": "Todavía no tienes etiquetas.",
+    "tags_create_first": "Crear la primera",
 
     # De dónde salió la lista. Se pregunta antes de escribir nada porque no se
     # puede rellenar después: una lista subida sin esto queda sin origen.
@@ -404,8 +435,6 @@ TEXTS = {
                    "columna de nombres, también la leemos.",
     "import_file": "Tu archivo",
     "import_file_hint": "Hasta {mb} MB, y hasta {n} importaciones al día.",
-    "import_tags": "Etiqueta para esta lista (opcional)",
-    "import_tags_hint": "Así puedes enviarle solo a este grupo más adelante.",
     "import_submit": "Importar",
     "import_result_title": "Esto pasó con tu archivo",
     "import_read": "Filas leídas",
@@ -558,6 +587,8 @@ TEXTS = {
                                "CSV y que tenga una columna de correos.",
     "error_contact_email": "Ese correo no parece válido.",
     "error_contacts_full": "Llegaste al límite de contactos de tu plan.",
+    "error_tag": "Ese nombre está vacío, ya lo tienes, o llegaste al máximo de "
+                 "etiquetas.",
     "error_suspended": "Tu cuenta está suspendida. Escríbenos a "
                        "panamails.info@gmail.com y lo revisamos.",
 

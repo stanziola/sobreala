@@ -79,7 +79,7 @@ a { color: var(--color-accent-strong); }
 .menu__bars { display: grid; gap: 4px; width: 20px; }
 .menu__bars span { display: block; height: 2px; background: currentColor; border-radius: 2px; }
 .menu__caret { display: grid; transition: transform var(--fast) var(--ease); }
-.menu[open] .menu__caret { transform: rotate(180deg); }
+.menu[open] > summary .menu__caret { transform: rotate(180deg); }
 
 .menu__panel {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 60;
@@ -104,6 +104,13 @@ a.menu__item:hover, button.menu__item:hover { background: var(--color-surface-al
 }
 .menu__icons > span { display: none; grid-area: 1 / 1; }
 .menu__group { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--color-border); }
+/* El idioma, desplegado dentro del menú. La flecha del de fuera se escoge con
+   el hijo directo: sin eso, abrir el menú giraba también la de esta fila. */
+.menu__sub > summary { list-style: none; }
+.menu__sub > summary::-webkit-details-marker { display: none; }
+.menu__value { margin-left: auto; font-size: .88rem; color: var(--color-ink-soft); }
+.menu__sub[open] > summary .menu__caret { transform: rotate(180deg); }
+.menu__subpanel { padding-left: 18px; }
 .menu__title {
   padding: 6px 12px 2px; font-size: .78rem; font-weight: 700;
   letter-spacing: .04em; text-transform: uppercase; color: var(--color-ink-soft);
@@ -250,6 +257,9 @@ input:focus, select:focus { border-color: var(--color-accent); }
 .tag {
   display: inline-block; margin-left: 8px; padding: 2px 8px; vertical-align: middle;
   font-size: .75rem; font-weight: 600; border-radius: 999px;
+  /* Un óvalo partido en dos líneas no se lee como una etiqueta: «Junta
+     directiva» tiene que caber entera o no caber. */
+  white-space: nowrap;
   color: var(--color-on-accent); background: var(--color-accent);
 }
 .tag--quiet {
@@ -384,7 +394,10 @@ input:focus, select:focus { border-color: var(--color-accent); }
 .quota b { color: var(--color-ink); }
 
 /* Buscar y filtrar, en una línea que se parte sola en el teléfono. */
-.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+/* Meter contactos y buscar entre los que hay son dos cosas distintas, así que
+   se separan en vez de leerse como una sola barra de botones. */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+           margin: 26px 0 16px; }
 .filters input, .filters select { width: auto; flex: 1 1 180px; min-width: 0; }
 .filters .btn { margin-top: 0; }
 .filters .hint { margin-top: 0; flex: 1 1 100%; }
@@ -417,14 +430,29 @@ input:focus, select:focus { border-color: var(--color-accent); }
 }
 .counts li:last-child { border-bottom: 0; padding-bottom: 0; }
 
-/* De dónde salió la lista. Enmarcado porque es una pregunta aparte, no un
-   campo más del formulario. */
-.consent {
+/* Una pregunta aparte dentro de un formulario, enmarcada: de dónde salió la
+   lista, y qué etiquetas lleva. */
+.fieldset {
   margin-top: 22px; padding: 14px 16px 18px;
   border: 1px solid var(--color-border); border-radius: 12px;
 }
-.consent legend { padding: 0 6px; font-weight: 700; font-size: .95rem; }
-.consent label:first-of-type { margin-top: 10px; }
+.fieldset legend { padding: 0 6px; font-weight: 700; font-size: .95rem; }
+.fieldset label:first-of-type { margin-top: 10px; }
+
+/* Las etiquetas se marcan, no se escriben. En rejilla para que veinte quepan
+   sin convertir el formulario en una lista interminable. */
+.picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.picker__item {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0;
+  padding: 8px 12px; font-weight: 500; font-size: .92rem; cursor: pointer;
+  border: 1px solid var(--color-field); border-radius: 999px;
+  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.picker__item:hover { background: var(--color-surface-alt); }
+.picker__item input { width: auto; margin: 0; accent-color: var(--color-accent); }
+.picker__item:has(input:checked) {
+  background: var(--color-accent-soft); border-color: var(--color-accent);
+}
 
 .error { margin-top: 6px; font-size: .9rem; font-weight: 600; color: var(--color-accent-strong); }
 .error--form {

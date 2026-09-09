@@ -225,6 +225,18 @@ colecciones separadas. Esto garantiza que un contacto en varias listas:
 cuente una sola vez contra el límite, reciba un solo correo, y consuma un solo
 correo de la cuota.
 
+**Las etiquetas se crean antes de usarse**, en `/contactos/etiquetas`, y viven
+en `contact_tags` del documento de la cuenta. Los formularios de agregar e
+importar solo enseñan casillas con las que existen, y el servidor descarta lo
+que llegue y no esté en ese registro. Dos razones: escribirlas en cada
+formulario dejaba «Socios» y «socios» como dos etiquetas distintas, y una recién
+creada no aparecía en ningún lado hasta tener un contacto dentro, porque la
+lista se sacaba preguntándole a los contactos.
+
+**`added_by` dice por dónde entró cada contacto**, `manual` o `import`. Los que
+existían antes de que el campo existiera no lo tienen y la pantalla enseña una
+raya: no se puede saber hacia atrás, y una raya es mejor que inventarlo.
+
 **Cada contacto guarda de dónde salió**: `consent` con el origen que se declaró
 al importar, la nota y la fecha. Se pregunta antes de escribir nada porque no se
 puede rellenar hacia atrás, y es lo que hay que enseñar cuando alguien reclame
@@ -232,7 +244,8 @@ que no dio su correo.
 
 **Si está suprimido no se marca en el contacto.** La supresión vive en su propia
 colección y se consulta en lote con `$in`; así las dos no pueden separarse, y un
-contacto borrado y vuelto a importar reaparece suprimido.
+contacto borrado y vuelto a importar reaparece suprimido. La columna «Estado» de
+la lista sale de esa consulta, no de un campo guardado.
 
 **El límite de contactos sale del plan** (`PLAN_CONTACTS` en
 `models/account.py`, copiado de `docs/pricing.md`). Una cuenta **sin plan** tiene
@@ -398,9 +411,11 @@ Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 ## Panel del cliente
 
 El panel (`/panel`) es la pantalla de las gráficas de envíos; hoy solo dice
-«próximamente», porque todavía no hay nada que medir. **`/contactos`** tiene tres
-pantallas: la lista con buscador y filtro por etiqueta, la importación y las
-supresiones. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
+«próximamente», porque todavía no hay nada que medir. **`/contactos`** tiene cuatro
+pantallas: la lista —una fila por contacto, con sus etiquetas, por dónde entró,
+cuándo y si está activo o anulado—, la importación, las etiquetas y las
+supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
+desde un botón encima de la lista. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
 dispositivos conectados), **Notificaciones** y **Opciones de pago** (PayPal y
 Yappy, por construir).
@@ -408,7 +423,8 @@ Yappy, por construir).
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: panel,
 contactos, configuración, modo, idioma y cerrar sesión, más **administración**
-para quien tenga el rol. **El panel va primero** porque es a
+para quien tenga el rol. El idioma es un desplegable dentro del desplegable, no
+dos filas sueltas de algo que casi no se toca. **El panel va primero** porque es a
 lo que se dedica la empresa; lo demás son ajustes, y se buscan cuando hacen
 falta. Sin sesión el mismo control es un botón de tres líneas con las dos que
 sirven sin cuenta.

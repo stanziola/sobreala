@@ -36,10 +36,7 @@
   <p class="hint">{{ t('import_file_hint', mb=max_mb, n=per_day) }}</p>
   {% if errors.archivo %}<p class="error">{{ errors.archivo }}</p>{% endif %}
 
-  <label for="tags">{{ t('import_tags') }}</label>
-  <input id="tags" name="tags" type="text" autocomplete="off">
-  <p class="hint">{{ t('import_tags_hint') }}</p>
-
+  {% include "contacts/_tags-picker.html" %}
   {% include "contacts/_consent.html" %}
 
   <button class="btn" type="submit">{{ t('import_submit') }}</button>

@@ -306,7 +306,7 @@ button { font: inherit; color: inherit; }
 .usermenu__bars span { display: block; height: 2px; background: currentColor; border-radius: 2px; }
 .usermenu__me { display: inline-flex; align-items: center; gap: 8px; }
 .usermenu__caret { display: grid; transition: transform var(--fast) var(--ease); }
-.usermenu[open] .usermenu__caret { transform: rotate(180deg); }
+.usermenu[open] > summary .usermenu__caret { transform: rotate(180deg); }
 
 .usermenu__panel {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 60;
@@ -332,6 +332,13 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 }
 .usermenu__icons > span { display: none; grid-area: 1 / 1; }
 .usermenu__group { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--color-border); }
+/* El idioma, desplegado dentro del menú. La flecha del de fuera se escoge con
+   el hijo directo: sin eso, abrir el menú giraba también la de esta fila. */
+.usermenu__sub > summary { list-style: none; }
+.usermenu__sub > summary::-webkit-details-marker { display: none; }
+.usermenu__value { margin-left: auto; font-size: .88rem; color: var(--color-ink-soft); }
+.usermenu__sub[open] > summary .usermenu__caret { transform: rotate(180deg); }
+.usermenu__subpanel { padding-left: 18px; }
 /* Salir va debajo del idioma: sin esta línea parecía una opción más de él. */
 .usermenu__item--out { margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--color-border); }
 .usermenu__title {

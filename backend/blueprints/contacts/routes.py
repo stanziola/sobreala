@@ -38,19 +38,15 @@ def signed_in():
     return current_account()
 
 
-def tags_from(raw: str) -> list[str]:
-    """The tags typed in a field, split by comma and tidied.
+def tags_chosen(account) -> list[str]:
+    """Las etiquetas marcadas en el formulario, filtradas por las que existen.
 
-    Kept short and few on purpose: a tag is a list name, and a hundred of them
-    is not a list, it is a mess nobody can filter by.
+    Nada se crea desde aquí. Lo que llegue y no esté en el registro de la
+    cuenta se descarta: la pantalla solo enseña casillas, y el servidor no se
+    fía de eso, porque un formulario se puede escribir a mano.
     """
-    seen, out = set(), []
-    for piece in (raw or "").split(","):
-        tag = " ".join(piece.split())[:40]
-        if tag and tag.lower() not in seen:
-            seen.add(tag.lower())
-            out.append(tag)
-    return out[:5]
+    marcadas = set(request.form.getlist("tags"))
+    return [tag for tag in accounts.tags_of(account) if tag in marcadas]
 
 
 def shared(db, account, **extra):
@@ -61,7 +57,9 @@ def shared(db, account, **extra):
         "account": account, "total": total, "limit": limit,
         "left": max(0, limit - total),
         "suppressed_total": suppressions.count(db, account["_id"]),
-        "tags": contacts.tags_of(db, account["_id"]),
+        # Del registro de la cuenta y no de los contactos: así una etiqueta
+        # recién creada aparece desde ese momento, aunque no tenga a nadie.
+        "tags": accounts.tags_of(account),
         **extra,
     }
 
@@ -91,31 +89,47 @@ def index():
     return render_template(
         "contacts/list.html", section="lista",
         **shared(db, account, rows=found, matching=matching, blocked=blocked,
-                 search=search, tag=tag, skip=skip, per_page=PER_PAGE,
-                 sources=contacts.SOURCES))
+                 search=search, tag=tag, skip=skip, per_page=PER_PAGE))
 
 
-@bp.route("/contactos/nuevo", methods=["POST"])
+@bp.route("/contactos/nuevo", methods=["GET", "POST"])
 def add_one():
-    """Add a single contact by hand, for the address somebody just gave you."""
+    """Agregar un contacto a mano, en su propia pantalla.
+
+    Vive aparte de la lista porque desde la lista se llega con un botón, y
+    porque un formulario colgando del final de una tabla de cincuenta filas no
+    lo encuentra nadie.
+    """
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
 
     db = get_db()
-    if csrf_ok(request.form.get("csrf_token")):
+    errors: dict[str, str] = {}
+
+    if request.method == "POST":
         address = importer.clean(request.form.get("email", ""))
-        if not address:
-            return redirect(url_for("contacts.index", error="correo"))
-        if contacts.count(db, account["_id"]) >= accounts.contact_limit(account):
-            return redirect(url_for("contacts.index", error="lleno"))
-        contacts.create(
-            db, account["_id"], email=address,
-            name=request.form.get("name", "").strip(),
-            tags=tags_from(request.form.get("tags", "")),
-            consent=contacts.consent_of(request.form.get("source", ""),
-                                        request.form.get("note", "")))
-    return redirect(url_for("contacts.index", guardado=1))
+        source = request.form.get("source", "")
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif not address:
+            errors["email"] = t("error_contact_email")
+        elif source not in contacts.SOURCES:
+            errors["source"] = t("error_required")
+        elif contacts.count(db, account["_id"]) >= accounts.contact_limit(account):
+            errors["form"] = t("error_contacts_full")
+        else:
+            contacts.create(
+                db, account["_id"], email=address,
+                name=request.form.get("name", "").strip(),
+                tags=tags_chosen(account),
+                consent=contacts.consent_of(source,
+                                            request.form.get("note", "")))
+            return redirect(url_for("contacts.index", guardado=1))
+
+    return render_template("contacts/new.html", section="lista", errors=errors,
+                           **shared(db, account, sources=contacts.SOURCES))
 
 
 @bp.route("/contactos/borrar", methods=["POST"])
@@ -132,17 +146,53 @@ def remove():
     return redirect(request.form.get("volver") or url_for("contacts.index"))
 
 
-@bp.route("/contactos/etiqueta/borrar", methods=["POST"])
-def drop_tag():
-    """Take a tag off every contact that has it. The contacts stay."""
+# ------------------------------------------------------------- las etiquetas
+
+@bp.route("/contactos/etiquetas")
+def tags():
+    """Las etiquetas de la cuenta, con cuántos contactos lleva cada una.
+
+    Existen aquí y no dentro de los contactos: por eso una recién creada ya se
+    puede elegir, aunque todavía no tenga a nadie.
+    """
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    return render_template(
+        "contacts/tags.html", section="etiquetas",
+        **shared(db, account, counts=contacts.count_by_tag(db, account["_id"]),
+                 room=accounts.TAGS_MAX - len(accounts.tags_of(account))))
+
+
+@bp.route("/contactos/etiquetas/nueva", methods=["POST"])
+def add_tag():
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
 
     if csrf_ok(request.form.get("csrf_token")):
-        contacts.drop_tag(get_db(), account["_id"],
-                          request.form.get("etiqueta", "").strip()[:40])
-    return redirect(url_for("contacts.index"))
+        if not accounts.add_tag(get_db(), account["_id"],
+                                request.form.get("etiqueta", "")):
+            return redirect(url_for("contacts.tags", error="etiqueta"))
+    return redirect(url_for("contacts.tags", guardado=1))
+
+
+@bp.route("/contactos/etiquetas/borrar", methods=["POST"])
+def drop_tag():
+    """Borrar una etiqueta: sale del registro y de los contactos que la
+    llevaban. Los contactos se quedan."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    if csrf_ok(request.form.get("csrf_token")):
+        db = get_db()
+        tag = request.form.get("etiqueta", "").strip()[:accounts.TAG_LENGTH]
+        accounts.remove_tag(db, account["_id"], tag)
+        contacts.drop_tag(db, account["_id"], tag)
+    return redirect(url_for("contacts.tags"))
 
 
 # ------------------------------------------------------------- the importer
@@ -177,7 +227,7 @@ def upload():
             errors["source"] = t("error_required")
         else:
             consent = contacts.consent_of(source, request.form.get("note", ""))
-            tags = tags_from(request.form.get("tags", ""))
+            tags = tags_chosen(account)
             job = imports.start(db, account["_id"], filename=archivo.filename,
                                 tags=tags, consent=consent)
             try:

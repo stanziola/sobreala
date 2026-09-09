@@ -59,6 +59,13 @@ def ensure_indexes(db: Database | None = None) -> None:
     # sola al arrancar y ya es la que deja la base como tiene que estar.
     db.accounts.update_many({"role": {"$exists": False}},
                             {"$set": {"role": "client"}})
+    # Las etiquetas que ya estaban puestas en contactos, pasadas al registro de
+    # su cuenta. Una vez: después ninguna cuenta cae en el filtro.
+    for account in db.accounts.find({"contact_tags": {"$exists": False}}, {"_id": 1}):
+        db.accounts.update_one(
+            {"_id": account["_id"]},
+            {"$set": {"contact_tags": sorted(
+                db.contacts.distinct("tags", {"account_id": account["_id"]}))}})
     # Registrations that never get confirmed. confirm_email() removes the field,
     # so a finished account is never a candidate.
     db.accounts.create_index([("purge_at", ASCENDING)], expireAfterSeconds=0,

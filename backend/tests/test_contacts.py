@@ -39,12 +39,21 @@ def csrf(client, url="/contactos"):
         return sess["_csrf"]
 
 
-def upload(client, text, *, source="members", tags="", filename="lista.csv"):
+def make_tag(client, name):
+    """Crear una etiqueta como lo hace la pantalla. Existen antes de usarse."""
+    return client.post("/contactos/etiquetas/nueva", data={
+        "csrf_token": csrf(client, "/contactos/etiquetas"), "etiqueta": name})
+
+
+def upload(client, text, *, source="members", tags=(), filename="lista.csv"):
+    """Subir un archivo. Las etiquetas van marcadas, como casillas."""
     token = csrf(client, "/contactos/importar")
-    return client.post("/contactos/importar", data={
-        "csrf_token": token, "source": source, "tags": tags, "note": "",
-        "archivo": (io.BytesIO(text.encode("utf-8")), filename),
-    }, content_type="multipart/form-data")
+    data = {"csrf_token": token, "source": source, "note": "",
+            "archivo": (io.BytesIO(text.encode("utf-8")), filename)}
+    if tags:
+        data["tags"] = list(tags)
+    return client.post("/contactos/importar", data=data,
+                       content_type="multipart/form-data")
 
 
 def account_of(database, email="ana@ejemplo.com"):
@@ -61,7 +70,8 @@ LISTA = ("correo,nombre\n"
 
 def test_una_lista_entra_entera(client, database, outbox):
     browser = inside(client)
-    upload(browser, LISTA, tags="socios")
+    make_tag(browser, "socios")
+    upload(browser, LISTA, tags=["socios"])
 
     cuenta = account_of(database)
     assert contacts.count(database, cuenta["_id"]) == 3
@@ -73,8 +83,10 @@ def test_una_lista_entra_entera(client, database, outbox):
 
 def test_subir_el_mismo_archivo_dos_veces_no_duplica_a_nadie(client, database, outbox):
     browser = inside(client)
-    upload(browser, LISTA, tags="socios")
-    upload(browser, LISTA, tags="junta")
+    make_tag(browser, "socios")
+    make_tag(browser, "junta")
+    upload(browser, LISTA, tags=["socios"])
+    upload(browser, LISTA, tags=["junta"])
 
     cuenta = account_of(database)
     assert contacts.count(database, cuenta["_id"]) == 3
@@ -183,7 +195,7 @@ def test_un_archivo_enorme_se_rechaza_sin_leerlo(client, database, outbox):
     grande = "a" * (Config.IMPORT_MAX_BYTES + 200 * 1024)
     token = csrf(browser, "/contactos/importar")
     respuesta = browser.post("/contactos/importar", data={
-        "csrf_token": token, "source": "members", "tags": "", "note": "",
+        "csrf_token": token, "source": "members", "note": "",
         "archivo": (io.BytesIO(grande.encode("ascii")), "enorme.csv"),
     }, content_type="multipart/form-data")
 
@@ -237,7 +249,7 @@ def test_un_suprimido_se_guarda_marcado_y_sigue_marcado(client, database, outbox
     assert contacts.by_email(database, cuenta["_id"], "bea@coop.com") is not None
     assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
     pantalla = browser.get("/contactos").get_data(as_text=True)
-    assert "Suprimido" in pantalla
+    assert "Anulado" in pantalla
 
 
 def test_borrar_un_contacto_no_levanta_su_supresion(client, database, outbox):
@@ -320,20 +332,25 @@ def test_las_supresiones_no_son_globales(client, database, outbox):
 
 def test_quitar_una_etiqueta_deja_los_contactos(client, database, outbox):
     browser = inside(client)
-    upload(browser, LISTA, tags="socios")
+    make_tag(browser, "socios")
+    upload(browser, LISTA, tags=["socios"])
     cuenta = account_of(database)
 
-    browser.post("/contactos/etiqueta/borrar", data={
-        "csrf_token": csrf(browser), "etiqueta": "socios"})
+    browser.post("/contactos/etiquetas/borrar", data={
+        "csrf_token": csrf(browser, "/contactos/etiquetas"), "etiqueta": "socios"})
 
+    # Los contactos se quedan; la etiqueta sale del registro y de ellos.
     assert contacts.count(database, cuenta["_id"]) == 3
-    assert contacts.tags_of(database, cuenta["_id"]) == []
+    assert accounts.tags_of(account_of(database)) == []
+    assert contacts.tags_in_use(database, cuenta["_id"]) == []
 
 
 def test_filtrar_por_etiqueta(client, database, outbox):
     browser = inside(client)
-    upload(browser, "correo\nana@coop.com\n", tags="junta")
-    upload(browser, "correo\nbea@coop.com\n", tags="socios")
+    make_tag(browser, "junta")
+    make_tag(browser, "socios")
+    upload(browser, "correo\nana@coop.com\n", tags=["junta"])
+    upload(browser, "correo\nbea@coop.com\n", tags=["socios"])
 
     pantalla = browser.get("/contactos?etiqueta=junta").get_data(as_text=True)
     assert "ana@coop.com" in pantalla
@@ -342,16 +359,100 @@ def test_filtrar_por_etiqueta(client, database, outbox):
 
 # --------------------------------------------------------------- la pantalla
 
+# --------------------------------------------------------------- etiquetas
+
+def test_una_etiqueta_recien_creada_ya_se_puede_elegir(client, database, outbox):
+    """El problema que tenían: sin contactos dentro, no aparecía en ningún lado."""
+    browser = inside(client)
+    make_tag(browser, "junta")
+
+    assert accounts.tags_of(account_of(database)) == ["junta"]
+    # En el filtro de la lista y en las dos pantallas que asignan.
+    for url in ("/contactos", "/contactos/nuevo", "/contactos/importar"):
+        assert "junta" in browser.get(url).get_data(as_text=True), url
+
+
+def test_una_etiqueta_repetida_no_entra_dos_veces(client, database, outbox):
+    """Ni escrita igual ni con otras mayúsculas: era justo lo que pasaba."""
+    browser = inside(client)
+    make_tag(browser, "Socios")
+    make_tag(browser, "socios")
+    make_tag(browser, "  Socios  ")
+
+    assert accounts.tags_of(account_of(database)) == ["Socios"]
+
+
+def test_una_etiqueta_que_no_existe_no_se_puede_asignar(client, database, outbox):
+    """La pantalla solo enseña casillas, pero un formulario se escribe a mano."""
+    browser = inside(client)
+    upload(browser, LISTA, tags=["inventada"])
+
+    cuenta = account_of(database)
+    assert contacts.count(database, cuenta["_id"]) == 3
+    assert contacts.tags_in_use(database, cuenta["_id"]) == []
+
+
+def test_las_etiquetas_que_ya_estaban_pasan_al_registro(client, database, outbox):
+    """El relleno de una vez, para las cuentas de antes del registro."""
+    from db import ensure_indexes
+
+    browser = inside(client)
+    make_tag(browser, "socios")
+    upload(browser, LISTA, tags=["socios"])
+    cuenta = account_of(database)
+
+    # Una cuenta como las de antes: con etiquetas puestas y sin registro.
+    database.accounts.update_one({"_id": cuenta["_id"]},
+                                 {"$unset": {"contact_tags": ""}})
+    ensure_indexes(database)
+
+    assert accounts.tags_of(account_of(database)) == ["socios"]
+
+
+# ------------------------------------------------------ como entro cada uno
+
+def test_se_guarda_por_donde_entro_cada_contacto(client, database, outbox):
+    browser = inside(client)
+    upload(browser, "correo\nana@coop.com\n")
+    browser.post("/contactos/nuevo", data={
+        "csrf_token": csrf(browser, "/contactos/nuevo"),
+        "email": "bea@coop.com", "source": "customers"})
+
+    cuenta = account_of(database)
+    assert contacts.by_email(database, cuenta["_id"],
+                             "ana@coop.com")["added_by"] == contacts.IMPORT
+    assert contacts.by_email(database, cuenta["_id"],
+                             "bea@coop.com")["added_by"] == contacts.MANUAL
+
+    pantalla = browser.get("/contactos").get_data(as_text=True)
+    assert "Importado" in pantalla
+    assert "A mano" in pantalla
+
+
+def test_la_columna_de_estado_dice_activo_o_anulado(client, database, outbox):
+    browser = inside(client)
+    upload(browser, LISTA)
+    cuenta = account_of(database)
+    suppressions.add(database, cuenta["_id"], "bea@coop.com")
+
+    pantalla = browser.get("/contactos").get_data(as_text=True)
+    assert "Activo" in pantalla
+    assert "Anulado" in pantalla
+
+
 def test_contactos_pide_sesion(client, database):
-    for url in ("/contactos", "/contactos/importar", "/contactos/supresiones"):
+    for url in ("/contactos", "/contactos/nuevo", "/contactos/importar",
+                "/contactos/etiquetas", "/contactos/supresiones"):
         assert client.get(url).status_code == 302
 
 
 def test_agregar_uno_a_mano(client, database, outbox):
     browser = inside(client)
+    make_tag(browser, "junta")
+    make_tag(browser, "socios")
     browser.post("/contactos/nuevo", data={
-        "csrf_token": csrf(browser), "email": "nuevo@coop.com",
-        "name": "Nuevo", "tags": "junta, socios", "source": "customers"})
+        "csrf_token": csrf(browser, "/contactos/nuevo"), "email": "nuevo@coop.com",
+        "name": "Nuevo", "tags": ["junta", "socios"], "source": "customers"})
 
     guardado = contacts.by_email(database, account_of(database)["_id"],
                                  "nuevo@coop.com")

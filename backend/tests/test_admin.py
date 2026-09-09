@@ -226,11 +226,18 @@ def test_la_ficha_ensena_cifras_y_no_direcciones(client, database, outbox):
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
 
+    # La etiqueta se crea antes de poder elegirla.
+    navegador.get("/contactos/etiquetas")
+    with navegador.session_transaction() as sess:
+        token = sess["_csrf"]
+    navegador.post("/contactos/etiquetas/nueva",
+                   data={"csrf_token": token, "etiqueta": "socios"})
+
     navegador.get("/contactos/importar")
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
     navegador.post("/contactos/importar", data={
-        "csrf_token": token, "source": contacts.MEMBERS, "tags": "socios",
+        "csrf_token": token, "source": contacts.MEMBERS, "tags": ["socios"],
         "note": "", "archivo": (io.BytesIO(b"correo\nana@coop.com\nbea@coop.com\n"),
                                 "socios.csv"),
     }, content_type="multipart/form-data")
