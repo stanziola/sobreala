@@ -54,6 +54,7 @@ DISABLED = "disabled"                  # two-step: turned off
 REGENERATED = "regenerated"            # two-step: new recovery codes
 MAIL_FAILED = "mail_failed"            # the account is fine, the email did not go out
 FAILED = "failed"                      # import: the file could not be read
+SUSPENDED = "suspended"                # login: la contraseña era buena, la cuenta no
 
 # What the confirm route writes down, keyed by the reason models/token.py gave.
 # The screen collapses most of these into one message, on purpose; the log keeps

@@ -9,9 +9,11 @@ Mercado principal: Santiago de Veraguas y el interior. Cliente típico:
 cooperativas de ahorro y crédito, colegios privados, gremios, universidades y
 PyMEs — organizaciones que ya tienen una lista de correos armada por otra razón.
 
-**Estado: proyecto nuevo.** Existen la marca (`brand/`) y el sitio público
-(`landing/`, cuatro páginas estáticas generadas con Jinja2). Todo el backend, el
-panel del cliente y el panel de administración están por construir.
+**Estado.** Están la marca (`brand/`), el sitio público (`landing/`, siete
+páginas estáticas generadas con Jinja2), la cuenta entera —registro, código,
+doble factor, dispositivos, configuración—, **contactos** con su importador y
+sus supresiones, y el **panel de administración** con aprobación de cuentas.
+Faltan campañas, analítica, cobros y el webhook de rebotes.
 
 ---
 
@@ -61,33 +63,40 @@ panamails/
 ├── Procfile                # cómo arranca en Railway
 ├── .python-version         # 3.12
 ├── landing/                # → Cloudflare Pages (sitio público, ver landing/README.md)
-│   ├── build_site.py       # genera las páginas; único punto de entrada
+│   ├── build_site.py       # genera las páginas; único punto de entrada.
+│   │                       # --check avisa si lo publicado quedó viejo
 │   ├── content.py          # todos los textos del sitio, en español
 │   ├── src/                # plantillas Jinja2 (base, parciales, páginas) y site.css
 │   ├── assets/             # css, js, fonts, img (fonts, img y css/site.css son generados)
 │   ├── index.html          # GENERADO
 │   ├── como-funciona/      # GENERADO
 │   ├── precios/            # GENERADO (precios leídos de docs/pricing.md al construir)
-│   └── nosotros/           # GENERADO
+│   ├── nosotros/           # GENERADO
+│   ├── contacto/           # GENERADO
+│   ├── privacidad/         # GENERADO
+│   └── terminos/           # GENERADO
 └── backend/                # → Railway
     ├── wsgi.py
     ├── config.py
     ├── requirements.txt    # apunta al de la raíz, que es el de verdad
     ├── blueprints/
-    │   ├── auth/           # registro, confirmación de correo, login. HECHO
-    │   ├── contacts/       # importación, etiquetas, supresiones
+    │   ├── auth/           # registro, confirmación, login, configuración. HECHO
+    │   ├── contacts/       # importación, etiquetas, supresiones. HECHO
+    │   ├── admin/          # aprobar cuentas y ficha de cliente. HECHO
     │   ├── campaigns/      # crear, programar, enviar, pausar/retomar
     │   ├── analytics/      # métricas, exportar CSV/PDF
     │   ├── billing/        # planes, cuota, recargas, acumulado
-    │   ├── webhooks/       # SNS de SES, PayPal, Yappy
-    │   └── admin/          # panel de administración
+    │   └── webhooks/       # SNS de SES, PayPal, Yappy
     ├── models/
+    ├── make_admin.py       # da el rol de administrador al primero, a mano
+    ├── build_assets.py     # genera panel.css y _wing.svg; --check avisa si
+    │                       # quedaron viejos
     ├── services/
     │   ├── mailer.py       # correo del sistema: file | smtp | ses
     │   ├── security.py     # contraseñas, CSRF, límite de intentos
+    │   ├── totp.py         # verificación en dos pasos
+    │   ├── importer.py     # CSV en streaming, upsert por lotes
     │   ├── ses.py
-    │   ├── suppression.py
-    │   ├── importer.py
     │   └── payments/
     ├── email_templates/    # plantillas prediseñadas del producto
     ├── templates/          # Jinja: panel del cliente y admin
@@ -97,6 +106,13 @@ panamails/
 
 Un solo repositorio. `landing/` se despliega a Cloudflare Pages y `backend/` a
 Railway; cada plataforma apunta a su carpeta.
+
+**Todo lo que dice GENERADO se escribe con un comando, nunca a mano.** Editar
+`landing/src/` o `_panel.src.css` y no regenerar no rompe nada y llega al
+despliegue en silencio: ya pasó una vez. Por eso `python landing/build_site.py
+--check` y `python backend/build_assets.py --check` comparan sin escribir, y
+`backend/tests/test_generated.py` los llama, así que un `pytest` falla cuando
+algo quedó viejo y dice qué comando correr.
 
 El panel de administración es un **blueprint con verificación de rol**, no una
 aplicación aparte: comparte modelos y servicios con el resto.
@@ -129,6 +145,17 @@ Estados: `registered` → `approved` → `active` → `suspended`
 | `approved` | Comprar un plan. Lo aprueba Luis manualmente tras contactar a la empresa. |
 | `active` | Enviar. |
 | `suspended` | Nada. Corte automático por rebotes/quejas, o manual. |
+
+Los estados **los cambia el administrador** desde `/admin/cuentas/<id>`, y cada
+cambio pide un motivo que queda escrito en `admin_events`. `suspended` no es
+decorativo: una cuenta suspendida no abre sesión, y al suspenderla se le cierran
+las que tuviera abiertas.
+
+**`role` vale `admin` o no está.** Al primero se lo pone `make_admin.py` a mano,
+porque nadie puede aprobarse a sí mismo el primer día. Las rutas de `/admin`
+responden **404** a quien no lo tiene —un 403 le confirmaría a un curioso que la
+dirección existe— y exigen doble factor: es la cuenta que puede aprobar,
+suspender y leer las cifras de todos los clientes.
 
 **Un registro que no se confirma se borra a las 24 horas.** `create()` escribe
 `purge_at` y `confirm_email()` lo quita, así que Mongo barre solo lo que quedó a
@@ -188,6 +215,20 @@ colecciones separadas. Esto garantiza que un contacto en varias listas:
 cuente una sola vez contra el límite, reciba un solo correo, y consuma un solo
 correo de la cuota.
 
+**Cada contacto guarda de dónde salió**: `consent` con el origen que se declaró
+al importar, la nota y la fecha. Se pregunta antes de escribir nada porque no se
+puede rellenar hacia atrás, y es lo que hay que enseñar cuando alguien reclame
+que no dio su correo.
+
+**Si está suprimido no se marca en el contacto.** La supresión vive en su propia
+colección y se consulta en lote con `$in`; así las dos no pueden separarse, y un
+contacto borrado y vuelto a importar reaparece suprimido.
+
+**El límite de contactos sale del plan** (`PLAN_CONTACTS` en
+`models/account.py`, copiado de `docs/pricing.md`). Una cuenta **sin plan** tiene
+`CONTACTS_FREE_LIMIT`, hoy 500: alcanza para probar con una lista de verdad y
+deja que el Básico, con 1,000, valga la pena.
+
 ### `suppressions`
 Correos que una cuenta no puede volver a contactar. **Colección aparte; el
 cliente no la puede borrar.** Índice sobre `{account_id, email}` — nunca global:
@@ -201,6 +242,24 @@ una baja en una cuenta no afecta a las demás.
 | `manual` | Sí, por el cliente desde el panel |
 
 Guardar siempre fecha y origen.
+
+### `imports`
+Un documento por archivo subido: nombre, etiquetas, el origen declarado, en qué
+fila va y cuántas entraron, se actualizaron o no eran direcciones. Es lo que
+hace comprobables los límites —diez al día, una a la vez— y lo que responde qué
+pasó con un archivo de hace meses.
+
+**Hoy la importación corre dentro del request**, no en un proceso aparte. Es a
+propósito: con un tope de 500 filas tarda menos que abrir la página. El
+documento existe para que mudarla sea mover el trabajo y no rehacer los datos.
+**Hay que mudarla antes del primer cliente con más de unas 5,000 filas**, que es
+donde el request se acerca al tiempo máximo de Railway.
+
+### `admin_events`
+Un documento por decisión de un administrador: qué cambió, de qué a qué, sobre
+qué cuenta, cuándo y **por qué**. El motivo no es opcional; la pantalla no deja
+aplicar un cambio sin él, porque meses después esa frase es la única respuesta
+honesta a «por qué me suspendieron». Sin TTL, como `auth_events`.
 
 ### `campaigns`
 Incluye la **posición de envío** (hasta qué destinatario se envió), necesaria
@@ -329,14 +388,17 @@ Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 ## Panel del cliente
 
 El panel (`/panel`) es la pantalla de las gráficas de envíos; hoy solo dice
-«próximamente», porque todavía no hay nada que medir. Todo lo demás vive en
-**`/configuracion`**, con cuatro secciones: **Cuenta** (datos, estado y plan),
-**Seguridad** (contraseña, dos pasos y dispositivos conectados),
-**Notificaciones** y **Opciones de pago** (PayPal y Yappy, por construir).
+«próximamente», porque todavía no hay nada que medir. **`/contactos`** tiene tres
+pantallas: la lista con buscador y filtro por etiqueta, la importación y las
+supresiones. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
+**Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
+dispositivos conectados), **Notificaciones** y **Opciones de pago** (PayPal y
+Yappy, por construir).
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
-las mismas cinco cosas en el sitio público y en el panel, en este orden: panel,
-configuración, modo, idioma y cerrar sesión. **El panel va primero** porque es a
+las mismas cosas en el sitio público y en el panel, en este orden: panel,
+contactos, configuración, modo, idioma y cerrar sesión, más **administración**
+para quien tenga el rol. **El panel va primero** porque es a
 lo que se dedica la empresa; lo demás son ajustes, y se buscan cuando hacen
 falta. Sin sesión el mismo control es un botón de tres líneas con las dos que
 sirven sin cuenta.
@@ -351,9 +413,19 @@ saca a nadie de su cuenta abriendo un enlace.
 
 ## Panel de administración
 
-Aprobar cuentas · ver analytics de cada cliente · pausar y suspender · cambiar
-plan · cargar plantillas prediseñadas · revisar rebotes por cliente · aprobar
-HTML de clientes.
+`/admin`, con verificación de rol. **Construido**: la portada con las cuentas que
+esperan aprobación y el conteo por estado, la tabla de todas las cuentas con
+filtro y buscador, y la ficha de cada cliente con sus cambios de estado y de
+plan, cada uno con su motivo.
+
+**La ficha enseña cifras y orígenes, nunca la lista de direcciones de los
+contactos de un cliente.** Cuántos tiene, cuántas supresiones, qué archivos subió
+y de dónde dijo que salió cada lista: eso es operar la plataforma. Las
+direcciones son suyas y de quien está en ellas, y se miran por un motivo
+concreto —una baja que alguien pide, un abuso que se investiga—, no hojeando.
+
+Pendiente: ver analytics de cada cliente · cargar plantillas prediseñadas ·
+revisar rebotes por cliente · aprobar HTML de clientes.
 
 Además:
 

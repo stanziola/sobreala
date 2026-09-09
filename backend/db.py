@@ -136,6 +136,14 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.imports.create_index([("account_id", ASCENDING), ("status", ASCENDING)],
                             name="by_account_status")
 
+    # Lo que un administrador decidió sobre una cuenta, con su motivo. Sin TTL,
+    # como auth_events: es el papel que se lee cuando alguien reclame.
+    db.admin_events.create_index([("account_id", ASCENDING),
+                                  ("created_at", DESCENDING)],
+                                 name="by_account_created")
+    db.admin_events.create_index([("created_at", DESCENDING)],
+                                 name="by_created_at")
+
 
 def indexes_ready() -> bool:
     return _indexes_ready

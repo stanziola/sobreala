@@ -273,6 +273,99 @@ def prepare_png(source: Path, target: Path, square: bool, max_height: int | None
     im.save(target, optimize=True)
 
 
+# La tarjeta que enseñan WhatsApp, Facebook e Instagram al pegar un enlace.
+# 1200 x 630 es lo que llena esa tarjeta; el logo, que es casi cuadrado, se
+# recortaba. Van en su propia carpeta: assets/img/social/ ya es la de los
+# iconos de redes y mezclarlas confunde las dos cosas.
+OG_DIR = OUT_IMG / "og"
+OG_SIZE = (1200, 630)
+
+
+def brand_color(name: str, fallback: str) -> str:
+    """Un color de brand/colors.css, que es la fuente de verdad."""
+    text = (BRAND_DIR / "colors.css").read_text(encoding="utf-8")
+    found = re.search(rf"--{name}:\s*(#[0-9A-Fa-f]{{3,8}})\s*;", text)
+    return found.group(1) if found else fallback
+
+
+def card_title(page: dict) -> str:
+    """El título de la página, tal como lo escribe content.py.
+
+    La portada lo tiene partido en dos porque la segunda mitad va en otro color;
+    aquí se vuelven a juntar. Ninguna frase se escribe en este archivo: el
+    español sigue viviendo en un solo sitio.
+    """
+    hero = page.get("hero", {})
+    if hero.get("title"):
+        return hero["title"]
+    return " ".join(x for x in (hero.get("title_lead"), hero.get("title_accent")) if x)
+
+
+def wrap_text(draw, text: str, font, width: int) -> list[str]:
+    """Partir el título en líneas que quepan, sin cortar palabras."""
+    lines, current = [], ""
+    for word in text.split():
+        candidate = f"{current} {word}".strip()
+        if draw.textlength(candidate, font=font) <= width or not current:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines[:4]
+
+
+def build_social_cards() -> list[Path]:
+    """Una tarjeta por página, con el ala, la marca y su propio título."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    fondo = brand_color("color-background", "#3166A7")
+    marca = brand_color("color-logo", "#EFEEEC")
+    claro = brand_color("color-accent-light", "#CFEBFA")
+
+    ala = Image.open(BRAND_DIR / "logo" / "logo-wing.png").convert("RGBA")
+    ala.thumbnail((300, 300), Image.LANCZOS)
+
+    wordmark = ImageFont.truetype(
+        str(BRAND_DIR / "fonts" / "changa-one" / "ChangaOne-Regular.ttf"), 58)
+    titulo = ImageFont.truetype(
+        str(BRAND_DIR / "fonts" / "sora" / "Sora-VariableFont_wght.ttf"), 66)
+    pie = ImageFont.truetype(
+        str(BRAND_DIR / "fonts" / "sora" / "Sora-VariableFont_wght.ttf"), 28)
+    for font, peso in ((titulo, 700), (pie, 500)):
+        try:
+            font.set_variation_by_axes([peso])
+        except Exception:  # noqa: BLE001 - sin ejes variables se usa el normal
+            pass
+
+    OG_DIR.mkdir(parents=True, exist_ok=True)
+    written = []
+    margen = 76
+    for slug, page in SOCIAL_CARDS:
+        lienzo = Image.new("RGB", OG_SIZE, fondo)
+        draw = ImageDraw.Draw(lienzo)
+
+        lienzo.paste(ala, (margen, margen - 18), ala)
+        draw.text((margen + ala.width + 20, margen + ala.height // 2),
+                  "Panamails", font=wordmark, fill=marca, anchor="lm")
+
+        lineas = wrap_text(draw, card_title(page), titulo, OG_SIZE[0] - margen * 2)
+        alto = 86
+        y = OG_SIZE[1] - margen - 52 - alto * len(lineas)
+        for linea in lineas:
+            draw.text((margen, y), linea, font=titulo, fill="#FFFFFF")
+            y += alto
+
+        draw.text((margen, OG_SIZE[1] - margen), "panamails.com",
+                  font=pie, fill=claro, anchor="ls")
+
+        target = OG_DIR / f"{slug}.png"
+        lienzo.save(target, optimize=True)
+        written.append(target)
+    return written
+
+
 def copy_icon_set(sources: dict[str, Path], out_dir: Path, url_prefix: str,
                   square: bool = False, max_height: int | None = None) -> dict:
     """Copy the chosen kit file of each icon as <name>.<ext>. Returns name -> URL."""
@@ -322,9 +415,30 @@ PAGES = [
     ("como-funciona/index.html", "como-funciona.html.j2", "/como-funciona/", content.HOW),
     ("precios/index.html", "precios.html.j2", "/precios/", content.PRICING),
     ("nosotros/index.html", "nosotros.html.j2", "/nosotros/", content.ABOUT),
+    ("contacto/index.html", "contacto.html.j2", "/contacto/", content.CONTACT_PAGE),
     ("privacidad/index.html", "legal.html.j2", "/privacidad/", content.PRIVACY),
     ("terminos/index.html", "legal.html.j2", "/terminos/", content.TERMS),
 ]
+
+
+# Solo las páginas que alguien comparte. Las dos legales se quedan con el logo:
+# nadie pega los términos en un chat.
+SOCIAL_CARDS = [
+    ("inicio", content.HOME),
+    ("como-funciona", content.HOW),
+    ("precios", content.PRICING),
+    ("nosotros", content.ABOUT),
+    ("contacto", content.CONTACT_PAGE),
+]
+
+# Qué tarjeta le toca a cada página. Lo que no esté aquí usa el logo.
+OG_IMAGES = {
+    "/": "inicio",
+    "/como-funciona/": "como-funciona",
+    "/precios/": "precios",
+    "/nosotros/": "nosotros",
+    "/contacto/": "contacto",
+}
 
 
 def strong(text: str) -> "Markup":
@@ -362,6 +476,7 @@ def build() -> list[Path]:
     faces = build_fonts()
     css = write_css(faces)
     social, payments = copy_assets()
+    build_social_cards()
     pricing = read_pricing()
 
     env = Environment(
@@ -394,7 +509,13 @@ def build() -> list[Path]:
 
     written = [css]
     for out_name, template, url, page in PAGES:
-        html = env.get_template(template).render(page=page, current_url=url, **shared)
+        html = env.get_template(template).render(
+            page=page, current_url=url,
+            # La tarjeta que se ve al compartir. Lo que no tenga la suya cae en
+            # el logo, que es lo que hacían las cuatro hasta ahora.
+            og_image=(f"/assets/img/og/{OG_IMAGES[url]}.png"
+                      if url in OG_IMAGES else "/assets/img/logo.png"),
+            **shared)
         target = LANDING_DIR / out_name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html.rstrip() + "\n", encoding="utf-8", newline="\n")
@@ -456,11 +577,68 @@ def serve(port: int = 8080) -> int:
     return 0
 
 
+
+# Lo que se compara en --check. Solo texto: dos versiones de Pillow pueden
+# escribir el mismo PNG con bytes distintos, y una prueba que falla al
+# actualizar una dependencia deja de creerse. La deriva que importa es esta.
+CHECKED = (".html", ".css", ".svg", ".txt", ".xml")
+
+
+def check() -> list[Path]:
+    """Los archivos publicados que ya no coinciden con sus fuentes.
+
+    Un archivo generado que se queda viejo no rompe nada, no falla ninguna
+    prueba y llega al despliegue sin decir palabra: pasó con la fila de
+    Contactos, que se agregó a la plantilla y nunca se regeneró. Esto lo
+    convierte en un error visible.
+
+    Genera todo en un directorio temporal y compara. No escribe nada en el
+    repositorio, así que se puede llamar desde las pruebas.
+    """
+    import tempfile
+
+    global LANDING_DIR, ASSETS_DIR, OUT_IMG, OG_DIR
+    saved = (LANDING_DIR, ASSETS_DIR, OUT_IMG, OG_DIR)
+    stale: list[Path] = []
+    with tempfile.TemporaryDirectory(prefix="panamails-check-") as tmp:
+        fake = Path(tmp)
+        LANDING_DIR = fake
+        ASSETS_DIR = fake / "assets"
+        OUT_IMG = ASSETS_DIR / "img"
+        OG_DIR = OUT_IMG / "og"
+        try:
+            produced = build()
+        finally:
+            LANDING_DIR, ASSETS_DIR, OUT_IMG, OG_DIR = saved
+
+        for made in produced:
+            if made.suffix.lower() not in CHECKED:
+                continue
+            published = LANDING_DIR / made.relative_to(fake)
+            if (not published.exists()
+                    or published.read_bytes() != made.read_bytes()):
+                stale.append(published)
+    return stale
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Generate the public Panamails site.")
     ap.add_argument("--serve", action="store_true", help="serve the built site locally")
     ap.add_argument("--port", type=int, default=8080, metavar="N", help="port for --serve")
+    ap.add_argument("--check", action="store_true",
+                    help="no escribir: solo decir si lo publicado quedo viejo")
     args = ap.parse_args(argv)
+
+    if args.check:
+        stale = check()
+        if not stale:
+            print("El sitio publicado esta al dia.")
+            return 0
+        print("Estos archivos se quedaron viejos:")
+        for path in stale:
+            print("  ", path.relative_to(ROOT))
+        print("\nCorre:  python landing/build_site.py")
+        return 1
 
     for path in build():
         print("wrote", path.relative_to(ROOT))

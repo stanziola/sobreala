@@ -32,6 +32,14 @@
       <span class="menu__icons">{% include "_icon-gear.svg" %}</span>
       <span>{{ t('menu_settings') }}</span>
     </a>
+    {# Solo la ve quien tiene el rol. Para el resto la dirección responde 404,
+       así que ni la fila ni la ruta dicen que existe. #}
+    {% if bar_admin %}
+    <a class="menu__item" href="{{ url_for('admin.home') }}">
+      <span class="menu__icons">{% include "_icon-shield.svg" %}</span>
+      <span>{{ t('menu_admin') }}</span>
+    </a>
+    {% endif %}
     {% endif %}
 
     {# The label says what pressing it will do, not what is on. panel.js keeps

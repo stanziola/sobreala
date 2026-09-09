@@ -1,0 +1,79 @@
+{% extends "admin/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('admin_tab_accounts') }}</h2>
+<p class="settings__lead">{{ t('admin_accounts_lead') }}</p>
+
+<form class="filters" method="get" action="{{ url_for('admin.accounts_list') }}">
+  <label class="visually-hidden" for="q">{{ t('admin_search') }}</label>
+  <input id="q" name="q" type="search" value="{{ search }}"
+         placeholder="{{ t('admin_search') }}" autocomplete="off">
+
+  <label class="visually-hidden" for="estado">{{ t('admin_all_states') }}</label>
+  <select id="estado" name="estado">
+    <option value="">{{ t('admin_all_states') }}</option>
+    {% for name in statuses %}
+    <option value="{{ name }}"{% if name == status %} selected{% endif %}>
+      {{ t('status_short_' + name) }}</option>
+    {% endfor %}
+  </select>
+
+  <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_search_action') }}</button>
+</form>
+
+{% if rows %}
+<p class="hint">{{ t('contacts_showing', n=rows|length, total=total) }}</p>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('admin_col_company') }}</th>
+        <th>{{ t('admin_col_email') }}</th>
+        <th>{{ t('admin_col_status') }}</th>
+        <th>{{ t('admin_col_plan') }}</th>
+        <th>{{ t('admin_col_login') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><b>{{ row.company_name }}</b><br>
+          <span class="table__quiet">{{ row.contact_name }}</span></td>
+        <td>{{ row.email }}
+          {% if not row.email_confirmed_at %}
+          <span class="tag tag--warn">{{ t('admin_unconfirmed') }}</span>
+          {% endif %}</td>
+        <td><span class="tag tag--quiet">{{ t('status_short_' + row.status) }}</span></td>
+        <td class="table__quiet">{{ row.plan|capitalize if row.plan else t('admin_no_plan') }}</td>
+        <td class="table__quiet">
+          {{ row.last_login_at|ago if row.last_login_at else t('admin_never') }}</td>
+        <td>
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('admin.account_page', raw=row._id) }}">{{ t('admin_open') }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if total > per_page %}
+<div class="row">
+  {% if skip > 0 %}
+  <a class="btn btn--small btn--outline"
+     href="{{ url_for('admin.accounts_list', q=search, estado=status, desde=skip - per_page) }}">
+    {{ t('contacts_newer') }}</a>
+  {% endif %}
+  {% if skip + per_page < total %}
+  <a class="btn btn--small btn--outline"
+     href="{{ url_for('admin.accounts_list', q=search, estado=status, desde=skip + per_page) }}">
+    {{ t('contacts_older') }}</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<p class="lead">{{ t('admin_none_found') }}</p>
+{% endif %}
+{% endblock %}

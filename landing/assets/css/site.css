@@ -642,6 +642,44 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 .faq__a { padding: 0 20px 20px; color: var(--color-ink-soft); }
 
 /* ------------------------------------------------------------------ prose (nosotros) */
+/* ----------------------------------------------------------------- contacto
+   Las tres formas de escribir, cada una en su tarjeta. El correo es un botón
+   que copia y no un mailto: en una computadora sin programa de correo
+   configurado un mailto no hace nada, y ahí se pierde el contacto. */
+.ways {
+  display: grid; gap: 16px; margin: 0 0 clamp(36px, 6vw, 56px); padding: 0;
+  list-style: none;
+}
+@media (min-width: 780px) { .ways { grid-template-columns: repeat(3, 1fr); } }
+.way {
+  padding: 22px; border-radius: var(--radius); background: var(--color-surface);
+  border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);
+}
+.way__link {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 0; border: 0; background: none; color: inherit;
+  font: inherit; text-align: left; cursor: pointer;
+}
+.way__link:hover { text-decoration: none; }
+.way__link:hover .way__value { text-decoration: underline; text-underline-offset: .18em; }
+/* El glifo enmascarado no trae medidas propias: se pinta con currentColor
+   sobre una caja que hay que darle, como en el pie. Sin esto mide cero y no
+   se ve nada. */
+.way__link .icon, .way__link svg { flex: none; width: 22px; height: 22px;
+                                   color: var(--color-accent-strong); }
+.way__text { display: grid; gap: 2px; min-width: 0; }
+.way__title { font-weight: 700; font-size: 1.08rem; }
+.way__value { color: var(--color-ink-soft); font-size: .95rem; overflow-wrap: anywhere; }
+.way__detail { margin-top: 12px; color: var(--color-ink-soft); font-size: .95rem; line-height: 1.6; }
+/* La misma señal de copiado que en el pie. */
+.way__done {
+  max-width: 0; padding: 2px 0; border-radius: 999px; overflow: hidden;
+  white-space: nowrap; background: var(--color-accent); color: var(--color-on-accent);
+  font-size: .66rem; font-weight: 700; line-height: 1.5; opacity: 0;
+  transition: max-width 220ms var(--ease), padding 220ms var(--ease), opacity 160ms var(--ease);
+}
+.way__link.is-done .way__done { max-width: 140px; padding: 2px 6px; opacity: 1; }
+
 .prose { display: grid; gap: clamp(32px, 5vw, 52px); }
 .prose__title { font-size: 1.5rem; font-weight: 700; margin-bottom: 14px; letter-spacing: -.01em; }
 .prose p { font-size: 1.08rem; line-height: 1.7; color: var(--color-ink); }

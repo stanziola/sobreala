@@ -424,6 +424,77 @@ TEXTS = {
     "blocked_saved": "Listo, esa dirección quedó suprimida.",
 
     "menu_contacts": "Contactos",
+    "menu_admin": "Administración",
+
+    # --- administración ----------------------------------------------------
+    "admin_title": "Administración",
+    "admin_tab_home": "Portada",
+    "admin_tab_accounts": "Cuentas",
+    "admin_home_lead": "Cómo va la plataforma y qué está esperándote.",
+    "admin_waiting_title": "Esperando aprobación",
+    "admin_waiting_lead": "Cuentas registradas que todavía no pueden contratar. "
+                          "Habla con ellas y decide.",
+    "admin_waiting_empty": "Ninguna cuenta espera aprobación.",
+    "admin_counts_title": "Cuentas por estado",
+    "admin_recent_title": "Últimas decisiones",
+    "admin_recent_empty": "Todavía no has aprobado ni suspendido nada.",
+    "admin_open": "Abrir",
+
+    "admin_accounts_lead": "Todas las cuentas. Busca por correo o por empresa.",
+    "admin_all_states": "Todos los estados",
+    "admin_search": "Buscar por correo o empresa",
+    "admin_col_company": "Empresa",
+    "admin_col_contact": "Contacto",
+    "admin_col_email": "Correo",
+    "admin_col_status": "Estado",
+    "admin_col_plan": "Plan",
+    "admin_col_created": "Se registró",
+    "admin_col_login": "Última entrada",
+    "admin_never": "Nunca",
+    "admin_unconfirmed": "Sin confirmar",
+    "admin_no_plan": "Sin plan",
+    "admin_none_found": "Ninguna cuenta coincide.",
+
+    "admin_account_lead": "Todo sobre esta cuenta.",
+    "admin_back": "Volver a las cuentas",
+    "admin_done": "Listo, quedó guardado.",
+    "admin_need_reason": "Escribe el motivo: es lo que se lee meses después "
+                         "cuando alguien pregunte por qué.",
+    "admin_change_status": "Cambiar el estado",
+    "admin_change_status_hint": "Suspender cierra además todas sus sesiones "
+                                "abiertas y le impide volver a entrar.",
+    "admin_change_plan": "Cambiar el plan",
+    "admin_change_plan_hint": "El plan es lo que decide cuántos contactos "
+                              "puede tener.",
+    "admin_reason": "Motivo",
+    "admin_apply": "Aplicar",
+
+    "admin_usage_title": "Cómo usa la plataforma",
+    "admin_contacts": "Contactos",
+    "admin_of_limit": "de {n} que le permite su plan",
+    "admin_suppressions": "Supresiones",
+    "admin_tags": "Etiquetas",
+    "admin_none": "Ninguna",
+    "admin_imports_title": "Sus importaciones",
+    "admin_imports_empty": "No ha importado nada todavía.",
+    "admin_imports_origin": "Dijo que salió de",
+    "admin_privacy_note": "Se enseñan cifras y de dónde dijo que salió cada "
+                          "lista, no las direcciones de sus contactos. Esas "
+                          "son suyas y de quien está en ellas.",
+
+    "admin_sending_title": "Envíos del mes",
+    "admin_sending_lead": "Correos enviados, rebotes, quejas y cuota restante. "
+                          "Todavía no hay envíos que medir; estas cifras se "
+                          "llenan solas cuando salga la primera campaña.",
+    "admin_devices_title": "Sus dispositivos",
+    "admin_history_title": "Lo que has decidido sobre esta cuenta",
+    "admin_history_empty": "Nada todavía.",
+    "admin_history_status": "Estado: de {before} a {after}",
+    "admin_history_plan": "Plan: de {before} a {after}",
+
+    "admin_two_step_needed": "Para entrar a administración activa antes la "
+                             "verificación en dos pasos. Es la cuenta que "
+                             "puede aprobar y suspender a todos los demás.",
 
     # --- errors ------------------------------------------------------------
     "error_required": "Completa este campo.",
@@ -461,6 +532,8 @@ TEXTS = {
                                "CSV y que tenga una columna de correos.",
     "error_contact_email": "Ese correo no parece válido.",
     "error_contacts_full": "Llegaste al límite de contactos de tu plan.",
+    "error_suspended": "Tu cuenta está suspendida. Escríbenos a "
+                       "panamails.info@gmail.com y lo revisamos.",
 
     # --- error pages -------------------------------------------------------
     # Shown instead of the server's own blank error page. The technical detail

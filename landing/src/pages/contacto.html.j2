@@ -1,0 +1,76 @@
+{% extends "base.html.j2" %}
+
+{% block main %}
+
+<section class="page-hero">
+  <div class="shell shell--narrow">
+    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
+    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
+    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell shell--narrow">
+    <ul class="ways">
+      {% for way in page.ways %}
+      <li class="way">
+        {% if way.kind == "whatsapp" %}
+        <a class="way__link" href="{{ whatsapp_url }}" target="_blank" rel="noopener">
+          {% if social_icons.whatsapp %}
+          <span class="icon icon--mask" style="--icon: url('{{ social_icons.whatsapp }}')" aria-hidden="true"></span>
+          {% else %}
+          {% include "partials/icon-chat.svg.j2" %}
+          {% endif %}
+          <span class="way__text">
+            <span class="way__title">{{ way.title }}</span>
+            <span class="way__value">{{ contact.whatsapp_display }}</span>
+          </span>
+        </a>
+        {% elif way.kind == "email" %}
+        {#- Un botón que copia, no un mailto: en una computadora sin programa de
+            correo configurado un mailto no hace nada, y ahí se pierde el contacto. -#}
+        <button class="way__link" type="button" data-copy="{{ contact.email }}"
+                aria-label="{{ contact.email_copy_label }} {{ contact.email }}">
+          {% include "partials/icon-mail.svg.j2" %}
+          <span class="way__text">
+            <span class="way__title">{{ way.title }}</span>
+            <span class="way__value">{{ contact.email }}</span>
+          </span>
+          <span class="way__done" aria-hidden="true">{{ contact.email_copied_label }}</span>
+        </button>
+        <span class="visually-hidden" role="status" data-copy-status></span>
+        {% else %}
+        <a class="way__link" href="{{ contact.instagram_url }}" target="_blank" rel="noopener">
+          {% if social_icons.instagram %}
+          <span class="icon icon--mask" style="--icon: url('{{ social_icons.instagram }}')" aria-hidden="true"></span>
+          {% endif %}
+          <span class="way__text">
+            <span class="way__title">{{ way.title }}</span>
+            <span class="way__value">@{{ contact.instagram_user }}</span>
+          </span>
+        </a>
+        {% endif %}
+        <p class="way__detail">{{ way.detail }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div class="prose">
+      <section class="prose__block">
+        <h2 class="prose__title">{{ page.who.title }}</h2>
+        {% for p in page.who.paragraphs %}
+        <p>{{ p|strong }}</p>
+        {% endfor %}
+      </section>
+
+      <section class="prose__block">
+        <h2 class="prose__title">{{ page.already.title }}</h2>
+        <p>{{ page.already.text }}</p>
+        <p><a class="btn btn--outline" href="{{ panel.base_url }}/entrar">{{ panel.login_label }}</a></p>
+      </section>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -144,6 +144,11 @@ def _load_account() -> dict | None:
     if account is None:
         session.clear()
         return None
+    # Suspender a alguien que ya estaba dentro tiene que sacarlo, no esperar a
+    # que se le ocurra salir.
+    if accounts.is_suspended(account):
+        session.clear()
+        return None
     sessions.touch(get_db(), doc)
     return account
 
@@ -162,9 +167,10 @@ def bar_account():
     if not has_request_context():
         return {}
     try:
-        return {"bar_account": current_account()}
+        account = current_account()
+        return {"bar_account": account, "bar_admin": accounts.is_admin(account)}
     except Exception:  # noqa: BLE001 - the page is worth more than the menu
-        return {"bar_account": None}
+        return {"bar_account": None, "bar_admin": False}
 
 
 def sign_in(account: dict, *, remember: bool = True) -> None:
@@ -726,6 +732,15 @@ def login():
             # Called even when there is no account, so a wrong address and a
             # wrong password take a similar amount of time.
             if verify_password(password, account and account.get("password_hash")):
+                # Suspendida es suspendida: hasta ahora el estado se enseñaba y
+                # no impedía nada. Se comprueba después de la contraseña, para
+                # no decirle a un desconocido qué cuentas están suspendidas.
+                if accounts.is_suspended(account):
+                    errors["form"] = t("error_suspended")
+                    log_auth(db, events.LOGIN, events.SUSPENDED,
+                             email=email_value, account_id=account["_id"])
+                    return render_template("login.html", errors=errors,
+                                           email=email_value, remember=remember)
                 remember = bool(request.form.get("remember"))
                 # The password was right. Whether that is enough depends on the
                 # account: with two-step on, and a device that has not answered

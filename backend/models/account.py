@@ -19,6 +19,11 @@ ACTIVE = "active"
 SUSPENDED = "suspended"
 STATUSES = (REGISTERED, APPROVED, ACTIVE, SUSPENDED)
 
+# Quien administra la plataforma. Una cuenta corriente no tiene el campo; al
+# primer administrador se lo pone make_admin.py a mano, porque nadie puede
+# aprobarse a sí mismo el primer día.
+ADMIN = "admin"
+
 
 def normalize_email(email: str) -> str:
     """Same rule the contacts collection uses: no spaces, lowercase."""
@@ -113,6 +118,85 @@ def confirm_email(db, account_id) -> bool:
 
 def touch_login(db, account_id) -> None:
     db.accounts.update_one({"_id": account_id}, {"$set": {"last_login_at": now()}})
+
+
+# ------------------------------------------------------------- administration
+
+def is_admin(account: dict[str, Any] | None) -> bool:
+    return (account or {}).get("role") == ADMIN
+
+
+def is_suspended(account: dict[str, Any] | None) -> bool:
+    return (account or {}).get("status") == SUSPENDED
+
+
+def set_role(db, account_id, role: str | None) -> None:
+    """Give or take the administrator role. Only make_admin.py calls this."""
+    if role == ADMIN:
+        db.accounts.update_one({"_id": account_id},
+                               {"$set": {"role": ADMIN, "updated_at": now()}})
+    else:
+        db.accounts.update_one({"_id": account_id},
+                               {"$unset": {"role": ""},
+                                "$set": {"updated_at": now()}})
+
+
+def set_status(db, account_id, status: str) -> str | None:
+    """Move an account to another state. Returns the one it had, or None.
+
+    The previous state is what makes the record in admin_events readable: "de
+    registered a approved" dice algo, "a approved" no dice nada.
+    """
+    if status not in STATUSES:
+        return None
+    before = by_id(db, account_id)
+    if before is None or before.get("status") == status:
+        return None
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"status": status, "updated_at": now()}})
+    return before.get("status")
+
+
+def set_plan(db, account_id, plan: str | None) -> str | None:
+    """Put an account on a plan, or take it off one. Returns the previous."""
+    if plan is not None and plan not in PLAN_CONTACTS:
+        return None
+    before = by_id(db, account_id)
+    if before is None or (before.get("plan") or None) == plan:
+        return None
+    change = {"$set": {"plan": plan, "updated_at": now()}} if plan else              {"$unset": {"plan": ""}, "$set": {"updated_at": now()}}
+    db.accounts.update_one({"_id": account_id}, change)
+    return before.get("plan")
+
+
+def by_status(db) -> dict[str, int]:
+    """How many accounts sit in each state, for the admin front page."""
+    counted = {name: 0 for name in STATUSES}
+    for row in db.accounts.aggregate([{"$group": {"_id": "$status",
+                                                  "n": {"$sum": 1}}}]):
+        if row["_id"] in counted:
+            counted[row["_id"]] = row["n"]
+    return counted
+
+
+def search(db, *, status: str = "", text: str = "", limit: int = 100,
+           skip: int = 0) -> tuple[list[dict[str, Any]], int]:
+    """The admin table: filter by state, search by address or company."""
+    import re
+
+    query: dict[str, Any] = {}
+    if status in STATUSES:
+        query["status"] = status
+    if text:
+        safe = re.escape(text.strip())
+        query["$or"] = [
+            {"email_normalized": {"$regex": f"^{re.escape(normalize_email(text))}"}},
+            {"company_name": {"$regex": safe, "$options": "i"}},
+        ]
+    total = db.accounts.count_documents(query)
+    found = list(db.accounts.find(query).sort("created_at", -1)
+                 .skip(skip).limit(limit))
+    return found, total
 
 
 # ---------------------------------------------------------------- notifications

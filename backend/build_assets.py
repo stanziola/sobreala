@@ -21,6 +21,13 @@ BRAND_DIR = BASE_DIR.parent / "brand"
 OUT_CSS = BASE_DIR / "static" / "css" / "panel.css"
 OUT_WING = BASE_DIR / "templates" / "_wing.svg"
 OUT_FONTS = BASE_DIR / "static" / "fonts"
+OUT_IMG = BASE_DIR / "static" / "img"
+
+# Lo que se compara en --check. Solo texto: dos versiones de Pillow pueden
+# escribir el mismo PNG con bytes distintos, y una prueba que falla al
+# actualizar una dependencia deja de creerse. La deriva que importa es esta.
+CHECKED = (".html", ".css", ".svg", ".txt", ".xml")
+
 
 # The same two the public site converts, for the same reason: the wordmark next
 # to the wing has to be the wordmark, not whatever the system offers.
@@ -123,7 +130,7 @@ def build() -> list[Path]:
     )
 
     written = [OUT_CSS, OUT_WING] + [OUT_FONTS / Path(f["file"]).name for f in faces]
-    img = BASE_DIR / "static" / "img"
+    img = OUT_IMG
     img.mkdir(parents=True, exist_ok=True)
     for name in ("favicon.svg", "favicon.ico"):
         source = BRAND_DIR / "favicon" / name
@@ -133,6 +140,64 @@ def build() -> list[Path]:
     return written
 
 
-if __name__ == "__main__":
+def check() -> list[Path]:
+    """Los archivos generados que ya no coinciden con sus fuentes.
+
+    Misma idea que en landing/build_site.py: panel.css y _wing.svg se generan
+    desde brand/ y desde _panel.src.css, y editarlos sin regenerar no rompe
+    nada hasta que alguien mira la página. Genera en un directorio temporal y
+    compara; no escribe nada en el repositorio.
+    """
+    import tempfile
+
+    global OUT_CSS, OUT_WING, OUT_FONTS, OUT_IMG
+    saved = (OUT_CSS, OUT_WING, OUT_FONTS, OUT_IMG)
+    stale: list[Path] = []
+    with tempfile.TemporaryDirectory(prefix="panamails-check-") as tmp:
+        fake = Path(tmp)
+        OUT_CSS = fake / "static" / "css" / "panel.css"
+        OUT_WING = fake / "templates" / "_wing.svg"
+        OUT_FONTS = fake / "static" / "fonts"
+        OUT_IMG = fake / "static" / "img"
+        try:
+            produced = build()
+        finally:
+            OUT_CSS, OUT_WING, OUT_FONTS, OUT_IMG = saved
+
+        for made in produced:
+            if made.suffix.lower() not in CHECKED:
+                continue
+            published = BASE_DIR / made.relative_to(fake)
+            if (not published.exists()
+                    or published.read_bytes() != made.read_bytes()):
+                stale.append(published)
+    return stale
+
+
+def main(argv=None) -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--check", action="store_true",
+                    help="no escribir: solo decir si lo generado quedo viejo")
+    args = ap.parse_args(argv)
+
+    if args.check:
+        stale = check()
+        if not stale:
+            print("Los archivos generados del panel estan al dia.")
+            return 0
+        print("Estos archivos se quedaron viejos:")
+        for path in stale:
+            print("  ", path.relative_to(BASE_DIR.parent))
+        print()
+        print("Corre:  python backend/build_assets.py")
+        return 1
+
     for path in build():
         print("wrote", path.relative_to(BASE_DIR.parent))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,175 @@
+{% extends "admin/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ client.company_name }}</h2>
+<p class="settings__lead">{{ t('admin_account_lead') }}</p>
+
+{% if request.args.get('hecho') %}
+<p class="notice notice--ok">{{ t('admin_done') }}</p>
+{% endif %}
+{% if request.args.get('falta') == 'motivo' %}
+<p class="notice">{{ t('admin_need_reason') }}</p>
+{% endif %}
+
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('admin_col_contact') }}</h3>
+    <p class="setting__desc">{{ client.email }}</p>
+  </div>
+  <div class="setting__action">
+    <span class="setting__value">{{ client.contact_name }}</span>
+    {% if not client.email_confirmed_at %}
+    <span class="tag tag--warn">{{ t('admin_unconfirmed') }}</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('admin_col_status') }}</h3>
+    <p class="setting__desc">{{ t('panel_status_' + client.status) }}</p>
+  </div>
+  <div class="setting__action">
+    <span class="tag tag--quiet">{{ t('status_short_' + client.status) }}</span>
+  </div>
+</div>
+
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('admin_col_plan') }}</h3>
+    <p class="setting__desc">{{ t('admin_of_limit', n=limit) }}</p>
+  </div>
+  <div class="setting__action">
+    <span class="setting__value">
+      {{ client.plan|capitalize if client.plan else t('admin_no_plan') }}</span>
+  </div>
+</div>
+
+{# --- las dos decisiones, cada una con su motivo obligatorio --- #}
+<h3 class="settings__subtitle">{{ t('admin_change_status') }}</h3>
+<p class="settings__lead">{{ t('admin_change_status_hint') }}</p>
+
+<form method="post" action="{{ url_for('admin.change_status', raw=client._id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="estado">{{ t('admin_col_status') }}</label>
+  <select id="estado" name="estado">
+    {% for name in statuses %}
+    <option value="{{ name }}"{% if name == client.status %} selected{% endif %}>
+      {{ t('status_short_' + name) }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="motivo-estado">{{ t('admin_reason') }}</label>
+  <input id="motivo-estado" name="motivo" type="text" maxlength="300" required
+         autocomplete="off">
+  <button class="btn" type="submit">{{ t('admin_apply') }}</button>
+</form>
+
+<h3 class="settings__subtitle">{{ t('admin_change_plan') }}</h3>
+<p class="settings__lead">{{ t('admin_change_plan_hint') }}</p>
+
+<form method="post" action="{{ url_for('admin.change_plan', raw=client._id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="plan">{{ t('admin_col_plan') }}</label>
+  <select id="plan" name="plan">
+    <option value="">{{ t('admin_no_plan') }}</option>
+    {% for name in plans %}
+    <option value="{{ name }}"{% if name == client.plan %} selected{% endif %}>
+      {{ name|capitalize }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="motivo-plan">{{ t('admin_reason') }}</label>
+  <input id="motivo-plan" name="motivo" type="text" maxlength="300" required
+         autocomplete="off">
+  <button class="btn" type="submit">{{ t('admin_apply') }}</button>
+</form>
+
+{# --- cifras y orígenes. Nunca la lista de direcciones de sus contactos --- #}
+<h3 class="settings__subtitle">{{ t('admin_usage_title') }}</h3>
+<ul class="counts">
+  <li><span>{{ t('admin_contacts') }}</span>
+    <b>{{ contacts_total }} / {{ limit }}</b></li>
+  <li><span>{{ t('admin_suppressions') }}</span> <b>{{ suppressed_total }}</b></li>
+  <li><span>{{ t('admin_tags') }}</span>
+    <b>{{ tags|join(', ') if tags else t('admin_none') }}</b></li>
+</ul>
+<p class="hint">{{ t('admin_privacy_note') }}</p>
+
+<h3 class="settings__subtitle">{{ t('admin_imports_title') }}</h3>
+{% if history %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for job in history %}
+      <tr>
+        <td>{{ job.filename }}<br>
+          <span class="table__quiet">{{ t('admin_imports_origin') }}:
+            {{ t('consent_' + job.consent.source) }}
+            {%- if job.consent.note %} · {{ job.consent.note }}{% endif %}</span></td>
+        <td class="table__quiet">{{ job.created_at|ago }}</td>
+        <td class="table__quiet">{{ t('import_added') }}: {{ job.added }} ·
+          {{ t('import_invalid') }}: {{ job.invalid }}</td>
+        <td><span class="tag tag--quiet">{{ t('import_status_' + job.status) }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('admin_imports_empty') }}</p>
+{% endif %}
+
+{# Estas cifras no existen todavía. Se dibujan igual para que la pantalla no
+   cambie de forma el día que haya envíos: solo se llenan. #}
+<h3 class="settings__subtitle">{{ t('admin_sending_title') }}
+  <span class="tag tag--quiet">{{ t('panel_soon_tag') }}</span></h3>
+<p class="settings__lead">{{ t('admin_sending_lead') }}</p>
+
+<h3 class="settings__subtitle">{{ t('admin_devices_title') }}</h3>
+<ul class="devices">
+  {% for device in devices %}
+  {% set who = describe(device.user_agent) %}
+  <li class="device">
+    <div>
+      <p class="device__name">
+        {% if who.browser and who.system %}
+          {{ t('device_on', browser=who.browser, system=who.system) }}
+        {% else %}{{ who.browser or who.system or t('device_unknown') }}{% endif %}
+      </p>
+      <p class="device__meta">{{ t('device_seen', when=device.last_seen_at|ago) }}
+        · {{ device.ip }}</p>
+    </div>
+  </li>
+  {% else %}
+  <li class="hint">{{ t('admin_none') }}</li>
+  {% endfor %}
+</ul>
+
+<h3 class="settings__subtitle">{{ t('admin_history_title') }}</h3>
+{% if decisions %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for row in decisions %}
+      <tr>
+        <td>
+          {% if row.kind == 'status' %}
+          {{ t('admin_history_status', before=row.before, after=row.after) }}
+          {% else %}
+          {{ t('admin_history_plan', before=row.before or t('admin_no_plan'),
+                after=row.after or t('admin_no_plan')) }}
+          {% endif %}
+        </td>
+        <td>{{ row.reason }}</td>
+        <td class="table__quiet">{{ row.created_at|ago }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('admin_history_empty') }}</p>
+{% endif %}
+
+<p class="foot"><a href="{{ url_for('admin.accounts_list') }}">{{ t('admin_back') }}</a></p>
+{% endblock %}

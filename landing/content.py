@@ -596,6 +596,54 @@ ABOUT = {
     ],
 }
 
+# --------------------------------------------------------------------------- contact
+# Una página y no un ancla al pie: así se puede enlazar desde fuera, aparece en
+# los buscadores y se puede mandar por WhatsApp sola.
+CONTACT_PAGE = {
+    "meta_title": "Contacto — Panamails",
+    "meta_description": "Escríbenos por WhatsApp o por correo. Respondemos el "
+                        "mismo día hábil, desde Santiago de Veraguas.",
+    "hero": {
+        "eyebrow": "Contacto",
+        "title": "Hablemos de tu lista",
+        "subtitle": "Escríbenos y te decimos en dos minutos si Panamails te "
+                    "sirve. Sin compromiso y sin formularios largos.",
+    },
+    "ways": [
+        {
+            "kind": "whatsapp",
+            "title": "WhatsApp",
+            "detail": "Lo más rápido. Contestamos el mismo día hábil.",
+        },
+        {
+            "kind": "email",
+            "title": "Correo",
+            "detail": "Para lo que necesite quedar por escrito, como una "
+                      "cotización o los datos de tu organización.",
+        },
+        {
+            "kind": "instagram",
+            "title": "Instagram",
+            "detail": "Ahí publicamos ejemplos de piezas y novedades.",
+        },
+    ],
+    "who": {
+        "title": "Quién contesta",
+        "paragraphs": [
+            "Panamails lo lleva **Luis Stanziola**, desde Santiago de "
+            "Veraguas. No hay centro de llamadas: escribes y te contesta la "
+            "misma persona que va a configurar tu cuenta.",
+            "Atendemos de **lunes a viernes**. Si escribes un fin de semana, "
+            "te respondemos el lunes.",
+        ],
+    },
+    "already": {
+        "title": "¿Ya tienes cuenta?",
+        "text": "Si es algo de tu cuenta, entra al panel: ahí están tus datos, "
+                "tu plan y tus dispositivos conectados.",
+    },
+}
+
 # --------------------------------------------------------------------------- legal
 
 # Quién responde por los datos. La ley pide que sea identificable y
@@ -791,6 +839,14 @@ PRIVACY = {
                 "JavaScript y caduca sola.",
                 "Un **valor guardado en tu navegador** con el tema que "
                 "elegiste, claro u oscuro. No sale de tu equipo.",
+                "Una cookie de **dispositivos de confianza**, de 30 días, solo "
+                "si activas la verificación en dos pasos y pides no volver a "
+                "escribir el código en ese equipo. De ella guardamos únicamente "
+                "una huella, nunca el valor que viaja.",
+                "Una **marca de un solo dígito** que el panel deja en "
+                "panamails.com para que el sitio público sepa si dibujarte el "
+                "botón «Mi cuenta». No lleva tu nombre ni tu dirección: es un "
+                "uno y nada más.",
             ],
             "note": (
                 "No usamos cookies de publicidad, ni de redes sociales, ni de "
@@ -1059,7 +1115,7 @@ FOOTER = {
             "title": "Empresa",
             "links": [
                 {"label": "Nosotros", "url": "/nosotros/"},
-                {"label": "Contacto", "url": "#contacto"},
+                {"label": "Contacto", "url": "/contacto/"},
             ],
         },
         {

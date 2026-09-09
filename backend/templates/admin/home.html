@@ -1,0 +1,76 @@
+{% extends "admin/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('admin_tab_home') }}</h2>
+<p class="settings__lead">{{ t('admin_home_lead') }}</p>
+
+{# Lo primero es lo único que pide acción tuya. #}
+<h3 class="settings__subtitle">{{ t('admin_waiting_title') }}</h3>
+<p class="settings__lead">{{ t('admin_waiting_lead') }}</p>
+
+{% if waiting %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for row in waiting %}
+      <tr>
+        <td><b>{{ row.company_name }}</b><br>
+          <span class="table__quiet">{{ row.email }}</span></td>
+        <td class="table__quiet">{{ row.created_at|ago }}</td>
+        <td>
+          {% if not row.email_confirmed_at %}
+          <span class="tag tag--warn">{{ t('admin_unconfirmed') }}</span>
+          {% endif %}
+        </td>
+        <td>
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('admin.account_page', raw=row._id) }}">{{ t('admin_open') }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('admin_waiting_empty') }}</p>
+{% endif %}
+
+<h3 class="settings__subtitle">{{ t('admin_counts_title') }}</h3>
+<ul class="counts">
+  {% for name in statuses %}
+  <li>
+    <a href="{{ url_for('admin.accounts_list', estado=name) }}">{{ t('status_short_' + name) }}</a>
+    <b>{{ counted[name] }}</b>
+  </li>
+  {% endfor %}
+</ul>
+
+<h3 class="settings__subtitle">{{ t('admin_recent_title') }}</h3>
+{% if decisions %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for row in decisions %}
+      <tr>
+        <td>
+          {% if row.kind == 'status' %}
+          {{ t('admin_history_status', before=row.before, after=row.after) }}
+          {% else %}
+          {{ t('admin_history_plan', before=row.before or t('admin_no_plan'),
+                after=row.after or t('admin_no_plan')) }}
+          {% endif %}
+        </td>
+        <td>{{ row.reason }}</td>
+        <td class="table__quiet">{{ row.created_at|ago }}</td>
+        <td>
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('admin.account_page', raw=row.account_id) }}">{{ t('admin_open') }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('admin_recent_empty') }}</p>
+{% endif %}
+{% endblock %}

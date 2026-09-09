@@ -112,6 +112,22 @@ class Config:
     IMPORT_MAX_BYTES = int(os.getenv("IMPORT_MAX_BYTES", str(5 * 1024 * 1024)))
     IMPORTS_PER_DAY = int(os.getenv("IMPORTS_PER_DAY", "10"))
 
+    # --- payments ----------------------------------------------------------
+    # sandbox mueve dinero falso, live cobra tarjetas de verdad. Cada uno tiene
+    # su propio par de llaves en developer.paypal.com y no son intercambiables.
+    PAYPAL_ENV = os.getenv("PAYPAL_ENV", "sandbox").strip().lower()
+    PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
+    PAYPAL_SECRET = os.getenv("PAYPAL_SECRET", "")
+    # Sin esto no se puede comprobar que un aviso venga de PayPal, así que
+    # cualquiera que encuentre la dirección podría decir que alguien pagó.
+    PAYPAL_WEBHOOK_ID = os.getenv("PAYPAL_WEBHOOK_ID", "")
+
+    @classmethod
+    def paypal_api(cls) -> str:
+        """El servidor al que se le habla, según el entorno."""
+        return ("https://api-m.paypal.com" if cls.PAYPAL_ENV == "live"
+                else "https://api-m.sandbox.paypal.com")
+
     @classmethod
     def check(cls) -> None:
         if not cls.SECRET_KEY:
@@ -126,6 +142,16 @@ class Config:
                 f"APP_BASE_URL sigue apuntando al servidor de desarrollo "
                 f"({cls.APP_BASE_URL}): los correos saldrian con enlaces "
                 f"inservibles")
+        if cls.PAYPAL_ENV not in ("sandbox", "live"):
+            raise RuntimeError(
+                f"PAYPAL_ENV debe ser sandbox o live, no {cls.PAYPAL_ENV!r}")
+        # Un cobro que no cobra no se nota desde dentro: la página del checkout
+        # se abre igual, el cliente cree que pagó y el dinero nunca llega.
+        # Mejor negarse a arrancar que descubrirlo al cerrar el mes.
+        if cls.ENV != "development" and cls.PAYPAL_CLIENT_ID                 and cls.PAYPAL_ENV != "live":
+            raise RuntimeError(
+                "PAYPAL_ENV sigue en sandbox con credenciales puestas: los "
+                "cobros no llegarian a ninguna cuenta de verdad")
         if cls.MAIL_BACKEND not in ("file", "smtp", "ses"):
             raise RuntimeError(f"unknown MAIL_BACKEND: {cls.MAIL_BACKEND!r}")
         if cls.MAIL_BACKEND == "smtp" and not cls.MAIL_SMTP_USER:
