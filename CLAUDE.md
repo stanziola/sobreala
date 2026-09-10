@@ -139,6 +139,13 @@ aplicación aparte: comparte modelos y servicios con el resto.
   es lo estrictamente necesario para que lo pedido funcione o para que las
   pruebas pasen, y eso va nombrado en el reporte. Renombrar de paso, reordenar,
   «ya que estoy» y «aprovecho y mejoro esto» no entran.
+- **Lo que existe en los dos sitios se cambia en los dos.** La barra de arriba,
+  su menú y todo lo que se repita entre `panamails.com` (`landing/src/`) y
+  `panel.panamails.com` (`backend/templates/`) son **dos plantillas distintas
+  que tienen que decir lo mismo**. Al tocar una, se abre la otra en el mismo
+  cambio y se comprueban las dos en el navegador, con sesión y sin ella. Ya
+  mordió dos veces: la fila de Plantillas se puso solo en el panel, y salir
+  preguntaba en un sitio y no en el otro.
 
 ---
 
@@ -529,10 +536,20 @@ sirven sin cuenta.
 **El idioma está anunciado, no traducido.** El menú enseña «Español» y «Inglés
 (pronto)»; el inglés se hará cuando haya a quién dárselo.
 
-El sitio público está en otro dominio y no lleva ningún testigo del panel, así
-que su «Cerrar sesión» no puede cerrar nada: lleva a `GET /salir`, que solo
-pregunta. Lo que cierra es el POST, y así ningún escáner de correo ni prefetch
-saca a nadie de su cuenta abriendo un enlace.
+**Salir cuesta un clic desde los dos sitios.** El sitio público está en otro
+dominio y no lleva ningún testigo del panel, así que su «Cerrar sesión» no puede
+ser un formulario: es un enlace, y un enlace es un `GET /salir`. Ese GET cierra
+igual que el POST del menú del panel, y por eso no se le pide testigo.
+
+Lo único que no obedece es una petición que el navegador **dice estar
+adelantando** —`Sec-Purpose`, `Purpose` o `X-Moz` con `prefetch`—: sin eso, un
+navegador que precarga enlaces sacaría a alguien de su cuenta sin que hubiera
+pulsado nada. Se cierra por omisión y se calla solo ante esa cabecera; si un
+intermediario se la comiera, lo que se pierde es la protección y no el salir.
+`logout.html` sigue existiendo, pero solo la ve esa precarga.
+
+Cerrar las sesiones de los **otros** dispositivos no se pregunta al salir: vive
+en Configuración → Seguridad, que es su sitio.
 
 ## Panel de administración
 

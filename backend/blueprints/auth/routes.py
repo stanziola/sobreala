@@ -954,24 +954,51 @@ def login_code():
                            recovery_left=len(account["two_factor"].get("recovery", [])))
 
 
+# Cómo dicen los navegadores que una petición la pidieron ellos y no la persona.
+# Se miran las tres porque conviven: la nueva de Chrome, la vieja de Chrome y la
+# de Firefox.
+PREFETCH_HEADERS = (("Sec-Purpose", "prefetch"), ("Purpose", "prefetch"),
+                    ("X-Moz", "prefetch"))
+
+
+def is_prefetch() -> bool:
+    """Si esta petición la está adelantando el navegador por su cuenta."""
+    return any(value in request.headers.get(name, "").lower()
+               for name, value in PREFETCH_HEADERS)
+
+
 @bp.route("/salir", methods=["GET", "POST"])
 def logout():
-    """Close this device's session. The GET only asks.
+    """Close this device's session, by either method.
 
     The public site sits on another host and carries none of our tokens, so its
-    "Cerrar sesión" cannot close anything by itself: it lands here and this page
-    holds the form that does. Closing on the GET would also hand the job to
-    every mail scanner and link prefetcher that opens a URL on its own.
+    "Cerrar sesión" cannot be a form: it is a link, and a link is a GET. Salir
+    tiene que costar lo mismo desde los dos sitios —un clic— así que el GET
+    también cierra.
+
+    Lo único que no cierra es una petición que el propio navegador dice estar
+    adelantando: sin eso, un navegador que precarga enlaces sacaría a alguien de
+    su cuenta sin que hubiera pulsado nada. Se cierra por omisión y se calla solo
+    ante esa cabecera; si un intermediario se la comiera, lo que se pierde es la
+    protección y no el salir, que es el lado bueno de equivocarse.
+
+    Cerrar las sesiones de los otros dispositivos no se pregunta aquí: eso vive
+    en Configuración → Seguridad, que es su sitio.
     """
     if request.method == "GET":
         if not current_session():
             return redirect(url_for("auth.login"))
-        return render_template("logout.html")
+        if is_prefetch():
+            # Nadie la va a ver: la pidió el navegador, no la persona.
+            return render_template("logout.html")
 
     db = get_db()
     doc = current_session()
     account_id = doc["account_id"] if doc else None
-    if csrf_ok(request.form.get("csrf_token")):
+    # El testigo se le pide al formulario del panel, que lo tiene. Al enlace del
+    # sitio público no, porque vive en otro dominio y no puede llevarlo; lo que
+    # protege a ese lado es no obedecer a una precarga.
+    if request.method == "GET" or csrf_ok(request.form.get("csrf_token")):
         # Close it for real instead of just forgetting the cookie: whoever
         # copied its value no longer holds anything.
         if doc:

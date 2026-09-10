@@ -231,19 +231,60 @@ def test_the_panel_no_longer_holds_the_settings(client, database, outbox):
 
 # --------------------------------------------------------------- signing out
 
-def test_opening_the_sign_out_link_closes_nothing(client, database, outbox):
-    """The public site's button lands on a page that asks. A mail scanner or a
-    prefetcher opening it must not sign anybody out."""
+def test_the_sign_out_link_signs_out(client, database, outbox):
+    """El botón del sitio público es un enlace, y un enlace es un GET.
+
+    Salir cuesta un clic desde los dos sitios: el enlace del sitio y el
+    formulario del panel hacen lo mismo. El enlace no lleva testigo porque viene
+    de otro dominio y no puede llevarlo.
+    """
     register(client)
     inside = other(client)
     login(inside)
 
-    asked = inside.get("/salir")
-    assert asked.status_code == 200
-    assert inside.get("/panel").status_code == 200
-
-    inside.post("/salir", data={"csrf_token": csrf(inside, "/salir")})
+    salida = inside.get("/salir")
+    assert salida.status_code == 302
+    assert salida.headers["Location"].endswith("/entrar")
     assert inside.get("/panel").status_code == 302
+
+
+def test_a_prefetched_sign_out_closes_nothing(client, database, outbox):
+    """Lo único que no obedece: una petición que el navegador dice estar
+    adelantando por su cuenta. Sin esto, un navegador que precarga enlaces
+    sacaría a alguien de su cuenta sin que hubiera pulsado nada."""
+    for cabecera in ("Sec-Purpose", "Purpose", "X-Moz"):
+        register(client, email=f"{cabecera.lower()}@ejemplo.com")
+        inside = other(client)
+        login(inside, email=f"{cabecera.lower()}@ejemplo.com")
+
+        adelantada = inside.get("/salir", headers={cabecera: "prefetch"})
+        assert adelantada.status_code == 200, cabecera
+        assert inside.get("/panel").status_code == 200, cabecera
+
+
+def test_signing_out_kills_the_session_document(client, database, outbox):
+    """No basta con olvidar la galleta: quien copió su valor no puede seguir
+    entrando con ella."""
+    from models import session as sessions
+
+    register(client)
+    inside = other(client)
+    login(inside)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    assert len(sessions.for_account(database, cuenta["_id"])) == 1
+
+    inside.get("/salir")
+    assert sessions.for_account(database, cuenta["_id"]) == []
+
+
+def test_the_sign_out_form_still_needs_its_token(client, database, outbox):
+    """El del panel sí lleva testigo, y sin uno bueno no cierra nada."""
+    register(client)
+    inside = other(client)
+    login(inside)
+
+    inside.post("/salir", data={"csrf_token": "no-es"})
+    assert inside.get("/panel").status_code == 200
 
 
 def test_the_sign_out_page_needs_a_session(client, database):

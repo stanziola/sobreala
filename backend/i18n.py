@@ -28,12 +28,11 @@ TEXTS = {
     "menu_language_soon": "Inglés (pronto)",
 
     # --- signing out from a link -------------------------------------------
-    # The public site cannot close a session by itself —it sits on another host
-    # and carries no token of ours— so its button lands here and this page is
-    # what actually closes it.
+    # Salir cierra la sesión al momento desde los dos sitios. Esta pantalla ya
+    # no está en ese camino: solo la recibe una petición que el navegador dijo
+    # estar adelantando por su cuenta, y a esa no la mira nadie.
     "logout_title": "¿Cerrar tu sesión?",
-    "logout_lead": "Vas a salir de tu cuenta en este dispositivo. Si la tienes "
-                   "abierta en otros, esos siguen abiertos.",
+    "logout_lead": "Vas a salir de tu cuenta en este dispositivo.",
     "logout_submit": "Sí, cerrar mi sesión",
     "logout_cancel": "No, volver al panel",
 
@@ -206,8 +205,8 @@ TEXTS = {
     "two_step_scan_note_title": "Si ya tenías Panamails en tu app",
     "two_step_scan_note": "Cada vez que activas la verificación el código es "
                           "nuevo, así que el anterior dejó de servir. Bórralo "
-                          "de tu app antes de escanear este: tener los dos "
-                          "solo lleva a escribir el que ya no funciona.",
+                          "de tu app antes de escanear este para evitar "
+                          "confusiones.",
 
     "two_step_codes_title": "Guarda estos códigos de respaldo",
     "two_step_codes_lead": "Sirven para entrar si pierdes el teléfono. Cada uno "
