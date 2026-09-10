@@ -103,18 +103,33 @@ def delete_suppressed(db, account_id) -> int:
     return result.deleted_count
 
 
-def all_of(db, account_id, *, search: str = "", tag: str = ""):
-    """Todos los que coinciden, uno a uno, para exportarlos.
+def _matching(account_id, search: str, tag: str) -> dict[str, Any]:
+    """La consulta de la tabla, en un solo sitio.
 
-    Un cursor y no una lista: el archivo se escribe fila por fila, por la misma
-    razón por la que el importador lee así.
+    La usan la exportación y el conteo que la confirma, para que el número que
+    se enseña antes de descargar sea el del archivo y no una cuenta aparte que
+    un día se desincroniza.
     """
     query: dict[str, Any] = {"account_id": account_id}
     if tag:
         query["tags"] = tag
     if search:
         query["email_normalized"] = {"$regex": f"^{_escape(normalize_email(search))}"}
-    return db.contacts.find(query).sort("created_at", -1)
+    return query
+
+
+def matching_count(db, account_id, *, search: str = "", tag: str = "") -> int:
+    """Cuántos saldrían con ese buscador y ese filtro."""
+    return db.contacts.count_documents(_matching(account_id, search, tag))
+
+
+def all_of(db, account_id, *, search: str = "", tag: str = ""):
+    """Todos los que coinciden, uno a uno, para exportarlos.
+
+    Un cursor y no una lista: el archivo se escribe fila por fila, por la misma
+    razón por la que el importador lee así.
+    """
+    return db.contacts.find(_matching(account_id, search, tag)).sort("created_at", -1)
 
 
 # Cómo entró un contacto. Los que existían antes de que este campo existiera no

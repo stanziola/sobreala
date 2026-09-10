@@ -45,6 +45,27 @@ def make_tag(client, name):
         "csrf_token": csrf(client, "/contactos/etiquetas"), "etiqueta": name})
 
 
+def with_plan(database, plan="empresa", email="ana@ejemplo.com"):
+    """Ponerle un plan a la cuenta de la prueba.
+
+    Cuántas etiquetas caben lo dice el plan, y sin plan cabe una. Las pruebas
+    que usan dos o más lo dicen aquí en vez de dar por hecho un tope que ya no
+    existe.
+    """
+    accounts.set_plan(database, accounts.by_email(database, email)["_id"], plan)
+
+
+def export(client, query=""):
+    """Exportar como lo hace la pantalla: se confirma y ahí baja el archivo."""
+    client.get("/contactos/exportar" + query)
+    data = {"csrf_token": csrf(client, "/contactos/exportar" + query)}
+    for pair in query.lstrip("?").split("&"):
+        if "=" in pair:
+            key, value = pair.split("=", 1)
+            data[key] = value
+    return client.post("/contactos/exportar", data=data)
+
+
 def upload(client, text, *, source="members", tags=(), filename="lista.csv"):
     """Subir un archivo. Las etiquetas van marcadas, como casillas."""
     token = csrf(client, "/contactos/importar")
@@ -83,6 +104,7 @@ def test_una_lista_entra_entera(client, database, outbox):
 
 def test_subir_el_mismo_archivo_dos_veces_no_duplica_a_nadie(client, database, outbox):
     browser = inside(client)
+    with_plan(database)
     make_tag(browser, "socios")
     make_tag(browser, "junta")
     upload(browser, LISTA, tags=["socios"])
@@ -444,6 +466,7 @@ def test_la_columna_de_estado_dice_activo_o_anulado(client, database, outbox):
 
 def test_editar_cambia_lo_editable_y_deja_la_historia(client, database, outbox):
     browser = inside(client)
+    with_plan(database)
     make_tag(browser, "socios")
     make_tag(browser, "junta")
     upload(browser, LISTA, tags=["socios"])
@@ -551,7 +574,10 @@ def test_exportar_trae_lo_que_ensena_la_tabla(client, database, outbox):
     cuenta = account_of(database)
     suppressions.add(database, cuenta["_id"], "bea@coop.com")
 
-    respuesta = browser.get("/contactos/exportar")
+    aviso = browser.get("/contactos/exportar").get_data(as_text=True)
+    assert "Van a salir 3 contactos" in aviso
+
+    respuesta = export(browser)
     assert respuesta.status_code == 200
     assert "attachment" in respuesta.headers["Content-Disposition"]
 
@@ -568,7 +594,7 @@ def test_exportar_respeta_el_filtro(client, database, outbox):
     upload(browser, "correo\nana@coop.com\n", tags=["junta"])
     upload(browser, "correo\nbea@coop.com\n")
 
-    texto = browser.get("/contactos/exportar?etiqueta=junta").get_data(as_text=True)
+    texto = export(browser, "?etiqueta=junta").get_data(as_text=True)
     assert "ana@coop.com" in texto
     assert "bea@coop.com" not in texto
 
@@ -581,6 +607,7 @@ def test_contactos_pide_sesion(client, database):
 
 def test_agregar_uno_a_mano(client, database, outbox):
     browser = inside(client)
+    with_plan(database)
     make_tag(browser, "junta")
     make_tag(browser, "socios")
     browser.post("/contactos/nuevo", data={
@@ -626,3 +653,76 @@ def test_el_lector_no_carga_el_archivo_entero(client, database, outbox):
     assert primera[0] == "socio0@coop.com"
     # Todavía queda archivo sin leer detrás del búfer.
     assert flujo.tell() < len(filas.encode("utf-8"))
+
+
+# --------------------------------------------- el tope de etiquetas, por plan
+
+def test_sin_plan_cabe_una_sola_etiqueta(client, database, outbox):
+    """Sin plan se puede organizar un grupo, igual que en el Básico."""
+    browser = inside(client)
+    make_tag(browser, "socios")
+    make_tag(browser, "junta")
+
+    assert accounts.tags_of(account_of(database)) == ["socios"]
+    pantalla = browser.get("/contactos/etiquetas").get_data(as_text=True)
+    assert "1 de 1 etiquetas" in pantalla
+
+
+def test_subir_de_plan_levanta_el_tope(client, database, outbox):
+    browser = inside(client)
+    make_tag(browser, "socios")
+    make_tag(browser, "junta")
+    assert len(accounts.tags_of(account_of(database))) == 1
+
+    with_plan(database, "negocio")
+    make_tag(browser, "junta")
+    assert sorted(accounts.tags_of(account_of(database))) == ["junta", "socios"]
+
+
+def test_el_tope_de_etiquetas_sale_del_documento_de_precios():
+    """Las cifras no están copiadas aquí ni en el backend."""
+    from services import plans
+    assert plans.tag_limit("basico") == 1
+    assert plans.tag_limit("negocio") == 2
+    assert plans.tag_limit("empresa") == 4
+    assert plans.tag_limit(None) == plans.FREE_TAGS
+    # Corporativo dice «Ilimitadas», y eso no es un número de la tabla.
+    assert plans.tag_limit("corporativo") >= plans.UNLIMITED
+
+
+# ------------------------------------------------- exportar pregunta antes
+
+def test_exportar_sin_confirmar_no_descarga_nada(client, database, outbox):
+    browser = inside(client)
+    upload(browser, LISTA)
+
+    respuesta = browser.get("/contactos/exportar")
+    assert respuesta.status_code == 200
+    assert "Content-Disposition" not in respuesta.headers
+    texto = respuesta.get_data(as_text=True)
+    assert "Van a salir 3 contactos" in texto
+    assert "ana@coop.com" not in texto
+
+
+def test_la_confirmacion_dice_con_que_filtro(client, database, outbox):
+    browser = inside(client)
+    make_tag(browser, "junta")
+    upload(browser, "correo\nana@coop.com\n", tags=["junta"])
+    upload(browser, "correo\nbea@coop.com\n")
+
+    texto = browser.get("/contactos/exportar?etiqueta=junta").get_data(as_text=True)
+    assert "Va a salir 1 contacto" in texto
+    assert "Etiqueta: junta" in texto
+
+    todos = browser.get("/contactos/exportar").get_data(as_text=True)
+    assert "Van a salir 2 contactos" in todos
+    assert "Sin filtro" in todos
+
+
+def test_exportar_sin_el_testigo_no_descarga(client, database, outbox):
+    """Un POST sin csrf vuelve a la confirmación, no al archivo."""
+    browser = inside(client)
+    upload(browser, LISTA)
+
+    respuesta = browser.post("/contactos/exportar", data={"csrf_token": "no"})
+    assert "Content-Disposition" not in respuesta.headers

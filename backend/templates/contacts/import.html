@@ -31,8 +31,17 @@
 <form method="post" enctype="multipart/form-data" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  <label for="archivo">{{ t('import_file') }}</label>
-  <input id="archivo" name="archivo" type="file" accept=".csv,text/csv" required>
+  {# El botón del navegador no se puede pintar, así que el campo se esconde
+     —sin dejar de recibir el foco— y quien lo abre es la etiqueta, que sí es
+     nuestra. Sin JavaScript la etiqueta abre el selector igual: eso lo hace el
+     navegador solo; lo único que se pierde es el nombre del archivo al lado. #}
+  <p class="field-label" id="archivo-label">{{ t('import_file') }}</p>
+  <div class="filepick">
+    <input id="archivo" name="archivo" type="file" accept=".csv,text/csv"
+           class="filepick__input" aria-labelledby="archivo-label" required>
+    <label class="btn btn--outline btn--small" for="archivo">{{ t('import_file_choose') }}</label>
+    <span class="filepick__name" data-file-name>{{ t('import_file_none') }}</span>
+  </div>
   <p class="hint">{{ t('import_file_hint', mb=max_mb, n=per_day) }}</p>
   {% if errors.archivo %}<p class="error">{{ errors.archivo }}</p>{% endif %}
 

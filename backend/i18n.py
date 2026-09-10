@@ -389,6 +389,23 @@ TEXTS = {
     "contacts_counter_blocked": "{n} anulados, que no cuentan.",
     "contacts_counter_blocked_one": "1 anulado, que no cuenta.",
     "contacts_export": "Exportar",
+    # Se pregunta antes de descargar: el archivo trae lo que se ve en la
+    # tabla, y eso hay que poder comprobarlo antes y no abriéndolo después.
+    "contacts_export_title": "Exportar tus contactos",
+    "contacts_export_lead": "Se descarga lo que estás viendo en la tabla, con "
+                            "el buscador y el filtro que tengas puestos.",
+    "contacts_export_going": "Van a salir {n} contactos.",
+    "contacts_export_going_one": "Va a salir 1 contacto.",
+    "contacts_export_going_none": "Con este filtro no sale ninguno.",
+    "contacts_export_filter_tag": "Etiqueta: {tag}",
+    "contacts_export_filter_search": "Buscando: {q}",
+    "contacts_export_filter_none": "Sin filtro: salen todos tus contactos.",
+    "contacts_export_columns": "Columnas: correo, nombre, etiquetas, cómo se "
+                               "agregó, cuándo y si está activo o anulado.",
+    "contacts_export_excel": "Se abre en Excel y lo lee nuestro propio "
+                             "importador, por si quieres volver a subirlo.",
+    "contacts_export_confirm": "Descargar",
+    "contacts_export_back": "Volver a la lista",
     "contacts_remove_blocked": "Eliminar los anulados",
     "contacts_remove_blocked_hint": "Eliminar los anulados borra esos "
                                     "contactos y deja sus supresiones donde "
@@ -458,8 +475,12 @@ TEXTS = {
     "tags_name": "Nombre",
     "tags_add": "Crear",
     "tags_room": "Puedes crear {n} más.",
-    "tags_full": "Llegaste al máximo de etiquetas. Borra alguna para crear "
-                 "otra.",
+    "tags_room_free": "Tu plan no pone tope: crea las que necesites.",
+    "tags_counter": "{n} de {limit} etiquetas",
+    "tags_counter_free": "{n} etiquetas, sin tope",
+    "tags_full": "Llegaste al máximo de etiquetas de tu plan. Borra alguna "
+                 "para crear otra, o sube de plan para tener más.",
+    "tags_plans": "Ver los planes",
     "tags_empty": "Todavía no tienes ninguna. Crea la primera y podrás usarla "
                   "al agregar contactos.",
     "tags_count": "{n} contactos",
@@ -492,6 +513,8 @@ TEXTS = {
     "import_title": "Importar contactos",
     "import_lead": "Un archivo CSV con una columna de correos. Si trae una "
                    "columna de nombres, también la leemos.",
+    "import_file_choose": "Elegir archivo",
+    "import_file_none": "Ningún archivo elegido",
     "import_file": "Tu archivo",
     "import_file_hint": "Hasta {mb} MB, y hasta {n} importaciones al día.",
     "import_submit": "Importar",
@@ -540,11 +563,65 @@ TEXTS = {
     "menu_contacts": "Contactos",
     "menu_admin": "Administración",
 
+    # --- plantillas --------------------------------------------------------
+    # Para el cliente son «plantillas»; en el código son «designs», porque
+    # `templates/` en este proyecto ya son las plantillas Jinja del panel.
+    "designs_title": "Plantillas",
+    "designs_lead": "Los diseños con los que sale tu correo. Los nuestros los "
+                    "tienes desde el primer día; los tuyos los subes en HTML.",
+    "designs_ready_title": "Plantillas prediseñadas",
+    "designs_ready_lead": "Vienen con Panamails y las tienen todos los planes.",
+    "designs_ready_empty": "Ninguna todavía. Se irán agregando y aparecerán "
+                           "aquí solas, sin que tengas que hacer nada.",
+    "designs_mine_title": "Tus plantillas",
+    "designs_mine_empty": "Todavía no has subido ninguna.",
+    "designs_upload_title": "Subir un HTML",
+    "designs_upload_hint": "Un archivo .html de hasta {kb} KB. Pasado ese "
+                           "tamaño Gmail recorta el correo y se pierde el "
+                           "botón para anular la suscripción.",
+    "designs_upload_first": "La primera que subas la revisamos a mano antes de "
+                            "que puedas usarla. Las siguientes entran solas.",
+    "designs_file": "Archivo",
+    "designs_name": "Nombre",
+    "designs_name_hint": "Para reconocerla después. Si lo dejas vacío usamos "
+                         "el nombre del archivo.",
+    "designs_submit": "Subir",
+    "designs_saved_approved": "Listo, ya la puedes usar.",
+    "designs_saved_pending": "Subida. La revisamos y te avisamos; suele ser el "
+                             "mismo día.",
+    "designs_delete": "Eliminar",
+    "designs_size": "{kb} KB",
+    "designs_status_pending": "En revisión",
+    "designs_status_approved": "Lista para usar",
+    "designs_status_rejected": "Rechazada",
+    "designs_locked": "Subir tu propio HTML es desde el plan {plan}. Con tu "
+                      "plan puedes usar las plantillas prediseñadas.",
+
+    # Por qué no se pudo guardar. Cada regla está por una razón, y la frase la
+    # dice, porque «archivo inválido» no le sirve a nadie para arreglarlo.
+    "designs_bad_empty": "El archivo está vacío.",
+    "designs_bad_too_big": "Pesa más de {kb} KB. Pasado eso Gmail recorta el "
+                           "correo y se pierde el botón de anular la "
+                           "suscripción.",
+    "designs_bad_not_utf8": "El archivo no está en UTF-8. Vuelve a guardarlo "
+                            "con esa codificación.",
+    "designs_bad_broken": "No se pudo leer como HTML.",
+    "designs_bad_tag": "Trae <{what}>, y eso ningún lector de correo lo "
+                       "ejecuta: un correo que lo lleva parece un ataque.",
+    "designs_bad_event": "Trae el atributo {what}. Los correos no ejecutan "
+                         "código.",
+    "designs_bad_href": "Trae un enlace que ejecuta código en vez de llevar a "
+                        "una dirección.",
+    "designs_bad_external": "Trae CSS o imágenes de otro sitio. Un archivo de "
+                            "fuera puede cambiar después de aprobado, así que "
+                            "aprobarlo no significaría nada.",
+
+    "menu_designs": "Plantillas",
+
     # --- administración ----------------------------------------------------
     "admin_title": "Administración",
     "admin_tab_home": "Portada",
     "admin_tab_accounts": "Cuentas",
-    "admin_home_lead": "Cómo va la plataforma y qué está esperándote.",
     "admin_waiting_title": "Esperando aprobación",
     "admin_waiting_lead": "Cuentas registradas que todavía no pueden contratar. "
                           "Habla con ellas y decide.",
@@ -552,7 +629,7 @@ TEXTS = {
     "admin_counts_title": "Cuentas por estado",
     "admin_recent_title": "Últimas decisiones",
     "admin_recent_empty": "Todavía no has aprobado ni suspendido nada.",
-    "admin_open": "Abrir",
+    "admin_open": "Ver perfil",
 
     "admin_accounts_lead": "Todas las cuentas. Busca por correo o por empresa.",
     "admin_all_states": "Todos los estados",
@@ -574,14 +651,14 @@ TEXTS = {
     "admin_done": "Listo, quedó guardado.",
     "admin_need_reason": "Escribe el motivo: es lo que se lee meses después "
                          "cuando alguien pregunte por qué.",
-    "admin_change_status": "Cambiar el estado",
-    "admin_change_status_hint": "Suspender cierra además todas sus sesiones "
-                                "abiertas y le impide volver a entrar.",
-    "admin_change_plan": "Cambiar el plan",
-    "admin_change_plan_hint": "El plan es lo que decide cuántos contactos "
-                              "puede tener.",
+    "admin_update_title": "Actualizar la cuenta",
+    "admin_update_hint": "El estado decide qué puede hacer y el plan cuántos "
+                         "contactos y etiquetas le caben. Suspender cierra "
+                         "además todas sus sesiones abiertas.",
     "admin_reason": "Motivo",
-    "admin_apply": "Aplicar",
+    "admin_reason_hint": "Si cambias las dos cosas, el motivo queda escrito en "
+                         "las dos.",
+    "admin_apply": "Actualizar",
 
     "admin_usage_title": "Cómo usa la plataforma",
     "admin_contacts": "Contactos",
@@ -601,10 +678,38 @@ TEXTS = {
                           "Todavía no hay envíos que medir; estas cifras se "
                           "llenan solas cuando salga la primera campaña.",
     "admin_devices_title": "Sus dispositivos",
-    "admin_history_title": "Lo que has decidido sobre esta cuenta",
+    "admin_history_title": "Actividad",
+    "admin_history_lead": "Lo que ha hecho la cuenta y lo que has decidido "
+                          "sobre ella, en la misma línea de tiempo.",
     "admin_history_empty": "Nada todavía.",
     "admin_history_status": "Estado: de {before} a {after}",
     "admin_history_plan": "Plan: de {before} a {after}",
+
+    "admin_act_login": "Entró a la cuenta",
+    "admin_act_login_failed": "Intento de entrada fallido",
+    "admin_act_logout": "Cerró sesión",
+    "admin_act_register": "Se registró",
+    "admin_act_confirm": "Confirmó su correo",
+    "admin_act_password_change": "Cambió la contraseña",
+    "admin_act_recover": "Recuperó la contraseña",
+    "admin_act_correct_email": "Corrigió su correo",
+    "admin_act_two_factor": "Verificación en dos pasos",
+    "admin_act_session_closed": "Cerró una sesión desde el aviso por correo",
+    "admin_act_import": "Importó {file}",
+    "admin_act_import_counts": "{added} nuevos · {updated} actualizados · "
+                               "{invalid} sin correo",
+    "admin_act_payment": "Pagó el plan {plan}",
+    "admin_act_payment_failed": "Intento de pago sin cobrar: {plan}",
+    "admin_act_from": "desde {ip}",
+    "admin_act_reason": "Motivo: {reason}",
+
+    "admin_designs_title": "Plantillas por revisar",
+    "admin_designs_lead": "La primera que sube cada cliente. Después queda "
+                          "habilitado y las siguientes entran solas.",
+    "admin_designs_empty": "Ninguna espera revisión.",
+    "admin_designs_approve": "Aprobar",
+    "admin_designs_reject": "Rechazar",
+    "admin_designs_download": "Ver el archivo",
 
     "admin_two_step_needed": "Para entrar a administración activa antes la "
                              "verificación en dos pasos. Es la cuenta que "

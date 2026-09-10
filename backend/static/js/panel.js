@@ -266,3 +266,20 @@
     box.addEventListener("focus", function () { box.select(); });
   });
 })();
+
+/* El nombre del archivo elegido, al lado del botón. El control del navegador
+   queda escondido, así que sin esto no habría forma de comprobar que se eligió
+   el que se quería. Sin JavaScript el botón sigue abriendo el selector. */
+(function () {
+  var input = document.querySelector(".filepick__input");
+  if (!input) return;
+  var name = document.querySelector("[data-file-name]");
+  if (!name) return;
+  var empty = name.textContent;
+
+  input.addEventListener("change", function () {
+    var file = input.files && input.files[0];
+    name.textContent = file ? file.name : empty;
+    name.classList.toggle("is-set", !!file);
+  });
+})();

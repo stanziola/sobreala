@@ -1,0 +1,33 @@
+{% extends "contacts/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('contacts_export_title') }}</h2>
+<p class="settings__lead">{{ t('contacts_export_lead') }}</p>
+
+{# El filtro se dice con palabras y no se da por sabido: es lo único que
+   separa «exporté mis socios» de «exporté todo». #}
+<p class="lead">
+  {% if going == 0 %}{{ t('contacts_export_going_none') }}
+  {% elif going == 1 %}{{ t('contacts_export_going_one') }}
+  {% else %}{{ t('contacts_export_going', n=going) }}{% endif %}
+</p>
+{% if tag %}<p class="hint">{{ t('contacts_export_filter_tag', tag=tag) }}</p>{% endif %}
+{% if search %}<p class="hint">{{ t('contacts_export_filter_search', q=search) }}</p>{% endif %}
+{% if not tag and not search %}<p class="hint">{{ t('contacts_export_filter_none') }}</p>{% endif %}
+
+<p class="hint">{{ t('contacts_export_columns') }}</p>
+<p class="hint">{{ t('contacts_export_excel') }}</p>
+
+<div class="row">
+  {# El filtro vuelve en campos escondidos: lo que se descarga es lo que esta
+     pantalla acaba de decir, no lo que quedó en la dirección de otra. #}
+  <form method="post" action="{{ url_for('contacts.export') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="q" value="{{ search }}">
+    <input type="hidden" name="etiqueta" value="{{ tag }}">
+    <button class="btn" type="submit"{% if going == 0 %} disabled{% endif %}>
+      {{ t('contacts_export_confirm') }}</button>
+  </form>
+  <a class="btn btn--outline"
+     href="{{ url_for('contacts.index', q=search, etiqueta=tag) }}">{{ t('contacts_export_back') }}</a>
+</div>
+{% endblock %}

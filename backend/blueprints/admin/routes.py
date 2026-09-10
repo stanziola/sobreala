@@ -21,8 +21,8 @@ from functools import wraps
 
 from bson.errors import InvalidId
 from bson import ObjectId
-from flask import (Blueprint, abort, redirect, render_template, request,
-                   url_for)
+from flask import (Blueprint, Response, abort, redirect, render_template,
+                   request, url_for)
 
 from blueprints.auth.routes import current_account
 from db import get_db
@@ -30,7 +30,9 @@ from models import account as accounts
 from models import admin_event as decisions
 from models import auth_event as events
 from models import contact as contacts
+from models import design as designs
 from models import import_job as imports
+from models import payment as payments
 from models import session as sessions
 from models import suppression as suppressions
 from services.security import csrf_ok
@@ -77,6 +79,41 @@ def wanted(raw):
     return found
 
 
+# Lo que se enseña de auth_events en la actividad de una cuenta. Fuera quedan
+# los reenvíos y los ajustes: llenan la línea de tiempo sin contar nada de lo
+# que uno viene a mirar.
+SHOWN = (events.LOGIN, events.LOGOUT, events.REGISTER, events.CONFIRM,
+         events.PASSWORD_CHANGE, events.RECOVER, events.CORRECT_EMAIL,
+         events.TWO_FACTOR, events.SESSION_CLOSED)
+
+
+def activity(db, client) -> list[dict]:
+    """Lo que hizo la cuenta y lo que se decidió sobre ella, en una sola línea
+    de tiempo.
+
+    Cuatro colecciones que ya existían y que hasta ahora se miraban por
+    separado: entradas, importaciones, pagos y decisiones. Se juntan aquí y no
+    en la plantilla porque lo que ordena es la fecha, no de dónde salió cada
+    cosa.
+
+    Las direcciones de sus contactos siguen sin aparecer: se enseña que importó
+    un archivo y cuántos entraron, no quiénes.
+    """
+    rows: list[dict] = []
+
+    for row in events.for_account(db, client["_id"], kinds=SHOWN, limit=40):
+        rows.append({"at": row["created_at"], "type": "auth", "row": row})
+    for job in imports.for_account(db, client["_id"], limit=20):
+        rows.append({"at": job["created_at"], "type": "import", "row": job})
+    for paid in payments.for_account(db, client["_id"], limit=20):
+        rows.append({"at": paid["created_at"], "type": "payment", "row": paid})
+    for taken in decisions.for_account(db, client["_id"]):
+        rows.append({"at": taken["created_at"], "type": "decision", "row": taken})
+
+    rows.sort(key=lambda entry: entry["at"], reverse=True)
+    return rows[:60]
+
+
 # --------------------------------------------------------------- la portada
 
 @bp.route("/")
@@ -87,10 +124,15 @@ def home(account):
     # Lo primero de la pantalla es lo único que pide acción: quien espera
     # aprobación desde hace más tiempo, primero.
     waiting, _ = accounts.search(db, status=accounts.REGISTERED, limit=10)
+    latest = decisions.latest(db, limit=10)
     return render_template("admin/home.html", section="portada", admin=account,
                            counted=counted, waiting=waiting,
-                           statuses=accounts.STATUSES,
-                           decisions=decisions.latest(db, limit=10))
+                           statuses=accounts.STATUSES, decisions=latest,
+                           # De qué cuenta es cada decisión. Sin esto hay que
+                           # abrirlas una a una para saberlo, y se resuelven en
+                           # una sola consulta, no una por fila.
+                           named=accounts.names_of(
+                               db, [row["account_id"] for row in latest]))
 
 
 # ---------------------------------------------------------------- las cuentas
@@ -129,18 +171,23 @@ def account_page(account, raw):
         tags=accounts.tags_of(client),
         history=imports.for_account(db, client["_id"], limit=20),
         devices=sessions.for_account(db, client["_id"]),
-        decisions=decisions.for_account(db, client["_id"]),
+        activity=activity(db, client),
         describe=sessions.describe,
         sources=contacts.SOURCES)
 
 
-@bp.route("/cuentas/<raw>/estado", methods=["POST"])
+@bp.route("/cuentas/<raw>/actualizar", methods=["POST"])
 @only_admins
-def change_status(account, raw):
-    """Mover una cuenta de estado, con el motivo escrito.
+def update(account, raw):
+    """Estado y plan en un solo envío, con el motivo escrito.
 
-    El motivo no es papeleo: meses después, la única respuesta honesta a «por
-    qué me suspendieron» es lo que se escribió el día que se hizo.
+    Eran dos formularios con dos botones, y quien aprobaba una cuenta y le
+    ponía el plan tenía que escribir el mismo motivo dos veces. Ahora es una
+    decisión —«qué hago con esta cuenta»— y `admin_events` sigue guardando una
+    línea por cosa cambiada, que es lo que la hace legible meses después.
+
+    El motivo no es papeleo: la única respuesta honesta a «por qué me
+    suspendieron» es lo que se escribió el día que se hizo.
     """
     db = get_db()
     client = wanted(raw)
@@ -148,43 +195,92 @@ def change_status(account, raw):
         return redirect(url_for("admin.account_page", raw=raw))
 
     status = request.form.get("estado", "")
-    reason = request.form.get("motivo", "").strip()
-    if not reason:
-        return redirect(url_for("admin.account_page", raw=raw, falta="motivo"))
-
-    before = accounts.set_status(db, client["_id"], status)
-    if before is None:
-        return redirect(url_for("admin.account_page", raw=raw))
-
-    decisions.record(db, kind=decisions.STATUS, admin_id=account["_id"],
-                     account_id=client["_id"], before=before, after=status,
-                     reason=reason)
-    # Suspender cierra lo que esté abierto: si no, quien ya estaba dentro
-    # sigue dentro hasta que se le ocurra salir.
-    if status == accounts.SUSPENDED:
-        sessions.revoke_others(db, client["_id"])
-    return redirect(url_for("admin.account_page", raw=raw, hecho=1))
-
-
-@bp.route("/cuentas/<raw>/plan", methods=["POST"])
-@only_admins
-def change_plan(account, raw):
-    """Poner o quitar el plan. Es lo que enciende el límite de contactos."""
-    db = get_db()
-    client = wanted(raw)
-    if not csrf_ok(request.form.get("csrf_token")):
-        return redirect(url_for("admin.account_page", raw=raw))
-
     plan = request.form.get("plan", "") or None
     reason = request.form.get("motivo", "").strip()
+
+    # Lo que no es un estado o un plan de verdad no cambia nada y tampoco deja
+    # una decisión escrita: escribir «pasó a xyz» sería mentir el registro.
+    if status not in accounts.STATUSES:
+        return redirect(url_for("admin.account_page", raw=raw))
+    if plan is not None and plan not in accounts.PLAN_CONTACTS:
+        return redirect(url_for("admin.account_page", raw=raw))
+
+    new_status = status != client.get("status")
+    new_plan = plan != (client.get("plan") or None)
+    if not new_status and not new_plan:
+        return redirect(url_for("admin.account_page", raw=raw))
     if not reason:
         return redirect(url_for("admin.account_page", raw=raw, falta="motivo"))
 
-    before = accounts.set_plan(db, client["_id"], plan)
-    if before is None and (client.get("plan") or None) == plan:
-        return redirect(url_for("admin.account_page", raw=raw))
+    if new_status:
+        before = accounts.set_status(db, client["_id"], status)
+        decisions.record(db, kind=decisions.STATUS, admin_id=account["_id"],
+                         account_id=client["_id"], before=before, after=status,
+                         reason=reason)
+        # Suspender cierra lo que esté abierto: si no, quien ya estaba dentro
+        # sigue dentro hasta que se le ocurra salir.
+        if status == accounts.SUSPENDED:
+            sessions.revoke_others(db, client["_id"])
 
-    decisions.record(db, kind=decisions.PLAN, admin_id=account["_id"],
-                     account_id=client["_id"], before=before, after=plan,
-                     reason=reason)
+    if new_plan:
+        before = accounts.set_plan(db, client["_id"], plan)
+        decisions.record(db, kind=decisions.PLAN, admin_id=account["_id"],
+                         account_id=client["_id"], before=before, after=plan,
+                         reason=reason)
+
     return redirect(url_for("admin.account_page", raw=raw, hecho=1))
+
+
+# ---------------------------------------------------- las plantillas subidas
+
+@bp.route("/plantillas")
+@only_admins
+def designs_queue(account):
+    """Lo que espera revisión: la primera pieza de cada cliente.
+
+    Después de esa, el cliente queda habilitado y las siguientes entran solas.
+    Lo que se revisa la primera vez no es el archivo, es si esa organización
+    sabe lo que está mandando.
+    """
+    db = get_db()
+    rows = designs.waiting(db)
+    return render_template(
+        "admin/designs.html", section="plantillas", admin=account, rows=rows,
+        named=accounts.names_of(db, [row["account_id"] for row in rows]))
+
+
+@bp.route("/plantillas/<raw>/revisar", methods=["POST"])
+@only_admins
+def review_design(account, raw):
+    """Aprobar o rechazar una. Rechazar pide motivo, igual que suspender."""
+    design_id = as_id(raw)
+    if not csrf_ok(request.form.get("csrf_token")) or design_id is None:
+        return redirect(url_for("admin.designs_queue"))
+
+    db = get_db()
+    decision = request.form.get("decision", "")
+    reason = request.form.get("motivo", "").strip()
+    if decision == designs.REJECTED and not reason:
+        return redirect(url_for("admin.designs_queue", falta="motivo"))
+
+    designs.review(db, design_id, status=decision, reason=reason)
+    return redirect(url_for("admin.designs_queue"))
+
+
+@bp.route("/plantillas/<raw>/archivo")
+@only_admins
+def design_file(account, raw):
+    """Bajar el HTML tal como lo subió el cliente, para poder mirarlo.
+
+    Se descarga, no se dibuja: enseñarlo dentro del panel sería meter el
+    documento de otro en una página nuestra con la sesión de administrador
+    abierta. Y se sirve como texto plano, para que ni el navegador lo ejecute
+    si alguien abre el archivo desde ahí.
+    """
+    design_id = as_id(raw)
+    found = get_db().designs.find_one({"_id": design_id}) if design_id else None
+    if found is None:
+        abort(404)
+    return Response(found["html"], mimetype="text/plain",
+                    headers={"Content-Disposition":
+                             f'attachment; filename="plantilla-{raw}.html"'})

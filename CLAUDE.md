@@ -12,9 +12,9 @@ PyMEs — organizaciones que ya tienen una lista de correos armada por otra raz�
 **Estado.** Están la marca (`brand/`), el sitio público (`landing/`, siete
 páginas estáticas generadas con Jinja2), la cuenta entera —registro, código,
 doble factor, dispositivos, configuración—, **contactos** con su importador y
-sus supresiones, el **panel de administración** con aprobación de cuentas, y el
-**cobro de un plan con PayPal**. Faltan campañas, analítica y el webhook de
-rebotes.
+sus supresiones, **plantillas** con la validación del HTML subido, el **panel de
+administración** con aprobación de cuentas y de piezas, y el **cobro de un plan
+con PayPal**. Faltan campañas, analítica y el webhook de rebotes.
 
 ---
 
@@ -83,7 +83,8 @@ panamails/
     ├── blueprints/
     │   ├── auth/           # registro, confirmación, login, configuración. HECHO
     │   ├── contacts/       # importación, etiquetas, supresiones. HECHO
-    │   ├── admin/          # aprobar cuentas y ficha de cliente. HECHO
+    │   ├── designs/        # plantillas: las prediseñadas y el HTML subido. HECHO
+    │   ├── admin/          # aprobar cuentas, ficha de cliente y piezas. HECHO
     │   ├── campaigns/      # crear, programar, enviar, pausar/retomar
     │   ├── analytics/      # métricas, exportar CSV/PDF
     │   ├── billing/        # planes, cuota, recargas, acumulado
@@ -97,7 +98,8 @@ panamails/
     │   ├── security.py     # contraseñas, CSRF, límite de intentos
     │   ├── totp.py         # verificación en dos pasos
     │   ├── importer.py     # CSV en streaming, upsert por lotes
-    │   ├── plans.py        # precios leídos de docs/pricing.md
+    │   ├── plans.py        # precios, etiquetas y quién sube HTML, de docs/pricing.md
+    │   ├── html_check.py   # revisa el HTML que sube un cliente
     │   ├── paypal.py       # crear y cobrar la orden, con urllib
     │   ├── ses.py
     │   └── payments/
@@ -228,6 +230,13 @@ colecciones separadas. Esto garantiza que un contacto en varias listas:
 cuente una sola vez contra el límite, reciba un solo correo, y consuma un solo
 correo de la cuota.
 
+**Cuántas etiquetas caben lo dice el plan**, leído de `docs/pricing.md` como los
+precios: 1 · 2 · 4 · ilimitadas, y **1 sin plan**, como el Básico. No se copia el
+número al backend por la misma razón que no se copian los precios. Una
+consecuencia que conviene tener presente: con una sola etiqueta no se puede
+segmentar, así que el Básico tampoco; si algún día estorba, es cambiar una fila
+del documento.
+
 **Las etiquetas se crean antes de usarse**, en `/contactos/etiquetas`, y viven
 en `contact_tags` del documento de la cuenta. Los formularios de agregar e
 importar solo enseñan casillas con las que existen, y el servidor descarta lo
@@ -249,6 +258,11 @@ que no dio su correo.
 colección y se consulta en lote con `$in`; así las dos no pueden separarse, y un
 contacto borrado y vuelto a importar reaparece suprimido. La columna «Estado» de
 la lista sale de esa consulta, no de un campo guardado.
+
+**Exportar pregunta antes.** El GET de `/contactos/exportar` no descarga nada:
+dice cuántos van a salir y con qué filtro, y el POST es el que escribe el
+archivo. El filtro viaja en campos escondidos, así que lo que baja es lo que esa
+pantalla acaba de decir y no lo que quedó en la dirección de otra.
 
 **El límite de contactos sale del plan** (`PLAN_CONTACTS` en
 `models/account.py`, copiado de `docs/pricing.md`). Una cuenta **sin plan** tiene
@@ -300,6 +314,32 @@ checkout de PayPal. Es la regla 9.
 Pasar de `created` a `completed` es una **escritura condicional**, y es la única
 que decide si se alarga un plan: recargar la página de vuelta entra otra vez y
 se va con las manos vacías en lugar de regalar otro periodo.
+
+### `designs`
+El HTML que sube un cliente. Se llaman «diseños» y no «templates» porque en este
+repositorio `templates/` ya son las plantillas Jinja del panel; para el cliente
+la pantalla dice **Plantillas**, que es su palabra. Las prediseñadas del producto
+no están aquí: son archivos de `email_templates/`, iguales para todos y sin nada
+que aprobar.
+
+**Subir HTML propio es de Negocio en adelante**, y eso lo dice la fila «Subir tu
+propio HTML» de `docs/pricing.md`, no una lista copiada al backend. El servidor
+lo comprueba además de esconder el formulario: esconder un botón no es un
+permiso.
+
+**Cada subida se valida al entrar** con `services/html_check.py`, que lee el
+documento con un parser y no con expresiones regulares —`&lt;script&gt;` es
+texto y `<script>` no—. Fuera: `<script>`, `<iframe>`, `<object>`, `<form>`,
+atributos de evento, CSS o imágenes de otro sitio, y **cualquier pieza de más de
+102 KB**. Lo que se guarda es el archivo entero y tal como llegó.
+
+**La primera pieza de cada cliente la aprueba un administrador**; después queda
+habilitado y las siguientes entran solas. Lo que se revisa la primera vez no es
+el archivo: es si esa organización sabe lo que está mandando.
+
+**El HTML de un cliente no se dibuja nunca dentro del panel**, ni en el suyo ni
+en el del administrador. Se baja como `text/plain`: meterlo en una página
+nuestra sería meter el documento de otro en una sesión abierta.
 
 ### `campaigns`
 Incluye la **posición de envío** (hasta qué destinatario se envió), necesaria
@@ -404,13 +444,8 @@ pausadas corren en un **proceso en segundo plano**, no dentro del request.
 
 ### HTML subido por el cliente
 
-Validación automática en cada subida — rechazar: `<script>`, `<iframe>`,
-`<object>`, atributos de evento, CSS/JS externo, formularios, HTML mal formado y
-**cualquier pieza de más de 102 KB** (pasado eso Gmail recorta el correo y se
-pierden la baja y la marca de agua).
-
-Aprobación manual solo la **primera** subida de cada cliente; después queda
-habilitado. Todo HTML queda guardado y revisable desde el admin.
+Hecho, en `/plantillas` y en la colección `designs`. Ver esa sección más arriba:
+qué se rechaza, quién puede subir y quién aprueba la primera.
 
 ### Límites de importación
 
@@ -432,7 +467,9 @@ El panel (`/panel`) es la pantalla de las gráficas de envíos; hoy solo dice
 pantallas: la lista —una fila por contacto, con sus etiquetas, por dónde entró,
 cuándo y si está activo o anulado—, la importación, las etiquetas y las
 supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
-desde un botón encima de la lista. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
+desde un botón encima de la lista, y exportar pasa por una confirmación que dice
+cuántos van a salir. **`/plantillas`** enseña las prediseñadas y las que ha
+subido la cuenta. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
 dispositivos conectados), **Notificaciones** y **Opciones de pago**, donde se
 contrata un plan con PayPal y se ven los pagos hechos. Yappy sigue por
@@ -440,8 +477,9 @@ construir.
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: panel,
-contactos, configuración, modo, idioma y cerrar sesión, más **administración**
-para quien tenga el rol. El idioma es un desplegable dentro del desplegable, no
+contactos, plantillas, configuración, modo, idioma y cerrar sesión, más
+**administración** para quien tenga el rol. Las plantillas van debajo de
+contactos: primero a quién le escribes, después con qué. El idioma es un desplegable dentro del desplegable, no
 dos filas sueltas de algo que casi no se toca. **El panel va primero** porque es a
 lo que se dedica la empresa; lo demás son ajustes, y se buscan cuando hacen
 falta. Sin sesión el mismo control es un botón de tres líneas con las dos que
@@ -457,10 +495,20 @@ saca a nadie de su cuenta abriendo un enlace.
 
 ## Panel de administración
 
-`/admin`, con verificación de rol. **Construido**: la portada con las cuentas que
-esperan aprobación y el conteo por estado, la tabla de todas las cuentas con
-filtro y buscador, y la ficha de cada cliente con sus cambios de estado y de
-plan, cada uno con su motivo.
+`/admin`, con verificación de rol, y **es donde aterriza un administrador al
+entrar**: su cuenta sigue siendo una cuenta, con sus contactos y su
+configuración, pero la primera pantalla es la que va a usar.
+
+**Construido**: la portada con las cuentas que esperan aprobación y el conteo por
+estado, la tabla de todas las cuentas con filtro y buscador, la cola de
+plantillas por revisar, y la ficha de cada cliente.
+
+La ficha tiene **un solo formulario** —estado, plan y un motivo—: si cambian las
+dos cosas se anotan dos líneas en `admin_events` con el mismo motivo, porque
+guardar una por cosa cambiada es lo que las hace legibles meses después. Y tiene
+una **Actividad** que junta en una línea de tiempo lo que hizo la cuenta —sus
+entradas, sus importaciones, sus pagos— con lo que se decidió sobre ella,
+leyendo `auth_events`, `imports`, `payments` y `admin_events`.
 
 **La ficha enseña cifras y orígenes, nunca la lista de direcciones de los
 contactos de un cliente.** Cuántos tiene, cuántas supresiones, qué archivos subió
@@ -469,7 +517,7 @@ direcciones son suyas y de quien está en ellas, y se miran por un motivo
 concreto —una baja que alguien pide, un abuso que se investiga—, no hojeando.
 
 Pendiente: ver analytics de cada cliente · cargar plantillas prediseñadas ·
-revisar rebotes por cliente · aprobar HTML de clientes.
+revisar rebotes por cliente.
 
 Además:
 

@@ -1,7 +1,6 @@
 {% extends "admin/_layout.html" %}
 {% block pane %}
 <h2 class="settings__title">{{ t('admin_tab_home') }}</h2>
-<p class="settings__lead">{{ t('admin_home_lead') }}</p>
 
 {# Lo primero es lo único que pide acción tuya. #}
 <h3 class="settings__subtitle">{{ t('admin_waiting_title') }}</h3>
@@ -51,6 +50,7 @@
     <tbody>
       {% for row in decisions %}
       <tr>
+        <td><b>{{ named.get(row.account_id, t('admin_none')) }}</b></td>
         <td>
           {% if row.kind == 'status' %}
           {{ t('admin_history_status', before=row.before, after=row.after) }}

@@ -15,16 +15,16 @@ reglas de negocio asociadas.
 | Correos por mes | 5,000 | 15,000 | 50,000 | 250,000 |
 | Campañas a lista completa | 5 | 5 | 5 | 5 |
 | Precio por correo | $0.0070 | $0.0040 | $0.0024 | $0.0012 |
-| Listas | 1 | Ilimitadas | Ilimitadas | Ilimitadas |
+| Etiquetas | 1 | 2 | 4 | Ilimitadas |
 | Plantillas prediseñadas | ✅ | ✅ | ✅ | ✅ |
 | Subir tu propio HTML | — | ✅ | ✅ | ✅ |
 | **Correos sin marca de agua** | — | ✅ | ✅ | ✅ |
-| Plantilla personalizada con su marca | — | 1 | 3 | 5 |
+| Diseño personalizado de tu correo | — | 1 | 3 | 5 |
 | Analytics completo | ✅ | ✅ | ✅ | ✅ |
 | Exportar CSV y PDF | ✅ | ✅ | ✅ | ✅ |
 | Usuarios | 1 | 2 | 3 | 5 |
 | Soporte | Email 48h | Email 24h | WhatsApp, mismo día | WhatsApp prioritario |
-| Onboarding guiado | — | — | — | ✅ |
+| Sesión de arranque dedicada | — | — | — | ✅ |
 
 **Corporativo se publica sin precio visible**: *"A la medida — contáctanos"*.
 Los $300 son referencia interna, no una promesa pública.
@@ -78,7 +78,7 @@ Requiere guardar la posición de envío de cada campaña, no solo un contador gl
 - La importación se detiene y se notifica que debe subir de plan.
 - Los contactos ya cargados no se borran.
 
-### Plantilla personalizada (Negocio en adelante)
+### Diseño personalizado de tu correo (Negocio en adelante)
 
 - Se diseña **una vez** con la marca, colores, logo y tipografía del cliente; él
   la reutiliza cada mes cambiando textos e imágenes.
@@ -96,7 +96,7 @@ Requiere guardar la posición de envío de cada campaña, no solo un contador gl
 - Doble función: incentivo de upgrade, y publicidad gratuita en cada correo que
   envía un cliente de entrada.
 
-### Onboarding (Corporativo)
+### Sesión de arranque dedicada (Corporativo)
 
 - 1 sesión de hasta 2 horas, por videollamada o presencial: importación de
   contactos, configuración del dominio de envío, primera campaña y recorrido

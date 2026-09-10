@@ -28,6 +28,11 @@
       <span class="menu__icons">{% include "_icon-people.svg" %}</span>
       <span>{{ t('menu_contacts') }}</span>
     </a>
+    {# Debajo de contactos: primero a quién le escribes, después con qué. #}
+    <a class="menu__item" href="{{ url_for('designs.index') }}">
+      <span class="menu__icons">{% include "_icon-mail.svg" %}</span>
+      <span>{{ t('menu_designs') }}</span>
+    </a>
     <a class="menu__item" href="{{ url_for('auth.settings') }}">
       <span class="menu__icons">{% include "_icon-gear.svg" %}</span>
       <span>{{ t('menu_settings') }}</span>

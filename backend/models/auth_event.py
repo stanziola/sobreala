@@ -79,6 +79,20 @@ def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def for_account(db, account_id, *, kinds: tuple[str, ...] = (),
+                limit: int = 40) -> list[dict[str, Any]]:
+    """Lo que hizo esa cuenta, lo más reciente primero.
+
+    Solo lo lee el administrador, y es la mitad de la actividad de una ficha:
+    la otra mitad son sus importaciones, sus pagos y las decisiones que se
+    tomaron sobre ella.
+    """
+    query: dict[str, Any] = {"account_id": account_id}
+    if kinds:
+        query["kind"] = {"$in": list(kinds)}
+    return list(db.auth_events.find(query).sort("created_at", -1).limit(limit))
+
+
 def record(db, *, kind: str, outcome: str, email: str = "",
            account_id: Any = None, ip: str = "", user_agent: str = "") -> Any:
     """Write one row. Returns the new document's id."""

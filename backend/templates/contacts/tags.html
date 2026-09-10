@@ -2,6 +2,12 @@
 {% block pane %}
 <h2 class="settings__title">{{ t('tags_title') }}</h2>
 <p class="settings__lead">{{ t('tags_lead') }}</p>
+{# Cuántas caben sale del plan, y el plan sale de docs/pricing.md. Se enseña
+   arriba para que el tope no se descubra al intentar crear la que sobra. #}
+<p class="hint">
+  {% if tags_free %}{{ t('tags_counter_free', n=tags|length) }}
+  {% else %}{{ t('tags_counter', n=tags|length, limit=tag_limit) }}{% endif %}
+</p>
 
 {% if request.args.get('guardado') %}
 <p class="notice notice--ok">{{ t('tags_saved') }}</p>
@@ -50,10 +56,14 @@
   <label for="etiqueta">{{ t('tags_name') }}</label>
   <input id="etiqueta" name="etiqueta" type="text" autocomplete="off"
          maxlength="40" required>
-  <p class="hint">{{ t('tags_room', n=room) }}</p>
+  <p class="hint">
+    {% if tags_free %}{{ t('tags_room_free') }}
+    {% else %}{{ t('tags_room', n=room) }}{% endif %}
+  </p>
   <button class="btn" type="submit">{{ t('tags_add') }}</button>
 </form>
 {% else %}
-<p class="hint">{{ t('tags_full') }}</p>
+<p class="hint">{{ t('tags_full') }}
+  <a href="{{ site_url }}/planes/">{{ t('tags_plans') }}</a></p>
 {% endif %}
 {% endblock %}

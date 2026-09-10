@@ -53,16 +53,16 @@ PUBLIC_ROWS = [
     ("Contactos", "Contactos"),
     ("Correos por mes", "Correos por mes"),
     ("Campañas a lista completa", "Campañas al mes a toda tu lista"),
-    ("Listas", "Listas"),
+    ("Etiquetas", "Etiquetas"),
     ("Plantillas prediseñadas", "Plantillas prediseñadas"),
     ("Subir tu propio HTML", "Subir tu propio HTML"),
     ("Correos sin marca de agua", "Correos sin marca de agua"),
-    ("Plantilla personalizada con su marca", "Plantillas personalizadas con tu marca"),
+    ("Diseño personalizado de tu correo", "Diseño personalizado de tu correo"),
     ("Analytics completo", "Estadísticas de cada campaña"),
     ("Exportar CSV y PDF", "Exportar a CSV y PDF"),
     ("Usuarios", "Usuarios de la cuenta"),
     ("Soporte", "Soporte"),
-    ("Onboarding guiado", "Sesión de arranque guiada"),
+    ("Sesión de arranque dedicada", "Sesión de arranque dedicada"),
 ]
 
 # Rows shown on the plan cards, above the fold.
@@ -143,7 +143,6 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
         "rows": [
             {"label": label, "values": [cell(key, n) for n in names]}
             for key, label in PUBLIC_ROWS
-            if key in plans_rows
         ],
     }
 

@@ -22,6 +22,14 @@ PRICING = Path(__file__).resolve().parent.parent.parent / "docs" / "pricing.md"
 # Lo que se cobra. Panamá usa el dólar, y PayPal necesita saberlo.
 CURRENCY = "USD"
 
+# Lo que dice «Ilimitadas» en la tabla. Un número y no None, para que quien
+# compare no tenga que acordarse de tratar el caso aparte.
+UNLIMITED = 10 ** 6
+
+# Etiquetas de una cuenta sin plan: las mismas que el Básico, para que quien
+# prueba pueda organizar un grupo y ver cómo funciona.
+FREE_TAGS = 1
+
 MONTHLY = "monthly"
 YEARLY = "yearly"
 CYCLES = (MONTHLY, YEARLY)
@@ -46,11 +54,24 @@ def _amount(raw: str) -> Decimal | None:
     return Decimal(found.group(1).replace(",", ""))
 
 
+def _count(raw: str) -> int | None:
+    """«4» → 4, «Ilimitadas» → UNLIMITED, «—» → None."""
+    plain = raw.strip()
+    if not plain or plain in ("—", "-"):
+        return None
+    if plain.lower().startswith("ilimitad"):
+        return UNLIMITED
+    digits = "".join(c for c in plain if c.isdigit())
+    return int(digits) if digits else None
+
+
 def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
-    """Cada plan con su nombre, sus dos precios y si el precio es público."""
+    """Cada plan con su nombre, sus precios, sus etiquetas y si es público."""
     text = path.read_text(encoding="utf-8")
     names: list[str] = []
     prices: dict[str, list[Decimal | None]] = {}
+    tags: list[int | None] = []
+    uploads: list[bool] = []
 
     for line in text.splitlines():
         if not line.lstrip().startswith("|"):
@@ -64,6 +85,10 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             prices[MONTHLY] = [_amount(c) for c in cells[1:]]
         elif "Precio anual" in cells[0]:
             prices[YEARLY] = [_amount(c) for c in cells[1:]]
+        elif cells[0].strip("* ") == "Etiquetas":
+            tags = [_count(c) for c in cells[1:]]
+        elif cells[0].strip("* ") == "Subir tu propio HTML":
+            uploads = [c.strip() == "✅" for c in cells[1:]]
 
     if not names or MONTHLY not in prices or YEARLY not in prices:
         raise RuntimeError(f"no encontré las filas de precios en {path}")
@@ -81,6 +106,8 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             "name": name,
             MONTHLY: prices[MONTHLY][index],
             YEARLY: prices[YEARLY][index],
+            "tags": tags[index] if index < len(tags) else None,
+            "upload": uploads[index] if index < len(uploads) else False,
             "public": key not in hidden,
         }
     return plans
@@ -105,6 +132,38 @@ def buyable(plan: str) -> bool:
     """
     found = PLANS.get(plan)
     return bool(found and found["public"])
+
+
+def tag_limit(plan: str | None) -> int:
+    """Cuántas etiquetas caben en ese plan, de docs/pricing.md.
+
+    No se copia el número al backend por la misma razón que los precios:
+    cambiar la fila del documento tiene que cambiarlo en el sitio y en el panel
+    a la vez, o un día dicen cosas distintas.
+    """
+    found = PLANS.get(plan or "")
+    if not found or found["tags"] is None:
+        return FREE_TAGS
+    return found["tags"]
+
+
+def can_upload(plan: str | None) -> bool:
+    """Si ese plan puede subir su propio HTML, de docs/pricing.md.
+
+    La fila del documento es la que manda: el Básico ve las prediseñadas y sube
+    ninguna, y eso lo dice la tabla que también lee el sitio público.
+    """
+    found = PLANS.get(plan or "")
+    return bool(found and found["upload"])
+
+
+def first_upload_plan() -> str | None:
+    """El plan más barato que sí puede subir. Es lo que la pantalla ofrece a
+    quien todavía no puede."""
+    for key, plan in PLANS.items():
+        if plan["upload"] and plan["public"]:
+            return key
+    return None
 
 
 def amount(plan: str, cycle: str) -> str | None:

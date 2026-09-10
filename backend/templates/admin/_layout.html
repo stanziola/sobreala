@@ -7,7 +7,8 @@
 <div class="settings">
   {% set tabs = [
     ('portada', 'admin_tab_home', url_for('admin.home')),
-    ('cuentas', 'admin_tab_accounts', url_for('admin.accounts_list'))] %}
+    ('cuentas', 'admin_tab_accounts', url_for('admin.accounts_list')),
+    ('plantillas', 'admin_designs_title', url_for('admin.designs_queue'))] %}
 
   <nav class="settings__nav" aria-label="{{ t('admin_title') }}">
     {% for slug, label, href in tabs %}

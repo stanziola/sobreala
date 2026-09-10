@@ -32,6 +32,7 @@ from models import contact as contacts
 from models import import_job as imports
 from models import suppression as suppressions
 from services import importer
+from services import plans
 from services.security import csrf_ok
 
 bp = Blueprint("contacts", __name__)
@@ -220,9 +221,13 @@ def remove_suppressed():
     return redirect(url_for("contacts.index"))
 
 
-@bp.route("/contactos/exportar")
+@bp.route("/contactos/exportar", methods=["GET", "POST"])
 def export():
     """Bajar lo que enseña la tabla, respetando el buscador y el filtro.
+
+    El GET no descarga nada: enseña cuántos van a salir y con qué filtro, y el
+    POST es el que escribe el archivo. Antes bajaba de golpe y no había forma de
+    saber, mirando el archivo, si el filtro que uno creía puesto lo estaba.
 
     Punto y coma y marca de orden de bytes: es lo que abre Excel en español sin
     meter todo en una columna, y es lo que nuestro propio importador lee. Y se
@@ -233,8 +238,19 @@ def export():
         return redirect(url_for("auth.login"))
 
     db = get_db()
-    search = request.args.get("q", "").strip()[:120]
-    tag = request.args.get("etiqueta", "").strip()[:accounts.TAG_LENGTH]
+    # El filtro viaja igual por los dos lados: en la dirección al llegar, y en
+    # campos escondidos al confirmar.
+    source = request.form if request.method == "POST" else request.args
+    search = source.get("q", "").strip()[:120]
+    tag = source.get("etiqueta", "").strip()[:accounts.TAG_LENGTH]
+
+    if request.method == "GET" or not csrf_ok(request.form.get("csrf_token")):
+        return render_template(
+            "contacts/export.html", section="lista",
+            **shared(db, account, search=search, tag=tag,
+                     going=contacts.matching_count(db, account["_id"],
+                                                   search=search, tag=tag)))
+
     rows = contacts.all_of(db, account["_id"], search=search, tag=tag)
     blocked = {d["email_normalized"] for d in
                db.suppressions.find({"account_id": account["_id"]},
@@ -295,7 +311,9 @@ def tags():
     return render_template(
         "contacts/tags.html", section="etiquetas",
         **shared(db, account, counts=contacts.count_by_tag(db, account["_id"]),
-                 room=accounts.TAGS_MAX - len(accounts.tags_of(account))))
+                 room=accounts.tag_limit(account) - len(accounts.tags_of(account)),
+                 tag_limit=accounts.tag_limit(account),
+                 tags_free=accounts.tag_limit(account) >= plans.UNLIMITED))
 
 
 @bp.route("/contactos/etiquetas/nueva", methods=["POST"])

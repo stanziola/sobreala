@@ -8,6 +8,7 @@ from typing import Any
 from pymongo.errors import DuplicateKeyError
 
 from config import Config
+from services import plans
 from services.security import hash_password, verify_password
 
 # States defined in CLAUDE.md. Email confirmation is NOT one of them: these
@@ -139,7 +140,6 @@ def touch_login(db, account_id) -> None:
 # se pueden asignar, que es lo que impide que se escriban a mano y acaben
 # «Socios» y «socios» como dos.
 TAG_LENGTH = 40
-TAGS_MAX = 30
 
 
 def clean_tag(name: str) -> str:
@@ -149,6 +149,11 @@ def clean_tag(name: str) -> str:
 
 def tags_of(account: dict[str, Any] | None) -> list[str]:
     return list((account or {}).get("contact_tags") or [])
+
+
+def tag_limit(account: dict[str, Any] | None) -> int:
+    """Cuántas etiquetas puede tener esta cuenta, según su plan."""
+    return plans.tag_limit(plan_of(account))
 
 
 def add_tag(db, account_id, name: str) -> bool:
@@ -163,7 +168,7 @@ def add_tag(db, account_id, name: str) -> bool:
         return False
     account = by_id(db, account_id)
     existing = tags_of(account)
-    if len(existing) >= TAGS_MAX:
+    if len(existing) >= tag_limit(account):
         return False
     if any(tag.lower() == other.lower() for other in existing):
         return False
@@ -182,6 +187,19 @@ def remove_tag(db, account_id, name: str) -> None:
 
 
 # ------------------------------------------------------------- administration
+
+def names_of(db, ids) -> dict[Any, str]:
+    """El nombre de cada empresa, por id, en una sola consulta.
+
+    Es para las tablas que enseñan filas de varias cuentas a la vez: pedir cada
+    nombre por separado sería una consulta por fila.
+    """
+    wanted = [one for one in set(ids) if one is not None]
+    if not wanted:
+        return {}
+    found = db.accounts.find({"_id": {"$in": wanted}}, {"company_name": 1})
+    return {doc["_id"]: doc.get("company_name", "") for doc in found}
+
 
 def is_admin(account: dict[str, Any] | None) -> bool:
     return (account or {}).get("role") == ADMIN

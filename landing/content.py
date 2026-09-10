@@ -20,7 +20,7 @@ SITE = {
     "domain": "panamails.com",
     "base_url": "https://panamails.com",
     "locale": "es",
-    "tagline": "Convierte tu lista de correos en ventas.",
+    "tagline": "Administra tu base de correos y envía de manera organizada.",
 }
 
 # Contact. The WhatsApp link carries a prefilled message so the conversation
@@ -80,41 +80,39 @@ HOME = {
         "y envíala por correo a toda tu lista desde un solo panel."
     ),
     "hero": {
-        "title_lead": "Convierte tu lista de correos",
-        "title_accent": "en ventas.",
-        "subtitle": (
-            "Sube tus contactos, escribe tu campaña y envíala por correo a toda tu "
-            "lista desde un solo panel. Sin instalar nada."
-        ),
+        "title_lead": "Administra tu base de datos de correos",
+        "title_accent": "y envía de manera organizada.",
+        "subtitle": "Sube tus contactos y envía correos con un solo clic.",
         "note": "En construcción. Escríbenos y te avisamos apenas abramos cuentas.",
     },
     "problem": {
         "eyebrow": "El problema",
-        "title": "Ya tienes los correos. El problema es enviarlos.",
+        "title": "Las desventajas de enviar sin una herramienta de correo masivo",
         "intro": (
-            "Cooperativas, colegios, gremios y comercios llevan años juntando "
-            "direcciones de socios, padres y clientes. Esa lista casi nunca se usa."
+            "Cuando hay que escribirle a cientos de personas a la vez —socios, "
+            "clientes, padres, empleados— el correo de todos los días deja de servir."
         ),
         "items": [
             {
-                "title": "El correo personal no sirve para esto",
+                "title": "Enviar desde tu correo de siempre acaba en spam",
                 "text": (
-                    "Enviar a cientos de personas desde Gmail termina en spam, con "
-                    "límites diarios y todos los destinatarios a la vista."
+                    "Gmail y Outlook tienen un tope diario, todos los destinatarios "
+                    "se ven entre ellos, y si alguien te marca como spam se lo llevas "
+                    "puesto a tu propia dirección."
                 ),
             },
             {
-                "title": "Contratar cada campaña sale caro",
+                "title": "No sabes si llegó, ni quién lo abrió",
                 "text": (
-                    "Pagar por envío convierte en excepción algo que debería ser "
-                    "rutina todos los meses."
+                    "Sin eso no hay forma de saber si sirvió de algo, ni de enterarte "
+                    "de que hay direcciones de tu lista que ya no existen."
                 ),
             },
             {
-                "title": "Hacerlo a mano cuesta horas",
+                "title": "Hacerlo a mano cuesta horas y se cuelan errores",
                 "text": (
-                    "Mandar en tandas de cincuenta, copiar y pegar el mismo mensaje, "
-                    "y al final no saber quién lo abrió ni quién ya no quiere recibirlo."
+                    "Tandas de cincuenta, copiar y pegar el mismo mensaje, y alguien "
+                    "que termina recibiéndolo dos veces o ninguna."
                 ),
             },
         ],
@@ -132,8 +130,9 @@ HOME = {
                 "title": "Contactos sin duplicados",
                 "text": (
                     "Cada dirección existe una sola vez en tu cuenta. Si una persona "
-                    "está en varias listas, cuenta como una, recibe un solo correo y "
-                    "consume un solo envío."
+                    "lleva varias etiquetas y la campaña va a más de una, recibe una "
+                    "sola copia y gasta un solo envío. Mandarle otra campaña distinta "
+                    "más adelante es otra cosa, y esa sí le llega."
                 ),
             },
             {
@@ -162,18 +161,19 @@ HOME = {
             },
             {
                 "icon": "shield",
-                "title": "Bajas y rebotes gestionados solos",
+                "title": "Cada persona puede anular su suscripción cuando quiera",
                 "text": (
-                    "El enlace para darse de baja va en todos los correos y en todos "
-                    "los planes. Quien se da de baja o rebota no vuelve a recibir nada."
+                    "Todos los correos llevan el botón para anular la suscripción, en "
+                    "todos los planes. Quien lo usa deja de recibir al momento y tú no "
+                    "tienes que hacer nada."
                 ),
             },
             {
                 "icon": "flag",
-                "title": "Acompañamiento en tu primera campaña",
+                "title": "Te acompañamos en tu primera campaña",
                 "text": (
-                    "Revisamos tu lista contigo, probamos el envío y sales con la "
-                    "primera campaña ya enviada, no con un panel vacío."
+                    "Revisamos tu lista contigo y probamos el envío antes de que salga "
+                    "el primero de verdad, para que no estrenes a ciegas."
                 ),
             },
         ],
@@ -310,7 +310,7 @@ HOW = {
     },
     "sending": {
         "eyebrow": "El envío",
-        "title": "Sales con el nombre de tu negocio, sin configurar nada",
+        "title": "Los correos salen con el nombre y el correo de tu empresa",
         "text": (
             "Muchos negocios no tienen dominio propio, así que no te pedimos uno. Tus "
             "correos salen desde un subdominio de Panamails, pero quien los recibe ve "
@@ -337,17 +337,18 @@ HOW = {
         ),
         "items": [
             {
-                "title": "Baja de un clic, siempre",
+                "title": "Botón de anular suscripción, siempre",
                 "text": (
                     "El enlace para dejar de recibir correos se agrega en el envío, es "
                     "único para cada persona y va en todos los planes. No se puede quitar."
                 ),
             },
             {
-                "title": "Una persona, un correo",
+                "title": "Nadie recibe la misma campaña dos veces",
                 "text": (
-                    "Si un contacto está en tres de tus listas y le envías a las tres, "
-                    "recibe un solo correo y te cuesta un solo envío."
+                    "Si una persona lleva tres de tus etiquetas y la campaña va a las "
+                    "tres, recibe una sola copia y te cuesta un solo envío. Otra "
+                    "campaña distinta, más adelante, sí le llega."
                 ),
             },
             {
@@ -409,6 +410,11 @@ PRICING = {
         },
     },
     "annual_note": "En el plan anual pagas diez meses y usas doce.",
+    # Para que nadie llegue al botón de pagar y descubra ahí que no puede.
+    "before_note": (
+        "Para contratar un plan necesitas una cuenta registrada y aprobada. "
+        "Créala, escríbenos y la revisamos contigo antes de activarte el envío."
+    ),
     "table": {
         "eyebrow": "Comparación",
         "title": "Todo lo que incluye cada plan",
@@ -432,8 +438,8 @@ PRICING = {
     "included": {
         "title": "En todos los planes, sin excepción",
         "items": [
-            "Enlace de baja de un clic en cada correo",
-            "Contactos sin duplicados, aunque estén en varias listas",
+            "Botón para anular la suscripción en cada correo",
+            "Contactos sin duplicados, aunque lleven varias etiquetas",
             "Lista de bajas y rebotes gestionada automáticamente",
             "Estadísticas de cada campaña, exportables",
             "Acompañamiento en tu primera campaña",
@@ -495,7 +501,7 @@ ABOUT = {
     ),
     "hero": {
         "eyebrow": "Nosotros",
-        "title": "Para las listas de correo que nadie usa",
+        "title": "Quiénes somos y por qué hacemos esto",
         "subtitle": (
             "Panamails se construye para negocios y organizaciones que ya tienen una "
             "lista de correos guardada en alguna parte y no tienen cómo usarla."

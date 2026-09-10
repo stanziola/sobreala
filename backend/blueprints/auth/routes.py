@@ -181,6 +181,18 @@ def bar_account():
         return {"bar_account": None, "bar_admin": False}
 
 
+def landing(account: dict | None) -> str:
+    """A dónde va alguien que acaba de entrar.
+
+    El administrador aterriza en /admin, que es lo que va a hacer al entrar.
+    Su cuenta sigue siendo una cuenta —con sus contactos y su configuración— y
+    el menú se los deja a un clic; lo que cambia es la primera pantalla.
+    """
+    if accounts.is_admin(account):
+        return url_for("admin.home")
+    return url_for("auth.panel")
+
+
 def sign_in(account: dict, *, remember: bool = True) -> None:
     """Open a session for this device.
 
@@ -450,7 +462,7 @@ def deliver(db, send, account: dict, *, kind: str) -> bool:
 @bp.route("/registro", methods=["GET", "POST"])
 def register():
     if current_session():
-        return redirect(url_for("auth.panel"))
+        return redirect(landing(current_account()))
 
     form = {"company_name": "", "contact_name": "", "email": "", "phone": ""}
     errors: dict[str, str] = {}
@@ -737,7 +749,7 @@ def resend():
 @bp.route("/entrar", methods=["GET", "POST"])
 def login():
     if current_session():
-        return redirect(url_for("auth.panel"))
+        return redirect(landing(current_account()))
 
     errors: dict[str, str] = {}
     email_value = ""
@@ -800,7 +812,7 @@ def login():
                     if here:
                         deliver(db, lambda d, a: send_new_login(d, a, here),
                                 account, kind=events.LOGIN)
-                return redirect(url_for("auth.panel"))
+                return redirect(landing(account))
             errors["form"] = t("error_login_failed")
             # One outcome for both halves of the failure, because the visitor is
             # told one thing. The account_id is still filled in when the address
@@ -862,7 +874,7 @@ def login_code():
                          events.RECOVERY_USED if used_backup else events.OK,
                          email=account["email"], account_id=account_id)
 
-                answer = redirect(url_for("auth.panel"))
+                answer = redirect(landing(account))
                 if first_time:
                     # After the second step, never before: warning about a
                     # sign-in that had not happened yet is noise in the one

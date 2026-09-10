@@ -44,12 +44,15 @@
   </div>
 </div>
 
-{# --- las dos decisiones, cada una con su motivo obligatorio --- #}
-<h3 class="settings__subtitle">{{ t('admin_change_status') }}</h3>
-<p class="settings__lead">{{ t('admin_change_status_hint') }}</p>
+{# Una sola decisión —qué hago con esta cuenta— y un solo motivo. Si cambian
+   las dos cosas se anotan dos líneas en admin_events con el mismo motivo:
+   guardar una por cosa cambiada es lo que las hace legibles después. #}
+<h3 class="settings__subtitle">{{ t('admin_update_title') }}</h3>
+<p class="settings__lead">{{ t('admin_update_hint') }}</p>
 
-<form method="post" action="{{ url_for('admin.change_status', raw=client._id) }}">
+<form method="post" action="{{ url_for('admin.update', raw=client._id) }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
   <label for="estado">{{ t('admin_col_status') }}</label>
   <select id="estado" name="estado">
     {% for name in statuses %}
@@ -58,17 +61,6 @@
     {% endfor %}
   </select>
 
-  <label for="motivo-estado">{{ t('admin_reason') }}</label>
-  <input id="motivo-estado" name="motivo" type="text" maxlength="300" required
-         autocomplete="off">
-  <button class="btn" type="submit">{{ t('admin_apply') }}</button>
-</form>
-
-<h3 class="settings__subtitle">{{ t('admin_change_plan') }}</h3>
-<p class="settings__lead">{{ t('admin_change_plan_hint') }}</p>
-
-<form method="post" action="{{ url_for('admin.change_plan', raw=client._id) }}">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label for="plan">{{ t('admin_col_plan') }}</label>
   <select id="plan" name="plan">
     <option value="">{{ t('admin_no_plan') }}</option>
@@ -78,9 +70,10 @@
     {% endfor %}
   </select>
 
-  <label for="motivo-plan">{{ t('admin_reason') }}</label>
-  <input id="motivo-plan" name="motivo" type="text" maxlength="300" required
+  <label for="motivo">{{ t('admin_reason') }}</label>
+  <input id="motivo" name="motivo" type="text" maxlength="300" required
          autocomplete="off">
+  <p class="hint">{{ t('admin_reason_hint') }}</p>
   <button class="btn" type="submit">{{ t('admin_apply') }}</button>
 </form>
 
@@ -146,22 +139,47 @@
 </ul>
 
 <h3 class="settings__subtitle">{{ t('admin_history_title') }}</h3>
-{% if decisions %}
+<p class="settings__lead">{{ t('admin_history_lead') }}</p>
+{% if activity %}
 <div class="table-wrap">
   <table class="table">
     <tbody>
-      {% for row in decisions %}
+      {# Cuatro colecciones en una sola línea de tiempo: sus entradas, sus
+         importaciones, sus pagos y tus decisiones. De los contactos se dice
+         cuántos entraron, nunca quiénes. #}
+      {% for entry in activity %}
+      {% set row = entry.row %}
       <tr>
         <td>
-          {% if row.kind == 'status' %}
-          {{ t('admin_history_status', before=row.before, after=row.after) }}
+          {% if entry.type == 'auth' %}
+            {% if row.kind == 'login' and row.outcome == 'bad_credentials' %}
+            {{ t('admin_act_login_failed') }}
+            {% else %}{{ t('admin_act_' + row.kind) }}{% endif %}
+            {% if row.ip %}<br>
+            <span class="table__quiet">{{ t('admin_act_from', ip=row.ip) }}</span>
+            {% endif %}
+          {% elif entry.type == 'import' %}
+            {{ t('admin_act_import', file=row.filename) }}<br>
+            <span class="table__quiet">{{ t('admin_act_import_counts',
+              added=row.added, updated=row.updated, invalid=row.invalid) }}</span>
+          {% elif entry.type == 'payment' %}
+            {% if row.status == 'completed' %}
+            {{ t('admin_act_payment', plan=row.plan|capitalize) }}
+            {% else %}
+            {{ t('admin_act_payment_failed', plan=row.plan|capitalize) }}
+            {% endif %}
+            <br><span class="table__quiet">{{ row.amount }} {{ row.currency }}</span>
           {% else %}
-          {{ t('admin_history_plan', before=row.before or t('admin_no_plan'),
-                after=row.after or t('admin_no_plan')) }}
+            {% if row.kind == 'status' %}
+            {{ t('admin_history_status', before=row.before, after=row.after) }}
+            {% else %}
+            {{ t('admin_history_plan', before=row.before or t('admin_no_plan'),
+                  after=row.after or t('admin_no_plan')) }}
+            {% endif %}
+            <br><span class="table__quiet">{{ t('admin_act_reason', reason=row.reason) }}</span>
           {% endif %}
         </td>
-        <td>{{ row.reason }}</td>
-        <td class="table__quiet">{{ row.created_at|ago }}</td>
+        <td class="table__quiet">{{ entry.at|ago }}</td>
       </tr>
       {% endfor %}
     </tbody>

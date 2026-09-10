@@ -359,6 +359,30 @@ input:focus, select:focus { border-color: var(--color-accent); }
 }
 .btn--outline:hover { background: var(--color-surface-alt); filter: none; transform: none; }
 
+/* Elegir archivo. El control del navegador no se puede pintar; se esconde sin
+   quitarle el foco y la etiqueta hace de botón. El anillo se dibuja alrededor
+   de la etiqueta cuando el campo escondido tiene el foco del teclado. */
+.filepick { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+/* Dos clases y no una: `input[type="file"]` de arriba tiene más peso que una
+   clase suelta y le devolvía el relleno, dejando una caja de 24x20 escondida. */
+.filepick .filepick__input {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: 0;
+  border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.filepick label { margin-top: 14px; }
+.filepick__input:focus-visible + label {
+  outline: 2px solid var(--color-accent-strong); outline-offset: 2px;
+}
+.filepick__name {
+  margin-top: 14px; font-size: .9rem; color: var(--color-ink-soft);
+  overflow-wrap: anywhere;
+}
+.filepick__name.is-set { color: var(--color-ink); font-weight: 600; }
+
+/* El nombre del campo cuando no hay un <label> que apunte a él, porque quien
+   apunta al campo es el botón. */
+.field-label { margin: 18px 0 0; font-weight: 600; font-size: .95rem; }
+
 /* "Keep me signed in": a checkbox, not a field, so it does not inherit the
    full-width input rules above. */
 .check { display: flex; align-items: center; gap: 10px; margin-top: 18px;

@@ -84,8 +84,10 @@ def create_app(overrides: dict | None = None) -> Flask:
     from blueprints.admin import bp as admin_bp
     from blueprints.auth import bp as auth_bp
     from blueprints.contacts import bp as contacts_bp
+    from blueprints.designs import bp as designs_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(contacts_bp)
+    app.register_blueprint(designs_bp)
     app.register_blueprint(admin_bp)
 
     # The size limit on an imported file, enforced by Flask before the request

@@ -156,6 +156,15 @@ def ensure_indexes(db: Database | None = None) -> None:
                              name="by_account_created")
     db.payments.create_index([("order_id", ASCENDING)], name="by_order")
 
+    # El HTML que sube cada cliente. Sin TTL: una pieza aprobada es lo que hay
+    # que poder volver a mirar cuando alguien pregunte qué se envió.
+    db.designs.create_index([("account_id", ASCENDING),
+                             ("created_at", DESCENDING)],
+                            name="by_account_created")
+    # La cola de revisión del administrador: lo que espera, primero lo viejo.
+    db.designs.create_index([("status", ASCENDING), ("created_at", ASCENDING)],
+                            name="by_status_created")
+
 
 def indexes_ready() -> bool:
     return _indexes_ready

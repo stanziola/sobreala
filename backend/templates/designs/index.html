@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ t('designs_title') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{% block content %}
+<h1 class="settings__heading">{{ t('designs_title') }}</h1>
+<p class="settings__lead">{{ t('designs_lead') }}</p>
+
+{% if saved == 'approved' %}
+<p class="notice notice--ok">{{ t('designs_saved_approved') }}</p>
+{% elif saved == 'pending' %}
+<p class="notice notice--ok">{{ t('designs_saved_pending') }}</p>
+{% endif %}
+{% if errors.form %}<p class="notice">{{ errors.form }}</p>{% endif %}
+
+<h2 class="settings__subtitle">{{ t('designs_ready_title') }}</h2>
+<p class="settings__lead">{{ t('designs_ready_lead') }}</p>
+{% if built_in %}
+<ul class="counts">
+  {% for one in built_in %}
+  <li><span>{{ one.name }}</span> <span class="table__quiet">{{ one.text }}</span></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="hint">{{ t('designs_ready_empty') }}</p>
+{% endif %}
+
+<h2 class="settings__subtitle">{{ t('designs_mine_title') }}</h2>
+{% if mine %}
+{# El HTML de un cliente no se dibuja dentro del panel: es de otro y esta
+   página lleva su sesión abierta. Se enseña qué es, cuánto pesa y cómo está. #}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for one in mine %}
+      <tr>
+        <td><b>{{ one.name }}</b></td>
+        <td class="table__quiet">{{ t('designs_size', kb=(one.bytes / 1024)|round(1)) }}</td>
+        <td class="table__quiet">{{ one.created_at|ago }}</td>
+        <td><span class="tag tag--quiet">{{ t('designs_status_' + one.status) }}</span>
+          {% if one.reason %}<br><span class="table__quiet">{{ one.reason }}</span>{% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('designs.remove') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="id" value="{{ one._id }}">
+            <button class="btn btn--small btn--outline" type="submit">{{ t('designs_delete') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('designs_mine_empty') }}</p>
+{% endif %}
+
+<h2 class="settings__subtitle">{{ t('designs_upload_title') }}</h2>
+{% if can_upload %}
+<p class="settings__lead">{{ t('designs_upload_hint', kb=max_kb) }}</p>
+{% if not mine %}<p class="hint">{{ t('designs_upload_first') }}</p>{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label for="nombre">{{ t('designs_name') }}</label>
+  <input id="nombre" name="nombre" type="text" maxlength="80" autocomplete="off">
+  <p class="hint">{{ t('designs_name_hint') }}</p>
+
+  {# El mismo botón nuestro que en importar: el del navegador no se puede
+     pintar, así que el campo se esconde y la etiqueta lo abre. #}
+  <p class="field-label" id="archivo-label">{{ t('designs_file') }}</p>
+  <div class="filepick">
+    <input id="archivo" name="archivo" type="file" accept=".html,text/html"
+           class="filepick__input" aria-labelledby="archivo-label" required>
+    <label class="btn btn--outline btn--small" for="archivo">{{ t('import_file_choose') }}</label>
+    <span class="filepick__name" data-file-name>{{ t('import_file_none') }}</span>
+  </div>
+  {% if errors.archivo %}<p class="error">{{ errors.archivo }}</p>{% endif %}
+
+  <button class="btn" type="submit">{{ t('designs_submit') }}</button>
+</form>
+{% else %}
+{# Y el servidor lo comprueba igual: esconder un botón no es un permiso. #}
+<p class="hint">{{ t('designs_locked', plan=upload_plan) }}
+  <a href="{{ site_url }}/planes/">{{ t('contacts_plans') }}</a></p>
+{% endif %}
+{% endblock %}
