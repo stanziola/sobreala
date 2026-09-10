@@ -216,6 +216,15 @@
   if (!crumb) return;
   var admin = crumb[2] === "admin";
 
+  // Una cuenta de administrador no compra planes, así que los botones de
+  // contratar de /planes sobran: el panel la mandaría a administración. Va
+  // antes que el menú porque esto vive fuera de él.
+  if (admin) {
+    Array.prototype.forEach.call(
+      document.querySelectorAll("[data-hide-for-admin]"),
+      function (el) { el.hidden = true; });
+  }
+
   // Signed in: the two buttons give way to the account's own face, and the
   // three rows that need a session appear inside the menu.
   grupo.querySelector("[data-account-in]").hidden = true;

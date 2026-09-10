@@ -37,11 +37,16 @@
         {# Con precio público el botón lleva a contratarlo en el panel, que es
            quien puede cobrar: este sitio es estático y vive en otro dominio.
            Sin sesión, el panel manda a entrar y vuelve aquí después. #}
+        {# Los cuatro se esconden para el administrador: su cuenta no compra
+           planes ni tiene a quién escribirle para pedir uno. Nacen visibles y
+           los esconde nav.js, así que sin JavaScript siguen ahí y quien pulse
+           uno de contratar acaba en administración, que es lo que ya hacía. #}
         {% if plan.has_public_price %}
         <a class="btn {% if plan.featured %}btn--primary{% else %}btn--outline{% endif %} btn--block"
+           data-hide-for-admin
            href="{{ panel.base_url }}/contratar/{{ plan.key }}">Empezar con {{ plan.name }}</a>
         {% else %}
-        <a class="btn btn--outline btn--block"
+        <a class="btn btn--outline btn--block" data-hide-for-admin
            href="{{ whatsapp_url }}" target="_blank" rel="noopener">Contactar</a>
         {% endif %}
       </li>
