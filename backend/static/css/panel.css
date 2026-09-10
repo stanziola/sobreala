@@ -247,13 +247,32 @@ a.menu__item:hover, button.menu__item:hover { background: var(--color-surface-al
 ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 
 .wrap { width: min(100% - 32px, 620px); margin: clamp(24px, 6vw, 56px) auto; }
-/* Configuración carries a sidebar beside its rows, and 620px is not enough
-   room for both. */
-.wrap--wide { width: min(100% - 32px, 980px); }
-/* La lista de contactos tiene siete columnas y en 980 px los nombres y las
-   etiquetas se parten en dos líneas. Configuración se queda como está: tiene
-   filas, no tablas. */
-.wrap--table { width: min(100% - 32px, 1180px); }
+/* Las pantallas con menú de secciones al lado —Configuración, Contactos,
+   Administración— y las que enseñan gráficas o tablas. 620 px no da para las
+   dos columnas, y 980 dejaba la mitad de un monitor en blanco: el menú flotando
+   lejos del borde y la gráfica de envíos dibujada en un cuarto de la pantalla.
+
+   El tope no es adorno. Sin él, en un monitor ancho una línea de texto se
+   estira hasta hacerse ilegible y la tabla de contactos separa tanto sus
+   columnas que hay que recorrerla con la cabeza. */
+.wrap--wide { width: min(100% - 32px, 1400px); }
+/* La lista de contactos es la pantalla con más columnas de todas, así que no
+   puede ser más estrecha que el resto. Hoy vale lo mismo que --wide; queda como
+   clase aparte porque la nombra su plantilla. */
+.wrap--table { width: min(100% - 32px, 1400px); }
+/* Las tablas, las gráficas y las listas de cifras llenan el ancho, que es para
+   lo que se ensanchó. Los campos de escribir no: un cuadro de mil cuatrocientos
+   píxeles para un motivo o un nombre es peor de leer y de apuntar que uno de la
+   medida del dato que va dentro.
+
+   Cuelga del contenedor y no de la tarjeta blanca: Plantillas y Estadísticas no
+   tienen tarjeta, y atarlo a ella dejaba sus campos estirados de lado a lado. El
+   contenedor estrecho —entrar, registrarse, contratar— no lleva tope: mide
+   620 px y ahí ocupar todo el ancho es lo correcto. */
+.wrap--wide input, .wrap--wide select, .wrap--wide textarea,
+.wrap--table input, .wrap--table select, .wrap--table textarea {
+  max-width: 560px;
+}
 
 .card {
   padding: clamp(22px, 4vw, 32px); border-radius: 16px;
@@ -422,7 +441,10 @@ input:focus, select:focus { border-color: var(--color-accent); }
    "what it is / what you can do" on the right— in this project's colours. */
 .settings__heading { margin-bottom: 18px; }
 .settings { display: grid; gap: 22px; align-items: start; }
-@media (min-width: 780px) { .settings { grid-template-columns: 208px 1fr; gap: 28px; } }
+/* El menú, pegado a la izquierda y estrecho: lo que gana de ancho se lo lleva
+   el contenido, que es a lo que se viene. Por debajo de 780 px cae en
+   horizontal, que es lo que lo hace usable en un teléfono. */
+@media (min-width: 780px) { .settings { grid-template-columns: 190px 1fr; gap: 24px; } }
 
 .settings__nav { display: flex; gap: 6px; overflow-x: auto; }
 @media (min-width: 780px) {
@@ -452,6 +474,7 @@ input:focus, select:focus { border-color: var(--color-accent); }
 .setting + .settings__subtitle { padding-top: 14px; border-top: 0; }
 .settings__lead { margin-bottom: 6px; color: var(--color-ink-soft); font-size: .95rem; }
 .settings__pane form { margin: 0; }
+
 
 /* One row. The action sits at the right edge, whatever it is: a button, a
    value, a tag or a switch. */

@@ -1,5 +1,9 @@
-{% extends "admin/_layout.html" %}
-{% block pane %}
-<h2 class="settings__title">{{ t('admin_no_clients_title') }}</h2>
+{% extends "base.html" %}
+{# La pantalla vacía de Estadísticas, así que va suelta como ella. #}
+{% block title %}{{ t('panel_title') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{% block content %}
+<h1 class="settings__heading">{{ t('admin_no_clients_title') }}</h1>
 <p class="settings__lead">{{ t('admin_no_clients_lead') }}</p>
 {% endblock %}

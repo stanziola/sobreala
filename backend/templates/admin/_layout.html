@@ -5,8 +5,9 @@
 <h1 class="settings__heading">{{ t('admin_title') }}</h1>
 
 <div class="settings">
+  {# Estadísticas no está aquí: tiene su propia fila en el menú de la cuenta y
+     se dibuja suelta, igual que la del cliente. #}
   {% set tabs = [
-    ('estadisticas', 'panel_title', url_for('admin.home')),
     ('cuentas', 'admin_tab_accounts', url_for('admin.accounts_list')),
     ('plantillas', 'admin_designs_title', url_for('admin.designs_queue'))] %}
 

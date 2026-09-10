@@ -10,6 +10,7 @@ direcciones de sus contactos.
 from __future__ import annotations
 
 import io
+import re
 
 import pyotp
 from conftest import login, register
@@ -485,11 +486,28 @@ def test_su_menu_no_trae_las_filas_de_cliente(client, database, outbox):
     assert ">Plantillas<" not in menu
 
 
+def test_estadisticas_no_lleva_menu_de_secciones(client, database, outbox):
+    """Es la misma pantalla que ve el cliente, así que se ve igual: suelta.
+
+    Tuvo una pestaña dentro de administración y se quitó cuando ganó su propia
+    fila en el menú de la cuenta; llegar dos veces al mismo sitio sobra, y el
+    menú de secciones al lado la hacía distinta de la del cliente.
+    """
+    admin, _ = make_admin(client, database)
+    make_client_account(client, database)
+
+    suelta = admin.get("/admin/").get_data(as_text=True)
+    assert "settings__tab" not in suelta
+
+    con_pestanas = admin.get("/admin/cuentas").get_data(as_text=True)
+    pestanas = re.findall(r'class="settings__tab[^"]*"[^>]*>\s*([^<]+)',
+                          con_pestanas)
+    assert [p.strip() for p in pestanas] == ["Cuentas", "Plantillas subidas"]
+
+
 def test_su_menu_lleva_estadisticas_encima_de_administracion(client, database,
                                                              outbox):
     """Dos filas y dos destinos: si llevaran al mismo, una sobraría."""
-    import re
-
     admin, _ = make_admin(client, database)
     menu = admin.get("/admin/").get_data(as_text=True)
     panel = menu[menu.index('class="menu__panel"'):]

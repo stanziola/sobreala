@@ -141,14 +141,12 @@ def home(account):
     # estadística suya que mirar.
     clients, _ = accounts.search(db, limit=200)
     if not clients:
-        return render_template("admin/no-clients.html", section="estadisticas",
-                               admin=account)
+        return render_template("admin/no-clients.html", admin=account)
 
     wanted = as_id(request.args.get("cuenta"))
     whose = next((one for one in clients if one["_id"] == wanted), clients[0])
     return render_template(
-        "admin/stats.html", section="estadisticas", admin=account,
-        account=account, pick=clients,
+        "admin/stats.html", admin=account, account=account, pick=clients,
         **stats.screen(db, whose,
                        period=request.args.get("periodo", ""),
                        tag=request.args.get("etiqueta", "")))
