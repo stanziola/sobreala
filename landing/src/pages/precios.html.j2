@@ -42,9 +42,15 @@
            los esconde nav.js, así que sin JavaScript siguen ahí y quien pulse
            uno de contratar acaba en administración, que es lo que ya hacía. #}
         {% if plan.has_public_price %}
+        {#- El puesto en la escalera, para que nav.js pueda apagar los que
+            estén por debajo del que ya se tiene contratado. Sale del orden de
+            docs/pricing.md, que va de menor a mayor. -#}
         <a class="btn {% if plan.featured %}btn--primary{% else %}btn--outline{% endif %} btn--block"
-           data-hide-for-admin
-           href="{{ panel.base_url }}/contratar/{{ plan.key }}">Empezar con {{ plan.name }}</a>
+           data-hide-for-admin data-plan-rank="{{ loop.index0 }}"
+           data-label-upgrade="{{ plan_buttons.upgrade.format(name=plan.name) }}"
+           data-label-renew="{{ plan_buttons.renew.format(name=plan.name) }}"
+           data-label-covered="{{ plan_buttons.covered }}"
+           href="{{ panel.base_url }}/contratar/{{ plan.key }}">{{ plan_buttons.start.format(name=plan.name) }}</a>
         {% else %}
         <a class="btn btn--outline btn--block" data-hide-for-admin
            href="{{ whatsapp_url }}" target="_blank" rel="noopener">Contactar</a>

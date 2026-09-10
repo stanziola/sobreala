@@ -14,7 +14,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, t
-from models.account import is_admin, status_of as account_status_of
+from models.account import (is_admin, plan_of,
+                            status_of as account_status_of)
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
 
@@ -157,7 +158,17 @@ def create_app(overrides: dict | None = None) -> Flask:
         wanted = ""
         if signed_in:
             try:
-                wanted = "admin" if is_admin(current_account()) else "1"
+                account = current_account()
+                if is_admin(account):
+                    wanted = "admin"
+                else:
+                    # «1» a secas, o «1:negocio» con el plan contratado. El plan
+                    # va ahí para que /planes pueda apagar los botones de los
+                    # planes menores: una página estática no lo sabe de otra
+                    # forma. Cuesta lo mismo que costó el rol, y es el mismo
+                    # trato: cualquier script de ese dominio puede leerlo.
+                    plan = plan_of(account)
+                    wanted = f"1:{plan}" if plan else "1"
             except Exception:  # noqa: BLE001 - la página vale más que la migaja
                 wanted = "1"
         if wanted and request.cookies.get(HINT_COOKIE) != wanted:

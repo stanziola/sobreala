@@ -1365,6 +1365,11 @@ def checkout(plan: str):
 
     return render_template(
         "checkout.html", plan=plan, one=plans.PLANS[plan],
+        # Bajar de plan no se hace por la web: lo que ya se pagó no se
+        # devuelve, así que quitarle sitio a una cuenta a cambio de nada tiene
+        # que pasar por una conversación. Renovar el mismo sí, que es sumarle
+        # tiempo al que ya tiene.
+        downgrade=plans.is_downgrade(accounts.plan_of(account), plan),
         currency=plans.CURRENCY,
         can_buy=accounts.can_buy(account),
         suspended=accounts.is_suspended(account),
@@ -1405,6 +1410,10 @@ def start_payment():
     amount = plans.amount(plan, cycle) if plans.buyable(plan) else None
     if amount is None:
         return redirect(url_for("auth.settings", section="pagos", error="plan"))
+    # Se comprueba aquí y no solo en la pantalla, porque un formulario se
+    # escribe a mano y el botón gris del sitio es solo un aviso.
+    if plans.is_downgrade(accounts.plan_of(account), plan):
+        return redirect(url_for("auth.checkout", plan=plan))
     if not paypal.configured():
         return redirect(url_for("auth.settings", section="pagos", error="paypal"))
 

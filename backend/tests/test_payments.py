@@ -425,3 +425,61 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     assert "PayPal" in pantalla
     assert "Yappy" in pantalla
     assert "Tus pagos" in pantalla
+
+
+# ------------------------------------------- bajar de plan no se hace por la web
+
+def test_con_un_plan_no_se_baja_a_uno_menor(client, database, outbox,
+                                            monkeypatch):
+    """Lo que ya se pagó no se devuelve, así que quitarle sitio a una cuenta a
+    cambio de nada tiene que pasar por una conversación."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    cuenta = confirm(database)
+    accounts.set_plan(database, cuenta["_id"], "empresa")
+
+    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    assert "Ya tienes un plan mayor" in pantalla
+    assert 'action="/configuracion/pagos/contratar"' not in pantalla
+
+    # Y el servidor lo comprueba, no solo la pantalla.
+    respuesta = buy(browser, plan="basico")
+    assert respuesta.headers["Location"].endswith("/contratar/basico")
+    assert database.payments.count_documents({}) == 0
+
+
+def test_renovar_el_mismo_plan_sigue_pudiendo(client, database, outbox,
+                                              monkeypatch):
+    """Comprar el que ya se tiene es renovarlo, y suma al final."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    cuenta = confirm(database)
+    accounts.set_plan(database, cuenta["_id"], "negocio")
+
+    assert 'action="/configuracion/pagos/contratar"' in \
+        browser.get("/contratar/negocio").get_data(as_text=True)
+    assert buy(browser, plan="negocio").headers["Location"].startswith(
+        "https://sandbox.paypal.com/")
+
+
+def test_subir_de_plan_sigue_pudiendo(client, database, outbox, monkeypatch):
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    cuenta = confirm(database)
+    accounts.set_plan(database, cuenta["_id"], "basico")
+
+    assert buy(browser, plan="empresa").headers["Location"].startswith(
+        "https://sandbox.paypal.com/")
+
+
+def test_la_escalera_sale_del_documento_de_precios():
+    """Sin copiar aquí una lista de nombres que un día lo contradiga."""
+    from services import plans
+
+    assert [plans.rank(k) for k in plans.PLANS] == [0, 1, 2, 3]
+    assert plans.rank(None) == -1 and plans.rank("inventado") == -1
+    assert plans.is_downgrade("negocio", "basico") is True
+    assert plans.is_downgrade("negocio", "negocio") is False
+    assert plans.is_downgrade("negocio", "empresa") is False
+    # Sin plan no se baja de ningún sitio.
+    assert plans.is_downgrade(None, "basico") is False

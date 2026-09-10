@@ -214,7 +214,10 @@
   if (!grupo) return;
   var crumb = /(^|;\s*)pm_in=([^;]*)/.exec(document.cookie);
   if (!crumb) return;
-  var admin = crumb[2] === "admin";
+  // "admin", "1", o "1:negocio" con el plan contratado.
+  var partes = crumb[2].split(":");
+  var admin = partes[0] === "admin";
+  var plan = partes[1] || "";
 
   // Una cuenta de administrador no compra planes, así que los botones de
   // contratar de /planes sobran: el panel la mandaría a administración. Va
@@ -223,6 +226,39 @@
     Array.prototype.forEach.call(
       document.querySelectorAll("[data-hide-for-admin]"),
       function (el) { el.hidden = true; });
+  }
+
+  // Con un plan contratado, los de más abajo en la escalera se apagan: bajar de
+  // plan no se hace por la web, porque lo que ya se pagó no se devuelve y hay
+  // que ajustarlo hablando. El del plan que se tiene se queda encendido, que es
+  // como se renueva. El servidor lo comprueba igual: esto es un aviso, no una
+  // puerta.
+  if (!admin && plan) {
+    var mio = -1;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-plan-rank]"),
+      function (b) {
+        if (b.getAttribute("href").indexOf("/contratar/" + plan) >= 0) {
+          mio = Number(b.getAttribute("data-plan-rank"));
+        }
+      });
+    if (mio >= 0) {
+      Array.prototype.forEach.call(document.querySelectorAll("[data-plan-rank]"),
+        function (b) {
+          var suyo = Number(b.getAttribute("data-plan-rank"));
+          if (suyo < mio) {
+            // Por debajo del contratado: no hay nada que ganar ahí.
+            b.textContent = b.getAttribute("data-label-covered");
+            b.classList.add("btn--off");
+            b.setAttribute("aria-disabled", "true");
+            b.removeAttribute("href");
+          } else if (suyo === mio) {
+            // El que ya tiene: comprarlo otra vez es renovarlo.
+            b.textContent = b.getAttribute("data-label-renew");
+          } else {
+            b.textContent = b.getAttribute("data-label-upgrade");
+          }
+        });
+    }
   }
 
   // Signed in: the two buttons give way to the account's own face, and the

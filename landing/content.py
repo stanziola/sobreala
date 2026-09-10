@@ -72,6 +72,16 @@ PANEL = {
     "language_soon": "Inglés (pronto)",
 }
 
+# Lo que dicen los botones de /planes cuando ya hay un plan contratado. El
+# sitio es estático y no lo sabe al construirse: los tres textos viajan en el
+# marcado y nav.js elige uno según la migaja que deja el panel.
+PLAN_BUTTONS = {
+    "start": "Empezar con {name}",
+    "upgrade": "Mejorar a {name}",
+    "renew": "Renovar {name}",
+    "covered": "Ya tienes todas las ventajas",
+}
+
 CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}
 CTA_SECONDARY = {"label": "Ver los planes", "url": "/planes/"}
 

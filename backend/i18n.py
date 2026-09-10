@@ -326,6 +326,9 @@ TEXTS = {
     "pay_renewing": "Ya tienes este plan hasta {when}. Lo que pagues ahora se "
                     "suma al final, no reemplaza lo que te queda.",
     "pay_back_to_plans": "Ver todos los planes",
+    "pay_downgrade": "Ya tienes un plan mayor que este. Bajar de plan no se "
+                     "hace desde aquí: escríbenos y lo vemos contigo, porque "
+                     "hay que ajustar lo que ya pagaste.",
     "pay_choose": "Contratar un plan",
     "pay_choose_lead": "El pago se hace en la página de PayPal. Al volver, tu "
                        "cuenta queda activa al momento.",

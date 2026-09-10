@@ -510,6 +510,7 @@ def build() -> list[Path]:
         "mailto_url": mailto_url(),
         "cta_primary": content.CTA_PRIMARY,
         "panel": content.PANEL,
+        "plan_buttons": content.PLAN_BUTTONS,
         "cta_secondary": content.CTA_SECONDARY,
         "footer": content.FOOTER,
         "steps": content.STEPS,

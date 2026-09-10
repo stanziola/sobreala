@@ -129,6 +129,18 @@ button { font: inherit; color: inherit; }
 .btn:hover { text-decoration: none; }
 .btn--lg { min-height: 52px; padding: 12px 26px; font-size: 1.04rem; }
 .btn--block { width: 100%; }
+/* Un plan por debajo del que ya se tiene: no se puede contratar, y el botón
+   lo dice quedándose quieto. Sin cursor de mano, sin hover y sin recibir el
+   foco del teclado, porque no lleva a ninguna parte; nav.js le quita también
+   la dirección. */
+/* Dos clases y no una: `.btn--outline` y `.btn--primary` pesan lo mismo que
+   una clase suelta y se definen más abajo, así que ganaban por orden y el gris
+   no llegaba a verse. */
+.btn.btn--off, .btn.btn--off:hover {
+  color: var(--color-ink-soft); background: var(--color-surface-alt);
+  border-color: var(--color-border);
+  cursor: default; transform: none; filter: none; box-shadow: none;
+}
 
 .btn--primary { background: var(--color-accent); color: var(--color-on-accent); box-shadow: var(--shadow-sm); }
 .btn--primary:hover { background: var(--color-accent-light); transform: translateY(-2px); box-shadow: var(--shadow); }

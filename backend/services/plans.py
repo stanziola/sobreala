@@ -164,6 +164,28 @@ def emails_a_month(plan: str | None) -> int | None:
     return found["emails"] if found else None
 
 
+def rank(plan: str | None) -> int:
+    """En qué puesto de la escalera está ese plan. Sin plan, -1.
+
+    El orden es el de `docs/pricing.md`, de izquierda a derecha, que es también
+    el de precio: la tabla se lee de menor a mayor y los diccionarios de Python
+    conservan el orden en que se llenaron. Copiar aquí una lista de nombres
+    ordenados sería una segunda fuente que un día contradiría al documento.
+    """
+    if not plan or plan not in PLANS:
+        return -1
+    return list(PLANS).index(plan)
+
+
+def is_downgrade(current: str | None, wanted: str) -> bool:
+    """Si pasar de uno al otro es bajar de plan.
+
+    Quedarse en el mismo no lo es: comprar el que ya se tiene es renovarlo, y
+    eso suma al final de lo que quedaba.
+    """
+    return rank(wanted) < rank(current)
+
+
 def can_upload(plan: str | None) -> bool:
     """Si ese plan puede subir su propio HTML, de docs/pricing.md.
 

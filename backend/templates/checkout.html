@@ -12,7 +12,9 @@
 
   {# Se dice qué falta, no un «no puedes» a secas: lo del correo se arregla
      solo abriendo la bandeja. #}
-  {% if not can_buy %}
+  {% if downgrade %}
+  <p class="notice">{{ t('pay_downgrade') }}</p>
+  {% elif not can_buy %}
   <p class="notice">{{ t('pay_suspended') if suspended else t('pay_needs_email') }}</p>
   {% elif not paypal_ready %}
   <p class="notice">{{ t('pay_not_ready') }}</p>

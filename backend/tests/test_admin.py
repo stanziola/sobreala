@@ -692,10 +692,15 @@ def test_la_migaja_del_sitio_publico_dice_el_rol(client, database, outbox,
     monkeypatch.setattr(Config, "PUBLIC_SITE_URL", "http://localhost")
 
     admin, _ = make_admin(client, database)
-    navegador, _ = make_client_account(client, database)
+    navegador, cliente = make_client_account(client, database)
 
     admin.get("/admin/")
     assert admin.get_cookie("pm_in").value == "admin"
 
     navegador.get("/panel")
     assert navegador.get_cookie("pm_in").value == "1"
+
+    # Con plan lleva también cuál, para que /planes pueda apagar los menores.
+    accounts.set_plan(database, cliente["_id"], "negocio")
+    navegador.get("/panel")
+    assert navegador.get_cookie("pm_in").value == "1:negocio"
