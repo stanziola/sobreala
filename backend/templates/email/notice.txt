@@ -1,0 +1,16 @@
+{{ heading }}
+{% for one in paragraphs %}
+{{ one }}
+{% endfor %}
+{%- if button %}
+{{ button.label }}: {{ button.href }}
+{% endif %}
+{%- if note %}
+{{ note.title }}
+{{ note.text }}
+{% endif %}
+{%- if foot %}
+{{ foot }}
+{% endif %}
+-- 
+{{ t('brand') }}

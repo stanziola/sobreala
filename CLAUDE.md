@@ -12,9 +12,10 @@ PyMEs — organizaciones que ya tienen una lista de correos armada por otra raz�
 **Estado.** Están la marca (`brand/`), el sitio público (`landing/`, siete
 páginas estáticas generadas con Jinja2), la cuenta entera —registro, código,
 doble factor, dispositivos, configuración—, **contactos** con su importador y
-sus supresiones, **plantillas** con la validación del HTML subido, el **panel de
-administración** con la habilitación de envío, y el **cobro de un plan con
-PayPal**. Faltan campañas, analítica y el webhook de rebotes.
+sus supresiones, **plantillas** —las cuatro prediseñadas y la validación del
+HTML subido—, el **panel de administración** con la habilitación de envío, y el
+**cobro de un plan con PayPal**. Faltan campañas, analítica y el webhook de
+rebotes.
 
 ---
 
@@ -27,7 +28,7 @@ PayPal**. Faltan campañas, analítica y el webhook de rebotes.
 | Envío de correo | **Amazon SES** (API HTTPS, no SMTP) | AWS |
 | Landing | HTML/CSS/JS estático | Cloudflare Pages |
 | DNS, WAF, rate limiting | Cloudflare (modo proxied, SSL Full strict) | — |
-| Imágenes de correos | Cloudflare R2 | — |
+| Imágenes de correos | En la propia base, servidas por el panel | Railway |
 | Pagos | Yappy y PayPal (tarjeta vía PayPal) | — |
 
 **No usar Brevo ni SMTP propio.** Brevo prohíbe en sus términos enviar en nombre
@@ -95,15 +96,21 @@ panamails/
     │                       # quedaron viejos
     ├── services/
     │   ├── mailer.py       # correo del sistema: file | smtp | ses
+    │   ├── notices.py      # los avisos de la cuenta: plan, habilitación,
+    │   │                   # suspensión, y el aviso de pago para el admin
     │   ├── security.py     # contraseñas, CSRF, límite de intentos
     │   ├── totp.py         # verificación en dos pasos
     │   ├── importer.py     # CSV en streaming, upsert por lotes
     │   ├── plans.py        # precios, etiquetas y quién sube HTML, de docs/pricing.md
     │   ├── html_check.py   # revisa el HTML que sube un cliente
     │   ├── paypal.py       # crear y cobrar la orden, con urllib
+    │   ├── render.py       # arma el correo: la pieza más la baja, la marca
+    │   │                   # de agua y la dirección postal
+    │   ├── imaging.py      # achica y reconoce las imágenes de las piezas
     │   ├── ses.py
     │   └── payments/
-    ├── email_templates/    # plantillas prediseñadas del producto
+    ├── email_templates/    # plantillas prediseñadas del producto, una por
+    │                       # archivo, con sus campos declarados arriba
     ├── templates/          # Jinja: panel del cliente y admin
     ├── static/
     └── tests/
@@ -139,6 +146,22 @@ aplicación aparte: comparte modelos y servicios con el resto.
   es lo estrictamente necesario para que lo pedido funcione o para que las
   pruebas pasen, y eso va nombrado en el reporte. Renombrar de paso, reordenar,
   «ya que estoy» y «aprovecho y mejoro esto» no entran.
+- **Los commits se hacen aquí, pero solo cuando se piden.** Terminar un bloque
+  no es una orden de subir nada: el reporte sigue siendo el resumen enumerado
+  con su asunto sugerido, y ahí se espera. Cuando se pide subirlo, primero se
+  pregunta si va con ese asunto o con uno escrito a mano, y después `git add`,
+  `git commit` y `git push`. Un plan aprobado tampoco es una orden de subir:
+  aprobar un plan es decir «hazlo», no «publícalo».
+- **En el repositorio no aparece Claude.** Ningún commit lleva `Co-Authored-By`,
+  ni enlace de sesión, ni una línea de «generado con»: el autor es el de
+  `git config` y el mensaje dice qué cambió y nada más. Si algún día eso no se
+  pudiera cumplir, entonces no se commitea.
+- **Los permisos viven en `.claude/settings.json` del proyecto**, no en el del
+  usuario, para que esto valga en Panamails y no en sus otros repositorios. Van
+  sin preguntar: `status`, `log`, `diff`, `show`, `add`, `commit`, `push`,
+  `branch`, `remote` y `fetch`. Quedan negados a propósito, y los hace una
+  persona a mano: `reset --hard`, `push --force`, `rebase`, `clean`,
+  `filter-branch` y borrar el `reflog`.
 - **Lo que existe en los dos sitios se cambia en los dos.** La barra de arriba,
   su menú y todo lo que se repita entre `panamails.com` (`landing/src/`) y
   `panel.panamails.com` (`backend/templates/`) son **dos plantillas distintas
@@ -245,11 +268,21 @@ sesión ajena. Sin JavaScript el campo funciona como siempre.
 **`notifications` guarda qué correos quiere recibir la cuenta**, una clave por
 aviso. Lo que no esté escrito vale «sí»: una cuenta que nunca abrió la pantalla
 recibe todo. Solo están ahí los avisos de actividad —`new_login`, `billing`,
-`imports`, `campaigns`, `monthly`—. Los de seguridad **no tienen clave y no se
+`plan_state`, `imports`, `campaigns`, `monthly`—. Los de seguridad **no tienen clave y no se
 pueden apagar**: el código de confirmación, el de recuperación, la contraseña
 cambiada y el doble factor activado o desactivado son los que enteran a alguien
 de que otro está entrando a su cuenta, y `set_notifications()` descarta
-cualquier campo del formulario que no sea uno de los cinco de arriba.
+cualquier campo del formulario que no sea uno de los seis de arriba.
+
+**`billing` y `plan_state` están separados a propósito.** El primero es
+papeleo —el comprobante de lo que se cobró— y el segundo es lo que explica
+por qué algo dejó de funcionar. Son dos cosas que se quieren apagar por
+razones distintas, y juntarlas obligaba a elegir entre las dos.
+
+**`plan_notices` guarda para qué fecha de vencimiento ya se avisó**, no un
+sí o un no. Es lo que hace que renovar devuelva el aviso para el ciclo
+siguiente sin que nadie tenga que limpiar nada: al cambiar `plan_until`, la
+marca deja de coincidir sola.
 
 ### `sessions`
 Un documento por dispositivo con sesión abierta: de la galleta solo se guarda su
@@ -357,11 +390,22 @@ que decide si se alarga un plan: recargar la página de vuelta entra otra vez y
 se va con las manos vacías en lugar de regalar otro periodo.
 
 ### `designs`
-El HTML que sube un cliente. Se llaman «diseños» y no «templates» porque en este
+Las piezas de un cliente. Se llaman «diseños» y no «templates» porque en este
 repositorio `templates/` ya son las plantillas Jinja del panel; para el cliente
-la pantalla dice **Plantillas**, que es su palabra. Las prediseñadas del producto
-no están aquí: son archivos de `email_templates/`, iguales para todos y sin nada
-que aprobar.
+la pantalla dice **Plantillas**, que es su palabra.
+
+**`source` dice de dónde salió cada una**, y hay dos:
+
+| `source` | Qué guarda | Quién puede |
+|---|---|---|
+| `upload` | El HTML entero, tal como llegó | Negocio en adelante |
+| `builtin` | De qué prediseñada salió y **qué escribió en cada casilla** | Todos |
+
+De una prediseñada llena **no se guarda el correo armado**. Guardar el resultado
+la dejaría imposible de volver a editar, y además el archivo de la plantilla
+puede mejorar: al reabrirla se arma otra vez con lo que ese archivo diga hoy. Los
+archivos de las prediseñadas viajan con el repositorio, en `email_templates/`,
+iguales para todos y sin nada que aprobar.
 
 **Subir HTML propio es de Negocio en adelante**, y eso lo dice la fila «Subir tu
 propio HTML» de `docs/pricing.md`, no una lista copiada al backend. El servidor
@@ -379,11 +423,98 @@ validador al subirla, y eso es mecánico, no un juicio. La mirada de una persona
 ocurre una sola vez por cuenta, en la habilitación para enviar, y es sobre la
 cuenta y su lista, no sobre el archivo. Tener las dos serían dos revisiones
 manuales para la misma decisión. `/admin/plantillas` lista lo que han subido los
-clientes, para poder abrir una cuando haga falta.
+clientes, para poder abrir una cuando haga falta; las prediseñadas llenas no
+salen ahí, porque son nuestras plantillas con el texto de alguien dentro y no hay
+ningún archivo ajeno que mirar.
 
 **El HTML de un cliente no se dibuja nunca dentro del panel**, ni en el suyo ni
 en el del administrador. Se baja como `text/plain`: meterlo en una página
 nuestra sería meter el documento de otro en una sesión abierta.
+
+## Las plantillas prediseñadas
+
+Cuatro, en `backend/email_templates/`, en el HTML que entienden los lectores de
+correo —tablas y estilos en línea—:
+
+| Plantilla | Para qué | Qué llena el cliente |
+|---|---|---|
+| **Aviso** | Un corte, un plazo, un recordatorio de pago. Sin imagen. | Título, texto y un botón opcional |
+| **Anuncio** | Una oferta o una novedad | Título, imagen, texto, botón |
+| **Boletín** | Varias noticias en un correo | Título y de dos a cuatro bloques |
+| **Convocatoria** | Una asamblea o un evento | Título, imagen, fecha, hora, lugar, texto, botón |
+
+**Cada archivo declara arriba sus campos y su nombre**, así que la pantalla
+dibuja su formulario sola y no hay una lista de campos escrita aparte que un día
+diga otra cosa que el archivo. Agregar la quinta es dejar caer un archivo; lo
+único que se escribe fuera es la línea que explica para qué sirve, en `i18n.py`,
+y sin ella se ofrece igual. Las que empiezan por guion bajo no se pueden elegir:
+son el sobre.
+
+**`services/render.py` es el único sitio que arma un correo**, y la vista previa
+llama ahí, así que lo que alguien ve antes de mandar es de verdad lo que se
+manda. Pone, por este orden: lo que escribió el cliente **escapado** —un
+`<script>` en el título sale como texto—, el botón de anular la suscripción, la
+dirección postal si está configurada, y la marca de agua solo si el plan la
+lleva. Las tres van fuera de la pieza, que es lo que hacen las reglas 3 y 4
+ciertas: el cliente no las puede quitar editando lo suyo, y la marca desaparece
+sola al subir de plan porque nadie la copió a ningún sitio.
+
+**La vista previa se dibuja en un marco aislado**, con `sandbox` y con su propia
+cabecera de seguridad —un correo necesita justo lo que el panel prohíbe: estilos
+en línea e imágenes de otro dominio—. El HTML es nuestro, pero el texto de
+dentro es de otro y esa página lleva una sesión abierta. El formulario entero
+entra en ese marco al pulsar el botón, así que ver cómo queda no guarda nada ni
+pierde lo escrito.
+
+### Las imágenes
+
+**Se guardan en la propia base**, en la colección `images`, y las sirve el panel
+en `/img/<nombre>`. No pueden viajar dentro del correo —pegadas dentro pesan
+megas y Gmail recorta a los 102 KB, y lo que se pierde es el pie con el botón de
+la baja—, así que van fuera y el correo trae su dirección.
+
+Hubo un almacén aparte (Cloudflare R2) y se quitó: pedía dejar una tarjeta en un
+servicio que se cobra por uso y no tiene tope duro de gasto. El costo real habría
+sido mínimo, pero para lo que hace falta aquí no compensa depender de una factura
+variable, y **esto no necesita ninguna variable de entorno ni ningún proveedor
+nuevo**.
+
+Lo que hace que guardarlas en la base salga barato es que **se achican al
+entrar** (`services/imaging.py`, con Pillow): una foto de teléfono son tres o
+cuatro megas y las plantillas la dibujan a 600 píxeles de ancho, así que lo
+guardado son unos 120 KB. Sin ese paso habría que rechazar casi cualquier foto,
+que es justo lo que dejaría la pantalla inservible para quien solo tiene la que
+acaba de tomar.
+
+- **Se acepta o se rechaza por lo que trae dentro el archivo, no por su
+  nombre**: JPG, PNG, GIF y WebP, hasta 5 MB de entrada. Sale JPEG, o PNG si
+  tiene transparencia. El **GIF se guarda tal cual** si viene liviano, porque
+  achicarlo le quitaría la animación.
+- Se le pone tope de píxeles a Pillow y se atrapa su aviso de bomba: un PNG de
+  40 KB puede descomprimirse a varios gigabytes.
+- **El campo de la pieza guarda el nombre del archivo, no una dirección.** La
+  dirección entera se arma al dibujar el correo, en `services/render.py`. Así la
+  pieza no se rompe si cambia el dominio, y **no hay forma de colar una imagen
+  de fuera** escribiendo en el campo escondido del formulario: lo que se acepta
+  es un nombre que tiene que existir y ser de esa cuenta.
+- **Borrar la pieza borra sus imágenes**, y hay un tope de 20 por cuenta. Ese
+  tope es también lo que acota lo que puede quedar huérfano: una imagen subida
+  y nunca guardada en ninguna pieza no la borra nadie.
+
+### `images`
+Una imagen de una plantilla, ya achicada, con la cuenta de quien la subió y su
+nombre. **El nombre es aleatorio y es la dirección**: no se usa el `_id`, que
+lleva la hora dentro y va casi en orden, porque con él quien tuviera una
+dirección podría recorrer las de los demás. Y lleva la extensión pegada, porque
+Cloudflare mira la extensión para decidir si guarda una respuesta en su borde;
+sin eso, cada apertura de cada correo llegaría hasta el servidor.
+
+`/img/<nombre>` es **la única dirección del panel que no pide sesión, y tiene que
+serlo**: quien la abre no es el cliente, es el lector de correo de cada persona
+que recibió la campaña. Va en su propio blueprint (`blueprints/media/`) y no en
+el de plantillas, que exige sesión y devuelve los administradores a `/admin`. La
+respuesta se puede guardar un año: cambiar una imagen es subir otra, con otro
+nombre, así que lo cacheado no puede quedar viejo.
 
 ### `campaigns`
 Incluye la **posición de envío** (hasta qué destinatario se envió), necesaria
@@ -534,8 +665,8 @@ pantallas: la lista —una fila por contacto, con sus etiquetas, por dónde entr
 cuándo y si está activo o anulado—, la importación, las etiquetas y las
 supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
 desde un botón encima de la lista, y exportar pasa por una confirmación que dice
-cuántos van a salir. **`/plantillas`** enseña las prediseñadas y las que ha
-subido la cuenta. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
+cuántos van a salir. **`/plantillas`** enseña las cuatro prediseñadas para
+elegir una y llenarla, las que ya armó y las que subió como HTML. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
 dispositivos conectados), **Notificaciones** y **Opciones de pago**, donde se
 contrata un plan con PayPal y se ven los pagos hechos. Yappy sigue por
@@ -617,7 +748,7 @@ dibujaría ceros y habría que rehacerla cuando se sepa qué forma tienen los
 eventos de verdad. Sigue valiendo la regla de arriba: cifras agregadas sí, la
 lista de direcciones de sus contactos no.
 
-Pendiente además: cargar plantillas prediseñadas · revisar rebotes por cliente.
+Pendiente además: revisar rebotes por cliente.
 
 Además:
 
@@ -631,6 +762,71 @@ Además:
 7. Buscador global de direcciones, para suprimir a quien escriba pidiendo la baja.
 
 ---
+
+## Los avisos de la cuenta
+
+`services/notices.py` es el único sitio que los compone, y son ocho:
+
+| Correo | Cuándo sale | ¿Se puede apagar? |
+|---|---|---|
+| Contrataste el plan X | Al cobrar PayPal, y al ponerle el plan a mano | Sí, «Pagos y plan» |
+| Renovaste el plan X | Igual, cuando el plan pagado es el que ya corría | Sí, «Pagos y plan» |
+| Tu plan vence en 7 días | Al entrar al panel, si falta una semana o menos | Sí, «Estado de tu plan» |
+| Tu plan venció | Al entrar al panel, si ya pasó la fecha | Sí, «Estado de tu plan» |
+| Ya puedes enviar | Al habilitar el envío desde la ficha | No |
+| Tu cuenta fue suspendida | Al suspenderla | No |
+| Tu cuenta está activa otra vez | Al levantar la suspensión | No |
+| Alguien pagó y espera habilitación | Al cobrar, **a quien administra** | No |
+
+**Los cuatro de abajo no llevan interruptor, y no por descuido.** «Ya puedes
+enviar» pasa una vez por cuenta y es la respuesta a la única espera que se le
+pide a un cliente. Los dos de la suspensión son la respuesta a «¿por qué no
+puedo entrar?», y quien está suspendido no puede entrar a cambiar sus
+preferencias, así que un interruptor no le serviría de nada. Y el último va a
+una cuenta de administrador, que no tiene pantalla de Notificaciones.
+
+**El correo de suspensión no lleva el motivo que escribió el administrador.**
+Ese motivo se redacta para `admin_events`, puede ser corto y duro, y lo que
+necesita quien lo recibe es otra cosa: qué significa, que no se borró nada y a
+dónde escribir.
+
+**Los ocho comparten un solo par de plantillas**, `email/notice.html` y `.txt`,
+porque los ocho tienen la misma forma: un titular, unos párrafos, a veces un
+botón y a veces un recuadro. Los siete correos anteriores —confirmación,
+bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el suyo;
+podrían mudarse a este sobre, pero eso es otro cambio.
+
+**Ninguno puede romper lo que estaba pasando.** Un correo que no sale no puede
+hacer que un pago cobrado parezca fallido, así que el envío va envuelto y solo
+deja una línea en el registro. Y como todos los del sistema, son
+transaccionales: sin enlace de baja y sin marca de agua, que es la regla 8.
+
+### Cómo se entera de que un plan venció
+
+**Cuando la cuenta entra al panel, y hoy no hay dónde más.** No existe el proceso
+en segundo plano que podría darse cuenta a las tres de la mañana, así que
+`notices.plan_watch()` se llama al dibujar `/panel`.
+
+Tiene el límite que se ve y conviene tenerlo presente: **solo le llega a quien
+entra**, que es justamente quien menos lo necesita. El día que exista ese
+proceso, es mover esta misma llamada; nada de esto se rehace.
+
+Un plan que venció hace más de 30 días no dispara nada. Sin ese corte, al subir
+esto las cuentas viejas de prueba habrían recibido un aviso de algo de hace
+medio año la primera vez que alguien entrara.
+
+## Enviar correos: lo siguiente, y lo que no va a hacer
+
+La fila **Enviar correos**, debajo de Estadísticas: armar el envío, programarlo,
+poder editarlo aunque ya esté programado, elegir etiquetas y elegir una pieza
+guardada. Se hace sobre lo de arriba, porque sin piezas guardadas no tendría qué
+ofrecer.
+
+**Esa pantalla arma y agenda, y no manda.** La campaña queda en cola con su hora,
+y mandar de verdad se conecta cuando estén las cuatro cosas que hoy faltan:
+acceso de producción en Amazon SES, `envios.panamails.com` verificado, el webhook
+de rebotes, y el proceso en segundo plano —un envío no puede correr dentro de una
+petición—. Nada de eso obliga a rehacer la pantalla después.
 
 ## Cobrar un plan
 
@@ -669,7 +865,13 @@ plan. **Un administrador no**: su cuenta no tiene a quién escribirle.
 
 Pagar mueve la cuenta a `active` y escribe `plan` y `plan_until`. Renovar el
 mismo plan antes de tiempo **suma al final de lo que quedaba**; cambiar de plan
-empieza hoy. Pagar **no** habilita el envío: eso es la otra puerta.
+empieza hoy. Pagar **no** habilita el envío: eso es la otra puerta, y el
+comprobante que sale lo dice para que no se descubra al intentar enviar.
+
+Del cobro salen **dos correos**: el comprobante al cliente y un aviso a quien
+administra, porque el que pagó queda esperando una habilitación que hace una
+persona. Los dos van después de todo lo que decide algo: si el correo no sale,
+el pago sigue cobrado y el plan activo.
 
 **Corporativo no se compra por la web.** `docs/pricing.md` dice que va sin precio
 público, a la medida: su botón lleva a contacto. Ponerlo comprable sería poner un
@@ -715,16 +917,13 @@ AWS_SECRET_ACCESS_KEY
 AWS_REGION
 SES_CONFIGURATION_SET
 SENDING_DOMAIN            # envios.panamails.com
-R2_ACCOUNT_ID
-R2_ACCESS_KEY_ID
-R2_SECRET_ACCESS_KEY
-R2_BUCKET
 PAYPAL_ENV                # sandbox | live; en producción con sandbox no arranca
 PAYPAL_CLIENT_ID
 PAYPAL_SECRET
 PAYPAL_WEBHOOK_ID         # para comprobar los avisos; todavía sin usar
 YAPPY_MERCHANT_ID
 YAPPY_SECRET
+POSTAL_ADDRESS            # el pie de las campañas; vacía, todavía no existe
 ```
 
 Nunca commitear el `.env`. En Railway van como variables del servicio.
@@ -740,10 +939,11 @@ no se descubra el día del lanzamiento.
 
 - **Dirección postal física en el pie de cada campaña.** La CAN-SPAM de Estados
   Unidos la exige en todo correo publicitario, y basta un destinatario con
-  Gmail o Hotmail para caer en su ámbito. Va inyectada al enviar, junto a la
-  baja y a la marca de agua, no en el HTML del cliente. Hoy no existe. Un
-  apartado postal de Correos de Panamá cumple el requisito sin publicar un
-  domicilio particular.
+  Gmail o Hotmail para caer en su ámbito. Ya va inyectada al armar el correo,
+  junto a la baja y a la marca de agua, no en el HTML del cliente; lo que falta
+  es la dirección: `POSTAL_ADDRESS` está vacía y mientras lo esté el pie no la
+  dibuja. Un apartado postal de Correos de Panamá cumple el requisito sin
+  publicar un domicilio particular.
 - **Aviso de operación.** Hace falta para operar y facturar en Panamá
   (panamaemprende.gob.pa). En cuanto exista se escribe en `LEGAL_HOLDER` de
   `landing/content.py` y aparece solo en las dos páginas legales.

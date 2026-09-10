@@ -1,12 +1,33 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(git config --get:*)"
+    ],
     "deny": [
-      "Bash(git)",
-      "Bash(git *)",
-      "Bash(git:*)",
-      "PowerShell(git)",
-      "PowerShell(git *)",
-      "PowerShell(git:*)"
+      "Bash(git reset --hard:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git rebase:*)",
+      "Bash(git clean:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(git reflog delete:*)",
+      "Bash(git reflog expire:*)",
+      "PowerShell(git reset --hard:*)",
+      "PowerShell(git push --force:*)",
+      "PowerShell(git push -f:*)",
+      "PowerShell(git rebase:*)",
+      "PowerShell(git clean:*)",
+      "PowerShell(git filter-branch:*)"
     ]
   }
 }

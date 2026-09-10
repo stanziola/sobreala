@@ -36,6 +36,7 @@ from models import payment as payments
 from models import session as sessions
 from models import token as tokens
 from services import mailer
+from services import notices
 from services import paypal
 from services import plans
 from services import stats
@@ -1191,9 +1192,14 @@ def panel():
     if answer:
         return answer
 
+    db = get_db()
+    # Sin proceso en segundo plano, entrar al panel es el único momento en que
+    # alguien puede enterarse de que su plan está por vencerse o ya venció.
+    notices.plan_watch(db, account)
+
     return render_template(
         "stats.html", account=account, pick=None,
-        **stats.screen(get_db(), account,
+        **stats.screen(db, account,
                        period=request.args.get("periodo", ""),
                        tag=request.args.get("etiqueta", "")))
 
@@ -1483,12 +1489,23 @@ def finish_payment():
     if not payments.complete(db, attempt["_id"]):
         return redirect(f"{back}?hecho=1")
 
-    accounts.activate_plan(
-        db, account["_id"], attempt["plan"],
-        payments.until(attempt["cycle"],
-                       since=accounts.renews_from(account, attempt["plan"])))
+    # Renovar es pagar el mismo plan que todavía corre; cambiarlo o volver
+    # después de que venciera es contratar. Se mira antes de activar, que es
+    # cuando la cuenta todavía dice lo que decía.
+    running = accounts.plan_until(account)
+    renewed = (accounts.plan_of(account) == attempt["plan"]
+               and running is not None and running > accounts.now())
+    until = payments.until(
+        attempt["cycle"],
+        since=accounts.renews_from(account, attempt["plan"]))
+    accounts.activate_plan(db, account["_id"], attempt["plan"], until)
     log_auth(db, events.PAYMENT, events.OK, email=account["email"],
              account_id=account["_id"])
+
+    # Los dos correos van después de todo lo que decide algo: si el correo no
+    # sale, el pago sigue cobrado y el plan activo.
+    notices.paid(account, plan=attempt["plan"], until=until, renewed=renewed)
+    notices.payment_to_admins(db, account, plan=attempt["plan"])
     return redirect(f"{back}?hecho=1")
 
 

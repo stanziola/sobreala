@@ -324,6 +324,19 @@ def plan_until(account: dict[str, Any] | None):
     return (account or {}).get("plan_until")
 
 
+def mark_plan_notice(db, account_id, which: str, until) -> None:
+    """Dejar escrito **para qué vencimiento** se avisó ya.
+
+    Se guarda la fecha y no un simple sí, y eso es lo que hace que renovar
+    devuelva el aviso para el ciclo siguiente: al cambiar `plan_until`, la marca
+    deja de coincidir sola. Un booleano habría que acordarse de limpiarlo, y
+    olvidarlo significa no volver a avisar nunca.
+    """
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        f"plan_notices.{which}": until, "updated_at": now(),
+    }})
+
+
 def renews_from(account: dict[str, Any] | None, plan: str):
     """Desde cuándo cuenta lo que se acaba de pagar.
 
@@ -387,10 +400,18 @@ def search(db, *, status: str = "", text: str = "", pending: bool = False,
 # switch for turning the alarm off.
 NEW_LOGIN = "new_login"
 BILLING = "billing"
+# Aparte de BILLING a propósito. Aquel es papeleo —el comprobante de lo que se
+# cobró—; este es lo que explica por qué algo dejó de funcionar, que es otra
+# cosa y se quiere apagar por otras razones.
+PLAN_STATE = "plan_state"
 IMPORTS = "imports"
 CAMPAIGNS = "campaigns"
 MONTHLY = "monthly"
-NOTICES = (NEW_LOGIN, BILLING, IMPORTS, CAMPAIGNS, MONTHLY)
+NOTICES = (NEW_LOGIN, BILLING, PLAN_STATE, IMPORTS, CAMPAIGNS, MONTHLY)
+
+# Los dos avisos del estado del plan, que se mandan una sola vez cada uno.
+EXPIRING = "expiring"
+EXPIRED = "expired"
 
 
 def wants(account: dict[str, Any] | None, notice: str) -> bool:

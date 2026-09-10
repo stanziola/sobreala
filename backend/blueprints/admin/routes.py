@@ -35,6 +35,7 @@ from models import import_job as imports
 from models import payment as payments
 from models import session as sessions
 from models import suppression as suppressions
+from services import notices
 from services import plans
 from services import stats
 from services.security import csrf_ok
@@ -248,10 +249,15 @@ def update(account, raw):
         if plan is None:
             accounts.set_plan(db, client["_id"], None)
         else:
-            accounts.activate_plan(
-                db, client["_id"], plan,
-                payments.until(cycle,
-                               since=accounts.renews_from(client, plan)))
+            running = accounts.plan_until(client)
+            renewed = (before == plan and running is not None
+                       and running > accounts.now())
+            until = payments.until(
+                cycle, since=accounts.renews_from(client, plan))
+            accounts.activate_plan(db, client["_id"], plan, until)
+            # Quien pagó por Yappy o por transferencia recibe el mismo correo
+            # que quien pagó por PayPal: para el cliente es el mismo hecho.
+            notices.paid(client, plan=plan, until=until, renewed=renewed)
         decisions.record(db, kind=decisions.PLAN, admin_id=account["_id"],
                          account_id=client["_id"], before=before, after=plan,
                          reason=reason)
@@ -267,6 +273,13 @@ def update(account, raw):
             decisions.record(db, kind=decisions.STATUS, admin_id=account["_id"],
                              account_id=client["_id"], before=before,
                              after=wanted_status, reason=reason)
+            # El correo no lleva el motivo: eso se escribe para el registro y
+            # puede ser corto y duro. Lo que necesita quien lo recibe es saber
+            # qué significa y a dónde escribir.
+            if suspend:
+                notices.suspended(client)
+            else:
+                notices.reinstated(client)
         # Suspender cierra lo que esté abierto: si no, quien ya estaba dentro
         # sigue dentro hasta que se le ocurra salir.
         if suspend:
@@ -296,6 +309,9 @@ def clear_sending(account, raw):
         return redirect(url_for("admin.account_page", raw=raw, falta="motivo"))
 
     if accounts.clear_sending(db, client["_id"], account["_id"]):
+        # Es la única espera que se le pide a un cliente, así que enterarse de
+        # que terminó no puede depender de que vuelva a entrar a mirar.
+        notices.sending_cleared(client)
         decisions.record(db, kind=decisions.SENDING, admin_id=account["_id"],
                          account_id=client["_id"], before=None, after="cleared",
                          reason=reason)

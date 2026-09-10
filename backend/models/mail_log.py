@@ -32,6 +32,14 @@ PASSWORD_CHANGED = "password_changed"
 RECOVER = "recover"
 NEW_LOGIN = "new_login"
 TWO_FACTOR = "two_factor"
+# Los avisos de la cuenta, que compone services/notices.py.
+PLAN_PAID = "plan_paid"
+PLAN_EXPIRING = "plan_expiring"
+PLAN_EXPIRED = "plan_expired"
+SENDING_CLEARED = "sending_cleared"
+SUSPENDED = "suspended"
+REINSTATED = "reinstated"
+ADMIN_PAYMENT = "admin_payment"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"
 

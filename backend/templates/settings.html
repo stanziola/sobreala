@@ -177,14 +177,19 @@
       {{ toggle('new_login', t('settings_notice_new_login'),
                 t('settings_notice_new_login_desc'), notifications.new_login) }}
 
+      {# Estos dos ya avisan de algo, así que van arriba y no bajo el título de
+         lo que todavía no existe. #}
+      {{ toggle('billing', t('settings_notice_billing'),
+                t('settings_notice_billing_desc'), notifications.billing) }}
+      {{ toggle('plan_state', t('settings_notice_plan_state'),
+                t('settings_notice_plan_state_desc'), notifications.plan_state) }}
+
       {# Se enseñan desde ya, agrupadas y dicho con claridad que todavía no
          hay nada que avisar: lo que se elija aquí se guarda y se respeta el
          día que esas partes existan. #}
       <h3 class="settings__subtitle">{{ t('settings_soon_title') }}</h3>
       <p class="settings__lead">{{ t('settings_soon_lead') }}</p>
 
-      {{ toggle('billing', t('settings_notice_billing'),
-                t('settings_notice_billing_desc'), notifications.billing) }}
       {{ toggle('imports', t('settings_notice_imports'),
                 t('settings_notice_imports_desc'), notifications.imports) }}
       {{ toggle('campaigns', t('settings_notice_campaigns'),
