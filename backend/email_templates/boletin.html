@@ -1,0 +1,57 @@
+{% set FIELDS = [
+  {"name": "titulo", "type": "text", "max": 120, "required": true},
+  {"name": "entrada", "type": "long", "max": 600, "required": false},
+  {"name": "bloque1_titulo", "type": "text", "max": 100, "required": true},
+  {"name": "bloque1_imagen", "type": "image", "required": false},
+  {"name": "bloque1_texto", "type": "long", "max": 900, "required": true},
+  {"name": "bloque2_titulo", "type": "text", "max": 100, "required": true},
+  {"name": "bloque2_imagen", "type": "image", "required": false},
+  {"name": "bloque2_texto", "type": "long", "max": 900, "required": true},
+  {"name": "bloque3_titulo", "type": "text", "max": 100, "required": false},
+  {"name": "bloque3_imagen", "type": "image", "required": false},
+  {"name": "bloque3_texto", "type": "long", "max": 900, "required": false},
+  {"name": "bloque4_titulo", "type": "text", "max": 100, "required": false},
+  {"name": "bloque4_imagen", "type": "image", "required": false},
+  {"name": "bloque4_texto", "type": "long", "max": 900, "required": false}
+] %}
+{% set LABEL = "Boletín" %}
+{#- Varias noticias en un correo. Los dos primeros bloques son obligatorios y
+    los otros dos no: un boletín de una sola noticia es un anuncio, y hay meses
+    en que solo hay dos cosas que contar. Los que se dejan vacíos no se
+    dibujan. -#}
+{% macro bloque(titulo, imagen, texto) %}
+{% if titulo and texto %}
+<tr><td style="padding:24px 28px 0;">
+  {% if imagen %}
+  <img src="{{ imagen }}" alt="" width="544"
+       style="display:block;width:100%;max-width:544px;height:auto;
+              border:0;border-radius:10px;margin-bottom:14px;">
+  {% endif %}
+  <h2 style="margin:0 0 8px;font-size:18px;line-height:1.3;">{{ titulo }}</h2>
+  <div style="margin:0;font-size:15px;line-height:1.6;color:#51617A;">{{ texto }}</div>
+</td></tr>
+{% endif %}
+{% endmacro %}
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#F1F6FC;padding:24px 12px;">
+  <tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="max-width:600px;background:#FFFFFF;border-radius:14px;
+                  font-family:Helvetica,Arial,sans-serif;color:#0E1B2A;">
+      <tr><td style="padding:28px 28px 0;">
+        <h1 style="margin:0 0 10px;font-size:24px;line-height:1.25;">{{ titulo }}</h1>
+        {% if entrada %}
+        <div style="margin:0;font-size:16px;line-height:1.6;color:#51617A;">{{ entrada }}</div>
+        {% endif %}
+      </td></tr>
+
+      {{ bloque(bloque1_titulo, bloque1_imagen, bloque1_texto) }}
+      {{ bloque(bloque2_titulo, bloque2_imagen, bloque2_texto) }}
+      {{ bloque(bloque3_titulo, bloque3_imagen, bloque3_texto) }}
+      {{ bloque(bloque4_titulo, bloque4_imagen, bloque4_texto) }}
+
+      <tr><td style="padding:28px;"></td></tr>
+    </table>
+  </td></tr>
+</table>

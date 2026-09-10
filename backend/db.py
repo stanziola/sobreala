@@ -175,6 +175,12 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.designs.create_index([("status", ASCENDING), ("created_at", ASCENDING)],
                             name="by_status_created")
 
+    # Las imágenes que los clientes ponen en sus plantillas. Se buscan por su
+    # nombre, que es la dirección con la que las pide el lector de correo de
+    # quien recibió la campaña, y ese nombre no se puede repetir.
+    db.images.create_index([("name", ASCENDING)], unique=True, name="by_name")
+    db.images.create_index([("account_id", ASCENDING)], name="by_account")
+
 
 def indexes_ready() -> bool:
     return _indexes_ready

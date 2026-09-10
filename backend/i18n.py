@@ -289,13 +289,17 @@ TEXTS = {
     "settings_notice_new_login_desc": "Te avisamos cuando alguien entra a tu "
                                       "cuenta desde un dispositivo que no "
                                       "habías usado.",
-    "settings_soon_title": "Cuando empiecen los envíos y los pagos",
-    "settings_soon_lead": "Estas cuatro cosas todavía no existen en Panamails, "
+    "settings_soon_title": "Cuando empiecen los envíos",
+    "settings_soon_lead": "Estas tres cosas todavía no existen en Panamails, "
                           "así que por ahora no te va a llegar nada. Lo que "
                           "elijas se guarda y se respeta desde el día en que "
                           "empiecen.",
     "settings_notice_billing": "Pagos y plan",
-    "settings_notice_billing_desc": "Cobros, renovaciones y cambios de plan.",
+    "settings_notice_billing_desc": "El comprobante cuando contratas o renuevas "
+                                    "un plan.",
+    "settings_notice_plan_state": "Estado de tu plan",
+    "settings_notice_plan_state_desc": "Cuando está por vencerse y cuando se "
+                                       "venció.",
     "settings_notice_imports": "Importación de contactos",
     "settings_notice_imports_desc": "Cuando termina de subir una lista, con "
                                     "cuántos contactos entraron y cuántos no.",
@@ -620,7 +624,86 @@ TEXTS = {
     "designs_ready_lead": "Vienen con Panamails y las tienen todos los planes.",
     "designs_ready_empty": "Ninguna todavía. Se irán agregando y aparecerán "
                            "aquí solas, sin que tengas que hacer nada.",
+
+    # --- las prediseñadas ---------------------------------------------------
+    # El nombre de cada una lo declara su archivo, en email_templates/; aquí va
+    # para qué sirve, que es lo que hace falta para elegir. Una plantilla nueva
+    # sin línea aquí se ofrece igual, solo que sin explicación.
+    "designs_tpl_aviso": "Un aviso corto y sin imagen: un corte, un plazo, un "
+                         "recordatorio de pago.",
+    "designs_tpl_anuncio": "Una oferta o una novedad, con su imagen arriba y "
+                           "un botón.",
+    "designs_tpl_boletin": "Varias noticias en un mismo correo, de dos a "
+                           "cuatro bloques.",
+    "designs_tpl_convocatoria": "Una asamblea o un evento, con la fecha, la "
+                                "hora y el lugar aparte.",
+    "designs_use": "Usar esta",
+    "designs_edit": "Editar",
+
+    # --- llenar una prediseñada --------------------------------------------
+    "designs_fill_title": "{plantilla}",
+    "designs_fill_lead": "Llena lo que quieras que diga. Puedes ver cómo "
+                         "queda antes de guardarla, y volver a cambiarla "
+                         "cuando quieras.",
+    "designs_fill_back": "Volver a plantillas",
+    "designs_fill_missing": "Falta llenar lo que está marcado.",
+    "designs_optional": "opcional",
+    "designs_save": "Guardar",
+    "designs_name_hint_filled": "Para reconocerla después. Si lo dejas vacío "
+                                "usamos el título.",
+    "designs_updated": "Listo, se guardaron los cambios.",
+
+    "designs_field_titulo": "Título",
+    "designs_field_texto": "Texto",
+    "designs_field_entrada": "Entrada",
+    "designs_field_imagen": "Imagen",
+    "designs_field_boton": "Texto del botón",
+    "designs_field_enlace": "Dirección del botón",
+    "designs_field_fecha": "Fecha",
+    "designs_field_hora": "Hora",
+    "designs_field_lugar": "Lugar",
+    "designs_field_block": "Bloque {n}: {what}",
+
+    # --- la vista previa ---------------------------------------------------
+    "designs_preview_title": "Vista previa",
+    "designs_preview_button": "Ver cómo queda",
+    "designs_preview_empty": "Llena la plantilla y pulsa «{boton}» para verla "
+                             "aquí.",
+    # Las dos van inyectadas al enviar y no dentro de la pieza, así que se
+    # explican aquí para que nadie las busque en el formulario.
+    "designs_preview_note": "El botón de anular la suscripción se agrega solo, "
+                            "en todos los planes.",
+    "designs_preview_watermark": "Tu plan lleva la marca «Enviado con "
+                                 "Panamails» al pie. Desaparece sola al subir "
+                                 "de plan.",
+
+    # --- las imágenes ------------------------------------------------------
+    "designs_image_upload": "Subir imagen",
+    "designs_image_change": "Cambiar",
+    "designs_image_remove": "Quitar",
+    "designs_image_none": "Sin imagen",
+    "designs_image_hint": "JPG, PNG, GIF o WebP, hasta {mb} MB. La achicamos "
+                          "para que el correo abra rápido.",
+    "designs_image_bad": "Ese archivo no es una imagen. Sirven JPG, PNG, GIF "
+                         "y WebP.",
+    "designs_image_heavy": "La imagen pesa más de {mb} MB. Mándala más "
+                           "pequeña.",
+    # Después de achicarla; pasa con dibujos enormes llenos de detalle.
+    "designs_image_big": "Esa imagen no se pudo dejar por debajo de {kb} KB. "
+                         "Prueba con otra.",
+    "designs_image_gif": "Ese GIF pesa demasiado. Los GIF se guardan tal cual "
+                         "para no quitarles la animación, así que tienen que "
+                         "venir livianos.",
+    "designs_image_limit": "Ya tienes {n} imágenes guardadas, que es el "
+                           "máximo. Borra alguna plantilla que no uses para "
+                           "liberar las suyas.",
+
     "designs_mine_title": "Tus plantillas",
+    "designs_filled_title": "Las que has armado",
+    "designs_filled_empty": "Todavía no has armado ninguna. Elige una "
+                            "de arriba y llénala.",
+    "designs_uploaded_title": "Las que has subido",
+    "designs_from": "Plantilla {name}",
     "designs_mine_empty": "Todavía no has subido ninguna.",
     "designs_upload_title": "Subir un HTML",
     "designs_upload_hint": "Un archivo .html de hasta {kb} KB. Pasado ese "
@@ -935,6 +1018,81 @@ TEXTS = {
     "mail_exists_button": "Entrar a mi cuenta",
     "mail_exists_ignore": "Si no fuiste tú, no tienes que hacer nada. Tu cuenta "
                           "sigue segura y nadie ha entrado.",
+
+    # --- los avisos de la cuenta -------------------------------------------
+    # El plan, la habilitación de envío y la suspensión. Los compone
+    # services/notices.py sobre una sola plantilla, porque los ocho tienen la
+    # misma forma y lo único que cambia es esto.
+    "mail_notice_off": "Estos avisos se apagan en Configuración → "
+                       "Notificaciones.",
+    "mail_plan_button": "Ir a mi panel",
+    "mail_plan_until": "Corre hasta el {until}. Te avisamos una semana antes de "
+                       "que se venza.",
+    "mail_plan_note_title": "Antes de tu primer envío",
+    "mail_plan_note_text": "Miramos una sola vez de dónde salió tu lista y te "
+                           "habilitamos el envío. Te avisamos por correo en "
+                           "cuanto esté.",
+
+    "mail_plan_started_subject": "Tu plan {plan} ya está activo",
+    "mail_plan_started_heading": "Ya tienes el plan {plan}",
+    "mail_plan_started_body": "Recibimos tu pago y tu cuenta quedó activa con "
+                              "el plan {plan}.",
+
+    "mail_plan_renewed_subject": "Renovaste tu plan {plan}",
+    "mail_plan_renewed_heading": "Tu plan {plan} sigue corriendo",
+    "mail_plan_renewed_body": "Recibimos tu pago. Los días que te quedaban no "
+                              "se pierden: lo que acabas de pagar se suma al "
+                              "final.",
+
+    "mail_plan_expiring_subject": "Tu plan {plan} vence el {until}",
+    "mail_plan_expiring_heading": "A tu plan le quedan {days} días",
+    "mail_plan_expiring_body": "Tu plan {plan} vence el {until}. Si lo renuevas "
+                               "antes, los días que te quedan se suman al final "
+                               "y no pierdes ninguno.",
+    "mail_plan_expiring_button": "Renovar mi plan",
+
+    "mail_plan_expired_subject": "Tu plan {plan} venció",
+    "mail_plan_expired_heading": "Se venció tu plan {plan}",
+    "mail_plan_expired_body": "Venció el {until}, así que por ahora no puedes "
+                              "enviar campañas.",
+    "mail_plan_expired_kept": "No se borró nada: tus contactos, tus etiquetas y "
+                              "tus plantillas siguen donde estaban y vuelven a "
+                              "servir en cuanto contrates otra vez.",
+    "mail_plan_expired_button": "Ver mi plan",
+
+    "mail_cleared_subject": "Ya puedes enviar tus campañas",
+    "mail_cleared_heading": "Tu cuenta quedó habilitada",
+    "mail_cleared_body": "Revisamos de dónde salió tu lista y ya puedes enviar. "
+                         "Es una sola vez por cuenta, así que no tienes que "
+                         "volver a esperar.",
+    "mail_cleared_button": "Ir a mi panel",
+    "mail_cleared_note_title": "Cuida tu lista",
+    "mail_cleared_note_text": "Escríbele solo a quien te dejó su correo. Todos "
+                              "enviamos desde el mismo dominio, así que si los "
+                              "rebotes suben se pausa el envío solo.",
+
+    "mail_suspended_subject": "Tu cuenta de Panamails quedó suspendida",
+    "mail_suspended_heading": "Suspendimos tu cuenta",
+    "mail_suspended_body": "Mientras esté suspendida no se puede entrar ni "
+                           "enviar. No se borró nada: tus contactos y tus "
+                           "plantillas siguen ahí.",
+    "mail_suspended_write": "Si crees que es un error, escríbenos a {email} y "
+                            "lo revisamos.",
+
+    "mail_reinstated_subject": "Tu cuenta está activa otra vez",
+    "mail_reinstated_heading": "Levantamos la suspensión",
+    "mail_reinstated_body": "Ya puedes entrar y seguir donde estabas.",
+    "mail_reinstated_button": "Entrar al panel",
+
+    # Este va a quien administra, no a un cliente.
+    "mail_admin_payment_subject": "{company} contrató el plan {plan}",
+    "mail_admin_payment_heading": "Un cliente pagó",
+    "mail_admin_payment_body": "{company} ({email}) contrató el plan {plan}.",
+    "mail_admin_payment_waiting": "Todavía no puede enviar: falta habilitarle "
+                                  "el envío desde su ficha.",
+    "mail_admin_payment_cleared": "Ya estaba habilitada para enviar, así que no "
+                                  "hay nada pendiente.",
+    "mail_admin_payment_button": "Ver la ficha",
 }
 
 

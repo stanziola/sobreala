@@ -1,0 +1,149 @@
+"""Preparar la imagen que un cliente pone en su plantilla.
+
+La imagen no puede viajar dentro del correo: pegada dentro pesa megas, Gmail
+recorta a los 102 KB y lo que se pierde es el pie con el botón de la baja. Así
+que se guarda fuera y el correo trae su dirección.
+
+**Achicarla es lo que hace que guardarla salga gratis.** Una foto de teléfono
+son tres o cuatro megas; a 600 píxeles de ancho —que es a lo que la dibujan las
+plantillas— son unos 120 KB. Sin este paso habría que rechazar casi cualquier
+foto, que es justo lo que dejaría la pantalla inservible para una cooperativa
+que solo tiene la foto que acaba de tomar.
+
+Dos cosas que este archivo no hace:
+
+  * **No decide de quién es la imagen.** Eso lo hace `models/image.py`, que la
+    guarda colgada de una cuenta.
+  * **No la sirve.** De eso se encarga `blueprints/media/`, que es lo que pide
+    el buzón de quien abre el correo.
+"""
+
+from __future__ import annotations
+
+import re
+import warnings
+from io import BytesIO
+
+from PIL import Image, ImageOps
+
+from config import Config
+
+# Lo que se acepta que entre. Flask ya corta por encima de esto antes de que la
+# petición llegue a ninguna línea nuestra, así que una foto enorme se rechaza
+# sin haberla leído.
+MAX_UPLOAD = 5 * 1024 * 1024
+
+# El ancho al que las plantillas dibujan la imagen. Guardar más píxeles de los
+# que se van a ver es pagar espacio y hacer esperar a quien abre el correo.
+WIDTH = 600
+# Y un tope de alto, para que una imagen larguísima no se cuele entera solo
+# porque es estrecha.
+HEIGHT = 2400
+
+# Lo que puede llegar a pesar ya achicada. Es una red de seguridad: si algo se
+# sale de aquí, mejor rechazarlo que guardarlo.
+STORED_MAX = 400 * 1024
+# Un GIF se guarda tal cual, porque achicarlo le mata la animación, que es lo
+# único por lo que alguien manda un GIF.
+GIF_MAX = 400 * 1024
+
+# Una foto de 40 megapíxeles no la saca ninguna cámara de las que se usan para
+# esto. Por encima, es un archivo hecho para reventar el proceso: un PNG de
+# 40 KB puede descomprimirse a varios gigabytes en memoria.
+Image.MAX_IMAGE_PIXELS = 40_000_000
+
+# El nombre con el que se guarda y con el que se pide. Lo ponemos nosotros
+# entero, así que se puede comprobar con una expresión y no hace falta confiar
+# en nada de lo que llegue.
+NAME = re.compile(r"^[A-Za-z0-9_-]{16,64}\.(jpg|png|gif)$")
+
+# Los formatos que dibuja cualquier lector de correo. Cada uno se reconoce por
+# cómo empieza el archivo, no por cómo se llama.
+KINDS = (
+    ("jpg", "image/jpeg", b"\xff\xd8\xff"),
+    ("png", "image/png", b"\x89PNG\r\n\x1a\n"),
+    ("gif", "image/gif", b"GIF87a"),
+    ("gif", "image/gif", b"GIF89a"),
+)
+
+# De qué se sale con cada extensión al servirla.
+MIMES = {"jpg": "image/jpeg", "png": "image/png", "gif": "image/gif"}
+
+
+class ImageError(RuntimeError):
+    """La imagen no se puede usar. Quien llama traduce el motivo a una frase."""
+
+
+def kind(raw: bytes) -> tuple[str, str] | None:
+    """Qué imagen es esto, mirando dentro. Devuelve (extensión, tipo) o None.
+
+    WebP va aparte porque no se reconoce por el principio: es un contenedor
+    RIFF con la palabra WEBP cuatro bytes más adelante.
+    """
+    for ext, mime, magic in KINDS:
+        if raw.startswith(magic):
+            return ext, mime
+    if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        return "webp", "image/webp"
+    return None
+
+
+def shrink(raw: bytes) -> tuple[bytes, str, str]:
+    """Dejarla lista para un correo. Devuelve (datos, extensión, tipo).
+
+    Sale JPEG, o PNG si la imagen tiene partes transparentes —un logo sobre
+    fondo blanco forzado a JPEG queda con un recuadro—. El WebP también sale
+    convertido: lo dibujan los navegadores, pero no todos los lectores de
+    correo.
+    """
+    found = kind(raw)
+    if found is None:
+        raise ImageError("not_image")
+    if found[0] == "gif":
+        # Tal cual: achicarlo le quitaría la animación.
+        if len(raw) > GIF_MAX:
+            raise ImageError("gif_too_big")
+        return raw, "gif", "image/gif"
+
+    try:
+        with warnings.catch_warnings():
+            # Pillow avisa antes de reventar; aquí ese aviso tiene que doler.
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(BytesIO(raw)) as opened:
+                # Las fotos de teléfono vienen derechas por una etiqueta y no
+                # por sus píxeles; sin esto salen acostadas.
+                image = ImageOps.exif_transpose(opened) or opened
+                clear = (image.mode in ("RGBA", "LA")
+                         or (image.mode == "P" and "transparency" in image.info))
+                image.thumbnail((WIDTH, HEIGHT), Image.LANCZOS)
+                out = BytesIO()
+                if clear:
+                    image.convert("RGBA").save(out, format="PNG", optimize=True)
+                    ext = "png"
+                else:
+                    image.convert("RGB").save(out, format="JPEG", quality=82,
+                                              optimize=True, progressive=True)
+                    ext = "jpg"
+    except Image.DecompressionBombWarning as exc:
+        raise ImageError("too_many_pixels") from exc
+    except (OSError, ValueError) as exc:
+        raise ImageError("unreadable") from exc
+
+    data = out.getvalue()
+    if len(data) > STORED_MAX:
+        raise ImageError("too_big")
+    return data, ext, MIMES[ext]
+
+
+def valid_name(name: str) -> bool:
+    return bool(NAME.match(name or ""))
+
+
+def url_of(name: str) -> str:
+    """La dirección completa, que es lo que va en el correo.
+
+    Completa y no relativa porque quien la pide es el buzón de quien recibe el
+    correo, desde fuera de aquí. Se arma al dibujar y no se guarda, así que
+    cambiar de dominio no rompe ninguna pieza guardada.
+    """
+    return f"{Config.APP_BASE_URL}/img/{name}" if name else ""

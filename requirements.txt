@@ -22,6 +22,11 @@ gunicorn>=21.2
 # desarrollar sin credenciales de AWS funciona con MAIL_BACKEND=file.
 boto3>=1.34
 
+# Achicar las imágenes que el cliente pone en sus plantillas. Una foto de
+# teléfono son tres o cuatro megas y en el correo se ve a 600 píxeles: sin
+# achicarla habría que rechazarla, y guardarla entera llenaría la base.
+Pillow>=10.0
+
 # Verificación en dos pasos. Los dos son Python puro y pesan poco: pyotp calcula
 # los códigos de la app y segno dibuja el QR como SVG en la propia página, sin
 # pedirle una imagen a ningún servidor.

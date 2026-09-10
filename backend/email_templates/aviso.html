@@ -1,0 +1,40 @@
+{% set FIELDS = [
+  {"name": "titulo", "type": "text", "max": 120, "required": true},
+  {"name": "texto", "type": "long", "max": 2000, "required": true},
+  {"name": "boton", "type": "text", "max": 40, "required": false},
+  {"name": "enlace", "type": "url", "max": 300, "required": false}
+] %}
+{% set LABEL = "Aviso" %}
+{#- Un aviso sin imagen: cortes, plazos, recordatorios de pago. Lo que importa
+    es que se lea rápido, así que no compite con ninguna foto.
+
+    HTML de correo: tablas y estilos en línea. Es feo de escribir y es lo único
+    que dibujan igual Gmail, Outlook y el correo de un teléfono; una hoja de
+    estilos aparte la ignoran casi todos. Los colores van en crudo por lo mismo:
+    una variable de CSS no llega al buzón de nadie. -#}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#F1F6FC;padding:24px 12px;">
+  <tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="max-width:600px;background:#FFFFFF;border-radius:14px;
+                  font-family:Helvetica,Arial,sans-serif;color:#0E1B2A;">
+      <tr><td style="padding:28px 28px 0;">
+        <h1 style="margin:0 0 14px;font-size:22px;line-height:1.3;">{{ titulo }}</h1>
+        <div style="margin:0;font-size:16px;line-height:1.6;color:#51617A;">{{ texto }}</div>
+      </td></tr>
+
+      {% if boton and enlace %}
+      <tr><td style="padding:22px 28px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:#31A9E8;border-radius:8px;">
+            <a href="{{ enlace }}" style="display:inline-block;padding:13px 26px;
+               font-size:16px;font-weight:bold;color:#0E1B2A;text-decoration:none;">{{ boton }}</a>
+          </td></tr>
+        </table>
+      </td></tr>
+      {% endif %}
+
+      <tr><td style="padding:28px;"></td></tr>
+    </table>
+  </td></tr>
+</table>

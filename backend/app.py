@@ -93,10 +93,15 @@ def create_app(overrides: dict | None = None) -> Flask:
     from blueprints.auth import bp as auth_bp
     from blueprints.contacts import bp as contacts_bp
     from blueprints.designs import bp as designs_bp
+    from blueprints.media import bp as media_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(contacts_bp)
     app.register_blueprint(designs_bp)
     app.register_blueprint(admin_bp)
+    # Las imagenes de las plantillas. Es lo unico que se sirve sin
+    # sesion, porque quien las pide es el lector de correo de cada
+    # persona que recibio la campana.
+    app.register_blueprint(media_bp)
 
     # The size limit on an imported file, enforced by Flask before the request
     # reaches any code of ours: an oversized upload is refused without being
@@ -189,6 +194,30 @@ def create_app(overrides: dict | None = None) -> Flask:
         from this same origin, so anything injected into a page — a script tag,
         a remote stylesheet, a form pointed somewhere else — has nowhere to go.
         """
+        if g.get("email_preview", False):
+            # Esta respuesta no es una página del panel: es un correo, y va
+            # dentro de un marco aislado. Necesita justo lo contrario que el
+            # resto —estilos en línea, imágenes de nuestro almacén, y dejarse
+            # enmarcar por nosotros— así que lleva su propia política, no una
+            # relajación de la de arriba.
+            response.headers["Content-Security-Policy"] = "; ".join([
+                "default-src 'none'",
+                # Un correo se escribe con style= en cada etiqueta: es lo
+                # único que entienden todos los lectores.
+                "style-src 'unsafe-inline'",
+                # El marco va con origen opaco, asi que 'self' ahi no
+                # significa nada: la direccion del panel se nombra entera.
+                f"img-src {Config.APP_BASE_URL} https: data:",
+                "frame-ancestors 'self'",
+                "form-action 'none'",
+                "base-uri 'none'",
+            ])
+            response.headers["X-Frame-Options"] = "SAMEORIGIN"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["Referrer-Policy"] = "same-origin"
+            response.headers["Cache-Control"] = "no-store"
+            return response
+
         nonce = g.get("csp_nonce", "")
         response.headers["Content-Security-Policy"] = "; ".join([
             "default-src 'self'",

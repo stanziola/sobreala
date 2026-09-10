@@ -153,7 +153,7 @@ contacto no borra su supresión; volver a subirlo no lo reactiva.
 | Supresiones | Permanente, siempre |
 | Eventos de envío | 12 meses en detalle; después solo totales por campaña |
 | Archivo CSV subido | Se borra tras procesarlo |
-| Imágenes de correos | Mientras exista la campaña (en Cloudflare R2, no en Mongo) |
+| Imágenes de correos | Mientras exista la pieza que las usa |
 
 **Al cancelar**: se conserva todo 90 días por si reactiva, con aviso por correo
 antes del vencimiento. Después se borran contactos y eventos. Las supresiones se

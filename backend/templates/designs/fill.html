@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ template_name }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{% block content %}
+<h1 class="settings__heading">{{ t('designs_fill_title', plantilla=template_name) }}</h1>
+<p class="settings__lead">{{ t('designs_fill_lead') }}</p>
+
+{% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+<div class="compose">
+  {# Un solo formulario y varios botones. Guardar, ver cómo queda y subir una
+     imagen mandan lo mismo, así que lo escrito sobrevive a cualquiera de los
+     tres sin necesidad de JavaScript. #}
+  <form class="compose__form" method="post" enctype="multipart/form-data" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="nombre">{{ t('designs_name') }}</label>
+    <input id="nombre" name="nombre" type="text" maxlength="80"
+           value="{{ name }}" autocomplete="off">
+    <p class="hint">{{ t('designs_name_hint_filled') }}</p>
+
+    {% for field in fields %}
+    {% if field.type == 'image' %}
+    <p class="field-label">{{ field.label }}
+      {%- if not field.required %} <span class="table__quiet">({{ t('designs_optional') }})</span>{% endif %}</p>
+    {# La dirección de la imagen viaja escondida para que sobreviva a los otros
+       botones. El servidor solo acepta las de nuestro almacén. #}
+    <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+    {% if field.value %}
+    <img class="compose__thumb" src="{{ field.url }}" alt="">
+    {% else %}
+    <p class="hint">{{ t('designs_image_none') }}</p>
+    {% endif %}
+    <div class="filepick">
+      <input id="archivo_{{ field.name }}" name="archivo_{{ field.name }}"
+             type="file" accept="image/*" class="filepick__input"
+             aria-label="{{ field.label }}">
+      <label class="btn btn--outline btn--small" for="archivo_{{ field.name }}">{{ t('import_file_choose') }}</label>
+      <span class="filepick__name" data-file-name>{{ t('import_file_none') }}</span>
+      <button class="btn btn--small" type="submit"
+              name="accion" value="imagen:{{ field.name }}">{{ t('designs_image_upload') }}</button>
+      {% if field.value %}
+      <button class="btn btn--small btn--outline" type="submit"
+              name="accion" value="quitar:{{ field.name }}">{{ t('designs_image_remove') }}</button>
+      {% endif %}
+    </div>
+    <p class="hint">{{ t('designs_image_hint', mb=image_mb) }}</p>
+
+    {% elif field.type == 'long' %}
+    <label for="{{ field.name }}">{{ field.label }}
+      {%- if not field.required %} <span class="table__quiet">({{ t('designs_optional') }})</span>{% endif %}</label>
+    <textarea id="{{ field.name }}" name="{{ field.name }}" rows="6"
+              maxlength="{{ field.max }}">{{ field.value }}</textarea>
+
+    {% else %}
+    <label for="{{ field.name }}">{{ field.label }}
+      {%- if not field.required %} <span class="table__quiet">({{ t('designs_optional') }})</span>{% endif %}</label>
+    <input id="{{ field.name }}" name="{{ field.name }}"
+           type="{{ 'url' if field.type == 'url' else 'text' }}"
+           maxlength="{{ field.max }}" value="{{ field.value }}" autocomplete="off">
+    {% endif %}
+    {% if errors[field.name] %}<p class="error">{{ errors[field.name] }}</p>{% endif %}
+    {% endfor %}
+
+    <div class="compose__actions">
+      <button class="btn" type="submit" name="accion" value="guardar">{{ t('designs_save') }}</button>
+      {# Este entra en el marco de al lado, no en la página. #}
+      <button class="btn btn--outline" type="submit" name="accion" value="vista"
+              formtarget="vista">{{ t('designs_preview_button') }}</button>
+    </div>
+
+    <p class="foot"><a href="{{ url_for('designs.index') }}">{{ t('designs_fill_back') }}</a></p>
+  </form>
+
+  <div class="compose__side">
+    <h2 class="settings__subtitle">{{ t('designs_preview_title') }}</h2>
+    <p class="hint">{{ t('designs_preview_note') }}</p>
+    {% if watermark %}<p class="hint">{{ t('designs_preview_watermark') }}</p>{% endif %}
+    {# Aislado a propósito: el HTML es nuestro, pero el texto de dentro es de
+       otro y esta página lleva la sesión abierta. #}
+    <iframe class="compose__preview" name="vista" sandbox
+            title="{{ t('designs_preview_title') }}"
+            srcdoc="{{ t('designs_preview_empty', boton=t('designs_preview_button')) }}"></iframe>
+  </div>
+</div>
+{% endblock %}

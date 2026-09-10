@@ -9,28 +9,65 @@
 {% if saved %}
 <p class="notice notice--ok">{{ t('designs_saved') }}</p>
 {% endif %}
+{% if updated %}
+<p class="notice notice--ok">{{ t('designs_updated') }}</p>
+{% endif %}
 {% if errors.form %}<p class="notice">{{ errors.form }}</p>{% endif %}
 
 <h2 class="settings__subtitle">{{ t('designs_ready_title') }}</h2>
 <p class="settings__lead">{{ t('designs_ready_lead') }}</p>
 {% if built_in %}
-<ul class="counts">
+<div class="picks">
   {% for one in built_in %}
-  <li><span>{{ one.name }}</span> <span class="table__quiet">{{ one.text }}</span></li>
+  <div class="picks__one">
+    <b>{{ one.name }}</b>
+    <p class="table__quiet">{{ one.text }}</p>
+    <a class="btn btn--small" href="{{ url_for('designs.new', key=one.key) }}">{{ t('designs_use') }}</a>
+  </div>
   {% endfor %}
-</ul>
+</div>
 {% else %}
 <p class="hint">{{ t('designs_ready_empty') }}</p>
 {% endif %}
 
-<h2 class="settings__subtitle">{{ t('designs_mine_title') }}</h2>
-{% if mine %}
-{# El HTML de un cliente no se dibuja dentro del panel: es de otro y esta
-   página lleva su sesión abierta. Se enseña qué es, cuánto pesa y cómo está. #}
+<h2 class="settings__subtitle">{{ t('designs_filled_title') }}</h2>
+{% if filled %}
 <div class="table-wrap">
   <table class="table">
     <tbody>
-      {% for one in mine %}
+      {% for one in filled %}
+      <tr>
+        <td><b>{{ one.name }}</b></td>
+        <td class="table__quiet">{{ t('designs_from', name=named.get(one.template, one.template)) }}</td>
+        <td class="table__quiet">{{ (one.updated_at or one.created_at)|ago }}</td>
+        <td>
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('designs.piece', raw=one._id) }}">{{ t('designs_edit') }}</a>
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('designs.remove') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="id" value="{{ one._id }}">
+            <button class="btn btn--small btn--outline" type="submit">{{ t('designs_delete') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('designs_filled_empty') }}</p>
+{% endif %}
+
+<h2 class="settings__subtitle">{{ t('designs_uploaded_title') }}</h2>
+{% if uploaded %}
+{# El HTML de un cliente no se dibuja dentro del panel: es de otro y esta
+   página lleva su sesión abierta. Se enseña qué es y cuánto pesa. #}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for one in uploaded %}
       <tr>
         <td><b>{{ one.name }}</b></td>
         <td class="table__quiet">{{ t('designs_size', kb=(one.bytes / 1024)|round(1)) }}</td>

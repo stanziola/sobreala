@@ -73,6 +73,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
     tags: list[int | None] = []
     uploads: list[bool] = []
     emails: list[int | None] = []
+    clean: list[bool] = []
 
     for line in text.splitlines():
         if not line.lstrip().startswith("|"):
@@ -93,6 +94,8 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             # otras tablas de dos columnas, y una de ellas empieza por una
             # palabra que también aparece aquí arriba.
             emails = [_count(c) for c in cells[1:]]
+        elif cells[0].strip("* ") == "Correos sin marca de agua":
+            clean = [c.strip() == "✅" for c in cells[1:]]
         elif cells[0].strip("* ") == "Subir tu propio HTML":
             uploads = [c.strip() == "✅" for c in cells[1:]]
 
@@ -114,6 +117,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             YEARLY: prices[YEARLY][index],
             "tags": tags[index] if index < len(tags) else None,
             "upload": uploads[index] if index < len(uploads) else False,
+            "clean": clean[index] if index < len(clean) else False,
             "emails": emails[index] if index < len(emails) else None,
             "public": key not in hidden,
         }
@@ -162,6 +166,18 @@ def emails_a_month(plan: str | None) -> int | None:
     """
     found = PLANS.get(plan or "")
     return found["emails"] if found else None
+
+
+def has_watermark(plan: str | None) -> bool:
+    """Si a los correos de ese plan hay que ponerles la marca de agua.
+
+    Es la regla 4 de CLAUDE.md, y sale de la fila «Correos sin marca de agua»
+    de docs/pricing.md: la lleva quien no ha pagado por quitársela, o sea el
+    Básico y quien todavía no tiene plan. Al subir de plan desaparece sola,
+    porque nadie la copió a ningún sitio.
+    """
+    found = PLANS.get(plan or "")
+    return not (found and found["clean"])
 
 
 def rank(plan: str | None) -> int:
