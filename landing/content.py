@@ -58,6 +58,7 @@ PANEL = {
     # sesión aparecen además las tres que necesitan una cuenta.
     "options_label": "Opciones",
     "contacts_label": "Contactos",
+    "designs_label": "Plantillas",
     "settings_label": "Configuración",
     "panel_label": "Panel",
     # Solo la ve quien tiene el rol, y quien lo decide es la galleta que deja
