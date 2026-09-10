@@ -18,12 +18,21 @@
 
   <div class="menu__panel">
     {% if bar_account %}
-    {# Administración va de primera y sola: una cuenta de administrador no
-       tiene clientes a los que escribirle, así que el panel de envíos, los
-       contactos y las plantillas le saldrían vacíos. Las rutas lo devuelven
-       aquí igual, porque esconder una fila no es un permiso. #}
+    {# Una cuenta de administrador no tiene clientes a los que escribirle, así
+       que los contactos y las plantillas le saldrían vacíos y no se le enseñan.
+       Las rutas lo devuelven a /admin igual, porque esconder una fila no es un
+       permiso.
+
+       Estadísticas va primera y con su nombre: es la misma pantalla que ve el
+       cliente, con un selector de cuenta encima. Administración es el resto, y
+       lo primero del resto son las cuentas; si las dos llevaran al mismo sitio
+       una de las dos sobraría. #}
     {% if bar_admin %}
     <a class="menu__item" href="{{ url_for('admin.home') }}">
+      <span class="menu__icons">{% include "_icon-chart.svg" %}</span>
+      <span>{{ t('nav_panel') }}</span>
+    </a>
+    <a class="menu__item" href="{{ url_for('admin.accounts_list') }}">
       <span class="menu__icons">{% include "_icon-shield.svg" %}</span>
       <span>{{ t('menu_admin') }}</span>
     </a>

@@ -485,6 +485,25 @@ def test_su_menu_no_trae_las_filas_de_cliente(client, database, outbox):
     assert ">Plantillas<" not in menu
 
 
+def test_su_menu_lleva_estadisticas_encima_de_administracion(client, database,
+                                                             outbox):
+    """Dos filas y dos destinos: si llevaran al mismo, una sobraría."""
+    import re
+
+    admin, _ = make_admin(client, database)
+    menu = admin.get("/admin/").get_data(as_text=True)
+    panel = menu[menu.index('class="menu__panel"'):]
+
+    filas = re.findall(r'<a class="menu__item" href="([^"]+)">.*?<span>([^<]+)</span>',
+                       panel, re.S)
+    hasta_configuracion = [texto for _, texto in filas][:2]
+    assert hasta_configuracion == ["Estadísticas", "Administración"]
+
+    destinos = dict((texto, href) for href, texto in filas)
+    assert destinos["Estadísticas"].endswith("/admin/")
+    assert destinos["Administración"].endswith("/admin/cuentas")
+
+
 def test_su_configuracion_es_solo_seguridad(client, database, outbox):
     admin, _ = make_admin(client, database)
 

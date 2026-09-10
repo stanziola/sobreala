@@ -109,11 +109,19 @@
 
         <div class="usermenu__panel">
           {#- Una cuenta de administrador no tiene clientes a los que
-              escribirle, así que el panel de envíos y los contactos le salen
-              vacíos: en su lugar ve administración. Quién es lo dice la
-              galleta que deja el panel, y nav.js decide con ella. -#}
+              escribirle, así que los contactos y las plantillas le salen
+              vacíos y no se le enseñan. Quién es lo dice la galleta que deja el
+              panel, y nav.js decide con ella.
+
+              Las mismas dos filas y en el mismo orden que el menú del panel,
+              que es la otra mitad de esto. -#}
           <a class="usermenu__item" data-admin-only hidden
              href="{{ panel.base_url }}/admin/">
+            <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
+            <span>{{ panel.panel_label }}</span></a>
+
+          <a class="usermenu__item" data-admin-only hidden
+             href="{{ panel.base_url }}/admin/cuentas">
             <span class="usermenu__icons">{% include "partials/icon-shield.svg.j2" %}</span>
             <span>{{ panel.admin_label }}</span></a>
 
