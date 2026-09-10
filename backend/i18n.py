@@ -10,7 +10,7 @@ from __future__ import annotations
 TEXTS = {
     # --- shared ------------------------------------------------------------
     "brand": "Panamails",
-    "nav_panel": "Panel",
+    "nav_panel": "Estadísticas",
     "nav_logout": "Cerrar sesión",
     "back_to_site": "Volver al sitio",
 
@@ -365,14 +365,53 @@ TEXTS = {
     "settings_payments_hint": "Panamails nunca guarda los datos de tu tarjeta: "
                               "el pago se hace en la página del proveedor.",
 
-    # --- panel -------------------------------------------------------------
-    "panel_title": "Tu panel",
-    "panel_greeting": "Hola, {name}",
-    "panel_building": "Aquí van a estar las gráficas de tus envíos: cuántos "
-                      "correos salieron, cuántos llegaron y cuántos abrieron. "
-                      "Todavía no hay nada que medir.",
+    # --- estadísticas ------------------------------------------------------
+    # La misma pantalla para el cliente y para el administrador; lo único que
+    # cambia es que él elige de qué cuenta.
+    "panel_title": "Estadísticas",
+    # La sigue usando la ficha del administrador, para el bloque de envíos del
+    # mes que todavía no tiene datos.
     "panel_soon_tag": "Próximamente",
+    "panel_greeting": "Hola, {name}",
     "panel_settings_link": "Ir a configuración",
+    "stats_of": "Estadísticas de {name}",
+    "stats_pick": "Cuenta",
+    "stats_pick_hint": "Ves lo mismo que ve esa empresa en su pantalla.",
+    "stats_period": "Periodo",
+    "stats_period_24h": "Últimas 24 horas",
+    "stats_period_7d": "Últimos 7 días",
+    "stats_period_30d": "Últimos 30 días",
+    "stats_tag": "Etiqueta",
+    "stats_all_tags": "Todas las etiquetas",
+    "stats_apply": "Ver",
+
+    "stats_sending_title": "Envíos y rebotes",
+    "stats_sending_lead": "Cuántos correos salieron y cuántos rebotaron en el "
+                          "periodo que elijas.",
+    "stats_sent": "Enviados",
+    "stats_bounce": "Rebotes",
+    "stats_delivery": "Entregados",
+    "stats_complaint": "Quejas",
+    "stats_open": "Aperturas",
+    "stats_click": "Clics",
+    # Lo que se lee cuando la gráfica sale vacía. Se dibuja igual, con sus ejes,
+    # porque un cuadro vacío que se explica dice más que un hueco.
+    "stats_nothing": "Todavía no se ha realizado ninguna acción sobre esto. "
+                     "Aquí van a aparecer tus envíos en cuanto salga la primera "
+                     "campaña.",
+    "stats_axis_none": "Sin datos",
+
+    "stats_contacts_title": "Tus contactos",
+    "stats_contacts": "Activos",
+    "stats_blocked": "Anulados",
+    "stats_tags_in_use": "Etiquetas en uso",
+    "stats_of_limit": "de {n}",
+    "stats_imports_title": "Importaciones",
+    "stats_imports_none": "Todavía no has importado ninguna lista.",
+    "stats_plan_title": "Tu plan",
+    "stats_plan_none": "Sin plan contratado.",
+    "stats_emails_month": "Correos al mes",
+    "stats_emails_used": "{used} de {limit} este mes",
     "panel_unconfirmed": "Todavía no confirmas tu correo. Revisa tu bandeja o "
                          "pide otro código.",
     "panel_unconfirmed_action": "Pedir otro código",
@@ -618,15 +657,13 @@ TEXTS = {
 
     # --- administración ----------------------------------------------------
     "admin_title": "Administración",
-    "admin_tab_home": "Portada",
+    "admin_filter_pending": "Esperando habilitación",
     "admin_tab_accounts": "Cuentas",
-    "admin_waiting_title": "Esperando para poder enviar",
-    "admin_waiting_lead": "Cuentas que ya pagaron y todavía no han enviado "
-                          "nada. Mira de dónde salió su lista y habilítalas.",
-    "admin_waiting_empty": "Ninguna cuenta espera habilitación.",
-    "admin_counts_title": "Cuentas por estado",
-    "admin_recent_title": "Últimas decisiones",
-    "admin_recent_empty": "Todavía no has decidido nada sobre ninguna cuenta.",
+    # Lo que ve el administrador cuando todavía no hay ningún cliente del que
+    # sacar estadísticas.
+    "admin_no_clients_title": "Todavía no hay clientes",
+    "admin_no_clients_lead": "Cuando se registre la primera empresa, aquí vas a "
+                             "ver lo mismo que ve ella en su pantalla.",
     "admin_open": "Ver perfil",
 
     "admin_accounts_lead": "Todas las cuentas. Busca por correo o por empresa.",

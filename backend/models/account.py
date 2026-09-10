@@ -296,18 +296,6 @@ def clear_sending(db, account_id, admin_id) -> bool:
     return result.modified_count == 1
 
 
-def waiting_to_send(db, *, limit: int = 20) -> list[dict[str, Any]]:
-    """Las cuentas que ya pagaron y todavía no pueden enviar.
-
-    Es la cola del administrador: lo único que espera una decisión suya. Las
-    más antiguas primero, que son las que llevan más tiempo esperando.
-    """
-    return list(db.accounts.find(
-        {"plan": {"$exists": True, "$ne": None},
-         "sending_cleared_at": {"$exists": False},
-         "role": {"$ne": ADMIN}}).sort("updated_at", 1).limit(limit))
-
-
 def set_plan(db, account_id, plan: str | None) -> str | None:
     """Put an account on a plan, or take it off one. Returns the previous."""
     if plan is not None and plan not in PLAN_CONTACTS:
@@ -358,14 +346,26 @@ def by_status(db) -> dict[str, int]:
     return counted
 
 
-def search(db, *, status: str = "", text: str = "", limit: int = 100,
-           skip: int = 0) -> tuple[list[dict[str, Any]], int]:
-    """The admin table: filter by state, search by address or company."""
+def search(db, *, status: str = "", text: str = "", pending: bool = False,
+           limit: int = 100, skip: int = 0) -> tuple[list[dict[str, Any]], int]:
+    """The admin table: filter by state, search by address or company.
+
+    Nunca trae cuentas de administrador: no son clientes, no compran ni envían,
+    y no hay nada que decidir sobre ellas. Salían en la lista y, como un
+    administrador no paga nunca, se quedaban en «registrada» para siempre, que
+    es lo que hacía que la columna de estado se leyera mal.
+
+    `pending` es la otra cola que pide acción: pagaron y todavía no pueden
+    enviar.
+    """
     import re
 
-    query: dict[str, Any] = {}
+    query: dict[str, Any] = {"role": {"$ne": ADMIN}}
     if status in STATUSES:
         query["status"] = status
+    if pending:
+        query["plan"] = {"$exists": True, "$ne": None}
+        query["sending_cleared_at"] = {"$exists": False}
     if text:
         safe = re.escape(text.strip())
         query["$or"] = [

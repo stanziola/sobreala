@@ -36,11 +36,17 @@ from models import payment as payments
 from models import session as sessions
 from models import suppression as suppressions
 from services import plans
+from services import stats
 from services.security import csrf_ok
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 PER_PAGE = 100
+
+# El valor que toma el filtro de estado cuando lo que se quiere ver es la cola
+# de habilitación. No es un estado de la cuenta, así que no puede estar en
+# STATUSES; es una vista más de la misma lista.
+PENDING_FILTER = "sin-habilitar"
 
 
 def only_admins(view):
@@ -115,26 +121,37 @@ def activity(db, client) -> list[dict]:
     return rows[:60]
 
 
-# --------------------------------------------------------------- la portada
+# ---------------------------------------------------------- las estadísticas
 
 @bp.route("/")
 @only_admins
 def home(account):
+    """Lo mismo que ve un cliente en su pantalla, de la cuenta que elijas.
+
+    Es la misma plantilla y el mismo `services/stats.py` que usa `/panel`: la
+    gracia de esta pantalla es enseñar lo que ve él, y dos copias acabarían
+    enseñando cosas distintas.
+
+    Hubo una portada antes que esta, con el conteo por estado y las últimas
+    decisiones. Se quitó: lo que pedía acción se mira ahora desde el filtro de
+    Cuentas, y lo que se decidió sobre una cuenta está en su propia ficha.
+    """
     db = get_db()
-    counted = accounts.by_status(db)
-    # Lo primero de la pantalla es lo único que pide acción tuya. Ya no son las
-    # cuentas por aprobar —eso se quitó, cualquiera puede registrarse y pagar—
-    # sino las que pagaron y todavía no pueden enviar.
-    waiting = accounts.waiting_to_send(db, limit=10)
-    latest = decisions.latest(db, limit=10)
-    return render_template("admin/home.html", section="portada", admin=account,
-                           counted=counted, waiting=waiting,
-                           statuses=accounts.STATUSES, decisions=latest,
-                           # De qué cuenta es cada decisión. Sin esto hay que
-                           # abrirlas una a una para saberlo, y se resuelven en
-                           # una sola consulta, no una por fila.
-                           named=accounts.names_of(
-                               db, [row["account_id"] for row in latest]))
+    # Solo clientes: una cuenta de administrador no envía nada, así que no hay
+    # estadística suya que mirar.
+    clients, _ = accounts.search(db, limit=200)
+    if not clients:
+        return render_template("admin/no-clients.html", section="estadisticas",
+                               admin=account)
+
+    wanted = as_id(request.args.get("cuenta"))
+    whose = next((one for one in clients if one["_id"] == wanted), clients[0])
+    return render_template(
+        "admin/stats.html", section="estadisticas", admin=account,
+        account=account, pick=clients,
+        **stats.screen(db, whose,
+                       period=request.args.get("periodo", ""),
+                       tag=request.args.get("etiqueta", "")))
 
 
 # ---------------------------------------------------------------- las cuentas
@@ -150,12 +167,17 @@ def accounts_list(account):
     except ValueError:
         skip = 0
 
-    rows, total = accounts.search(db, status=status, text=text,
+    # La cola de habilitación es un filtro más y no una pantalla aparte: sigue
+    # siendo la lista de lo que pide acción, pero vive donde están todas.
+    pending = request.args.get("estado") == PENDING_FILTER
+    rows, total = accounts.search(db, status=status, text=text, pending=pending,
                                   limit=PER_PAGE, skip=skip)
     return render_template("admin/accounts.html", section="cuentas",
-                           admin=account, rows=rows, total=total, status=status,
+                           admin=account, rows=rows, total=total,
+                           status=PENDING_FILTER if pending else status,
                            search=text, skip=skip, per_page=PER_PAGE,
-                           statuses=accounts.STATUSES)
+                           statuses=accounts.STATUSES,
+                           pending_filter=PENDING_FILTER)
 
 
 @bp.route("/cuentas/<raw>")

@@ -156,6 +156,16 @@ def ensure_indexes(db: Database | None = None) -> None:
                              name="by_account_created")
     db.payments.create_index([("order_id", ASCENDING)], name="by_order")
 
+    # Un documento por evento de SES. Es lo que más crece: unos tres por correo
+    # enviado. Todavía no lo llena nadie, pero el índice va puesto desde ya para
+    # que el primer evento no llegue a una colección sin ordenar.
+    db.events.create_index([("account_id", ASCENDING),
+                            ("created_at", DESCENDING)],
+                           name="by_account_created")
+    db.events.create_index([("account_id", ASCENDING), ("kind", ASCENDING),
+                            ("created_at", DESCENDING)],
+                           name="by_account_kind_created")
+
     # El HTML que sube cada cliente. Sin TTL: una pieza aprobada es lo que hay
     # que poder volver a mirar cuando alguien pregunte qué se envió.
     db.designs.create_index([("account_id", ASCENDING),

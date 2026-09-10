@@ -60,7 +60,7 @@ PANEL = {
     "contacts_label": "Contactos",
     "designs_label": "Plantillas",
     "settings_label": "Configuración",
-    "panel_label": "Panel",
+    "panel_label": "Estadísticas",
     # Solo la ve quien tiene el rol, y quien lo decide es la galleta que deja
     # el panel: este sitio es estático y no sabe quién mira.
     "admin_label": "Administración",

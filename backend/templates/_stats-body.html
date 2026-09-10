@@ -1,0 +1,98 @@
+{#- El cuerpo de la pantalla de estadísticas, que miran los dos.
+
+    El cliente la abre en /panel y el administrador en /admin/, y son dos
+    plantillas distintas porque cada una vive dentro de su propia barra: la
+    del panel y la de administración con sus pestañas. Lo que enseñan es
+    esto, una sola vez, para que no puedan separarse. -#}
+{# Un solo formulario en GET para los filtros: la dirección guarda lo que estás
+   mirando, así que se puede recargar y compartir. El selector de cuenta solo
+   lo dibuja el administrador; el cliente ve la suya y no hay nada que elegir. #}
+<form class="filters" method="get">
+  {% if pick %}
+  <label class="visually-hidden" for="cuenta">{{ t('stats_pick') }}</label>
+  <select id="cuenta" name="cuenta">
+    {% for one in pick %}
+    <option value="{{ one._id }}"{% if one._id == whose._id %} selected{% endif %}>
+      {{ one.company_name }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+
+  <label class="visually-hidden" for="periodo">{{ t('stats_period') }}</label>
+  <select id="periodo" name="periodo">
+    {% for name in periods %}
+    <option value="{{ name }}"{% if name == period %} selected{% endif %}>
+      {{ t('stats_period_' + name) }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="visually-hidden" for="etiqueta">{{ t('stats_tag') }}</label>
+  <select id="etiqueta" name="etiqueta">
+    <option value="">{{ t('stats_all_tags') }}</option>
+    {% for name in tags %}
+    <option value="{{ name }}"{% if name == tag %} selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+
+  <button class="btn btn--small" type="submit">{{ t('stats_apply') }}</button>
+</form>
+
+{# --------------------------------------------------- envíos y rebotes --- #}
+<h2 class="settings__subtitle">{{ t('stats_sending_title') }}</h2>
+<p class="settings__lead">{{ t('stats_sending_lead') }}</p>
+
+{% with rows = series, kinds = [('sent', 'sent'), ('bounce', 'bounce')],
+        label = t('stats_sending_title') %}
+{% include "_bars.html" %}
+{% endwith %}
+
+<ul class="counts counts--wide">
+  {% for kind in ['delivery', 'open', 'click', 'complaint'] %}
+  <li><span>{{ t('stats_' + kind) }}</span> <b>{{ totals[kind] }}</b></li>
+  {% endfor %}
+</ul>
+
+{# ------------------------------------------------------- los contactos --- #}
+<h2 class="settings__subtitle">{{ t('stats_contacts_title') }}</h2>
+<ul class="counts counts--wide">
+  <li><span>{{ t('stats_contacts') }}</span>
+    <b>{{ active }} <span class="table__quiet">{{ t('stats_of_limit', n=limit) }}</span></b></li>
+  <li><span>{{ t('stats_blocked') }}</span> <b>{{ blocked }}</b></li>
+  <li><span>{{ t('stats_tags_in_use') }}</span> <b>{{ tags|length }}</b></li>
+</ul>
+
+{# ---------------------------------------------------- las importaciones --- #}
+<h2 class="settings__subtitle">{{ t('stats_imports_title') }}</h2>
+{% if imports %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for job in imports %}
+      <tr>
+        <td>{{ job.filename }}</td>
+        <td class="table__quiet">{{ job.created_at|ago }}</td>
+        <td class="table__quiet">{{ t('import_added') }}: {{ job.added }} ·
+          {{ t('import_updated') }}: {{ job.updated }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('stats_imports_none') }}</p>
+{% endif %}
+
+{# ------------------------------------------------------------- el plan --- #}
+<h2 class="settings__subtitle">{{ t('stats_plan_title') }}</h2>
+{% if plan %}
+<ul class="counts counts--wide">
+  <li><span>{{ t('admin_col_plan') }}</span>
+    <b>{{ plan|capitalize }}
+      {% if plan_until %}<span class="table__quiet">{{ t('pay_until', when=plan_until|ago) }}</span>{% endif %}</b></li>
+  <li><span>{{ t('stats_emails_month') }}</span>
+    <b>{{ t('stats_emails_used', used=totals['sent'], limit=emails_limit) }}</b></li>
+</ul>
+{% else %}
+<p class="hint">{{ t('stats_plan_none') }}</p>
+{% endif %}
+

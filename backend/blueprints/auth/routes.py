@@ -38,6 +38,7 @@ from models import token as tokens
 from services import mailer
 from services import paypal
 from services import plans
+from services import stats
 from services import totp
 from services.security import (csrf_ok, hash_password, now as security_now,
                                password_problem, rate_limit, verify_password)
@@ -1174,16 +1175,27 @@ def recover_new():
 
 @bp.route("/panel")
 def panel():
-    """What is going to be the graphs of the sends.
+    """Las estadísticas de la cuenta: sus cifras y las gráficas de sus envíos.
 
-    Everything that used to hang off it —devices, password, two-step— lives in
-    Configuración now, so nobody has to look for their settings in two places.
+    La dirección sigue siendo /panel aunque la pantalla se llame Estadísticas:
+    cambiarla rompería los enlaces guardados y el correo de bienvenida a cambio
+    de nada.
+
+    La llena `services/stats.py`, el mismo que llena la del administrador, para
+    que las dos no puedan separarse.
     """
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
-    return not_for_admins(account) or render_template(
-        "panel.html", account=account, confirmed=accounts.is_confirmed(account))
+    answer = not_for_admins(account)
+    if answer:
+        return answer
+
+    return render_template(
+        "stats.html", account=account, pick=None,
+        **stats.screen(get_db(), account,
+                       period=request.args.get("periodo", ""),
+                       tag=request.args.get("etiqueta", "")))
 
 
 # --------------------------------------------------------------- settings

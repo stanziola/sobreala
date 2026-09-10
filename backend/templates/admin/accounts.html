@@ -15,6 +15,10 @@
     <option value="{{ name }}"{% if name == status %} selected{% endif %}>
       {{ t('status_short_' + name) }}</option>
     {% endfor %}
+    {# No es un estado de la cuenta sino la cola que pide acción: pagaron y
+       todavía no pueden enviar. Vive aquí para no tener una pantalla aparte. #}
+    <option value="{{ pending_filter }}"{% if status == pending_filter %} selected{% endif %}>
+      {{ t('admin_filter_pending') }}</option>
   </select>
 
   <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_search_action') }}</button>

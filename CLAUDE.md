@@ -391,8 +391,15 @@ para pausar por límite de cuota y retomar desde ahí.
 
 ### `events`
 Un registro por evento de SES (enviado, entregado, rebote, queja, apertura,
-clic). Es lo que más crece: ~3 eventos por correo, ~200 bytes cada uno.
+clic), con su cuenta, su campaña y cuándo pasó. Es lo que más crece: ~3 eventos
+por correo, ~200 bytes cada uno.
 **Retención: 12 meses en detalle, después solo totales por campaña.**
+
+**Todavía no la llena nadie**, y `models/event.py` ya la lee: la serie por tramo
+de tiempo y los totales del periodo, que contra una colección que no existe
+devuelven cero. Eso es lo que dibuja la pantalla de Estadísticas hoy, y el día
+que el webhook de SNS entre en funcionamiento se llena sola sin tocar la
+pantalla.
 
 ### `mail_log`
 Un documento por cada **correo del sistema** que se intentó enviar, con el
@@ -506,8 +513,23 @@ Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 
 ## Panel del cliente
 
-El panel (`/panel`) es la pantalla de las gráficas de envíos; hoy solo dice
-«próximamente», porque todavía no hay nada que medir. **`/contactos`** tiene cuatro
+**`/panel` es la pantalla de Estadísticas.** La dirección no cambió aunque la
+pantalla se llame así: cambiarla rompería los enlaces guardados y el correo de
+bienvenida a cambio de nada. Enseña las cifras de la cuenta —contactos activos y
+anulados, etiquetas, importaciones, plan y cuota— y las **gráficas de envíos y
+rebotes**, con filtro por periodo y por etiqueta.
+
+Las gráficas leen `events`, que **todavía no llena nadie**, así que hoy salen
+vacías. Se dibujan igual, con sus ejes y su leyenda, y encima la frase de que
+aún no se ha hecho nada: un cuadro vacío que se explica enseña de antemano la
+forma que va a tener, y un hueco no. **Son SVG generado en la plantilla, sin
+JavaScript y sin librerías**: la cabecera del panel solo deja cargar guiones
+propios, así que una de un CDN no cargaría, y traerse una al repositorio sería
+algo que mantener y auditar para pintar rectángulos.
+
+La llena `services/stats.py`, y **es la misma pantalla que ve el
+administrador** en `/admin/` para la cuenta que elija: una plantilla y dos
+entradas, para que no puedan separarse. **`/contactos`** tiene cuatro
 pantallas: la lista —una fila por contacto, con sus etiquetas, por dónde entró,
 cuándo y si está activo o anulado—, la importación, las etiquetas y las
 supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
@@ -554,12 +576,19 @@ en Configuración → Seguridad, que es su sitio.
 ## Panel de administración
 
 `/admin`, con verificación de rol, y **es donde aterriza un administrador al
-entrar**: su cuenta sigue siendo una cuenta, con sus contactos y su
-configuración, pero la primera pantalla es la que va a usar.
+entrar**. Tres pantallas: **Estadísticas · Cuentas · Plantillas subidas**.
 
-**Construido**: la portada con las cuentas que esperan habilitación para enviar y
-el conteo por estado, la tabla de todas las cuentas con filtro y buscador, la
-lista del HTML que han subido los clientes, y la ficha de cada cliente.
+**Estadísticas** es `/admin/`, y es la misma pantalla del cliente con un selector
+de cuenta encima: lo que ve él, de quien elijas. Hubo una portada antes ahí, con
+el conteo por estado y las últimas decisiones; se quitó porque lo que pedía
+acción cabe en un filtro de Cuentas y lo demás ya está en la ficha.
+
+**Cuentas** es la tabla con filtro y buscador. **Nunca trae cuentas de
+administrador**: no son clientes, no compran ni envían, y como un administrador
+no paga nunca se quedaban en «registrada» para siempre, que es lo que hacía que
+la columna de estado se leyera mal. Su filtro de estado tiene una entrada más,
+**«esperando habilitación»**, que no es un estado sino la cola que pide acción:
+pagaron y todavía no pueden enviar.
 
 Arriba del todo de la ficha está lo único que espera una decisión: **habilitar el
 envío**. Debajo, **un solo formulario** —plan, ciclo, suspensión y un motivo—: si

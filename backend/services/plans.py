@@ -72,6 +72,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
     prices: dict[str, list[Decimal | None]] = {}
     tags: list[int | None] = []
     uploads: list[bool] = []
+    emails: list[int | None] = []
 
     for line in text.splitlines():
         if not line.lstrip().startswith("|"):
@@ -87,6 +88,11 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             prices[YEARLY] = [_amount(c) for c in cells[1:]]
         elif cells[0].strip("* ") == "Etiquetas":
             tags = [_count(c) for c in cells[1:]]
+        elif cells[0].strip("* ") == "Correos por mes" and len(cells) - 1 == len(names):
+            # La comprobación de ancho no es adorno: más abajo del documento hay
+            # otras tablas de dos columnas, y una de ellas empieza por una
+            # palabra que también aparece aquí arriba.
+            emails = [_count(c) for c in cells[1:]]
         elif cells[0].strip("* ") == "Subir tu propio HTML":
             uploads = [c.strip() == "✅" for c in cells[1:]]
 
@@ -108,6 +114,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             YEARLY: prices[YEARLY][index],
             "tags": tags[index] if index < len(tags) else None,
             "upload": uploads[index] if index < len(uploads) else False,
+            "emails": emails[index] if index < len(emails) else None,
             "public": key not in hidden,
         }
     return plans
@@ -145,6 +152,16 @@ def tag_limit(plan: str | None) -> int:
     if not found or found["tags"] is None:
         return FREE_TAGS
     return found["tags"]
+
+
+def emails_a_month(plan: str | None) -> int | None:
+    """Cuántos correos al mes puede enviar ese plan, de docs/pricing.md.
+
+    None sin plan: no es cero, es que todavía no hay ninguno contratado, y son
+    dos cosas distintas en una pantalla que enseña cifras.
+    """
+    found = PLANS.get(plan or "")
+    return found["emails"] if found else None
 
 
 def can_upload(plan: str | None) -> bool:

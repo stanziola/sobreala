@@ -140,7 +140,7 @@ def test_con_rol_y_doble_factor_entra(client, database, outbox):
 
     pantalla = browser.get("/admin/")
     assert pantalla.status_code == 200
-    assert "Esperando para poder enviar" in pantalla.get_data(as_text=True)
+    assert "Estadísticas" in pantalla.get_data(as_text=True)
 
 
 # ------------------------------------------------------------ las decisiones
@@ -397,15 +397,15 @@ def test_la_actividad_no_ensena_las_direcciones_de_sus_contactos(
     assert "carlos@coop.com" not in ficha
 
 
-def test_las_ultimas_decisiones_dicen_de_que_cuenta_son(client, database, outbox):
+def test_lo_decidido_se_lee_en_la_ficha_de_la_cuenta(client, database, outbox):
+    """Ya no hay portada con «últimas decisiones»: cada ficha tiene la suya."""
     admin, _ = make_admin(client, database)
     _, cliente = make_client_account(client, database)
-    clear_sending(admin, cliente, motivo="listo")
+    clear_sending(admin, cliente, motivo="revisé su lista")
 
-    portada = admin.get("/admin/").get_data(as_text=True)
-    nombre = accounts.by_id(database, cliente["_id"])["company_name"]
-    assert nombre in portada
-    assert "Ver perfil" in portada
+    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    assert "Actividad" in ficha
+    assert "revisé su lista" in ficha
 
 
 # ----------------------------------------------------------- dónde se aterriza
@@ -569,22 +569,33 @@ def test_habilitar_sin_motivo_no_habilita(client, database, outbox):
     assert accounts.can_send(accounts.by_id(database, cliente["_id"])) is False
 
 
-def test_la_portada_lista_a_quien_pago_y_no_puede_enviar(client, database,
-                                                         outbox):
+def test_el_filtro_trae_a_quien_pago_y_no_puede_enviar(client, database, outbox):
+    """La cola de habilitación es un filtro más de Cuentas, no una pantalla."""
     admin, _ = make_admin(client, database)
     _, cliente = make_client_account(client, database)
-    # Por el correo y no por el nombre de la empresa: las dos cuentas de prueba
-    # se llaman igual, y el del administrador está en su propia barra.
     correo = cliente["email"]
+    cola = "/admin/cuentas?estado=sin-habilitar"
 
     # Sin plan no está esperando nada: todavía no va a enviar.
-    assert correo not in admin.get("/admin/").get_data(as_text=True)
+    assert correo not in admin.get(cola).get_data(as_text=True)
 
     update(admin, database, cliente, plan="basico", motivo="pagó por Yappy")
-    assert correo in admin.get("/admin/").get_data(as_text=True)
+    assert correo in admin.get(cola).get_data(as_text=True)
 
     clear_sending(admin, cliente)
-    assert correo not in admin.get("/admin/").get_data(as_text=True)
+    assert correo not in admin.get(cola).get_data(as_text=True)
+
+
+def test_la_lista_de_cuentas_no_trae_administradores(client, database, outbox):
+    """No son clientes: no compran ni envían, y no hay nada que decidir sobre
+    ellas. Salían en la lista y, como un administrador no paga nunca, se
+    quedaban en «registrada» para siempre."""
+    admin, jefe = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+
+    lista = admin.get("/admin/cuentas").get_data(as_text=True)
+    assert cliente["email"] in lista
+    assert jefe["email"] not in lista
 
 
 # ----------------------------- un estado que el código ya no conoce

@@ -1,0 +1,67 @@
+{#- Una gráfica de barras en SVG, dibujada aquí y sin una línea de JavaScript.
+
+    La cabecera del panel solo deja cargar guiones propios, así que una librería
+    de un CDN no se cargaría; y traerse una al repositorio sería algo que
+    mantener y auditar para dibujar unos rectángulos.
+
+    Cuando no hay nada que dibujar se dibuja igual: los ejes, la rejilla y la
+    leyenda, con una frase encima. Un cuadro vacío que se explica dice más que
+    un hueco, y además enseña de antemano la forma que va a tener.
+
+    rows  — un dict por tramo, con su `at` y un conteo por tipo
+    kinds — los tipos a apilar, en orden, con su clase de color
+    top   — el tramo más alto, que fija la altura
+-#}
+{% set ancho = 720 %}
+{% set alto = 200 %}
+{% set hueco = 2 %}
+{% set paso = (ancho / (rows|length or 1)) %}
+<div class="chart{% if not top %} chart--empty{% endif %}">
+  <svg class="chart__svg" viewBox="0 0 {{ ancho }} {{ alto + 22 }}"
+       role="img" preserveAspectRatio="none"
+       aria-label="{{ label }}">
+    {#- La rejilla: cuatro líneas para poder leer una altura sin adivinarla. -#}
+    {% for n in range(5) %}
+    <line class="chart__grid" x1="0" x2="{{ ancho }}"
+          y1="{{ alto * n / 4 }}" y2="{{ alto * n / 4 }}"/>
+    {% endfor %}
+
+    {% if top %}
+    {% for row in rows %}
+    {% set x = loop.index0 * paso %}
+    {#- Apiladas: cada tipo empieza donde acabó el anterior. -#}
+    {% set ns = namespace(base=0) %}
+    {% for kind, css in kinds %}
+    {% set valor = row[kind] %}
+    {% if valor %}
+    {% set altura = alto * valor / top %}
+    {% set ns.base = ns.base + altura %}
+    <rect class="chart__bar chart__bar--{{ css }}"
+          x="{{ x }}" width="{{ [paso - hueco, 1]|max }}"
+          y="{{ alto - ns.base }}" height="{{ altura }}">
+      <title>{{ row.at|ago }} · {{ t('stats_' + kind) }}: {{ valor }}</title>
+    </rect>
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
+
+    <line class="chart__axis" x1="0" x2="{{ ancho }}" y1="{{ alto }}" y2="{{ alto }}"/>
+  </svg>
+
+  {#- El eje del tiempo va fuera del SVG: así el texto no se estira con él. -#}
+  <p class="chart__axis-x">
+    <span>{{ rows[0].at|ago if rows else t('stats_axis_none') }}</span>
+    <span>{{ t('stats_period_' + period) }}</span>
+  </p>
+
+  <p class="chart__legend">
+    {% for kind, css in kinds %}
+    <span class="chart__key chart__key--{{ css }}">{{ t('stats_' + kind) }}</span>
+    {% endfor %}
+  </p>
+
+  {% if not top %}
+  <p class="chart__nothing">{{ t('stats_nothing') }}</p>
+  {% endif %}
+</div>

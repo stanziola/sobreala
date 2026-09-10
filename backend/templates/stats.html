@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ t('panel_title') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
 {% block content %}
 {# Recuperar la contraseña deja a la persona aquí, ya dentro; cambiarla desde
    configuración la deja en su sección. Las dos pantallas dan el mismo aviso. #}
 {% if request.args.get('cambiada') %}
 <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
 {% endif %}
-
 {% if not confirmed %}
 <div class="notice">
   <p>{{ t('panel_unconfirmed') }}</p>
@@ -14,10 +15,10 @@
 </div>
 {% endif %}
 
-<div class="card">
-  <h1>{{ t('panel_greeting', name=account.contact_name) }}</h1>
-  <p class="lead">{{ t('panel_building') }}</p>
-  <p class="status"><span class="tag tag--quiet">{{ t('panel_soon_tag') }}</span></p>
-  <p class="foot"><a href="{{ url_for('auth.settings') }}">{{ t('panel_settings_link') }}</a></p>
-</div>
+<h1 class="settings__heading">{{ t('panel_title') }}</h1>
+<p class="settings__lead">{{ t('panel_greeting', name=account.contact_name) }}</p>
+
+{% include "_stats-body.html" %}
+
+<p class="foot"><a href="{{ url_for('auth.settings') }}">{{ t('panel_settings_link') }}</a></p>
 {% endblock %}

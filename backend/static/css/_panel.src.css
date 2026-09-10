@@ -467,6 +467,49 @@ input:focus, select:focus { border-color: var(--color-accent); }
 .table .tag { margin-left: 0; margin-right: 6px; }
 
 /* Lo que pasó con un archivo: una cifra por línea, y la cifra a la derecha. */
+/* ------------------------------------------------------------ estadísticas
+   La gráfica se dibuja en SVG desde la plantilla, sin JavaScript: la cabecera
+   del panel solo deja cargar guiones propios, así que una librería de fuera no
+   se cargaría, y traerse una al repositorio sería algo que mantener y auditar
+   para pintar unos rectángulos.
+
+   Los dos colores salen de la marca; no se inventa ninguno. El color no es lo
+   único que distingue las series: cada barra lleva su título y debajo va la
+   leyenda con los nombres. */
+.chart { margin-top: 14px; }
+.chart__svg {
+  display: block; width: 100%; height: 220px;
+  background: var(--color-surface-alt); border-radius: 10px;
+}
+.chart__grid { stroke: var(--color-border); stroke-width: 1; }
+.chart__axis { stroke: var(--color-field); stroke-width: 1.5; }
+.chart__bar--sent { fill: var(--color-accent); }
+.chart__bar--bounce { fill: var(--color-ink-soft); }
+.chart__axis-x {
+  display: flex; justify-content: space-between; gap: 12px;
+  margin: 6px 0 0; font-size: .82rem; color: var(--color-ink-soft);
+}
+.chart__legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 10px 0 0;
+                 font-size: .88rem; }
+.chart__key { display: inline-flex; align-items: center; gap: 7px; }
+.chart__key::before {
+  content: ""; width: 12px; height: 12px; border-radius: 3px;
+}
+.chart__key--sent::before { background: var(--color-accent); }
+.chart__key--bounce::before { background: var(--color-ink-soft); }
+/* Cuando no hay nada, el cuadro se dibuja igual y la frase va encima: enseña de
+   antemano la forma que va a tener, que es más de lo que dice un hueco. */
+.chart--empty { position: relative; }
+.chart__nothing {
+  position: absolute; top: 0; left: 0; right: 0; height: 220px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0; padding: 0 24px; text-align: center;
+  font-size: .92rem; color: var(--color-ink-soft);
+}
+
+.counts--wide { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 6px 24px; }
+
 .counts { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .counts li {
   display: flex; justify-content: space-between; gap: 16px;

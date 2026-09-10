@@ -1,0 +1,9 @@
+{% extends "admin/_layout.html" %}
+{# Dentro de la barra de administración, para no perder sus pestañas: desde
+   aquí se llega a Cuentas y a las plantillas subidas. #}
+{% block pane %}
+<h2 class="settings__title">{{ t('stats_of', name=whose.company_name) }}</h2>
+<p class="settings__lead">{{ t('stats_pick_hint') }}</p>
+
+{% include "_stats-body.html" %}
+{% endblock %}
