@@ -616,11 +616,14 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 @media (min-width: 900px) { .table-hint { display: none; } }
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius); border: 1px solid var(--color-border); background: var(--color-surface); }
 .compare { width: 100%; min-width: 720px; border-collapse: collapse; font-size: .97rem; }
-.compare th, .compare td { padding: 14px 16px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--color-border); }
+/* Las cifras van centradas bajo el nombre de su plan: así se comparan de
+   arriba abajo. La columna de la izquierda es la que nombra la fila y se
+   queda alineada a la izquierda, que es por donde se lee. */
+.compare th, .compare td { padding: 14px 16px; text-align: center; vertical-align: top; border-bottom: 1px solid var(--color-border); }
 .compare thead th { background: var(--color-deep); color: var(--color-on-dark); font-weight: 700; position: sticky; top: 0; }
 .compare thead th:first-child { border-top-left-radius: var(--radius); }
 .compare thead th:last-child { border-top-right-radius: var(--radius); }
-.compare tbody th { font-weight: 600; color: var(--color-ink); width: 34%; background: var(--color-surface-alt); }
+.compare tbody th { font-weight: 600; color: var(--color-ink); width: 34%; background: var(--color-surface-alt); text-align: left; }
 .compare tbody tr:last-child th, .compare tbody tr:last-child td { border-bottom: 0; }
 .compare tbody tr:hover td { background: var(--color-accent-soft); }
 .compare .yes { color: var(--color-accent-strong); font-weight: 800; font-size: 1.1rem; }

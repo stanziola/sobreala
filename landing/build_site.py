@@ -62,7 +62,6 @@ PUBLIC_ROWS = [
     ("Exportar CSV y PDF", "Exportar a CSV y PDF"),
     ("Usuarios", "Usuarios de la cuenta"),
     ("Soporte", "Soporte"),
-    ("Sesión de arranque dedicada", "Sesión de arranque dedicada"),
 ]
 
 # Rows shown on the plan cards, above the fold.

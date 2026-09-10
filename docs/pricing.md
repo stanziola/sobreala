@@ -91,7 +91,7 @@ Requiere guardar la posición de envío de cada campaña, no solo un contador gl
 - Los correos enviados desde el plan **Básico** llevan una firma discreta al pie:
   *"Enviado con Panamails"*, con enlace al sitio.
 - **A partir de Negocio los correos salen sin ninguna marca.**
-- La firma va separada del enlace de baja: el enlace de baja de un clic es
+- La firma va separada del enlace de baja: el enlace de baja de un click es
   obligatorio en **todos** los planes y nunca se quita.
 - Doble función: incentivo de upgrade, y publicidad gratuita en cada correo que
   envía un cliente de entrada.

@@ -82,7 +82,7 @@ HOME = {
     "hero": {
         "title_lead": "Administra tu base de datos de correos",
         "title_accent": "y envía de manera organizada.",
-        "subtitle": "Sube tus contactos y envía correos con un solo clic.",
+        "subtitle": "Envía un correo a toda tu lista con un solo click.",
         "note": "En construcción. Escríbenos y te avisamos apenas abramos cuentas.",
     },
     "problem": {
@@ -155,7 +155,7 @@ HOME = {
                 "icon": "chart",
                 "title": "Resultados de cada campaña",
                 "text": (
-                    "Entregados, aperturas, clics, rebotes y bajas, por campaña, con "
+                    "Entregados, aperturas, clicks, rebotes y bajas, por campaña, con "
                     "exportación a CSV y PDF."
                 ),
             },
@@ -213,7 +213,7 @@ HOME = {
             {
                 "q": "¿Qué pasa si alguien no quiere recibir más correos?",
                 "a": (
-                    "Todos los correos llevan un enlace de baja de un clic, en todos "
+                    "Todos los correos llevan un enlace de baja de un click, en todos "
                     "los planes, y no se puede quitar. Quien se da de baja queda fuera "
                     "de tus envíos automáticamente."
                 ),
@@ -282,10 +282,10 @@ STEPS = [
     {
         "number": "4",
         "title": "Mira qué pasó",
-        "short": "Ves entregados, aperturas, clics, rebotes y bajas de cada campaña.",
+        "short": "Ves entregados, aperturas, clicks, rebotes y bajas de cada campaña.",
         "detail": (
             "Cada campaña deja su registro: cuántos correos se entregaron, cuántas "
-            "personas abrieron, cuántas hicieron clic, cuántos rebotaron y cuántas se "
+            "personas abrieron, cuántas hicieron click, cuántos rebotaron y cuántas se "
             "dieron de baja. Puedes exportarlo a CSV o PDF para presentarlo en una "
             "junta directiva o guardarlo como respaldo."
         ),
@@ -509,7 +509,7 @@ ABOUT = {
     },
     "sections": [
         {
-            "title": "Qué es Panamails",
+            "title": "¿Qué es Panamails?",
             "paragraphs": [
                 (
                     "Panamails es una plataforma de email marketing: un panel donde una "
@@ -523,7 +523,7 @@ ABOUT = {
             ],
         },
         {
-            "title": "Para quién",
+            "title": "¿Para quién?",
             "paragraphs": [
                 (
                     "Sobre todo para organizaciones que ya juntaron una lista por otra "
@@ -539,7 +539,7 @@ ABOUT = {
             ],
         },
         {
-            "title": "Por qué",
+            "title": "¿Por qué?",
             "paragraphs": [
                 (
                     "Una organización con dos mil correos guardados en una hoja de "
@@ -555,7 +555,7 @@ ABOUT = {
             ],
         },
         {
-            "title": "Cómo lo hacemos",
+            "title": "¿Cómo lo hacemos?",
             "paragraphs": [
                 (
                     "Tus correos no salen de un servidor de correo cualquiera ni de una "
@@ -589,7 +589,7 @@ ABOUT = {
             ],
         },
         {
-            "title": "En qué punto estamos",
+            "title": "¿En qué punto estamos?",
             "paragraphs": [
                 (
                     "Panamails está en construcción. Este sitio presenta el proyecto y "
@@ -733,7 +733,7 @@ PRIVACY = {
                 "lo que nos permite responder qué salió exactamente del "
                 "servidor cuando alguien dice que no le llegó el código.",
                 "**De tus envíos:** por cada correo de campaña, si se entregó, "
-                "rebotó, generó una queja, se abrió o se hizo clic.",
+                "rebotó, generó una queja, se abrió o se hizo click.",
                 "**De pagos:** el plan, la fecha y el resultado del cobro. "
                 "**Nunca vemos ni guardamos datos de tarjeta:** el pago ocurre "
                 "en la página de PayPal o de Yappy, no en la nuestra.",
@@ -800,7 +800,7 @@ PRIVACY = {
                 "**Bajas y supresiones:** de forma permanente y a propósito. Es "
                 "justamente lo que impide volver a escribirle a quien pidió no "
                 "recibir más correos, así que ni tú ni nosotros las borramos.",
-                "**Detalle de aperturas, clics, entregas y rebotes:** 12 meses; "
+                "**Detalle de aperturas, clicks, entregas y rebotes:** 12 meses; "
                 "después quedan solo los totales por campaña.",
                 "**Bitácora de accesos y de correos del sistema:** se conserva "
                 "como registro de seguridad y soporte.",
