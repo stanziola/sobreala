@@ -28,6 +28,7 @@ import argparse
 import re
 import shutil
 import sys
+import unicodedata
 from pathlib import Path
 
 LANDING_DIR = Path(__file__).resolve().parent
@@ -68,6 +69,20 @@ CARD_ROWS = ["Contactos", "Correos por mes", "Usuarios", "Soporte"]
 
 # Plans published without a price, by the document's own instruction.
 NO_PUBLIC_PRICE = {"Corporativo"}
+
+
+def slug(name: str) -> str:
+    """«Básico» → «basico», que es como el panel llama a cada plan.
+
+    Tiene que dar exactamente lo mismo que slug() de
+    backend/services/plans.py: es la pieza que enlaza el botón de esta página
+    con la pantalla de contratar. No se importa de allí porque este generador
+    parsea docs/pricing.md por su cuenta, a propósito: publicar el sitio no
+    depende de que el backend se pueda importar.
+    """
+    plain = unicodedata.normalize("NFKD", name)
+    plain = "".join(c for c in plain if not unicodedata.combining(c))
+    return plain.strip().lower()
 
 
 def _split_row(line: str) -> list[str]:
@@ -127,6 +142,8 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
         extra = content.PRICING["plans"].get(name, {})
         plans.append({
             "name": name,
+            # Con qué nombre lo conoce el panel, para el botón de contratar.
+            "key": slug(name),
             "monthly": cell("Precio mensual", name),
             "yearly": cell("Precio anual (2 meses gratis)", name),
             "has_public_price": name not in NO_PUBLIC_PRICE,

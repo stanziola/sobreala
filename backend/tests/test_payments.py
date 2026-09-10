@@ -263,7 +263,7 @@ def test_sin_credenciales_la_pantalla_se_dibuja_y_no_deja_contratar(
     browser = inside(client)
     confirm(database)
 
-    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
+    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
     assert "Básico" in pantalla
     assert "todavía no está disponible" in pantalla
 
@@ -277,7 +277,7 @@ def test_sin_el_correo_confirmado_no_se_contrata(client, database, outbox,
     fake_paypal(monkeypatch)
     browser = inside(client)
 
-    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
+    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
     assert "Básico" in pantalla
     assert "confirma primero tu correo" in pantalla
     assert "/configuracion/pagos/contratar" not in pantalla
@@ -312,3 +312,116 @@ def test_una_cuenta_suspendida_no_contrata(client, database, outbox,
 
     assert database.payments.count_documents({}) == 0
     assert accounts.can_buy(accounts.by_id(database, cuenta["_id"])) is False
+
+
+# ------------------------------- la cabecera que dejaba el botón sin hacer nada
+
+def test_la_cabecera_permite_ir_a_pagar(client, database, outbox):
+    """`form-action` gobierna también la redirección que sigue al envío.
+
+    Con solo 'self', el navegador se negaba a seguir hasta PayPal: el servidor
+    creaba la orden, respondía 302, y desde fuera parecía que el botón no hacía
+    nada. Es el fallo que se reprodujo en Chrome antes de arreglarlo.
+    """
+    from config import Config
+
+    cabecera = client.get("/entrar").headers["Content-Security-Policy"]
+    regla = next(p.strip() for p in cabecera.split(";")
+                 if p.strip().startswith("form-action"))
+
+    assert Config.paypal_checkout() in regla
+    assert "'self'" in regla
+    # Y sigue sin permitir cualquier otro destino.
+    assert "*" not in regla
+    assert "https://ejemplo.com" not in regla
+
+
+def test_el_destino_de_pago_sale_del_entorno(monkeypatch):
+    """En producción no se permite el de pruebas, ni al revés."""
+    from config import Config
+
+    monkeypatch.setattr(Config, "PAYPAL_ENV", "live")
+    assert Config.paypal_checkout() == "https://www.paypal.com"
+    monkeypatch.setattr(Config, "PAYPAL_ENV", "sandbox")
+    assert Config.paypal_checkout() == "https://www.sandbox.paypal.com"
+
+
+# ------------------------------------------ la pantalla de contratar un plan
+
+def test_sin_sesion_contratar_manda_a_entrar_con_su_plan(client, database):
+    respuesta = client.get("/contratar/basico")
+
+    assert respuesta.status_code == 302
+    assert "/entrar" in respuesta.headers["Location"]
+    assert "plan=basico" in respuesta.headers["Location"]
+
+
+def test_al_entrar_sigue_hasta_el_plan_que_iba_a_comprar(client, database,
+                                                         outbox, monkeypatch):
+    fake_paypal(monkeypatch)
+    register(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    database.accounts.update_one(
+        {"_id": cuenta["_id"]},
+        {"$set": {"email_confirmed_at": cuenta["created_at"]}})
+
+    navegador = other(client)
+    navegador.get("/entrar?plan=negocio")      # lo anota al dibujar la pantalla
+    respuesta = login(navegador)
+
+    assert respuesta.headers["Location"].endswith("/contratar/negocio")
+    # Y se gasta: volver a entrar aterriza donde siempre.
+    otra = other(client)
+    otra.get("/entrar")
+    assert login(otra).headers["Location"].endswith("/panel")
+
+
+def test_un_plan_inventado_en_la_direccion_no_se_recuerda(client, database,
+                                                          outbox):
+    register(client)
+    navegador = other(client)
+    navegador.get("/entrar?plan=infinito")
+
+    assert login(navegador).headers["Location"].endswith("/panel")
+
+
+def test_contratar_ensena_el_plan_y_sus_dos_ciclos(client, database, outbox,
+                                                   monkeypatch):
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+
+    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    assert "Contratar Básico" in pantalla
+    assert plans.amount("basico", "monthly") in pantalla
+    assert plans.amount("basico", "yearly") in pantalla
+    assert pantalla.count('action="/configuracion/pagos/contratar"') == 2
+
+
+def test_corporativo_no_tiene_pantalla_de_contratar(client, database, outbox,
+                                                    monkeypatch):
+    """Va sin precio público: comprarlo pondría un precio donde no hay ninguno."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+
+    for plan in ("corporativo", "inventado"):
+        respuesta = browser.get(f"/contratar/{plan}")
+        assert respuesta.status_code == 302
+        assert "error=plan" in respuesta.headers["Location"]
+    assert database.payments.count_documents({}) == 0
+
+
+def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
+    """Los planes se eligen en el sitio; esta pantalla dice cómo te cobramos."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+    buy(browser)
+
+    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
+    assert "/configuracion/pagos/contratar" not in pantalla
+    # Y sí sigue diciendo qué tienes y qué se te ha cobrado.
+    assert "PayPal" in pantalla
+    assert "Yappy" in pantalla
+    assert "Tus pagos" in pantalla

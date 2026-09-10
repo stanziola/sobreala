@@ -60,6 +60,9 @@ PANEL = {
     "contacts_label": "Contactos",
     "settings_label": "Configuración",
     "panel_label": "Panel",
+    # Solo la ve quien tiene el rol, y quien lo decide es la galleta que deja
+    # el panel: este sitio es estático y no sabe quién mira.
+    "admin_label": "Administración",
     "logout_label": "Cerrar sesión",
     "theme_dark": "Modo oscuro",
     "theme_light": "Modo claro",
@@ -89,8 +92,8 @@ HOME = {
         "eyebrow": "El problema",
         "title": "Las desventajas de enviar sin una herramienta de correo masivo",
         "intro": (
-            "Cuando hay que escribirle a cientos de personas a la vez —socios, "
-            "clientes, padres, empleados— el correo de todos los días deja de servir."
+            "Cuando hay que escribirle a cientos de personas a la vez, socios, "
+            "clientes, padres, empleados, el correo de todos los días deja de servir."
         ),
         "items": [
             {

@@ -133,6 +133,12 @@ aplicación aparte: comparte modelos y servicios con el resto.
   archivo de traducciones, no dispersos en las plantillas.
 - Comentarios en inglés.
 - Implementaciones mínimas y directas. No agregar funcionalidad que no se pidió.
+- **No cambiar nada que no se haya pedido.** Si al hacer una tarea aparece algo
+  más —un texto flojo, una regla que se salta en silencio, algo que se podría
+  endurecer— **se dice y se espera**, no se arregla de paso. La única excepción
+  es lo estrictamente necesario para que lo pedido funcione o para que las
+  pruebas pasen, y eso va nombrado en el reporte. Renombrar de paso, reordenar,
+  «ya que estoy» y «aprovecho y mejoro esto» no entran.
 
 ---
 
@@ -555,8 +561,17 @@ y de dónde dijo que salió cada lista: eso es operar la plataforma. Las
 direcciones son suyas y de quien está en ellas, y se miran por un motivo
 concreto —una baja que alguien pide, un abuso que se investiga—, no hojeando.
 
-Pendiente: ver analytics de cada cliente · cargar plantillas prediseñadas ·
-revisar rebotes por cliente.
+**Pendiente: la pantalla de gráficas.** El administrador elige un cliente y ve
+lo mismo que ve él: correos enviados y rebotes contra el tiempo, con filtro por
+periodo —las últimas 24 horas, por ejemplo— y por etiqueta. **No se puede hacer
+todavía**: las colecciones `events` y `campaigns` no existen, así que no hay
+envíos, rebotes ni aperturas guardados en ningún sitio. Se hace junto con las
+campañas y el webhook de SNS, que es lo que las llena; antes de eso solo
+dibujaría ceros y habría que rehacerla cuando se sepa qué forma tienen los
+eventos de verdad. Sigue valiendo la regla de arriba: cifras agregadas sí, la
+lista de direcciones de sus contactos no.
+
+Pendiente además: cargar plantillas prediseñadas · revisar rebotes por cliente.
 
 Además:
 
@@ -613,6 +628,19 @@ empieza hoy. Pagar **no** habilita el envío: eso es la otra puerta.
 **Corporativo no se compra por la web.** `docs/pricing.md` dice que va sin precio
 público, a la medida: su botón lleva a contacto. Ponerlo comprable sería poner un
 precio donde el documento dice que no hay ninguno.
+
+**El plan se elige en `/planes`, no dentro del panel.** El botón de cada plan
+del sitio público lleva a `/contratar/<plan>`, que enseña lo que cuesta y tiene
+el botón de pagar; sin sesión manda a entrar llevando **el nombre del plan, nunca
+una dirección**, y al abrir sesión sigue hasta ahí. Configuración → Opciones de
+pago ya no vende: dice desde dónde se cobra, qué plan hay contratado y qué se ha
+cobrado.
+
+**`form-action` de la cabecera tiene que permitir el checkout de PayPal.** Esa
+regla gobierna también la redirección que sigue al envío de un formulario, así
+que con solo `'self'` el navegador se niega a ir a PayPal: el servidor crea la
+orden, responde 302, y desde fuera parece que el botón no hace nada. El destino
+sale de `Config.paypal_checkout()`, según el entorno.
 
 Sin credenciales configuradas la pantalla se dibuja igual y dice que el pago no
 está disponible, en vez de romperse.

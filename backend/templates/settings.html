@@ -219,62 +219,22 @@
     {% endif %}
     {% endcall %}
 
-    {# La regla de CLAUDE.md: registrada explora, aprobada compra. La ruta lo
-       vuelve a comprobar, porque un formulario se escribe a mano. #}
-    {# Se dice qué falta, no un «no puedes» a secas: una de las dos se arregla
-       sola abriendo el correo. #}
-    {% if not can_buy %}
-    <p class="notice">{{ t('pay_suspended') if suspended else t('pay_needs_email') }}</p>
-    {% elif not paypal_ready %}
-    <p class="notice">{{ t('pay_not_ready') }}</p>
+    {# Aquí ya no se vende: los planes se eligen en /planes, que es la página
+       que existe para eso. Esta pantalla dice desde dónde te cobramos, qué
+       tienes contratado y qué se te ha cobrado. #}
+    {% call row(t('settings_payments_paypal'), t('settings_payments_paypal_desc')) %}
+    {% if paypal_ready %}
+    <span class="tag tag--on">{{ t('settings_payments_ready') }}</span>
+    {% else %}
+    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
     {% endif %}
-
-    <h3 class="settings__subtitle">{{ t('pay_choose') }}</h3>
-    <p class="settings__lead">{{ t('pay_choose_lead') }}</p>
-
-    {% for key, one in plans.items() %}
-    <div class="setting">
-      <div class="setting__text">
-        <h3 class="setting__title">{{ one.name }}</h3>
-        <p class="setting__desc">
-          {% if one.public %}
-          {{ t('pay_prices', month='%.2f'|format(one.monthly),
-                year='%.2f'|format(one.yearly)) }}
-          {% else %}
-          {{ t('pay_custom') }}
-          {% endif %}
-        </p>
-      </div>
-      <div class="setting__action">
-        {% if key == plan %}<span class="tag tag--on">{{ t('pay_current') }}</span>{% endif %}
-        {% if not one.public %}
-        {# Sin precio público: se acuerda hablando, no se compra por la web. #}
-        <a class="btn btn--small btn--outline" href="{{ site_url }}/contacto/">{{ t('pay_talk') }}</a>
-        {% elif can_buy and paypal_ready %}
-        <form method="post" action="{{ url_for('auth.start_payment') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="plan" value="{{ key }}">
-          <input type="hidden" name="cycle" value="monthly">
-          <button class="btn btn--small btn--outline" type="submit">{{ t('pay_monthly') }}</button>
-        </form>
-        <form method="post" action="{{ url_for('auth.start_payment') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="plan" value="{{ key }}">
-          <input type="hidden" name="cycle" value="yearly">
-          <button class="btn btn--small btn--outline" type="submit">{{ t('pay_yearly') }}</button>
-        </form>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-
-    <p class="hint">{{ t('pay_compare') }}
-      <a href="{{ site_url }}/planes/">{{ t('settings_account_plans') }}</a></p>
-    <p class="hint">{{ t('settings_payments_hint') }}</p>
+    {% endcall %}
 
     {% call row(t('settings_payments_yappy'), t('settings_payments_yappy_desc')) %}
     <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
     {% endcall %}
+
+    <p class="hint">{{ t('settings_payments_hint') }}</p>
 
     {% if payments %}
     <h3 class="settings__subtitle">{{ t('pay_history') }}</h3>

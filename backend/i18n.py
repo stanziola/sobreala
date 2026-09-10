@@ -309,8 +309,10 @@ TEXTS = {
     "settings_notifications_save": "Guardar",
     "settings_notifications_saved": "Listo, guardamos lo que elegiste.",
 
-    "settings_payments_lead": "Desde dónde te vamos a cobrar el plan cuando "
-                              "contrates uno.",
+    "settings_payments_lead": "Desde dónde te cobramos, qué tienes contratado "
+                              "y qué se te ha cobrado. Los planes se eligen en "
+                              "el sitio.",
+    "settings_payments_ready": "Disponible",
     "settings_payments_paypal": "PayPal",
     "settings_payments_paypal_desc": "Para pagar con tarjeta o con tu cuenta "
                                      "de PayPal, y para que se renueve solo.",
@@ -321,6 +323,10 @@ TEXTS = {
     "settings_payments_current_hint": "Lo que tienes contratado ahora mismo.",
 
     # --- pagos -------------------------------------------------------------
+    "pay_checkout_title": "Contratar {plan}",
+    "pay_renewing": "Ya tienes este plan hasta {when}. Lo que pagues ahora se "
+                    "suma al final, no reemplaza lo que te queda.",
+    "pay_back_to_plans": "Ver todos los planes",
     "pay_choose": "Contratar un plan",
     "pay_choose_lead": "El pago se hace en la página de PayPal. Al volver, tu "
                        "cuenta queda activa al momento.",

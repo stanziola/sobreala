@@ -14,14 +14,20 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, t
-from models.account import status_of as account_status_of
+from models.account import is_admin, status_of as account_status_of
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
 
-# A crumb the public site can read. It carries a single "1" and nothing else:
-# unlike the session cookie it is NOT HttpOnly, so any script on panamails.com
-# can see it, and anything with a name or an address in it would be handing that
-# to a static site with no reason to know it.
+# A crumb the public site can read. It carries "1" for a client and "admin" for
+# an administrator, and nothing else: unlike the session cookie it is NOT
+# HttpOnly, so any script on panamails.com can see it, and anything with a name
+# or an address in it would be handing that to a static site with no reason to
+# know it.
+#
+# El rol va ahí porque el menú del sitio público le ofrecía a un administrador
+# el panel de envíos y los contactos, que su cuenta no tiene. Cuesta que
+# cualquier script de ese dominio pueda saber que quien mira es administrador;
+# no hay forma de que un sitio estático lo sepa sin que se lo digan.
 HINT_COOKIE = "pm_in"
 
 
@@ -142,14 +148,25 @@ def create_app(overrides: dict | None = None) -> Flask:
         """
         from blueprints.auth.routes import SESSION_KEY
 
+        from blueprints.auth.routes import current_account
+
         signed_in = bool(session.get(SESSION_KEY))
-        has_crumb = request.cookies.get(HINT_COOKIE) == "1"
-        if signed_in and not has_crumb:
+        # Se compara contra el valor que debería tener, no contra su presencia:
+        # así el día que una cuenta pasa a administrador la galleta se reescribe
+        # sola en la siguiente página.
+        wanted = ""
+        if signed_in:
+            try:
+                wanted = "admin" if is_admin(current_account()) else "1"
+            except Exception:  # noqa: BLE001 - la página vale más que la migaja
+                wanted = "1"
+        if wanted and request.cookies.get(HINT_COOKIE) != wanted:
             response.set_cookie(
-                HINT_COOKIE, "1", max_age=app.config["PERMANENT_SESSION_LIFETIME"],
+                HINT_COOKIE, wanted,
+                max_age=app.config["PERMANENT_SESSION_LIFETIME"],
                 domain=hint_domain(), samesite="Lax", httponly=False,
                 secure=app.config.get("SESSION_COOKIE_SECURE", False))
-        elif not signed_in and has_crumb:
+        elif not wanted and request.cookies.get(HINT_COOKIE) is not None:
             response.delete_cookie(HINT_COOKIE, domain=hint_domain())
         return response
 
@@ -169,7 +186,11 @@ def create_app(overrides: dict | None = None) -> Flask:
             "img-src 'self' data:",
             "font-src 'self'",
             "connect-src 'self'",
-            "form-action 'self'",
+            # El pago sale de aquí y acaba en PayPal. `form-action` gobierna
+            # también la redirección que viene después de enviar el
+            # formulario, así que sin este destino el navegador se planta y el
+            # botón de pagar parece no hacer nada.
+            f"form-action 'self' {Config.paypal_checkout()}",
             "frame-ancestors 'none'",
             "base-uri 'none'",
             "object-src 'none'",

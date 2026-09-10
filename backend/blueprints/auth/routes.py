@@ -192,6 +192,37 @@ def landing(account: dict | None) -> str:
     return url_for("auth.panel")
 
 
+# El plan que alguien venía a contratar cuando se le pidió entrar. Se guarda su
+# nombre —«basico»— y nunca una dirección: así no hay ninguna vuelta que validar
+# y esa vuelta no puede servir para mandar a nadie a otro sitio.
+WANTED_PLAN = "wanted_plan"
+
+
+def remember_plan(raw: str | None) -> None:
+    """Anotar el plan que se quería, si es uno de los de docs/pricing.md.
+
+    Solo escribe; no borra lo que ya hubiera. Recargar la pantalla de entrar
+    —o pedirla otra vez por cualquier motivo— llega sin el parámetro, y eso no
+    puede significar «ya no quería contratar nada». Lo gasta `after_sign_in()`
+    al abrir sesión, y salir limpia la sesión entera.
+    """
+    if raw and raw in plans.PLANS:
+        session[WANTED_PLAN] = raw
+
+
+def after_sign_in(account: dict | None) -> str:
+    """A dónde va quien acaba de abrir sesión.
+
+    Si llegó desde el botón de un plan, sigue a contratarlo en vez de aterrizar
+    en su panel y tener que buscarlo otra vez. Un administrador nunca: su cuenta
+    no compra.
+    """
+    wanted = session.pop(WANTED_PLAN, None)
+    if wanted and wanted in plans.PLANS and not accounts.is_admin(account):
+        return url_for("auth.checkout", plan=wanted)
+    return landing(account)
+
+
 def not_for_admins(account: dict | None):
     """Un redirect a administración si esta cuenta es de administrador.
 
@@ -215,8 +246,17 @@ def sign_in(account: dict, *, remember: bool = True) -> None:
     `remember` decides two lifetimes at once: the cookie's —permanent, or gone
     when the browser closes— and the document's. The document is the one that
     counts, because a browser is free to keep a cookie longer than it was told.
+
+    La sesión se vacía a propósito antes de abrir la nueva: nada de lo que
+    hubiera antes de identificarse tiene por qué sobrevivir a identificarse. Lo
+    único que cruza es el plan que se venía a contratar, porque es justamente
+    para después de entrar, y es un nombre de plan comprobado contra
+    docs/pricing.md, no una dirección.
     """
+    wanted = session.get(WANTED_PLAN)
     session.clear()
+    if wanted:
+        session[WANTED_PLAN] = wanted
     session[SESSION_KEY] = sessions.start(
         get_db(), account["_id"], ip=client_ip(),
         user_agent=request.headers.get("User-Agent", ""), remember=remember)
@@ -767,6 +807,11 @@ def login():
     if current_session():
         return redirect(landing(current_account()))
 
+    # Quien llegó desde el botón de un plan sigue hasta él al abrir sesión. Se
+    # anota al dibujar la pantalla, para que sobreviva al segundo paso.
+    if request.method == "GET":
+        remember_plan(request.args.get("plan"))
+
     errors: dict[str, str] = {}
     email_value = ""
     # Ticked by default the first time; after a failure, whatever was left.
@@ -828,7 +873,7 @@ def login():
                     if here:
                         deliver(db, lambda d, a: send_new_login(d, a, here),
                                 account, kind=events.LOGIN)
-                return redirect(landing(account))
+                return redirect(after_sign_in(account))
             errors["form"] = t("error_login_failed")
             # One outcome for both halves of the failure, because the visitor is
             # told one thing. The account_id is still filled in when the address
@@ -890,7 +935,7 @@ def login_code():
                          events.RECOVERY_USED if used_backup else events.OK,
                          email=account["email"], account_id=account_id)
 
-                answer = redirect(landing(account))
+                answer = redirect(after_sign_in(account))
                 if first_time:
                     # After the second step, never before: warning about a
                     # sign-in that had not happened yet is noise in the one
@@ -1174,8 +1219,6 @@ def settings(section: str = "cuenta"):
     return render_template(
         "settings.html", section=section, sections=sections, account=account,
         plans=plans.PLANS, cycles=plans.CYCLES, currency=plans.CURRENCY,
-        can_buy=accounts.can_buy(account),
-        suspended=accounts.is_suspended(account),
         paypal_ready=paypal.configured(),
         plan_until=accounts.plan_until(account),
         payments=payments.for_account(db, account["_id"]),
@@ -1256,6 +1299,40 @@ def close_device():
 
 
 # ------------------------------------------------------------------- pagos
+
+@bp.route("/contratar/<plan>")
+def checkout(plan: str):
+    """La pantalla de un plan: lo que cuesta y el botón de pagarlo.
+
+    Es a donde llevan los botones de /planes. El sitio público es estático y
+    vive en otro dominio, así que no puede iniciar un cobro por su cuenta: eso
+    es un formulario con testigo y tiene que salir de aquí.
+
+    No cobra nada. El botón hace POST a `start_payment()`, que es y sigue siendo
+    el único que habla con PayPal.
+    """
+    account = current_account()
+    if account is None:
+        # El plan viaja por su nombre para que, al entrar, siga hasta aquí.
+        return redirect(url_for("auth.login", plan=plan))
+    answer = not_for_admins(account)
+    if answer:
+        return answer
+
+    # Corporativo va sin precio público: comprarlo por la web pondría un precio
+    # donde docs/pricing.md dice que no hay ninguno.
+    if not plans.buyable(plan):
+        return redirect(url_for("auth.settings", section="pagos", error="plan"))
+
+    return render_template(
+        "checkout.html", plan=plan, one=plans.PLANS[plan],
+        currency=plans.CURRENCY,
+        can_buy=accounts.can_buy(account),
+        suspended=accounts.is_suspended(account),
+        paypal_ready=paypal.configured(),
+        current=accounts.plan_of(account),
+        plan_until=accounts.plan_until(account))
+
 
 @bp.route("/configuracion/pagos/contratar", methods=["POST"])
 def start_payment():

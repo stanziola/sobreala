@@ -615,3 +615,39 @@ def test_un_estado_viejo_no_rompe_la_pantalla(client, database, outbox):
     suya = navegador.get("/configuracion/cuenta")
     assert suya.status_code == 200
     assert "Registrada" in suya.get_data(as_text=True)
+
+
+# ------------------------- el administrador tampoco contrata desde /planes
+
+def test_un_administrador_que_abre_contratar_vuelve_a_administracion(
+        client, database, outbox):
+    admin, _ = make_admin(client, database)
+
+    respuesta = admin.get("/contratar/basico")
+
+    assert respuesta.status_code == 302
+    assert respuesta.headers["Location"].endswith("/admin/")
+    assert database.payments.count_documents({}) == 0
+
+
+def test_la_migaja_del_sitio_publico_dice_el_rol(client, database, outbox,
+                                                 monkeypatch):
+    """El sitio es estático y en otro dominio: lo único que sabe es esa migaja.
+
+    Sin el rol le ofrecía a un administrador el panel de envíos y los
+    contactos, que su cuenta no tiene.
+
+    La migaja se pone en el dominio padre de los dos despliegues; aquí se apunta
+    a localhost para que el navegador de prueba, que vive ahí, la acepte.
+    """
+    from config import Config
+    monkeypatch.setattr(Config, "PUBLIC_SITE_URL", "http://localhost")
+
+    admin, _ = make_admin(client, database)
+    navegador, _ = make_client_account(client, database)
+
+    admin.get("/admin/")
+    assert admin.get_cookie("pm_in").value == "admin"
+
+    navegador.get("/panel")
+    assert navegador.get_cookie("pm_in").value == "1"

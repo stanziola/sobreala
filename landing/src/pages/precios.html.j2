@@ -34,10 +34,16 @@
           <li><span class="plan__value">{{ h.value }}</span> <span class="plan__label">{{ h.label|lower }}</span></li>
           {% endfor %}
         </ul>
+        {# Con precio público el botón lleva a contratarlo en el panel, que es
+           quien puede cobrar: este sitio es estático y vive en otro dominio.
+           Sin sesión, el panel manda a entrar y vuelve aquí después. #}
+        {% if plan.has_public_price %}
         <a class="btn {% if plan.featured %}btn--primary{% else %}btn--outline{% endif %} btn--block"
-           href="{{ whatsapp_url }}" target="_blank" rel="noopener">
-          {% if plan.has_public_price %}Empezar con {{ plan.name }}{% else %}Contactar{% endif %}
-        </a>
+           href="{{ panel.base_url }}/contratar/{{ plan.key }}">Empezar con {{ plan.name }}</a>
+        {% else %}
+        <a class="btn btn--outline btn--block"
+           href="{{ whatsapp_url }}" target="_blank" rel="noopener">Contactar</a>
+        {% endif %}
       </li>
       {% endfor %}
     </ul>

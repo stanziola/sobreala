@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ one.name }}{% endblock %}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('pay_checkout_title', plan=one.name) }}</h1>
+  <p class="lead">{{ t('pay_prices', month='%.2f'|format(one.monthly),
+                       year='%.2f'|format(one.yearly)) }}</p>
+
+  {% if current == plan and plan_until %}
+  <p class="hint">{{ t('pay_renewing', when=plan_until|ago) }}</p>
+  {% endif %}
+
+  {# Se dice qué falta, no un «no puedes» a secas: lo del correo se arregla
+     solo abriendo la bandeja. #}
+  {% if not can_buy %}
+  <p class="notice">{{ t('pay_suspended') if suspended else t('pay_needs_email') }}</p>
+  {% elif not paypal_ready %}
+  <p class="notice">{{ t('pay_not_ready') }}</p>
+  {% else %}
+  {# Los dos ciclos, cada uno con su formulario: el cobro lo arranca
+     start_payment(), que compara el monto contra lo que dice el documento de
+     precios antes de activar nada. #}
+  <div class="row">
+    {% for cycle in ['monthly', 'yearly'] %}
+    <form method="post" action="{{ url_for('auth.start_payment') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="plan" value="{{ plan }}">
+      <input type="hidden" name="cycle" value="{{ cycle }}">
+      <button class="btn{% if cycle == 'yearly' %} btn--outline{% endif %}" type="submit">
+        {{ t('pay_' + cycle) }} · {{ currency }}
+        {{ '%.2f'|format(one.yearly if cycle == 'yearly' else one.monthly) }}</button>
+    </form>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="hint">{{ t('settings_payments_hint') }}</p>
+  <p class="foot">
+    <a href="{{ site_url }}/planes/">{{ t('pay_back_to_plans') }}</a> ·
+    <a href="{{ url_for('auth.settings', section='pagos') }}">{{ t('menu_settings') }}</a>
+  </p>
+</div>
+{% endblock %}

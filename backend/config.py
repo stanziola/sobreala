@@ -129,6 +129,19 @@ class Config:
                 else "https://api-m.sandbox.paypal.com")
 
     @classmethod
+    def paypal_checkout(cls) -> str:
+        """El sitio al que el navegador va a pagar.
+
+        No es el mismo que `paypal_api()`: uno es el servidor con el que habla
+        el nuestro y este es la página que abre la persona. Hace falta por
+        nombre porque la cabecera `form-action` tiene que permitirlo; sin eso el
+        navegador se niega a seguir la redirección y el botón parece no hacer
+        nada.
+        """
+        return ("https://www.paypal.com" if cls.PAYPAL_ENV == "live"
+                else "https://www.sandbox.paypal.com")
+
+    @classmethod
     def check(cls) -> None:
         if not cls.SECRET_KEY:
             raise RuntimeError("SECRET_KEY is required outside development")

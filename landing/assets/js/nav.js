@@ -180,10 +180,17 @@
    is HttpOnly and SameSite=Lax, and neither travels here nor can be read.
 
    What can be read is the crumb the panel leaves on the parent domain when
-   someone signs in: a "1" and nothing else. A hint, not a proof — if the
-   session was closed from another device this will keep offering "Mi panel"
-   until someone presses it, and the panel will then ask them to sign in. That
-   is the right order: what decides who gets in is the panel, not this line. */
+   someone signs in: "1" for a client and "admin" for an administrator, and
+   nothing else. A hint, not a proof — if the session was closed from another
+   device this will keep offering "Mi panel" until someone presses it, and the
+   panel will then ask them to sign in. That is the right order: what decides
+   who gets in is the panel, not this line.
+
+   El rol va ahí porque una cuenta de administrador no tiene panel de envíos ni
+   contactos, y sin saberlo este menú ofrecía dos filas que no llevan a nada
+   suyo. Cuesta que cualquier script de este dominio pueda saber que quien mira
+   es administrador; no hay forma de que un sitio estático lo sepa sin que se lo
+   digan. */
 (function () {
   "use strict";
 
@@ -205,7 +212,9 @@
 
   var grupo = document.querySelector("[data-account]");
   if (!grupo) return;
-  if (!/(^|;\s*)pm_in=1(;|$)/.test(document.cookie)) return;
+  var crumb = /(^|;\s*)pm_in=([^;]*)/.exec(document.cookie);
+  if (!crumb) return;
+  var admin = crumb[2] === "admin";
 
   // Signed in: the two buttons give way to the account's own face, and the
   // three rows that need a session appear inside the menu.
@@ -222,5 +231,10 @@
   if (label) label.hidden = true;
   if (me) me.hidden = false;
   Array.prototype.forEach.call(menu.querySelectorAll("[data-account-only]"),
+                               function (row) { row.hidden = false; });
+  // Las que dependen de quién es: administración para uno, panel y contactos
+  // para el otro.
+  var suyas = admin ? "[data-admin-only]" : "[data-client-only]";
+  Array.prototype.forEach.call(menu.querySelectorAll(suyas),
                                function (row) { row.hidden = false; });
 })();

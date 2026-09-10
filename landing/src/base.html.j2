@@ -108,14 +108,23 @@
         </summary>
 
         <div class="usermenu__panel">
+          {#- Una cuenta de administrador no tiene clientes a los que
+              escribirle, así que el panel de envíos y los contactos le salen
+              vacíos: en su lugar ve administración. Quién es lo dice la
+              galleta que deja el panel, y nav.js decide con ella. -#}
+          <a class="usermenu__item" data-admin-only hidden
+             href="{{ panel.base_url }}/admin/">
+            <span class="usermenu__icons">{% include "partials/icon-shield.svg.j2" %}</span>
+            <span>{{ panel.admin_label }}</span></a>
+
           {#- El panel va primero porque es a lo que se dedica la empresa: lo
               demás son ajustes de la cuenta, y se buscan cuando hace falta. -#}
-          <a class="usermenu__item" data-account-only hidden
+          <a class="usermenu__item" data-client-only hidden
              href="{{ panel.base_url }}/panel">
             <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
             <span>{{ panel.panel_label }}</span></a>
 
-          <a class="usermenu__item" data-account-only hidden
+          <a class="usermenu__item" data-client-only hidden
              href="{{ panel.base_url }}/contactos">
             <span class="usermenu__icons">{% include "partials/icon-people.svg.j2" %}</span>
             <span>{{ panel.contacts_label }}</span></a>
