@@ -5,14 +5,15 @@ Dos reglas de CLAUDE.md mandan aquí:
   * **Subir HTML propio es de Negocio en adelante**, y eso lo dice
     `docs/pricing.md`, no una lista copiada a este archivo. El Básico ve las
     prediseñadas y una línea que explica desde qué plan se puede subir.
-  * **Cada subida se revisa al entrar**, y la primera de cada cliente la aprueba
-    un administrador. Lo que se revisa la primera vez no es el archivo: es si
-    esa organización sabe lo que está mandando.
+  * **Cada subida se revisa al entrar**, y esa revisión es automática y es la
+    única que hay sobre el archivo. La mirada de una persona ocurre una vez por
+    cuenta, antes de su primera campaña, y es sobre de dónde salió su lista, no
+    sobre el HTML.
 
 El HTML subido **no se dibuja dentro del panel**. Es de otro y puede traer
 cualquier cosa; enseñarlo aquí sería meter el documento de un cliente dentro de
-una página nuestra con su sesión abierta. La pantalla enseña qué es, cuánto pesa
-y en qué estado está.
+una página nuestra con su sesión abierta. La pantalla enseña qué es y cuánto
+pesa.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from flask import (Blueprint, redirect, render_template, request, url_for)
 
-from blueprints.auth.routes import current_account
+from blueprints.auth.routes import current_account, not_for_admins
 from db import get_db
 from i18n import t
 from models import account as accounts
@@ -30,6 +31,16 @@ from services import html_check, plans
 from services.security import csrf_ok
 
 bp = Blueprint("designs", __name__)
+
+@bp.before_request
+def keep_admins_out():
+    """Un administrador no tiene plantillas que mirar, así que vuelve a /admin.
+
+    Va aquí y no en un decorador por ruta: esta pantalla tiene varias y una
+    nueva heredaría la puerta sin que nadie se acuerde de ponérsela.
+    """
+    return not_for_admins(current_account())
+
 
 # Las prediseñadas del producto: iguales para todos y sin nada que aprobar.
 # Todavía no hay ninguna hecha; la lista existe para que la pantalla tenga su
@@ -112,23 +123,18 @@ def index():
             if problems:
                 errors["archivo"] = explain(problems)
             else:
-                # La primera de cada cliente espera revisión; después queda
-                # habilitado y las siguientes entran aprobadas.
-                status = (designs.APPROVED
-                          if designs.approved_before(db, account["_id"])
-                          else designs.PENDING)
+                # Pasó el validador, así que queda lista. Lo que se revisa a
+                # mano es la cuenta, una vez, antes de su primera campaña.
                 designs.save(db, account["_id"],
                              name=name or archivo.filename,
-                             html=raw.decode("utf-8"), status=status,
+                             html=raw.decode("utf-8"),
                              uploaded_by=account["_id"])
-                return redirect(url_for("designs.index", guardado=status))
+                return redirect(url_for("designs.index", guardado=1))
 
-    # Qué decir arriba al volver: aprobada y lista, o subida y en revisión.
-    saved = request.args.get("guardado")
     return render_template(
         "designs/index.html", section="plantillas",
         **shared(db, account, errors=errors,
-                 saved=saved if saved in (designs.APPROVED, designs.PENDING) else None))
+                 saved=bool(request.args.get("guardado"))))
 
 
 @bp.route("/plantillas/borrar", methods=["POST"])

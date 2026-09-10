@@ -184,13 +184,29 @@ def bar_account():
 def landing(account: dict | None) -> str:
     """A dónde va alguien que acaba de entrar.
 
-    El administrador aterriza en /admin, que es lo que va a hacer al entrar.
-    Su cuenta sigue siendo una cuenta —con sus contactos y su configuración— y
-    el menú se los deja a un clic; lo que cambia es la primera pantalla.
+    El administrador aterriza en /admin y no en el panel del cliente: es lo
+    único que su cuenta hace.
     """
     if accounts.is_admin(account):
         return url_for("admin.home")
     return url_for("auth.panel")
+
+
+def not_for_admins(account: dict | None):
+    """Un redirect a administración si esta cuenta es de administrador.
+
+    El panel de envíos, los contactos y las plantillas son de quien tiene
+    clientes a los que escribirle. Una cuenta de administrador no los tiene, así
+    que esas pantallas le salen vacías y lo único que hacen es estorbar.
+
+    Devuelve None cuando no hay nada que hacer, para poder escribir
+    `answer = not_for_admins(account) ...` sin envolver cada vista en un
+    decorador. Se comprueba aquí además de esconder las filas del menú: esconder
+    un botón no es un permiso.
+    """
+    if accounts.is_admin(account):
+        return redirect(url_for("admin.home"))
+    return None
 
 
 def sign_in(account: dict, *, remember: bool = True) -> None:
@@ -328,8 +344,8 @@ def send_confirmation(db, account: dict) -> None:
 def send_welcome(db, account: dict) -> None:
     """The message that closes a registration.
 
-    Says the two things nobody guesses: that the account now exists, and that
-    sending is still off until it is approved by hand.
+    Says the two things nobody guesses: that the account exists and can already
+    buy a plan, and that the first campaign is looked at before it goes out.
     """
     panel = f"{Config.APP_BASE_URL}{url_for('auth.panel')}"
     mailer.send(
@@ -1094,8 +1110,8 @@ def panel():
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
-    return render_template("panel.html", account=account,
-                           confirmed=accounts.is_confirmed(account))
+    return not_for_admins(account) or render_template(
+        "panel.html", account=account, confirmed=accounts.is_confirmed(account))
 
 
 # --------------------------------------------------------------- settings
@@ -1103,21 +1119,38 @@ def panel():
 # The four sections, in the order the sidebar lists them.
 SECTIONS = ("cuenta", "seguridad", "notificaciones", "pagos")
 
+# Del administrador solo una. Estado y plan no significan nada en una cuenta
+# que no compra, y los avisos de campañas e importaciones son de cosas que no
+# hace. Lo que sí le aplica es cuidar la cuenta que puede aprobar y suspender a
+# todas las demás: contraseña, dos pasos y dispositivos.
+ADMIN_SECTIONS = ("seguridad",)
+
+
+def sections_for(account: dict | None) -> tuple[str, ...]:
+    """Las secciones que esa cuenta puede abrir. La primera es la de entrada."""
+    return ADMIN_SECTIONS if accounts.is_admin(account) else SECTIONS
+
 
 @bp.route("/configuracion", methods=["GET", "POST"])
 @bp.route("/configuracion/<section>", methods=["GET", "POST"])
 def settings(section: str = "cuenta"):
-    """The account's own settings: one view, one template, four sections.
+    """The account's own settings: one view, one template, its sections.
 
     They differ in what they draw, not in what they need — each one wants the
     same account beside the same sidebar — so splitting them into four views
     would only spread the same six lines over four places.
+
+    Cuáles son depende de quién mira: un cliente tiene cuatro y un
+    administrador solo Seguridad.
     """
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
-    if section not in SECTIONS:
-        return redirect(url_for("auth.settings"))
+    sections = sections_for(account)
+    if section not in sections:
+        # Una que no le toca —o una inventada— lo deja en la primera suya, no
+        # en una pantalla en blanco.
+        return redirect(url_for("auth.settings", section=sections[0]))
 
     db = get_db()
     if request.method == "POST":
@@ -1139,9 +1172,10 @@ def settings(section: str = "cuenta"):
 
     here = current_session()
     return render_template(
-        "settings.html", section=section, account=account,
+        "settings.html", section=section, sections=sections, account=account,
         plans=plans.PLANS, cycles=plans.CYCLES, currency=plans.CURRENCY,
-        can_buy=account.get("status") in (accounts.APPROVED, accounts.ACTIVE),
+        can_buy=accounts.can_buy(account),
+        suspended=accounts.is_suspended(account),
         paypal_ready=paypal.configured(),
         plan_until=accounts.plan_until(account),
         payments=payments.for_account(db, account["_id"]),
@@ -1234,6 +1268,10 @@ def start_payment():
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
+    # Una cuenta de administrador no compra planes: no tiene a quién escribirle.
+    answer = not_for_admins(account)
+    if answer:
+        return answer
 
     db = get_db()
     back = url_for("auth.settings", section="pagos")
@@ -1242,11 +1280,9 @@ def start_payment():
 
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(back)
-    # La regla de CLAUDE.md: registrada explora, aprobada compra. Activa
-    # también, porque una cuenta que ya pagó tiene que poder renovar y cambiar
-    # de plan; si no, el primer pago sería el último. Se comprueba aquí y no
-    # solo en la pantalla, porque un formulario se escribe a mano.
-    if account.get("status") not in (accounts.APPROVED, accounts.ACTIVE):
+    # Correo confirmado y cuenta no suspendida, nada más. Se comprueba aquí y
+    # no solo en la pantalla, porque un formulario se escribe a mano.
+    if not accounts.can_buy(account):
         return redirect(url_for("auth.settings", section="pagos", error="estado"))
     # Corporativo va sin precio público: comprarlo por la web pondría un precio
     # donde docs/pricing.md dice que no hay ninguno.

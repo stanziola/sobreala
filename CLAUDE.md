@@ -13,8 +13,8 @@ PyMEs — organizaciones que ya tienen una lista de correos armada por otra raz�
 páginas estáticas generadas con Jinja2), la cuenta entera —registro, código,
 doble factor, dispositivos, configuración—, **contactos** con su importador y
 sus supresiones, **plantillas** con la validación del HTML subido, el **panel de
-administración** con aprobación de cuentas y de piezas, y el **cobro de un plan
-con PayPal**. Faltan campañas, analítica y el webhook de rebotes.
+administración** con la habilitación de envío, y el **cobro de un plan con
+PayPal**. Faltan campañas, analítica y el webhook de rebotes.
 
 ---
 
@@ -142,19 +142,40 @@ aplicación aparte: comparte modelos y servicios con el resto.
 Cuenta de una empresa cliente. Guarda plan, cuota del mes, saldo acumulado,
 estado y configuración de remitente.
 
-Estados: `registered` → `approved` → `active` → `suspended`
+Estados: `registered` → `active` → `suspended`
 
-| Estado | Puede |
+| Estado | Qué significa |
 |---|---|
-| `registered` | Explorar el panel, importar contactos, armar campañas. **No comprar ni enviar.** |
-| `approved` | Comprar un plan. Lo aprueba Luis manualmente tras contactar a la empresa. |
-| `active` | Enviar. |
+| `registered` | Se registró. Explora, importa contactos y **puede comprar un plan**. |
+| `active` | Pagó. Su plan corre hasta `plan_until`. |
 | `suspended` | Nada. Corte automático por rebotes/quejas, o manual. |
 
-Los estados **los cambia el administrador** desde `/admin/cuentas/<id>`, y cada
-cambio pide un motivo que queda escrito en `admin_events`. `suspended` no es
-decorativo: una cuenta suspendida no abre sesión, y al suspenderla se le cierran
-las que tuviera abiertas.
+**Hubo un cuarto, `approved`, y se quitó.** Era una aprobación comercial a mano
+sin la cual no se podía comprar. Esperar a que alguien te apruebe para poder
+pagar no protegía nada que valiera esa espera; la mirada que sí importa —de
+dónde salió esa lista— se hace ahora justo antes del primer envío, que es donde
+puede hacer daño. Ver «La habilitación para enviar», más abajo.
+
+**Estar activa es el efecto de un pago cobrado, no una decisión.** `activate_plan()`
+es el único sitio que escribe `active`, y lo llaman tanto la vuelta de PayPal
+como el plan que el administrador pone a mano para quien pagó por Yappy o por
+transferencia. Lo que el administrador sí decide es **suspender y levantar la
+suspensión**, desde `/admin/cuentas/<id>` y con un motivo que queda escrito en
+`admin_events`. `suspended` no es decorativo: una cuenta suspendida no abre
+sesión, y al suspenderla se le cierran las que tuviera abiertas.
+
+### La habilitación para enviar
+
+`sending_cleared_at` en la cuenta, y `sending_cleared_by` con quién la puso. **Es
+la única puerta que queda con una persona detrás.** Todos los clientes envían
+desde el mismo dominio, así que comparten una sola reputación: una lista comprada
+la quema para todos. Se mira una vez —de dónde dijo que salió cada lista, y la
+pieza que va a mandar— y después la cuenta queda habilitada.
+
+Registrarse, importar y pagar **no la necesitan**: nada de eso le llega a nadie.
+La portada de `/admin` lista lo que espera, que son las cuentas con plan y sin
+habilitar. Todavía no hay campañas, así que nada consulta `can_send()` hoy; el
+blueprint de campañas, cuando exista, lee ese booleano antes de mandar nada.
 
 **`role` está en todas las cuentas** y vale `client` o `admin`; un campo que a
 veces está y a veces no es difícil de leer y fácil de equivocar en una consulta.
@@ -164,6 +185,13 @@ mano, porque nadie puede aprobarse a sí mismo el primer día. Las rutas de `/ad
 responden **404** a quien no lo tiene —un 403 le confirmaría a un curioso que la
 dirección existe— y exigen doble factor: es la cuenta que puede aprobar,
 suspender y leer las cifras de todos los clientes.
+
+**Una cuenta de administrador solo administra.** No tiene panel de envíos, ni
+contactos, ni plantillas, ni puede comprar un plan: no tiene a quién escribirle,
+así que esas pantallas le saldrían vacías. De Configuración le queda **Seguridad**
+—contraseña, dos pasos y dispositivos—, que es lo que hay que cuidar en la cuenta
+que puede suspender y habilitar a todas las demás. Las filas se esconden del menú
+**y las rutas la devuelven a `/admin`**: esconder un botón no es un permiso.
 
 **Un registro que no se confirma se borra a las 24 horas.** `create()` escribe
 `purge_at` y `confirm_email()` lo quita, así que Mongo barre solo lo que quedó a
@@ -333,9 +361,12 @@ texto y `<script>` no—. Fuera: `<script>`, `<iframe>`, `<object>`, `<form>`,
 atributos de evento, CSS o imágenes de otro sitio, y **cualquier pieza de más de
 102 KB**. Lo que se guarda es el archivo entero y tal como llegó.
 
-**La primera pieza de cada cliente la aprueba un administrador**; después queda
-habilitado y las siguientes entran solas. Lo que se revisa la primera vez no es
-el archivo: es si esa organización sabe lo que está mandando.
+**Nadie aprueba una pieza a mano.** Lo que puede hacer daño lo rechaza el
+validador al subirla, y eso es mecánico, no un juicio. La mirada de una persona
+ocurre una sola vez por cuenta, en la habilitación para enviar, y es sobre la
+cuenta y su lista, no sobre el archivo. Tener las dos serían dos revisiones
+manuales para la misma decisión. `/admin/plantillas` lista lo que han subido los
+clientes, para poder abrir una cuando haga falta.
 
 **El HTML de un cliente no se dibuja nunca dentro del panel**, ni en el suyo ni
 en el del administrador. Se baja como `text/plain`: meterlo en una página
@@ -477,9 +508,13 @@ construir.
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: panel,
-contactos, plantillas, configuración, modo, idioma y cerrar sesión, más
-**administración** para quien tenga el rol. Las plantillas van debajo de
-contactos: primero a quién le escribes, después con qué. El idioma es un desplegable dentro del desplegable, no
+contactos, plantillas, configuración, modo, idioma y cerrar sesión. Las
+plantillas van debajo de contactos: primero a quién le escribes, después con qué.
+**A un administrador el menú le enseña administración de primera y después
+configuración, y nada más.** El sitio público sí le sigue enseñando las filas de
+cliente, porque solo lee una galleta que dice «hay sesión» y no sabe quién es
+—ponerle el rol sería publicar en el dominio padre quién es administrador—, pero
+pulsarlas lo deja en `/admin`. El idioma es un desplegable dentro del desplegable, no
 dos filas sueltas de algo que casi no se toca. **El panel va primero** porque es a
 lo que se dedica la empresa; lo demás son ajustes, y se buscan cuando hacen
 falta. Sin sesión el mismo control es un botón de tres líneas con las dos que
@@ -499,13 +534,17 @@ saca a nadie de su cuenta abriendo un enlace.
 entrar**: su cuenta sigue siendo una cuenta, con sus contactos y su
 configuración, pero la primera pantalla es la que va a usar.
 
-**Construido**: la portada con las cuentas que esperan aprobación y el conteo por
-estado, la tabla de todas las cuentas con filtro y buscador, la cola de
-plantillas por revisar, y la ficha de cada cliente.
+**Construido**: la portada con las cuentas que esperan habilitación para enviar y
+el conteo por estado, la tabla de todas las cuentas con filtro y buscador, la
+lista del HTML que han subido los clientes, y la ficha de cada cliente.
 
-La ficha tiene **un solo formulario** —estado, plan y un motivo—: si cambian las
-dos cosas se anotan dos líneas en `admin_events` con el mismo motivo, porque
-guardar una por cosa cambiada es lo que las hace legibles meses después. Y tiene
+Arriba del todo de la ficha está lo único que espera una decisión: **habilitar el
+envío**. Debajo, **un solo formulario** —plan, ciclo, suspensión y un motivo—: si
+cambian dos cosas se anotan dos líneas en `admin_events` con el mismo motivo,
+porque guardar una por cosa cambiada es lo que las hace legibles meses después.
+Ponerle el plan a mano llama al mismo `activate_plan()` que usa PayPal, así que
+deja la cuenta activa **y con fecha de vencimiento**, no con un plan que no vence
+nunca. Y tiene
 una **Actividad** que junta en una línea de tiempo lo que hizo la cuenta —sus
 entradas, sus importaciones, sus pagos— con lo que se decidió sobre ella,
 leyendo `auth_events`, `imports`, `payments` y `admin_events`.
@@ -560,11 +599,16 @@ Tres cosas de ese camino que no son negociables:
    `services/plans.py` lee las mismas dos filas que lee el sitio. Cambiar una
    cifra ahí la cambia en el sitio, en el panel y en lo que se cobra.
 
-**Quién puede pagar**: `approved` y `active`. Registrada no —primero se habla con
-la organización y se revisa de dónde salió su lista—, y activa sí, porque una
-cuenta que ya pagó tiene que poder renovar y cambiar de plan. Pagar mueve la
-cuenta a `active` y escribe `plan` y `plan_until`. Renovar el mismo plan antes de
-tiempo **suma al final de lo que quedaba**; cambiar de plan empieza hoy.
+**Quién puede pagar**: cualquiera con el **correo confirmado** y **sin suspender**,
+y ninguna de las dos la decide una persona (`accounts.can_buy()`). El correo
+confirmado porque es a donde va el comprobante, y cobrarle a una dirección
+escrita mal deja a alguien pagando sin recibir nada. Una cuenta activa también,
+porque si no el primer pago sería el último y nadie podría renovar ni cambiar de
+plan. **Un administrador no**: su cuenta no tiene a quién escribirle.
+
+Pagar mueve la cuenta a `active` y escribe `plan` y `plan_until`. Renovar el
+mismo plan antes de tiempo **suma al final de lo que quedaba**; cambiar de plan
+empieza hoy. Pagar **no** habilita el envío: eso es la otra puerta.
 
 **Corporativo no se compra por la web.** `docs/pricing.md` dice que va sin precio
 público, a la medida: su botón lleva a contacto. Ponerlo comprable sería poner un

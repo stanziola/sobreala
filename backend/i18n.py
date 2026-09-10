@@ -259,7 +259,6 @@ TEXTS = {
     # La misma palabra que la etiqueta corta de la fila; la frase larga que la
     # explica sigue siendo panel_status_*, que es la que ya se enseñaba.
     "status_short_registered": "Registrada",
-    "status_short_approved": "Aprobada",
     "status_short_active": "Activa",
     "status_short_suspended": "Suspendida",
     "settings_account_plan": "Tu plan",
@@ -341,12 +340,13 @@ TEXTS = {
     "pay_state_completed": "Pagado",
     "pay_state_failed": "No se cobró",
     "pay_done": "Listo, tu plan quedó activo.",
-    "pay_needs_approval": "Todavía no puedes contratar. Hablamos contigo y "
-                          "revisamos de dónde salió tu lista antes de "
-                          "activarte el envío; escríbenos y lo vemos.",
+    "pay_needs_email": "Para contratar, confirma primero tu correo: es a donde "
+                       "va el comprobante y los avisos del plan.",
+    "pay_suspended": "Tu cuenta está suspendida, así que no puede contratar. "
+                     "Escríbenos y lo revisamos.",
     "pay_not_ready": "El pago con PayPal todavía no está disponible. "
                      "Escríbenos y lo resolvemos por otra vía.",
-    "pay_error_estado": "Tu cuenta todavía no puede contratar un plan.",
+    "pay_error_estado": "Tu cuenta todavía no puede contratar un plan. Confirma tu correo, o escríbenos si está suspendida.",
     "pay_error_plan": "Ese plan no se contrata por aquí.",
     "pay_error_paypal": "No pudimos hablar con PayPal en este momento. "
                         "Vuelve a intentarlo en unos minutos.",
@@ -372,9 +372,9 @@ TEXTS = {
                          "pide otro código.",
     "panel_unconfirmed_action": "Pedir otro código",
     "panel_status_label": "Estado de tu cuenta",
-    "panel_status_registered": "Registrada. Cuando quieras enviar, escríbenos y "
-                               "revisamos tu caso.",
-    "panel_status_approved": "Aprobada. Ya puedes contratar un plan.",
+    "panel_status_registered": "Registrada. Ya puedes contratar un plan; antes "
+                               "de tu primera campaña revisamos tu lista "
+                               "contigo.",
     "panel_status_active": "Activa.",
     "panel_status_suspended": "Suspendida. Escríbenos para revisarla.",
 
@@ -579,21 +579,14 @@ TEXTS = {
     "designs_upload_hint": "Un archivo .html de hasta {kb} KB. Pasado ese "
                            "tamaño Gmail recorta el correo y se pierde el "
                            "botón para anular la suscripción.",
-    "designs_upload_first": "La primera que subas la revisamos a mano antes de "
-                            "que puedas usarla. Las siguientes entran solas.",
     "designs_file": "Archivo",
     "designs_name": "Nombre",
     "designs_name_hint": "Para reconocerla después. Si lo dejas vacío usamos "
                          "el nombre del archivo.",
     "designs_submit": "Subir",
-    "designs_saved_approved": "Listo, ya la puedes usar.",
-    "designs_saved_pending": "Subida. La revisamos y te avisamos; suele ser el "
-                             "mismo día.",
+    "designs_saved": "Listo, ya la puedes usar.",
     "designs_delete": "Eliminar",
     "designs_size": "{kb} KB",
-    "designs_status_pending": "En revisión",
-    "designs_status_approved": "Lista para usar",
-    "designs_status_rejected": "Rechazada",
     "designs_locked": "Subir tu propio HTML es desde el plan {plan}. Con tu "
                       "plan puedes usar las plantillas prediseñadas.",
 
@@ -622,13 +615,13 @@ TEXTS = {
     "admin_title": "Administración",
     "admin_tab_home": "Portada",
     "admin_tab_accounts": "Cuentas",
-    "admin_waiting_title": "Esperando aprobación",
-    "admin_waiting_lead": "Cuentas registradas que todavía no pueden contratar. "
-                          "Habla con ellas y decide.",
-    "admin_waiting_empty": "Ninguna cuenta espera aprobación.",
+    "admin_waiting_title": "Esperando para poder enviar",
+    "admin_waiting_lead": "Cuentas que ya pagaron y todavía no han enviado "
+                          "nada. Mira de dónde salió su lista y habilítalas.",
+    "admin_waiting_empty": "Ninguna cuenta espera habilitación.",
     "admin_counts_title": "Cuentas por estado",
     "admin_recent_title": "Últimas decisiones",
-    "admin_recent_empty": "Todavía no has aprobado ni suspendido nada.",
+    "admin_recent_empty": "Todavía no has decidido nada sobre ninguna cuenta.",
     "admin_open": "Ver perfil",
 
     "admin_accounts_lead": "Todas las cuentas. Busca por correo o por empresa.",
@@ -652,9 +645,14 @@ TEXTS = {
     "admin_need_reason": "Escribe el motivo: es lo que se lee meses después "
                          "cuando alguien pregunte por qué.",
     "admin_update_title": "Actualizar la cuenta",
-    "admin_update_hint": "El estado decide qué puede hacer y el plan cuántos "
-                         "contactos y etiquetas le caben. Suspender cierra "
-                         "además todas sus sesiones abiertas.",
+    "admin_update_hint": "Ponerle el plan a mano es para quien pagó por Yappy "
+                         "o por transferencia: deja la cuenta activa y con "
+                         "fecha de vencimiento, igual que un pago por PayPal. "
+                         "Suspender cierra además todas sus sesiones abiertas.",
+    "admin_cycle": "Por cuánto tiempo",
+    "admin_suspend": "Cuenta suspendida",
+    "admin_suspend_hint": "Mientras lo esté no puede entrar, ni contratar, ni "
+                          "enviar.",
     "admin_reason": "Motivo",
     "admin_reason_hint": "Si cambias las dos cosas, el motivo queda escrito en "
                          "las dos.",
@@ -683,6 +681,7 @@ TEXTS = {
                           "sobre ella, en la misma línea de tiempo.",
     "admin_history_empty": "Nada todavía.",
     "admin_history_status": "Estado: de {before} a {after}",
+    "admin_history_sending": "Se habilitó el envío",
     "admin_history_plan": "Plan: de {before} a {after}",
 
     "admin_act_login": "Entró a la cuenta",
@@ -703,17 +702,28 @@ TEXTS = {
     "admin_act_from": "desde {ip}",
     "admin_act_reason": "Motivo: {reason}",
 
-    "admin_designs_title": "Plantillas por revisar",
-    "admin_designs_lead": "La primera que sube cada cliente. Después queda "
-                          "habilitado y las siguientes entran solas.",
-    "admin_designs_empty": "Ninguna espera revisión.",
-    "admin_designs_approve": "Aprobar",
-    "admin_designs_reject": "Rechazar",
+    "admin_designs_title": "Plantillas subidas",
+    "admin_designs_lead": "El HTML que ha subido cada cliente. Lo peligroso lo "
+                          "rechaza solo el validador al subirlo; esto es para "
+                          "poder mirarlo cuando haga falta.",
+    "admin_designs_empty": "Ningún cliente ha subido nada todavía.",
     "admin_designs_download": "Ver el archivo",
+
+    # La única puerta que queda con una persona detrás.
+    "admin_sending_gate": "Habilitación para enviar",
+    "admin_sending_gate_hint": "Todos tus clientes envían desde el mismo "
+                               "dominio, así que comparten una sola "
+                               "reputación. Mira de dónde dijo que salió su "
+                               "lista antes de habilitarla. Se hace una sola "
+                               "vez por cuenta.",
+    "admin_sending_clear": "Habilitar el envío",
+    "admin_sending_cleared": "Habilitada para enviar",
+    "admin_sending_cleared_when": "Habilitada {when}",
+    "admin_sending_pending": "Todavía no puede enviar",
 
     "admin_two_step_needed": "Para entrar a administración activa antes la "
                              "verificación en dos pasos. Es la cuenta que "
-                             "puede aprobar y suspender a todos los demás.",
+                             "puede suspender y habilitar a todos los demás.",
 
     # --- errors ------------------------------------------------------------
     "error_required": "Completa este campo.",
@@ -793,14 +803,16 @@ TEXTS = {
     # Neutral on purpose: we do not know the recipient's gender.
     "mail_welcome_heading": "Te damos la bienvenida, {name}",
     "mail_welcome_body": "Confirmaste tu correo, así que tu cuenta ya está "
-                         "creada. Desde el panel puedes subir tus contactos, "
-                         "organizarlos por listas y dejar tus campañas armadas.",
+                         "creada y ya puedes contratar un plan. Desde el panel "
+                         "subes tus contactos, los organizas con etiquetas y "
+                         "dejas tus campañas armadas.",
     "mail_welcome_button": "Entrar al panel",
     "mail_welcome_next_title": "Antes de tu primer envío",
-    "mail_welcome_next": "Para enviar de verdad hablamos contigo primero: "
-                         "revisamos de dónde salió tu lista y activamos el "
-                         "envío a mano. Es lo que mantiene la entregabilidad "
-                         "alta para todos los que envían desde Panamails.",
+    "mail_welcome_next": "La primera campaña la revisamos contigo: miramos de "
+                         "dónde salió tu lista y hacemos una prueba antes de "
+                         "que salga. Es una sola vez, y es lo que mantiene la "
+                         "entregabilidad alta para todos los que envían desde "
+                         "Panamails.",
     "mail_welcome_help": "Si algo no te calza, escríbenos a "
                          "panamails.info@gmail.com y lo vemos.",
 

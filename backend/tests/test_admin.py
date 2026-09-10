@@ -64,18 +64,41 @@ def make_client_account(client, database, email="socia@ejemplo.com"):
     return browser, accounts.by_email(database, email)
 
 
-def update(admin, database, cliente, *, estado=None, plan="", motivo="por algo"):
+def update(admin, database, cliente, *, plan="", ciclo="monthly",
+           suspendida=None, motivo="por algo"):
     """Actualizar una cuenta como lo hace la pantalla: un solo formulario.
 
-    Los dos campos viajan siempre, cambien o no, porque el formulario los
-    dibuja los dos. Lo que no se pasa aquí se toma de como está la cuenta.
+    Los campos viajan siempre, cambien o no, porque el formulario los dibuja
+    todos. Lo que no se pasa aquí se toma de como está la cuenta. Ya no hay
+    casilla para aprobar ni para activar: estar activa es el efecto de un pago.
     """
     ahora = accounts.by_id(database, cliente["_id"])
-    return admin.post(f"/admin/cuentas/{cliente['_id']}/actualizar", data={
-        "csrf_token": csrf(admin, "/admin/"),
-        "estado": ahora["status"] if estado is None else estado,
-        "plan": ahora.get("plan", "") or "" if plan == "" else (plan or ""),
-        "motivo": motivo})
+    if suspendida is None:
+        suspendida = accounts.is_suspended(ahora)
+    data = {"csrf_token": csrf(admin, "/admin/"), "ciclo": ciclo,
+            "plan": (ahora.get("plan", "") or "") if plan == "" else (plan or ""),
+            "motivo": motivo}
+    if suspendida:
+        data["suspendida"] = "1"
+    return admin.post(f"/admin/cuentas/{cliente['_id']}/actualizar", data=data)
+
+
+def upload_piece(navegador, nombre="Boletín"):
+    """Subir una pieza como lo hace la pantalla del cliente."""
+    navegador.get("/plantillas")
+    with navegador.session_transaction() as sess:
+        token = sess["_csrf"]
+    return navegador.post("/plantillas", data={
+        "csrf_token": token, "nombre": nombre,
+        "archivo": (io.BytesIO(b"<html><body><h1>Hola</h1></body></html>"),
+                    "pieza.html")},
+        content_type="multipart/form-data")
+
+
+def clear_sending(admin, cliente, motivo="hablé con ellos, la lista es suya"):
+    """Habilitar el envío, que es la única aprobación que queda."""
+    return admin.post(f"/admin/cuentas/{cliente['_id']}/habilitar-envio", data={
+        "csrf_token": csrf(admin, "/admin/"), "motivo": motivo})
 
 
 RUTAS = ("/admin/", "/admin/cuentas")
@@ -117,28 +140,27 @@ def test_con_rol_y_doble_factor_entra(client, database, outbox):
 
     pantalla = browser.get("/admin/")
     assert pantalla.status_code == 200
-    assert "Esperando aprobación" in pantalla.get_data(as_text=True)
-    assert "Administración" in browser.get("/panel").get_data(as_text=True)
+    assert "Esperando para poder enviar" in pantalla.get_data(as_text=True)
 
 
 # ------------------------------------------------------------ las decisiones
 
-def test_aprobar_deja_escrito_el_motivo_y_quien_fue(client, database, outbox):
+def test_suspender_deja_escrito_el_motivo_y_quien_fue(client, database, outbox):
     admin, jefe = make_admin(client, database)
     _, cliente = make_client_account(client, database)
 
-    update(admin, database, cliente, estado=accounts.APPROVED,
-           motivo="hablé con la tesorera, la lista es de sus socios")
+    update(admin, database, cliente, suspendida=True,
+           motivo="rebotes por encima del 3%")
 
     despues = accounts.by_id(database, cliente["_id"])
-    assert despues["status"] == accounts.APPROVED
+    assert despues["status"] == accounts.SUSPENDED
 
     escrito = decisions.for_account(database, cliente["_id"])
     assert len(escrito) == 1
     assert escrito[0]["before"] == accounts.REGISTERED
-    assert escrito[0]["after"] == accounts.APPROVED
+    assert escrito[0]["after"] == accounts.SUSPENDED
     assert escrito[0]["admin_id"] == jefe["_id"]
-    assert "tesorera" in escrito[0]["reason"]
+    assert "rebotes" in escrito[0]["reason"]
 
 
 def test_sin_motivo_no_se_cambia_nada(client, database, outbox):
@@ -146,21 +168,22 @@ def test_sin_motivo_no_se_cambia_nada(client, database, outbox):
     admin, _ = make_admin(client, database)
     _, cliente = make_client_account(client, database)
 
-    respuesta = update(admin, database, cliente, estado=accounts.SUSPENDED,
-                       motivo="   ")
+    respuesta = update(admin, database, cliente, suspendida=True, motivo="   ")
 
     assert accounts.by_id(database, cliente["_id"])["status"] == accounts.REGISTERED
     assert decisions.for_account(database, cliente["_id"]) == []
     assert "falta=motivo" in respuesta.headers["Location"]
 
 
-def test_un_estado_inventado_no_se_aplica(client, database, outbox):
+def test_un_plan_inventado_no_se_aplica(client, database, outbox):
     admin, _ = make_admin(client, database)
     _, cliente = make_client_account(client, database)
 
-    update(admin, database, cliente, estado="jefe", motivo="a ver si cuela")
+    update(admin, database, cliente, plan="infinito", motivo="a ver si cuela")
 
-    assert accounts.by_id(database, cliente["_id"])["status"] == accounts.REGISTERED
+    despues = accounts.by_id(database, cliente["_id"])
+    assert despues.get("plan") is None
+    assert decisions.for_account(database, cliente["_id"]) == []
 
 
 # ------------------------------------------------------------- la suspensión
@@ -169,7 +192,7 @@ def test_una_cuenta_suspendida_no_puede_entrar(client, database, outbox):
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
 
-    update(admin, database, cliente, estado=accounts.SUSPENDED,
+    update(admin, database, cliente, suspendida=True,
            motivo="rebotes por encima del 3%")
 
     # La sesión que ya tenía abierta se cierra con ella.
@@ -186,9 +209,8 @@ def test_al_levantar_la_suspension_vuelve_a_entrar(client, database, outbox):
     admin, _ = make_admin(client, database)
     _, cliente = make_client_account(client, database)
 
-    for estado, motivo in ((accounts.SUSPENDED, "impago"),
-                           (accounts.APPROVED, "pagó, resuelto")):
-        update(admin, database, cliente, estado=estado, motivo=motivo)
+    for suspendida, motivo in ((True, "impago"), (False, "pagó, resuelto")):
+        update(admin, database, cliente, suspendida=suspendida, motivo=motivo)
 
     navegador = other(client)
     assert login(navegador, email="socia@ejemplo.com").status_code == 302
@@ -204,23 +226,18 @@ def test_cambiar_el_plan_cambia_el_limite_de_contactos(client, database, outbox)
 
     assert accounts.contact_limit(cliente) == 500
 
-    update(admin, database, cliente, plan="basico",
-           motivo="contrató el Básico anual")
+    update(admin, database, cliente, plan="basico", ciclo="yearly",
+           motivo="pagó el Básico anual por transferencia")
 
     despues = accounts.by_id(database, cliente["_id"])
     assert despues["plan"] == "basico"
     assert accounts.contact_limit(despues) == 1000
+    # Ponerlo a mano hace lo mismo que un pago: activa y con vencimiento, no un
+    # plan suelto que no vence nunca.
+    assert despues["status"] == accounts.ACTIVE
+    assert accounts.plan_until(despues) is not None
     # Y la pantalla del cliente lo dice sin que nadie la toque.
     assert "de 1000 contactos" in navegador.get("/contactos").get_data(as_text=True)
-
-
-def test_un_plan_inventado_no_se_aplica(client, database, outbox):
-    admin, _ = make_admin(client, database)
-    _, cliente = make_client_account(client, database)
-
-    update(admin, database, cliente, plan="infinito", motivo="a ver")
-
-    assert accounts.by_id(database, cliente["_id"]).get("plan") is None
 
 
 # ------------------------------------------------------------------ la ficha
@@ -305,23 +322,25 @@ def test_la_tabla_filtra_por_estado(client, database, outbox):
 
 # ------------------------------------------------- un solo botón de actualizar
 
-def test_cambiar_estado_y_plan_a_la_vez_deja_dos_lineas_con_el_mismo_motivo(
+def test_cambiar_plan_y_suspension_a_la_vez_deja_dos_lineas_con_el_mismo_motivo(
         client, database, outbox):
     """admin_events guarda una por cosa cambiada: así se sigue leyendo."""
     admin, _ = make_admin(client, database)
     _, cliente = make_client_account(client, database)
 
-    update(admin, database, cliente, estado=accounts.ACTIVE, plan="negocio",
-           motivo="pagó el Negocio anual por transferencia")
+    update(admin, database, cliente, plan="negocio", suspendida=True,
+           motivo="pagó el Negocio y a la vez se le fue en rebotes")
 
     despues = accounts.by_id(database, cliente["_id"])
-    assert despues["status"] == accounts.ACTIVE
+    # La suspensión va después del plan, así que le gana: poner un plan deja la
+    # cuenta activa y esto tiene que poder apagarla en el mismo envío.
+    assert despues["status"] == accounts.SUSPENDED
     assert despues["plan"] == "negocio"
 
     escrito = decisions.for_account(database, cliente["_id"])
     assert len(escrito) == 2
     assert {row["kind"] for row in escrito} == {decisions.STATUS, decisions.PLAN}
-    assert all("transferencia" in row["reason"] for row in escrito)
+    assert all("rebotes" in row["reason"] for row in escrito)
 
 
 def test_actualizar_sin_cambiar_nada_no_escribe_una_decision(client, database,
@@ -349,8 +368,7 @@ def test_la_actividad_trae_entradas_importaciones_pagos_y_decisiones(
         "archivo": (io.BytesIO(b"correo\nana@coop.com\n"), "socios.csv")},
         content_type="multipart/form-data")
 
-    update(admin, database, cliente, estado=accounts.APPROVED,
-           motivo="hablé con la junta")
+    clear_sending(admin, cliente, motivo="hablé con la junta")
 
     ficha = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
     assert "Actividad" in ficha
@@ -382,7 +400,7 @@ def test_la_actividad_no_ensena_las_direcciones_de_sus_contactos(
 def test_las_ultimas_decisiones_dicen_de_que_cuenta_son(client, database, outbox):
     admin, _ = make_admin(client, database)
     _, cliente = make_client_account(client, database)
-    update(admin, database, cliente, estado=accounts.APPROVED, motivo="listo")
+    clear_sending(admin, cliente, motivo="listo")
 
     portada = admin.get("/admin/").get_data(as_text=True)
     nombre = accounts.by_id(database, cliente["_id"])["company_name"]
@@ -405,77 +423,30 @@ def test_el_cliente_sigue_aterrizando_en_el_panel(client, database, outbox):
 
 # ----------------------------------------------------- la cola de plantillas
 
-def test_la_cola_ensena_de_quien_es_cada_pieza_y_deja_aprobar(client, database,
-                                                              outbox):
-    from models import design as designs
-
+def test_la_lista_ensena_de_quien_es_cada_pieza(client, database, outbox):
+    """Ya no es una cola: nadie aprueba una pieza a mano."""
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
     accounts.set_plan(database, cliente["_id"], "negocio")
+    upload_piece(navegador)
 
-    navegador.get("/plantillas")
-    with navegador.session_transaction() as sess:
-        token = sess["_csrf"]
-    navegador.post("/plantillas", data={
-        "csrf_token": token, "nombre": "Boletín",
-        "archivo": (io.BytesIO(b"<html><body><h1>Hola</h1></body></html>"),
-                    "pieza.html")},
-        content_type="multipart/form-data")
-
-    cola = admin.get("/admin/plantillas").get_data(as_text=True)
-    nombre = accounts.by_id(database, cliente["_id"])["company_name"]
-    assert nombre in cola
-    assert "Boletín" in cola
-
-    subida = designs.for_account(database, cliente["_id"])[0]
-    admin.post(f"/admin/plantillas/{subida['_id']}/revisar", data={
-        "csrf_token": csrf(admin, "/admin/"), "decision": "approved"})
-
-    assert designs.by_id(database, cliente["_id"],
-                         subida["_id"])["status"] == designs.APPROVED
-
-
-def test_rechazar_sin_motivo_no_cambia_nada(client, database, outbox):
-    from models import design as designs
-
-    admin, _ = make_admin(client, database)
-    navegador, cliente = make_client_account(client, database)
-    accounts.set_plan(database, cliente["_id"], "negocio")
-    navegador.get("/plantillas")
-    with navegador.session_transaction() as sess:
-        token = sess["_csrf"]
-    navegador.post("/plantillas", data={
-        "csrf_token": token, "nombre": "Boletín",
-        "archivo": (io.BytesIO(b"<html><body><h1>Hola</h1></body></html>"),
-                    "pieza.html")},
-        content_type="multipart/form-data")
-    subida = designs.for_account(database, cliente["_id"])[0]
-
-    respuesta = admin.post(f"/admin/plantillas/{subida['_id']}/revisar", data={
-        "csrf_token": csrf(admin, "/admin/"), "decision": "rejected",
-        "motivo": "  "})
-
-    assert "falta=motivo" in respuesta.headers["Location"]
-    assert designs.by_id(database, cliente["_id"],
-                         subida["_id"])["status"] == designs.PENDING
+    lista = admin.get("/admin/plantillas").get_data(as_text=True)
+    assert accounts.by_id(database, cliente["_id"])["company_name"] in lista
+    assert "Boletín" in lista
+    # Y no hay nada que pulsar para aprobarla o rechazarla.
+    assert "Aprobar" not in lista
+    assert "Rechazar" not in lista
 
 
 def test_el_archivo_no_se_sirve_como_html(client, database, outbox):
     """Bajarlo, no dibujarlo: es el documento de otro y esta sesión es la que
-    puede aprobar y suspender a todo el mundo."""
+    puede suspender y habilitar a todo el mundo."""
     from models import design as designs
 
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
     accounts.set_plan(database, cliente["_id"], "negocio")
-    navegador.get("/plantillas")
-    with navegador.session_transaction() as sess:
-        token = sess["_csrf"]
-    navegador.post("/plantillas", data={
-        "csrf_token": token, "nombre": "Boletín",
-        "archivo": (io.BytesIO(b"<html><body><h1>Hola</h1></body></html>"),
-                    "pieza.html")},
-        content_type="multipart/form-data")
+    upload_piece(navegador)
     subida = designs.for_account(database, cliente["_id"])[0]
 
     respuesta = admin.get(f"/admin/plantillas/{subida['_id']}/archivo")
@@ -487,3 +458,160 @@ def test_la_cola_no_existe_para_quien_no_es_administrador(client, database,
                                                           outbox):
     navegador, _ = make_client_account(client, database)
     assert navegador.get("/admin/plantillas").status_code == 404
+
+
+# ------------------------------------ el administrador solo administra
+
+def test_las_pantallas_de_cliente_lo_devuelven_a_administracion(client,
+                                                                database,
+                                                                outbox):
+    """Una cuenta de administrador no tiene contactos ni plantillas."""
+    admin, _ = make_admin(client, database)
+
+    for url in ("/panel", "/contactos", "/contactos/importar",
+                "/contactos/etiquetas", "/plantillas"):
+        respuesta = admin.get(url)
+        assert respuesta.status_code == 302, url
+        assert respuesta.headers["Location"].endswith("/admin/"), url
+
+
+def test_su_menu_no_trae_las_filas_de_cliente(client, database, outbox):
+    admin, _ = make_admin(client, database)
+
+    menu = admin.get("/admin/").get_data(as_text=True)
+    assert "Administración" in menu
+    assert "Configuración" in menu
+    assert ">Contactos<" not in menu
+    assert ">Plantillas<" not in menu
+
+
+def test_su_configuracion_es_solo_seguridad(client, database, outbox):
+    admin, _ = make_admin(client, database)
+
+    respuesta = admin.get("/configuracion")
+    assert respuesta.headers["Location"].endswith("/configuracion/seguridad")
+
+    pantalla = admin.get("/configuracion/seguridad").get_data(as_text=True)
+    assert "Contraseña" in pantalla
+    assert "Opciones de pago" not in pantalla
+    assert "Notificaciones" not in pantalla
+
+    # Y la de pagos no se abre escribiéndola a mano.
+    assert admin.get("/configuracion/pagos").headers["Location"].endswith(
+        "/configuracion/seguridad")
+
+
+def test_un_administrador_no_contrata_un_plan(client, database, outbox):
+    admin, jefe = make_admin(client, database)
+
+    admin.post("/configuracion/pagos/contratar", data={
+        "csrf_token": csrf(admin, "/admin/"), "plan": "basico",
+        "cycle": "monthly"})
+
+    assert database.payments.count_documents({}) == 0
+    assert accounts.by_id(database, jefe["_id"]).get("plan") is None
+
+
+def test_un_cliente_sigue_llegando_a_todo(client, database, outbox):
+    """La que importa: el riesgo del cambio es cortarle algo a quien sí lo usa."""
+    navegador, _ = make_client_account(client, database)
+
+    for url in ("/panel", "/contactos", "/plantillas"):
+        assert navegador.get(url).status_code == 200, url
+
+    menu = navegador.get("/panel").get_data(as_text=True)
+    assert ">Contactos<" in menu
+    assert ">Plantillas<" in menu
+    assert "Administración" not in menu
+
+    pagos = navegador.get("/configuracion/pagos").get_data(as_text=True)
+    assert "Opciones de pago" in pagos
+
+
+# ----------------------------------- la única aprobación que queda
+
+def test_habilitar_el_envio_deja_su_decision_escrita(client, database, outbox):
+    admin, jefe = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+
+    assert accounts.can_send(accounts.by_id(database, cliente["_id"])) is False
+
+    clear_sending(admin, cliente, motivo="revisé su lista, son sus socios")
+
+    despues = accounts.by_id(database, cliente["_id"])
+    assert accounts.can_send(despues) is True
+    escrito = decisions.for_account(database, cliente["_id"])
+    assert len(escrito) == 1
+    assert escrito[0]["kind"] == decisions.SENDING
+    assert escrito[0]["admin_id"] == jefe["_id"]
+    assert "sus socios" in escrito[0]["reason"]
+
+
+def test_habilitar_dos_veces_no_duplica_nada(client, database, outbox):
+    admin, _ = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+
+    clear_sending(admin, cliente)
+    cuando = accounts.by_id(database, cliente["_id"])["sending_cleared_at"]
+    clear_sending(admin, cliente, motivo="otra vez")
+
+    assert len(decisions.for_account(database, cliente["_id"])) == 1
+    assert accounts.by_id(database, cliente["_id"])["sending_cleared_at"] == cuando
+
+
+def test_habilitar_sin_motivo_no_habilita(client, database, outbox):
+    admin, _ = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+
+    respuesta = clear_sending(admin, cliente, motivo="   ")
+
+    assert "falta=motivo" in respuesta.headers["Location"]
+    assert accounts.can_send(accounts.by_id(database, cliente["_id"])) is False
+
+
+def test_la_portada_lista_a_quien_pago_y_no_puede_enviar(client, database,
+                                                         outbox):
+    admin, _ = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+    # Por el correo y no por el nombre de la empresa: las dos cuentas de prueba
+    # se llaman igual, y el del administrador está en su propia barra.
+    correo = cliente["email"]
+
+    # Sin plan no está esperando nada: todavía no va a enviar.
+    assert correo not in admin.get("/admin/").get_data(as_text=True)
+
+    update(admin, database, cliente, plan="basico", motivo="pagó por Yappy")
+    assert correo in admin.get("/admin/").get_data(as_text=True)
+
+    clear_sending(admin, cliente)
+    assert correo not in admin.get("/admin/").get_data(as_text=True)
+
+
+# ----------------------------- un estado que el código ya no conoce
+
+def test_un_estado_viejo_no_rompe_la_pantalla(client, database, outbox):
+    """`approved` existió hasta que se quitó la aprobación de cuentas.
+
+    El valor quedó escrito en las cuentas que lo tenían, y la interfaz busca el
+    texto de un estado por su nombre: uno que no está en la tabla de
+    traducciones reventaba la página entera. Se lee como Registrada.
+    """
+    admin, _ = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+    database.accounts.update_one({"_id": cliente["_id"]},
+                                 {"$set": {"status": "approved"}})
+
+    tabla = admin.get("/admin/cuentas")
+    assert tabla.status_code == 200
+    assert "Registrada" in tabla.get_data(as_text=True)
+
+    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}")
+    assert ficha.status_code == 200
+    assert "Registrada" in ficha.get_data(as_text=True)
+
+    # Y la del propio cliente, que enseña su estado en Configuración.
+    navegador = other(client)
+    login(navegador, email="socia@ejemplo.com")
+    suya = navegador.get("/configuracion/cuenta")
+    assert suya.status_code == 200
+    assert "Registrada" in suya.get_data(as_text=True)

@@ -38,10 +38,17 @@ def csrf(client, url="/configuracion/pagos"):
         return sess["_csrf"]
 
 
-def approve(database, email="ana@ejemplo.com"):
-    """Aprobar la cuenta, que es lo que la deja contratar."""
+def confirm(database, email="ana@ejemplo.com"):
+    """Confirmar el correo, que es lo único que hace falta para contratar.
+
+    Antes hacía falta además que un administrador aprobara la cuenta a mano.
+    Se quitó: esperar a que alguien te apruebe para poder pagar no protegía
+    nada, y la revisión que sí importa se hace antes del primer envío.
+    """
     cuenta = accounts.by_email(database, email)
-    accounts.set_status(database, cuenta["_id"], accounts.APPROVED)
+    database.accounts.update_one(
+        {"_id": cuenta["_id"]},
+        {"$set": {"email_confirmed_at": cuenta["created_at"]}})
     return accounts.by_id(database, cuenta["_id"])
 
 
@@ -93,7 +100,7 @@ def test_una_cuenta_registrada_no_puede_contratar(client, database, outbox,
 def test_una_cuenta_aprobada_llega_a_paypal(client, database, outbox, monkeypatch):
     pedido = fake_paypal(monkeypatch)
     browser = inside(client)
-    approve(database)
+    confirm(database)
 
     respuesta = buy(browser)
 
@@ -107,7 +114,7 @@ def test_corporativo_no_se_compra_por_la_web(client, database, outbox, monkeypat
     un precio donde el documento dice que no hay ninguno."""
     fake_paypal(monkeypatch)
     browser = inside(client)
-    approve(database)
+    confirm(database)
 
     respuesta = buy(browser, plan="corporativo")
 
@@ -118,7 +125,7 @@ def test_corporativo_no_se_compra_por_la_web(client, database, outbox, monkeypat
 def test_un_plan_inventado_no_crea_nada(client, database, outbox, monkeypatch):
     fake_paypal(monkeypatch)
     browser = inside(client)
-    approve(database)
+    confirm(database)
 
     assert "error=plan" in buy(browser, plan="infinito").headers["Location"]
     assert "error=plan" in buy(browser, cycle="semanal").headers["Location"]
@@ -133,7 +140,7 @@ def test_el_monto_es_el_que_dice_el_documento(client, database, outbox, monkeypa
                         ("negocio", "monthly"), ("empresa", "yearly")):
         pedido = fake_paypal(monkeypatch)
         browser = inside(client, email=f"{plan}{cycle}@ejemplo.com")
-        approve(database, f"{plan}{cycle}@ejemplo.com")
+        confirm(database, f"{plan}{cycle}@ejemplo.com")
 
         buy(browser, plan=plan, cycle=cycle)
         assert pedido["amount"] == plans.amount(plan, cycle)
@@ -146,14 +153,14 @@ def test_si_paypal_no_confirma_no_se_activa_nada(client, database, outbox,
                                                  monkeypatch):
     fake_paypal(monkeypatch, status="PAYER_ACTION_REQUIRED")
     browser = inside(client)
-    approve(database)
+    confirm(database)
     buy(browser)
 
     respuesta = come_back(browser)
 
     assert "error=cobro" in respuesta.headers["Location"]
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    assert cuenta["status"] == accounts.APPROVED
+    assert cuenta["status"] == accounts.REGISTERED
     assert cuenta.get("plan") is None
     assert database.payments.count_documents({"status": payments.FAILED}) == 1
 
@@ -164,7 +171,7 @@ def test_si_el_monto_no_cuadra_no_se_activa_nada(client, database, outbox,
     activa: es lo que hace falta para poder reclamarlo."""
     fake_paypal(monkeypatch, amount="1.00")
     browser = inside(client)
-    approve(database)
+    confirm(database)
     buy(browser)
 
     respuesta = come_back(browser)
@@ -180,7 +187,7 @@ def test_una_orden_de_otra_cuenta_no_encuentra_nada(client, database, outbox,
                                                     monkeypatch):
     fake_paypal(monkeypatch)
     una = inside(client)
-    approve(database)
+    confirm(database)
     buy(una)
 
     ajena = inside(other(client), email="otra@ejemplo.com")
@@ -196,7 +203,7 @@ def test_pagar_deja_la_cuenta_activa_con_su_plan(client, database, outbox,
                                                  monkeypatch):
     fake_paypal(monkeypatch)
     browser = inside(client)
-    approve(database)
+    confirm(database)
     buy(browser)
 
     respuesta = come_back(browser)
@@ -216,7 +223,7 @@ def test_volver_dos_veces_no_alarga_el_periodo(client, database, outbox,
     """Recargar la página de vuelta entra otra vez por aquí."""
     fake_paypal(monkeypatch)
     browser = inside(client)
-    approve(database)
+    confirm(database)
     buy(browser)
     come_back(browser)
 
@@ -233,7 +240,7 @@ def test_renovar_el_mismo_plan_suma_al_final(client, database, outbox,
     """Pagar antes de tiempo no tira los días que quedaban."""
     fake_paypal(monkeypatch)
     browser = inside(client)
-    approve(database)
+    confirm(database)
     buy(browser)
     come_back(browser)
     primero = accounts.by_email(database, "ana@ejemplo.com")["plan_until"]
@@ -254,7 +261,7 @@ def test_sin_credenciales_la_pantalla_se_dibuja_y_no_deja_contratar(
         client, database, outbox, monkeypatch):
     monkeypatch.setattr(paypal, "configured", lambda: False)
     browser = inside(client)
-    approve(database)
+    confirm(database)
 
     pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
     assert "Básico" in pantalla
@@ -264,12 +271,44 @@ def test_sin_credenciales_la_pantalla_se_dibuja_y_no_deja_contratar(
     assert database.payments.count_documents({}) == 0
 
 
-def test_una_cuenta_registrada_ve_por_que_no_puede(client, database, outbox,
-                                                   monkeypatch):
+def test_sin_el_correo_confirmado_no_se_contrata(client, database, outbox,
+                                                 monkeypatch):
+    """La única puerta que queda, y se dice cuál es para poder abrirla."""
     fake_paypal(monkeypatch)
     browser = inside(client)
 
     pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
     assert "Básico" in pantalla
-    assert "Todavía no puedes contratar" in pantalla
+    assert "confirma primero tu correo" in pantalla
     assert "/configuracion/pagos/contratar" not in pantalla
+
+    assert "error=estado" in buy(browser).headers["Location"]
+    assert database.payments.count_documents({}) == 0
+
+
+def test_recien_confirmada_ya_puede_contratar(client, database, outbox,
+                                              monkeypatch):
+    """Nadie la aprueba: confirma su correo y llega hasta PayPal."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    cuenta = confirm(database)
+    assert cuenta["status"] == accounts.REGISTERED
+
+    respuesta = buy(browser)
+    assert respuesta.headers["Location"].startswith("https://sandbox.paypal.com/")
+
+
+def test_una_cuenta_suspendida_no_contrata(client, database, outbox,
+                                           monkeypatch):
+    """Suspender cierra su sesión, así que el testigo se toma antes."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    cuenta = confirm(database)
+    token = csrf(browser)
+    accounts.set_status(database, cuenta["_id"], accounts.SUSPENDED)
+
+    browser.post("/configuracion/pagos/contratar", data={
+        "csrf_token": token, "plan": "basico", "cycle": "monthly"})
+
+    assert database.payments.count_documents({}) == 0
+    assert accounts.can_buy(accounts.by_id(database, cuenta["_id"])) is False

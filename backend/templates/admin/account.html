@@ -26,10 +26,10 @@
 <div class="setting">
   <div class="setting__text">
     <h3 class="setting__title">{{ t('admin_col_status') }}</h3>
-    <p class="setting__desc">{{ t('panel_status_' + client.status) }}</p>
+    <p class="setting__desc">{{ t('panel_status_' + status_of(client)) }}</p>
   </div>
   <div class="setting__action">
-    <span class="tag tag--quiet">{{ t('status_short_' + client.status) }}</span>
+    <span class="tag tag--quiet">{{ t('status_short_' + status_of(client)) }}</span>
   </div>
 </div>
 
@@ -44,22 +44,42 @@
   </div>
 </div>
 
-{# Una sola decisión —qué hago con esta cuenta— y un solo motivo. Si cambian
-   las dos cosas se anotan dos líneas en admin_events con el mismo motivo:
-   guardar una por cosa cambiada es lo que las hace legibles después. #}
+{# La única puerta que queda con una persona detrás. Va antes que nada porque
+   es lo único de esta pantalla que espera una decisión. #}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('admin_sending_gate') }}</h3>
+    <p class="setting__desc">{{ t('admin_sending_gate_hint') }}</p>
+  </div>
+  <div class="setting__action">
+    {% if can_send %}
+    <span class="tag tag--quiet">{{ t('admin_sending_cleared_when',
+      when=client.sending_cleared_at|ago) }}</span>
+    {% else %}
+    <span class="tag tag--warn">{{ t('admin_sending_pending') }}</span>
+    {% endif %}
+  </div>
+</div>
+
+{% if not can_send %}
+<form method="post" action="{{ url_for('admin.clear_sending', raw=client._id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="motivo-envio">{{ t('admin_reason') }}</label>
+  <input id="motivo-envio" name="motivo" type="text" maxlength="300" required
+         autocomplete="off">
+  <button class="btn" type="submit">{{ t('admin_sending_clear') }}</button>
+</form>
+{% endif %}
+
+{# El plan y la suspensión, con un solo motivo. Si cambian los dos se anotan
+   dos líneas en admin_events con ese mismo motivo: guardar una por cosa
+   cambiada es lo que las hace legibles después. No hay casilla para aprobar ni
+   para activar; estar activa es el efecto de un pago. #}
 <h3 class="settings__subtitle">{{ t('admin_update_title') }}</h3>
 <p class="settings__lead">{{ t('admin_update_hint') }}</p>
 
 <form method="post" action="{{ url_for('admin.update', raw=client._id) }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-  <label for="estado">{{ t('admin_col_status') }}</label>
-  <select id="estado" name="estado">
-    {% for name in statuses %}
-    <option value="{{ name }}"{% if name == client.status %} selected{% endif %}>
-      {{ t('status_short_' + name) }}</option>
-    {% endfor %}
-  </select>
 
   <label for="plan">{{ t('admin_col_plan') }}</label>
   <select id="plan" name="plan">
@@ -69,6 +89,20 @@
       {{ name|capitalize }}</option>
     {% endfor %}
   </select>
+
+  <label for="ciclo">{{ t('admin_cycle') }}</label>
+  <select id="ciclo" name="ciclo">
+    {% for name in cycles %}
+    <option value="{{ name }}">{{ t('pay_cycle_' + name) }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="check" for="suspendida">
+    <input id="suspendida" name="suspendida" type="checkbox"
+           {% if client.status == 'suspended' %}checked{% endif %}>
+    <span>{{ t('admin_suspend') }}</span>
+  </label>
+  <p class="hint">{{ t('admin_suspend_hint') }}</p>
 
   <label for="motivo">{{ t('admin_reason') }}</label>
   <input id="motivo" name="motivo" type="text" maxlength="300" required
@@ -172,6 +206,8 @@
           {% else %}
             {% if row.kind == 'status' %}
             {{ t('admin_history_status', before=row.before, after=row.after) }}
+            {% elif row.kind == 'sending' %}
+            {{ t('admin_history_sending') }}
             {% else %}
             {{ t('admin_history_plan', before=row.before or t('admin_no_plan'),
                   after=row.after or t('admin_no_plan')) }}

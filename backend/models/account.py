@@ -11,14 +11,18 @@ from config import Config
 from services import plans
 from services.security import hash_password, verify_password
 
-# States defined in CLAUDE.md. Email confirmation is NOT one of them: these
-# describe the commercial approval Luis does by hand, while confirming the
-# address is a separate fact, kept in its own field.
-REGISTERED = "registered"
-APPROVED = "approved"
-ACTIVE = "active"
-SUSPENDED = "suspended"
-STATUSES = (REGISTERED, APPROVED, ACTIVE, SUSPENDED)
+# Los estados de CLAUDE.md. Confirmar el correo NO es uno: eso es otro hecho y
+# vive en su propio campo.
+#
+# Hubo un cuarto, `approved`, entre registrada y activa: una aprobación
+# comercial a mano sin la cual no se podía comprar. Se quitó. Esperar a que
+# alguien te apruebe para poder pagar no protegía nada que valiera esa espera, y
+# la mirada que sí importa —de dónde salió esa lista— se hace ahora justo antes
+# del primer envío, que es donde puede hacer daño.
+REGISTERED = "registered"   # se registró; explora, importa y puede comprar
+ACTIVE = "active"           # pagó; su plan corre hasta plan_until
+SUSPENDED = "suspended"     # corte por rebotes o quejas. No es una aprobación
+STATUSES = (REGISTERED, ACTIVE, SUSPENDED)
 
 # Quién es cada cuenta. Toda cuenta lleva el campo, también las corrientes: uno
 # que a veces está y a veces no es difícil de leer en la base y fácil de
@@ -205,6 +209,34 @@ def is_admin(account: dict[str, Any] | None) -> bool:
     return (account or {}).get("role") == ADMIN
 
 
+def status_of(account: dict[str, Any] | None) -> str:
+    """El estado de esa cuenta, siempre uno de los que el código conoce.
+
+    Un valor escrito por una versión anterior —`approved`, que existió hasta que
+    se quitó la aprobación de cuentas— no puede convertir una pantalla en una
+    página de error: la interfaz busca su texto por el nombre del estado, y uno
+    que no está en la tabla de traducciones revienta la página entera. Se lee
+    como `registered`, que es donde nace toda cuenta, y la siguiente escritura
+    lo deja bien.
+    """
+    found = (account or {}).get("status")
+    return found if found in STATUSES else REGISTERED
+
+
+def can_buy(account: dict[str, Any] | None) -> bool:
+    """Si esta cuenta puede contratar un plan.
+
+    Dos condiciones y ninguna la decide una persona. El correo confirmado,
+    porque es a donde va el comprobante y los avisos del plan, y cobrarle a una
+    dirección escrita mal deja a alguien pagando sin recibir nada. Y no estar
+    suspendida, que es lo contrario de vender más.
+
+    Una cuenta activa también puede: si no, el primer pago sería el último y
+    nadie podría renovar ni cambiar de plan.
+    """
+    return is_confirmed(account) and not is_suspended(account)
+
+
 def is_suspended(account: dict[str, Any] | None) -> bool:
     return (account or {}).get("status") == SUSPENDED
 
@@ -225,7 +257,7 @@ def set_status(db, account_id, status: str) -> str | None:
     """Move an account to another state. Returns the one it had, or None.
 
     The previous state is what makes the record in admin_events readable: "de
-    registered a approved" dice algo, "a approved" no dice nada.
+    registered a suspended" dice algo, "a suspended" no dice nada.
     """
     if status not in STATUSES:
         return None
@@ -235,6 +267,45 @@ def set_status(db, account_id, status: str) -> str | None:
     db.accounts.update_one({"_id": account_id},
                            {"$set": {"status": status, "updated_at": now()}})
     return before.get("status")
+
+
+def can_send(account: dict[str, Any] | None) -> bool:
+    """Si de esta cuenta puede salir una campaña.
+
+    Es la única puerta que queda con una persona detrás, y está donde hace
+    falta: todos los clientes envían desde el mismo dominio, así que comparten
+    una sola reputación, y una lista comprada la quema para todos. Se mira una
+    vez, antes del primer envío; después la cuenta queda habilitada.
+
+    Registrarse, importar y pagar no la necesitan: nada de eso le llega a
+    nadie.
+    """
+    return bool(account and account.get("sending_cleared_at"))
+
+
+def clear_sending(db, account_id, admin_id) -> bool:
+    """Habilitar el envío. False si ya lo estaba.
+
+    Escritura condicional sobre la ausencia del campo, así que pulsar dos veces
+    no anota dos decisiones ni mueve la fecha de la primera.
+    """
+    result = db.accounts.update_one(
+        {"_id": account_id, "sending_cleared_at": {"$exists": False}},
+        {"$set": {"sending_cleared_at": now(), "sending_cleared_by": admin_id,
+                  "updated_at": now()}})
+    return result.modified_count == 1
+
+
+def waiting_to_send(db, *, limit: int = 20) -> list[dict[str, Any]]:
+    """Las cuentas que ya pagaron y todavía no pueden enviar.
+
+    Es la cola del administrador: lo único que espera una decisión suya. Las
+    más antiguas primero, que son las que llevan más tiempo esperando.
+    """
+    return list(db.accounts.find(
+        {"plan": {"$exists": True, "$ne": None},
+         "sending_cleared_at": {"$exists": False},
+         "role": {"$ne": ADMIN}}).sort("updated_at", 1).limit(limit))
 
 
 def set_plan(db, account_id, plan: str | None) -> str | None:
@@ -252,8 +323,8 @@ def set_plan(db, account_id, plan: str | None) -> str | None:
 def activate_plan(db, account_id, plan: str, until) -> None:
     """Dejar la cuenta pagada: su plan, activa, y hasta cuándo.
 
-    `approved` → `active` es lo que dice CLAUDE.md que hace un pago: aprobada
-    puede comprar, activa puede enviar.
+    Es el único sitio que escribe `active`: estar activa es el efecto de un
+    pago cobrado, no una decisión que alguien tome a mano.
     """
     db.accounts.update_one({"_id": account_id}, {"$set": {
         "plan": plan, "status": ACTIVE, "plan_until": until,

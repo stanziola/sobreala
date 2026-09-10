@@ -17,9 +17,19 @@
   </summary>
 
   <div class="menu__panel">
+    {% if bar_account %}
+    {# Administración va de primera y sola: una cuenta de administrador no
+       tiene clientes a los que escribirle, así que el panel de envíos, los
+       contactos y las plantillas le saldrían vacíos. Las rutas lo devuelven
+       aquí igual, porque esconder una fila no es un permiso. #}
+    {% if bar_admin %}
+    <a class="menu__item" href="{{ url_for('admin.home') }}">
+      <span class="menu__icons">{% include "_icon-shield.svg" %}</span>
+      <span>{{ t('menu_admin') }}</span>
+    </a>
+    {% else %}
     {# El panel va primero porque es a lo que se dedica la empresa: lo demás son
        ajustes de la cuenta, y se buscan cuando hace falta. #}
-    {% if bar_account %}
     <a class="menu__item" href="{{ url_for('auth.panel') }}">
       <span class="menu__icons">{% include "_icon-chart.svg" %}</span>
       <span>{{ t('nav_panel') }}</span>
@@ -33,18 +43,11 @@
       <span class="menu__icons">{% include "_icon-mail.svg" %}</span>
       <span>{{ t('menu_designs') }}</span>
     </a>
+    {% endif %}
     <a class="menu__item" href="{{ url_for('auth.settings') }}">
       <span class="menu__icons">{% include "_icon-gear.svg" %}</span>
       <span>{{ t('menu_settings') }}</span>
     </a>
-    {# Solo la ve quien tiene el rol. Para el resto la dirección responde 404,
-       así que ni la fila ni la ruta dicen que existe. #}
-    {% if bar_admin %}
-    <a class="menu__item" href="{{ url_for('admin.home') }}">
-      <span class="menu__icons">{% include "_icon-shield.svg" %}</span>
-      <span>{{ t('menu_admin') }}</span>
-    </a>
-    {% endif %}
     {% endif %}
 
     {# The label says what pressing it will do, not what is on. panel.js keeps

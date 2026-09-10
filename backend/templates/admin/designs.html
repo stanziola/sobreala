@@ -3,10 +3,6 @@
 <h2 class="settings__title">{{ t('admin_designs_title') }}</h2>
 <p class="settings__lead">{{ t('admin_designs_lead') }}</p>
 
-{% if request.args.get('falta') == 'motivo' %}
-<p class="notice">{{ t('admin_need_reason') }}</p>
-{% endif %}
-
 {% if rows %}
 <div class="table-wrap">
   <table class="table">
@@ -22,20 +18,6 @@
              una página con la sesión de administrador abierta. #}
           <a class="btn btn--small btn--outline"
              href="{{ url_for('admin.design_file', raw=row._id) }}">{{ t('admin_designs_download') }}</a>
-        </td>
-        <td>
-          <form method="post"
-                action="{{ url_for('admin.review_design', raw=row._id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label class="visually-hidden" for="motivo-{{ row._id }}">{{ t('admin_reason') }}</label>
-            <input id="motivo-{{ row._id }}" name="motivo" type="text"
-                   maxlength="300" autocomplete="off"
-                   placeholder="{{ t('admin_reason') }}">
-            <button class="btn btn--small" type="submit"
-                    name="decision" value="approved">{{ t('admin_designs_approve') }}</button>
-            <button class="btn btn--small btn--outline" type="submit"
-                    name="decision" value="rejected">{{ t('admin_designs_reject') }}</button>
-          </form>
         </td>
       </tr>
       {% endfor %}

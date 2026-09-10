@@ -14,6 +14,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, t
+from models.account import status_of as account_status_of
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
 
@@ -109,6 +110,9 @@ def create_app(overrides: dict | None = None) -> Flask:
 
     # Templates hold no Spanish of their own: they ask i18n for it.
     app.jinja_env.globals.update(t=t, csrf_token=csrf_token,
+                                 # Para que un estado viejo en la base no
+                                 # convierta una pantalla en un error.
+                                 status_of=account_status_of,
                                  asset_version=asset_version(),
                                  site_url=Config.PUBLIC_SITE_URL,
                                  # El mismo número que refuerza el servidor, para

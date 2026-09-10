@@ -179,7 +179,10 @@ def test_an_invented_section_lands_on_the_first_one(client, database, outbox):
     answer = inside.get("/configuracion/inventada")
 
     assert answer.status_code == 302
-    assert answer.headers["Location"].endswith("/configuracion")
+    # A la primera suya, nombrada: para un cliente es Cuenta y para un
+    # administrador Seguridad, así que la dirección lo dice en vez de depender
+    # de cuál sea el valor por omisión de la vista.
+    assert answer.headers["Location"].endswith("/configuracion/cuenta")
 
 
 def test_each_section_draws_its_own(client, database, outbox):

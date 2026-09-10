@@ -412,8 +412,8 @@ PRICING = {
     "annual_note": "En el plan anual pagas diez meses y usas doce.",
     # Para que nadie llegue al botón de pagar y descubra ahí que no puede.
     "before_note": (
-        "Para contratar un plan necesitas una cuenta registrada y aprobada. "
-        "Créala, escríbenos y la revisamos contigo antes de activarte el envío."
+        "Para contratar creas tu cuenta, confirmas tu correo y ya. Antes de tu "
+        "primera campaña la revisamos contigo, una sola vez."
     ),
     "table": {
         "eyebrow": "Comparación",
@@ -981,8 +981,9 @@ TERMS = {
             "title": "6. Envíos, límites y pausas automáticas",
             "items": [
                 "El HTML que subas se revisa automáticamente y se rechaza si "
-                "trae guiones, marcos, formularios o recursos externos. La "
-                "primera pieza de cada cliente además la revisamos a mano.",
+                "trae guiones, marcos, formularios o recursos externos.",
+                "Tu primera campaña la revisamos contigo antes de que salga, "
+                "una sola vez. Después la cuenta queda habilitada.",
                 "Las primeras 48 horas de una cuenta nueva llevan un tope de "
                 "envío reducido, sea cual sea el plan.",
                 "**Si los rebotes pasan del 3% o las quejas del 0.05%, el envío "

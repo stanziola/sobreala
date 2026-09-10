@@ -9,21 +9,20 @@ Los prediseñados del producto no viven aquí: son archivos que viajan con el
 repositorio, iguales para todos. Esta colección guarda lo que sube cada cliente,
 que es lo único que hay que revisar y aprobar.
 
-**Solo la primera subida de cada cliente se aprueba a mano.** Después queda
-habilitado, porque lo que se revisa la primera vez no es el archivo: es si esa
-organización sabe lo que está mandando. Todo queda guardado y visible desde
-administración, aprobado o no.
+**Nadie aprueba una pieza a mano.** Lo que puede hacer daño lo rechaza el
+validador al subirla —`services/html_check.py`— y eso es mecánico, no un
+juicio. La única puerta con una persona detrás está una vez por cuenta, antes de
+su primera campaña, y es sobre la cuenta y su lista, no sobre el archivo. Tener
+las dos serían dos revisiones manuales para la misma decisión.
+
+Todo queda guardado y visible desde administración, que es lo que permite abrir
+una pieza cuando haga falta.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
-
-# Qué se puede hacer con un diseño subido.
-PENDING = "pending"      # esperando la primera aprobación del administrador
-APPROVED = "approved"    # se puede usar en una campaña
-REJECTED = "rejected"    # no se puede usar; el motivo queda escrito
 
 NAME_MAX = 80
 
@@ -36,8 +35,7 @@ def clean_name(raw: str) -> str:
     return " ".join((raw or "").split())[:NAME_MAX]
 
 
-def save(db, account_id, *, name: str, html: str, status: str,
-         uploaded_by=None) -> Any:
+def save(db, account_id, *, name: str, html: str, uploaded_by=None) -> Any:
     """Guardar una pieza subida. Devuelve su id.
 
     El HTML se guarda entero y tal como llegó. Es lo que hay que poder volver a
@@ -48,11 +46,8 @@ def save(db, account_id, *, name: str, html: str, status: str,
         "name": clean_name(name),
         "html": html,
         "bytes": len(html.encode("utf-8")),
-        "status": status,
-        "reason": "",
         "uploaded_by": uploaded_by,
         "created_at": now(),
-        "reviewed_at": None,
     }).inserted_id
 
 
@@ -71,30 +66,9 @@ def count(db, account_id) -> int:
     return db.designs.count_documents({"account_id": account_id})
 
 
-def approved_before(db, account_id) -> bool:
-    """Si esta cuenta ya pasó la primera revisión.
-
-    Es lo que decide si la siguiente subida entra aprobada o se queda esperando.
-    """
-    return db.designs.count_documents(
-        {"account_id": account_id, "status": APPROVED}, limit=1) == 1
-
-
-def waiting(db, *, limit: int = 50) -> list[dict[str, Any]]:
-    """Lo que espera revisión, de todas las cuentas. Lo lee el administrador."""
-    return list(db.designs.find({"status": PENDING})
-                .sort("created_at", 1).limit(limit))
-
-
-def review(db, design_id, *, status: str, reason: str = "") -> bool:
-    """Aprobar o rechazar. Solo mueve lo que todavía estaba esperando."""
-    if status not in (APPROVED, REJECTED):
-        return False
-    result = db.designs.update_one(
-        {"_id": design_id, "status": PENDING},
-        {"$set": {"status": status, "reason": reason.strip()[:300],
-                  "reviewed_at": now()}})
-    return result.modified_count == 1
+def latest(db, *, limit: int = 100) -> list[dict[str, Any]]:
+    """Lo último que ha subido cualquier cliente. Lo lee el administrador."""
+    return list(db.designs.find().sort("created_at", -1).limit(limit))
 
 
 def remove(db, account_id, design_id) -> bool:

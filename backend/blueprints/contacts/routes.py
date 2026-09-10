@@ -22,7 +22,7 @@ from bson.errors import InvalidId
 from flask import (Blueprint, Response, abort, redirect, render_template,
                    request, url_for)
 
-from blueprints.auth.routes import current_account, log_auth
+from blueprints.auth.routes import current_account, not_for_admins, log_auth
 from config import Config
 from db import get_db
 from i18n import t
@@ -36,6 +36,16 @@ from services import plans
 from services.security import csrf_ok
 
 bp = Blueprint("contacts", __name__)
+
+@bp.before_request
+def keep_admins_out():
+    """Un administrador no tiene contactos que mirar, así que vuelve a /admin.
+
+    Va aquí y no en un decorador por ruta: esta pantalla tiene varias y una
+    nueva heredaría la puerta sin que nadie se acuerde de ponérsela.
+    """
+    return not_for_admins(current_account())
+
 
 # How many rows one screen of the list shows.
 PER_PAGE = 50

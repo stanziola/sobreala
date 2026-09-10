@@ -52,7 +52,6 @@ import content  # noqa: E402  (local module, needs the path above)
 PUBLIC_ROWS = [
     ("Contactos", "Contactos"),
     ("Correos por mes", "Correos por mes"),
-    ("Campañas a lista completa", "Campañas al mes a toda tu lista"),
     ("Etiquetas", "Etiquetas"),
     ("Plantillas prediseñadas", "Plantillas prediseñadas"),
     ("Subir tu propio HTML", "Subir tu propio HTML"),

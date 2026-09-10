@@ -18,6 +18,7 @@ from typing import Any
 STATUS = "status"        # de un estado a otro
 PLAN = "plan"            # contrató, cambió o se quedó sin plan
 ROLE = "role"            # se dio o se quitó el rol de administrador
+SENDING = "sending"      # se habilitó a la cuenta para enviar su primera campaña
 
 
 def now() -> datetime:

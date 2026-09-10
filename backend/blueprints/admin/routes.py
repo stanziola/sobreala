@@ -35,6 +35,7 @@ from models import import_job as imports
 from models import payment as payments
 from models import session as sessions
 from models import suppression as suppressions
+from services import plans
 from services.security import csrf_ok
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -121,9 +122,10 @@ def activity(db, client) -> list[dict]:
 def home(account):
     db = get_db()
     counted = accounts.by_status(db)
-    # Lo primero de la pantalla es lo único que pide acción: quien espera
-    # aprobación desde hace más tiempo, primero.
-    waiting, _ = accounts.search(db, status=accounts.REGISTERED, limit=10)
+    # Lo primero de la pantalla es lo único que pide acción tuya. Ya no son las
+    # cuentas por aprobar —eso se quitó, cualquiera puede registrarse y pagar—
+    # sino las que pagaron y todavía no pueden enviar.
+    waiting = accounts.waiting_to_send(db, limit=10)
     latest = decisions.latest(db, limit=10)
     return render_template("admin/home.html", section="portada", admin=account,
                            counted=counted, waiting=waiting,
@@ -164,6 +166,7 @@ def account_page(account, raw):
     return render_template(
         "admin/account.html", section="cuentas", admin=account, client=client,
         statuses=accounts.STATUSES, plans=sorted(accounts.PLAN_CONTACTS),
+        cycles=plans.CYCLES, can_send=accounts.can_send(client),
         limit=accounts.contact_limit(client),
         # Cifras y orígenes. Las direcciones de sus contactos no se listan.
         contacts_total=contacts.count(db, client["_id"]),
@@ -179,55 +182,103 @@ def account_page(account, raw):
 @bp.route("/cuentas/<raw>/actualizar", methods=["POST"])
 @only_admins
 def update(account, raw):
-    """Estado y plan en un solo envío, con el motivo escrito.
+    """El plan y la suspensión en un solo envío, con el motivo escrito.
 
-    Eran dos formularios con dos botones, y quien aprobaba una cuenta y le
-    ponía el plan tenía que escribir el mismo motivo dos veces. Ahora es una
-    decisión —«qué hago con esta cuenta»— y `admin_events` sigue guardando una
-    línea por cosa cambiada, que es lo que la hace legible meses después.
+    Ya no hay una casilla para aprobar ni para activar: **estar activa es el
+    efecto de un pago cobrado, no una decisión**. Lo que queda aquí es lo que
+    una persona sí tiene que poder decidir:
 
-    El motivo no es papeleo: la única respuesta honesta a «por qué me
-    suspendieron» es lo que se escribió el día que se hizo.
+      * ponerle el plan a quien pagó por fuera de la web —Yappy, transferencia—,
+        que llama al mismo `activate_plan()` que usa PayPal, así que la cuenta
+        queda activa y **con fecha de vencimiento**, no con un plan que no vence
+        nunca;
+      * suspenderla y levantarle la suspensión.
+
+    `admin_events` guarda una línea por cosa cambiada, con el mismo motivo si
+    cambian las dos: es lo que las hace legibles meses después. Y el motivo no
+    es papeleo: la única respuesta honesta a «por qué me suspendieron» es lo que
+    se escribió el día que se hizo.
     """
     db = get_db()
     client = wanted(raw)
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(url_for("admin.account_page", raw=raw))
 
-    status = request.form.get("estado", "")
     plan = request.form.get("plan", "") or None
+    cycle = request.form.get("ciclo", plans.MONTHLY)
+    suspend = bool(request.form.get("suspendida"))
     reason = request.form.get("motivo", "").strip()
 
-    # Lo que no es un estado o un plan de verdad no cambia nada y tampoco deja
-    # una decisión escrita: escribir «pasó a xyz» sería mentir el registro.
-    if status not in accounts.STATUSES:
-        return redirect(url_for("admin.account_page", raw=raw))
+    # Un plan que no existe no cambia nada y tampoco deja una decisión escrita:
+    # anotar «pasó a xyz» sería mentir el registro.
     if plan is not None and plan not in accounts.PLAN_CONTACTS:
         return redirect(url_for("admin.account_page", raw=raw))
+    if cycle not in plans.CYCLES:
+        cycle = plans.MONTHLY
 
-    new_status = status != client.get("status")
+    was_suspended = accounts.is_suspended(client)
     new_plan = plan != (client.get("plan") or None)
-    if not new_status and not new_plan:
+    if not new_plan and suspend == was_suspended:
         return redirect(url_for("admin.account_page", raw=raw))
     if not reason:
         return redirect(url_for("admin.account_page", raw=raw, falta="motivo"))
 
-    if new_status:
-        before = accounts.set_status(db, client["_id"], status)
-        decisions.record(db, kind=decisions.STATUS, admin_id=account["_id"],
-                         account_id=client["_id"], before=before, after=status,
-                         reason=reason)
-        # Suspender cierra lo que esté abierto: si no, quien ya estaba dentro
-        # sigue dentro hasta que se le ocurra salir.
-        if status == accounts.SUSPENDED:
-            sessions.revoke_others(db, client["_id"])
-
     if new_plan:
-        before = accounts.set_plan(db, client["_id"], plan)
+        before = client.get("plan") or None
+        if plan is None:
+            accounts.set_plan(db, client["_id"], None)
+        else:
+            accounts.activate_plan(
+                db, client["_id"], plan,
+                payments.until(cycle,
+                               since=accounts.renews_from(client, plan)))
         decisions.record(db, kind=decisions.PLAN, admin_id=account["_id"],
                          account_id=client["_id"], before=before, after=plan,
                          reason=reason)
 
+    # Después del plan, porque poner uno deja la cuenta activa y suspenderla
+    # tiene que ganarle a eso.
+    if suspend != was_suspended:
+        fresh = accounts.by_id(db, client["_id"])
+        wanted_status = accounts.SUSPENDED if suspend else (
+            accounts.ACTIVE if (fresh or {}).get("plan") else accounts.REGISTERED)
+        before = accounts.set_status(db, client["_id"], wanted_status)
+        if before is not None:
+            decisions.record(db, kind=decisions.STATUS, admin_id=account["_id"],
+                             account_id=client["_id"], before=before,
+                             after=wanted_status, reason=reason)
+        # Suspender cierra lo que esté abierto: si no, quien ya estaba dentro
+        # sigue dentro hasta que se le ocurra salir.
+        if suspend:
+            sessions.revoke_others(db, client["_id"])
+
+    return redirect(url_for("admin.account_page", raw=raw, hecho=1))
+
+
+@bp.route("/cuentas/<raw>/habilitar-envio", methods=["POST"])
+@only_admins
+def clear_sending(account, raw):
+    """Habilitar a una cuenta para que salga su primera campaña.
+
+    Es la única puerta que queda con una persona detrás. Todos los clientes
+    envían desde el mismo dominio, así que comparten una sola reputación: una
+    lista comprada la quema para todos. Se mira una vez —de dónde dijo que salió
+    cada lista, y la pieza que va a mandar— y después la cuenta queda
+    habilitada.
+    """
+    db = get_db()
+    client = wanted(raw)
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(url_for("admin.account_page", raw=raw))
+
+    reason = request.form.get("motivo", "").strip()
+    if not reason:
+        return redirect(url_for("admin.account_page", raw=raw, falta="motivo"))
+
+    if accounts.clear_sending(db, client["_id"], account["_id"]):
+        decisions.record(db, kind=decisions.SENDING, admin_id=account["_id"],
+                         account_id=client["_id"], before=None, after="cleared",
+                         reason=reason)
     return redirect(url_for("admin.account_page", raw=raw, hecho=1))
 
 
@@ -236,35 +287,18 @@ def update(account, raw):
 @bp.route("/plantillas")
 @only_admins
 def designs_queue(account):
-    """Lo que espera revisión: la primera pieza de cada cliente.
+    """El HTML que han subido los clientes.
 
-    Después de esa, el cliente queda habilitado y las siguientes entran solas.
-    Lo que se revisa la primera vez no es el archivo, es si esa organización
-    sabe lo que está mandando.
+    Ya no es una cola: lo peligroso —`<script>`, un atributo de evento, más de
+    102 KB— lo rechaza solo el validador en el momento de subirlo, y la única
+    mirada humana que queda está en habilitar el envío de la cuenta. Esto es
+    para poder abrir una pieza cuando haga falta.
     """
     db = get_db()
-    rows = designs.waiting(db)
+    rows = designs.latest(db)
     return render_template(
         "admin/designs.html", section="plantillas", admin=account, rows=rows,
         named=accounts.names_of(db, [row["account_id"] for row in rows]))
-
-
-@bp.route("/plantillas/<raw>/revisar", methods=["POST"])
-@only_admins
-def review_design(account, raw):
-    """Aprobar o rechazar una. Rechazar pide motivo, igual que suspender."""
-    design_id = as_id(raw)
-    if not csrf_ok(request.form.get("csrf_token")) or design_id is None:
-        return redirect(url_for("admin.designs_queue"))
-
-    db = get_db()
-    decision = request.form.get("decision", "")
-    reason = request.form.get("motivo", "").strip()
-    if decision == designs.REJECTED and not reason:
-        return redirect(url_for("admin.designs_queue", falta="motivo"))
-
-    designs.review(db, design_id, status=decision, reason=reason)
-    return redirect(url_for("admin.designs_queue"))
 
 
 @bp.route("/plantillas/<raw>/archivo")

@@ -29,19 +29,20 @@
 <h1 class="settings__heading">{{ t('settings_title') }}</h1>
 
 <div class="settings">
-  {# The sections, in the order they are listed. The slugs are the URLs; the
-     Spanish beside them comes from i18n like everywhere else. #}
-  {% set tabs = [
-    ('cuenta', 'settings_section_account'),
-    ('seguridad', 'settings_section_security'),
-    ('notificaciones', 'settings_section_notifications'),
-    ('pagos', 'settings_section_payments')] %}
+  {# Cuáles se listan lo decide la vista, no esta plantilla: un cliente tiene
+     cuatro y un administrador solo Seguridad. Los slugs son las direcciones; el
+     español de al lado sale de i18n, como en todas partes. #}
+  {% set label_of = {
+    'cuenta': 'settings_section_account',
+    'seguridad': 'settings_section_security',
+    'notificaciones': 'settings_section_notifications',
+    'pagos': 'settings_section_payments'} %}
 
   <nav class="settings__nav" aria-label="{{ t('settings_title') }}">
-    {% for slug, label in tabs %}
+    {% for slug in sections %}
     <a class="settings__tab{% if slug == section %} is-current{% endif %}"
        href="{{ url_for('auth.settings', section=slug) }}"
-       {%- if slug == section %} aria-current="page"{% endif %}>{{ t(label) }}</a>
+       {%- if slug == section %} aria-current="page"{% endif %}>{{ t(label_of[slug]) }}</a>
     {% endfor %}
   </nav>
 
@@ -65,8 +66,8 @@
     {% if not confirmed %}<span class="tag tag--warn">{{ t('settings_account_email_pending') }}</span>{% endif %}
     {% endcall %}
 
-    {% call row(t('settings_account_status'), t('panel_status_' + account.status)) %}
-    <span class="tag tag--quiet">{{ t('status_short_' + account.status) }}</span>
+    {% call row(t('settings_account_status'), t('panel_status_' + status_of(account))) %}
+    <span class="tag tag--quiet">{{ t('status_short_' + status_of(account)) }}</span>
     {% endcall %}
 
     {# Nada escribe todavía el campo del plan, así que hoy todas las cuentas
@@ -220,8 +221,10 @@
 
     {# La regla de CLAUDE.md: registrada explora, aprobada compra. La ruta lo
        vuelve a comprobar, porque un formulario se escribe a mano. #}
+    {# Se dice qué falta, no un «no puedes» a secas: una de las dos se arregla
+       sola abriendo el correo. #}
     {% if not can_buy %}
-    <p class="notice">{{ t('pay_needs_approval') }}</p>
+    <p class="notice">{{ t('pay_suspended') if suspended else t('pay_needs_email') }}</p>
     {% elif not paypal_ready %}
     <p class="notice">{{ t('pay_not_ready') }}</p>
     {% endif %}

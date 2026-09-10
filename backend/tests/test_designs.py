@@ -3,9 +3,12 @@
 Lo que se fija aquí es lo que no se puede aflojar después. Que una pieza con
 `<script>`, con un atributo de evento o de más de 102 KB no se guarde —pasado
 ese tamaño Gmail recorta el correo y lo que se pierde es el botón de anular la
-suscripción—. Que subir HTML propio sea de Negocio en adelante, leído de
-`docs/pricing.md` y comprobado en el servidor. Y que la primera de cada cliente
-la apruebe un administrador.
+suscripción—. Y que subir HTML propio sea de Negocio en adelante, leído de
+`docs/pricing.md` y comprobado en el servidor.
+
+Nadie aprueba una pieza a mano: lo que puede hacer daño lo rechaza el validador
+al subirla, y la única mirada humana está una vez por cuenta, antes de su
+primera campaña.
 """
 
 from __future__ import annotations
@@ -125,40 +128,22 @@ def test_lo_que_no_pasa_la_revision_no_se_guarda(client, database, outbox):
     assert "&lt;script&gt;" in respuesta.get_data(as_text=True)
 
 
-# --------------------------------------------- la primera se aprueba a mano
+# -------------------------------------------- ninguna espera aprobación
 
-def test_la_primera_espera_y_la_siguiente_entra_sola(client, database, outbox):
+def test_lo_que_pasa_el_validador_queda_listo(client, database, outbox):
+    """Ya no hay una primera pieza en revisión: pasa el validador y se usa."""
     browser = inside(client)
     with_plan(database, "negocio")
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
 
-    subir(browser, LIMPIO, name="Primera")
-    primera = designs.for_account(database, cuenta["_id"])[0]
-    assert primera["status"] == designs.PENDING
+    respuesta = subir(browser, LIMPIO, name="Primera")
+    assert "Listo, ya la puedes usar" in browser.get(
+        respuesta.headers["Location"]).get_data(as_text=True)
 
-    # Todavía no está aprobada, así que la segunda también espera.
     subir(browser, LIMPIO, name="Segunda")
-    assert [d["status"] for d in designs.for_account(database, cuenta["_id"])] == \
-        [designs.PENDING, designs.PENDING]
-
-    designs.review(database, primera["_id"], status=designs.APPROVED)
-    subir(browser, LIMPIO, name="Tercera")
-    tercera = designs.for_account(database, cuenta["_id"])[0]
-    assert tercera["name"] == "Tercera"
-    assert tercera["status"] == designs.APPROVED
-
-
-def test_aprobar_dos_veces_no_hace_nada(client, database, outbox):
-    browser = inside(client)
-    with_plan(database, "negocio")
-    subir(browser, LIMPIO)
-    cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    una = designs.for_account(database, cuenta["_id"])[0]
-
-    assert designs.review(database, una["_id"], status=designs.APPROVED) is True
-    assert designs.review(database, una["_id"], status=designs.REJECTED,
-                          reason="me arrepentí") is False
-    assert designs.by_id(database, cuenta["_id"], una["_id"])["status"] == designs.APPROVED
+    assert [d["name"] for d in designs.for_account(database, cuenta["_id"])] ==         ["Segunda", "Primera"]
+    # Y no queda ningún campo de estado que alguien tenga que mover.
+    assert "status" not in designs.for_account(database, cuenta["_id"])[0]
 
 
 # ----------------------------------------------------- de quién es cada una

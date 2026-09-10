@@ -44,7 +44,7 @@
           {% if not row.email_confirmed_at %}
           <span class="tag tag--warn">{{ t('admin_unconfirmed') }}</span>
           {% endif %}</td>
-        <td><span class="tag tag--quiet">{{ t('status_short_' + row.status) }}</span></td>
+        <td><span class="tag tag--quiet">{{ t('status_short_' + status_of(row)) }}</span></td>
         <td class="table__quiet">{{ row.plan|capitalize if row.plan else t('admin_no_plan') }}</td>
         <td class="table__quiet">
           {{ row.last_login_at|ago if row.last_login_at else t('admin_never') }}</td>

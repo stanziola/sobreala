@@ -15,11 +15,7 @@
         <td><b>{{ row.company_name }}</b><br>
           <span class="table__quiet">{{ row.email }}</span></td>
         <td class="table__quiet">{{ row.created_at|ago }}</td>
-        <td>
-          {% if not row.email_confirmed_at %}
-          <span class="tag tag--warn">{{ t('admin_unconfirmed') }}</span>
-          {% endif %}
-        </td>
+        <td><span class="tag tag--quiet">{{ row.plan|capitalize }}</span></td>
         <td>
           <a class="btn btn--small btn--outline"
              href="{{ url_for('admin.account_page', raw=row._id) }}">{{ t('admin_open') }}</a>
@@ -54,6 +50,8 @@
         <td>
           {% if row.kind == 'status' %}
           {{ t('admin_history_status', before=row.before, after=row.after) }}
+          {% elif row.kind == 'sending' %}
+          {{ t('admin_history_sending') }}
           {% else %}
           {{ t('admin_history_plan', before=row.before or t('admin_no_plan'),
                 after=row.after or t('admin_no_plan')) }}
