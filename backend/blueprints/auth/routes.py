@@ -256,12 +256,20 @@ def bar_account():
 def landing(account: dict | None) -> str:
     """A dónde va alguien que acaba de entrar.
 
-    El administrador aterriza en /admin y no en el panel del cliente: es lo
-    único que su cuenta hace.
+    Un cliente aterriza en **el sitio público**, que es su portada: desde ahí
+    elige a dónde ir con el menú de siempre. Antes caía directo en Estadísticas,
+    que es una pantalla concreta y no un punto de partida.
+
+    El administrador no: aterriza en /admin, que es lo único que su cuenta hace.
+
+    Devuelve una dirección entera y no una ruta, porque el sitio está en otro
+    dominio. Eso obliga a una cosa más, en `app.py`: la cabecera `form-action`
+    tiene que permitirlo, porque gobierna también la redirección que sigue al
+    envío de un formulario, y entrar es un formulario.
     """
     if accounts.is_admin(account):
         return url_for("admin.home")
-    return url_for("auth.panel")
+    return Config.PUBLIC_SITE_URL
 
 
 # El plan que alguien venía a contratar cuando se le pidió entrar. Se guarda su
@@ -293,6 +301,18 @@ def after_sign_in(account: dict | None) -> str:
     if wanted and wanted in plans.PLANS and not accounts.is_admin(account):
         return url_for("auth.checkout", plan=wanted)
     return landing(account)
+
+
+def inside(account: dict | None) -> str:
+    """La pantalla de dentro que le toca a esta cuenta.
+
+    No es lo mismo que `landing()`: aquella es a dónde se aterriza al entrar, y
+    esta es a dónde se vuelve desde una pantalla del panel, que tiene que ser
+    otra del panel y no el sitio público.
+    """
+    if accounts.is_admin(account):
+        return url_for("admin.home")
+    return url_for("auth.panel")
 
 
 def not_for_admins(account: dict | None):
@@ -1165,7 +1185,7 @@ def switch_account():
     here = next((one for one in mine if one["active"]), None)
     return render_template(
         "accounts.html", accounts=mine, max_accounts=MAX_ACCOUNTS,
-        back=landing(here["account"]) if here else url_for("auth.login"))
+        back=inside(here["account"]) if here else url_for("auth.login"))
 
 
 def close_session() -> bool:

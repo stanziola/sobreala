@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from conftest import code_from_outbox, login, register
 
+from config import Config
 from models import account as accounts
 from models import mail_log
 from models import token as tokens
@@ -112,7 +113,8 @@ def test_despues_se_entra_con_la_nueva_y_no_con_la_vieja(client, database, outbo
     type_code(browser, code_from_outbox(outbox))
 
     con_la_nueva = other(client)
-    assert login(con_la_nueva, email=NUEVA).headers["Location"].endswith("/panel")
+    assert login(con_la_nueva,
+                 email=NUEVA).headers["Location"] == Config.PUBLIC_SITE_URL
 
     con_la_vieja = other(client)
     respuesta = login(con_la_vieja, email="ana@ejemplo.com")

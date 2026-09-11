@@ -417,9 +417,12 @@ def test_el_administrador_aterriza_en_administracion(client, database, outbox):
     assert admin.get("/entrar").headers["Location"].endswith("/admin/")
 
 
-def test_el_cliente_sigue_aterrizando_en_el_panel(client, database, outbox):
+def test_el_cliente_aterriza_en_el_sitio_y_el_admin_no(client, database, outbox):
+    """Quien administra cae en /admin; un cliente, en el sitio publico."""
+    from config import Config
+
     navegador, _ = make_client_account(client, database)
-    assert navegador.get("/entrar").headers["Location"].endswith("/panel")
+    assert navegador.get("/entrar").headers["Location"] == Config.PUBLIC_SITE_URL
 
 
 # ----------------------------------------------------- la cola de plantillas

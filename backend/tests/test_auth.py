@@ -366,10 +366,17 @@ def test_resend_answers_the_same_for_an_unknown_address(client, database, outbox
 # ------------------------------------------------------------------------ login
 
 def test_login_and_logout(client, database):
+    """Un cliente aterriza en el sitio publico, que es su portada.
+
+    Antes caia directo en Estadisticas, que es una pantalla concreta y no un
+    punto de partida.
+    """
+    from config import Config
+
     register(client)
     response = login(client)
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/panel")
+    assert response.headers["Location"] == Config.PUBLIC_SITE_URL
 
     panel = client.get("/panel")
     assert "Hola, Ana" in panel.get_data(as_text=True)

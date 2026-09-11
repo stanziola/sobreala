@@ -15,6 +15,7 @@ from datetime import timedelta
 import pyotp
 from conftest import login, register
 
+from config import Config
 from models import account as accounts
 from models import auth_event as events
 from services import totp
@@ -184,7 +185,8 @@ def test_a_good_code_gets_in(client, database, outbox):
 
     phone = other(client)
     sign_in(phone)
-    assert second_step(phone, code=pyotp.TOTP(secret).now()).headers["Location"].endswith("/panel")
+    assert second_step(phone, code=pyotp.TOTP(secret).now()
+                       ).headers["Location"] == Config.PUBLIC_SITE_URL
     assert phone.get("/panel").status_code == 200
 
 
@@ -311,7 +313,7 @@ def test_turning_it_off_leaves_the_account_on_the_password(client, database, out
 
     account = accounts.by_email(database, "ana@ejemplo.com")
     assert not accounts.two_factor_on(account)
-    assert sign_in(other(client)).headers["Location"].endswith("/panel")
+    assert sign_in(other(client)).headers["Location"] == Config.PUBLIC_SITE_URL
 
 
 def test_disabling_needs_the_password(client, database, outbox):

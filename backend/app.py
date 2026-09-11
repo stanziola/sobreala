@@ -232,11 +232,13 @@ def create_app(overrides: dict | None = None) -> Flask:
             "img-src 'self' data:",
             "font-src 'self'",
             "connect-src 'self'",
-            # El pago sale de aquí y acaba en PayPal. `form-action` gobierna
-            # también la redirección que viene después de enviar el
-            # formulario, así que sin este destino el navegador se planta y el
-            # botón de pagar parece no hacer nada.
-            f"form-action 'self' {Config.paypal_checkout()}",
+            # `form-action` gobierna también la redirección que viene
+            # después de enviar un formulario, así que aquí va todo sitio al
+            # que se pueda acabar yendo desde uno: el checkout de PayPal, y el
+            # sitio público, que es donde aterriza un cliente al entrar. Sin
+            # ellos el navegador se planta y el botón parece no hacer nada.
+            f"form-action 'self' {Config.paypal_checkout()} "
+            f"{Config.PUBLIC_SITE_URL}",
             "frame-ancestors 'none'",
             "base-uri 'none'",
             "object-src 'none'",

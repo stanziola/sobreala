@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from conftest import login, register
 
+from config import Config
 from models import account as accounts
 from models import payment as payments
 from services import paypal, plans
@@ -373,7 +374,7 @@ def test_al_entrar_sigue_hasta_el_plan_que_iba_a_comprar(client, database,
     # Y se gasta: volver a entrar aterriza donde siempre.
     otra = other(client)
     otra.get("/entrar")
-    assert login(otra).headers["Location"].endswith("/panel")
+    assert login(otra).headers["Location"] == Config.PUBLIC_SITE_URL
 
 
 def test_un_plan_inventado_en_la_direccion_no_se_recuerda(client, database,
@@ -382,7 +383,7 @@ def test_un_plan_inventado_en_la_direccion_no_se_recuerda(client, database,
     navegador = other(client)
     navegador.get("/entrar?plan=infinito")
 
-    assert login(navegador).headers["Location"].endswith("/panel")
+    assert login(navegador).headers["Location"] == Config.PUBLIC_SITE_URL
 
 
 def test_contratar_ensena_el_plan_y_sus_dos_ciclos(client, database, outbox,

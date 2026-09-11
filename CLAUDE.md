@@ -687,6 +687,16 @@ Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 
 ## Panel del cliente
 
+**Al entrar, un cliente aterriza en el sitio público**, que es su portada, y
+desde ahí elige con el menú de siempre. Antes caía en Estadísticas, que es una
+pantalla concreta y no un punto de partida. Un administrador no: aterriza en
+`/admin`, que es lo único que su cuenta hace. Lo decide `landing()` en
+`blueprints/auth/routes.py`, y como devuelve una dirección de otro dominio, es lo
+que obliga a nombrar el sitio en `form-action`.
+
+Volver **desde dentro** del panel es otra cosa y tiene su propia función,
+`inside()`: de una pantalla del panel se vuelve a otra del panel, no al sitio.
+
 **Lo primero que ve una cuenta nueva es `/bienvenida`, no el panel.** Confirmar
 el registro aterriza ahí: el nombre de la persona, que su cuenta está lista, y
 dos botones —ver los planes, que están en el sitio público, e ir a
@@ -1021,11 +1031,13 @@ una dirección**, y al abrir sesión sigue hasta ahí. Configuración → Opcion
 pago ya no vende: dice desde dónde se cobra, qué plan hay contratado y qué se ha
 cobrado.
 
-**`form-action` de la cabecera tiene que permitir el checkout de PayPal.** Esa
-regla gobierna también la redirección que sigue al envío de un formulario, así
-que con solo `'self'` el navegador se niega a ir a PayPal: el servidor crea la
-orden, responde 302, y desde fuera parece que el botón no hace nada. El destino
-sale de `Config.paypal_checkout()`, según el entorno.
+**`form-action` de la cabecera tiene que permitir todo sitio al que se pueda
+acabar yendo desde un formulario.** Esa regla gobierna también la redirección que
+sigue al envío, así que con solo `'self'` el navegador se planta y desde fuera
+parece que el botón no hace nada. Hoy hay dos destinos así: el checkout de PayPal
+—`Config.paypal_checkout()`, según el entorno— y **el sitio público**, que es
+donde aterriza un cliente al entrar. Costó descubrirlo una vez con los botones de
+pagar; la segunda estaba avisada.
 
 Sin credenciales configuradas la pantalla se dibuja igual y dice que el pago no
 está disponible, en vez de romperse.
