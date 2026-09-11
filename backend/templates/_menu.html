@@ -96,7 +96,14 @@
     </details>
 
     {% if bar_account %}
-    <form class="menu__form menu__group" method="post" action="{{ url_for('auth.logout') }}">
+    {# Encima de salir. Lleva a la lista de las cuentas abiertas, que es donde
+       se salta de una a otra. Un enlace, igual que en el sitio público: no
+       cambia nada por sí solo, así que no necesita ni testigo ni formulario. #}
+    <a class="menu__item menu__group" href="{{ url_for('auth.switch_account') }}">
+      <span class="menu__icons">{% include "_icon-user.svg" %}</span>
+      <span>{{ t('nav_switch') }}</span>
+    </a>
+    <form class="menu__form" method="post" action="{{ url_for('auth.logout') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="menu__item" type="submit">
         <span class="menu__icons">{% include "_icon-exit.svg" %}</span>

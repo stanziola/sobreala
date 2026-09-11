@@ -64,6 +64,7 @@ PANEL = {
     # Solo la ve quien tiene el rol, y quien lo decide es la galleta que deja
     # el panel: este sitio es estático y no sabe quién mira.
     "admin_label": "Administración",
+    "switch_label": "Cambiar de cuenta",
     "logout_label": "Cerrar sesión",
     "theme_dark": "Modo oscuro",
     "theme_light": "Modo claro",

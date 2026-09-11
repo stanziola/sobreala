@@ -181,9 +181,14 @@
             </div>
           </details>
 
-          {#- Un enlace, no un formulario: este sitio está en otro dominio y no
-              lleva ningún testigo del panel. La página a la que llega es la que
-              pregunta y la que cierra. -#}
+          {#- Encima de salir, y cierra igual que salir: está para quien prueba
+              con varias cuentas. Enlaces y no formularios, los dos: este sitio
+              está en otro dominio y no lleva ningún testigo del panel. -#}
+          <a class="usermenu__item usermenu__group" data-account-only hidden
+             href="{{ panel.base_url }}/cambiar-cuenta">
+            <span class="usermenu__icons">{% include "partials/icon-user.svg.j2" %}</span>
+            <span>{{ panel.switch_label }}</span></a>
+
           <a class="usermenu__item usermenu__item--out" data-account-only hidden
              href="{{ panel.base_url }}/salir">
             <span class="usermenu__icons">{% include "partials/icon-exit.svg.j2" %}</span>

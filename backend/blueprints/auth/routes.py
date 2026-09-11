@@ -99,6 +99,76 @@ TWO_FACTOR_OK = "two_factor_verified"
 TWO_FACTOR_MINUTES = 10
 # Lo único que identifica una sesión: el resto vive en la colección sessions.
 SESSION_KEY = "sid"
+# Y las que este navegador tiene abiertas a la vez, la activa incluida. Son
+# testigos como el de arriba, así que valen lo mismo que él y viven donde él:
+# en la galleta firmada, que ya es HttpOnly y no sale de aquí.
+OPEN_KEY = "sids"
+# Cuántas caben. El tope existe porque esto viaja en una galleta y porque cuatro
+# es más de lo que nadie necesita abrir en un mismo navegador.
+MAX_ACCOUNTS = 4
+# Marca de que la pantalla de entrar se abrió para **agregar** una cuenta y no
+# para reemplazar la que hay. Vive en la sesión y no en la dirección porque el
+# segundo paso pasa por otra pantalla y perdería el parámetro.
+ADDING = "adding_account"
+
+
+def open_tokens() -> list[str]:
+    """Los testigos guardados, con el activo dentro aunque no estuviera.
+
+    Una galleta escrita antes de que esta lista existiera trae solo el activo;
+    se lee igual, así que un despliegue no saca a nadie de su cuenta.
+    """
+    raws = list(session.get(OPEN_KEY) or [])
+    active = session.get(SESSION_KEY)
+    if active and active not in raws:
+        raws.insert(0, active)
+    return raws
+
+
+def open_accounts() -> list[dict]:
+    """Las cuentas que este navegador tiene abiertas ahora mismo.
+
+    Cada testigo se comprueba contra la colección y se descarta el que ya no
+    vale —cerrado desde otro dispositivo, vencido, o de una cuenta suspendida—,
+    y la lista se deja limpia. Así la pantalla no ofrece una puerta que no abre,
+    y cerrar un dispositivo desde Seguridad sigue significando lo que dice.
+    """
+    db = get_db()
+    active = session.get(SESSION_KEY)
+    found: list[dict] = []
+    keep: list[str] = []
+    seen = set()
+    for raw in open_tokens():
+        doc = sessions.find(db, raw)
+        if doc is None:
+            continue
+        account = accounts.by_id(db, doc["account_id"])
+        if account is None or accounts.is_suspended(account):
+            continue
+        # La misma cuenta dos veces serían dos puertas al mismo sitio.
+        if doc["account_id"] in seen:
+            continue
+        seen.add(doc["account_id"])
+        keep.append(raw)
+        found.append({"raw": raw, "doc": doc, "account": account,
+                      "active": raw == active})
+    if keep != list(session.get(OPEN_KEY) or []):
+        session[OPEN_KEY] = keep
+    return found
+
+
+def forget_active() -> None:
+    """Olvidar la sesión activa sin tocar las demás.
+
+    Hace falta cuando la que estaba en uso deja de valer —la cerraron desde otro
+    dispositivo, o suspendieron esa cuenta— y en el navegador quedan otras
+    abiertas: hay que sacar a esa, no a todas.
+    """
+    dead = session.get(SESSION_KEY)
+    others = [raw for raw in open_tokens() if raw != dead]
+    session.clear()
+    if others:
+        session[OPEN_KEY] = others
 
 
 def current_session():
@@ -148,16 +218,16 @@ def _load_account() -> dict | None:
     doc = current_session()
     if doc is None:
         if session.get(SESSION_KEY):
-            session.clear()
+            forget_active()
         return None
     account = accounts.by_id(get_db(), doc["account_id"])
     if account is None:
-        session.clear()
+        forget_active()
         return None
     # Suspender a alguien que ya estaba dentro tiene que sacarlo, no esperar a
     # que se le ocurra salir.
     if accounts.is_suspended(account):
-        session.clear()
+        forget_active()
         return None
     sessions.touch(get_db(), doc)
     return account
@@ -242,8 +312,8 @@ def not_for_admins(account: dict | None):
     return None
 
 
-def sign_in(account: dict, *, remember: bool = True) -> None:
-    """Open a session for this device.
+def sign_in(account: dict, *, remember: bool = True, keep: bool = False) -> None:
+    """Open a session for this device, and make it the one in use.
 
     `remember` decides two lifetimes at once: the cookie's —permanent, or gone
     when the browser closes— and the document's. The document is the one that
@@ -254,14 +324,46 @@ def sign_in(account: dict, *, remember: bool = True) -> None:
     único que cruza es el plan que se venía a contratar, porque es justamente
     para después de entrar, y es un nombre de plan comprobado contra
     docs/pricing.md, no una dirección.
+
+    `keep` es lo que distingue **agregar** una cuenta de **entrar**: con él
+    sobreviven los testigos de las que ya estaban abiertas. Entrar sin él sigue
+    dejando una sola, que es lo que esta función siempre hizo.
     """
     wanted = session.get(WANTED_PLAN)
+
+    # Se lee antes de vaciar la sesión, porque después ya no habría lista.
+    everything = open_accounts()
+    kept: list[dict] = []
+    replaced: list[dict] = []
+    dropped: list[dict] = []
+    if keep:
+        for one in everything:
+            if one["account"]["_id"] == account["_id"]:
+                replaced.append(one)
+            else:
+                kept.append(one)
+        # Pasado el tope se van las más viejas.
+        dropped = kept[:max(0, len(kept) - (MAX_ACCOUNTS - 1))]
+        kept = kept[len(dropped):]
+    else:
+        # Entrar sin más cierra lo que este navegador tuviera abierto. Se
+        # cierran de verdad y no solo se olvidan: una sesión viva cuyo testigo
+        # nadie tiene ya es una puerta suelta que además aparecería en la
+        # pantalla de dispositivos de su dueño.
+        dropped = everything
+
     session.clear()
+    db = get_db()
+    for one in replaced + dropped:
+        sessions.revoke(db, one["doc"]["account_id"], one["doc"]["_id"])
+
     if wanted:
         session[WANTED_PLAN] = wanted
-    session[SESSION_KEY] = sessions.start(
-        get_db(), account["_id"], ip=client_ip(),
+    token = sessions.start(
+        db, account["_id"], ip=client_ip(),
         user_agent=request.headers.get("User-Agent", ""), remember=remember)
+    session[SESSION_KEY] = token
+    session[OPEN_KEY] = [one["raw"] for one in kept] + [token]
     session.permanent = remember
 
 
@@ -806,13 +908,24 @@ def resend():
 
 @bp.route("/entrar", methods=["GET", "POST"])
 def login():
-    if current_session():
+    # Con «agregar» la pantalla se dibuja aunque ya haya una sesión abierta: es
+    # la única forma de sumar una segunda cuenta, y pasa por aquí entera —con su
+    # contraseña y su segundo paso— como cualquier otra.
+    adding = bool(request.args.get("agregar"))
+    if current_session() and not adding:
         return redirect(landing(current_account()))
 
     # Quien llegó desde el botón de un plan sigue hasta él al abrir sesión. Se
     # anota al dibujar la pantalla, para que sobreviva al segundo paso.
     if request.method == "GET":
         remember_plan(request.args.get("plan"))
+        # La marca vive en la sesión porque el segundo paso pasa por otra
+        # dirección y perdería el parámetro. Y se borra al abrir esta pantalla
+        # sin él, para que una marca vieja no deje abierta una cuenta de más.
+        if adding:
+            session[ADDING] = True
+        else:
+            session.pop(ADDING, None)
 
     errors: dict[str, str] = {}
     email_value = ""
@@ -862,7 +975,8 @@ def login():
                 # is one this account has used.
                 first_time = not sessions.is_known_device(
                     db, account["_id"], request.headers.get("User-Agent", ""))
-                sign_in(account, remember=remember)
+                sign_in(account, remember=remember,
+                        keep=bool(session.pop(ADDING, False)))
                 accounts.touch_login(db, account["_id"])
                 log_auth(db, events.LOGIN, events.OK, email=email_value,
                          account_id=account["_id"])
@@ -886,7 +1000,11 @@ def login():
                      account_id=account["_id"] if account else None)
 
     return render_template("login.html", errors=errors, email=email_value,
-                           remember=remember)
+                           remember=remember, adding=adding,
+                           # Solo cuando no hay nada que corregir: un error de
+                           # contraseña importa más que de dónde se venía.
+                           switched=bool(request.args.get("cambiar"))
+                           and not errors)
 
 
 @bp.route("/entrar/codigo", methods=["GET", "POST"])
@@ -931,7 +1049,8 @@ def login_code():
                 remember = bool(session.pop(PENDING_REMEMBER, True))
                 first_time = not sessions.is_known_device(
                     db, account["_id"], request.headers.get("User-Agent", ""))
-                sign_in(account, remember=remember)
+                sign_in(account, remember=remember,
+                        keep=bool(session.pop(ADDING, False)))
                 accounts.touch_login(db, account["_id"])
                 log_auth(db, events.LOGIN,
                          events.RECOVERY_USED if used_backup else events.OK,
@@ -994,22 +1113,88 @@ def logout():
             # Nadie la va a ver: la pidió el navegador, no la persona.
             return render_template("logout.html")
 
-    db = get_db()
-    doc = current_session()
-    account_id = doc["account_id"] if doc else None
-    # El testigo se le pide al formulario del panel, que lo tiene. Al enlace del
-    # sitio público no, porque vive en otro dominio y no puede llevarlo; lo que
-    # protege a ese lado es no obedecer a una precarga.
-    if request.method == "GET" or csrf_ok(request.form.get("csrf_token")):
-        # Close it for real instead of just forgetting the cookie: whoever
-        # copied its value no longer holds anything.
-        if doc:
-            sessions.revoke(db, account_id, doc["_id"])
-        session.clear()
-        log_auth(db, events.LOGOUT, events.OK, account_id=account_id)
-    else:
-        log_auth(db, events.LOGOUT, events.CSRF_FAILED, account_id=account_id)
+    close_session()
     return redirect(url_for("auth.login"))
+
+
+@bp.route("/cambiar-cuenta", methods=["GET", "POST"])
+def switch_account():
+    """Las cuentas que este navegador tiene abiertas, para saltar entre ellas.
+
+    **Son sesiones de verdad, abiertas a la vez.** Cada una tiene su documento
+    en `sessions`, con su dispositivo y su vencimiento, y aparece en Seguridad
+    como cualquier otra; lo único que comparten es la galleta que guarda sus
+    testigos. Saltar de una a otra es cambiar cuál está activa: no se vuelve a
+    escribir ninguna contraseña y no se cierra nada.
+
+    Agregar una siempre pasa por la pantalla de entrar completa, con su
+    contraseña y su segundo paso si lo tiene. Aquí no se abre ninguna puerta que
+    no estuviera ya abierta.
+    """
+    db = get_db()
+
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            return redirect(url_for("auth.switch_account"))
+        # Se elige por el identificador de la cuenta y nunca por el testigo: un
+        # testigo dibujado en la página sería la sesión escrita en el HTML.
+        wanted = as_object_id(request.form.get("cuenta"))
+        chosen = next((one for one in open_accounts()
+                       if one["account"]["_id"] == wanted), None)
+        if chosen is None:
+            return redirect(url_for("auth.switch_account"))
+
+        if request.form.get("accion") == "quitar":
+            sessions.revoke(db, chosen["doc"]["account_id"],
+                            chosen["doc"]["_id"])
+            log_auth(db, events.LOGOUT, events.OK,
+                     account_id=chosen["account"]["_id"])
+            if chosen["active"]:
+                forget_active()
+            else:
+                session[OPEN_KEY] = [raw for raw in open_tokens()
+                                     if raw != chosen["raw"]]
+            return redirect(url_for("auth.switch_account"))
+
+        session[SESSION_KEY] = chosen["raw"]
+        return redirect(landing(chosen["account"]))
+
+    mine = open_accounts()
+    if not mine:
+        return redirect(url_for("auth.login"))
+    here = next((one for one in mine if one["active"]), None)
+    return render_template(
+        "accounts.html", accounts=mine, max_accounts=MAX_ACCOUNTS,
+        back=landing(here["account"]) if here else url_for("auth.login"))
+
+
+def close_session() -> bool:
+    """Cerrar **todas** las sesiones de este dispositivo. True si se cerraron.
+
+    Todas y no solo la activa: «Cerrar sesión» en una computadora prestada tiene
+    que significar que no queda ninguna cuenta abierta. Para dejar solo una hay
+    un botón por cuenta en la pantalla de cambiar de cuenta.
+
+    El testigo se le pide al formulario del panel, que lo tiene. Al enlace del
+    sitio público no, porque vive en otro dominio y no puede llevarlo; lo que
+    protege a ese lado es no obedecer a una precarga.
+    """
+    db = get_db()
+    mine = open_accounts()
+    account_id = session_account_id()
+    if request.method == "GET" or csrf_ok(request.form.get("csrf_token")):
+        # Close them for real instead of just forgetting the cookie: whoever
+        # copied a value no longer holds anything.
+        for one in mine:
+            sessions.revoke(db, one["doc"]["account_id"], one["doc"]["_id"])
+            log_auth(db, events.LOGOUT, events.OK,
+                     account_id=one["account"]["_id"])
+        session.clear()
+        if not mine:
+            log_auth(db, events.LOGOUT, events.OK, account_id=account_id)
+        return True
+    log_auth(db, events.LOGOUT, events.CSRF_FAILED, account_id=account_id)
+    return False
 
 
 # -------------------------------------------------------------- recover

@@ -674,7 +674,8 @@ construir.
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: panel,
-contactos, plantillas, configuración, modo, idioma y cerrar sesión. Las
+contactos, plantillas, configuración, modo, idioma, cambiar de cuenta y
+cerrar sesión. Las
 plantillas van debajo de contactos: primero a quién le escribes, después con qué.
 **A un administrador el menú le enseña administración de primera y después
 configuración, y nada más.** El sitio público sí le sigue enseñando las filas de
@@ -700,6 +701,41 @@ navegador que precarga enlaces sacaría a alguien de su cuenta sin que hubiera
 pulsado nada. Se cierra por omisión y se calla solo ante esa cabecera; si un
 intermediario se la comiera, lo que se pierde es la protección y no el salir.
 `logout.html` sigue existiendo, pero solo la ve esa precarga.
+
+### Varias cuentas abiertas a la vez
+
+**«Cambiar de cuenta», encima de salir, lleva a `/cambiar-cuenta`**: la lista de
+las cuentas que este navegador tiene abiertas, para saltar de una a otra sin
+escribir ninguna contraseña. Existe porque quien administra prueba con varias
+—un cliente, otro cliente, el administrador— y antes eso era salir, buscar el
+botón de entrar y volver, cada vez.
+
+**Son sesiones de verdad y no un truco.** Cada una tiene su documento en
+`sessions`, con su dispositivo, su última visita y su vencimiento, y sale en
+Seguridad como cualquier otra; si la cierran desde otro dispositivo, desaparece
+de la lista sola. Lo único que comparten es la galleta firmada, que guarda sus
+testigos en `sids` además del de la activa en `sid`. **Caben cuatro**, porque eso
+viaja en una galleta y porque nadie necesita más.
+
+Tres cosas que sostienen esto:
+
+- **Agregar una cuenta pasa por la pantalla de entrar completa**, con su
+  contraseña y su segundo paso: `/entrar?agregar=1`. Aquí no se abre ninguna
+  puerta que no estuviera ya abierta. La marca de «vengo a agregar» vive en la
+  sesión y no en la dirección, porque el segundo paso pasa por otra pantalla.
+- **En la lista nunca se dibuja un testigo.** Los formularios mandan el
+  identificador de la cuenta; el testigo se queda en la galleta. Dibujarlo sería
+  escribir la sesión dentro del HTML.
+- **La lista se limpia sola al leerla**: lo cerrado, lo vencido y lo de una
+  cuenta suspendida se caen antes de enseñarse, así que la pantalla no ofrece
+  una puerta que no abre.
+
+**«Cerrar sesión» las cierra todas**, y eso es a propósito: en una computadora
+prestada, salir tiene que significar que no queda ninguna cuenta abierta. Para
+dejar solo una hay un botón por fila en esa misma pantalla. Entrar sin
+«agregar» también cierra lo que el navegador tuviera abierto: una sesión viva
+cuyo testigo ya nadie tiene sería una puerta suelta, y además aparecería en la
+pantalla de dispositivos de su dueño.
 
 Cerrar las sesiones de los **otros** dispositivos no se pregunta al salir: vive
 en Configuración → Seguridad, que es su sitio.

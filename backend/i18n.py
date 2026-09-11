@@ -12,6 +12,9 @@ TEXTS = {
     "brand": "Panamails",
     "nav_panel": "Estadísticas",
     "nav_logout": "Cerrar sesión",
+    # Encima de salir. Lleva a la lista de las cuentas que este navegador tiene
+    # abiertas a la vez, para saltar entre ellas sin escribir nada.
+    "nav_switch": "Cambiar de cuenta",
     "back_to_site": "Volver al sitio",
 
     # --- the bar menu ------------------------------------------------------
@@ -116,6 +119,20 @@ TEXTS = {
 
     # --- login -------------------------------------------------------------
     "login_title": "Entra a tu cuenta",
+    "login_switched": "Cerraste tu sesión. Entra con la cuenta que quieras.",
+    "login_adding": "Vas a agregar otra cuenta. La que tienes abierta sigue "
+                    "abierta, y vas a poder saltar entre las dos.",
+
+    # --- las cuentas abiertas a la vez -------------------------------------
+    "accounts_title": "Tus cuentas",
+    "accounts_lead": "Las que tienes abiertas en este navegador. Saltar de una "
+                     "a otra no pide contraseña y no cierra ninguna.",
+    "accounts_here": "Estás aquí",
+    "accounts_use": "Entrar aquí",
+    "accounts_drop": "Cerrar esta",
+    "accounts_add": "Agregar otra cuenta",
+    "accounts_full": "Caben {n} a la vez. Cierra una para poder agregar otra.",
+    "accounts_back": "Volver",
     "login_email": "Correo electrónico",
     "login_password": "Contraseña",
     "login_submit": "Entrar",

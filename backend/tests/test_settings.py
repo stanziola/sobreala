@@ -289,3 +289,261 @@ def test_the_sign_out_form_still_needs_its_token(client, database, outbox):
 
 def test_the_sign_out_page_needs_a_session(client, database):
     assert client.get("/salir").status_code == 302
+
+
+# --------------------------------------- varias cuentas abiertas a la vez
+
+def quien(browser, database):
+    """La cuenta que este navegador está usando ahora mismo."""
+    from models import session as sessions
+
+    with browser.session_transaction() as sess:
+        doc = sessions.find(database, sess.get("sid"))
+    return doc["account_id"] if doc else None
+
+
+def abiertas(browser, database):
+    """Las cuentas que este navegador tiene abiertas, vivas de verdad."""
+    from models import session as sessions
+
+    with browser.session_transaction() as sess:
+        raws = list(sess.get("sids") or [])
+    vivas = [sessions.find(database, raw) for raw in raws]
+    return [doc["account_id"] for doc in vivas if doc]
+
+
+def add_account(browser, email, password=PASSWORD):
+    """Agregar una cuenta desde la pantalla de entrar, como lo hace la pantalla."""
+    browser.get("/entrar?agregar=1")
+    with browser.session_transaction() as sess:
+        token = sess["_csrf"]
+    return browser.post("/entrar?agregar=1", data={
+        "csrf_token": token, "email": email, "password": password,
+        "remember": "1"})
+
+
+def switch_to(browser, account_id, accion=""):
+    data = {"csrf_token": csrf(browser, "/cambiar-cuenta"),
+            "cuenta": str(account_id)}
+    if accion:
+        data["accion"] = accion
+    return browser.post("/cambiar-cuenta", data=data)
+
+
+def two_accounts(client, database):
+    """Un navegador con dos cuentas abiertas. Devuelve (navegador, una, dos)."""
+    register(client, email="una@ejemplo.com")
+    register(client, email="dos@ejemplo.com")
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+    add_account(browser, "dos@ejemplo.com")
+    return (browser,
+            accounts.by_email(database, "una@ejemplo.com")["_id"],
+            accounts.by_email(database, "dos@ejemplo.com")["_id"])
+
+
+def test_dos_cuentas_abiertas_y_se_salta_sin_contrasena(client, database, outbox):
+    """Es lo que pidió: dos sesiones de verdad y cambiar rápido entre ellas."""
+    browser, una, dos = two_accounts(client, database)
+
+    # La recién agregada queda en uso, y la primera sigue abierta.
+    assert quien(browser, database) == dos
+    assert set(abiertas(browser, database)) == {una, dos}
+
+    # Saltar no pide nada y no cierra nada.
+    salto = switch_to(browser, una)
+    assert salto.status_code == 302
+    assert quien(browser, database) == una
+    assert set(abiertas(browser, database)) == {una, dos}
+    assert browser.get("/panel").status_code == 200
+
+
+def test_las_dos_son_sesiones_de_verdad(client, database, outbox):
+    """Cada una tiene su documento, así que aparece en Seguridad y se puede
+    cerrar desde otro dispositivo como cualquier otra."""
+    from models import session as sessions
+
+    browser, una, dos = two_accounts(client, database)
+
+    assert len(sessions.for_account(database, una)) == 1
+    assert len(sessions.for_account(database, dos)) == 1
+
+
+def test_la_pantalla_lista_las_dos_y_dice_en_cual_estas(client, database, outbox):
+    browser, una, dos = two_accounts(client, database)
+
+    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    assert "una@ejemplo.com" in pantalla
+    assert "dos@ejemplo.com" in pantalla
+    assert "Estás aquí" in pantalla
+
+
+def test_la_pantalla_no_dibuja_ningun_testigo(client, database, outbox):
+    """Un testigo en el HTML sería la sesión escrita en la página."""
+    browser, _, _ = two_accounts(client, database)
+
+    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    with browser.session_transaction() as sess:
+        testigos = list(sess.get("sids") or [])
+    assert testigos
+    for raw in testigos:
+        assert raw not in pantalla
+
+
+def test_cerrar_una_deja_la_otra(client, database, outbox):
+    from models import session as sessions
+
+    browser, una, dos = two_accounts(client, database)
+
+    switch_to(browser, una, accion="quitar")
+
+    assert abiertas(browser, database) == [dos]
+    assert sessions.for_account(database, una) == []
+    assert len(sessions.for_account(database, dos)) == 1
+
+
+def test_cerrar_sesion_las_cierra_todas(client, database, outbox):
+    """En una computadora prestada, salir tiene que significar que no queda
+    ninguna cuenta abierta."""
+    from models import session as sessions
+
+    browser, una, dos = two_accounts(client, database)
+
+    browser.post("/salir", data={"csrf_token": csrf(browser)})
+
+    assert sessions.for_account(database, una) == []
+    assert sessions.for_account(database, dos) == []
+    assert browser.get("/panel").status_code == 302
+
+
+def test_entrar_de_cero_cierra_lo_que_el_navegador_tuviera(client, database, outbox):
+    """Entrar sin «agregar» sigue dejando una sola cuenta, como siempre hizo.
+
+    Se llega aquí cuando la activa se muere —la cerraron desde otro dispositivo—
+    y quedan otras en el navegador: la que quedaba viva se cierra de verdad, y
+    no solo se olvida, porque una sesión viva cuyo testigo ya nadie tiene es una
+    puerta suelta que además saldría en la pantalla de dispositivos de su
+    dueño.
+    """
+    from models import session as sessions
+
+    browser, una, dos = two_accounts(client, database)
+    sessions.revoke_others(database, dos)
+    assert browser.get("/panel").status_code == 302
+
+    login(browser, email="una@ejemplo.com")
+
+    assert abiertas(browser, database) == [una]
+    assert len(sessions.for_account(database, una)) == 1
+
+
+def test_una_cerrada_desde_otro_dispositivo_desaparece(client, database, outbox):
+    from models import session as sessions
+
+    browser, una, dos = two_accounts(client, database)
+    sessions.revoke_others(database, una)  # como «cerrar las otras» en Seguridad
+
+    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    assert "una@ejemplo.com" not in pantalla
+    assert abiertas(browser, database) == [dos]
+
+
+def test_una_suspendida_desaparece(client, database, outbox):
+    browser, una, dos = two_accounts(client, database)
+    accounts.set_status(database, una, accounts.SUSPENDED)
+
+    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    assert "una@ejemplo.com" not in pantalla
+    # Y la lista queda limpia, no solo sin dibujar.
+    assert abiertas(browser, database) == [dos]
+    assert switch_to(browser, una).status_code == 302
+    assert quien(browser, database) == dos
+
+
+def test_hay_un_tope_de_cuentas_a_la_vez(client, database, outbox):
+    """El tope existe porque esto viaja en una galleta."""
+    from blueprints.auth.routes import MAX_ACCOUNTS
+    from models import session as sessions
+
+    correos = [f"c{n}@ejemplo.com" for n in range(MAX_ACCOUNTS + 1)]
+    for correo in correos:
+        register(client, email=correo)
+
+    browser = other(client)
+    login(browser, email=correos[0])
+    for correo in correos[1:]:
+        add_account(browser, correo)
+
+    assert len(abiertas(browser, database)) == MAX_ACCOUNTS
+    # La más vieja se fue, y se cerró de verdad.
+    primera = accounts.by_email(database, correos[0])["_id"]
+    assert primera not in abiertas(browser, database)
+    assert sessions.for_account(database, primera) == []
+
+
+def test_agregar_con_dos_pasos_pide_el_codigo(client, database, outbox):
+    """Agregar pasa por la pantalla de entrar entera, segundo paso incluido."""
+    register(client, email="una@ejemplo.com")
+    register(client, email="dos@ejemplo.com")
+
+    suyo = other(client)
+    login(suyo, email="dos@ejemplo.com")
+    turn_on_two_step(suyo)
+    secreto = accounts.by_email(database, "dos@ejemplo.com")["two_factor"]["secret"]
+
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+    respuesta = add_account(browser, "dos@ejemplo.com")
+    assert respuesta.headers["Location"].endswith("/entrar/codigo")
+
+    browser.post("/entrar/codigo", data={
+        "csrf_token": csrf(browser, "/entrar/codigo"),
+        "code": list(pyotp.TOTP(secreto).now())})
+
+    una = accounts.by_email(database, "una@ejemplo.com")["_id"]
+    dos = accounts.by_email(database, "dos@ejemplo.com")["_id"]
+    assert quien(browser, database) == dos
+    assert set(abiertas(browser, database)) == {una, dos}
+
+
+def test_saltar_necesita_su_testigo(client, database, outbox):
+    browser, una, dos = two_accounts(client, database)
+
+    browser.post("/cambiar-cuenta", data={"csrf_token": "no-es",
+                                          "cuenta": str(una)})
+
+    assert quien(browser, database) == dos
+
+
+def test_no_se_puede_saltar_a_una_cuenta_que_no_esta_abierta(client, database, outbox):
+    """El identificador viaja en un formulario, así que nunca se cree solo."""
+    browser, una, dos = two_accounts(client, database)
+    register(client, email="ajena@ejemplo.com")
+    ajena = accounts.by_email(database, "ajena@ejemplo.com")["_id"]
+
+    switch_to(browser, ajena)
+
+    assert quien(browser, database) == dos
+
+
+def test_sin_ninguna_abierta_lleva_a_entrar(client, database):
+    assert client.get("/cambiar-cuenta").status_code == 302
+
+
+def test_both_menus_offer_the_switch(client, database, outbox):
+    """La regla de CLAUDE.md: lo que está en los dos sitios se cambia en los
+    dos. El panel lo dibuja y el sitio público lo publica ya construido."""
+    from pathlib import Path
+
+    register(client)
+    inside = other(client)
+    login(inside)
+
+    panel = inside.get("/panel").get_data(as_text=True)
+    assert "Cambiar de cuenta" in panel
+    assert "/cambiar-cuenta" in panel
+
+    raiz = Path(__file__).resolve().parent.parent.parent
+    sitio = (raiz / "landing" / "index.html").read_text(encoding="utf-8")
+    assert "Cambiar de cuenta" in sitio
+    assert "/cambiar-cuenta" in sitio

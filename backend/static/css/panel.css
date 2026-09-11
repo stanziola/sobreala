@@ -730,3 +730,33 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   .compose { grid-template-columns: 1fr; }
   .compose__side { position: static; }
 }
+
+
+/* ------------------------------------------------------- cuentas abiertas
+   Las que este navegador tiene abiertas a la vez, para saltar entre ellas. */
+.switcher { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.switcher__item {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--color-border); background: var(--color-surface);
+}
+/* La que se está usando ahora mismo, marcada para no tener que leerlas. */
+.switcher__item.is-on {
+  border-color: var(--color-accent); background: var(--color-accent-soft);
+}
+.switcher__icon { display: inline-flex; color: var(--color-ink-soft); }
+.switcher__who { display: grid; gap: 2px; margin-right: auto; min-width: 0; }
+.switcher__who b { overflow-wrap: anywhere; }
+.switcher__mail {
+  font-size: .85rem; color: var(--color-ink-soft); overflow-wrap: anywhere;
+}
+/* Los botones de una fila van juntos: si no caben al lado del nombre bajan
+   como un bloque, no uno a cada lado de la tarjeta. */
+.switcher__do {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-left: auto;
+}
+.switcher form { margin: 0; }
+.switcher .btn { margin-top: 0; }
+.switcher__add { margin: 18px 0 0; }
+.switcher__add .btn { margin-top: 0; }
