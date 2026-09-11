@@ -31,6 +31,9 @@ PASSWORD_RESET = "password_reset"
 # Closing a session from the email that announced it. A link and not a code:
 # nobody types six digits to put out a fire, and the value travels in the URL.
 SESSION_REVOKE = "session_revoke"
+# Cambiar el correo de una cuenta que ya está confirmada. El código va a la
+# dirección **nueva**: es lo que prueba que existe y que es de quien la escribió.
+EMAIL_CHANGE = "email_change"
 
 # Why a code was refused, so the visitor gets a useful message instead of a
 # generic error. UNKNOWN is "there is no code waiting for this account"; INVALID

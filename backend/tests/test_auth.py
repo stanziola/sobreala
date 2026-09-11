@@ -125,11 +125,45 @@ def test_confirmation_works_and_signs_in(client, database, outbox):
     response = confirm(client, code_from_outbox(outbox))
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/panel")
+    # Confirmar ya no cae en Estadísticas: la primera pantalla es la bienvenida.
+    assert response.headers["Location"].endswith("/bienvenida")
     assert accounts.by_email(database, "ana@ejemplo.com")["email_confirmed_at"]
     # Confirming leaves the visitor inside, without asking for the password
     # they typed two screens ago.
     assert "Hola, Ana" in client.get("/panel").get_data(as_text=True)
+
+
+def test_the_welcome_screen_says_what_comes_next(client, database, outbox):
+    """La primera pantalla de una cuenta nueva no puede ser un cuadro vacio."""
+    register(client)
+    confirm(client, code_from_outbox(outbox))
+
+    pantalla = client.get("/bienvenida").get_data(as_text=True)
+    assert "te damos la bienvenida" in pantalla
+    assert "Ana" in pantalla
+    assert "Elige el plan" in pantalla
+    # Los dos botones: los planes viven en el sitio publico.
+    assert "/planes/" in pantalla
+    assert "/configuracion" in pantalla
+
+
+def test_the_welcome_screen_steps_aside_once_there_is_a_plan(client, database,
+                                                             outbox):
+    """No es para el dia del registro, donde no puede darse: es para cuando
+    alguien vuelve a esa direccion meses despues."""
+    register(client)
+    confirm(client, code_from_outbox(outbox))
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    accounts.set_plan(database, cuenta["_id"], "basico")
+
+    respuesta = client.get("/bienvenida")
+
+    assert respuesta.status_code == 302
+    assert respuesta.headers["Location"].endswith("/panel")
+
+
+def test_the_welcome_screen_needs_a_session(client, database):
+    assert client.get("/bienvenida").status_code == 302
 
 
 def test_confirming_sends_the_welcome(client, database, outbox):
@@ -168,7 +202,7 @@ def test_a_failed_welcome_does_not_lock_anyone_out(client, database, outbox,
 
     response = confirm(client, code)
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/panel")
+    assert response.headers["Location"].endswith("/bienvenida")
     assert accounts.by_email(database, "ana@ejemplo.com")["email_confirmed_at"]
     assert "Hola, Ana" in client.get("/panel").get_data(as_text=True)
 
@@ -245,12 +279,12 @@ def test_the_code_arrives_in_six_pieces_or_in_one(client, database, outbox):
     protocol.
     """
     register(client)
-    assert confirm(client, code_from_outbox(outbox)).headers["Location"].endswith("/panel")
+    assert confirm(client, code_from_outbox(outbox)).headers["Location"].endswith("/bienvenida")
 
     fresh = client.application.test_client()
     register(fresh, email="beto@ejemplo.com")
     whole = confirm(fresh, code_from_outbox(outbox), split=False)
-    assert whole.headers["Location"].endswith("/panel")
+    assert whole.headers["Location"].endswith("/bienvenida")
 
 
 def test_the_countdown_says_the_same_in_every_case(client, database, outbox):
@@ -299,7 +333,7 @@ def test_the_clock_on_screen_does_not_decide(client, database, outbox):
     with client.session_transaction() as sess:
         sess["code_expires_at"] = "2020-01-01T00:00:00+00:00"
 
-    assert confirm(client, code).headers["Location"].endswith("/panel")
+    assert confirm(client, code).headers["Location"].endswith("/bienvenida")
 
 
 def test_resending_replaces_the_previous_code(client, database, outbox):
@@ -315,7 +349,7 @@ def test_resending_replaces_the_previous_code(client, database, outbox):
     assert first != second
     assert database.account_tokens.count_documents({}) == 1
     assert "no es correcto" in confirm(client, first).get_data(as_text=True)
-    assert confirm(client, second).headers["Location"].endswith("/panel")
+    assert confirm(client, second).headers["Location"].endswith("/bienvenida")
 
 
 def test_resend_answers_the_same_for_an_unknown_address(client, database, outbox):

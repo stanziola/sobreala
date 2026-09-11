@@ -38,6 +38,19 @@
         <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#51617A;">{{ one }}</p>
         {% endfor %}
 
+        {% if code %}
+        {#- Monoespaciada y separada, como en el correo de confirmación: seis
+            dígitos se copian con los ojos y hay que poder leerlos de un
+            vistazo desde la notificación del teléfono. -#}
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"
+               style="margin:6px 0 18px;">
+          <tr><td style="background:#F1F6FC;border-radius:10px;padding:16px 26px;
+                         font-family:Consolas,Menlo,monospace;font-size:32px;
+                         font-weight:bold;letter-spacing:8px;color:#0E1B2A;">
+            {{ code }}</td></tr>
+        </table>
+        {% endif %}
+
         {% if button %}
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"
                style="margin-top:8px;">

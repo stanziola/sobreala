@@ -116,6 +116,46 @@ def change_email(db, account_id, email: str) -> bool:
     return True
 
 
+def start_email_change(db, account_id, email: str) -> None:
+    """Anotar la dirección a la que se quiere mover la cuenta.
+
+    Se guarda aparte y **no toca `email`**: hasta que no llegue el código que se
+    mandó a esa dirección, la cuenta sigue entrando y recibiendo por la de
+    siempre. Un cambio a medias dejaría a alguien sin ninguna de las dos.
+    """
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "pending_email": email.strip(),
+        "pending_email_at": now(),
+        "updated_at": now(),
+    }})
+
+
+def pending_email(account: dict[str, Any] | None) -> str:
+    return (account or {}).get("pending_email") or ""
+
+
+def cancel_email_change(db, account_id) -> None:
+    db.accounts.update_one({"_id": account_id}, {
+        "$unset": {"pending_email": "", "pending_email_at": ""},
+        "$set": {"updated_at": now()}})
+
+
+def finish_email_change(db, account_id, email: str) -> bool:
+    """Escribir por fin la dirección nueva. False si se la llevó otra cuenta.
+
+    El índice único es quien responde, como en `change_email()`: entre pedir el
+    código y escribirlo hay tiempo de sobra para que alguien se registre con esa
+    misma dirección.
+
+    No se toca `email_confirmed_at`: la dirección nueva acaba de probarse con un
+    código, así que la cuenta sigue tan confirmada como estaba.
+    """
+    if not change_email(db, account_id, email):
+        return False
+    cancel_email_change(db, account_id)
+    return True
+
+
 def confirm_email(db, account_id) -> bool:
     """Mark the address as verified. False if it already was.
 

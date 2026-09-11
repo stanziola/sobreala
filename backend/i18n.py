@@ -118,6 +118,58 @@ TEXTS = {
     "password_forgot": "¿No recuerdas tu contraseña actual?",
 
     # --- login -------------------------------------------------------------
+    # --- la bienvenida, al confirmar el registro ---------------------------
+    # «Te damos la bienvenida» y no «Bienvenido»: es la fórmula que ya usa el
+    # correo de bienvenida, y no le adivina el género a nadie por su nombre.
+    "welcome_tab": "Tu cuenta está lista",
+    "welcome_title": "{name}, te damos la bienvenida a Panamails",
+    "welcome_lead": "Tu cuenta está lista. Elige el plan que más se adapte a ti "
+                    "para empezar a enviar correos.",
+    "welcome_plans": "Ver planes",
+    "welcome_settings": "Ir a configuración",
+
+    # --- cambiar el correo de la cuenta ------------------------------------
+    "email_change_title": "Cambiar tu correo",
+    "email_change_lead": "Ahora mismo tu cuenta usa {email}. Aquí te llegan los "
+                         "códigos para entrar y para recuperar tu contraseña, "
+                         "así que hay que comprobar la dirección nueva.",
+    "email_change_new": "Correo nuevo",
+    "email_change_code_hint": "Te mandamos un código ahí para comprobar que es "
+                              "tuyo. Hasta que lo escribas no cambia nada.",
+    "email_change_password": "Tu contraseña",
+    "email_change_submit": "Mandar el código",
+
+    "email_code_title": "Escribe el código",
+    "email_code_lead": "Te enviamos un código de 6 dígitos a {email}. Cuando lo "
+                       "escribas, esa pasa a ser la dirección de tu cuenta.",
+    "email_code_hint": "Si no te llega, mira en el correo no deseado. El código "
+                       "es de un solo uso.",
+    "email_code_other": "Usar otra dirección",
+    "email_code_submit": "Cambiar mi correo",
+    "error_email_same": "Esa ya es la dirección de tu cuenta.",
+
+    # Los dos mensajes: el código va a la dirección nueva y el aviso a la vieja.
+    "mail_email_code_subject": "{code} es tu código para cambiar tu correo",
+    "mail_email_code_heading": "Tu código para cambiar el correo",
+    "mail_email_code_body": "Alguien pidió usar esta dirección para una cuenta "
+                            "de Panamails. Escribe este código en la pantalla "
+                            "que lo pidió:",
+    "mail_email_code_expiry": "El código vence en {minutes} minutos. Si no "
+                              "fuiste tú, no hagas nada: sin el código no "
+                              "cambia nada.",
+    "mail_email_code_expiry_one": "El código vence en un minuto. Si no fuiste "
+                                  "tú, no hagas nada: sin el código no cambia "
+                                  "nada.",
+
+    "mail_email_changed_subject": "El correo de tu cuenta de Panamails cambió",
+    "mail_email_changed_heading": "Tu cuenta cambió de correo",
+    "mail_email_changed_body": "De ahora en adelante tu cuenta de Panamails usa "
+                               "{new}. A esta dirección ya no le va a llegar "
+                               "nada.",
+    "mail_email_changed_write": "Si no fuiste tú, escríbenos de inmediato a "
+                                "{email}: con este mensaje en la mano podemos "
+                                "devolverte la cuenta.",
+
     "login_title": "Entra a tu cuenta",
     "login_switched": "Cerraste tu sesión. Entra con la cuenta que quieras.",
     "login_adding": "Vas a agregar otra cuenta. La que tienes abierta sigue "
@@ -271,6 +323,11 @@ TEXTS = {
     "settings_account_email": "Correo de tu cuenta",
     "settings_account_email_hint": "Aquí te llegan los códigos y los avisos.",
     "settings_account_email_pending": "Sin confirmar",
+    "settings_account_email_change": "Cambiar",
+    "settings_account_email_warns": "Si lo cambias, le avisamos a la dirección "
+                                    "anterior.",
+    "settings_account_email_done": "Listo, tu correo cambió. Le avisamos a la "
+                                   "dirección anterior.",
     "settings_account_status": "Estado de tu cuenta",
     # La misma palabra que la etiqueta corta de la fila; la frase larga que la
     # explica sigue siendo panel_status_*, que es la que ya se enseñaba.

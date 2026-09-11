@@ -760,7 +760,7 @@ def confirm():
                     # written down and that is all.
                     deliver(db, send_welcome, account, kind=events.CONFIRM)
                     sign_in(account)
-                    return redirect(url_for("auth.panel"))
+                    return redirect(url_for("auth.welcome"))
 
             if reason == tokens.USED:
                 errors["form"] = t("error_code_used")
@@ -1359,6 +1359,32 @@ def recover_new():
 
 # ---------------------------------------------------------------------- panel
 
+@bp.route("/bienvenida")
+def welcome():
+    """Lo primero que ve quien acaba de crear su cuenta.
+
+    Antes se caía directo en Estadísticas, que sin plan contratado y sin envíos
+    es un cuadro vacío diciendo que todavía no ha pasado nada: la peor primera
+    pantalla posible. Esta dice lo único que importa en ese momento —que la
+    cuenta está lista— y hacia dónde ir.
+
+    Los dos guardas de abajo no son para el día del registro, donde no pueden
+    darse: son para después, porque esta dirección queda en el historial y se
+    puede escribir a mano. A quien ya contrató no tiene nada que decirle, y un
+    administrador vuelve a `/admin` como en cualquier pantalla de cliente.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account)
+    if answer:
+        return answer
+    if accounts.plan_of(account):
+        return redirect(url_for("auth.panel"))
+
+    return render_template("welcome.html", account=account)
+
+
 @bp.route("/panel")
 def panel():
     """Las estadísticas de la cuenta: sus cifras y las gráficas de sus envíos.
@@ -1694,7 +1720,181 @@ def finish_payment():
     return redirect(f"{back}?hecho=1")
 
 
+# --------------------------------------------------------- cambiar el correo
+
+# Lo que la segunda pantalla necesita recordar de la primera. No hace falta
+# guardar de quién es el código: quien lo escribe está dentro de su cuenta.
+MAIL_ATTEMPTS = "email_change_attempts"
+MAIL_DEADLINE = "email_change_expires_at"
+
+
+def await_email_change() -> None:
+    """Empezar la espera del código, como `await_code()` con la suya."""
+    session[MAIL_ATTEMPTS] = 0
+    session[MAIL_DEADLINE] = (security_now() + timedelta(
+        minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
+
+
+@bp.route("/cuenta/correo", methods=["GET", "POST"])
+def change_email():
+    """Mover la cuenta a otra dirección: la contraseña, y después el código.
+
+    Corregir el correo (`/confirmar/corregir`) es otra cosa y es de antes: sirve
+    mientras la cuenta no está confirmada y nadie ha probado nada todavía. Esta
+    pantalla es la de después, y por eso pide las dos pruebas:
+
+      * **la contraseña**, como para cambiarla o para tocar los dos pasos. Sin
+        ella, quien encuentre una sesión abierta se lleva la cuenta a su propio
+        buzón y desde ahí pide recuperar la contraseña;
+      * **un código a la dirección nueva**, que es lo que prueba que existe y
+        que es suya. Un error de dedo dejaría la cuenta apuntando al buzón de
+        nadie, y aquí eso significa perderla: la recuperación va por correo.
+
+    Un administrador puede usarla, igual que puede cambiar su contraseña: esto
+    es la identidad con la que entra, no una pantalla de cliente. Lo que no
+    tiene es el botón, porque su Configuración no enseña la sección Cuenta.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    errors: dict[str, str] = {}
+    email_value = ""
+
+    if request.method == "POST":
+        email_value = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.EMAIL_CHANGE, events.CSRF_FAILED,
+                     email=account["email"], account_id=account["_id"])
+        elif not rate_limit(db, f"email:ip:{client_ip()}", *PASSWORD_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.EMAIL_CHANGE, events.RATE_LIMITED,
+                     email=account["email"], account_id=account["_id"])
+        elif not verify_password(password, account.get("password_hash")):
+            errors["password"] = t("error_password_wrong")
+            log_auth(db, events.EMAIL_CHANGE, events.BAD_CURRENT,
+                     email=account["email"], account_id=account["_id"])
+        else:
+            email = clean_email(email_value) if email_value else None
+            if not email:
+                errors["email"] = t("error_email_invalid")
+                log_auth(db, events.EMAIL_CHANGE, events.INVALID,
+                         email=email_value, account_id=account["_id"])
+            elif accounts.normalize_email(email) == account["email_normalized"]:
+                errors["email"] = t("error_email_same")
+            elif accounts.by_email(db, email):
+                # Se dice, como en el registro y en corregir: callarlo deja a
+                # alguien esperando un código que no va a llegar nunca.
+                errors["email"] = t("error_email_taken")
+                log_auth(db, events.EMAIL_CHANGE, events.TAKEN, email=email,
+                         account_id=account["_id"])
+            elif not rate_limit(db, f"register:mail:{accounts.normalize_email(email)}",
+                                *REGISTER_PER_EMAIL):
+                # Esta pantalla manda correo a una dirección escrita a mano, así
+                # que comparte el presupuesto del registro: nadie llena el buzón
+                # de un tercero pidiendo el cambio una y otra vez.
+                errors["form"] = t("error_too_many")
+                log_auth(db, events.EMAIL_CHANGE, events.RATE_LIMITED,
+                         email=email, account_id=account["_id"])
+            else:
+                # La dirección nueva se anota aparte: la cuenta sigue entrando y
+                # recibiendo por la de siempre hasta que el código llegue.
+                accounts.start_email_change(db, account["_id"], email)
+                code = tokens.issue(db, account["_id"], tokens.EMAIL_CHANGE)
+                notices.email_change_code(
+                    account, code=code, to=email,
+                    minutes=Config.CONFIRMATION_CODE_MINUTES)
+                log_auth(db, events.EMAIL_CHANGE, events.SENT, email=email,
+                         account_id=account["_id"])
+                await_email_change()
+                return redirect(url_for("auth.change_email_code"))
+
+    return render_template("email-change.html", errors=errors,
+                           email=email_value, account=account)
+
+
+@bp.route("/cuenta/correo/codigo", methods=["GET", "POST"])
+def change_email_code():
+    """El código que llegó a la dirección nueva.
+
+    Hasta que entra aquí no se ha movido nada. Cuando entra, se escribe la
+    dirección nueva y **se avisa a la vieja**: es la alarma que entera al dueño
+    si quien hizo esto no era él.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    waiting = accounts.pending_email(account)
+    if not waiting:
+        return redirect(url_for("auth.change_email"))
+
+    db = get_db()
+    errors: dict[str, str] = {}
+
+    if request.method == "POST":
+        typed = "".join(request.form.getlist("code"))
+
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+            log_auth(db, events.EMAIL_CHANGE, events.CSRF_FAILED,
+                     account_id=account["_id"])
+        elif not rate_limit(db, f"email:ip:{client_ip()}", *CONFIRM_PER_IP):
+            errors["form"] = t("error_too_many")
+            log_auth(db, events.EMAIL_CHANGE, events.RATE_LIMITED,
+                     account_id=account["_id"])
+        else:
+            attempts = session.get(MAIL_ATTEMPTS, 0) + 1
+            session[MAIL_ATTEMPTS] = attempts
+            reason, doc = tokens.check(db, account["_id"], typed,
+                                       tokens.EMAIL_CHANGE)
+            if reason in (tokens.UNKNOWN, tokens.INVALID) \
+                    and attempts >= tokens.MAX_ATTEMPTS:
+                reason = tokens.TOO_MANY
+
+            if reason == tokens.VALID and not tokens.spend(db, doc):
+                # Alguien escribió el mismo código hace un instante.
+                reason = tokens.USED
+
+            if reason == tokens.VALID:
+                old = account["email"]
+                if accounts.finish_email_change(db, account["_id"], waiting):
+                    # Si la cuenta estaba sin confirmar, acaba de confirmarse:
+                    # lo que prueba una confirmación es justo lo que acaba de
+                    # probar el código. Ya confirmada, no hace nada.
+                    accounts.confirm_email(db, account["_id"])
+                    notices.email_changed(account, old=old, new=waiting)
+                    log_auth(db, events.EMAIL_CHANGE, events.OK, email=waiting,
+                             account_id=account["_id"])
+                    return redirect(url_for("auth.settings", section="cuenta",
+                                            correo=1))
+                # Se la llevó otra cuenta entre que se pidió el código y se
+                # escribió. El índice único es quien lo dice.
+                accounts.cancel_email_change(db, account["_id"])
+                log_auth(db, events.EMAIL_CHANGE, events.TAKEN, email=waiting,
+                         account_id=account["_id"])
+                return redirect(url_for("auth.change_email", tomada=1))
+
+            if reason == tokens.USED:
+                errors["form"] = t("error_code_used")
+            elif reason == tokens.TOO_MANY:
+                errors["form"] = t("error_code_too_many")
+            else:
+                errors["form"] = t("error_code_invalid")
+            log_auth(db, events.EMAIL_CHANGE, events.CONFIRM_OUTCOMES[reason],
+                     account_id=account["_id"])
+
+    return render_template("email-change-code.html", errors=errors,
+                           waiting=waiting,
+                           minutes=Config.CONFIRMATION_CODE_MINUTES,
+                           left=seconds_left(MAIL_DEADLINE))
+
+
 # --------------------------------------------------------------- password
+
 
 # Las dos acciones que se pueden hacer sobre una verificación ya encendida.
 TWO_FACTOR_ACTIONS = ("regenerate", "disable")

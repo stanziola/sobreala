@@ -40,6 +40,10 @@ SENDING_CLEARED = "sending_cleared"
 SUSPENDED = "suspended"
 REINSTATED = "reinstated"
 ADMIN_PAYMENT = "admin_payment"
+# Cambiar el correo de la cuenta: el código va a la dirección nueva y el aviso
+# a la vieja, así que son dos mensajes distintos y a dos sitios distintos.
+EMAIL_CHANGE_CODE = "email_change_code"
+EMAIL_CHANGED = "email_changed"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"
 

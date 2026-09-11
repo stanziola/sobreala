@@ -61,9 +61,19 @@
     <span class="setting__value">{{ account.company_name }}</span>
     {% endcall %}
 
-    {% call row(t('settings_account_email'), t('settings_account_email_hint')) %}
+    {% if request.args.get('correo') %}
+    <p class="notice notice--ok">{{ t('settings_account_email_done') }}</p>
+    {% endif %}
+
+    {# El aviso a la dirección anterior se dice aquí y no se esconde: quien
+       cambia su correo tiene derecho a saber que su dirección vieja se va a
+       enterar. #}
+    {% call row(t('settings_account_email'),
+                t('settings_account_email_hint') + ' ' + t('settings_account_email_warns')) %}
     <span class="setting__value">{{ account.email }}</span>
     {% if not confirmed %}<span class="tag tag--warn">{{ t('settings_account_email_pending') }}</span>{% endif %}
+    <a class="btn btn--small btn--outline"
+       href="{{ url_for('auth.change_email') }}">{{ t('settings_account_email_change') }}</a>
     {% endcall %}
 
     {% call row(t('settings_account_status'), t('panel_status_' + status_of(account))) %}

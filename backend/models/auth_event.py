@@ -27,6 +27,8 @@ LOGIN = "login"
 PASSWORD_CHANGE = "password_change"
 RECOVER = "recover"
 CORRECT_EMAIL = "correct_email"
+# Corregir es antes de confirmar; cambiar es después, y con contraseña y código.
+EMAIL_CHANGE = "email_change"
 TWO_FACTOR = "two_factor"
 SESSION_CLOSED = "session_closed"
 RESEND = "resend"

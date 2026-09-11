@@ -2,6 +2,9 @@
 {% for one in paragraphs %}
 {{ one }}
 {% endfor %}
+{%- if code %}
+{{ code }}
+{% endif %}
 {%- if button %}
 {{ button.label }}: {{ button.href }}
 {% endif %}

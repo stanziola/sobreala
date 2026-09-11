@@ -678,6 +678,16 @@ def test_un_administrador_que_abre_contratar_vuelve_a_administracion(
     assert database.payments.count_documents({}) == 0
 
 
+def test_un_administrador_no_ve_la_bienvenida(client, database, outbox):
+    """Es una pantalla de cliente, y su cuenta no tiene plan que elegir."""
+    admin, _ = make_admin(client, database)
+
+    respuesta = admin.get("/bienvenida")
+
+    assert respuesta.status_code == 302
+    assert respuesta.headers["Location"].endswith("/admin/")
+
+
 def test_la_migaja_del_sitio_publico_dice_el_rol(client, database, outbox,
                                                  monkeypatch):
     """El sitio es estático y en otro dominio: lo único que sabe es esa migaja.

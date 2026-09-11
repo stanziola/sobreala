@@ -46,7 +46,7 @@ def test_correcting_the_address_and_finishing(client, database, outbox):
     # The new code went to the right address, and it is the one that works.
     last = sorted(outbox.glob("*.txt"))[-1].read_text(encoding="utf-8")
     assert RIGHT in last
-    assert confirm(client, code_from_outbox(outbox)).headers["Location"].endswith("/panel")
+    assert confirm(client, code_from_outbox(outbox)).headers["Location"].endswith("/bienvenida")
 
     # One account, under the right address, confirmed.
     assert database.accounts.count_documents({}) == 1

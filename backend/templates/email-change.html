@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_fields.html" import proof with context %}
+{% block title %}{{ t('email_change_title') }}{% endblock %}
+
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('email_change_title') }}</h1>
+  <p class="lead">{{ t('email_change_lead', email=account.email) }}</p>
+
+  {# Se la llevó otra cuenta entre que se pidió el código y se escribió: pasa
+     una vez entre un millón, y la pantalla tiene que decirlo igual. #}
+  {% if request.args.get('tomada') %}
+  <p class="notice">{{ t('error_email_taken') }}</p>
+  {% endif %}
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="email">{{ t('email_change_new') }}</label>
+    <input id="email" name="email" type="email" value="{{ email }}"
+           autocomplete="email" required>
+    {% if errors.email %}<p class="error">{{ errors.email }}</p>{% endif %}
+    <p class="hint">{{ t('email_change_code_hint') }}</p>
+
+    {# La contraseña, como para cambiarla o para tocar los dos pasos: sin ella,
+       quien encuentre una sesión abierta se lleva la cuenta a su buzón. #}
+    <label for="password">{{ t('email_change_password') }}</label>
+    {{ proof('password', 'password') }}
+    {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
+
+    <button class="btn" type="submit">{{ t('email_change_submit') }}</button>
+  </form>
+
+  <p class="foot">
+    <a href="{{ url_for('auth.settings', section='cuenta') }}">{{ t('two_step_back') }}</a>
+  </p>
+</div>
+{% endblock %}

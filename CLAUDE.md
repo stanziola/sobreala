@@ -235,6 +235,21 @@ medias: una dirección escrita mal no queda ocupada para siempre, y nadie puede
 reservar el correo de un tercero registrándolo y no confirmando nunca. El
 intento sigue en `auth_events`, que no tiene TTL.
 
+**El correo de la cuenta se puede cambiar, con dos pruebas.** La contraseña,
+como para cambiarla o para tocar los dos pasos; y un **código a la dirección
+nueva**, que es lo que prueba que existe y que es suya. Hasta que ese código
+entra, la dirección nueva vive en `pending_email` y **la cuenta sigue entrando y
+recibiendo por la de siempre**: un cambio a medias dejaría a alguien sin ninguna
+de las dos. Al terminar se avisa a la **dirección vieja**, y ese aviso no tiene
+interruptor ni lleva enlaces dentro: quien lo recibe ya no controla esa cuenta, y
+es lo único que le queda para reclamar.
+
+Corregir el correo (`/confirmar/corregir`) es otra cosa y es de antes: sirve
+mientras la cuenta no está confirmada, cuando todavía no hay nada que proteger.
+Y si una cuenta sin confirmar cambia su correo por aquí, **queda confirmada**:
+el código acaba de probar exactamente lo que probaría confirmar, y pedir dos
+veces la misma prueba no protege de nada.
+
 **Ninguna contraseña se puede repetir.** `password_history` guarda el hash de
 cada una que la cuenta usó, y cambiarla las compara todas: si alguien conoció
 una, volver a ponerla devolvería la cuenta al mismo estado.
@@ -644,6 +659,17 @@ Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 
 ## Panel del cliente
 
+**Lo primero que ve una cuenta nueva es `/bienvenida`, no el panel.** Confirmar
+el registro aterriza ahí: el nombre de la persona, que su cuenta está lista, y
+dos botones —ver los planes, que están en el sitio público, e ir a
+Configuración—. Antes se caía directo en Estadísticas, que sin plan contratado y
+sin un solo envío es un cuadro vacío diciendo que todavía no ha pasado nada: la
+peor primera pantalla posible.
+
+Esa dirección se queda en el historial, así que lleva dos guardas que **no son
+para el día del registro**, donde no pueden darse: con un plan ya contratado
+manda al panel, y a un administrador lo devuelve a `/admin`.
+
 **`/panel` es la pantalla de Estadísticas.** La dirección no cambió aunque la
 pantalla se llame así: cambiarla rompería los enlaces guardados y el correo de
 bienvenida a cambio de nada. Enseña las cifras de la cuenta —contactos activos y
@@ -813,6 +839,8 @@ Además:
 | Tu cuenta fue suspendida | Al suspenderla | No |
 | Tu cuenta está activa otra vez | Al levantar la suspensión | No |
 | Alguien pagó y espera habilitación | Al cobrar, **a quien administra** | No |
+| Tu código para cambiar el correo | Al pedirlo, **a la dirección nueva** | No |
+| Tu cuenta cambió de correo | Al terminar, **a la dirección vieja** | No |
 
 **Los cuatro de abajo no llevan interruptor, y no por descuido.** «Ya puedes
 enviar» pasa una vez por cuenta y es la respuesta a la única espera que se le
@@ -826,9 +854,9 @@ Ese motivo se redacta para `admin_events`, puede ser corto y duro, y lo que
 necesita quien lo recibe es otra cosa: qué significa, que no se borró nada y a
 dónde escribir.
 
-**Los ocho comparten un solo par de plantillas**, `email/notice.html` y `.txt`,
-porque los ocho tienen la misma forma: un titular, unos párrafos, a veces un
-botón y a veces un recuadro. Los siete correos anteriores —confirmación,
+**Los diez comparten un solo par de plantillas**, `email/notice.html` y `.txt`,
+porque todos tienen la misma forma: un titular, unos párrafos, y a veces un
+botón, un recuadro o un código de seis dígitos. Los siete correos anteriores —confirmación,
 bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el suyo;
 podrían mudarse a este sobre, pero eso es otro cambio.
 

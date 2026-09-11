@@ -6,9 +6,9 @@ confirmación, la contraseña cambiada, el doble factor— viven en el blueprint
 la cuenta y no se pueden apagar; estos sí, según lo que diga su pantalla de
 Notificaciones.
 
-Los ocho comparten un solo par de plantillas, `email/notice.html` y `.txt`,
-porque los ocho tienen la misma forma: un titular, unos párrafos, a veces un
-botón y a veces un recuadro. Lo que cambia es el texto, y el texto está en
+Todos comparten un solo par de plantillas, `email/notice.html` y `.txt`,
+porque todos tienen la misma forma: un titular, unos párrafos, y a veces un
+botón, un recuadro o un código de seis dígitos. Lo que cambia es el texto, y el texto está en
 `i18n.py` como todo lo que lee un cliente.
 
 **Ninguno puede romper lo que estaba pasando.** Un correo que no sale no puede
@@ -63,24 +63,29 @@ def panel_url() -> str:
 
 def deliver(account: dict[str, Any], *, purpose: str, subject: str,
             heading: str, paragraphs: list[str], button: dict | None = None,
-            note: dict | None = None, foot: str = "") -> bool:
+            note: dict | None = None, foot: str = "", code: str = "",
+            to: str = "") -> bool:
     """Mandar uno. True si salió.
 
     No deja escapar nada: quien llama acaba de cobrar un pago o de suspender una
     cuenta, y eso ya pasó aunque el correo no salga.
+
+    `to` existe para el único caso en que el mensaje no va a la dirección de la
+    cuenta: el código que prueba una dirección nueva, que tiene que llegar
+    justamente a esa y no a la de siempre.
     """
     content = {"heading": heading, "paragraphs": paragraphs,
-               "button": button, "note": note, "foot": foot}
+               "button": button, "note": note, "foot": foot, "code": code}
     try:
         mailer.send(
-            to=account["email"], subject=subject,
+            to=to or account["email"], subject=subject,
             html=render_template("email/notice.html", **content),
             text=render_template("email/notice.txt", **content),
             purpose=purpose, account_id=account["_id"])
         return True
     except Exception as exc:  # noqa: BLE001 - reported, not handled
         print(f"  [avisos] no se pudo enviar {purpose} a "
-              f"{account.get('email')}: {type(exc).__name__}: "
+              f"{to or account.get('email')}: {type(exc).__name__}: "
               f"{str(exc)[:160]}", flush=True)
         return False
 
@@ -195,6 +200,45 @@ def plan_watch(db, account) -> None:
         if expiring(account, plan=plan, until=until, days=days):
             accounts.mark_plan_notice(db, account["_id"], accounts.EXPIRING,
                                       until)
+
+
+# ------------------------------------------------------ cambiar el correo
+
+def email_change_code(account, *, code: str, to: str, minutes: int) -> bool:
+    """El código que prueba que la dirección nueva existe y es suya.
+
+    Va a la dirección **nueva**, que es de lo que se trata. Se manda aunque el
+    dueño de la cuenta no vuelva a escribir: si nadie lo usa, no pasa nada y la
+    cuenta se queda donde estaba.
+    """
+    return deliver(
+        account, to=to, purpose=mail_log.EMAIL_CHANGE_CODE,
+        subject=t("mail_email_code_subject", code=code),
+        heading=t("mail_email_code_heading"),
+        paragraphs=[t("mail_email_code_body")],
+        code=code,
+        foot=t("mail_email_code_expiry_one") if minutes == 1
+        else t("mail_email_code_expiry", minutes=minutes))
+
+
+def email_changed(account, *, old: str, new: str) -> bool:
+    """El aviso a la dirección **vieja** de que la cuenta se mudó.
+
+    Es la alarma, y por eso no tiene interruptor: si alguien entró a una sesión
+    abierta y se llevó la cuenta a su buzón, este mensaje es lo único que entera
+    al dueño mientras todavía puede reclamar.
+
+    No lleva ningún enlace que sirva para entrar ni para deshacerlo: quien lo
+    recibe ya no controla esa cuenta, y un enlace en ese correo sería una puerta
+    en la dirección equivocada. Lleva a dónde escribir.
+    """
+    return deliver(
+        account, to=old, purpose=mail_log.EMAIL_CHANGED,
+        subject=t("mail_email_changed_subject"),
+        heading=t("mail_email_changed_heading"),
+        paragraphs=[t("mail_email_changed_body", new=new),
+                    t("mail_email_changed_write",
+                      email=Config.SYSTEM_FROM_EMAIL)])
 
 
 # --------------------------------------------------- el estado de la cuenta
