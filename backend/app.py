@@ -13,7 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
 from db import ensure_indexes_once, health, indexes_ready
-from i18n import ago, t
+from i18n import ago, at_moment, t
 from models.account import (is_admin, plan_of,
                             status_of as account_status_of)
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
@@ -93,15 +93,19 @@ def create_app(overrides: dict | None = None) -> Flask:
     from blueprints.auth import bp as auth_bp
     from blueprints.contacts import bp as contacts_bp
     from blueprints.designs import bp as designs_bp
+    from blueprints.campaigns import bp as campaigns_bp
     from blueprints.media import bp as media_bp
+    from blueprints.unsubscribe import bp as unsubscribe_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(contacts_bp)
     app.register_blueprint(designs_bp)
     app.register_blueprint(admin_bp)
-    # Las imagenes de las plantillas. Es lo unico que se sirve sin
-    # sesion, porque quien las pide es el lector de correo de cada
-    # persona que recibio la campana.
+    app.register_blueprint(campaigns_bp)
+    # Las imagenes de las plantillas y la baja son lo unico que se sirve sin
+    # sesion, porque quien las pide no es el cliente: es el lector de correo de
+    # cada persona que recibio la campana, y la persona misma.
     app.register_blueprint(media_bp)
+    app.register_blueprint(unsubscribe_bp)
 
     # The size limit on an imported file, enforced by Flask before the request
     # reaches any code of ours: an oversized upload is refused without being
@@ -131,6 +135,8 @@ def create_app(overrides: dict | None = None) -> Flask:
                                  # que la lista de la pantalla no pueda mentir.
                                  password_min=MIN_PASSWORD_LENGTH)
     app.jinja_env.filters["ago"] = ago
+    # Para lo que va a pasar, no para lo que pasó: «17 de septiembre a las 09:00».
+    app.jinja_env.filters["at_moment"] = at_moment
 
     @app.before_request
     def _csp_nonce():

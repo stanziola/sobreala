@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ t('send_title') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{% block content %}
+<h1 class="settings__heading">{{ t('send_title') }}</h1>
+<p class="settings__lead">{{ t('send_lead') }}</p>
+
+{% if saved %}<p class="notice notice--ok">{{ t('send_saved') }}</p>{% endif %}
+{% if removed %}<p class="notice notice--ok">{{ t('send_removed') }}</p>{% endif %}
+{% if done == 'todo' %}<p class="notice notice--ok">{{ t('send_done_all') }}</p>{% endif %}
+{% if done == 'parte' %}<p class="notice notice--ok">{{ t('send_done_some') }}</p>{% endif %}
+{% if done == 'falta' %}<p class="notice">{{ t('send_done_blocked') }}</p>{% endif %}
+{% if done == 'tarde' %}<p class="notice">{{ t('send_already_out') }}</p>{% endif %}
+{% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+{# Lo que le falta a la cuenta, arriba del todo: enterarse de que no se puede
+   después de armar la campaña entera es la peor forma de enterarse. #}
+{% if blocked %}
+<p class="notice">
+  {% for why in blocked %}{{ t('send_blocked_' + why) }} {% endfor %}
+  {% if 'plan' in blocked %}<a href="{{ site_url }}/planes/">{{ t('welcome_plans') }}</a>{% endif %}
+</p>
+{% endif %}
+
+<h2 class="settings__subtitle">{{ t('send_new') }}</h2>
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% include "campaigns/_form.html" %}
+  <button class="btn" type="submit">{{ t('send_submit') }}</button>
+</form>
+
+<h2 class="settings__subtitle">{{ t('send_yours') }}</h2>
+{% if campaigns %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for one in campaigns %}
+      <tr>
+        <td>
+          <b>{{ one.subject }}</b><br>
+          <span class="table__quiet">
+            {{ one.tag or t('send_all_contacts') }}</span>
+        </td>
+        <td class="table__quiet">
+          {% if one.status == 'sent' %}
+          {{ t('send_state_sent', n=one.sent) }}
+          {% if one.skipped %}· {{ t('send_state_skipped', n=one.skipped) }}{% endif %}
+          {% if one.failed %}· {{ t('send_state_failed', n=one.failed) }}{% endif %}
+          {% elif one.status == 'sending' %}
+          {{ t('send_state_going', done=one.position, total=one.total) }}
+          {% elif due(one) %}
+          {{ t('send_state_ready') }}
+          {% else %}
+          {{ t('send_state_scheduled', when=one.scheduled_at|at_moment) }}
+          {% endif %}
+        </td>
+        <td>
+          {% if one.status != 'sent' %}
+          <form method="post" action="{{ url_for('campaigns.send', raw=one._id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--small" type="submit">
+              {{ t('send_continue') if one.status == 'sending' else t('send_now') }}</button>
+          </form>
+          {% endif %}
+        </td>
+        <td>
+          {% if editable(one) %}
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('campaigns.edit', raw=one._id) }}">{{ t('send_edit') }}</a>
+          {% endif %}
+        </td>
+        <td>
+          {% if editable(one) %}
+          <form method="post" action="{{ url_for('campaigns.remove', raw=one._id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--small btn--outline" type="submit">{{ t('send_delete') }}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% if one.errors %}
+      <tr>
+        <td colspan="5" class="table__quiet">
+          {{ t('send_errors_title') }}
+          {% for bad in one.errors %}<br>{{ bad.email }}: {{ bad.error }}{% endfor %}
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('send_none') }}</p>
+{% endif %}
+{% endblock %}

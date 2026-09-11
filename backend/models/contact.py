@@ -123,6 +123,19 @@ def matching_count(db, account_id, *, search: str = "", tag: str = "") -> int:
     return db.contacts.count_documents(_matching(account_id, search, tag))
 
 
+def batch_for_sending(db, account_id, *, tag: str = "", skip: int = 0,
+                      limit: int = 100) -> list[dict[str, Any]]:
+    """Un tramo de la lista, en orden fijo, para mandarle una campaña.
+
+    Por `_id` y no por fecha, que es como ordena la pantalla: es el único orden
+    que no se mueve si alguien importa contactos mientras la campaña va por la
+    mitad, y de eso depende que la posición guardada signifique lo mismo en la
+    tanda siguiente.
+    """
+    return list(db.contacts.find(_matching(account_id, "", tag))
+                .sort("_id", 1).skip(skip).limit(limit))
+
+
 def all_of(db, account_id, *, search: str = "", tag: str = ""):
     """Todos los que coinciden, uno a uno, para exportarlos.
 

@@ -814,6 +814,82 @@ TEXTS = {
                             "aprobarlo no significaría nada.",
 
     "menu_designs": "Plantillas",
+    # --- enviar correos ----------------------------------------------------
+    "menu_send": "Enviar correos",
+    "send_title": "Enviar correos",
+    "send_lead": "Elige a quién le escribes y con qué pieza. Puedes mandarlo "
+                 "ahora o dejarlo programado.",
+    "send_new": "Nueva campaña",
+    "send_submit": "Guardar la campaña",
+    "send_save": "Guardar los cambios",
+    "send_yours": "Tus campañas",
+    "send_none": "Todavía no has armado ninguna.",
+    "send_back": "Volver a envíos",
+
+    "send_subject": "Asunto",
+    "send_subject_hint": "Lo primero que se lee, y muchas veces lo único. "
+                         "Corto y concreto.",
+    "send_list": "A quién",
+    "send_all_contacts": "Todos mis contactos",
+    "send_howmany": "{n} contactos",
+    "send_piece": "Con qué plantilla",
+    "send_no_pieces": "Todavía no tienes ninguna plantilla guardada. Arma una "
+                      "primero en",
+    "send_when": "Cuándo",
+    "send_when_now": "Ahora mismo",
+    "send_when_later": "En esta fecha y hora",
+    "send_when_hint": "La hora es la de tu reloj. Mientras esté programada la "
+                      "puedes cambiar o borrar.",
+
+    "send_pick_piece": "Elige una de tus plantillas.",
+    "send_pick_list": "Esa lista no es tuya.",
+    "send_pick_when": "Escribe la fecha y la hora.",
+    "send_when_past": "Esa hora ya pasó. Si quieres que salga ya, elige «ahora "
+                      "mismo».",
+    "send_saved": "Listo, tu campaña quedó guardada.",
+    "send_removed": "Campaña borrada.",
+    "send_already_out": "Esa campaña ya empezó a salir, así que no se puede "
+                        "cambiar ni borrar.",
+
+    "send_now": "Enviar",
+    "send_continue": "Seguir enviando",
+    "send_edit": "Editar",
+    "send_delete": "Borrar",
+    "send_done_all": "Se envió. Ya salieron todos.",
+    "send_done_some": "Va saliendo. Pulsa «seguir enviando» para la siguiente "
+                      "tanda.",
+    "send_done_blocked": "Todavía no se puede enviar. Mira lo que falta arriba.",
+
+    # Por qué una cuenta todavía no puede mandar. Se enseñan arriba del todo.
+    "send_blocked_plan": "Para enviar hace falta un plan contratado.",
+    "send_blocked_quota": "Se acabaron los correos de tu plan este mes.",
+    "send_blocked_cleared": "Falta que habilitemos el envío de tu cuenta. Es "
+                            "una sola vez, miramos de dónde salió tu lista y te "
+                            "avisamos por correo.",
+    "send_blocked_piece": "La plantilla de esa campaña ya no existe.",
+
+    "send_state_ready": "Lista para salir",
+    "send_state_scheduled": "Programada para el {when}",
+    "send_state_going": "Van {done} de {total}",
+    "send_state_sent": "Enviada · {n} salieron",
+    "send_state_skipped": "{n} anulados",
+    "send_state_failed": "{n} fallaron",
+    "send_errors_title": "Lo que no se pudo enviar:",
+    "send_edit_title": "Editar la campaña",
+    "send_edit_lead": "Se puede cambiar mientras no haya empezado a salir.",
+
+    # --- darse de baja -----------------------------------------------------
+    # La pantalla que abre quien recibió una campaña. No tiene cuenta ni sesión.
+    "bye_title": "Dejar de recibir estos correos",
+    "bye_lead": "Si confirmas, {company} no le vuelve a escribir a {email}.",
+    "bye_already": "{email} ya estaba fuera de esa lista. No le llega nada.",
+    "bye_submit": "Sí, darme de baja",
+    "bye_done_title": "Listo",
+    "bye_done": "{email} no va a recibir más correos de {company}.",
+    "bye_done_gone": "Esa dirección ya no está en ninguna lista.",
+    "bye_done_note": "Si algún día quieres volver, pídeselo a quien te escribía: "
+                     "nosotros no te podemos volver a suscribir.",
+
 
     # --- administración ----------------------------------------------------
     "admin_title": "Administración",
@@ -1173,6 +1249,24 @@ TEXTS = {
 def t(key: str, **kwargs) -> str:
     text = TEXTS[key]
     return text.format(**kwargs) if kwargs else text
+
+
+MONTHS = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+          "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+
+
+def on_date(when) -> str:
+    """La fecha como la escribiría una persona.
+
+    A mano y no con `strftime`, que da el mes en el idioma del servidor: en
+    Railway saldría «September» en una pantalla en español.
+    """
+    return f"{when.day} de {MONTHS[when.month - 1]} de {when.year}"
+
+
+def at_moment(when) -> str:
+    """La fecha y la hora, para algo que va a pasar."""
+    return f"{on_date(when)} a las {when:%H:%M}"
 
 
 def ago(moment) -> str:

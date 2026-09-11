@@ -486,9 +486,14 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 
 /* ------------------------------------------------------------------ plans (precios) */
 .section--overlap { padding-top: clamp(28px, 5vw, 48px); }
+/* minmax(0, 1fr) y no 1fr a secas: `1fr` reparte el sobrante pero no deja que
+   una columna baje de lo que mide su contenido, así que las tres tarjetas con
+   precio —con su «$350 al año, dos meses gratis»— se llevaban más ancho y a
+   Corporativo, que solo dice «A la medida», le quedaba el resto. Con el mínimo
+   en cero las cuatro miden exactamente lo mismo y el texto se acomoda dentro. */
 .plans { display: grid; gap: 18px; align-items: stretch; }
-@media (min-width: 640px) { .plans { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1060px) { .plans { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 640px) { .plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1060px) { .plans { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .plan {
   position: relative; display: flex; flex-direction: column;
   padding: 26px 24px; border-radius: var(--radius-lg);

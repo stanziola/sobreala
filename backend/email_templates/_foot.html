@@ -1,0 +1,41 @@
+{#- El pie que se le pega a todo correo de campaña: la baja, la dirección
+    postal y la marca de agua. Va aparte de `_wrap.html` porque no siempre hay
+    un sobre que poner: al HTML que sube un cliente hay que meterle esto dentro
+    del documento que él escribió, sin envolverlo en otro.
+
+    Espera: unsubscribe, preview, watermark y postal. Lo llena `render.py`, que
+    es el único sitio que arma un correo. -#}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#F1F6FC;padding:0 12px 28px;">
+  <tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="max-width:600px;font-family:Helvetica,Arial,sans-serif;">
+      {#- La baja va en todos los planes, sin excepción, y va aquí y no dentro
+          de la plantilla para que no se pueda quitar editándola. -#}
+      <tr><td align="center" style="padding:18px 20px 0;font-size:13px;
+                                    line-height:1.6;color:#51617A;">
+        <a href="{{ unsubscribe }}" style="color:#136A9B;">Anular la suscripción</a>
+        {%- if preview %}
+        <br><span style="color:#7692B3;">En el correo de verdad este enlace da
+        de baja a quien lo recibe. Desde aquí no hace nada.</span>
+        {%- endif %}
+      </td></tr>
+
+      {% if postal %}
+      {#- La ley CAN-SPAM de Estados Unidos la exige en todo correo publicitario,
+          y basta un destinatario con Gmail o Hotmail para caer en su ámbito. -#}
+      <tr><td align="center" style="padding:8px 20px 0;font-size:12px;
+                                    line-height:1.5;color:#7692B3;">{{ postal }}</td></tr>
+      {% endif %}
+
+      {% if watermark %}
+      {#- Solo en los planes que no la han pagado. Al subir de plan desaparece
+          sola: nadie la copió a la pieza, se pregunta cada vez. -#}
+      <tr><td align="center" style="padding:10px 20px 0;font-size:12px;
+                                    color:#7692B3;">
+        Enviado con <a href="https://panamails.com" style="color:#136A9B;">Panamails</a>
+      </td></tr>
+      {% endif %}
+    </table>
+  </td></tr>
+</table>

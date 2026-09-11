@@ -498,6 +498,50 @@ def contact_limit(account: dict[str, Any] | None) -> int:
     return PLAN_CONTACTS.get(plan_of(account) or "", Config.CONTACTS_FREE_LIMIT)
 
 
+# --------------------------------------------------------- la cuota del mes
+
+def quota_month(when: datetime | None = None) -> str:
+    """La clave del mes, «2026-09».
+
+    Un contador por mes y no uno solo que haya que poner a cero: el mes que
+    viene empieza en cero porque es otra clave, sin que nadie tenga que pasar a
+    barrer. Y lo del mes pasado queda ahí, que es lo que hace falta para
+    responder cuánto envió alguien en marzo.
+    """
+    moment = when or now()
+    return f"{moment.year:04d}-{moment.month:02d}"
+
+
+def sent_this_month(account: dict[str, Any] | None,
+                    when: datetime | None = None) -> int:
+    counts = (account or {}).get("sent_counts") or {}
+    return int(counts.get(quota_month(when), 0))
+
+
+def quota_left(account: dict[str, Any] | None,
+               when: datetime | None = None) -> int:
+    """Cuántos correos puede mandar todavía este mes.
+
+    **Cero sin plan contratado**, que no es lo mismo que «no se sabe»: sin plan
+    no hay correos incluidos, así que no sale ninguno. El número de cada plan
+    sale de docs/pricing.md, como todo lo demás.
+    """
+    allowed = plans.emails_a_month(plan_of(account))
+    if not allowed:
+        return 0
+    return max(0, allowed - sent_this_month(account, when))
+
+
+def add_sent(db, account_id, many: int, when: datetime | None = None) -> None:
+    """Anotar los que acaban de salir. Se llama una vez por tanda, no por correo."""
+    if many <= 0:
+        return
+    db.accounts.update_one(
+        {"_id": account_id},
+        {"$inc": {f"sent_counts.{quota_month(when)}": many},
+         "$set": {"updated_at": now()}})
+
+
 def plan_of(account: dict[str, Any] | None) -> str | None:
     """The plan this account pays for, or None while it pays for none.
 

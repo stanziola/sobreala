@@ -28,7 +28,7 @@ from typing import Any
 from flask import render_template, url_for
 
 from config import Config
-from i18n import t
+from i18n import on_date, t  # noqa: F401  (on_date se reexporta)
 from models import account as accounts
 from models import mail_log
 from services import mailer, plans
@@ -39,19 +39,6 @@ WARN_DAYS = 7
 # de prueba de hace medio año recibiría un aviso de algo viejísimo la primera
 # vez que alguien entre.
 STALE_DAYS = 30
-
-MONTHS = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
-          "agosto", "septiembre", "octubre", "noviembre", "diciembre")
-
-
-def on_date(when) -> str:
-    """La fecha como la escribiría una persona.
-
-    A mano y no con `strftime`, que da el mes en el idioma del servidor: en
-    Railway saldría «September» en un correo en español.
-    """
-    return f"{when.day} de {MONTHS[when.month - 1]} de {when.year}"
-
 
 def plan_name(plan: str | None) -> str:
     return plans.PLANS.get(plan or "", {}).get("name", "")

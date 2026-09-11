@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ t('bye_title') }}{% endblock %}
+
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('bye_title') }}</h1>
+
+  {% if already %}
+  <p class="lead">{{ t('bye_already', email=email) }}</p>
+  {% else %}
+  <p class="lead">{{ t('bye_lead', email=email, company=company) }}</p>
+
+  {# Lo que da de baja es este botón y no abrir la página: los escáneres de
+     correo abren los enlaces de lo que revisan, y si bastara con abrirlo, la
+     lista de un cliente se vaciaría sola. #}
+  <form method="post">
+    <button class="btn" type="submit">{{ t('bye_submit') }}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

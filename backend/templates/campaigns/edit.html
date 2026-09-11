@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ t('send_edit_title') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{% block content %}
+<h1 class="settings__heading">{{ t('send_edit_title') }}</h1>
+<p class="settings__lead">{{ t('send_edit_lead') }}</p>
+
+{% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% include "campaigns/_form.html" %}
+  <button class="btn" type="submit">{{ t('send_save') }}</button>
+</form>
+
+<p class="foot">
+  <a href="{{ url_for('campaigns.index') }}">{{ t('send_back') }}</a>
+</p>
+{% endblock %}

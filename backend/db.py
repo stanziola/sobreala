@@ -175,6 +175,15 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.designs.create_index([("status", ASCENDING), ("created_at", ASCENDING)],
                             name="by_status_created")
 
+    # Una campaña por envío. Se listan por cuenta y por cuándo salen, que es
+    # como las enseña la pantalla y como las va a buscar el proceso en segundo
+    # plano el día que exista: «las que ya les tocaba».
+    db.campaigns.create_index([("account_id", ASCENDING),
+                               ("scheduled_at", DESCENDING)],
+                              name="by_account_when")
+    db.campaigns.create_index([("status", ASCENDING), ("scheduled_at", ASCENDING)],
+                              name="by_status_when")
+
     # Las imágenes que los clientes ponen en sus plantillas. Se buscan por su
     # nombre, que es la dirección con la que las pide el lector de correo de
     # quien recibió la campaña, y ese nombre no se puede repetir.

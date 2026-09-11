@@ -25,6 +25,7 @@ un `<script>` en el título sale como texto y no como etiqueta.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -141,6 +142,41 @@ def email(key: str, filled: dict[str, str], *, plan: str | None,
         watermark=plans.has_watermark(plan),
         postal=Config.POSTAL_ADDRESS,
     )
+
+
+def foot(*, plan: str | None, unsubscribe: str = "#",
+         preview: bool = False) -> str:
+    """Solo lo que ponemos nosotros: la baja, la dirección postal y la marca.
+
+    Existe aparte porque a una pieza subida por el cliente no se le puede poner
+    un sobre alrededor: ya es un documento entero, con su `<html>` y su
+    `<body>`. Lo que se le hace es meterle esto dentro, antes de que cierre.
+    """
+    return _env.get_template("_foot.html").render(
+        unsubscribe=unsubscribe, preview=preview,
+        watermark=plans.has_watermark(plan), postal=Config.POSTAL_ADDRESS)
+
+
+# Dónde termina el documento de un cliente. Se busca sin distinguir mayúsculas
+# porque el HTML lo escribió otro.
+CLOSING = re.compile(r"</body\s*>", re.IGNORECASE)
+
+
+def email_from_html(html: str, *, plan: str | None, unsubscribe: str = "#",
+                    preview: bool = False) -> str:
+    """Un correo a partir del HTML que subió el cliente.
+
+    Se le inyecta el pie justo antes de que cierre el cuerpo; si no cierra
+    —`services/html_check.py` no lo exige—, se le pega al final. De las dos
+    formas la baja sale **dentro** del correo y no la puede quitar nadie
+    editando su archivo, que es de lo que trata la regla 3.
+    """
+    pie = foot(plan=plan, unsubscribe=unsubscribe, preview=preview)
+    found = list(CLOSING.finditer(html))
+    if not found:
+        return html + pie
+    last = found[-1]
+    return html[:last.start()] + pie + html[last.start():]
 
 
 def as_json(filled: dict[str, str]) -> str:

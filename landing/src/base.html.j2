@@ -132,6 +132,13 @@
             <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
             <span>{{ panel.panel_label }}</span></a>
 
+          {#- Debajo de Estadísticas y solo para clientes, igual que en el
+              panel: una cuenta de administrador no tiene a quién escribirle. -#}
+          <a class="usermenu__item" data-client-only hidden
+             href="{{ panel.base_url }}/envios">
+            <span class="usermenu__icons">{% include "partials/icon-send.svg.j2" %}</span>
+            <span>{{ panel.send_label }}</span></a>
+
           <a class="usermenu__item" data-client-only hidden
              href="{{ panel.base_url }}/contactos">
             <span class="usermenu__icons">{% include "partials/icon-people.svg.j2" %}</span>

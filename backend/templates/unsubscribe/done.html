@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t('bye_done_title') }}{% endblock %}
+
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('bye_done_title') }}</h1>
+  <p class="lead">
+    {% if email %}{{ t('bye_done', email=email, company=company) }}
+    {% else %}{{ t('bye_done_gone') }}{% endif %}
+  </p>
+  <p class="hint">{{ t('bye_done_note') }}</p>
+</div>
+{% endblock %}

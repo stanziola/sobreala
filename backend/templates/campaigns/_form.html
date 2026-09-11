@@ -1,0 +1,54 @@
+{#- El formulario de una campaña, el mismo para crear y para editar.
+
+    Espera: lists, pieces, named, errors, form (lo que se acaba de escribir) y,
+    al editar, campaign y when. -#}
+{% set chosen = form.get('lista', campaign.tag if campaign else '') %}
+{% set piece_id = form.get('pieza', campaign.design_id|string if campaign else '') %}
+
+<label for="asunto">{{ t('send_subject') }}</label>
+<input id="asunto" name="asunto" type="text" maxlength="150" autocomplete="off"
+       value="{{ form.get('asunto', campaign.subject if campaign else '') }}">
+{% if errors.asunto %}<p class="error">{{ errors.asunto }}</p>{% endif %}
+<p class="hint">{{ t('send_subject_hint') }}</p>
+
+<label for="lista">{{ t('send_list') }}</label>
+<select id="lista" name="lista">
+  {% for one in lists %}
+  <option value="{{ one.tag }}"{% if one.tag == chosen %} selected{% endif %}>
+    {{ one.name }} · {{ t('send_howmany', n=one.howmany) }}</option>
+  {% endfor %}
+</select>
+{% if errors.lista %}<p class="error">{{ errors.lista }}</p>{% endif %}
+
+<label for="pieza">{{ t('send_piece') }}</label>
+{% if pieces %}
+<select id="pieza" name="pieza">
+  {% for one in pieces %}
+  <option value="{{ one._id }}"{% if one._id|string == piece_id %} selected{% endif %}>
+    {{ one.name }}{% if one.template %} · {{ named.get(one.template, one.template) }}{% endif %}</option>
+  {% endfor %}
+</select>
+{% if errors.pieza %}<p class="error">{{ errors.pieza }}</p>{% endif %}
+{% else %}
+<p class="hint">{{ t('send_no_pieces') }}
+  <a href="{{ url_for('designs.index') }}">{{ t('menu_designs') }}</a></p>
+{% endif %}
+
+<p class="field-label">{{ t('send_when') }}</p>
+{% set when_now = form.get('cuando', 'fecha' if campaign else 'ahora') == 'ahora' %}
+<label class="check">
+  <input type="radio" name="cuando" value="ahora"{% if when_now %} checked{% endif %}>
+  <span>{{ t('send_when_now') }}</span>
+</label>
+<label class="check">
+  <input type="radio" name="cuando" value="fecha"{% if not when_now %} checked{% endif %}>
+  <span>{{ t('send_when_later') }}</span>
+</label>
+<input id="fecha" name="fecha" type="datetime-local"
+       value="{{ form.get('fecha', when if campaign else '') }}"
+       aria-label="{{ t('send_when_later') }}">
+{% if errors.fecha %}<p class="error">{{ errors.fecha }}</p>{% endif %}
+{#- La hora es la del reloj de quien la escribe y se guarda tal cual, en UTC.
+    Preguntar la zona horaria es lo que falta antes de que esto lo use alguien
+    que no esté en Panamá. -#}
+<p class="hint">{{ t('send_when_hint') }}</p>

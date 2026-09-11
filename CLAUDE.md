@@ -13,9 +13,10 @@ PyMEs — organizaciones que ya tienen una lista de correos armada por otra raz�
 páginas estáticas generadas con Jinja2), la cuenta entera —registro, código,
 doble factor, dispositivos, configuración—, **contactos** con su importador y
 sus supresiones, **plantillas** —las cuatro prediseñadas y la validación del
-HTML subido—, el **panel de administración** con la habilitación de envío, y el
-**cobro de un plan con PayPal**. Faltan campañas, analítica y el webhook de
-rebotes.
+HTML subido—, el **panel de administración** con la habilitación de envío, el
+**cobro de un plan con PayPal** y el **envío de campañas**, con su enlace de
+baja. Faltan la analítica de aperturas y clics, el webhook de rebotes y el
+proceso en segundo plano.
 
 ---
 
@@ -86,7 +87,8 @@ panamails/
     │   ├── contacts/       # importación, etiquetas, supresiones. HECHO
     │   ├── designs/        # plantillas: las prediseñadas y el HTML subido. HECHO
     │   ├── admin/          # aprobar cuentas, ficha de cliente y piezas. HECHO
-    │   ├── campaigns/      # crear, programar, enviar, pausar/retomar
+    │   ├── campaigns/      # crear, programar, enviar por tandas. HECHO
+    │   ├── unsubscribe/    # la baja, sin sesión. HECHO
     │   ├── analytics/      # métricas, exportar CSV/PDF
     │   ├── billing/        # planes, cuota, recargas, acumulado
     │   └── webhooks/       # SNS de SES, PayPal, Yappy
@@ -104,6 +106,8 @@ panamails/
     │   ├── plans.py        # precios, etiquetas y quién sube HTML, de docs/pricing.md
     │   ├── html_check.py   # revisa el HTML que sube un cliente
     │   ├── paypal.py       # crear y cobrar la orden, con urllib
+    │   ├── sender.py       # arma y entrega cada correo de una campaña
+    │   ├── unsubscribe.py  # el enlace de baja, firmado, uno por destinatario
     │   ├── render.py       # arma el correo: la pieza más la baja, la marca
     │   │                   # de agua y la dirección postal
     │   ├── imaging.py      # achica y reconoce las imágenes de las piezas
@@ -234,6 +238,13 @@ que puede suspender y habilitar a todas las demás. Las filas se esconden del me
 medias: una dirección escrita mal no queda ocupada para siempre, y nadie puede
 reservar el correo de un tercero registrándolo y no confirmando nunca. El
 intento sigue en `auth_events`, que no tiene TTL.
+
+**La cuota del mes vive en `sent_counts`**, una clave por mes y un contador
+dentro. Un contador por mes y no uno solo que haya que poner a cero: el mes que
+viene empieza en cero porque es otra clave, sin que nadie pase a barrer, y lo del
+mes pasado queda para responder cuánto envió alguien en marzo. Lo compara
+`accounts.quota_left()` contra lo que dice `docs/pricing.md` para ese plan; sin
+plan es cero, que no es lo mismo que «no se sabe».
 
 **El correo de la cuenta se puede cambiar, con dos pruebas.** La contraseña,
 como para cambiarla o para tocar los dos pasos; y un **código a la dirección
@@ -532,8 +543,23 @@ respuesta se puede guardar un año: cambiar una imagen es subir otra, con otro
 nombre, así que lo cacheado no puede quedar viejo.
 
 ### `campaigns`
-Incluye la **posición de envío** (hasta qué destinatario se envió), necesaria
-para pausar por límite de cuota y retomar desde ahí.
+Un documento por envío: el asunto, la pieza, la lista, la hora y **hasta dónde
+llegó**. Estados: `scheduled` → `sending` → `sent`.
+
+**La posición es lo que hace que esto se pueda cortar.** El envío sale por tandas
+—cien destinatarios por vuelta— porque corre dentro de la petición y no hay
+proceso en segundo plano: cada tanda anota dónde quedó, así que cortar a la
+mitad no le manda a nadie dos veces, y la pantalla ofrece seguir. El día que
+exista ese proceso, llama a `sender.run()` en bucle y no cambia nada más. Es
+también lo que va a permitir pausar por cuota y retomar.
+
+**Editar y borrar solo mientras esté en `scheduled`**, y el estado va dentro de
+la consulta que escribe: entre mirar y guardar hay sitio para que el envío
+arranque. Que le haya pasado la hora no la cierra —nadie la despertó—, así que
+sigue esperando con su botón de mandar.
+
+**Lo programado no sale solo.** No hay quién lo despierte: cuando pasa su hora, la
+pantalla la enseña como lista para salir.
 
 ### `events`
 Un registro por evento de SES (enviado, entregado, rebote, queja, apertura,
@@ -541,7 +567,9 @@ clic), con su cuenta, su campaña y cuándo pasó. Es lo que más crece: ~3 even
 por correo, ~200 bytes cada uno.
 **Retención: 12 meses en detalle, después solo totales por campaña.**
 
-**Todavía no la llena nadie**, y `models/event.py` ya la lee: la serie por tramo
+**La llena el envío de campañas**, con un evento por correo que sale, así que
+las gráficas de Estadísticas ya no están vacías. Lo que falta son las aperturas,
+los clics y los rebotes, que llegan por el webhook de SNS. `models/event.py` la lee: la serie por tramo
 de tiempo y los totales del periodo, que contra una colección que no existe
 devuelven cero. Eso es lo que dibuja la pantalla de Estadísticas hoy, y el día
 que el webhook de SNS entre en funcionamiento se llena sola sin tocar la
@@ -700,8 +728,8 @@ construir.
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: panel,
-contactos, plantillas, configuración, modo, idioma, cambiar de cuenta y
-cerrar sesión. Las
+enviar correos, contactos, plantillas, configuración, modo, idioma, cambiar de
+cuenta y cerrar sesión. Las
 plantillas van debajo de contactos: primero a quién le escribes, después con qué.
 **A un administrador el menú le enseña administración de primera y después
 configuración, y nada más.** El sitio público sí le sigue enseñando las filas de
@@ -879,18 +907,63 @@ Un plan que venció hace más de 30 días no dispara nada. Sin ese corte, al sub
 esto las cuentas viejas de prueba habrían recibido un aviso de algo de hace
 medio año la primera vez que alguien entrara.
 
-## Enviar correos: lo siguiente, y lo que no va a hacer
+## Enviar correos
 
-La fila **Enviar correos**, debajo de Estadísticas: armar el envío, programarlo,
-poder editarlo aunque ya esté programado, elegir etiquetas y elegir una pieza
-guardada. Se hace sobre lo de arriba, porque sin piezas guardadas no tendría qué
-ofrecer.
+`/envios`, debajo de Estadísticas y **solo para clientes**: se elige la lista
+—una etiqueta o todos—, una pieza guardada y el asunto, y sale ahora o queda
+programada. Arriba, siempre, **qué le falta a la cuenta para que un envío salga
+de verdad**; armar y programar se puede igual, mandar no.
 
-**Esa pantalla arma y agenda, y no manda.** La campaña queda en cola con su hora,
-y mandar de verdad se conecta cuando estén las cuatro cosas que hoy faltan:
-acceso de producción en Amazon SES, `envios.panamails.com` verificado, el webhook
-de rebotes, y el proceso en segundo plano —un envío no puede correr dentro de una
-petición—. Nada de eso obliga a rehacer la pantalla después.
+**Para mandar hacen falta las dos puertas**: un plan con cuota del mes por gastar,
+y la habilitación de envío, que es la única con una persona detrás
+(`accounts.can_send()`). `services/sender.py` las mira antes de armar un solo
+correo.
+
+**`services/sender.py` es el único sitio que le escribe a un contacto de un
+cliente.** Los del sistema salen por `mailer.py`, que es otro camino con otras
+reglas: aquellos no llevan baja ni marca de agua (regla 8) y estos las llevan
+siempre (reglas 3 y 4). Las campañas **no pasan por `mail_log`**, que es del
+correo del sistema; lo suyo se cuenta en su propio documento.
+
+### La baja, que es la regla 3
+
+Cada destinatario recibe **su** enlace, distinto, inyectado al armar el correo y
+no guardado en la pieza, para que el cliente no lo pueda quitar. Va también en la
+cabecera `List-Unsubscribe`, con `List-Unsubscribe-Post`, que es lo que hace que
+Gmail enseñe su propio botón de cancelar suscripción.
+
+**Sin escribir nada al enviar**: el enlace lleva el identificador del contacto y
+una firma con la llave del servidor (`services/unsubscribe.py`). Un documento por
+destinatario multiplicaría la base por el tamaño de cada lista para conseguir lo
+mismo.
+
+**Abrir el enlace no da de baja a nadie**, y eso no es un descuido: los escáneres
+de correo abren los enlaces de lo que revisan, y si bastara con abrirlo, la lista
+de un cliente se vaciaría sola. Lo que da de baja es el POST —el mismo que manda
+Gmail en su «un clic»—, y por eso ese POST **no lleva testigo**: lo que autoriza
+es la firma del enlace. La baja queda con motivo `unsubscribe`, que el cliente no
+puede levantar.
+
+**La cabecera no puede ir codificada.** Una dirección no tiene espacios por donde
+partirla, así que con el límite de 78 caracteres Python la parte codificándola en
+RFC 2047 y el botón del buzón deja de entenderla. Por eso el mensaje se arma con
+una política de líneas largas.
+
+### De quién sale
+
+De la identidad **verificada hoy** en SES —`panamails.com`—, con el nombre de la
+empresa a la vista y su dirección como responder a. Lo que dice el apartado de
+arriba, `tuempresa@envios.panamails.com`, es a dónde va esto el día que ese
+subdominio esté verificado: mientras no lo esté, usarlo haría fallar cada envío.
+Es una sola función, `sender.from_address()`.
+
+Y SES sigue en modo de prueba: **solo entrega a direcciones verificadas**. Lo que
+responda por cada destinatario se guarda en la campaña y la pantalla lo enseña.
+
+### Lo que todavía no hace
+
+Aperturas, clics y rebotes —eso es el webhook de SNS—, reanudar sola una campaña,
+y acumular los correos no usados al mes siguiente.
 
 ## Cobrar un plan
 
