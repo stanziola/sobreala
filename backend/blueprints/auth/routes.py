@@ -1231,14 +1231,24 @@ def recover():
 
     Signed in, the address is already known and the form does not ask for it:
     this is also the way to change a password without remembering the old one.
+
+    **Salvo cuando se está agregando una cuenta**, que es el caso contrario:
+    ahí hay una sesión abierta, pero la contraseña que se olvidó es la de la
+    **otra** dirección, la que se venía a sumar. Sin esta distinción el código
+    salía al buzón de la cuenta en la que ya estaba dentro, que es justo donde
+    no hace falta.
     """
     account = current_account()
+    # La marca la pone /entrar?agregar=1 y vive hasta que se abre la sesión
+    # nueva, así que sigue puesta al pasar por aquí.
+    adding = bool(session.get(ADDING))
+    known = account is not None and not adding
     errors: dict[str, str] = {}
-    email_value = account["email"] if account else ""
+    email_value = account["email"] if known else ""
 
     if request.method == "POST":
         db = get_db()
-        if account is None:
+        if not known:
             email_value = request.form.get("email", "").strip()
 
         if not csrf_ok(request.form.get("csrf_token")):
@@ -1274,7 +1284,7 @@ def recover():
                 return redirect(url_for("auth.recover_code"))
 
     return render_template("recover.html", errors=errors, email=email_value,
-                           known=account is not None)
+                           known=known)
 
 
 @bp.route("/recuperar/codigo", methods=["GET", "POST"])
@@ -1369,7 +1379,10 @@ def recover_new():
                 sessions.revoke_others(db, account_id)
                 log_auth(db, events.PASSWORD_CHANGE, events.OK,
                          email=account["email"], account_id=account_id)
-                sign_in(account)
+                # Si se venía agregando una cuenta, las que ya estaban
+                # abiertas siguen abiertas: recuperar la contraseña de la
+                # segunda no es motivo para cerrar la primera.
+                sign_in(account, keep=bool(session.pop(ADDING, False)))
                 deliver(db, send_password_changed, account,
                         kind=events.PASSWORD_CHANGE)
                 return redirect(url_for("auth.panel", cambiada=1))

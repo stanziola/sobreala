@@ -787,6 +787,11 @@ Tres cosas que sostienen esto:
   contraseña y su segundo paso: `/entrar?agregar=1`. Aquí no se abre ninguna
   puerta que no estuviera ya abierta. La marca de «vengo a agregar» vive en la
   sesión y no en la dirección, porque el segundo paso pasa por otra pantalla.
+- **«Olvidé la contraseña» mientras se agrega una cuenta es de la que se está
+  agregando**, no de la que ya está abierta. La pantalla de recuperar, estando
+  dentro, no pregunta la dirección porque ya la sabe; con la marca de agregar
+  puesta sí la pregunta, porque la contraseña olvidada es la de otra. Y al
+  terminar, las cuentas que ya estaban abiertas siguen abiertas.
 - **En la lista nunca se dibuja un testigo.** Los formularios mandan el
   identificador de la cuenta; el testigo se queda en la galleta. Dibujarlo sería
   escribir la sesión dentro del HTML.

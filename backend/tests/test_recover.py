@@ -211,3 +211,73 @@ def test_an_unknown_address_is_recorded_as_such(client, database, outbox):
     assert [d["outcome"] for d in database.auth_events.find({"kind": events.RECOVER})] == [
         events.NO_ACCOUNT]
     assert database.mail_log.count_documents({}) == 0
+
+
+# ------------------------------------- recuperar mientras se agrega una cuenta
+
+def other(client):
+    return client.application.test_client()
+
+
+def adding(browser):
+    """Abrir la pantalla de entrar en modo «agregar otra cuenta»."""
+    return browser.get("/entrar?agregar=1")
+
+
+def test_agregando_una_cuenta_se_recupera_la_otra(client, database, outbox):
+    """El fallo que había: estando dentro de A y agregando B, «olvidé la
+    contraseña» mandaba el código al buzón de A, que es justo donde no hace
+    falta."""
+    register(client, email="una@ejemplo.com")
+    register(client, email="dos@ejemplo.com")
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+    adding(browser)
+
+    pantalla = browser.get("/recuperar").get_data(as_text=True)
+    # Pregunta la dirección en vez de dar por hecho la de la sesión.
+    assert "una@ejemplo.com" not in pantalla
+
+    ask(browser, "dos@ejemplo.com")
+
+    ultimo = list(database.mail_log.find({"purpose": mail_log.RECOVER}))[-1]
+    assert ultimo["to"] == "dos@ejemplo.com"
+
+
+def test_al_recuperar_la_segunda_la_primera_sigue_abierta(client, database,
+                                                          outbox):
+    register(client, email="una@ejemplo.com")
+    register(client, email="dos@ejemplo.com")
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+    adding(browser)
+
+    ask(browser, "dos@ejemplo.com")
+    type_code(browser, code_from_outbox(outbox))
+    browser.get("/recuperar/nueva")
+    with browser.session_transaction() as sess:
+        token = sess["_csrf"]
+    browser.post("/recuperar/nueva", data={"csrf_token": token,
+                                           "password": NEW, "repeat": NEW})
+
+    una = accounts.by_email(database, "una@ejemplo.com")["_id"]
+    dos = accounts.by_email(database, "dos@ejemplo.com")["_id"]
+    with browser.session_transaction() as sess:
+        abiertas = [sessions.find(database, raw) for raw in sess.get("sids") or []]
+    cuales = {doc["account_id"] for doc in abiertas if doc}
+    assert cuales == {una, dos}
+
+
+def test_dentro_de_la_propia_cuenta_sigue_sin_preguntar(client, database, outbox):
+    """Lo de siempre: quien está en su cuenta y olvidó su contraseña no tiene
+    que volver a escribir su dirección."""
+    register(client, email="una@ejemplo.com")
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+
+    pantalla = browser.get("/recuperar").get_data(as_text=True)
+    assert "una@ejemplo.com" in pantalla
+
+    ask(browser)
+    ultimo = list(database.mail_log.find({"purpose": mail_log.RECOVER}))[-1]
+    assert ultimo["to"] == "una@ejemplo.com"
