@@ -18,6 +18,7 @@
          value="{{ row.name or '' }}">
 
   {% include "contacts/_tags-picker.html" %}
+{% include "contacts/_fields.html" %}
 
   <button class="btn" type="submit">{{ t('contacts_edit_submit') }}</button>
 </form>

@@ -8,6 +8,7 @@ from typing import Any
 from pymongo.errors import DuplicateKeyError
 
 from config import Config
+from services import fields
 from services import plans
 from services.security import hash_password, verify_password
 
@@ -227,6 +228,62 @@ def remove_tag(db, account_id, name: str) -> None:
     llevaban es cosa de models/contact.py, y el que borra hace las dos."""
     db.accounts.update_one({"_id": account_id},
                            {"$pull": {"contact_tags": name},
+                            "$set": {"updated_at": now()}})
+
+
+# ------------------------------------------- las columnas propias del contacto
+
+# Viven aquí, en la cuenta, y no deducidas de los contactos, por lo mismo que
+# las etiquetas: una columna recién creada se puede usar desde ese momento
+# aunque todavía no tenga un solo valor escrito.
+
+
+def fields_of(account: dict[str, Any] | None) -> list[dict[str, Any]]:
+    return list((account or {}).get("contact_fields") or [])
+
+
+def field_limit(account: dict[str, Any] | None) -> int:
+    """Cuántas columnas propias puede tener esta cuenta, según su plan."""
+    return plans.field_limit(plan_of(account))
+
+
+def field_by_key(account: dict[str, Any] | None, key: str):
+    return next((one for one in fields_of(account) if one["key"] == key), None)
+
+
+def add_field(db, account_id, *, label: str, kind: str,
+              default: str = "") -> str | None:
+    """Crear una columna. Devuelve su clave, o None si no se pudo.
+
+    No se pudo quiere decir: sin nombre, un nombre que da la misma clave que
+    otra, o que ya no caben más en el plan. El límite se mira aquí y no solo en
+    la pantalla, porque un formulario se puede escribir a mano.
+    """
+    name = fields.clean_label(label)
+    key = fields.key_from(name)
+    if not name or not key:
+        return None
+    account = by_id(db, account_id)
+    existing = fields_of(account)
+    if len(existing) >= field_limit(account):
+        return None
+    if any(one["key"] == key for one in existing):
+        return None
+    db.accounts.update_one(
+        {"_id": account_id},
+        {"$push": {"contact_fields": {
+            "key": key, "label": name, "type": fields.clean_kind(kind),
+            "default": fields.parse(default, fields.clean_kind(kind)) or ""}},
+         "$set": {"updated_at": now()}})
+    return key
+
+
+def remove_field(db, account_id, key: str) -> None:
+    """Sacar la columna del registro. Borrar lo que los contactos tenían
+    escrito en ella es cosa de models/contact.py, y el que borra hace las
+    dos."""
+    db.accounts.update_one({"_id": account_id},
+                           {"$pull": {"contact_fields": {"key": key}},
                             "$set": {"updated_at": now()}})
 
 

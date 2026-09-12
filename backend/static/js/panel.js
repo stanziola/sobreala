@@ -283,3 +283,167 @@
     name.classList.toggle("is-set", !!file);
   });
 })();
+
+/* Elegir qué columnas del archivo se guardan, al importar contactos.
+
+   La primera línea del CSV se lee aquí, en el navegador, con FileReader: así
+   el archivo no hay que subirlo dos veces ni guardarlo en el servidor
+   mientras alguien decide. Lo que se manda son los desplegables; el servidor
+   vuelve a leer esa misma cabecera y no se fía de nada de esto.
+
+   Sin JavaScript el bloque se queda escondido y la importación sigue
+   funcionando: el servidor casa los títulos con las columnas que ya existen. */
+(function () {
+  var input = document.querySelector(".filepick__input");
+  var box = document.querySelector("[data-map-columns]");
+  if (!input || !box) return;
+
+  var rows = box.querySelector("[data-map-rows]");
+  var room = box.querySelector("[data-map-room]");
+  var choiceTpl = document.querySelector("[data-map-choice]");
+  var typeTpl = document.querySelector("[data-map-type]");
+  if (!rows || !choiceTpl || !typeTpl) return;
+
+  var left = parseInt(room && room.getAttribute("data-room"), 10);
+  if (isNaN(left)) left = 0;
+
+  /* El separador, contando cuál aparece más. Excel en español escribe punto y
+     coma; casi todo lo demás, coma. */
+  function apart(line) {
+    var best = ",", most = -1;
+    [",", ";", "\t", "|"].forEach(function (one) {
+      var many = line.split(one).length - 1;
+      if (many > most) { most = many; best = one; }
+    });
+    return best;
+  }
+
+  /* Una línea de CSV en celdas, respetando las comillas. */
+  function cells(line, sep) {
+    var out = [], current = "", quoted = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === '"') {
+        if (quoted && line[i + 1] === '"') { current += '"'; i++; }
+        else quoted = !quoted;
+      } else if (ch === sep && !quoted) { out.push(current); current = ""; }
+      else current += ch;
+    }
+    out.push(current);
+    return out.map(function (one) { return one.trim(); });
+  }
+
+  /* Sin acentos y en minúsculas, para comparar un título con los conocidos.
+     Es lo mismo que hace fold() en el servidor. */
+  function fold(text) {
+    return String(text || "").normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  }
+
+  var known = (box.getAttribute("data-known") || "").split(",").map(fold);
+
+  function draw(header) {
+    rows.innerHTML = "";
+    header.forEach(function (title, index) {
+      /* El correo y el nombre no se preguntan: el servidor ya los reconoce por
+         su título, y ofrecerlos aquí invitaría a guardar la dirección dentro
+         de una columna propia. */
+      if (!title || known.indexOf(fold(title)) >= 0) return;
+      var row = document.createElement("div");
+      row.className = "mapcols__row";
+
+      var name = document.createElement("span");
+      name.className = "mapcols__name";
+      name.textContent = title;
+      row.appendChild(name);
+
+      var choice = choiceTpl.content.firstElementChild.cloneNode(true);
+      choice.name = "columna-" + index;
+      choice.id = "columna-" + index;
+      name.setAttribute("for", choice.id);
+      row.appendChild(choice);
+
+      var kind = typeTpl.content.firstElementChild.cloneNode(true);
+      kind.name = "tipo-" + index;
+      kind.hidden = true;
+      row.appendChild(kind);
+
+      /* El tipo solo se pregunta cuando la columna se va a crear: para una que
+         ya existe, el tipo ya está decidido y preguntarlo otra vez sería
+         ofrecer cambiarlo por la puerta de atrás. */
+      choice.addEventListener("change", function () {
+        kind.hidden = choice.value !== "nueva";
+        count();
+      });
+      rows.appendChild(row);
+    });
+    box.hidden = header.length === 0;
+    count();
+  }
+
+  /* Cuántas se están creando, contra las que caben. Es un aviso, no una
+     puerta: la que cierra es la del servidor. */
+  function count() {
+    if (!room) return;
+    var many = 0;
+    rows.querySelectorAll("select[name^='columna-']").forEach(function (one) {
+      if (one.value === "nueva") many++;
+    });
+    room.classList.toggle("is-full", many > left);
+  }
+
+  input.addEventListener("change", function () {
+    var file = input.files && input.files[0];
+    box.hidden = true;
+    rows.innerHTML = "";
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      var line = text.split(/\r\n|\r|\n/)[0] || "";
+      /* Una primera línea con una dirección dentro son datos, no títulos: ese
+         archivo no tiene nada que mapear. */
+      if (!line.trim() || line.indexOf("@") >= 0) return;
+      draw(cells(line, apart(line)));
+    };
+    /* Solo el principio: la cabecera está ahí y el archivo puede pesar megas. */
+    reader.readAsText(file.slice(0, 64 * 1024));
+  });
+})();
+
+/* Escribir una columna dentro de la pieza, donde esté el cursor.
+
+   Los botones llevan la marca escrita —*|CIUDAD|*—, así que sin JavaScript se
+   puede leer y copiar a mano; lo que esto agrega es pegarla en el sitio donde
+   se estaba escribiendo. */
+(function () {
+  var box = document.querySelector("[data-marks]");
+  if (!box) return;
+  var form = box.closest("form") || document;
+  var last = null;
+
+  form.addEventListener("focusin", function (e) {
+    var one = e.target;
+    if (one && (one.tagName === "TEXTAREA" ||
+                (one.tagName === "INPUT" && one.type === "text"))) {
+      last = one;
+    }
+  });
+
+  box.addEventListener("click", function (e) {
+    var button = e.target.closest("[data-mark]");
+    if (!button) return;
+    var mark = button.getAttribute("data-mark");
+    /* Sin un campo tocado no se adivina: la marca se queda para copiar. */
+    if (!last) return;
+    var start = last.selectionStart, end = last.selectionEnd;
+    if (start === null || start === undefined) {
+      last.value += mark;
+    } else {
+      last.value = last.value.slice(0, start) + mark + last.value.slice(end);
+      last.selectionStart = last.selectionEnd = start + mark.length;
+    }
+    last.focus();
+  });
+})();

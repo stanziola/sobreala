@@ -16,6 +16,7 @@ reglas de negocio asociadas.
 | Campañas a lista completa | 5 | 5 | 5 | 5 |
 | Precio por correo | $0.0070 | $0.0040 | $0.0024 | $0.0012 |
 | Etiquetas | 1 | 2 | 4 | Ilimitadas |
+| Columnas propias del contacto | 1 | 5 | 10 | Ilimitadas |
 | Plantillas prediseñadas | ✅ | ✅ | ✅ | ✅ |
 | Subir tu propio HTML | — | ✅ | ✅ | ✅ |
 | **Correos sin marca de agua** | — | ✅ | ✅ | ✅ |
@@ -124,6 +125,25 @@ Normalización: sin espacios, sin distinguir mayúsculas.
 
 **Argumento comercial**: *"Tus contactos no se duplican: si una persona está en
 varias de tus listas, cuenta como uno solo y recibe un solo correo."*
+
+### Columnas propias del contacto
+
+Además del correo y el nombre, cada cuenta define **sus** columnas —ciudad,
+número de socio, monto, fecha de vencimiento— y las usa dentro del correo para
+que cada persona reciba su propio texto. Cuántas caben lo dice la fila de
+arriba.
+
+El límite es de empaquetado, no de costo: una columna más no cuesta lo que
+cuesta un correo más. Está para que los planes se distingan entre sí.
+
+| Regla | Efecto |
+|---|---|
+| Se crean antes de usarse | Como las etiquetas: el importador solo llena columnas que ya existen |
+| El archivo no manda | Un CSV con quince columnas se acepta; el cliente marca cuáles importa, y son esas las que cuentan contra el límite |
+| Cada una tiene un valor por defecto | Un contacto sin ese dato no deja un hueco en medio de la frase |
+
+**Argumento comercial**: *"Escríbele a cada quien por su nombre, con su monto y
+su fecha, sin armar un correo por persona."*
 
 ### Lista de supresión
 

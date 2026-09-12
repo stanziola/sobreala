@@ -1,0 +1,19 @@
+{#- Las columnas propias de la cuenta, para meterlas dentro de una pieza.
+
+    Espera: columns. Una cuenta que no ha creado ninguna no dibuja nada.
+
+    Cada una es un botón que la escribe donde esté el cursor; sin JavaScript el
+    botón no hace nada, pero la marca está ahí escrita para copiarla, que es lo
+    que hay que poder hacer de las dos formas. -#}
+{% if columns %}
+<p class="field-label">{{ t('designs_columns_title') }}</p>
+<p class="hint">{{ t('designs_columns_hint') }}</p>
+<div class="marks" data-marks>
+  {% for one in columns %}
+  <button class="mark" type="button" data-mark="*|{{ one.key }}|*"
+          title="{{ one.label }}">*|{{ one.key }}|*</button>
+  {% endfor %}
+</div>
+<p class="hint">{{ t('designs_columns_manage') }}
+  <a href="{{ url_for('contacts.fields') }}">{{ t('contacts_tab_fields') }}</a></p>
+{% endif %}

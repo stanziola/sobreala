@@ -205,7 +205,7 @@ def by_email(db, account_id, email: str) -> dict[str, Any] | None:
                                  "email_normalized": normalize_email(email)})
 
 
-def upsert_many(db, account_id, rows: Iterable[tuple[str, str]], *,
+def upsert_many(db, account_id, rows: Iterable[tuple], *,
                 tags: list[str], consent: dict[str, Any],
                 added_by: str = IMPORT) -> tuple[int, int]:
     """Write one batch. Returns (added, updated).
@@ -214,14 +214,23 @@ def upsert_many(db, account_id, rows: Iterable[tuple[str, str]], *,
     nobody. What an existing contact keeps is its tags —the new one is added to
     them, never replacing— its name if the file brings none, and the origin it
     was first recorded with: the first answer is the true one.
+
+    Cada fila es `(correo, nombre)` o `(correo, nombre, columnas)`. Las
+    columnas se escriben una por una y no como un bloque: así una importación
+    que trae la ciudad no le borra el monto a quien ya lo tenía.
     """
     moment = now()
     operations = []
-    for email, name in rows:
+    for row in rows:
+        email, name = row[0], row[1]
+        values = row[2] if len(row) > 2 else {}
         normalized = normalize_email(email)
         fresh = {"email": email.strip(), "updated_at": moment}
         if name:
             fresh["name"] = name.strip()[:120]
+        for key, value in (values or {}).items():
+            if value != "":
+                fresh[f"fields.{key}"] = value
         born = {"account_id": account_id, "email_normalized": normalized,
                 "consent": consent, "added_by": added_by, "created_at": moment}
         update: dict[str, Any] = {"$set": fresh, "$setOnInsert": born}
@@ -241,9 +250,10 @@ def upsert_many(db, account_id, rows: Iterable[tuple[str, str]], *,
 
 
 def create(db, account_id, *, email: str, name: str = "",
-           tags: list[str] | None = None, consent: dict[str, Any]) -> bool:
+           tags: list[str] | None = None, consent: dict[str, Any],
+           values: dict[str, str] | None = None) -> bool:
     """Add one by hand. False if that address is already in the account."""
-    added, _ = upsert_many(db, account_id, [(email, name)],
+    added, _ = upsert_many(db, account_id, [(email, name, values or {})],
                            tags=tags or [], consent=consent, added_by=MANUAL)
     return added == 1
 
@@ -255,7 +265,7 @@ def by_id(db, account_id, contact_id) -> dict[str, Any] | None:
 
 
 def update(db, account_id, contact_id, *, email: str, name: str,
-           tags: list[str]) -> bool:
+           tags: list[str], values: dict[str, str] | None = None) -> bool:
     """Cambiar la dirección, el nombre y las etiquetas. False si esa dirección
     ya la tiene otro contacto de la cuenta.
 
@@ -274,6 +284,10 @@ def update(db, account_id, contact_id, *, email: str, name: str,
                       "email_normalized": normalize_email(email),
                       "name": name.strip()[:120],
                       "tags": tags,
+                      # El formulario trae todas las columnas, así que aquí sí
+                      # se escribe el bloque entero: vaciar una es dejarla en
+                      # blanco a propósito.
+                      "fields": values or {},
                       "updated_at": now()}})
     except DuplicateKeyError:
         return False
@@ -285,6 +299,14 @@ def delete(db, account_id, email: str) -> bool:
     result = db.contacts.delete_one({"account_id": account_id,
                                      "email_normalized": normalize_email(email)})
     return result.deleted_count == 1
+
+
+def drop_field(db, account_id, key: str) -> int:
+    """Borrar lo que todos los contactos tenían escrito en esa columna."""
+    result = db.contacts.update_many(
+        {"account_id": account_id, f"fields.{key}": {"$exists": True}},
+        {"$unset": {f"fields.{key}": ""}, "$set": {"updated_at": now()}})
+    return result.modified_count
 
 
 def drop_tag(db, account_id, tag: str) -> int:

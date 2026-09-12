@@ -31,6 +31,7 @@ from models import auth_event as events
 from models import contact as contacts
 from models import import_job as imports
 from models import suppression as suppressions
+from services import fields as columns
 from services import importer
 from services import plans
 from services.security import csrf_ok
@@ -50,6 +51,14 @@ def keep_admins_out():
 # How many rows one screen of the list shows.
 PER_PAGE = 50
 
+# Lo que dice el desplegable del mapeo cuando esa columna del archivo todavía
+# no existe en la cuenta y hay que crearla.
+NEW_COLUMN = "nueva"
+
+# Los títulos que el importador ya reconoce solo. La pantalla no los pregunta,
+# y la lista viaja de aquí y no copiada al guion: es la misma.
+KNOWN_HEADERS = ",".join(importer.EMAIL_HEADERS + importer.NAME_HEADERS)
+
 
 def signed_in():
     """The account behind this request, or None. Every route starts here."""
@@ -61,6 +70,22 @@ def as_id(raw):
         return ObjectId(raw)
     except (InvalidId, TypeError):
         return None
+
+
+def values_written(account) -> dict[str, str]:
+    """Lo que el formulario escribió en cada columna de la cuenta.
+
+    Se recorren las columnas que existen, no lo que llegó: un campo con un
+    nombre inventado no escribe nada. Lo que no es del tipo de su columna
+    tampoco, que es lo mismo que hace el importador.
+    """
+    written: dict[str, str] = {}
+    for one in accounts.fields_of(account):
+        raw = request.form.get(f"col-{one['key']}", "")
+        value = columns.parse(raw, one.get("type", columns.TEXT))
+        if value:
+            written[one["key"]] = value
+    return written
 
 
 def tags_chosen(account) -> list[str]:
@@ -89,6 +114,11 @@ def shared(db, account, **extra):
         # Del registro de la cuenta y no de los contactos: así una etiqueta
         # recién creada aparece desde ese momento, aunque no tenga a nadie.
         "tags": accounts.tags_of(account),
+        # Lo mismo con las columnas propias: se crean antes de usarse.
+        "fields": accounts.fields_of(account),
+        # El tope del plan lo miran dos pantallas: la de columnas y la de
+        # importar, que es donde se pueden crear de golpe.
+        "field_limit": accounts.field_limit(account),
         **extra,
     }
 
@@ -153,6 +183,7 @@ def add_one():
                 db, account["_id"], email=address,
                 name=request.form.get("name", "").strip(),
                 tags=tags_chosen(account),
+                values=values_written(account),
                 consent=contacts.consent_of(source,
                                             request.form.get("note", "")))
             # Si esa dirección está anulada, se guarda igual pero no va a
@@ -193,7 +224,8 @@ def edit(raw):
             errors["email"] = t("error_contact_email")
         elif not contacts.update(db, account["_id"], contact_id, email=address,
                                  name=request.form.get("name", ""),
-                                 tags=tags_chosen(account)):
+                                 tags=tags_chosen(account),
+                                 values=values_written(account)):
             # Lo dice el índice único, no una consulta previa.
             errors["email"] = t("error_contact_taken")
         else:
@@ -202,6 +234,7 @@ def edit(raw):
 
     return render_template("contacts/edit.html", section="lista", errors=errors,
                            row=row, chosen=row.get("tags") or [],
+                           written=columns.values_of(row),
                            **shared(db, account))
 
 
@@ -276,10 +309,16 @@ def export():
             buffer.truncate(0)
             return value
 
+        # Las columnas propias salen al final y con su nombre: así el
+        # archivo que baja se puede volver a subir y el importador las reconoce
+        # por el título, que es lo que hace que exportar sirva de copia.
+        mine = accounts.fields_of(account)
+
         yield "\ufeff"
         writer.writerow([t("contacts_col_email"), t("contacts_col_name"),
                          t("contacts_col_tags"), t("contacts_col_how"),
-                         t("contacts_col_added"), t("contacts_col_status")])
+                         t("contacts_col_added"), t("contacts_col_status")]
+                        + [one["label"] for one in mine])
         yield flush()
         for row in rows:
             how = row.get("added_by")
@@ -293,6 +332,9 @@ def export():
                 t("contacts_status_blocked")
                 if row["email_normalized"] in blocked
                 else t("contacts_status_active"),
+                *[columns.show(columns.values_of(row).get(one["key"], ""),
+                               one.get("type", columns.TEXT))
+                  for one in mine],
             ])
             yield flush()
 
@@ -355,7 +397,106 @@ def drop_tag():
     return redirect(url_for("contacts.tags"))
 
 
+# ------------------------------------------- las columnas propias del contacto
+
+@bp.route("/contactos/columnas")
+def fields():
+    """Las columnas que esta cuenta guarda de cada contacto.
+
+    Existen aquí y no deducidas de los contactos, como las etiquetas: una
+    recién creada ya se puede usar en una pieza aunque nadie tenga ese dato
+    escrito todavía.
+    """
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    limit = accounts.field_limit(account)
+    return render_template(
+        "contacts/fields.html", section="columnas",
+        **shared(db, account, types=columns.TYPES,
+                 room=limit - len(accounts.fields_of(account)),
+                 fields_free=limit >= plans.UNLIMITED))
+
+
+@bp.route("/contactos/columnas/nueva", methods=["POST"])
+def add_field():
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    if csrf_ok(request.form.get("csrf_token")):
+        if not accounts.add_field(get_db(), account["_id"],
+                                  label=request.form.get("nombre", ""),
+                                  kind=request.form.get("tipo", ""),
+                                  default=request.form.get("respaldo", "")):
+            return redirect(url_for("contacts.fields", error="columna"))
+    return redirect(url_for("contacts.fields", guardado=1))
+
+
+@bp.route("/contactos/columnas/borrar", methods=["POST"])
+def drop_field():
+    """Borrar una columna: sale del registro y de los contactos que la tenían
+    escrita. Los contactos se quedan, y las piezas que la nombraban dejan de
+    escribir nada en ese sitio."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    if csrf_ok(request.form.get("csrf_token")):
+        db = get_db()
+        key = request.form.get("columna", "").strip()[:columns.KEY_MAX]
+        accounts.remove_field(db, account["_id"], key)
+        contacts.drop_field(db, account["_id"], key)
+    return redirect(url_for("contacts.fields"))
+
+
 # ------------------------------------------------------------- the importer
+
+def chosen_columns(db, account, head: list[str]):
+    """Qué columna del archivo se guarda en qué columna de la cuenta.
+
+    **El archivo no manda.** Uno de quince columnas se acepta igual; lo que
+    cuenta contra el plan es lo que el cliente marque, y eso es lo que se
+    comprueba aquí. Devuelve (mapa, error).
+
+    Sin JavaScript la pantalla no dibuja el mapeo y no llega ninguna elección:
+    entonces se hace por título, contra las columnas que esa cuenta ya tiene.
+    Nada se crea así, porque crear una columna es una decisión y no un efecto
+    secundario de subir un archivo.
+    """
+    marked = {index: request.form.get(f"columna-{index}", "").strip()
+              for index in range(len(head))}
+    marked = {i: what for i, what in marked.items() if what}
+    if not marked:
+        return importer.matching(head, accounts.fields_of(account)), None
+
+    existing = accounts.fields_of(account)
+    limit = accounts.field_limit(account)
+    fresh = [i for i, what in marked.items() if what == NEW_COLUMN]
+    if len(existing) + len(fresh) > limit:
+        return {}, t("error_fields_full", n=limit)
+
+    for index in fresh:
+        # El título del archivo es el nombre de la columna. El tipo lo eligió
+        # la pantalla al lado.
+        if not accounts.add_field(db, account["_id"], label=head[index],
+                                  kind=request.form.get(f"tipo-{index}", "")):
+            return {}, t("error_field")
+
+    account = accounts.by_id(db, account["_id"])
+    known = {one["key"]: one for one in accounts.fields_of(account)}
+    take: dict[int, dict] = {}
+    for index, what in marked.items():
+        key = (columns.key_from(head[index]) if what == NEW_COLUMN else what)
+        one = known.get(key)
+        # Una clave que no existe se ignora en vez de romper la importación:
+        # el formulario se puede escribir a mano.
+        if one is not None:
+            take[index] = one
+    return take, None
+
 
 @bp.route("/contactos/importar", methods=["GET", "POST"])
 def upload():
@@ -388,12 +529,31 @@ def upload():
         else:
             consent = contacts.consent_of(source, request.form.get("note", ""))
             tags = tags_chosen(account)
+            # El archivo se lee dos veces: la primera solo los títulos, para
+            # saber qué columna es cuál, y la segunda es la que escribe.
+            head = importer.header_of(archivo.stream)
+            archivo.stream.seek(0)
+            take, wrong = chosen_columns(db, account, head)
+
+            if wrong:
+                errors["form"] = wrong
+                return render_template(
+                    "contacts/import.html", section="importar", errors=errors,
+                    result=None,
+                    **shared(db, account, sources=contacts.SOURCES,
+                             history=imports.for_account(db, account["_id"]),
+                             per_day=Config.IMPORTS_PER_DAY,
+                             new_column=NEW_COLUMN, types=columns.TYPES,
+                             known_headers=KNOWN_HEADERS,
+                             max_mb=Config.IMPORT_MAX_BYTES // (1024 * 1024)))
+
             job = imports.start(db, account["_id"], filename=archivo.filename,
                                 tags=tags, consent=consent)
             try:
                 counts, stopped = importer.run(
                     db, account["_id"], archivo.stream, tags=tags,
-                    consent=consent, limit=accounts.contact_limit(account))
+                    consent=consent, limit=accounts.contact_limit(account),
+                    take=take)
             except Exception as exc:  # noqa: BLE001 - written down, not hidden
                 imports.finish(db, job, status=imports.FAILED, counts={},
                                error=f"{type(exc).__name__}: {exc}")
@@ -413,6 +573,8 @@ def upload():
         **shared(db, account, sources=contacts.SOURCES,
                  history=imports.for_account(db, account["_id"]),
                  per_day=Config.IMPORTS_PER_DAY,
+                 new_column=NEW_COLUMN, types=columns.TYPES,
+                 known_headers=KNOWN_HEADERS,
                  max_mb=Config.IMPORT_MAX_BYTES // (1024 * 1024)))
 
 

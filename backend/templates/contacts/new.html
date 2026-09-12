@@ -15,6 +15,7 @@
   <input id="name" name="name" type="text" autocomplete="off">
 
   {% include "contacts/_tags-picker.html" %}
+{% with written = {} %}{% include "contacts/_fields.html" %}{% endwith %}
   {% include "contacts/_consent.html" %}
 
   <button class="btn" type="submit">{{ t('contacts_add_submit') }}</button>

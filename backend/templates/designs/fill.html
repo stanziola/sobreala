@@ -63,6 +63,8 @@
     {% if errors[field.name] %}<p class="error">{{ errors[field.name] }}</p>{% endif %}
     {% endfor %}
 
+    {% include "designs/_columns.html" %}
+
     <div class="compose__actions">
       <button class="btn" type="submit" name="accion" value="guardar">{{ t('designs_save') }}</button>
       {# Este entra en el marco de al lado, no en la página. #}

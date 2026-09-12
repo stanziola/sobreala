@@ -92,6 +92,8 @@
 {% if can_upload %}
 <p class="settings__lead">{{ t('designs_upload_hint', kb=max_kb) }}</p>
 
+{% include "designs/_columns.html" %}
+
 <form method="post" enctype="multipart/form-data" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

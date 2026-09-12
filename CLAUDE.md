@@ -351,6 +351,28 @@ formulario dejaba «Socios» y «socios» como dos etiquetas distintas, y una re
 creada no aparecía en ningún lado hasta tener un contacto dentro, porque la
 lista se sacaba preguntándole a los contactos.
 
+**Cada cuenta define sus propias columnas**, además del correo y el nombre:
+ciudad, número de socio, monto, fecha de vencimiento. Viven en
+`contact_fields` del documento de la cuenta —nombre, clave, tipo y respaldo— y
+sus valores en `fields` del contacto, así que escribir un correo personalizado
+no agrega ni una consulta. Cuántas caben lo dice `docs/pricing.md`, como las
+etiquetas: 1 · 5 · 10 · ilimitadas, y 1 sin plan.
+
+Cuatro tipos —texto, número, fecha y sí/no— y cada uno se gana el sitio
+haciendo dos cosas: decidir qué se acepta al importar, y cómo se escribe al
+enviar. **El valor se guarda normalizado y siempre como texto**: una fecha como
+`2026-03-15` y un «1,234.50» como `1234.5`, para que el archivo de cada cliente
+pueda venir como venga y el correo salga parejo. Lo que no es de su tipo no se
+escribe: guardar «el martes» en una columna de fecha es guardar algo que
+después no se puede enseñar.
+
+**Cada columna tiene un respaldo**, y no es un adorno: sin él, a quien le falte
+ese dato le llega «Hola, » y el correo se ve roto.
+
+**Se crean antes de usarse**, como las etiquetas, en `/contactos/columnas`.
+Borrar una borra lo que los contactos tenían escrito en ella; los contactos se
+quedan.
+
 **`added_by` dice por dónde entró cada contacto**, `manual` o `import`. Los que
 existían antes de que el campo existiera no lo tienen y la pantalla enseña una
 raya: no se puede saber hacia atrás, y una raya es mejor que inventarlo.
@@ -481,6 +503,24 @@ diga otra cosa que el archivo. Agregar la quinta es dejar caer un archivo; lo
 único que se escribe fuera es la línea que explica para qué sirve, en `i18n.py`,
 y sin ella se ofrece igual. Las que empiezan por guion bajo no se pueden elegir:
 son el sobre.
+
+### Escribir el dato de cada quien
+
+Dentro de una pieza, `*|CIUDAD|*` se cambia por lo que dice ese contacto al
+armarle **su** correo, en `services/sender.py`. El asunto también, que es lo
+primero que se lee. Lo hace `services/fields.py` y no Jinja: **el HTML de un
+cliente no puede pasar nunca por el motor de plantillas del panel**, que sería
+dejar que un archivo subido ejecute código en el servidor. Por eso la marca es
+esa y no `{{ }}`; además no choca con las llaves del CSS de nadie.
+
+El valor va **escapado** dentro del correo —lo escribió otro y el HTML de
+alrededor es nuestro— y sin escapar en el asunto, que es texto. Una marca que
+nombra una columna borrada se queda en blanco: dejarla a la vista sería mandar
+`*|CIUDAD|*` a mil personas.
+
+La vista previa se dibuja con **el respaldo de cada columna**, que es justo lo
+que va a recibir quien no tenga ese dato: enseña el caso peor y no uno inventado
+que siempre se ve bien.
 
 **`services/render.py` es el único sitio que arma un correo**, y la vista previa
 llama ahí, así que lo que alguien ve antes de mandar es de verdad lo que se
@@ -715,6 +755,19 @@ qué se rechaza, quién puede subir y quién aprueba la primera.
 
 Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 
+**El archivo no manda.** Uno de quince columnas se acepta igual: la pantalla
+enseña sus títulos y el cliente marca cuáles guardar, y es **lo que marca** lo
+que cuenta contra el límite del plan. Rechazar el archivo entero por traer
+columnas de más dejaría fuera a cualquiera que exporte de su sistema.
+
+Ese mapeo lo dibuja `panel.js` leyendo la primera línea en el propio navegador,
+así que el archivo no se sube dos veces ni se guarda mientras alguien decide.
+**Sin JavaScript la importación sigue funcionando**: el servidor casa los
+títulos del archivo con las columnas que la cuenta ya tiene. Lo que se pierde es
+poder crear una columna desde ahí, y eso es a propósito: crear una columna es
+una decisión, no un efecto secundario de subir un archivo. El servidor vuelve a
+leer la cabecera y no se fía de nada de lo que mande la pantalla.
+
 ---
 
 ## Panel del cliente
@@ -757,10 +810,10 @@ algo que mantener y auditar para pintar rectángulos.
 
 La llena `services/stats.py`, y **es la misma pantalla que ve el
 administrador** en `/admin/` para la cuenta que elija: una plantilla y dos
-entradas, para que no puedan separarse. **`/contactos`** tiene cuatro
+entradas, para que no puedan separarse. **`/contactos`** tiene cinco
 pantallas: la lista —una fila por contacto, con sus etiquetas, por dónde entró,
-cuándo y si está activo o anulado—, la importación, las etiquetas y las
-supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
+cuándo y si está activo o anulado—, la importación, las etiquetas, las columnas
+propias y las supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
 desde un botón encima de la lista, y exportar pasa por una confirmación que dice
 cuántos van a salir. **`/plantillas`** enseña las cuatro prediseñadas para
 elegir una y llenarla, las que ya armó y las que subió como HTML. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:

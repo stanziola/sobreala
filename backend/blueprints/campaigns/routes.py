@@ -110,6 +110,8 @@ def shared(db, account, **extra):
         # todo es la peor forma de enterarse.
         "blocked": sender.blocked(account),
         "quota": accounts.quota_left(account),
+        # Para escribirlas en el asunto, que es lo primero que se lee.
+        "columns": accounts.fields_of(account),
         "editable": campaigns.editable,
         "due": campaigns.due,
         **extra,

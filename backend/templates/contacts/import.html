@@ -45,6 +45,40 @@
   <p class="hint">{{ t('import_file_hint', mb=max_mb, n=per_day) }}</p>
   {% if errors.archivo %}<p class="error">{{ errors.archivo }}</p>{% endif %}
 
+  {# Elegir qué columnas del archivo se guardan. Lo dibuja panel.js leyendo la
+     primera línea del archivo en el propio navegador: así no hay que subirlo
+     dos veces ni guardarlo en ningún sitio mientras se decide.
+
+     Sin JavaScript esto no aparece y la importación sigue funcionando: el
+     servidor casa los títulos del archivo con las columnas que la cuenta ya
+     tiene. Lo que se pierde es poder crear una columna desde aquí. #}
+  <div class="mapcols" data-map-columns hidden
+       data-known="{{ known_headers }}">
+    <p class="field-label">{{ t('import_map_title') }}</p>
+    <p class="hint">{{ t('import_map_hint') }}</p>
+    <div data-map-rows></div>
+    <p class="hint" data-map-room
+       data-room="{{ field_limit - fields|length }}">{{ t('import_map_room', n=field_limit - fields|length) }}</p>
+  </div>
+
+  {# Los moldes que clona el guion, con los textos ya traducidos. #}
+  <template data-map-choice>
+    <select>
+      <option value="">{{ t('import_map_skip') }}</option>
+      {% for one in fields %}
+      <option value="{{ one.key }}">{{ one.label }}</option>
+      {% endfor %}
+      <option value="{{ new_column }}">{{ t('import_map_new') }}</option>
+    </select>
+  </template>
+  <template data-map-type>
+    <select>
+      {% for kind in types %}
+      <option value="{{ kind }}">{{ t('fields_type_' + kind) }}</option>
+      {% endfor %}
+    </select>
+  </template>
+
   {% include "contacts/_tags-picker.html" %}
   {% include "contacts/_consent.html" %}
 

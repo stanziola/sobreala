@@ -30,6 +30,10 @@ UNLIMITED = 10 ** 6
 # prueba pueda organizar un grupo y ver cómo funciona.
 FREE_TAGS = 1
 
+# Y las columnas propias del contacto, por lo mismo: quien todavía no paga
+# prueba con lo que trae el Básico.
+FREE_FIELDS = 1
+
 MONTHLY = "monthly"
 YEARLY = "yearly"
 CYCLES = (MONTHLY, YEARLY)
@@ -71,6 +75,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
     names: list[str] = []
     prices: dict[str, list[Decimal | None]] = {}
     tags: list[int | None] = []
+    fields: list[int | None] = []
     uploads: list[bool] = []
     emails: list[int | None] = []
     clean: list[bool] = []
@@ -89,6 +94,8 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             prices[YEARLY] = [_amount(c) for c in cells[1:]]
         elif cells[0].strip("* ") == "Etiquetas":
             tags = [_count(c) for c in cells[1:]]
+        elif cells[0].strip("* ") == "Columnas propias del contacto":
+            fields = [_count(c) for c in cells[1:]]
         elif cells[0].strip("* ") == "Correos por mes" and len(cells) - 1 == len(names):
             # La comprobación de ancho no es adorno: más abajo del documento hay
             # otras tablas de dos columnas, y una de ellas empieza por una
@@ -116,6 +123,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             MONTHLY: prices[MONTHLY][index],
             YEARLY: prices[YEARLY][index],
             "tags": tags[index] if index < len(tags) else None,
+            "fields": fields[index] if index < len(fields) else None,
             "upload": uploads[index] if index < len(uploads) else False,
             "clean": clean[index] if index < len(clean) else False,
             "emails": emails[index] if index < len(emails) else None,
@@ -143,6 +151,18 @@ def buyable(plan: str) -> bool:
     """
     found = PLANS.get(plan)
     return bool(found and found["public"])
+
+
+def field_limit(plan: str | None) -> int:
+    """Cuántas columnas propias caben en ese plan, de `docs/pricing.md`.
+
+    Leída y no copiada, como las etiquetas y como los precios: cambiar la fila
+    del documento tiene que cambiarlo en un solo sitio.
+    """
+    found = PLANS.get(plan or "")
+    if not found or found.get("fields") is None:
+        return FREE_FIELDS
+    return found["fields"]
 
 
 def tag_limit(plan: str | None) -> int:

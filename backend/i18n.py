@@ -620,6 +620,66 @@ TEXTS = {
     # Se crean aquí y después se eligen. Escribirlas en cada formulario era lo
     # que acababa dejando «Socios» y «socios» como dos etiquetas distintas.
     "contacts_tab_tags": "Etiquetas",
+    "contacts_tab_fields": "Columnas",
+    # --- las columnas propias del contacto ---------------------------------
+    "fields_title": "Columnas",
+    "fields_lead": "Lo que guardas de cada contacto además del correo y el "
+                   "nombre: su ciudad, su número de socio, lo que debe. "
+                   "Después lo escribes dentro del correo y a cada quien le "
+                   "llega el suyo.",
+    "fields_counter": "Tienes {n} de {limit} columnas.",
+    "fields_counter_free": "Tienes {n} columnas, y tu plan no pone tope.",
+    "fields_empty": "Todavía no has creado ninguna.",
+    "fields_new": "Nueva columna",
+    "fields_name": "Nombre",
+    "fields_name_example": "Ciudad",
+    "fields_type": "Tipo de dato",
+    "fields_type_hint": "El tipo decide cómo se lee lo que venga en el "
+                        "archivo y cómo se escribe en el correo. Una fecha "
+                        "sale como «15 de marzo de 2026».",
+    "fields_type_text": "Texto",
+    "fields_type_number": "Número",
+    "fields_type_date": "Fecha",
+    "fields_type_yesno": "Sí o no",
+    "fields_default": "Qué escribir si el contacto no lo tiene",
+    "fields_default_example": "tu ciudad",
+    "fields_default_hint": "Sin esto, a quien le falte ese dato le llega la "
+                           "frase con un hueco en medio.",
+    "fields_no_default": "Sin respaldo",
+    "fields_add": "Crear la columna",
+    "fields_delete": "Borrar",
+    "fields_delete_hint": "Borrar una columna borra lo que cada contacto tenía "
+                          "escrito en ella. Los contactos se quedan.",
+    "fields_room": "Te quedan {n} por crear.",
+    "fields_room_free": "Tu plan no pone tope.",
+    "fields_full": "Ya usaste todas las columnas de tu plan.",
+    "fields_plans": "Ver los planes",
+    "fields_saved": "Listo, la columna quedó creada.",
+    "fields_col_name": "Columna",
+    "fields_col_mark": "Se escribe así",
+    "fields_col_type": "Tipo",
+    "fields_col_default": "Si falta",
+    "fields_on_contact": "Sus columnas",
+    "fields_on_contact_hint": "Lo que dejes en blanco usa el respaldo de esa "
+                              "columna cuando se envíe el correo.",
+    "fields_value_empty": "Sin responder",
+    "fields_yes": "Sí",
+    "fields_no": "No",
+    "error_field": "Ese nombre no sirve o ya lo tiene otra columna.",
+    "error_fields_full": "Marcaste más columnas de las que caben en tu plan, "
+                         "que son {n}. Desmarca algunas y vuelve a intentarlo.",
+
+    # Al importar: qué columna del archivo va a cuál.
+    "import_map_title": "Qué columnas quieres guardar",
+    "import_map_hint": "Estas son las columnas de tu archivo. El correo y el "
+                       "nombre se reconocen solos; de las demás, elige las que "
+                       "quieras guardar. Lo que no elijas no se guarda, así "
+                       "que un archivo con columnas de más se puede importar "
+                       "igual.",
+    "import_map_skip": "No guardar esta",
+    "import_map_new": "Guardarla en una columna nueva",
+    "import_map_room": "Te quedan {n} columnas por crear.",
+
     "tags_title": "Etiquetas",
     "tags_lead": "Los grupos con los que organizas tus contactos. Créalos aquí "
                  "y después los eliges al agregar o importar.",
@@ -766,6 +826,12 @@ TEXTS = {
     "designs_field_block": "Bloque {n}: {what}",
 
     # --- la vista previa ---------------------------------------------------
+    "designs_columns_title": "Escribir un dato de cada contacto",
+    "designs_columns_hint": "Pulsa una para escribirla donde tengas el cursor, "
+                            "o cópiala tal cual. Al enviar, cada quien recibe "
+                            "lo suyo; a quien le falte ese dato le llega el "
+                            "respaldo que le pusiste a la columna.",
+    "designs_columns_manage": "Las creas y las borras en Contactos →",
     "designs_preview_title": "Vista previa",
     "designs_preview_button": "Ver cómo queda",
     "designs_preview_empty": "Llena la plantilla y pulsa «{boton}» para verla "

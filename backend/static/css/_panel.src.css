@@ -651,3 +651,27 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .switcher .btn { margin-top: 0; }
 .switcher__add { margin: 18px 0 0; }
 .switcher__add .btn { margin-top: 0; }
+
+/* Las columnas propias del contacto. La marca se enseña tal cual se escribe
+   dentro de una pieza, en monoespaciada, porque es algo que se copia. */
+.mark {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .88rem; padding: 2px 6px; border-radius: 6px;
+  background: var(--color-surface-alt); overflow-wrap: anywhere;
+}
+
+/* Elegir qué columna del archivo va a cuál, al importar. Una fila por columna
+   del archivo: su título a la izquierda y a dónde va, a la derecha. */
+.mapcols { margin: 20px 0; }
+.mapcols__row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 8px;
+}
+.mapcols__name { flex: 1 1 150px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.mapcols__row select { flex: 1 1 150px; width: auto; margin: 0; }
+.mapcols [data-map-room].is-full { color: var(--color-accent); font-weight: 600; }
+
+/* Las marcas de las columnas, dentro del editor de una pieza. */
+.marks { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
+button.mark { border: 1px solid var(--color-border); cursor: pointer; color: inherit; }
+button.mark:hover { border-color: var(--color-accent); color: var(--color-accent); }

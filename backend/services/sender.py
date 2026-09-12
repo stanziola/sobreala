@@ -39,6 +39,7 @@ from models import contact as contacts
 from models import design as designs
 from models import event as events
 from models import suppression as suppressions
+from services import fields as columns
 from services import render, unsubscribe
 
 # Cuántos destinatarios por vuelta. El tope existe porque esto corre dentro de
@@ -121,15 +122,26 @@ def from_address(account: dict[str, Any]) -> str:
 
 
 def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
-          contact: dict[str, Any]) -> EmailMessage:
-    """El correo de un destinatario, entero, con sus cabeceras."""
+          contact: dict[str, Any],
+          fields: list[dict[str, Any]] | None = None) -> EmailMessage:
+    """El correo de un destinatario, entero, con sus cabeceras.
+
+    Aquí es donde el correo deja de ser el mismo para todos: las marcas de la
+    pieza —`*|CIUDAD|*`— se cambian por lo que dice **este** contacto, y lo que
+    le falte usa el respaldo de su columna. El asunto también, que es donde más
+    rinde y lo primero que se lee.
+    """
+    fields = fields or []
     url = unsubscribe.link(contact["_id"])
     html = piece.html(plan=accounts.plan_of(account), unsubscribe_url=url)
+    html = columns.fill(html, contact, fields)
 
     message = EmailMessage(policy=POLICY)
     message["From"] = from_address(account)
     message["To"] = contact["email"]
-    message["Subject"] = campaign["subject"]
+    # Sin escapar: un asunto es texto, y ahí «&» es «&» y no «&amp;».
+    message["Subject"] = columns.fill(campaign["subject"], contact, fields,
+                                      html=False)
     # Responder le llega al cliente, no a nosotros: la conversación es suya.
     if account.get("email"):
         message["Reply-To"] = account["email"]
@@ -218,6 +230,7 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
                                         skip=position, limit=room)
 
     ready = Piece(piece)
+    fields = accounts.fields_of(account)
     among = suppressions.among(db, account_id,
                                [one["email"] for one in people])
     sent = skipped = failed = 0
@@ -229,7 +242,7 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
             skipped += 1
             continue
         try:
-            deliver(build(account, campaign, ready, one))
+            deliver(build(account, campaign, ready, one, fields))
         except Exception as exc:  # noqa: BLE001 - se anota y se sigue
             failed += 1
             errors.append({"email": one["email"],

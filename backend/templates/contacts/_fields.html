@@ -1,0 +1,27 @@
+{#- Las columnas propias de la cuenta, una casilla por cada una.
+
+    Espera: fields (las que existen) y written (lo que ese contacto tiene
+    escrito; vacío al agregar uno nuevo). Una cuenta que no ha creado ninguna
+    no dibuja nada, ni un título. -#}
+{% if fields %}
+<p class="field-label">{{ t('fields_on_contact') }}</p>
+{% for one in fields %}
+{% set value = written.get(one.key, '') %}
+<label for="col-{{ one.key }}">{{ one.label }}</label>
+{% if one.type == 'yesno' %}
+<select id="col-{{ one.key }}" name="col-{{ one.key }}">
+  <option value="">{{ t('fields_value_empty') }}</option>
+  <option value="si"{% if value == 'si' %} selected{% endif %}>{{ t('fields_yes') }}</option>
+  <option value="no"{% if value == 'no' %} selected{% endif %}>{{ t('fields_no') }}</option>
+</select>
+{% else %}
+{# El tipo decide el teclado del teléfono y poco más: lo que de verdad
+   comprueba el valor es el servidor, que es el que lo guarda. #}
+<input id="col-{{ one.key }}" name="col-{{ one.key }}" maxlength="120"
+       autocomplete="off" value="{{ value }}"
+       type="{% if one.type == 'date' %}date{% elif one.type == 'number' %}text{% else %}text{% endif %}"
+       {% if one.type == 'number' %}inputmode="decimal"{% endif %}>
+{% endif %}
+{% endfor %}
+<p class="hint">{{ t('fields_on_contact_hint') }}</p>
+{% endif %}

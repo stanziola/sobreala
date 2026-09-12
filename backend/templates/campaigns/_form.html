@@ -10,6 +10,7 @@
        value="{{ form.get('asunto', campaign.subject if campaign else '') }}">
 {% if errors.asunto %}<p class="error">{{ errors.asunto }}</p>{% endif %}
 <p class="hint">{{ t('send_subject_hint') }}</p>
+{% include "designs/_columns.html" %}
 
 <label for="lista">{{ t('send_list') }}</label>
 <select id="lista" name="lista">

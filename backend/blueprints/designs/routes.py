@@ -33,6 +33,7 @@ from i18n import TEXTS, t
 from models import account as accounts
 from models import design as designs
 from models import image as images
+from services import fields as columns
 from services import html_check, imaging, plans, render
 from services.security import csrf_ok
 
@@ -124,6 +125,9 @@ def shared(db, account, **extra):
         # A quién ofrecerle el salto cuando su plan todavía no puede.
         "upload_plan": plan_needed(),
         "max_kb": html_check.MAX_BYTES // 1024,
+        # Las columnas propias de la cuenta, para poder escribirlas dentro de
+        # una pieza sin tener que acordarse de cómo se llamaban.
+        "columns": accounts.fields_of(account),
         **extra,
     }
 
@@ -249,15 +253,22 @@ def keep_image(db, account, which: str, current: str,
     return images.save(db, account["_id"], data=data, ext=ext, mime=mime)
 
 
-def preview(key: str, filled: dict[str, str], plan) -> Response:
+def preview(key: str, filled: dict[str, str], plan,
+            fields: list[dict] | None = None) -> Response:
     """El correo entero, tal como saldría, para dibujarlo en el marco aislado.
 
     Lleva sus propias cabeceras —las pone `app.py` al ver esta marca—: un
     correo necesita justo lo que el panel prohíbe, estilos en línea e imágenes
     de nuestro almacén.
+
+    Las columnas propias se dibujan **con su respaldo**, que es exactamente lo
+    que va a recibir quien no tenga ese dato: la vista previa enseña el caso
+    peor y no uno inventado que siempre se ve bien.
     """
     g.email_preview = True
-    return Response(render.email(key, filled, plan=plan, preview=True),
+    fields = fields or []
+    html = render.email(key, filled, plan=plan, preview=True)
+    return Response(columns.fill(html, columns.sample(fields), fields),
                     mimetype="text/html")
 
 
@@ -285,7 +296,7 @@ def compose(account, key: str, found):
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         elif action == "vista":
-            return preview(key, filled, plan)
+            return preview(key, filled, plan, accounts.fields_of(account))
         elif action == "imagen":
             filled[which] = keep_image(db, account, which,
                                        filled.get(which, ""), errors)
@@ -320,6 +331,7 @@ def compose(account, key: str, found):
                           if one.get("type") == "image" else ""))
                 for one in render.fields_of(key)],
         name=name, errors=errors, found=found,
+        columns=accounts.fields_of(account),
         image_mb=imaging.MAX_UPLOAD // (1024 * 1024),
         watermark=plans.has_watermark(plan))
 

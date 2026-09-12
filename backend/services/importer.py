@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 import unicodedata
 from typing import Any, Iterator
 
@@ -24,6 +25,7 @@ from email_validator import EmailNotValidError, validate_email
 from models import contact as contacts
 from models import suppression as suppressions
 from models.account import normalize_email
+from services import fields as columns_of
 
 # What a column of addresses tends to be called, and what a column of names
 # tends to be called, in the files these clients actually have.
@@ -74,12 +76,12 @@ def columns(header: list[str]) -> tuple[int | None, int | None]:
     return email_at, name_at
 
 
-def rows(stream: Any) -> Iterator[tuple[str, str]]:
-    """Yield (address, name) out of the uploaded file, one row at a time.
+def open_rows(stream: Any) -> tuple[list[str], Iterator[list[str]]]:
+    """El archivo abierto: su cabecera y sus filas, sin leerlo entero.
 
-    Never reads more than a row into memory. The first line decides three
-    things: the separator, whether there is a header, and which columns to
-    take; after that it is a straight walk to the end of the file.
+    La cabecera sale vacía cuando el archivo no tiene ninguna —una columna de
+    direcciones pegada y ya—, y entonces esa primera línea viaja dentro de las
+    filas, que es donde le toca.
     """
     # utf-8-sig eats the mark Excel puts at the start of the file, and errors
     # are replaced instead of raised: one accented name in Latin-1 must not
@@ -88,22 +90,83 @@ def rows(stream: Any) -> Iterator[tuple[str, str]]:
                             newline="")
     first = text.readline()
     if not first.strip():
-        return
+        return [], iter(())
 
-    reader = csv.reader(io.StringIO(first), delimiter=sniff(first))
-    header = next(reader, [])
+    apart = sniff(first)
+    head = next(csv.reader(io.StringIO(first), delimiter=apart), [])
     # A line with an address in it is data, not a header.
-    is_header = not any("@" in cell for cell in header)
-    email_at, name_at = columns(header) if is_header else (None, None)
+    is_header = not any("@" in cell for cell in head)
 
-    if not is_header:
-        email_at = next((i for i, c in enumerate(header) if "@" in c), 0)
-        yield header[email_at][:MAX_FIELD], _cell(header, name_at)
+    def walk() -> Iterator[list[str]]:
+        if not is_header:
+            yield head
+        for row in csv.reader(text, delimiter=apart):
+            if row:
+                yield row
 
-    walker = csv.reader(text, delimiter=sniff(first))
+    return (head if is_header else []), walk()
+
+
+def header_of(stream: Any) -> list[str]:
+    """Solo los títulos, para preguntar qué columna es cuál. Vacío si el
+    archivo no trae ninguno.
+
+    Lee un trozo y no envuelve el archivo: `TextIOWrapper` lo cierra cuando se
+    lo lleva el recolector, y este mismo archivo hay que volver a leerlo entero
+    para importarlo. Quien llama lo pone al principio otra vez.
+    """
+    chunk = stream.read(64 * 1024)
+    if not chunk:
+        return []
+    if isinstance(chunk, bytes):
+        chunk = chunk.decode("utf-8-sig", errors="replace")
+    line = re.split(r"\r\n|\r|\n", chunk, maxsplit=1)[0]
+    if not line.strip():
+        return []
+    head = next(csv.reader(io.StringIO(line), delimiter=sniff(line)), [])
+    # Una línea con una dirección dentro son datos, no títulos: ese archivo no
+    # tiene nada que elegir.
+    if any("@" in cell for cell in head):
+        return []
+    return [cell.strip()[:MAX_FIELD] for cell in head]
+
+
+def matching(header: list[str],
+             definitions: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
+    """Qué columna del archivo va a cada columna de la cuenta, por su título.
+
+    Es el respaldo de la pantalla, que es la que pregunta: si nadie eligió
+    nada, un archivo cuya cabecera dice «Ciudad» llena la columna «Ciudad» que
+    esa cuenta ya tiene. Nada se crea aquí.
+    """
+    found: dict[int, dict[str, Any]] = {}
+    used: set[str] = set()
+    for index, cell in enumerate(header):
+        title = columns_of.fold(cell)
+        for one in definitions:
+            if one["key"] in used:
+                continue
+            if title and title == columns_of.fold(one["label"]):
+                found[index] = one
+                used.add(one["key"])
+                break
+    return found
+
+
+def rows(stream: Any, take: dict[int, dict[str, Any]] | None = None
+         ) -> Iterator[tuple[str, str, dict[str, str]]]:
+    """Yield (address, name, columns) out of the uploaded file, one at a time.
+
+    Never reads more than a row into memory. `take` dice qué columna del
+    archivo se guarda en qué columna de la cuenta; lo que no esté ahí se ignora,
+    que es lo que hace que un archivo de quince columnas se pueda importar con
+    un plan que permite dos.
+    """
+    header, walker = open_rows(stream)
+    email_at, name_at = columns(header) if header else (None, None)
+    wanted = take or {}
+
     for row in walker:
-        if not row:
-            continue
         if email_at is None:
             # A header that named no column of addresses: take the first one
             # that holds an address in the first row that has any.
@@ -112,7 +175,17 @@ def rows(stream: Any) -> Iterator[tuple[str, str]]:
                 continue
         if email_at >= len(row):
             continue
-        yield row[email_at][:MAX_FIELD], _cell(row, name_at)
+        values: dict[str, str] = {}
+        for index, one in wanted.items():
+            raw = _cell(row, index)
+            if not raw:
+                continue
+            # Lo que no es de ese tipo no se escribe. Guardar «el martes» en una
+            # columna de fecha es guardar algo que después no se puede enseñar.
+            value = columns_of.parse(raw, one.get("type", columns_of.TEXT))
+            if value:
+                values[one["key"]] = value
+        yield row[email_at][:MAX_FIELD], _cell(row, name_at), values
 
 
 def _cell(row: list[str], index: int | None) -> str:
@@ -122,7 +195,9 @@ def _cell(row: list[str], index: int | None) -> str:
 
 
 def run(db, account_id, stream: Any, *, tags: list[str],
-        consent: dict[str, Any], limit: int) -> tuple[dict[str, int], bool]:
+        consent: dict[str, Any], limit: int,
+        take: dict[int, dict[str, Any]] | None = None
+        ) -> tuple[dict[str, int], bool]:
     """Import the whole file. Returns (counts, hit_the_limit).
 
     Reaching the limit is not a failure: what already went in stays in, which
@@ -133,7 +208,7 @@ def run(db, account_id, stream: Any, *, tags: list[str],
     # Los anulados no ocupan sitio: no pueden recibir nada.
     room = max(0, limit - contacts.active_count(db, account_id))
     stopped = False
-    batch: list[tuple[str, str]] = []
+    batch: list[tuple[str, str, dict[str, str]]] = []
     seen: set[str] = set()
 
     def flush() -> bool:
@@ -141,7 +216,7 @@ def run(db, account_id, stream: Any, *, tags: list[str],
         nonlocal room
         if not batch:
             return False
-        keys = [normalize_email(e) for e, _ in batch]
+        keys = [normalize_email(one[0]) for one in batch]
 
         # The two bulk questions, one query each: who is already here, and who
         # may not be written to.
@@ -153,12 +228,12 @@ def run(db, account_id, stream: Any, *, tags: list[str],
         # Somebody already in the account costs no room; a new one does. What
         # does not fit is left out, in the order the file had them.
         fits, full = [], False
-        for (email, name), key in zip(batch, keys):
+        for one, key in zip(batch, keys):
             if key in known:
-                fits.append((email, name))
+                fits.append(one)
             elif room > 0:
                 room -= 1
-                fits.append((email, name))
+                fits.append(one)
             else:
                 full = True
                 break
@@ -171,7 +246,7 @@ def run(db, account_id, stream: Any, *, tags: list[str],
         seen.clear()
         return full
 
-    for raw_email, name in rows(stream):
+    for raw_email, name, values in rows(stream, take):
         counts["read"] += 1
         address = clean(raw_email)
         if not address:
@@ -183,7 +258,7 @@ def run(db, account_id, stream: Any, *, tags: list[str],
         if key in seen:
             continue
         seen.add(key)
-        batch.append((address, name))
+        batch.append((address, name, values))
         if len(batch) >= contacts.BATCH:
             if flush():
                 stopped = True
