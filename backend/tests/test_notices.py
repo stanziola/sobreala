@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from conftest import login, register
+from conftest import code_from_outbox, confirm as type_code, login, register
 from test_admin import clear_sending, make_admin, update
 
 from models import account as accounts
@@ -109,6 +109,93 @@ def switch(database, email, notice, on):
     cuenta = accounts.by_email(database, email)
     accounts.set_notifications(database, cuenta["_id"], {
         name: (on if name == notice else True) for name in accounts.NOTICES})
+
+
+def admin_switch(database, email, notice, on):
+    """Lo mismo en una cuenta de administrador, que tiene su propia lista."""
+    cuenta = accounts.by_email(database, email)
+    accounts.set_notifications(
+        database, cuenta["_id"],
+        {name: (on if name == notice else True)
+         for name in accounts.ADMIN_NOTICES},
+        names=accounts.ADMIN_NOTICES)
+
+
+# ------------------------------------------------ los avisos de quien manda
+
+def test_confirmar_el_registro_avisa_a_quien_administra(client, database,
+                                                        outbox):
+    """Al confirmar y no al escribir el formulario: lo que no se confirma se
+    borra a las 24 horas, y avisar de cada intento sería avisar de cada
+    dirección escrita mal."""
+    an_admin(client, database)
+    visitante = other(client)
+    register(visitante, email="socia@ejemplo.com")
+
+    assert sent(database, mail_log.ADMIN_SIGNUP) == []
+
+    type_code(visitante, code_from_outbox(outbox))
+
+    aviso = only(database, mail_log.ADMIN_SIGNUP)
+    assert aviso["to"] == "jefe@ejemplo.com"
+    assert "socia@ejemplo.com" in aviso["text"]
+
+
+def test_apagar_el_aviso_de_registro_lo_apaga(client, database, outbox):
+    an_admin(client, database)
+    admin_switch(database, "jefe@ejemplo.com", accounts.ADMIN_SIGNUP, False)
+    visitante = other(client)
+    register(visitante, email="socia@ejemplo.com")
+
+    type_code(visitante, code_from_outbox(outbox))
+
+    assert sent(database, mail_log.ADMIN_SIGNUP) == []
+
+
+def test_apagar_el_aviso_de_pago_lo_apaga(client, database, outbox, monkeypatch):
+    pedido = fake_paypal(monkeypatch)
+    an_admin(client, database)
+    admin_switch(database, "jefe@ejemplo.com", accounts.ADMIN_PAYMENT, False)
+    browser = inside(client)
+    confirm(database)
+
+    pay(browser, pedido)
+
+    # El comprobante del cliente sigue saliendo: apagar el suyo no apaga el de
+    # nadie más.
+    assert len(sent(database, mail_log.PLAN_PAID)) == 1
+    assert sent(database, mail_log.ADMIN_PAYMENT) == []
+
+
+def test_un_plan_vencido_tambien_se_le_avisa_a_quien_administra(
+        client, database, outbox):
+    an_admin(client, database)
+    browser = inside(client)
+    with_plan(database, "ana@ejemplo.com", "negocio",
+              accounts.now() - timedelta(days=2))
+
+    browser.get("/panel")
+    browser.get("/panel")
+
+    aviso = only(database, mail_log.ADMIN_PLAN_END)
+    assert aviso["to"] == "jefe@ejemplo.com"
+    assert "se quedó sin plan" in aviso["text"]
+    # Y al cliente le llegó el suyo, una sola vez.
+    only(database, mail_log.PLAN_EXPIRED)
+
+
+def test_apagar_el_aviso_de_vencimiento_no_apaga_el_del_cliente(
+        client, database, outbox):
+    an_admin(client, database)
+    admin_switch(database, "jefe@ejemplo.com", accounts.ADMIN_PLAN_END, False)
+    browser = inside(client)
+    with_plan(database, "ana@ejemplo.com", "negocio",
+              accounts.now() - timedelta(days=2))
+
+    browser.get("/panel")
+
+    assert sent(database, mail_log.ADMIN_PLAN_END) == []
+    only(database, mail_log.PLAN_EXPIRED)
 
 
 # --------------------------------------------------------------- el plan

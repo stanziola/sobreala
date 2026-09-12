@@ -40,6 +40,8 @@ SENDING_CLEARED = "sending_cleared"
 SUSPENDED = "suspended"
 REINSTATED = "reinstated"
 ADMIN_PAYMENT = "admin_payment"
+ADMIN_SIGNUP = "admin_signup"
+ADMIN_PLAN_END = "admin_plan_end"
 # Cambiar el correo de la cuenta: el código va a la dirección nueva y el aviso
 # a la vieja, así que son dos mensajes distintos y a dos sitios distintos.
 EMAIL_CHANGE_CODE = "email_change_code"

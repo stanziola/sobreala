@@ -161,7 +161,9 @@
     {# ---------------------------------------------------- notificaciones #}
     {% elif section == 'notificaciones' %}
     <h2 class="settings__title">{{ t('settings_section_notifications') }}</h2>
-    <p class="settings__lead">{{ t('settings_notifications_lead') }}</p>
+    <p class="settings__lead">
+      {{ t('settings_admin_notifications_lead') if is_admin
+         else t('settings_notifications_lead') }}</p>
 
     {% if request.args.get('guardado') %}
     <p class="notice notice--ok">{{ t('settings_notifications_saved') }}</p>
@@ -183,6 +185,20 @@
 
     <form method="post" action="{{ url_for('auth.settings', section='notificaciones') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      {# La lista de quien administra es otra: habla de lo que hacen los
+         clientes. Los interruptores de un cliente no se le dibujan, porque no
+         recibiría ninguno de esos correos. #}
+      {% if is_admin %}
+      {{ toggle('admin_payment', t('settings_notice_admin_payment'),
+                t('settings_notice_admin_payment_desc'), notifications.admin_payment) }}
+      {{ toggle('admin_signup', t('settings_notice_admin_signup'),
+                t('settings_notice_admin_signup_desc'), notifications.admin_signup) }}
+      {{ toggle('admin_plan_end', t('settings_notice_admin_plan_end'),
+                t('settings_notice_admin_plan_end_desc'), notifications.admin_plan_end) }}
+
+      <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
+      {% else %}
 
       {{ toggle('new_login', t('settings_notice_new_login'),
                 t('settings_notice_new_login_desc'), notifications.new_login) }}
@@ -208,6 +224,7 @@
                 t('settings_notice_monthly_desc'), notifications.monthly) }}
 
       <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
+      {% endif %}
     </form>
 
     {# ------------------------------------------------------------- pagos #}

@@ -449,6 +449,14 @@ CAMPAIGNS = "campaigns"
 MONTHLY = "monthly"
 NOTICES = (NEW_LOGIN, BILLING, PLAN_STATE, IMPORTS, CAMPAIGNS, MONTHLY)
 
+# Los de una cuenta de administrador, que son otros y por eso son otra tupla:
+# no hablan de su cuenta sino de lo que pasa en las de los clientes. Una cuenta
+# es cliente o administradora, así que nunca se mezclan en el mismo documento.
+ADMIN_PAYMENT = "admin_payment"
+ADMIN_SIGNUP = "admin_signup"
+ADMIN_PLAN_END = "admin_plan_end"
+ADMIN_NOTICES = (ADMIN_PAYMENT, ADMIN_SIGNUP, ADMIN_PLAN_END)
+
 # Los dos avisos del estado del plan, que se mandan una sola vez cada uno.
 EXPIRING = "expiring"
 EXPIRED = "expired"
@@ -464,7 +472,19 @@ def wants(account: dict[str, Any] | None, notice: str) -> bool:
     return (account or {}).get("notifications", {}).get(notice, True) is not False
 
 
-def set_notifications(db, account_id, wanted: dict[str, bool]) -> None:
+def notices_for(account: dict[str, Any] | None) -> tuple[str, ...]:
+    """Los avisos que esa cuenta puede elegir.
+
+    Los de un administrador son de lo que hacen los clientes —quién pagó, quién
+    se registró, a quién se le venció el plan—; los de un cliente son de su
+    propia cuenta. Enseñarle a cada uno los del otro sería ofrecer interruptores
+    de correos que no va a recibir nunca.
+    """
+    return ADMIN_NOTICES if is_admin(account) else NOTICES
+
+
+def set_notifications(db, account_id, wanted: dict[str, bool], *,
+                      names: tuple[str, ...] = NOTICES) -> None:
     """Write the whole set from what the form said.
 
     Only the names this module knows are written. A form field for anything
@@ -472,7 +492,7 @@ def set_notifications(db, account_id, wanted: dict[str, bool]) -> None:
     request can invent a preference that turns one of them off.
     """
     db.accounts.update_one({"_id": account_id}, {"$set": {
-        "notifications": {name: bool(wanted.get(name)) for name in NOTICES},
+        "notifications": {name: bool(wanted.get(name)) for name in names},
         "updated_at": now(),
     }})
 

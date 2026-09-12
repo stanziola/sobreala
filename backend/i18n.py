@@ -360,6 +360,27 @@ TEXTS = {
 
     "settings_notifications_lead": "Qué correos te mandamos. Los que avisan de "
                                    "un problema de seguridad van siempre.",
+
+    # La misma pantalla, con la otra lista: la de quien administra habla de lo
+    # que hacen los clientes, no de lo que pasa en su cuenta.
+    "settings_admin_notifications_lead": "Qué te avisamos de las cuentas de tus "
+                                         "clientes. Los correos que avisan de "
+                                         "un problema de seguridad de tu propia "
+                                         "cuenta van siempre.",
+    "settings_notice_admin_payment": "Alguien pagó un plan",
+    "settings_notice_admin_payment_desc": "Cuando un cliente contrata o renueva. "
+                                          "Dice si queda esperando que le "
+                                          "habilites el envío, que es lo único "
+                                          "que espera por una persona.",
+    "settings_notice_admin_signup": "Se registró una cuenta nueva",
+    "settings_notice_admin_signup_desc": "Cuando alguien confirma su correo y la "
+                                         "cuenta queda creada de verdad. Los "
+                                         "registros a medias no avisan nada.",
+    "settings_notice_admin_plan_end": "A un cliente se le venció el plan",
+    "settings_notice_admin_plan_end_desc": "Se mira cuando el cliente entra a su "
+                                           "panel, así que de quien no vuelve a "
+                                           "entrar no se entera nadie hasta que "
+                                           "exista el proceso automático.",
     "settings_fixed_codes": "Códigos de confirmación y de recuperación",
     "settings_fixed_password": "Tu contraseña cambió",
     "settings_fixed_two_step": "Se activó o se desactivó la verificación en "
@@ -1294,6 +1315,22 @@ TEXTS = {
     "mail_admin_payment_cleared": "Ya estaba habilitada para enviar, así que no "
                                   "hay nada pendiente.",
     "mail_admin_payment_button": "Ver la ficha",
+
+    "mail_admin_signup_subject": "{company} se registró",
+    "mail_admin_signup_heading": "Se registró {company}",
+    "mail_admin_signup_body": "{name} confirmó el correo {email} y la cuenta de "
+                              "{company} ya está creada. Todavía no tiene plan "
+                              "ni puede enviar.",
+    "mail_admin_signup_button": "Ver la ficha",
+
+    "mail_admin_plan_end_subject": "Se le venció el plan a {company}",
+    "mail_admin_plan_end_heading": "{company} se quedó sin plan",
+    "mail_admin_plan_end_body": "El plan {plan} de {company} venció el {until}, "
+                                "así que ya no puede enviar.",
+    "mail_admin_plan_end_kept": "No se borró nada suyo: sus contactos y sus "
+                                "plantillas siguen ahí, y vuelven a servir en "
+                                "cuanto renueve.",
+    "mail_admin_plan_end_button": "Ver la ficha",
 }
 
 

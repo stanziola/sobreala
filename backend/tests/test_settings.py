@@ -210,6 +210,48 @@ def test_each_section_draws_its_own(client, database, outbox):
     assert "Próximamente" in payments
 
 
+def admin_inside(client, database, email="jefe@ejemplo.com"):
+    """Una cuenta con el rol, ya dentro."""
+    register(client, email=email)
+    inside = other(client)
+    login(inside, email=email)
+    cuenta = accounts.by_email(database, email)
+    accounts.set_role(database, cuenta["_id"], accounts.ADMIN)
+    return inside, cuenta
+
+
+def test_el_administrador_tiene_notificaciones_y_son_las_suyas(
+        client, database, outbox):
+    """Su lista habla de lo que hacen los clientes. Los interruptores de un
+    cliente no se le dibujan: no recibiría ninguno de esos correos."""
+    inside, _ = admin_inside(client, database)
+
+    pantalla = inside.get("/configuracion/notificaciones").get_data(as_text=True)
+
+    assert 'name="admin_payment"' in pantalla
+    assert 'name="admin_signup"' in pantalla
+    assert 'name="admin_plan_end"' in pantalla
+    assert 'name="campaigns"' not in pantalla
+    assert 'name="billing"' not in pantalla
+    # Y los de seguridad siguen sin interruptor, como en cualquier cuenta.
+    assert "Siempre activo" in pantalla
+
+
+def test_el_administrador_guarda_solo_sus_avisos(client, database, outbox):
+    inside, cuenta = admin_inside(client, database)
+
+    token = csrf(inside, "/configuracion/notificaciones")
+    inside.post("/configuracion/notificaciones", data={
+        "csrf_token": token, "admin_payment": "on",
+        # Uno que no es suyo: se descarta en vez de guardarse.
+        "campaigns": "on"})
+
+    fresca = accounts.by_id(database, cuenta["_id"])
+    assert accounts.wants(fresca, accounts.ADMIN_PAYMENT)
+    assert not accounts.wants(fresca, accounts.ADMIN_SIGNUP)
+    assert "campaigns" not in (fresca.get("notifications") or {})
+
+
 def test_an_account_with_no_plan_says_so(client, database, outbox):
     register(client)
     inside = other(client)

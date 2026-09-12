@@ -173,10 +173,18 @@ def plan_watch(db, account) -> None:
     if until <= now:
         if now - until > timedelta(days=STALE_DAYS):
             return
-        if marks.get(accounts.EXPIRED) != until and expired(
-                account, plan=plan, until=until):
-            accounts.mark_plan_notice(db, account["_id"], accounts.EXPIRED,
-                                      until)
+        if marks.get(accounts.EXPIRED) != until:
+            # Dos avisos del mismo vencimiento: al cliente y a quien administra.
+            # La marca se escribe cuando los dos salieron, así que un correo
+            # que falló se vuelve a intentar y ninguno se manda dos veces.
+            done = True
+            if accounts.wants(account, accounts.PLAN_STATE):
+                done = expired(account, plan=plan, until=until)
+            done = plan_end_to_admins(db, account, plan=plan,
+                                      until=until) and done
+            if done:
+                accounts.mark_plan_notice(db, account["_id"],
+                                          accounts.EXPIRED, until)
         return
 
     left = until - now
@@ -272,22 +280,87 @@ def reinstated(account) -> bool:
 
 # ------------------------------------------------------------- para nosotros
 
+def admins_who_want(db, notice: str):
+    """Las cuentas de administrador que todavía quieren ese aviso.
+
+    Se buscan por su índice de rol. **Estos también tienen interruptor**, en su
+    propia Configuración: son avisos de lo que hacen los clientes, y con varios
+    clientes activos son varios correos al día. El que no está escrito vale
+    «sí», como en las cuentas de los clientes.
+    """
+    return [admin for admin in db.accounts.find({"role": accounts.ADMIN})
+            if accounts.wants(admin, notice)]
+
+
+def about(client) -> str:
+    """Cómo se nombra a un cliente en estos avisos."""
+    return client.get("company_name") or client.get("email", "")
+
+
+def file_of(client) -> str:
+    return (f"{Config.APP_BASE_URL}"
+            f"{url_for('admin.account_page', raw=str(client['_id']))}")
+
+
+def signup_to_admins(db, client) -> bool:
+    """Avisarle a quien administra que se registró una cuenta nueva.
+
+    Al confirmar el correo y no al escribir el formulario: hasta ese momento no
+    hay cuenta que dure —lo que no se confirma se borra a las 24 horas— y
+    avisar de cada intento sería avisar de cada dirección escrita mal.
+    """
+    todos = admins_who_want(db, accounts.ADMIN_SIGNUP)
+    ok = True
+    for admin in todos:
+        ok = deliver(
+            admin, purpose=mail_log.ADMIN_SIGNUP,
+            subject=t("mail_admin_signup_subject", company=about(client)),
+            heading=t("mail_admin_signup_heading", company=about(client)),
+            paragraphs=[t("mail_admin_signup_body", company=about(client),
+                          email=client.get("email", ""),
+                          name=client.get("contact_name", ""))],
+            button={"href": file_of(client),
+                    "label": t("mail_admin_signup_button")},
+            foot=switch_off_hint()) and ok
+    return ok
+
+
+def plan_end_to_admins(db, client, *, plan: str, until) -> bool:
+    """Avisarle a quien administra que a un cliente se le venció el plan.
+
+    Con el mismo límite que el aviso al cliente y por la misma razón: **esto se
+    mira cuando el cliente entra al panel**, así que de quien no vuelve a
+    entrar no se entera nadie. El día que exista el proceso en segundo plano,
+    es la misma llamada en otro sitio.
+    """
+    todos = admins_who_want(db, accounts.ADMIN_PLAN_END)
+    ok = True
+    for admin in todos:
+        ok = deliver(
+            admin, purpose=mail_log.ADMIN_PLAN_END,
+            subject=t("mail_admin_plan_end_subject", company=about(client)),
+            heading=t("mail_admin_plan_end_heading", company=about(client)),
+            paragraphs=[t("mail_admin_plan_end_body", company=about(client),
+                          plan=plan_name(plan), until=on_date(until)),
+                        t("mail_admin_plan_end_kept")],
+            button={"href": file_of(client),
+                    "label": t("mail_admin_plan_end_button")},
+            foot=switch_off_hint()) and ok
+    return ok
+
+
 def payment_to_admins(db, client, *, plan: str) -> int:
     """Avisarle a quien administra que alguien pagó y espera habilitación.
 
-    Va a todas las cuentas con el rol, buscadas por su índice. Sin esto, para
-    enterarte de que una cooperativa pagó y está esperando hay que entrar a
-    mirar, y quien espera es un cliente que ya pagó.
-
-    No pasa por Notificaciones: esa pantalla es de los clientes, y una cuenta de
-    administrador no la tiene.
+    Va a todas las cuentas con el rol que lo quieran. Sin esto, para enterarte
+    de que una cooperativa pagó y está esperando hay que entrar a mirar, y
+    quien espera es un cliente que ya pagó.
     """
-    ficha = (f"{Config.APP_BASE_URL}"
-             f"{url_for('admin.account_page', raw=str(client['_id']))}")
-    company = client.get("company_name") or client.get("email", "")
+    ficha = file_of(client)
+    company = about(client)
     waiting = not accounts.can_send(client)
     sent = 0
-    for admin in db.accounts.find({"role": accounts.ADMIN}):
+    for admin in admins_who_want(db, accounts.ADMIN_PAYMENT):
         if deliver(
                 admin, purpose=mail_log.ADMIN_PAYMENT,
                 subject=t("mail_admin_payment_subject", company=company,
@@ -298,6 +371,7 @@ def payment_to_admins(db, client, *, plan: str) -> int:
                               plan=plan_name(plan)),
                             t("mail_admin_payment_waiting" if waiting
                               else "mail_admin_payment_cleared")],
-                button={"href": ficha, "label": t("mail_admin_payment_button")}):
+                button={"href": ficha, "label": t("mail_admin_payment_button")},
+                foot=switch_off_hint()):
             sent += 1
     return sent

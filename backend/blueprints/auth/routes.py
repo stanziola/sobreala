@@ -796,6 +796,9 @@ def confirm():
                     # already and the session opens either way; the failure is
                     # written down and that is all.
                     deliver(db, send_welcome, account, kind=events.CONFIRM)
+                    # Y a quien administra, que se registró alguien. No puede
+                    # romper una confirmación que ya pasó: se traga lo suyo.
+                    notices.signup_to_admins(db, account)
                     # Si la cuenta se creó desde otra, aquella sigue abierta:
                     # crear una segunda no es motivo para cerrar la primera.
                     sign_in(account, keep=bool(session.pop(ADDING, False)))
@@ -1472,11 +1475,11 @@ def panel():
 # The four sections, in the order the sidebar lists them.
 SECTIONS = ("cuenta", "seguridad", "notificaciones", "pagos")
 
-# Del administrador solo una. Estado y plan no significan nada en una cuenta
-# que no compra, y los avisos de campañas e importaciones son de cosas que no
-# hace. Lo que sí le aplica es cuidar la cuenta que puede aprobar y suspender a
-# todas las demás: contraseña, dos pasos y dispositivos.
-ADMIN_SECTIONS = ("seguridad",)
+# Del administrador dos. Cuenta y Pagos no significan nada en una cuenta que no
+# compra. Seguridad sí: es la cuenta que puede aprobar y suspender a todas las
+# demás. Y Notificaciones también, pero con otra lista: la suya es de lo que
+# hacen los clientes, no de lo que pasa en su cuenta.
+ADMIN_SECTIONS = ("seguridad", "notificaciones")
 
 
 def sections_for(account: dict | None) -> tuple[str, ...]:
@@ -1512,9 +1515,12 @@ def settings(section: str = "cuenta"):
         if csrf_ok(request.form.get("csrf_token")):
             # Only the names models/account.py knows are read. A field naming a
             # security notice is dropped here rather than written, so no form
-            # —or anything pretending to be one— can turn the alarm off.
+            # —or anything pretending to be one— can turn the alarm off. Y las
+            # que se leen son las suyas: un administrador tiene otra lista.
+            mine = accounts.notices_for(account)
             accounts.set_notifications(db, account["_id"], {
-                name: bool(request.form.get(name)) for name in accounts.NOTICES})
+                name: bool(request.form.get(name)) for name in mine},
+                names=mine)
             log_auth(db, events.SETTINGS, events.OK, email=account["email"],
                      account_id=account["_id"])
         else:
@@ -1533,8 +1539,9 @@ def settings(section: str = "cuenta"):
         confirmed=accounts.is_confirmed(account),
         plan=accounts.plan_of(account),
         two_step=accounts.two_factor_on(account),
+        is_admin=accounts.is_admin(account),
         notifications={name: accounts.wants(account, name)
-                       for name in accounts.NOTICES},
+                       for name in accounts.notices_for(account)},
         devices=sessions.for_account(db, account["_id"]),
         here=here["_id"] if here else None,
         describe=sessions.describe,

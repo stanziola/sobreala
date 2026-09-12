@@ -228,9 +228,11 @@ suspender y leer las cifras de todos los clientes.
 
 **Una cuenta de administrador solo administra.** No tiene panel de envíos, ni
 contactos, ni plantillas, ni puede comprar un plan: no tiene a quién escribirle,
-así que esas pantallas le saldrían vacías. De Configuración le queda **Seguridad**
-—contraseña, dos pasos y dispositivos—, que es lo que hay que cuidar en la cuenta
-que puede suspender y habilitar a todas las demás. Las filas se esconden del menú
+así que esas pantallas le saldrían vacías. De Configuración le quedan dos:
+**Seguridad** —contraseña, dos pasos y dispositivos—, que es lo que hay que
+cuidar en la cuenta que puede suspender y habilitar a todas las demás, y
+**Notificaciones**, que es la misma pantalla con otra lista: qué le avisamos de
+las cuentas de sus clientes. Las filas se esconden del menú
 **y las rutas la devuelven a `/admin`**: esconder un botón no es un permiso.
 
 **Un registro que no se confirma se borra a las 24 horas.** `create()` escribe
@@ -293,8 +295,12 @@ sesión ajena. Sin JavaScript el campo funciona como siempre.
 
 **`notifications` guarda qué correos quiere recibir la cuenta**, una clave por
 aviso. Lo que no esté escrito vale «sí»: una cuenta que nunca abrió la pantalla
-recibe todo. Solo están ahí los avisos de actividad —`new_login`, `billing`,
-`plan_state`, `imports`, `campaigns`, `monthly`—. Los de seguridad **no tienen clave y no se
+recibe todo. En una cuenta de cliente están los avisos de su actividad
+—`new_login`, `billing`, `plan_state`, `imports`, `campaigns`, `monthly`— y en
+una de administrador **otros tres**, que son de lo que hacen los clientes:
+`admin_payment`, `admin_signup` y `admin_plan_end`. Lo decide
+`accounts.notices_for()`, y una cuenta es lo uno o lo otro, así que las dos
+listas no se mezclan nunca en el mismo documento. Los de seguridad **no tienen clave y no se
 pueden apagar**: el código de confirmación, el de recuperación, la contraseña
 cambiada y el doble factor activado o desactivado son los que enteran a alguien
 de que otro está entrando a su cuenta, y `set_notifications()` descarta
@@ -916,7 +922,7 @@ Además:
 
 ## Los avisos de la cuenta
 
-`services/notices.py` es el único sitio que los compone, y son ocho:
+`services/notices.py` es el único sitio que los compone, y son doce:
 
 | Correo | Cuándo sale | ¿Se puede apagar? |
 |---|---|---|
@@ -927,23 +933,33 @@ Además:
 | Ya puedes enviar | Al habilitar el envío desde la ficha | No |
 | Tu cuenta fue suspendida | Al suspenderla | No |
 | Tu cuenta está activa otra vez | Al levantar la suspensión | No |
-| Alguien pagó y espera habilitación | Al cobrar, **a quien administra** | No |
 | Tu código para cambiar el correo | Al pedirlo, **a la dirección nueva** | No |
 | Tu cuenta cambió de correo | Al terminar, **a la dirección vieja** | No |
+| Alguien pagó y espera habilitación | Al cobrar | Sí, «Alguien pagó un plan» |
+| Se registró una cuenta nueva | Al confirmar el correo | Sí, «Se registró una cuenta nueva» |
+| A un cliente se le venció el plan | Cuando ese cliente entra al panel | Sí, «A un cliente se le venció el plan» |
 
-**Los cuatro de abajo no llevan interruptor, y no por descuido.** «Ya puedes
+**Los tres últimos van a quien administra**, no a un cliente, y hablan de lo
+que pasa en las cuentas de los demás.
+
+**Los tres del medio no llevan interruptor, y no por descuido.** «Ya puedes
 enviar» pasa una vez por cuenta y es la respuesta a la única espera que se le
 pide a un cliente. Los dos de la suspensión son la respuesta a «¿por qué no
 puedo entrar?», y quien está suspendido no puede entrar a cambiar sus
-preferencias, así que un interruptor no le serviría de nada. Y el último va a
-una cuenta de administrador, que no tiene pantalla de Notificaciones.
+preferencias, así que un interruptor no le serviría de nada.
+
+**El de un plan vencido tiene el límite de dónde se mira**, que es el mismo del
+aviso al cliente: se detecta cuando ese cliente entra a su panel, así que de
+quien no vuelve a entrar no se entera nadie. Los dos salen del mismo vistazo y
+se anotan con la misma marca, así que ninguno se manda dos veces por el mismo
+vencimiento.
 
 **El correo de suspensión no lleva el motivo que escribió el administrador.**
 Ese motivo se redacta para `admin_events`, puede ser corto y duro, y lo que
 necesita quien lo recibe es otra cosa: qué significa, que no se borró nada y a
 dónde escribir.
 
-**Los diez comparten un solo par de plantillas**, `email/notice.html` y `.txt`,
+**Los doce comparten un solo par de plantillas**, `email/notice.html` y `.txt`,
 porque todos tienen la misma forma: un titular, unos párrafos, y a veces un
 botón, un recuadro o un código de seis dígitos. Los siete correos anteriores —confirmación,
 bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el suyo;
