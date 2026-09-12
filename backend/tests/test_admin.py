@@ -411,18 +411,31 @@ def test_lo_decidido_se_lee_en_la_ficha_de_la_cuenta(client, database, outbox):
 
 # ----------------------------------------------------------- dónde se aterriza
 
-def test_el_administrador_aterriza_en_administracion(client, database, outbox):
-    admin, _ = make_admin(client, database)
-    # Ya dentro, volver a /entrar lleva a lo suyo, no al panel del cliente.
-    assert admin.get("/entrar").headers["Location"].endswith("/admin/")
+def test_todos_aterrizan_en_el_sitio(client, database, outbox):
+    """Una sola regla: entrar lleva al sitio, administre o no.
 
-
-def test_el_cliente_aterriza_en_el_sitio_y_el_admin_no(client, database, outbox):
-    """Quien administra cae en /admin; un cliente, en el sitio publico."""
+    A administracion se llega con el menu, que para esa cuenta la tiene de
+    primera fila. Antes eran dos reglas para el mismo momento y se notaba al
+    saltar entre cuentas: una te dejaba en un sitio y la otra en otro.
+    """
     from config import Config
+
+    admin, _ = make_admin(client, database)
+    assert admin.get("/entrar").headers["Location"] == Config.PUBLIC_SITE_URL
 
     navegador, _ = make_client_account(client, database)
     assert navegador.get("/entrar").headers["Location"] == Config.PUBLIC_SITE_URL
+
+
+def test_aterrizar_en_el_sitio_no_le_abre_las_pantallas_de_cliente(
+        client, database, outbox):
+    """Aterrizar es una cosa y la puerta es otra: su cuenta sigue sin panel."""
+    admin, _ = make_admin(client, database)
+
+    respuesta = admin.get("/panel")
+
+    assert respuesta.status_code == 302
+    assert respuesta.headers["Location"].endswith("/admin/")
 
 
 # ----------------------------------------------------- la cola de plantillas

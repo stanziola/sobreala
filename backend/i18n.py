@@ -56,7 +56,10 @@ TEXTS = {
     "register_legal_join": "y la",
     "register_legal_privacy": "política de privacidad",
     "register_have_account": "¿Ya tienes cuenta?",
+    "register_have_account_adding": "¿Esa cuenta ya existe?",
     "register_login_link": "Entra aquí",
+    "register_adding": "Vas a crear otra cuenta. La que tienes abierta sigue "
+                       "abierta, y vas a poder saltar entre las dos.",
 
     # --- confirmation ------------------------------------------------------
     "confirm_title": "Escribe tu código",
@@ -190,6 +193,9 @@ TEXTS = {
     "login_submit": "Entrar",
     "login_remember": "Mantener mi sesión iniciada 30 días",
     "login_no_account": "¿Todavía no tienes cuenta?",
+    # Estando dentro de una cuenta y agregando otra, «todavía no tienes cuenta»
+    # es mentira: la tiene, lo que quiere es otra.
+    "login_no_account_adding": "¿Todavía no existe esa cuenta?",
     "login_register_link": "Créala aquí",
 
     # --- devices -----------------------------------------------------------

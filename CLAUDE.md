@@ -687,12 +687,13 @@ Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 
 ## Panel del cliente
 
-**Al entrar, un cliente aterriza en el sitio público**, que es su portada, y
-desde ahí elige con el menú de siempre. Antes caía en Estadísticas, que es una
-pantalla concreta y no un punto de partida. Un administrador no: aterriza en
-`/admin`, que es lo único que su cuenta hace. Lo decide `landing()` en
-`blueprints/auth/routes.py`, y como devuelve una dirección de otro dominio, es lo
-que obliga a nombrar el sitio en `form-action`.
+**Al entrar, se aterriza en el sitio público**, que es la portada, y desde ahí
+se elige con el menú de siempre. **Administre o no**: una sola regla para el
+mismo momento. Antes un cliente caía en Estadísticas y un administrador en
+`/admin`, que son dos pantallas concretas, y la diferencia se notaba justo al
+saltar entre cuentas abiertas —una te dejaba en un sitio y la otra en otro—. Lo
+decide `landing()` en `blueprints/auth/routes.py`, y como devuelve una dirección
+de otro dominio, es lo que obliga a nombrar el sitio en `form-action`.
 
 Volver **desde dentro** del panel es otra cosa y tiene su propia función,
 `inside()`: de una pantalla del panel se vuelve a otra del panel, no al sitio.
@@ -787,6 +788,11 @@ Tres cosas que sostienen esto:
   contraseña y su segundo paso: `/entrar?agregar=1`. Aquí no se abre ninguna
   puerta que no estuviera ya abierta. La marca de «vengo a agregar» vive en la
   sesión y no en la dirección, porque el segundo paso pasa por otra pantalla.
+- **Y se puede crear una cuenta nueva sin cerrar la abierta**, por el mismo
+  camino: el pie de esa pantalla lleva a `/registro?agregar=1`, que se dibuja en
+  vez de devolver a la portada, y al confirmar el código la cuenta nueva se suma
+  a las abiertas. Ahí el pie tampoco dice «¿todavía no tienes cuenta?», que
+  estando dentro de una es mentira.
 - **«Olvidé la contraseña» mientras se agrega una cuenta es de la que se está
   agregando**, no de la que ya está abierta. La pantalla de recuperar, estando
   dentro, no pregunta la dirección porque ya la sabe; con la marca de agregar
@@ -811,8 +817,11 @@ en Configuración → Seguridad, que es su sitio.
 
 ## Panel de administración
 
-`/admin`, con verificación de rol, y **es donde aterriza un administrador al
-entrar**. Tres pantallas: **Estadísticas · Cuentas · Plantillas subidas**.
+`/admin`, con verificación de rol. **No es donde se aterriza al entrar** —eso es
+el sitio público, para todos—: se llega desde el menú, que para esta cuenta
+enseña Administración de primera fila. Sí es a donde la devuelve
+`not_for_admins()` si abre una pantalla de cliente. Tres pantallas:
+**Estadísticas · Cuentas · Plantillas subidas**.
 
 **Estadísticas** es `/admin/`, y es la misma pantalla del cliente con un selector
 de cuenta encima: lo que ve él, de quien elijas. Hubo una portada antes ahí, con

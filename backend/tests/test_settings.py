@@ -547,3 +547,64 @@ def test_both_menus_offer_the_switch(client, database, outbox):
     sitio = (raiz / "landing" / "index.html").read_text(encoding="utf-8")
     assert "Cambiar de cuenta" in sitio
     assert "/cambiar-cuenta" in sitio
+
+
+# ------------------------------------ crear otra cuenta sin cerrar la abierta
+
+def register_another(browser, email, company="Otra Cooperativa"):
+    """Registrar desde dentro de otra cuenta, como lo hace la pantalla."""
+    browser.get("/registro?agregar=1")
+    with browser.session_transaction() as sess:
+        token = sess["_csrf"]
+    return browser.post("/registro?agregar=1", data={
+        "csrf_token": token, "company_name": company, "contact_name": "Bea",
+        "email": email, "phone": "60000000", "password": PASSWORD})
+
+
+def test_la_pantalla_de_agregar_ofrece_crear_una(client, database, outbox):
+    """El pie decía «todavía no tienes cuenta», que estando dentro es mentira,
+    y encima el enlace rebotaba a la portada."""
+    register(client, email="una@ejemplo.com")
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+
+    pantalla = browser.get("/entrar?agregar=1").get_data(as_text=True)
+
+    assert "no existe esa cuenta" in pantalla
+    assert "no tienes cuenta" not in pantalla
+    assert "/registro?agregar=1" in pantalla
+
+
+def test_se_crea_otra_cuenta_y_la_primera_sigue_abierta(client, database, outbox):
+    from conftest import code_from_outbox, confirm
+
+    register(client, email="una@ejemplo.com")
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+
+    # El formulario se dibuja en vez de devolver a la portada.
+    formulario = browser.get("/registro?agregar=1")
+    assert formulario.status_code == 200
+    assert "Vas a crear otra cuenta" in formulario.get_data(as_text=True)
+
+    register_another(browser, "dos@ejemplo.com")
+    confirm(browser, code_from_outbox(outbox))
+
+    una = accounts.by_email(database, "una@ejemplo.com")["_id"]
+    dos = accounts.by_email(database, "dos@ejemplo.com")["_id"]
+    assert quien(browser, database) == dos
+    assert set(abiertas(browser, database)) == {una, dos}
+
+
+def test_el_registro_sin_la_marca_sigue_devolviendo(client, database, outbox):
+    """Quien ya está dentro y abre /registro sin más no tiene nada que hacer ahí."""
+    from config import Config
+
+    register(client, email="una@ejemplo.com")
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+
+    respuesta = browser.get("/registro")
+
+    assert respuesta.status_code == 302
+    assert respuesta.headers["Location"] == Config.PUBLIC_SITE_URL

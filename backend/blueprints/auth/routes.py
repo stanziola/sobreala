@@ -254,21 +254,25 @@ def bar_account():
 
 
 def landing(account: dict | None) -> str:
-    """A dónde va alguien que acaba de entrar.
+    """A dónde va alguien que acaba de entrar o que salta de cuenta.
 
-    Un cliente aterriza en **el sitio público**, que es su portada: desde ahí
-    elige a dónde ir con el menú de siempre. Antes caía directo en Estadísticas,
-    que es una pantalla concreta y no un punto de partida.
+    **Al sitio público, sea quien sea.** Es la portada: desde ahí se elige a
+    dónde ir con el menú de siempre, que para una cuenta de administrador
+    enseña Administración de primera fila. Antes un cliente caía en
+    Estadísticas y un administrador en `/admin`, que son dos pantallas
+    concretas y dos reglas distintas para el mismo momento; se nota al probar
+    con varias cuentas abiertas, donde saltar a una te dejaba en un sitio y
+    saltar a otra en otro.
 
-    El administrador no: aterriza en /admin, que es lo único que su cuenta hace.
+    No se confunda con `inside()`, que es a dónde se vuelve **desde dentro** del
+    panel, ni con `not_for_admins()`, que es la puerta que devuelve a `/admin` a
+    quien abre una pantalla de cliente que su cuenta no tiene.
 
     Devuelve una dirección entera y no una ruta, porque el sitio está en otro
     dominio. Eso obliga a una cosa más, en `app.py`: la cabecera `form-action`
     tiene que permitirlo, porque gobierna también la redirección que sigue al
     envío de un formulario, y entrar es un formulario.
     """
-    if accounts.is_admin(account):
-        return url_for("admin.home")
     return Config.PUBLIC_SITE_URL
 
 
@@ -641,8 +645,20 @@ def deliver(db, send, account: dict, *, kind: str) -> bool:
 
 @bp.route("/registro", methods=["GET", "POST"])
 def register():
-    if current_session():
+    # Con «agregar» la pantalla se dibuja aunque ya haya una sesión: es crear
+    # **otra** cuenta sin cerrar la que está abierta, el mismo camino que ya
+    # tiene entrar. Sin la marca, quien ya está dentro no tiene nada que hacer
+    # aquí y vuelve a la portada, como siempre.
+    adding = bool(request.args.get("agregar"))
+    if current_session() and not adding:
         return redirect(landing(current_account()))
+    if request.method == "GET":
+        # Vive en la sesión porque el camino pasa por la pantalla del código,
+        # que llega sin parámetros. La gasta `confirm()` al abrir la sesión.
+        if adding:
+            session[ADDING] = True
+        else:
+            session.pop(ADDING, None)
 
     form = {"company_name": "", "contact_name": "", "email": "", "phone": ""}
     errors: dict[str, str] = {}
@@ -696,7 +712,7 @@ def register():
                         accounts.delete(db, created["_id"])
                         errors["form"] = t("error_mail_failed")
                         return render_template("register.html", form=form,
-                                               errors=errors)
+                                               errors=errors, adding=adding)
                     await_code(created["_id"])
                 else:
                     # The address is taken, and the screen says so. Rule 7 in
@@ -717,10 +733,11 @@ def register():
                                 kind=events.REGISTER)
                     errors["email"] = t("error_email_taken")
                     return render_template("register.html", form=form,
-                                           errors=errors)
+                                           errors=errors, adding=adding)
                 return redirect(url_for("auth.confirm"))
 
-    return render_template("register.html", form=form, errors=errors)
+    return render_template("register.html", form=form, errors=errors,
+                           adding=adding)
 
 
 # -------------------------------------------------------------------- confirm
@@ -779,7 +796,9 @@ def confirm():
                     # already and the session opens either way; the failure is
                     # written down and that is all.
                     deliver(db, send_welcome, account, kind=events.CONFIRM)
-                    sign_in(account)
+                    # Si la cuenta se creó desde otra, aquella sigue abierta:
+                    # crear una segunda no es motivo para cerrar la primera.
+                    sign_in(account, keep=bool(session.pop(ADDING, False)))
                     return redirect(url_for("auth.welcome"))
 
             if reason == tokens.USED:
