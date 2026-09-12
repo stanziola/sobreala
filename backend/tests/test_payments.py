@@ -396,7 +396,59 @@ def test_contratar_ensena_el_plan_y_sus_dos_ciclos(client, database, outbox,
     assert "Contratar Básico" in pantalla
     assert plans.amount("basico", "monthly") in pantalla
     assert plans.amount("basico", "yearly") in pantalla
-    assert pantalla.count('action="/configuracion/pagos/contratar"') == 2
+    # Un solo formulario con los dos ciclos: el que se pulse dice cuál va.
+    assert pantalla.count('action="/configuracion/pagos/contratar"') == 1
+    assert pantalla.count('name="cycle"') == 2
+
+
+def test_contratar_ensena_con_que_se_puede_pagar_y_con_que_todavia_no(
+        client, database, outbox, monkeypatch):
+    """Los que faltan se enseñan igual: esconderlos haría que quien no tiene
+    PayPal cerrara la página creyendo que no puede pagar de ninguna forma."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+
+    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+
+    assert 'value="paypal"' in pantalla
+    assert "Tarjeta de crédito o débito" in pantalla
+    assert "Yappy" in pantalla
+    # Y los que no cobran no son un control que se pueda mandar.
+    assert 'value="card"' not in pantalla
+    assert 'value="yappy"' not in pantalla
+    assert pantalla.count("Pronto") == 2
+
+
+def test_el_metodo_queda_escrito_en_el_intento(client, database, outbox,
+                                               monkeypatch):
+    pedido = fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+
+    browser.post("/configuracion/pagos/contratar", data={
+        "csrf_token": csrf(browser), "plan": "basico", "cycle": "monthly",
+        "metodo": "paypal"})
+
+    intento = database.payments.find_one({})
+    assert intento["method"] == "paypal"
+    assert pedido
+
+
+def test_un_metodo_que_todavia_no_cobra_no_abre_ninguna_puerta(
+        client, database, outbox, monkeypatch):
+    """El formulario se puede escribir a mano. Lo que no cobra hoy se lee como
+    PayPal en vez de crear un intento de algo que no existe."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+
+    browser.post("/configuracion/pagos/contratar", data={
+        "csrf_token": csrf(browser), "plan": "basico", "cycle": "monthly",
+        "metodo": "yappy"})
+
+    intento = database.payments.find_one({})
+    assert intento["method"] == "paypal"
 
 
 def test_corporativo_no_tiene_pantalla_de_contratar(client, database, outbox,

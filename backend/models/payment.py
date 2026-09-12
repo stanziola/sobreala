@@ -28,12 +28,30 @@ def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+# Con qué se paga. **`METHODS` es lo que cobra hoy**, y es lo único que esta
+# ruta acepta; los otros dos están anunciados en la pantalla y no llegan hasta
+# aquí, así que un formulario escrito a mano con `metodo=yappy` acaba pagando
+# por PayPal y no abriendo una puerta que no existe.
+#
+# La tarjeta va a ser una pasarela con afiliación de comercio en Panamá, no el
+# checkout de PayPal, y esa decisión está pendiente. Cuando exista, entra aquí
+# y lo demás —la pantalla, el documento del intento— ya está puesto.
+PAYPAL = "paypal"
+CARD = "card"
+YAPPY = "yappy"
+METHODS = (PAYPAL,)
+SOON = (CARD, YAPPY)
+
+
 def start(db, account_id, *, plan: str, cycle: str, amount: str,
-          currency: str) -> Any:
+          currency: str, method: str = PAYPAL) -> Any:
     """Anotar el intento. Devuelve su id, que viaja a PayPal como referencia."""
     return db.payments.insert_one({
         "account_id": account_id,
         "provider": "paypal",
+        # Con qué eligió pagar. Lo de antes no lo tiene y se lee como PayPal,
+        # que es lo único que había.
+        "method": method if method in METHODS else PAYPAL,
         "plan": plan,
         "cycle": cycle,
         # El monto que se pidió cobrar, para poder compararlo con el que se

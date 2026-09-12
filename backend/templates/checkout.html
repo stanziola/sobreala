@@ -19,21 +19,58 @@
   {% elif not paypal_ready %}
   <p class="notice">{{ t('pay_not_ready') }}</p>
   {% else %}
-  {# Los dos ciclos, cada uno con su formulario: el cobro lo arranca
-     start_payment(), que compara el monto contra lo que dice el documento de
-     precios antes de activar nada. #}
-  <div class="row">
-    {% for cycle in ['monthly', 'yearly'] %}
-    <form method="post" action="{{ url_for('auth.start_payment') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="plan" value="{{ plan }}">
-      <input type="hidden" name="cycle" value="{{ cycle }}">
-      <button class="btn{% if cycle == 'yearly' %} btn--outline{% endif %}" type="submit">
+  {# Un solo formulario: primero con qué se paga y después por cuánto tiempo,
+     que son las dos preguntas y en ese orden. El ciclo viaja en el botón que
+     se pulse, así que no hace falta un tercer control para elegirlo.
+
+     El cobro lo arranca start_payment(), que compara el monto contra lo que
+     dice el documento de precios antes de activar nada. #}
+  <form method="post" action="{{ url_for('auth.start_payment') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="plan" value="{{ plan }}">
+
+    <p class="field-label">{{ t('pay_method_title') }}</p>
+    {% for name in methods %}
+    <div class="setting">
+      <div class="setting__text">
+        <p class="setting__title">{{ t('pay_method_' + name) }}</p>
+        <p class="setting__desc">{{ t('pay_method_' + name + '_desc') }}</p>
+      </div>
+      <div class="setting__action">
+        <label class="check">
+          <input type="radio" name="metodo" value="{{ name }}"
+                 {% if loop.first %}checked{% endif %}>
+          <span>{{ t('pay_method_use') }}</span>
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+
+    {# Los que faltan se enseñan igual y se dice que faltan. Esconderlos haría
+       que quien no tiene PayPal cerrara la página creyendo que no puede
+       pagar. #}
+    {% for name in soon %}
+    <div class="setting">
+      <div class="setting__text">
+        <p class="setting__title">{{ t('pay_method_' + name) }}</p>
+        <p class="setting__desc">{{ t('pay_method_' + name + '_desc') }}</p>
+      </div>
+      <div class="setting__action">
+        <span class="tag tag--quiet">{{ t('pay_method_soon') }}</span>
+      </div>
+    </div>
+    {% endfor %}
+
+    <p class="field-label">{{ t('pay_cycle_title') }}</p>
+    <div class="row">
+      {% for cycle in ['monthly', 'yearly'] %}
+      <button class="btn{% if cycle == 'yearly' %} btn--outline{% endif %}"
+              type="submit" name="cycle" value="{{ cycle }}">
         {{ t('pay_' + cycle) }} · {{ currency }}
         {{ '%.2f'|format(one.yearly if cycle == 'yearly' else one.monthly) }}</button>
-    </form>
-    {% endfor %}
-  </div>
+      {% endfor %}
+    </div>
+  </form>
   {% endif %}
 
   <p class="hint">{{ t('settings_payments_hint') }}</p>

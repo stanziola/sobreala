@@ -1650,6 +1650,8 @@ def checkout(plan: str):
         can_buy=accounts.can_buy(account),
         suspended=accounts.is_suspended(account),
         paypal_ready=paypal.configured(),
+        methods=payments.METHODS,
+        soon=payments.SOON,
         current=accounts.plan_of(account),
         plan_until=accounts.plan_until(account))
 
@@ -1693,8 +1695,16 @@ def start_payment():
     if not paypal.configured():
         return redirect(url_for("auth.settings", section="pagos", error="paypal"))
 
+    # Con qué eligió pagar. Lo que no sea uno de los que cobran hoy se lee
+    # como PayPal: el formulario se puede escribir a mano, y tarjeta y Yappy
+    # están anunciados pero todavía no cobran nada.
+    method = request.form.get("metodo", "")
+    if method not in payments.METHODS:
+        method = payments.PAYPAL
+
     attempt = payments.start(db, account["_id"], plan=plan, cycle=cycle,
-                             amount=amount, currency=plans.CURRENCY)
+                             amount=amount, currency=plans.CURRENCY,
+                             method=method)
     try:
         order_id, approve = paypal.create(
             amount=amount, currency=plans.CURRENCY,

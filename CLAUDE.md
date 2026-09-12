@@ -30,7 +30,7 @@ proceso en segundo plano.
 | Landing | HTML/CSS/JS estático | Cloudflare Pages |
 | DNS, WAF, rate limiting | Cloudflare (modo proxied, SSL Full strict) | — |
 | Imágenes de correos | En la propia base, servidas por el panel | Railway |
-| Pagos | Yappy y PayPal (tarjeta vía PayPal) | — |
+| Pagos | PayPal. Tarjeta y Yappy, anunciados y sin pasarela todavía | — |
 
 **No usar Brevo ni SMTP propio.** Brevo prohíbe en sus términos enviar en nombre
 de terceros y sus tarifas dan margen negativo. El SMTP propio o de una cuenta
@@ -1134,6 +1134,35 @@ Tres cosas de ese camino que no son negociables:
 3. **Los precios salen de `docs/pricing.md`**, no copiados al backend:
    `services/plans.py` lee las mismas dos filas que lee el sitio. Cambiar una
    cifra ahí la cambia en el sitio, en el panel y en lo que se cobra.
+
+### Con qué se paga
+
+La pantalla de contratar pregunta **dos cosas y en este orden**: con qué se paga
+y por cuánto tiempo. El ciclo viaja en el botón que se pulse, así que no hace
+falta un control aparte para elegirlo.
+
+| Método | Estado |
+|---|---|
+| PayPal | Cobra, y es el único que cobra hoy |
+| Tarjeta de crédito o débito | Anunciado. Falta la pasarela |
+| Yappy | Anunciado. Falta la integración |
+
+**Los tres se enseñan siempre**, también los que faltan: esconderlos haría que
+quien no tiene cuenta de PayPal cerrara la página creyendo que no puede pagar de
+ninguna forma. Los que no cobran **no son un control que se pueda mandar** —no
+tienen radio, solo una etiqueta—, y `payments.METHODS` es lo único que la ruta
+acepta, así que un formulario escrito a mano con `metodo=yappy` acaba pagando
+por PayPal en vez de abrir una puerta que no existe.
+
+**La tarjeta no va a ir por el checkout de PayPal.** Va a ser una pasarela con
+afiliación de comercio en Panamá —Paguélofácil, BAC Credomatic o Tilopay son las
+que hay—, y esa decisión está pendiente. Sea cual sea, **el pago ocurre en la
+página del proveedor**: la regla 9 no cambia, y meter los campos de la tarjeta
+en el panel obligaría a una certificación PCI que este producto no va a tener.
+
+Cada intento de pago anota **con qué se eligió pagar** (`method`), así que la
+lista de pagos lo dice. Lo escrito antes de esto no lo lleva y se lee como
+PayPal, que era lo único que había.
 
 **Quién puede pagar**: cualquiera con el **correo confirmado** y **sin suspender**,
 y ninguna de las dos la decide una persona (`accounts.can_buy()`). El correo

@@ -262,6 +262,10 @@
     {% endif %}
     {% endcall %}
 
+    {% call row(t('settings_payments_card'), t('settings_payments_card_desc')) %}
+    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
+    {% endcall %}
+
     {% call row(t('settings_payments_yappy'), t('settings_payments_yappy_desc')) %}
     <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
     {% endcall %}
@@ -277,6 +281,9 @@
           <tr>
             <td>{{ plans[one.plan].name if one.plan in plans else one.plan }}</td>
             <td class="table__quiet">{{ t('pay_cycle_' + one.cycle) }}</td>
+            {# Lo de antes no lleva método escrito y se lee como PayPal, que
+               era lo único que había. #}
+            <td class="table__quiet">{{ t('pay_method_' + (one.method or 'paypal')) }}</td>
             <td class="table__quiet">{{ one.currency }} {{ one.amount }}</td>
             <td class="table__quiet">{{ one.created_at|ago }}</td>
             <td><span class="tag tag--quiet">{{ t('pay_state_' + one.status) }}</span></td>

@@ -418,8 +418,11 @@ TEXTS = {
                               "el sitio.",
     "settings_payments_ready": "Disponible",
     "settings_payments_paypal": "PayPal",
-    "settings_payments_paypal_desc": "Para pagar con tarjeta o con tu cuenta "
-                                     "de PayPal, y para que se renueve solo.",
+    "settings_payments_paypal_desc": "Para pagar con tu cuenta de PayPal, y "
+                                     "para que se renueve solo.",
+    "settings_payments_card": "Tarjeta de crédito o débito",
+    "settings_payments_card_desc": "Visa y Mastercard, sin necesidad de tener "
+                                   "cuenta de PayPal.",
     "settings_payments_yappy": "Yappy",
     "settings_payments_yappy_desc": "Para pagar desde tu banco en Panamá, sin "
                                     "tarjeta.",
@@ -440,6 +443,22 @@ TEXTS = {
     "pay_prices": "${month} al mes · ${year} al año, con dos meses gratis.",
     "pay_custom": "A la medida, sin precio público. Hablamos y lo armamos "
                   "contigo.",
+    # Con qué se paga. Los tres se enseñan siempre: esconder los que faltan
+    # haría que quien no tiene PayPal cerrara la página creyendo que no puede
+    # pagar de ninguna forma.
+    "pay_method_title": "Cómo quieres pagar",
+    "pay_method_use": "Usar este",
+    "pay_method_soon": "Pronto",
+    "pay_method_paypal": "PayPal",
+    "pay_method_paypal_desc": "Se paga en la página de PayPal, con tu cuenta. "
+                              "Nosotros nunca vemos tus datos.",
+    "pay_method_card": "Tarjeta de crédito o débito",
+    "pay_method_card_desc": "Visa y Mastercard, sin necesidad de tener cuenta "
+                            "de PayPal. Estamos afiliando el comercio.",
+    "pay_method_yappy": "Yappy",
+    "pay_method_yappy_desc": "Desde tu banco en Panamá, sin tarjeta.",
+    "pay_cycle_title": "Por cuánto tiempo",
+
     "pay_monthly": "Pagar un mes",
     "pay_yearly": "Pagar un año",
     "pay_talk": "Escríbenos",
