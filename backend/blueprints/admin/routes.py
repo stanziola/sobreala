@@ -29,6 +29,7 @@ from db import get_db
 from models import account as accounts
 from models import admin_event as decisions
 from models import auth_event as events
+from models import campaign as campaigns
 from models import contact as contacts
 from models import design as designs
 from models import import_job as imports
@@ -95,31 +96,70 @@ SHOWN = (events.LOGIN, events.LOGOUT, events.REGISTER, events.CONFIRM,
          events.TWO_FACTOR, events.SESSION_CLOSED)
 
 
-def activity(db, client) -> list[dict]:
+# Las cinco fuentes de la línea de tiempo. La clave es lo que viaja en la
+# dirección —en español, como el resto de los filtros— y el valor es el tipo
+# que dibuja la plantilla.
+KINDS = {
+    "entradas": "auth",
+    "pagos": "payment",
+    "correos": "campaign",
+    "contactos": "import",
+    "decisiones": "decision",
+}
+
+# Cuántas líneas se enseñan.
+TIMELINE = 60
+
+
+def activity(db, client, *, only: str = "") -> list[dict]:
     """Lo que hizo la cuenta y lo que se decidió sobre ella, en una sola línea
     de tiempo.
 
-    Cuatro colecciones que ya existían y que hasta ahora se miraban por
-    separado: entradas, importaciones, pagos y decisiones. Se juntan aquí y no
+    Cinco colecciones que ya existían y que por separado no cuentan nada:
+    entradas, importaciones, pagos, campañas y decisiones. Se juntan aquí y no
     en la plantilla porque lo que ordena es la fecha, no de dónde salió cada
     cosa.
 
-    Las direcciones de sus contactos siguen sin aparecer: se enseña que importó
-    un archivo y cuántos entraron, no quiénes.
-    """
-    rows: list[dict] = []
+    **Filtrar es preguntar de nuevo, no esconder filas.** De la mezcla se
+    guardan las sesenta más recientes, así que quedarse después con los pagos
+    enseñaría los pocos que sobrevivieron a ella; pidiendo una sola fuente, esa
+    fuente se lleva el sitio entero.
 
-    for row in events.for_account(db, client["_id"], kinds=SHOWN, limit=40):
-        rows.append({"at": row["created_at"], "type": "auth", "row": row})
-    for job in imports.for_account(db, client["_id"], limit=20):
-        rows.append({"at": job["created_at"], "type": "import", "row": job})
-    for paid in payments.for_account(db, client["_id"], limit=20):
-        rows.append({"at": paid["created_at"], "type": "payment", "row": paid})
-    for taken in decisions.for_account(db, client["_id"]):
-        rows.append({"at": taken["created_at"], "type": "decision", "row": taken})
+    Las direcciones de sus contactos siguen sin aparecer: se enseña que importó
+    un archivo y cuántos entraron, o que mandó una campaña y cuántos salieron,
+    nunca a quiénes.
+    """
+    account_id = client["_id"]
+    want = KINDS.get(only, "")
+
+    def room(default: int) -> int:
+        return TIMELINE if want else default
+
+    rows: list[dict] = []
+    if want in ("", "auth"):
+        for row in events.for_account(db, account_id, kinds=SHOWN,
+                                      limit=room(40)):
+            rows.append({"at": row["created_at"], "type": "auth", "row": row})
+    if want in ("", "import"):
+        for job in imports.for_account(db, account_id, limit=room(20)):
+            rows.append({"at": job["created_at"], "type": "import", "row": job})
+    if want in ("", "payment"):
+        for paid in payments.for_account(db, account_id, limit=room(20)):
+            rows.append({"at": paid["created_at"], "type": "payment",
+                         "row": paid})
+    if want in ("", "campaign"):
+        for one in campaigns.recent(db, account_id, limit=room(20)):
+            # La fecha que importa es cuándo salió; mientras no salga, cuándo
+            # se armó, que es lo único que pasó todavía.
+            rows.append({"at": one.get("finished_at") or one.get("started_at")
+                         or one["created_at"], "type": "campaign", "row": one})
+    if want in ("", "decision"):
+        for taken in decisions.for_account(db, account_id, limit=room(50)):
+            rows.append({"at": taken["created_at"], "type": "decision",
+                         "row": taken})
 
     rows.sort(key=lambda entry: entry["at"], reverse=True)
-    return rows[:60]
+    return rows[:TIMELINE]
 
 
 # ---------------------------------------------------------- las estadísticas
@@ -184,6 +224,11 @@ def accounts_list(account):
 def account_page(account, raw):
     db = get_db()
     client = wanted(raw)
+    # Un tipo que no existe se mira como si no se hubiera pedido nada: la
+    # dirección la escribe cualquiera, y una página vacía por una letra de más
+    # parecería que la cuenta no ha hecho nada.
+    shown = request.args.get("actividad", "")
+    shown = shown if shown in KINDS else ""
     return render_template(
         "admin/account.html", section="cuentas", admin=account, client=client,
         statuses=accounts.STATUSES, plans=sorted(accounts.PLAN_CONTACTS),
@@ -195,7 +240,9 @@ def account_page(account, raw):
         tags=accounts.tags_of(client),
         history=imports.for_account(db, client["_id"], limit=20),
         devices=sessions.for_account(db, client["_id"]),
-        activity=activity(db, client),
+        activity=activity(db, client, only=shown),
+        activity_kinds=list(KINDS),
+        activity_only=shown,
         describe=sessions.describe,
         sources=contacts.SOURCES)
 

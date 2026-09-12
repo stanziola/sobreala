@@ -843,8 +843,17 @@ Ponerle el plan a mano llama al mismo `activate_plan()` que usa PayPal, así que
 deja la cuenta activa **y con fecha de vencimiento**, no con un plan que no vence
 nunca. Y tiene
 una **Actividad** que junta en una línea de tiempo lo que hizo la cuenta —sus
-entradas, sus importaciones, sus pagos— con lo que se decidió sobre ella,
-leyendo `auth_events`, `imports`, `payments` y `admin_events`.
+entradas, sus importaciones, sus pagos, sus campañas— con lo que se decidió
+sobre ella, leyendo `auth_events`, `imports`, `payments`, `campaigns` y
+`admin_events`, con un desplegable para mirar una sola de las cinco.
+
+**Ese filtro vuelve a preguntar, no esconde filas.** De la mezcla se guardan las
+sesenta más recientes, así que filtrar al dibujar enseñaría los pocos pagos que
+sobrevivieron a ella.
+
+**Agregar y borrar un contacto de uno en uno no queda escrito en ninguna
+parte**, así que no se puede enseñar: de los contactos, la línea de tiempo
+cuenta los archivos que importó.
 
 **La ficha enseña cifras y orígenes, nunca la lista de direcciones de los
 contactos de un cliente.** Cuántos tiene, cuántas supresiones, qué archivos subió

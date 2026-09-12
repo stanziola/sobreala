@@ -73,6 +73,18 @@ def for_account(db, account_id, *, limit: int = 50) -> list[dict[str, Any]]:
                 .sort("scheduled_at", -1).limit(limit))
 
 
+def recent(db, account_id, *, limit: int = 20) -> list[dict[str, Any]]:
+    """Las últimas de esta cuenta, por cuándo se armaron.
+
+    `for_account()` ordena por la hora de envío, que es lo que la pantalla del
+    cliente enseña; la actividad de la ficha ordena por cuándo pasaron las
+    cosas, y una campaña armada hoy para dentro de un mes no es lo más viejo
+    que tiene esa cuenta.
+    """
+    return list(db.campaigns.find({"account_id": account_id})
+                .sort("created_at", -1).limit(limit))
+
+
 def by_id(db, account_id, campaign_id) -> dict[str, Any] | None:
     """Una de esta cuenta. La cuenta va en la consulta, no se comprueba después."""
     return db.campaigns.find_one({"_id": campaign_id, "account_id": account_id})

@@ -172,15 +172,33 @@
   {% endfor %}
 </ul>
 
-<h3 class="settings__subtitle">{{ t('admin_history_title') }}</h3>
-<p class="settings__lead">{{ t('admin_history_lead') }}</p>
+<h3 class="settings__subtitle" id="actividad">{{ t('admin_history_title') }}</h3>
+
+{# El filtro se resuelve en el servidor y no escondiendo filas: la línea de
+   tiempo se queda con las más recientes de las cinco fuentes mezcladas, así
+   que esconder lo demás enseñaría los pocos pagos que sobrevivieron a la
+   mezcla. El ancla devuelve aquí, que es el final de una página larga. #}
+<form class="filters" method="get"
+      action="{{ url_for('admin.account_page', raw=client._id) }}#actividad">
+  <label class="visually-hidden" for="tipo">{{ t('admin_act_filter') }}</label>
+  <select id="tipo" name="actividad">
+    <option value="">{{ t('admin_act_all') }}</option>
+    {% for name in activity_kinds %}
+    <option value="{{ name }}"{% if name == activity_only %} selected{% endif %}>
+      {{ t('admin_act_only_' + name) }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn--small btn--outline" type="submit">{{ t('stats_apply') }}</button>
+</form>
+
 {% if activity %}
 <div class="table-wrap">
   <table class="table">
     <tbody>
-      {# Cuatro colecciones en una sola línea de tiempo: sus entradas, sus
-         importaciones, sus pagos y tus decisiones. De los contactos se dice
-         cuántos entraron, nunca quiénes. #}
+      {# Cinco colecciones en una sola línea de tiempo: sus entradas, sus
+         importaciones, sus pagos, sus campañas y tus decisiones. De los
+         contactos se dice cuántos entraron y a cuántos les salió un correo,
+         nunca quiénes. #}
       {% for entry in activity %}
       {% set row = entry.row %}
       <tr>
@@ -203,6 +221,14 @@
             {{ t('admin_act_payment_failed', plan=row.plan|capitalize) }}
             {% endif %}
             <br><span class="table__quiet">{{ row.amount }} {{ row.currency }}</span>
+          {% elif entry.type == 'campaign' %}
+            {% if row.status == 'scheduled' %}
+            {{ t('admin_act_campaign_scheduled', subject=row.subject) }}
+            {% else %}
+            {{ t('admin_act_campaign', subject=row.subject) }}<br>
+            <span class="table__quiet">{{ t('admin_act_campaign_counts',
+              sent=row.sent, skipped=row.skipped, failed=row.failed) }}</span>
+            {% endif %}
           {% else %}
             {% if row.kind == 'status' %}
             {{ t('admin_history_status', before=row.before, after=row.after) }}

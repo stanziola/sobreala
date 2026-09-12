@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import re
+from datetime import datetime, timezone
 
 import pyotp
 from conftest import login, register
@@ -378,6 +379,80 @@ def test_la_actividad_trae_entradas_importaciones_pagos_y_decisiones(
     assert "hablé con la junta" in ficha         # de admin_events
     # Y lo que no cambia: las direcciones de sus contactos no se enseñan.
     assert "ana@coop.com" not in ficha
+
+
+def enviada(database, cliente, subject="Asamblea de marzo"):
+    """Una campaña ya salida, con una dirección dentro para comprobar que no se
+    dibuja."""
+    momento = datetime.now(timezone.utc)
+    database.campaigns.insert_one({
+        "account_id": cliente["_id"], "subject": subject, "tag": "",
+        "status": "sent", "position": 3, "total": 3,
+        "sent": 2, "skipped": 1, "failed": 0,
+        "errors": [{"email": "ana@coop.com", "error": "no salió"}],
+        "created_at": momento, "updated_at": momento,
+        "scheduled_at": momento, "started_at": momento,
+        "finished_at": momento})
+
+
+def cobrado(database, cliente, plan="negocio"):
+    momento = datetime.now(timezone.utc)
+    database.payments.insert_one({
+        "account_id": cliente["_id"], "plan": plan, "cycle": "monthly",
+        "amount": "60.00", "currency": "USD", "order_id": "ORDEN-1",
+        "status": "completed", "created_at": momento, "updated_at": momento})
+
+
+def test_la_actividad_ensena_las_campanas_y_no_a_quien_salieron(
+        client, database, outbox):
+    """Mandar una campaña es actividad de la cuenta como entrar o pagar, y de
+    ella se dicen cifras: cuántos salieron, nunca a quiénes."""
+    admin, _ = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+    enviada(database, cliente)
+
+    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    assert "Asamblea de marzo" in ficha
+    assert "2 salieron" in ficha
+    assert "ana@coop.com" not in ficha
+
+
+def test_el_filtro_de_actividad_deja_solo_lo_que_se_pide(
+        client, database, outbox):
+    admin, _ = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+    cobrado(database, cliente)
+    enviada(database, cliente)
+
+    entera = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    assert "Entró a la cuenta" in entera
+    assert "Pagó el plan Negocio" in entera
+    assert "Asamblea de marzo" in entera
+
+    pagos = admin.get(
+        f"/admin/cuentas/{cliente['_id']}?actividad=pagos").get_data(as_text=True)
+    assert "Pagó el plan Negocio" in pagos
+    assert "Entró a la cuenta" not in pagos
+    assert "Asamblea de marzo" not in pagos
+
+    correos = admin.get(
+        f"/admin/cuentas/{cliente['_id']}?actividad=correos").get_data(as_text=True)
+    assert "Asamblea de marzo" in correos
+    assert "Pagó el plan Negocio" not in correos
+
+
+def test_un_tipo_de_actividad_inventado_se_mira_como_todo(
+        client, database, outbox):
+    """La dirección la escribe cualquiera, y una página vacía por una letra de
+    más parecería que la cuenta no ha hecho nada."""
+    admin, _ = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+    cobrado(database, cliente)
+
+    ficha = admin.get(
+        f"/admin/cuentas/{cliente['_id']}?actividad=inventado").get_data(as_text=True)
+    assert "Entró a la cuenta" in ficha
+    assert "Pagó el plan Negocio" in ficha
 
 
 def test_la_actividad_no_ensena_las_direcciones_de_sus_contactos(

@@ -961,8 +961,6 @@ TEXTS = {
                           "llenan solas cuando salga la primera campaña.",
     "admin_devices_title": "Sus dispositivos",
     "admin_history_title": "Actividad",
-    "admin_history_lead": "Lo que ha hecho la cuenta y lo que has decidido "
-                          "sobre ella, en la misma línea de tiempo.",
     "admin_history_empty": "Nada todavía.",
     "admin_history_status": "Estado: de {before} a {after}",
     "admin_history_sending": "Se habilitó el envío",
@@ -985,6 +983,20 @@ TEXTS = {
     "admin_act_payment_failed": "Intento de pago sin cobrar: {plan}",
     "admin_act_from": "desde {ip}",
     "admin_act_reason": "Motivo: {reason}",
+    "admin_act_campaign": "Envió «{subject}»",
+    "admin_act_campaign_scheduled": "Programó «{subject}»",
+    "admin_act_campaign_counts": "{sent} salieron · {skipped} suprimidos · "
+                                 "{failed} fallaron",
+
+    # El desplegable que parte la línea de tiempo. Los nombres van por el valor
+    # que viaja en la dirección, en español como el resto de los filtros.
+    "admin_act_filter": "Tipo de actividad",
+    "admin_act_all": "Toda la actividad",
+    "admin_act_only_entradas": "Entradas",
+    "admin_act_only_pagos": "Transacciones",
+    "admin_act_only_correos": "Correos",
+    "admin_act_only_contactos": "Contactos",
+    "admin_act_only_decisiones": "Decisiones",
 
     "admin_designs_title": "Plantillas subidas",
     "admin_designs_lead": "El HTML que ha subido cada cliente. Lo peligroso lo "
