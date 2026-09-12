@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ t('send_confirm_title') }}{% endblock %}
+
+{#- La pantalla que pregunta antes de mandar. El GET la dibuja y no manda nada;
+    el POST de abajo es el que le escribe a la gente, que es el mismo reparto
+    que usa exportar contactos. Aquí importa más: un correo que salió no se
+    puede recoger. -#}
+{% block content %}
+<h1 class="settings__heading">{{ t('send_confirm_title') }}</h1>
+<p class="settings__lead">{{ t('send_confirm_lead') }}</p>
+
+<p class="lead"><b>{{ campaign.subject }}</b></p>
+
+<ul class="counts">
+  <li><span>{{ t('send_confirm_list') }}</span>
+    <b>{{ campaign.tag or t('send_all_contacts') }} ·
+      {% if going == 0 %}{{ t('send_confirm_going_none') }}
+      {% elif going == 1 %}{{ t('send_confirm_going_one') }}
+      {% else %}{{ t('send_confirm_going', n=going) }}{% endif %}</b></li>
+  <li><span>{{ t('send_confirm_piece') }}</span>
+    <b>{{ piece.name if piece else t('send_blocked_piece') }}</b></li>
+</ul>
+<p class="hint">{{ t('send_confirm_quota', n=quota) }}
+  {{ t('send_confirm_suppressed') }}</p>
+
+{# Lo que hay que decir antes y no después: a quien ya la recibió le llega otra
+   vez. Es lo que se pide de un boletín y lo que sorprende de un recordatorio. #}
+{% if campaign.status == 'sending' %}
+<p class="notice">{{ t('send_confirm_going_on',
+     done=campaign.position, total=campaign.total) }}</p>
+{% elif already == 1 %}
+<p class="notice">{{ t('send_confirm_again_one') }}</p>
+{% elif already > 1 %}
+<p class="notice">{{ t('send_confirm_again', n=already) }}</p>
+{% endif %}
+
+{% if blocked %}
+<p class="notice">
+  {% for why in blocked %}{{ t('send_blocked_' + why) }} {% endfor %}
+  {% if 'plan' in blocked %}<a href="{{ site_url }}/planes/">{{ t('welcome_plans') }}</a>{% endif %}
+</p>
+{% endif %}
+
+<div class="row">
+  {% if not blocked and going > 0 and piece %}
+  <form method="post" action="{{ url_for('campaigns.send', raw=campaign._id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn" type="submit">{{ t('send_confirm_yes') }}</button>
+  </form>
+  {% endif %}
+  <a class="btn btn--outline"
+     href="{{ url_for('campaigns.index') }}">{{ t('send_confirm_no') }}</a>
+</div>
+{% endblock %}

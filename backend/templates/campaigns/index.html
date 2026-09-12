@@ -31,6 +31,7 @@
 </form>
 
 <h2 class="settings__subtitle">{{ t('send_yours') }}</h2>
+<p class="settings__lead">{{ t('send_yours_lead') }}</p>
 {% if campaigns %}
 <div class="table-wrap">
   <table class="table">
@@ -43,10 +44,15 @@
             {{ one.tag or t('send_all_contacts') }}</span>
         </td>
         <td class="table__quiet">
+          {# De una guardada se dice cuántas veces ha salido, no las cifras de
+             la última: esas son de un envío y viven abajo, uno por línea. #}
           {% if one.status == 'sent' %}
-          {{ t('send_state_sent', n=one.sent) }}
-          {% if one.skipped %}· {{ t('send_state_skipped', n=one.skipped) }}{% endif %}
-          {% if one.failed %}· {{ t('send_state_failed', n=one.failed) }}{% endif %}
+          {% set veces = times.get(one._id) %}
+          {% if veces and veces.times > 1 %}
+          {{ t('send_times', n=veces.times, when=veces.last|ago) }}
+          {% else %}
+          {{ t('send_times_one', when=(veces.last if veces else one.finished_at)|ago) }}
+          {% endif %}
           {% elif one.status == 'sending' %}
           {{ t('send_state_going', done=one.position, total=one.total) }}
           {% elif due(one) %}
@@ -56,13 +62,11 @@
           {% endif %}
         </td>
         <td>
-          {% if one.status != 'sent' %}
-          <form method="post" action="{{ url_for('campaigns.send', raw=one._id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn--small" type="submit">
-              {{ t('send_continue') if one.status == 'sending' else t('send_now') }}</button>
-          </form>
-          {% endif %}
+          {# Un enlace y no un formulario: lo que hay al otro lado es la
+             pantalla que pregunta, y el que manda es su botón. #}
+          <a class="btn btn--small"
+             href="{{ url_for('campaigns.send', raw=one._id) }}">
+            {{ t('send_continue') if one.status == 'sending' else t('send_now') }}</a>
         </td>
         <td>
           {% if editable(one) %}
@@ -79,9 +83,41 @@
           {% endif %}
         </td>
       </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('send_none') }}</p>
+{% endif %}
+
+{# --------------------------------------------------- lo que ya salió --- #}
+{# Una línea por envío y no por campaña: la mandada seis veces son seis. Sale
+   de `campaign_runs`, con el asunto copiado, así que sigue diciendo la verdad
+   aunque después se corrija o se borre la campaña. #}
+<h2 class="settings__subtitle">{{ t('send_runs_title') }}</h2>
+<p class="settings__lead">{{ t('send_runs_lead') }}</p>
+{% if runs %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for one in runs %}
+      <tr>
+        <td>
+          <b>{{ one.subject }}</b><br>
+          <span class="table__quiet">
+            {{ one.tag or t('send_all_contacts') }}</span>
+        </td>
+        <td class="table__quiet">
+          {{ t('send_state_sent', n=one.sent) }}
+          {% if one.skipped %}· {{ t('send_state_skipped', n=one.skipped) }}{% endif %}
+          {% if one.failed %}· {{ t('send_state_failed', n=one.failed) }}{% endif %}
+        </td>
+        <td class="table__quiet">{{ one.finished_at|ago }}</td>
+      </tr>
       {% if one.errors %}
       <tr>
-        <td colspan="5" class="table__quiet">
+        <td colspan="3" class="table__quiet">
           {{ t('send_errors_title') }}
           {% for bad in one.errors %}<br>{{ bad.email }}: {{ bad.error }}{% endfor %}
         </td>
@@ -92,6 +128,6 @@
   </table>
 </div>
 {% else %}
-<p class="hint">{{ t('send_none') }}</p>
+<p class="hint">{{ t('send_runs_none') }}</p>
 {% endif %}
 {% endblock %}

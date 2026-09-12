@@ -10,6 +10,12 @@ escribirle, así que la fila no le sale en el menú y la ruta lo devuelve a
 
 El envío de verdad vive en `services/sender.py`. Aquí solo se elige, se agenda,
 y se le pide que mande una tanda.
+
+**Una campaña se guarda y se manda las veces que haga falta.** La pantalla
+tiene por eso dos listas: las campañas guardadas, que se pueden corregir y
+volver a mandar, y los envíos, uno por vez que salió. Y mandar pasa siempre por
+una pantalla que pregunta, como exportar contactos: el GET no manda nada y el
+POST sí.
 """
 
 from __future__ import annotations
@@ -25,6 +31,7 @@ from db import get_db
 from i18n import t
 from models import account as accounts
 from models import campaign as campaigns
+from models import campaign_run as runs
 from models import contact as contacts
 from models import design as designs
 from services import render, sender
@@ -94,6 +101,10 @@ def shared(db, account, **extra):
         "named": {one["key"]: one["label"]
                   for one in render.TEMPLATE_LIST.values()},
         "campaigns": campaigns.for_account(db, account["_id"]),
+        # Una fila por vez que salió algo, que es otra cosa que una fila por
+        # campaña: la mandada seis veces son seis envíos.
+        "runs": runs.for_account(db, account["_id"]),
+        "times": runs.times_by_campaign(db, account["_id"]),
         # Qué le falta a la cuenta para que un envío salga de verdad. Se enseña
         # siempre, no al final: enterarse de que no se puede después de armarlo
         # todo es la peor forma de enterarse.
@@ -206,9 +217,13 @@ def remove(raw):
     return redirect(url_for("campaigns.index", borrado=1))
 
 
-@bp.route("/envios/<raw>/mandar", methods=["POST"])
+@bp.route("/envios/<raw>/mandar", methods=["GET", "POST"])
 def send(raw):
-    """Mandar una tanda de esta campaña.
+    """Preguntar primero, y después mandar una tanda de esta campaña.
+
+    **El GET no manda nada**: dibuja a quién le va a salir y cuántos son, y
+    pregunta. Es el mismo reparto que exportar contactos, y aquí importa más,
+    porque lo que hace el POST no se puede deshacer: un correo que salió, salió.
 
     Una tanda y no la campaña entera: esto corre dentro de la petición y una
     lista larga la cortaría el servidor a la mitad. La pantalla dice cuántos
@@ -218,15 +233,35 @@ def send(raw):
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
-    if not csrf_ok(request.form.get("csrf_token")):
-        return redirect(url_for("campaigns.index"))
 
     db = get_db()
     campaign_id = as_id(raw)
     found = (campaigns.by_id(db, account["_id"], campaign_id)
              if campaign_id else None)
-    if found is None or found["status"] == campaigns.SENT:
+    if found is None:
         return redirect(url_for("campaigns.index"))
+
+    if request.method == "GET":
+        return render_template(
+            "campaigns/confirm.html", section="envios",
+            **shared(db, account, campaign=found,
+                     piece=designs.by_id(db, account["_id"],
+                                         found.get("design_id")),
+                     going=contacts.matching_count(db, account["_id"],
+                                                   tag=found.get("tag", "")),
+                     already=runs.times(db, account["_id"], found["_id"])))
+
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(url_for("campaigns.index"))
+
+    # Volver a mandar una que ya salió empieza por devolver a cero los
+    # contadores de la vuelta. Si otra pestaña se adelantó, la consulta no
+    # encuentra nada y aquí no se manda dos veces lo mismo.
+    if found["status"] == campaigns.SENT:
+        if not campaigns.restart(db, account["_id"], found["_id"],
+                                 when=accounts.now()):
+            return redirect(url_for("campaigns.index", hecho="tarde"))
+        found = campaigns.by_id(db, account["_id"], found["_id"])
 
     result = sender.run(db, account, found)
     if result["blocked"]:

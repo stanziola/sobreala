@@ -15,6 +15,7 @@ from conftest import login, register
 
 from models import account as accounts
 from models import campaign as campaigns
+from models import campaign_run as runs
 from models import contact as contacts
 from models import design as designs
 from models import suppression as suppressions
@@ -118,18 +119,54 @@ def test_no_se_programa_para_una_hora_que_ya_paso(client, database, outbox):
     assert "ya pasó" in respuesta.get_data(as_text=True)
 
 
-def test_lo_que_ya_salio_no_se_toca(client, database, outbox, monkeypatch):
+def test_la_que_esta_saliendo_no_se_toca(client, database, outbox, monkeypatch):
+    """Cambiarle el asunto a algo que va por la mitad es mandarle dos cosas
+    distintas a dos mitades de la misma lista."""
+    catch(monkeypatch)
+    monkeypatch.setattr(sender, "BATCH", 2)
+    browser, account, piece = ready(client, database, howmany=5)
+    make(browser, piece)
+    _, suya = send_it(browser, database, account["_id"])
+
+    mitad = campaigns.by_id(database, account["_id"], suya["_id"])
+    assert mitad["status"] == campaigns.SENDING
+    assert not campaigns.editable(mitad)
+
+    browser.post(f"/envios/{suya['_id']}", data={
+        "csrf_token": csrf(browser), "asunto": "Otro asunto",
+        "pieza": str(piece), "lista": "", "cuando": "ahora"})
+    browser.post(f"/envios/{suya['_id']}/borrar",
+                 data={"csrf_token": csrf(browser)})
+
+    sigue = campaigns.by_id(database, account["_id"], suya["_id"])
+    assert sigue is not None and sigue["subject"] == "Aviso"
+
+
+def test_la_que_ya_salio_se_corrige_y_se_borra_sin_perder_lo_enviado(
+        client, database, outbox, monkeypatch):
+    """Una campaña guardada sigue viva después de salir. Lo que salió no
+    cambia con ella: vive aparte, con el asunto copiado."""
     catch(monkeypatch)
     browser, account, piece = ready(client, database)
     make(browser, piece)
-    respuesta, suya = send_it(browser, database, account["_id"])
+    _, suya = send_it(browser, database, account["_id"])
 
     despues = campaigns.by_id(database, account["_id"], suya["_id"])
     assert despues["status"] == campaigns.SENT
-    assert not campaigns.editable(despues)
+    assert campaigns.editable(despues)
+
+    browser.post(f"/envios/{suya['_id']}", data={
+        "csrf_token": csrf(browser), "asunto": "Aviso corregido",
+        "pieza": str(piece), "lista": "", "cuando": "ahora"})
+    assert campaigns.by_id(database, account["_id"],
+                           suya["_id"])["subject"] == "Aviso corregido"
+
     browser.post(f"/envios/{suya['_id']}/borrar",
                  data={"csrf_token": csrf(browser)})
-    assert campaigns.count(database, account["_id"]) == 1
+    assert campaigns.count(database, account["_id"]) == 0
+    # Lo que salió, salió: sigue escrito y con el asunto que llevaba.
+    historial = runs.for_account(database, account["_id"])
+    assert len(historial) == 1 and historial[0]["subject"] == "Aviso"
 
 
 # ------------------------------------------------------------------ el envío
@@ -205,6 +242,77 @@ def test_la_tanda_tiene_tope_y_retoma_donde_iba(client, database, outbox,
     assert final["sent"] == 5
     # Y nadie recibió dos veces.
     assert len({one["To"] for one in salidos}) == 5
+
+
+def test_la_misma_campana_se_manda_las_veces_que_haga_falta(
+        client, database, outbox, monkeypatch):
+    """Un boletín se arma una vez y sale muchas. Cada vez es un envío suyo, con
+    sus cifras, y a la lista entera otra vez."""
+    salidos = catch(monkeypatch)
+    browser, account, piece = ready(client, database, howmany=2)
+    make(browser, piece)
+
+    for _ in range(3):
+        _, suya = send_it(browser, database, account["_id"])
+
+    # Dos contactos por tres vueltas: seis correos, y nadie recibió uno solo.
+    assert len(salidos) == 6
+    historial = runs.for_account(database, account["_id"])
+    assert len(historial) == 3
+    assert [una["sent"] for una in historial] == [2, 2, 2]
+    assert runs.times(database, account["_id"], suya["_id"]) == 3
+    # Y sigue siendo una sola campaña guardada.
+    assert campaigns.count(database, account["_id"]) == 1
+    fresca = accounts.by_id(database, account["_id"])
+    assert accounts.sent_this_month(fresca) == 6
+
+
+def test_volver_a_mandarla_pone_los_contadores_a_cero(client, database, outbox,
+                                                      monkeypatch):
+    catch(monkeypatch)
+    browser, account, piece = ready(client, database, howmany=2)
+    make(browser, piece)
+    _, suya = send_it(browser, database, account["_id"])
+
+    assert campaigns.restart(database, account["_id"], suya["_id"],
+                             when=accounts.now())
+
+    lista = campaigns.by_id(database, account["_id"], suya["_id"])
+    assert lista["status"] == campaigns.SCHEDULED
+    assert (lista["sent"], lista["position"], lista["errors"]) == (0, 0, [])
+    # Y lo de la vuelta anterior sigue escrito.
+    assert runs.for_account(database, account["_id"])[0]["sent"] == 2
+
+
+def test_la_pantalla_pregunta_antes_y_no_manda_nada(client, database, outbox,
+                                                    monkeypatch):
+    """El GET dibuja y pregunta; el que manda es el POST. Un correo que salió
+    no se puede recoger."""
+    salidos = catch(monkeypatch)
+    browser, account, piece = ready(client, database, howmany=2)
+    make(browser, piece)
+    suya = campaigns.for_account(database, account["_id"])[0]
+
+    pantalla = browser.get(f"/envios/{suya['_id']}/mandar").get_data(as_text=True)
+
+    assert "¿Seguro que quieres enviarla?" in pantalla
+    assert "2 contactos" in pantalla
+    assert salidos == []
+    assert campaigns.by_id(database, account["_id"],
+                           suya["_id"])["status"] == campaigns.SCHEDULED
+
+
+def test_la_pantalla_avisa_de_que_le_llega_otra_vez_a_todos(
+        client, database, outbox, monkeypatch):
+    catch(monkeypatch)
+    browser, account, piece = ready(client, database, howmany=2)
+    make(browser, piece)
+    send_it(browser, database, account["_id"])
+    suya = campaigns.for_account(database, account["_id"])[0]
+
+    pantalla = browser.get(f"/envios/{suya['_id']}/mandar").get_data(as_text=True)
+
+    assert "también a quienes ya la recibieron" in pantalla
 
 
 def test_la_cuota_del_mes_manda(client, database, outbox, monkeypatch):

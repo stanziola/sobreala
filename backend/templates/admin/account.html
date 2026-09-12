@@ -222,13 +222,9 @@
             {% endif %}
             <br><span class="table__quiet">{{ row.amount }} {{ row.currency }}</span>
           {% elif entry.type == 'campaign' %}
-            {% if row.status == 'scheduled' %}
-            {{ t('admin_act_campaign_scheduled', subject=row.subject) }}
-            {% else %}
             {{ t('admin_act_campaign', subject=row.subject) }}<br>
             <span class="table__quiet">{{ t('admin_act_campaign_counts',
               sent=row.sent, skipped=row.skipped, failed=row.failed) }}</span>
-            {% endif %}
           {% else %}
             {% if row.kind == 'status' %}
             {{ t('admin_history_status', before=row.before, after=row.after) }}

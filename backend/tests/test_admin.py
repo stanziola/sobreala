@@ -381,18 +381,24 @@ def test_la_actividad_trae_entradas_importaciones_pagos_y_decisiones(
     assert "ana@coop.com" not in ficha
 
 
-def enviada(database, cliente, subject="Asamblea de marzo"):
-    """Una campaña ya salida, con una dirección dentro para comprobar que no se
-    dibuja."""
+def enviada(database, cliente, subject="Asamblea de marzo", cuantas=1):
+    """Una campaña guardada y sus envíos, con una dirección dentro para
+    comprobar que no se dibuja."""
     momento = datetime.now(timezone.utc)
-    database.campaigns.insert_one({
+    campana = database.campaigns.insert_one({
         "account_id": cliente["_id"], "subject": subject, "tag": "",
         "status": "sent", "position": 3, "total": 3,
-        "sent": 2, "skipped": 1, "failed": 0,
-        "errors": [{"email": "ana@coop.com", "error": "no salió"}],
+        "sent": 2, "skipped": 1, "failed": 0, "errors": [],
         "created_at": momento, "updated_at": momento,
         "scheduled_at": momento, "started_at": momento,
-        "finished_at": momento})
+        "finished_at": momento}).inserted_id
+    for _ in range(cuantas):
+        database.campaign_runs.insert_one({
+            "account_id": cliente["_id"], "campaign_id": campana,
+            "subject": subject, "tag": "", "total": 3,
+            "sent": 2, "skipped": 1, "failed": 0,
+            "errors": [{"email": "ana@coop.com", "error": "no salió"}],
+            "started_at": momento, "finished_at": momento})
 
 
 def cobrado(database, cliente, plan="negocio"):
@@ -415,6 +421,17 @@ def test_la_actividad_ensena_las_campanas_y_no_a_quien_salieron(
     assert "Asamblea de marzo" in ficha
     assert "2 salieron" in ficha
     assert "ana@coop.com" not in ficha
+
+
+def test_una_campana_mandada_dos_veces_son_dos_lineas(client, database, outbox):
+    """La que sale cada mes no es una cosa que pasó una vez."""
+    admin, _ = make_admin(client, database)
+    _, cliente = make_client_account(client, database)
+    enviada(database, cliente, subject="Boletín", cuantas=2)
+
+    ficha = admin.get(
+        f"/admin/cuentas/{cliente['_id']}?actividad=correos").get_data(as_text=True)
+    assert ficha.count("Envió «Boletín»") == 2
 
 
 def test_el_filtro_de_actividad_deja_solo_lo_que_se_pide(

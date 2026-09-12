@@ -828,8 +828,16 @@ TEXTS = {
     "send_new": "Nueva campaña",
     "send_submit": "Guardar la campaña",
     "send_save": "Guardar los cambios",
-    "send_yours": "Tus campañas",
+    "send_yours": "Campañas guardadas",
+    "send_yours_lead": "Se guardan armadas y se mandan las veces que haga "
+                       "falta. Corregir una no cambia lo que ya salió.",
     "send_none": "Todavía no has armado ninguna.",
+    "send_runs_title": "Campañas enviadas",
+    "send_runs_lead": "Una línea por cada vez que salió algo, lo último "
+                      "arriba.",
+    "send_runs_none": "Todavía no ha salido ninguna.",
+    "send_times_one": "Enviada una vez, {when}",
+    "send_times": "Enviada {n} veces, la última {when}",
     "send_back": "Volver a envíos",
 
     "send_subject": "Asunto",
@@ -881,6 +889,32 @@ TEXTS = {
     "send_state_skipped": "{n} anulados",
     "send_state_failed": "{n} fallaron",
     "send_errors_title": "Lo que no se pudo enviar:",
+
+    # La pantalla que pregunta antes de mandar. Dice cifras y no generalidades:
+    # es lo único que separa «mandé el boletín» de «le escribí a toda la base».
+    "send_confirm_title": "¿Seguro que quieres enviarla?",
+    "send_confirm_lead": "Un correo que sale no se puede recoger. Mira a quién "
+                         "le va a llegar antes de mandarla.",
+    "send_confirm_subject": "Asunto",
+    "send_confirm_list": "A quién",
+    "send_confirm_piece": "Con qué plantilla",
+    "send_confirm_going_none": "Ahora mismo no hay nadie en esa lista, así que "
+                               "no hay a quién mandarla.",
+    "send_confirm_going_one": "Un contacto",
+    "send_confirm_going": "{n} contactos",
+    "send_confirm_quota": "Te quedan {n} correos este mes.",
+    "send_confirm_suppressed": "Quien se dio de baja no la recibe, y no gasta "
+                               "cuota.",
+    "send_confirm_again_one": "Esta campaña ya salió una vez. Va a salir otra "
+                              "vez a toda la lista, también a quienes ya la "
+                              "recibieron.",
+    "send_confirm_again": "Esta campaña ya salió {n} veces. Va a salir otra "
+                          "vez a toda la lista, también a quienes ya la "
+                          "recibieron.",
+    "send_confirm_going_on": "Esta campaña está saliendo: van {done} de "
+                             "{total}. Se manda la siguiente tanda.",
+    "send_confirm_yes": "Sí, enviarla",
+    "send_confirm_no": "Cancelar",
     "send_edit_title": "Editar la campaña",
     "send_edit_lead": "Se puede cambiar mientras no haya empezado a salir.",
 
@@ -984,7 +1018,6 @@ TEXTS = {
     "admin_act_from": "desde {ip}",
     "admin_act_reason": "Motivo: {reason}",
     "admin_act_campaign": "Envió «{subject}»",
-    "admin_act_campaign_scheduled": "Programó «{subject}»",
     "admin_act_campaign_counts": "{sent} salieron · {skipped} suprimidos · "
                                  "{failed} fallaron",
 

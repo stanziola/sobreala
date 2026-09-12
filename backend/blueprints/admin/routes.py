@@ -29,7 +29,7 @@ from db import get_db
 from models import account as accounts
 from models import admin_event as decisions
 from models import auth_event as events
-from models import campaign as campaigns
+from models import campaign_run as sendings
 from models import contact as contacts
 from models import design as designs
 from models import import_job as imports
@@ -148,11 +148,11 @@ def activity(db, client, *, only: str = "") -> list[dict]:
             rows.append({"at": paid["created_at"], "type": "payment",
                          "row": paid})
     if want in ("", "campaign"):
-        for one in campaigns.recent(db, account_id, limit=room(20)):
-            # La fecha que importa es cuándo salió; mientras no salga, cuándo
-            # se armó, que es lo único que pasó todavía.
-            rows.append({"at": one.get("finished_at") or one.get("started_at")
-                         or one["created_at"], "type": "campaign", "row": one})
+        # Una línea por envío y no por campaña: la que se manda cada mes no es
+        # una cosa que pasó una vez.
+        for one in sendings.for_account(db, account_id, limit=room(20)):
+            rows.append({"at": one["finished_at"], "type": "campaign",
+                         "row": one})
     if want in ("", "decision"):
         for taken in decisions.for_account(db, account_id, limit=room(50)):
             rows.append({"at": taken["created_at"], "type": "decision",

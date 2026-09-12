@@ -543,8 +543,16 @@ respuesta se puede guardar un año: cambiar una imagen es subir otra, con otro
 nombre, así que lo cacheado no puede quedar viejo.
 
 ### `campaigns`
-Un documento por envío: el asunto, la pieza, la lista, la hora y **hasta dónde
-llegó**. Estados: `scheduled` → `sending` → `sent`.
+**Un documento por campaña, no por envío**: el asunto, la pieza, la lista, la
+hora y **hasta dónde llegó**. Estados: `scheduled` → `sending` → `sent`.
+
+**Una campaña se guarda y se manda las veces que haga falta.** Un boletín
+mensual se arma una vez y sale doce; un recordatorio de asamblea, cada año.
+`restart()` devuelve los contadores a cero y la deja esperando otra vez, con el
+estado dentro de la consulta que escribe para que dos clics no arranquen dos
+envíos. **Sale a la lista entera otra vez**, también a quien ya la recibió —que
+es lo que se le pide a un boletín—, los suprimidos se siguen saltando por la
+regla 1, y gasta cuota otra vez porque son correos que salen.
 
 **La posición es lo que hace que esto se pueda cortar.** El envío sale por tandas
 —cien destinatarios por vuelta— porque corre dentro de la petición y no hay
@@ -553,13 +561,31 @@ mitad no le manda a nadie dos veces, y la pantalla ofrece seguir. El día que
 exista ese proceso, llama a `sender.run()` en bucle y no cambia nada más. Es
 también lo que va a permitir pausar por cuota y retomar.
 
-**Editar y borrar solo mientras esté en `scheduled`**, y el estado va dentro de
-la consulta que escribe: entre mirar y guardar hay sitio para que el envío
+**Editar y borrar solo mientras no esté saliendo**, y el estado va dentro de la
+consulta que escribe: entre mirar y guardar hay sitio para que el envío
 arranque. Que le haya pasado la hora no la cierra —nadie la despertó—, así que
-sigue esperando con su botón de mandar.
+sigue esperando con su botón de mandar. Y una que ya salió tampoco queda
+cerrada: es la campaña guardada, y corregirle el asunto para la próxima vez es
+justo para lo que se guarda. Lo que ya salió no cambia con ella, porque vive
+aparte.
 
 **Lo programado no sale solo.** No hay quién lo despierte: cuando pasa su hora, la
 pantalla la enseña como lista para salir.
+
+### `campaign_runs`
+Un documento **cada vez que una campaña sale**: la cuenta, la campaña, el asunto
+y la lista copiados, cuándo empezó y terminó, cuántos salieron, se saltaron y
+fallaron, y los errores. Lo escribe `campaigns.finish()`, que es por donde pasa
+toda vuelta que termina.
+
+Aparte y no en un arreglo dentro de la campaña por tres razones: **no hay
+tope** —treinta envíos son treinta líneas—, el documento de la campaña no crece
+sin límite, y el asunto copiado hace que el historial siga contando la verdad
+aunque después se corrija o se borre la campaña. **Borrar una campaña no borra
+sus envíos**: lo que salió, salió.
+
+Es lo que dibuja «Campañas enviadas» en `/envios` y las líneas de correo de la
+Actividad de una ficha, que por eso son una por envío y no una por campaña.
 
 ### `events`
 Un registro por evento de SES (enviado, entregado, rebote, queja, apertura,
@@ -843,9 +869,11 @@ Ponerle el plan a mano llama al mismo `activate_plan()` que usa PayPal, así que
 deja la cuenta activa **y con fecha de vencimiento**, no con un plan que no vence
 nunca. Y tiene
 una **Actividad** que junta en una línea de tiempo lo que hizo la cuenta —sus
-entradas, sus importaciones, sus pagos, sus campañas— con lo que se decidió
-sobre ella, leyendo `auth_events`, `imports`, `payments`, `campaigns` y
-`admin_events`, con un desplegable para mirar una sola de las cinco.
+entradas, sus importaciones, sus pagos, sus envíos— con lo que se decidió
+sobre ella, leyendo `auth_events`, `imports`, `payments`, `campaign_runs` y
+`admin_events`, con un desplegable para mirar una sola de las cinco. Los correos
+son **una línea por envío**: la campaña que sale cada mes no es una cosa que
+pasó una vez.
 
 **Ese filtro vuelve a preguntar, no esconde filas.** De la mezcla se guardan las
 sesenta más recientes, así que filtrar al dibujar enseñaría los pocos pagos que
@@ -946,6 +974,18 @@ medio año la primera vez que alguien entrara.
 —una etiqueta o todos—, una pieza guardada y el asunto, y sale ahora o queda
 programada. Arriba, siempre, **qué le falta a la cuenta para que un envío salga
 de verdad**; armar y programar se puede igual, mandar no.
+
+La pantalla tiene **dos listas y son dos cosas distintas**: «Campañas
+guardadas», que se corrigen y se vuelven a mandar, y «Campañas enviadas», una
+línea por cada vez que salió algo, leída de `campaign_runs`. Una campaña
+mandada seis veces es una fila arriba y seis abajo.
+
+**Mandar pasa siempre por una pantalla que pregunta.** El botón de la lista es
+un enlace a `GET /envios/<id>/mandar`, que no manda nada: dice el asunto, a qué
+lista, **a cuántos contactos**, con qué pieza y cuánta cuota queda, y si ya
+salió antes avisa de que le va a llegar otra vez a todos, también a quien ya la
+recibió. El que manda es el POST. Es el mismo reparto que exportar contactos, y
+aquí pesa más: un correo que salió no se puede recoger.
 
 **Para mandar hacen falta las dos puertas**: un plan con cuota del mes por gastar,
 y la habilitación de envío, que es la única con una persona detrás
