@@ -62,6 +62,14 @@ class Config:
     # System mail keeps its own SES configuration set: a client's campaign
     # bounces must never affect whether confirmation mail is delivered.
     SES_TRANSACTIONAL_CONFIGURATION_SET = os.getenv("SES_TRANSACTIONAL_CONFIGURATION_SET", "")
+    # El de las campanas, que es otro a proposito: los rebotes de una campana no
+    # pueden arrastrar la reputacion de los codigos de confirmacion.
+    #
+    # Vacia se puede enviar igual; services/sender.py solo se la pasa a SES si
+    # tiene valor. Falto durante un tiempo y sender.py la leia, asi que con SES
+    # de verdad cada destinatario moria en un AttributeError que se contaba como
+    # correo fallido. Ninguna prueba lo vio porque todas sustituyen la entrega.
+    SES_CONFIGURATION_SET = os.getenv("SES_CONFIGURATION_SET", "")
     # us-east-2 (Ohio) is where the SES identity lives. SES is per region: the
     # same domain verified elsewhere does not count, and sending against the
     # wrong one fails with "identity not verified".

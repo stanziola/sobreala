@@ -319,3 +319,45 @@ def test_la_fila_esta_en_los_dos_menus(client, database, outbox):
     sitio = (raiz / "landing" / "index.html").read_text(encoding="utf-8")
     assert "Enviar correos" in sitio
     assert "/envios" in sitio
+
+
+# --------------------------------------------------------- la rama de SES
+
+def test_la_entrega_por_ses_llega_a_ses(monkeypatch):
+    """Esta rama no la recorría ninguna prueba, porque todas sustituyen la
+    entrega para no mandar correo de verdad.
+
+    Por eso vivió escondido que leía una configuración que no existía: con SES
+    de verdad, cada destinatario moría en un AttributeError y la campaña decía
+    «0 salieron, 1 falló».
+    """
+    from email.message import EmailMessage
+
+    import boto3
+
+    from config import Config
+
+    pedido = {}
+
+    class Falso:
+        def send_raw_email(self, **kwargs):
+            pedido.update(kwargs)
+            return {"MessageId": "mensaje-1"}
+
+    monkeypatch.setattr(Config, "MAIL_BACKEND", "ses")
+    monkeypatch.setattr(boto3, "client", lambda *a, **k: Falso())
+
+    mensaje = EmailMessage()
+    mensaje["To"] = "socio@ejemplo.com"
+    mensaje.set_content("hola")
+
+    # Sin conjunto de configuración puesto, que es como está hoy: se envía igual.
+    monkeypatch.setattr(Config, "SES_CONFIGURATION_SET", "")
+    assert sender.deliver(mensaje) == "mensaje-1"
+    assert b"socio@ejemplo.com" in pedido["RawMessage"]["Data"]
+    assert "ConfigurationSetName" not in pedido
+
+    # Y con él puesto, se le dice a SES dónde publicar los eventos.
+    monkeypatch.setattr(Config, "SES_CONFIGURATION_SET", "campanas")
+    sender.deliver(mensaje)
+    assert pedido["ConfigurationSetName"] == "campanas"
