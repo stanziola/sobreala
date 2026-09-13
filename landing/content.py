@@ -264,10 +264,11 @@ STEPS = [
         "detail": (
             "Subes el archivo que ya tienes, en CSV, y Panamails lo procesa. Los "
             "correos repetidos se unifican solos: una dirección existe una sola vez en "
-            "tu cuenta, aunque aparezca en varias listas. Al terminar te decimos "
+            "tu cuenta, aunque venga repetida en el archivo. Al terminar te decimos "
             "cuántos entraron y cuántos estaban dados de baja de envíos anteriores. "
-            "En vez de listas separadas usas etiquetas, así un mismo contacto puede ser "
-            "socio y estar en la lista de la asamblea sin contar dos veces."
+            "No manejas listas separadas: es una sola lista y la organizas con "
+            "etiquetas, así un mismo contacto puede ser empleado y junta directiva "
+            "sin contar dos veces."
         ),
     },
     {
@@ -415,11 +416,11 @@ PRICING = {
             "badge": "Recomendado",
         },
         "Empresa": {
-            "pitch": "Para cooperativas y colegios con listas grandes.",
+            "pitch": "Para cooperativas y colegios con una lista grande.",
             "featured": False,
         },
         "Corporativo": {
-            "pitch": "Para listas muy grandes, con acompañamiento.",
+            "pitch": "Para una lista muy grande, con acompañamiento.",
             "featured": False,
             "custom_price": "A la medida",
             "custom_note": "Contáctanos",
@@ -435,6 +436,9 @@ PRICING = {
         "eyebrow": "Comparación",
         "title": "Todo lo que incluye cada plan",
         "scroll_hint": "Desliza para ver todos los planes",
+        # Lo que lleva al lado la fila de algo que todavía se está
+        # construyendo. Los números son los del plan; la función no está.
+        "soon": "Pronto",
     },
     # Lo que la tabla no dice sola. Una fila que se llama «Etiquetas» y dice
     # «4» no significa nada para quien no conoce el producto, y hay una que no
@@ -451,21 +455,23 @@ PRICING = {
             {
                 "title": "Contactos",
                 "text": (
-                    "Las personas que tienes guardadas. Cada dirección cuenta "
-                    "una sola vez, aunque esté en varias de tus listas, y "
-                    "quien se da de baja deja de ocupar lugar: si tu plan son "
-                    "3,000 contactos, son 3,000 personas a las que puedes "
-                    "escribirle."
+                    "Las personas que tienes guardadas. Tienes una sola lista "
+                    "y cada dirección está en ella una sola vez, aunque le "
+                    "pongas varias etiquetas. Quien se da de baja deja de "
+                    "ocupar lugar: si tu plan son 3,000 contactos, son 3,000 "
+                    "personas a las que puedes escribirle."
                 ),
             },
             {
                 "title": "Etiquetas",
                 "text": (
-                    "Son tus listas: socios, morosos, junta directiva. Un "
-                    "contacto puede llevar varias y sigue contando como uno "
-                    "solo, y si le escribes a dos listas donde está, recibe un "
-                    "correo y no dos. El número dice cuántas listas distintas "
-                    "puedes armar."
+                    "No manejas listas separadas: es una sola lista y las "
+                    "etiquetas son las que la dividen. A cada contacto le "
+                    "pones las que quieras (colaborador, empleado, junta "
+                    "directiva, estudiante, profesor) y después le escribes "
+                    "solo a los que llevan una. Un contacto con tres etiquetas "
+                    "sigue contando como uno y recibe un solo correo. El "
+                    "número dice cuántas etiquetas distintas puedes crear."
                 ),
             },
             {
@@ -480,23 +486,20 @@ PRICING = {
             {
                 "title": "Plantillas prediseñadas",
                 "text": (
-                    "Cuatro piezas ya armadas —un aviso, un anuncio, un "
-                    "boletín y una convocatoria— que solo tienes que llenar "
-                    "con tu texto y tus imágenes. Van en todos los planes, se "
-                    "guardan y las vuelves a usar las veces que quieras."
+                    "Cuatro diseños ya hechos, como un banner al que solo le "
+                    "cambias lo de adentro: el título, el texto y la imagen. "
+                    "Van en todos los planes, se guardan y los usas las veces "
+                    "que quieras."
                 ),
             },
             {
                 "title": "Subir tu propio HTML",
                 "text": (
-                    "Si ya tienes una pieza diseñada por fuera, la subes tal "
-                    "cual y se envía así. Y en esa pieza, como en las nuestras, "
-                    "escribes tus columnas de datos donde quieras: pones "
-                    "*|CIUDAD|* en medio de una frase y a cada persona le "
-                    "llega la suya. No es un mismo correo idéntico para toda "
-                    "la lista: es uno por persona, con lo que tú guardaste de "
-                    "cada quien, y a quien le falte ese dato le llega el texto "
-                    "de respaldo que tú elijas."
+                    "Si tu diseñador te hizo un correo, lo subes tal cual y "
+                    "sale así. Y ahí, como en los nuestros, escribes tus "
+                    "columnas de datos donde quieras: pones *|CIUDAD|* en "
+                    "medio de una frase y a cada persona le llega la suya. No "
+                    "es un mismo correo idéntico para toda la lista."
                 ),
             },
             {
@@ -511,9 +514,20 @@ PRICING = {
             {
                 "title": "Exportar a CSV y PDF",
                 "text": (
-                    "Tus contactos y las cifras de cada campaña se bajan "
-                    "cuando quieras, en un archivo que abre Excel. Tus datos "
-                    "son tuyos y salen de aquí sin que tengas que pedirlo."
+                    "Puedes descargar tus estadísticas y tu base de datos "
+                    "como CSV y PDF, cuando quieras."
+                ),
+            },
+            {
+                "title": "Usuarios de la cuenta",
+                "text": (
+                    "Cuántas personas de tu empresa entran con su propio "
+                    "acceso. El dueño puede todo: cambiar la contraseña, el "
+                    "plan y los datos de la cuenta. Al empleado le das lo "
+                    "suyo: subir contactos, ponerles etiquetas, armar "
+                    "plantillas y mandar campañas, sin tocar el plan ni el "
+                    "pago. Se está construyendo: hoy cada cuenta tiene un solo "
+                    "acceso."
                 ),
             },
         ],

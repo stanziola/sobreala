@@ -97,7 +97,8 @@
           </tr>
           {% for row in pricing_data.table.rows %}
           <tr>
-            <th scope="row">{{ row.label }}</th>
+            <th scope="row">{{ row.label }}{% if row.soon %}
+              <span class="compare__soon">{{ page.table.soon }}</span>{% endif %}</th>
             {% for v in row['values'] %}
             <td>
               {% if v == '✅' %}<span class="yes" role="img" aria-label="Incluido">✓</span>

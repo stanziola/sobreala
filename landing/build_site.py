@@ -65,6 +65,12 @@ PUBLIC_ROWS = [
     ("Soporte", "Soporte"),
 ]
 
+# Filas cuyo número es el del plan pero cuya función todavía se está
+# construyendo. Se dibujan con su marca al lado, para que nadie contrate
+# esperando algo que hoy no puede usar. Hoy: una cuenta es un solo acceso, sin
+# empleados ni permisos.
+SOON_ROWS = {"Usuarios"}
+
 # Rows shown on the plan cards, above the fold.
 CARD_ROWS = ["Contactos", "Correos por mes", "Usuarios", "Soporte"]
 
@@ -157,7 +163,8 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
     table = {
         "plans": names,
         "rows": [
-            {"label": label, "values": [cell(key, n) for n in names]}
+            {"label": label, "soon": key in SOON_ROWS,
+             "values": [cell(key, n) for n in names]}
             for key, label in PUBLIC_ROWS
         ],
     }

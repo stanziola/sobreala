@@ -643,6 +643,14 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .compare tbody th { font-weight: 600; color: var(--color-ink); width: 34%; background: var(--color-surface-alt); text-align: left; }
 .compare tbody tr:last-child th, .compare tbody tr:last-child td { border-bottom: 0; }
 .compare tbody tr:hover td { background: var(--color-accent-soft); }
+/* Una fila cuyo número es el del plan pero cuya función se está construyendo:
+   la marca va al lado del nombre y no en las celdas, que son ciertas. */
+.compare__soon {
+  display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px;
+  background: var(--color-accent-soft); color: var(--color-accent-strong);
+  font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  vertical-align: middle;
+}
 .compare .yes { color: var(--color-accent-strong); font-weight: 800; font-size: 1.1rem; }
 .compare .no { color: var(--color-ink-soft); }
 
