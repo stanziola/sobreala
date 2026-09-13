@@ -600,6 +600,11 @@ envíos. **Sale a la lista entera otra vez**, también a quien ya la recibió �
 es lo que se le pide a un boletín—, los suprimidos se siguen saltando por la
 regla 1, y gasta cuota otra vez porque son correos que salen.
 
+**A qué etiquetas sale vive en `tags`**, y vacío es toda la lista. Las
+campañas de antes llevaban una sola en un campo suelto; `campaigns.tags_of()`
+lee las dos formas, así que no hubo nada que migrar, y guardar una campaña vieja
+la pasa al campo nuevo.
+
 **La posición es lo que hace que esto se pueda cortar.** El envío sale por tandas
 —cien destinatarios por vuelta— porque corre dentro de la petición y no hay
 proceso en segundo plano: cada tanda anota dónde quedó, así que cortar a la
@@ -1039,9 +1044,16 @@ medio año la primera vez que alguien entrara.
 
 ## Enviar correos
 
-`/envios`, debajo de Estadísticas y **solo para clientes**: se elige la lista
-—una etiqueta o todos—, una pieza guardada y el asunto, y sale ahora o queda
-programada. Arriba, siempre, **qué le falta a la cuenta para que un envío salga
+`/envios`, debajo de Estadísticas y **solo para clientes**: se marcan las
+etiquetas a las que va —ninguna es toda la lista—, una pieza guardada y el
+asunto, y sale ahora o queda programada.
+
+**Se le puede escribir a varias etiquetas a la vez**, y le llega a quien lleve
+cualquiera de ellas. Que nadie reciba dos veces no hubo que construirlo: un
+contacto es **un solo documento** con sus etiquetas dentro, así que la consulta
+por varias lo devuelve una vez aunque lleve tres de las marcadas. Es la garantía
+que `docs/pricing.md` promete, y hasta que esto existió era cierta solo porque
+no se podía elegir más de una. Arriba, siempre, **qué le falta a la cuenta para que un envío salga
 de verdad**; armar y programar se puede igual, mandar no.
 
 La pantalla tiene **dos listas y son dos cosas distintas**: «Campañas

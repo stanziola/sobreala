@@ -79,18 +79,26 @@ def pieces(db, account_id) -> list[dict]:
 
 
 def lists_of(db, account) -> list[dict]:
-    """Las listas a las que se le puede escribir, con cuántos hay en cada una.
+    """Las etiquetas a las que se le puede escribir, con cuántos hay en cada una.
 
-    La primera es todos los contactos: una cuenta que nunca creó una etiqueta
-    tiene igualmente a quién escribirle.
+    Marcar varias es escribirle a quien lleve **cualquiera** de ellas, y no
+    marcar ninguna es escribirle a toda la lista: una cuenta que nunca creó una
+    etiqueta tiene igualmente a quién escribirle.
     """
     counted = contacts.count_by_tag(db, account["_id"])
-    found = [{"tag": "", "name": t("send_all_contacts"),
-              "howmany": contacts.count(db, account["_id"])}]
-    for name in accounts.tags_of(account):
-        found.append({"tag": name, "name": name,
-                      "howmany": counted.get(name, 0)})
-    return found
+    return [{"tag": name, "name": name, "howmany": counted.get(name, 0)}
+            for name in accounts.tags_of(account)]
+
+
+def lists_chosen(account) -> list[str]:
+    """Las etiquetas marcadas, filtradas por las que existen.
+
+    Se recorren las de la cuenta y no lo que llegó: un nombre inventado se
+    descarta en vez de filtrar por él, que es lo mismo que hace la pantalla de
+    contactos. Vacío es toda la lista.
+    """
+    marked = set(request.form.getlist("lista"))
+    return [name for name in accounts.tags_of(account) if name in marked]
 
 
 def shared(db, account, **extra):
@@ -101,6 +109,8 @@ def shared(db, account, **extra):
         "named": {one["key"]: one["label"]
                   for one in render.TEMPLATE_LIST.values()},
         "campaigns": campaigns.for_account(db, account["_id"]),
+        "tags_of": campaigns.tags_of,
+        "everyone": t("send_all_contacts"),
         # Una fila por vez que salió algo, que es otra cosa que una fila por
         # campaña: la mandada seis veces son seis envíos.
         "runs": runs.for_account(db, account["_id"]),
@@ -145,7 +155,7 @@ def save(db, account, campaign) -> dict[str, str]:
     errors: dict[str, str] = {}
     subject = campaigns.clean_subject(request.form.get("asunto", ""))
     design_id = as_id(request.form.get("pieza"))
-    tag = (request.form.get("lista") or "").strip()
+    tags = lists_chosen(account)
     now_wanted = request.form.get("cuando") == "ahora"
     when = accounts.now() if now_wanted else read_when(
         request.form.get("fecha", ""))
@@ -156,8 +166,6 @@ def save(db, account, campaign) -> dict[str, str]:
         errors["asunto"] = t("error_required")
     if design_id is None or designs.by_id(db, account["_id"], design_id) is None:
         errors["pieza"] = t("send_pick_piece")
-    if tag and tag not in accounts.tags_of(account):
-        errors["lista"] = t("send_pick_list")
     if when is None:
         errors["fecha"] = t("send_pick_when")
     elif not now_wanted and when <= accounts.now():
@@ -169,9 +177,9 @@ def save(db, account, campaign) -> dict[str, str]:
 
     if campaign is None:
         campaigns.create(db, account["_id"], subject=subject,
-                         design_id=design_id, tag=tag, scheduled_at=when)
+                         design_id=design_id, tags=tags, scheduled_at=when)
     elif not campaigns.update(db, account["_id"], campaign["_id"],
-                              subject=subject, design_id=design_id, tag=tag,
+                              subject=subject, design_id=design_id, tags=tags,
                               scheduled_at=when):
         return {"form": t("send_already_out")}
     return {}
@@ -249,8 +257,9 @@ def send(raw):
             **shared(db, account, campaign=found,
                      piece=designs.by_id(db, account["_id"],
                                          found.get("design_id")),
-                     going=contacts.matching_count(db, account["_id"],
-                                                   tag=found.get("tag", "")),
+                     going=contacts.matching_count(
+                         db, account["_id"],
+                         tags=campaigns.tags_of(found)),
                      already=runs.times(db, account["_id"], found["_id"])))
 
     if not csrf_ok(request.form.get("csrf_token")):

@@ -103,27 +103,38 @@ def delete_suppressed(db, account_id) -> int:
     return result.deleted_count
 
 
-def _matching(account_id, search: str, tag: str) -> dict[str, Any]:
+def _matching(account_id, search: str, tag: str,
+              tags: list[str] | None = None) -> dict[str, Any]:
     """La consulta de la tabla, en un solo sitio.
 
     La usan la exportación y el conteo que la confirma, para que el número que
     se enseña antes de descargar sea el del archivo y no una cuenta aparte que
     un día se desincroniza.
+
+    `tag` es una sola, que es como filtra la pantalla de contactos. `tags` son
+    varias, que es como sale una campaña: **quien lleve cualquiera de ellas**.
+    Nadie sale dos veces porque un contacto es un solo documento con sus
+    etiquetas dentro, así que llevar tres de las marcadas no lo duplica.
     """
     query: dict[str, Any] = {"account_id": account_id}
-    if tag:
-        query["tags"] = tag
+    wanted = [one for one in (tags or []) if one] or ([tag] if tag else [])
+    if len(wanted) == 1:
+        query["tags"] = wanted[0]
+    elif wanted:
+        query["tags"] = {"$in": wanted}
     if search:
         query["email_normalized"] = {"$regex": f"^{_escape(normalize_email(search))}"}
     return query
 
 
-def matching_count(db, account_id, *, search: str = "", tag: str = "") -> int:
+def matching_count(db, account_id, *, search: str = "", tag: str = "",
+                   tags: list[str] | None = None) -> int:
     """Cuántos saldrían con ese buscador y ese filtro."""
-    return db.contacts.count_documents(_matching(account_id, search, tag))
+    return db.contacts.count_documents(_matching(account_id, search, tag, tags))
 
 
-def batch_for_sending(db, account_id, *, tag: str = "", skip: int = 0,
+def batch_for_sending(db, account_id, *, tag: str = "",
+                      tags: list[str] | None = None, skip: int = 0,
                       limit: int = 100) -> list[dict[str, Any]]:
     """Un tramo de la lista, en orden fijo, para mandarle una campaña.
 
@@ -132,7 +143,7 @@ def batch_for_sending(db, account_id, *, tag: str = "", skip: int = 0,
     mitad, y de eso depende que la posición guardada signifique lo mismo en la
     tanda siguiente.
     """
-    return list(db.contacts.find(_matching(account_id, "", tag))
+    return list(db.contacts.find(_matching(account_id, "", tag, tags))
                 .sort("_id", 1).skip(skip).limit(limit))
 
 

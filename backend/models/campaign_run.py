@@ -33,7 +33,7 @@ def record(db, campaign: dict[str, Any]) -> Any:
         "campaign_id": campaign["_id"],
         # Copiados a propósito: ver más arriba.
         "subject": campaign.get("subject", ""),
-        "tag": campaign.get("tag", ""),
+        "tags": list(campaign.get("tags") or []),
         "total": campaign.get("total", 0),
         "sent": campaign.get("sent", 0),
         "skipped": campaign.get("skipped", 0),

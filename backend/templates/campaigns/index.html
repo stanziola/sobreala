@@ -41,7 +41,7 @@
         <td>
           <b>{{ one.subject }}</b><br>
           <span class="table__quiet">
-            {{ one.tag or t('send_all_contacts') }}</span>
+            {{ tags_of(one)|join(' · ') or everyone }}</span>
         </td>
         <td class="table__quiet">
           {# De una guardada se dice cuántas veces ha salido, no las cifras de
@@ -106,7 +106,7 @@
         <td>
           <b>{{ one.subject }}</b><br>
           <span class="table__quiet">
-            {{ one.tag or t('send_all_contacts') }}</span>
+            {{ (one.tags or [])|join(' · ') or everyone }}</span>
         </td>
         <td class="table__quiet">
           {{ t('send_state_sent', n=one.sent) }}

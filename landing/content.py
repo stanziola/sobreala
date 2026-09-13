@@ -457,9 +457,9 @@ PRICING = {
                 "text": (
                     "Las personas que tienes guardadas. Tienes una sola lista "
                     "y cada dirección está en ella una sola vez, aunque le "
-                    "pongas varias etiquetas. Quien se da de baja deja de "
-                    "ocupar lugar: si tu plan son 3,000 contactos, son 3,000 "
-                    "personas a las que puedes escribirle."
+                    "pongas varias etiquetas. Quien anula su suscripción "
+                    "deja de ocupar lugar: si tu plan son 3,000 contactos, son "
+                    "3,000 personas a las que puedes escribirle."
                 ),
             },
             {
@@ -468,10 +468,10 @@ PRICING = {
                     "No manejas listas separadas: es una sola lista y las "
                     "etiquetas son las que la dividen. A cada contacto le "
                     "pones las que quieras (colaborador, empleado, junta "
-                    "directiva, estudiante, profesor) y después le escribes "
-                    "solo a los que llevan una. Un contacto con tres etiquetas "
-                    "sigue contando como uno y recibe un solo correo. El "
-                    "número dice cuántas etiquetas distintas puedes crear."
+                    "directiva, estudiante, profesor). Al enviar un correo "
+                    "eliges toda la lista o las etiquetas que quieras, y quien "
+                    "lleve más de una de las marcadas recibe un solo correo. "
+                    "El número dice cuántas etiquetas distintas puedes crear."
                 ),
             },
             {
@@ -480,14 +480,15 @@ PRICING = {
                     "Lo que guardas de cada persona además de su correo y su "
                     "nombre: su ciudad, su número de socio, cuánto debe, "
                     "cuándo vence. Las creas tú, con el nombre que quieras, y "
-                    "el número dice cuántas caben en tu plan."
+                    "el número de la tabla indica cuántas columnas adicionales "
+                    "puedes guardar en tu base."
                 ),
             },
             {
                 "title": "Plantillas prediseñadas",
                 "text": (
                     "Cuatro diseños ya hechos, como un banner al que solo le "
-                    "cambias lo de adentro: el título, el texto y la imagen. "
+                    "cambias el contenido: el título, el texto y la imagen. "
                     "Van en todos los planes, se guardan y los usas las veces "
                     "que quieras."
                 ),

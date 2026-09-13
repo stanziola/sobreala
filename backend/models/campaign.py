@@ -54,16 +54,29 @@ def clean_subject(raw: str) -> str:
     return " ".join((raw or "").split())[:SUBJECT_MAX]
 
 
-def create(db, account_id, *, subject: str, design_id, tag: str,
+def tags_of(campaign: dict[str, Any] | None) -> list[str]:
+    """A qué etiquetas sale. Vacío es «todos mis contactos».
+
+    Lee `tags`, y si el documento es de antes de que se pudiera elegir más de
+    una, su `tag` suelto. Así ninguna campaña vieja se rompe y no hay nada que
+    migrar.
+    """
+    one = campaign or {}
+    if one.get("tags") is not None:
+        return list(one["tags"])
+    return [one["tag"]] if one.get("tag") else []
+
+
+def create(db, account_id, *, subject: str, design_id, tags: list[str],
            scheduled_at: datetime) -> Any:
     """Dejar la campaña en cola. Devuelve su id."""
     return db.campaigns.insert_one({
         "account_id": account_id,
         "subject": clean_subject(subject),
         "design_id": design_id,
-        # Vacío es «todos mis contactos». Se guarda el nombre de la etiqueta y
-        # no su posición: las etiquetas se pueden reordenar.
-        "tag": tag or "",
+        # Vacío es «todos mis contactos». Se guardan los nombres de las
+        # etiquetas y no sus posiciones: las etiquetas se pueden reordenar.
+        "tags": list(tags or []),
         "scheduled_at": scheduled_at,
         "status": SCHEDULED,
         # Hasta qué destinatario se llegó, contando también los que se saltaron.
@@ -101,8 +114,8 @@ def editable(campaign: dict[str, Any] | None) -> bool:
     return bool(campaign) and campaign.get("status") != SENDING
 
 
-def update(db, account_id, campaign_id, *, subject: str, design_id, tag: str,
-           scheduled_at: datetime) -> bool:
+def update(db, account_id, campaign_id, *, subject: str, design_id,
+           tags: list[str], scheduled_at: datetime) -> bool:
     """Cambiarla. False si en este momento está saliendo.
 
     El estado va en la consulta y no en una comprobación previa: entre mirar y
@@ -112,8 +125,11 @@ def update(db, account_id, campaign_id, *, subject: str, design_id, tag: str,
         {"_id": campaign_id, "account_id": account_id,
          "status": {"$ne": SENDING}},
         {"$set": {"subject": clean_subject(subject), "design_id": design_id,
-                  "tag": tag or "", "scheduled_at": scheduled_at,
-                  "updated_at": now()}}).matched_count == 1
+                  "tags": list(tags or []), "scheduled_at": scheduled_at,
+                  "updated_at": now()},
+         # Una campaña de antes llevaba una sola etiqueta en otro campo. Se
+         # quita al guardar, o seguiría mandando por su cuenta.
+         "$unset": {"tag": ""}}).matched_count == 1
 
 
 def remove(db, account_id, campaign_id) -> bool:
@@ -176,7 +192,7 @@ def finish(db, account_id, campaign_id) -> None:
     # tanda— no es un envío: no salió un solo correo y anotarla sería llenar el
     # historial de líneas en cero.
     if done and done.get("started_at"):
-        runs.record(db, done)
+        runs.record(db, {**done, "tags": tags_of(done)})
 
 
 def restart(db, account_id, campaign_id, *, when: datetime) -> bool:

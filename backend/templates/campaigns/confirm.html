@@ -13,7 +13,7 @@
 
 <ul class="counts">
   <li><span>{{ t('send_confirm_list') }}</span>
-    <b>{{ campaign.tag or t('send_all_contacts') }} ·
+    <b>{{ tags_of(campaign)|join(' · ') or everyone }} ·
       {% if going == 0 %}{{ t('send_confirm_going_none') }}
       {% elif going == 1 %}{{ t('send_confirm_going_one') }}
       {% else %}{{ t('send_confirm_going', n=going) }}{% endif %}</b></li>

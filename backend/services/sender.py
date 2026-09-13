@@ -218,15 +218,15 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         campaigns.finish(db, account_id, campaign["_id"])
         return {"blocked": ["piece"], "sent": 0, "left": 0}
 
-    total = contacts.matching_count(db, account_id, tag=campaign.get("tag", ""))
+    wanted = campaigns.tags_of(campaign)
+    total = contacts.matching_count(db, account_id, tags=wanted)
     if campaign["status"] == campaigns.SCHEDULED:
         campaigns.start(db, account_id, campaign["_id"], total)
 
     position = int(campaign.get("position", 0))
     # La cuota manda sobre el tope de la tanda: no se arma lo que no puede salir.
     room = min(limit, accounts.quota_left(account))
-    people = contacts.batch_for_sending(db, account_id,
-                                        tag=campaign.get("tag", ""),
+    people = contacts.batch_for_sending(db, account_id, tags=wanted,
                                         skip=position, limit=room)
 
     ready = Piece(piece)

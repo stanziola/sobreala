@@ -2,7 +2,8 @@
 
     Espera: lists, pieces, named, errors, form (lo que se acaba de escribir) y,
     al editar, campaign y when. -#}
-{% set chosen = form.get('lista', campaign.tag if campaign else '') %}
+{% set chosen = form.getlist('lista') if form.getlist('lista')
+                  else (tags_of(campaign) if campaign else []) %}
 {% set piece_id = form.get('pieza', campaign.design_id|string if campaign else '') %}
 
 <label for="asunto">{{ t('send_subject') }}</label>
@@ -12,13 +13,25 @@
 <p class="hint">{{ t('send_subject_hint') }}</p>
 {% include "designs/_columns.html" %}
 
-<label for="lista">{{ t('send_list') }}</label>
-<select id="lista" name="lista">
+{# Casillas y no un desplegable: se le puede escribir a varias etiquetas a la
+   vez, y quien lleve más de una de las marcadas recibe un solo correo, porque
+   un contacto es un solo documento. Sin marcar ninguna sale a toda la lista. #}
+<p class="field-label">{{ t('send_list') }}</p>
+{% if lists %}
+<div class="picker">
   {% for one in lists %}
-  <option value="{{ one.tag }}"{% if one.tag == chosen %} selected{% endif %}>
-    {{ one.name }} · {{ t('send_howmany', n=one.howmany) }}</option>
+  <label class="picker__item">
+    <input type="checkbox" name="lista" value="{{ one.tag }}"
+           {%- if one.tag in chosen %} checked{% endif %}>
+    <span>{{ one.name }} · {{ t('send_howmany', n=one.howmany) }}</span>
+  </label>
   {% endfor %}
-</select>
+</div>
+<p class="hint">{{ t('send_list_hint') }}</p>
+{% else %}
+<p class="hint">{{ t('send_list_none') }}
+  <a href="{{ url_for('contacts.tags') }}">{{ t('tags_create_first') }}</a></p>
+{% endif %}
 {% if errors.lista %}<p class="error">{{ errors.lista }}</p>{% endif %}
 
 <label for="pieza">{{ t('send_piece') }}</label>

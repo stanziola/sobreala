@@ -74,6 +74,8 @@ def catch(monkeypatch) -> list:
 
 
 def make(browser, piece, *, subject="Aviso", tag="", when="ahora", fecha=""):
+    """`tag` es una etiqueta o varias, como las manda el navegador: una casilla
+    marcada por cada una, todas con el mismo nombre de campo."""
     data = {"csrf_token": csrf(browser), "asunto": subject,
             "pieza": str(piece), "lista": tag, "cuando": when}
     if fecha:
@@ -361,6 +363,84 @@ def test_solo_le_llega_a_la_lista_elegida(client, database, outbox, monkeypatch)
 
     send_it(browser, database, account["_id"])
 
+    assert len(salidos) == 2
+    assert "suelto@ejemplo.com" not in {one["To"] for one in salidos}
+
+
+def test_sale_a_todas_las_etiquetas_marcadas_sin_repetirle_a_nadie(
+        client, database, outbox, monkeypatch):
+    """Marcar dos es escribirle a quien lleve cualquiera de las dos. Y quien
+    lleve las dos recibe **un solo correo**: un contacto es un solo documento
+    con sus etiquetas dentro, así que la consulta no lo devuelve dos veces."""
+    salidos = catch(monkeypatch)
+    # Negocio, que es el primer plan donde caben dos etiquetas.
+    browser, account, piece = ready(client, database, howmany=0, plan="negocio")
+    for name in ("Socios", "Junta"):
+        assert accounts.add_tag(database, account["_id"], name)
+    quienes = {"solo-socio@ejemplo.com": ["Socios"],
+               "solo-junta@ejemplo.com": ["Junta"],
+               "las-dos@ejemplo.com": ["Socios", "Junta"],
+               "ninguna@ejemplo.com": []}
+    for email, tags in quienes.items():
+        contacts.create(database, account["_id"], email=email, tags=tags,
+                        consent=contacts.consent_of(contacts.MEMBERS))
+
+    make(browser, piece, tag=["Socios", "Junta"])
+    send_it(browser, database, account["_id"])
+
+    salieron = [one["To"] for one in salidos]
+    assert sorted(salieron) == ["las-dos@ejemplo.com", "solo-junta@ejemplo.com",
+                                "solo-socio@ejemplo.com"]
+    # Una vez cada uno, también el que lleva las dos.
+    assert len(salieron) == len(set(salieron))
+
+
+def test_sin_marcar_ninguna_sale_a_toda_la_lista(client, database, outbox,
+                                                 monkeypatch):
+    salidos = catch(monkeypatch)
+    browser, account, piece = ready(client, database, howmany=3, tag="Socios")
+    contacts.create(database, account["_id"], email="suelto@ejemplo.com",
+                    tags=[], consent=contacts.consent_of(contacts.MEMBERS))
+
+    make(browser, piece)
+    send_it(browser, database, account["_id"])
+
+    assert len(salidos) == 4
+
+
+def test_una_etiqueta_que_no_es_suya_se_descarta(client, database, outbox,
+                                                 monkeypatch):
+    """El formulario se puede escribir a mano. Lo que no está en el registro de
+    la cuenta no filtra nada, en vez de dejar la campaña sin destinatarios."""
+    salidos = catch(monkeypatch)
+    browser, account, piece = ready(client, database, howmany=2)
+
+    make(browser, piece, tag="Inventada")
+    suya = campaigns.for_account(database, account["_id"])[0]
+
+    assert campaigns.tags_of(suya) == []
+    send_it(browser, database, account["_id"])
+    assert len(salidos) == 2
+
+
+def test_una_campana_de_antes_sigue_saliendo_a_su_etiqueta(
+        client, database, outbox, monkeypatch):
+    """Las que se guardaron con una sola etiqueta, en el campo viejo, no se
+    migran: se leen igual."""
+    salidos = catch(monkeypatch)
+    browser, account, piece = ready(client, database, howmany=2, tag="Socios")
+    contacts.create(database, account["_id"], email="suelto@ejemplo.com",
+                    tags=[], consent=contacts.consent_of(contacts.MEMBERS))
+    make(browser, piece)
+    suya = campaigns.for_account(database, account["_id"])[0]
+    # Como la escribía la versión anterior: `tag` suelto y sin `tags`.
+    database.campaigns.update_one({"_id": suya["_id"]},
+                                  {"$set": {"tag": "Socios"},
+                                   "$unset": {"tags": ""}})
+
+    assert campaigns.tags_of(
+        campaigns.by_id(database, account["_id"], suya["_id"])) == ["Socios"]
+    send_it(browser, database, account["_id"])
     assert len(salidos) == 2
     assert "suelto@ejemplo.com" not in {one["To"] for one in salidos}
 

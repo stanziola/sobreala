@@ -950,6 +950,11 @@ TEXTS = {
     "send_subject_hint": "Lo primero que se lee, y muchas veces lo único. "
                          "Corto y concreto.",
     "send_list": "A quién",
+    "send_list_hint": "Marca las etiquetas que quieras. Quien lleve más de una "
+                      "recibe un solo correo. Sin marcar ninguna le escribes a "
+                      "toda tu lista.",
+    "send_list_none": "Todavía no tienes etiquetas, así que este correo sale a "
+                      "toda tu lista.",
     "send_all_contacts": "Todos mis contactos",
     "send_howmany": "{n} contactos",
     "send_piece": "Con qué plantilla",
@@ -962,7 +967,6 @@ TEXTS = {
                       "puedes cambiar o borrar.",
 
     "send_pick_piece": "Elige una de tus plantillas.",
-    "send_pick_list": "Esa lista no es tuya.",
     "send_pick_when": "Escribe la fecha y la hora.",
     "send_when_past": "Esa hora ya pasó. Si quieres que salga ya, elige «ahora "
                       "mismo».",
