@@ -436,6 +436,88 @@ PRICING = {
         "title": "Todo lo que incluye cada plan",
         "scroll_hint": "Desliza para ver todos los planes",
     },
+    # Lo que la tabla no dice sola. Una fila que se llama «Etiquetas» y dice
+    # «4» no significa nada para quien no conoce el producto, y hay una que no
+    # se puede adivinar de ninguna forma: que el correo puede salir distinto
+    # para cada persona en vez de ser el mismo para toda la lista.
+    "glossary": {
+        "eyebrow": "En detalle",
+        "title": "Qué significa cada fila",
+        "intro": (
+            "Lo que hay detrás de los números de la tabla, para que sepas qué "
+            "estás eligiendo."
+        ),
+        "items": [
+            {
+                "title": "Contactos",
+                "text": (
+                    "Las personas que tienes guardadas. Cada dirección cuenta "
+                    "una sola vez, aunque esté en varias de tus listas, y "
+                    "quien se da de baja deja de ocupar lugar: si tu plan son "
+                    "3,000 contactos, son 3,000 personas a las que puedes "
+                    "escribirle."
+                ),
+            },
+            {
+                "title": "Etiquetas",
+                "text": (
+                    "Son tus listas: socios, morosos, junta directiva. Un "
+                    "contacto puede llevar varias y sigue contando como uno "
+                    "solo, y si le escribes a dos listas donde está, recibe un "
+                    "correo y no dos. El número dice cuántas listas distintas "
+                    "puedes armar."
+                ),
+            },
+            {
+                "title": "Columnas de datos",
+                "text": (
+                    "Lo que guardas de cada persona además de su correo y su "
+                    "nombre: su ciudad, su número de socio, cuánto debe, "
+                    "cuándo vence. Las creas tú, con el nombre que quieras, y "
+                    "el número dice cuántas caben en tu plan."
+                ),
+            },
+            {
+                "title": "Plantillas prediseñadas",
+                "text": (
+                    "Cuatro piezas ya armadas —un aviso, un anuncio, un "
+                    "boletín y una convocatoria— que solo tienes que llenar "
+                    "con tu texto y tus imágenes. Van en todos los planes, se "
+                    "guardan y las vuelves a usar las veces que quieras."
+                ),
+            },
+            {
+                "title": "Subir tu propio HTML",
+                "text": (
+                    "Si ya tienes una pieza diseñada por fuera, la subes tal "
+                    "cual y se envía así. Y en esa pieza, como en las nuestras, "
+                    "escribes tus columnas de datos donde quieras: pones "
+                    "*|CIUDAD|* en medio de una frase y a cada persona le "
+                    "llega la suya. No es un mismo correo idéntico para toda "
+                    "la lista: es uno por persona, con lo que tú guardaste de "
+                    "cada quien, y a quien le falte ese dato le llega el texto "
+                    "de respaldo que tú elijas."
+                ),
+            },
+            {
+                "title": "Plantillas personalizadas",
+                "text": (
+                    "Las diseñamos nosotros con tu marca, tus colores y tu "
+                    "logo, y quedan guardadas en tu cuenta. El número dice "
+                    "cuántas incluye tu plan; después las reutilizas cada mes "
+                    "cambiando textos e imágenes, sin volver a pedirnos nada."
+                ),
+            },
+            {
+                "title": "Exportar a CSV y PDF",
+                "text": (
+                    "Tus contactos y las cifras de cada campaña se bajan "
+                    "cuando quieras, en un archivo que abre Excel. Tus datos "
+                    "son tuyos y salen de aquí sin que tengas que pedirlo."
+                ),
+            },
+        ],
+    },
     "addons": {
         "eyebrow": "Complementos",
         "title": "Si necesitas más",
