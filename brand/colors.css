@@ -21,7 +21,9 @@
  * brand/favicon/; they are overwritten on the next build.
  */
 :root {
-  /* Blue background of the logo composition (primary brand color). */
+  /* Blue background of the logo composition (primary brand color). On the site
+   * it is also the ground of everything that carries the wing: the header, the
+   * hero and the footer, so they match the favicon. Nothing else is blue. */
   --color-background: #3166A7;
 
   /* Off-white of the wing shapes. */
@@ -36,32 +38,34 @@
    * (4.5:1 for normal text, 3:1 for large text and UI borders).
    */
 
-  /* Sky blues: action and emphasis. The brand blue still owns the surfaces. */
+  /* Sky blues: action and emphasis only. The surfaces are greys. */
   --color-accent: #31A9E8;        /* buttons, icons, marks. Use --color-ink on top */
   --color-accent-strong: #136A9B; /* links and hover; 5.9:1 on white and under white */
-  --color-accent-soft: #E2F1FB;   /* chips, badges, quiet highlights */
+  --color-accent-soft: #EDEDEF;   /* chips, badges, quiet highlights */
   --color-accent-light: #CFEBFA;  /* accents over the brand blue; 4.7:1 */
 
-  /* Deep blue for dark sections; white on it reaches 13.7:1. */
-  --color-deep: #122E52;
+  /* Dark grey for the bands with no wing on them; white on it reaches 14.9:1. */
+  --color-deep: #27272A;
 
   /* Text and surfaces. */
-  --color-ink: #0E1B2A;           /* body text; 17.4:1 on white */
-  --color-ink-soft: #51617A;      /* secondary text; 6.3:1 on white */
+  --color-ink: #18181B;           /* body text; 17.7:1 on white */
+  --color-ink-soft: #52525B;      /* secondary text; 7.7:1 on white */
   --color-page: #FFFFFF;          /* page background */
   --color-surface: #FFFFFF;       /* cards and panels sitting on the page */
-  --color-surface-alt: #F1F6FC;   /* alternating section background */
-  --color-border: #D7E2EE;    /* lineas que separan: tarjetas, filas, bloques */
-  /* El contorno de un campo tiene que verse, y --color-border no llega: sobre
-   * blanco da 1.31:1, cuando un borde de control necesita 3:1. Este da 3.21:1.
-   * Va aparte para que oscurecer los campos no oscurezca cada linea de la
-   * pagina. */
-  --color-field: #7692B3;
+  --color-surface-alt: #F4F4F5;   /* alternating section background */
+  --color-border: #CFCFD4;    /* lineas que separan: tarjetas, filas, bloques */
+  /* El contorno de un campo tiene que verse, y --color-border no llega: un
+   * borde de control necesita 3:1. Este da 3.42:1 sobre blanco. Va aparte para
+   * que oscurecer los campos no oscurezca cada linea de la pagina. */
+  --color-field: #8A8A93;
 
   /* Text and light chips placed ON the dark blue surfaces: header, hero, deep
    * sections and footer. Separate from --color-surface because in dark mode the
    * cards go dark while this has to stay near-white. */
   --color-on-dark: #FFFFFF;
+  /* Secondary text on those same surfaces: subtitles, the footer, the steps.
+   * 4.7:1 on --color-background, the lightest of them. */
+  --color-on-dark-soft: #E6E6E9;
 
   /* Text on the sky-blue accent (buttons, badges, step numbers). Dark in BOTH
    * themes: the accent stays light, so this cannot follow --color-ink. */
@@ -69,7 +73,7 @@
 
   /* Elevation. Here rather than in site.css so the dark palette can restate
    * them: a translucent black shadow is invisible on a dark page. */
-  --shadow-sm: 0 1px 2px rgba(14, 27, 42, .06), 0 1px 3px rgba(14, 27, 42, .08);
-  --shadow: 0 6px 20px rgba(14, 27, 42, .10);
-  --shadow-lg: 0 18px 48px rgba(14, 27, 42, .16);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .08);
+  --shadow: 0 6px 20px rgba(0, 0, 0, .10);
+  --shadow-lg: 0 18px 48px rgba(0, 0, 0, .16);
 }

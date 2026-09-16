@@ -170,7 +170,7 @@
               opción que todavía no hace nada lo dice en vez de fingir. Un
               <details> dentro del que ya es el menú, así que abre y cierra sin
               JavaScript igual que el de fuera. -#}
-          <details class="usermenu__sub usermenu__group">
+          <details class="usermenu__sub">
             <summary class="usermenu__item">
               <span class="usermenu__icons">{% include "partials/icon-globe.svg.j2" %}</span>
               <span>{{ panel.language_label }}</span>
@@ -196,7 +196,7 @@
             <span class="usermenu__icons">{% include "partials/icon-user.svg.j2" %}</span>
             <span>{{ panel.switch_label }}</span></a>
 
-          <a class="usermenu__item usermenu__item--out" data-account-only hidden
+          <a class="usermenu__item" data-account-only hidden
              href="{{ panel.base_url }}/salir">
             <span class="usermenu__icons">{% include "partials/icon-exit.svg.j2" %}</span>
             <span>{{ panel.logout_label }}</span></a>
