@@ -112,6 +112,15 @@
           {{ t('send_state_sent', n=one.sent) }}
           {% if one.skipped %}· {{ t('send_state_skipped', n=one.skipped) }}{% endif %}
           {% if one.failed %}· {{ t('send_state_failed', n=one.failed) }}{% endif %}
+          {# Lo que contó Amazon después, en personas. Solo si contó algo: un
+             envío de antes de configurar los avisos no tiene cifras, y una fila
+             de ceros diría que no le llegó a nadie. #}
+          {% set seen = run_counts.get(one._id) %}
+          {% if seen and seen.values()|sum %}
+          <br>{{ t('send_seen', delivered=seen.delivery, bounced=seen.bounce,
+                   opened=seen.open, clicked=seen.click) }}
+          {% if seen.complaint %}· {{ t('send_seen_complaints', n=seen.complaint) }}{% endif %}
+          {% endif %}
         </td>
         <td class="table__quiet">{{ one.finished_at|ago }}</td>
       </tr>

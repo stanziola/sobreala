@@ -1,0 +1,56 @@
+{% extends "admin/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('admin_mail_title') }}</h2>
+<p class="settings__lead">{{ t('admin_mail_lead') }}</p>
+
+<form class="filters" method="get" action="{{ url_for('admin.system_mail') }}">
+  <label class="visually-hidden" for="q">{{ t('admin_mail_search') }}</label>
+  <input id="q" name="q" type="search" value="{{ search }}"
+         placeholder="{{ t('admin_mail_search') }}" autocomplete="off">
+  <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_search_action') }}</button>
+</form>
+
+{% if search and rows %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('admin_mail_col_when') }}</th>
+        <th>{{ t('admin_mail_col_subject') }}</th>
+        <th>{{ t('admin_mail_col_result') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td class="table__quiet">{{ row.created_at|ago }}</td>
+        <td>{{ row.subject }}</td>
+        <td>
+          {# Tres preguntas, en este orden: si salió de aquí, qué dijo Amazon
+             después, y si todavía no dijo nada. «Entregado» es que el otro
+             servidor lo aceptó, no que esté en la bandeja. #}
+          {% if row.status == 'failed' %}
+          <span class="tag tag--warn">{{ t('admin_mail_failed') }}</span>
+          <br><span class="table__quiet">{{ row.error or '' }}</span>
+          {% elif row.outcome %}
+          <span class="tag {{ 'tag--quiet' if row.outcome == 'delivered' else 'tag--warn' }}">
+            {{ t('admin_mail_outcome_' + row.outcome) }}</span>
+          {% if row.outcome_detail %}
+          <br><span class="table__quiet">{{ row.outcome_detail }}</span>
+          {% endif %}
+          {% elif row.backend != 'ses' %}
+          <span class="table__quiet">{{ t('admin_mail_not_ses') }}</span>
+          {% else %}
+          <span class="table__quiet">{{ t('admin_mail_waiting') }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="hint">{{ t('admin_mail_hint') }}</p>
+{% elif search %}
+<p class="hint">{{ t('admin_mail_none', address=search) }}</p>
+{% endif %}
+{% endblock %}

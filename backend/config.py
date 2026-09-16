@@ -70,6 +70,13 @@ class Config:
     # de verdad cada destinatario moria en un AttributeError que se contaba como
     # correo fallido. Ninguna prueba lo vio porque todas sustituyen la entrega.
     SES_CONFIGURATION_SET = os.getenv("SES_CONFIGURATION_SET", "")
+    # Lo que autoriza los avisos de SES. Va **en la direccion** del webhook:
+    # SNS no puede llevar una cabecera nuestra, y comprobar su firma pediria RSA
+    # y una dependencia mas. Sin secreto puesto, esa direccion no existe.
+    SES_WEBHOOK_SECRET = os.getenv("SES_WEBHOOK_SECRET", "")
+    # De que tema se aceptan avisos. Vacio acepta cualquiera, que es lo comodo
+    # mientras se monta; con el ARN puesto, un aviso de otro tema se descarta.
+    SES_TOPIC_ARN = os.getenv("SES_TOPIC_ARN", "")
     # us-east-2 (Ohio) is where the SES identity lives. SES is per region: the
     # same domain verified elsewhere does not count, and sending against the
     # wrong one fails with "identity not verified".

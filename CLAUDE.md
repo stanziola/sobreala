@@ -15,8 +15,9 @@ doble factor, dispositivos, configuración—, **contactos** con su importador y
 sus supresiones, **plantillas** —las cuatro prediseñadas y la validación del
 HTML subido—, el **panel de administración** con la habilitación de envío, el
 **cobro de un plan con PayPal** y el **envío de campañas**, con su enlace de
-baja. Faltan la analítica de aperturas y clics, el webhook de rebotes y el
-proceso en segundo plano.
+baja, y **el aviso de Amazon** que cuenta qué pasó con cada correo después de
+salir. Faltan la pausa automática por rebotes y quejas, y el proceso en segundo
+plano.
 
 ---
 
@@ -50,7 +51,8 @@ panamails/
 │   ├── pricing.md          # planes, precios y reglas de negocio
 │   ├── pricing-interno.md  # costos, márgenes, competencia (FUERA de git)
 │   ├── arquitectura.md
-│   └── decisiones.md
+│   ├── decisiones.md
+│   └── ses.md              # conectar SES con el panel, y la entrega a la UTP
 ├── brand/
 │   ├── colors.css          # variables de color, fuente única de verdad
 │   ├── layout.json         # posición del ala (logo y favicon) y encuadre del favicon
@@ -91,7 +93,7 @@ panamails/
     │   ├── unsubscribe/    # la baja, sin sesión. HECHO
     │   ├── analytics/      # métricas, exportar CSV/PDF
     │   ├── billing/        # planes, cuota, recargas, acumulado
-    │   └── webhooks/       # SNS de SES, PayPal, Yappy
+    │   └── webhooks/       # SNS de SES. HECHO. PayPal y Yappy, no
     ├── models/
     ├── make_admin.py       # da el rol de administrador al primero, a mano
     ├── build_assets.py     # genera panel.css y _wing.svg; --check avisa si
@@ -112,6 +114,8 @@ panamails/
     │   │                   # de agua y la dirección postal
     │   ├── imaging.py      # achica y reconoce las imágenes de las piezas
     │   ├── ses.py
+    │   ├── ses_events.py   # a dónde va cada aviso de SES: evento, supresión
+    │   │                   # o la fila de mail_log
     │   └── payments/
     ├── email_templates/    # plantillas prediseñadas del producto, una por
     │                       # archivo, con sus campos declarados arriba
@@ -655,19 +659,25 @@ sus envíos**: lo que salió, salió.
 Es lo que dibuja «Campañas enviadas» en `/envios` y las líneas de correo de la
 Actividad de una ficha, que por eso son una por envío y no una por campaña.
 
+**Su `_id` nace al arrancar, no al terminar.** `campaigns.start()` lo genera y
+lo deja en `run_id` de la campaña, cada correo sale etiquetado con él, y
+`finish()` escribe la línea con ese mismo id. Hace falta así porque los avisos
+de SES llegan mientras el envío todavía sale, y tienen que poder decir a qué
+envío pertenecen.
+
 ### `events`
 Un registro por evento de SES (enviado, entregado, rebote, queja, apertura,
 clic), con su cuenta, su campaña y cuándo pasó. Es lo que más crece: ~3 eventos
 por correo, ~200 bytes cada uno.
 **Retención: 12 meses en detalle, después solo totales por campaña.**
 
-**La llena el envío de campañas**, con un evento por correo que sale, así que
-las gráficas de Estadísticas ya no están vacías. Lo que falta son las aperturas,
-los clics y los rebotes, que llegan por el webhook de SNS. `models/event.py` la lee: la serie por tramo
-de tiempo y los totales del periodo, que contra una colección que no existe
-devuelven cero. Eso es lo que dibuja la pantalla de Estadísticas hoy, y el día
-que el webhook de SNS entre en funcionamiento se llena sola sin tocar la
-pantalla.
+**La llenan dos sitios**: el envío de campañas, con un `sent` por correo que
+sale, y el aviso de SES (ver «Lo que cuenta Amazon»), con lo demás. Cada evento
+lleva el `run_id` del envío y la dirección normalizada, que es lo que permite
+contar **personas y no eventos**: quien abre tres veces cuenta una. Lo hace
+`events.counts_by_run()`, una consulta para toda la lista de «Campañas
+enviadas». `models/event.py` lee también la serie por tramo de tiempo y los
+totales del periodo que dibuja Estadísticas.
 
 ### `mail_log`
 Un documento por cada **correo del sistema** que se intentó enviar, con el
@@ -675,6 +685,12 @@ cuerpo completo: destinatario, asunto, backend usado, `sent` o `failed`, el
 error si falló, el HTML y el texto tal como salieron. Es lo que permite
 responder qué salió del servidor cuando alguien dice que no le llegó la
 confirmación. No cubre campañas de clientes, que llevan su propia contabilidad.
+
+**`outcome` es lo que Amazon dijo después**: `delivered`, `bounced`,
+`soft_bounced`, `complained` o `rejected`, con el motivo en `outcome_detail`.
+Se encuentra la fila por `provider_id`, el identificador que SES devolvió al
+enviar. Lo enseña **Administración → Correos del sistema**, buscando por
+dirección.
 
 ### `auth_events`
 Un documento por cada intento de registro, entrada, reenvío, confirmación y
@@ -933,8 +949,14 @@ en Configuración → Seguridad, que es su sitio.
 `/admin`, con verificación de rol. **No es donde se aterriza al entrar** —eso es
 el sitio público, para todos—: se llega desde el menú, que para esta cuenta
 enseña Administración de primera fila. Sí es a donde la devuelve
-`not_for_admins()` si abre una pantalla de cliente. Tres pantallas:
-**Estadísticas · Cuentas · Plantillas subidas**.
+`not_for_admins()` si abre una pantalla de cliente. Cuatro pantallas:
+**Estadísticas · Cuentas · Plantillas subidas · Correos del sistema**.
+
+**Correos del sistema** (`/admin/correos`) es la del «no me llegó el código»: se
+escribe una dirección y sale cada correo que el panel le mandó, cuándo, cuál
+era y qué dijo Amazon. Se busca por dirección y no desde una ficha porque quien
+no recibe su código casi nunca llegó a tener cuenta. **No dibuja el cuerpo de
+ningún correo**, que lleva códigos y enlaces de un solo uso.
 
 **Estadísticas** es `/admin/`, y es la misma pantalla del cliente con un selector
 de cuenta encima: lo que ve él, de quien elijas. Hubo una portada antes ahí, con
@@ -1139,8 +1161,57 @@ responda por cada destinatario se guarda en la campaña y la pantalla lo enseña
 
 ### Lo que todavía no hace
 
-Aperturas, clics y rebotes —eso es el webhook de SNS—, reanudar sola una campaña,
-y acumular los correos no usados al mes siguiente.
+Pausar sola una cuenta que pasa de los umbrales, reanudar sola una campaña, y
+acumular los correos no usados al mes siguiente.
+
+## Lo que cuenta Amazon
+
+`POST /webhooks/ses/<secreto>`, en `blueprints/webhooks/`. SES avisa por SNS de
+cada entrega, rebote, queja, rechazo, apertura y clic, y
+`services/ses_events.py` decide a dónde va cada uno. Lo que hay que hacer en la
+consola de Amazon y en Cloudflare está paso a paso en `docs/ses.md`.
+
+**Lo que lo autoriza es el secreto de la dirección** (`SES_WEBHOOK_SECRET`):
+uno que no cuadra, o ninguno configurado, responde 404. Con `SES_TOPIC_ARN`
+puesto, un aviso de otro tema se descarta. **La firma de SNS no se comprueba**:
+pide RSA contra un certificado descargado, y con el secreto por HTTPS y el
+filtro del tema alcanza. Es una decisión, no un olvido. La dirección para
+confirmar la suscripción **solo se visita si es de `sns.<región>.amazonaws.com`**,
+porque ese campo lo escribe quien manda el cuerpo.
+
+Un aviso que no se entiende se contesta **200**, o SNS lo reintentaría durante
+horas. Uno que se entiende y no se pudo guardar, **500**, para que sí lo
+reintente.
+
+**De quién es un aviso lo dicen las etiquetas del correo**, nunca la dirección.
+Cada correo de campaña sale con `account`, `campaign` y `run` en la cabecera
+`X-SES-MESSAGE-TAGS`, y SES las devuelve dentro. La misma dirección puede estar
+en las listas de tres clientes, y anularla en las tres por el rebote de una
+sería anular por cuenta ajena. Lo que no trae esas etiquetas es un correo del
+sistema, y va a su fila de `mail_log`.
+
+| Aviso | De una campaña | Del sistema |
+|---|---|---|
+| Entrega | evento `delivery` | `delivered` |
+| Rebote permanente | evento `bounce` y **se anula en esa cuenta** (`hard_bounce`) | `bounced` |
+| Rebote pasajero | evento `bounce`, sin anular | `soft_bounced` |
+| Queja | evento `complaint` y **se anula en esa cuenta** (`complaint`) | `complained` |
+| Rechazo | evento `reject` | `rejected` |
+| Apertura, clic | evento `open` o `click` | no se miden |
+
+**Dos conjuntos de configuración**: `SES_CONFIGURATION_SET` para campañas, con
+aperturas y clics, y `SES_TRANSACTIONAL_CONFIGURATION_SET` para el sistema, sin
+ellos: a un código de confirmación no se le mide nada. **El enlace de baja
+lleva `ses:no-track`**, para que SES no lo reescriba al contar clics: es el que
+tiene que funcionar siempre.
+
+**«Entregado» es que el otro servidor lo aceptó**, no que esté en la bandeja. Si
+después lo mandó a spam o a cuarentena no se lo cuenta a nadie, y Microsoft 365
+(la UTP) pone en cuarentena sin rebotar. Las pantallas lo dicen, para que nadie
+lea «entregado» como «lo vio».
+
+**La pausa automática por umbrales no está.** Se decidió esperar a tener cifras
+reales antes de poner el corte.
 
 ## Cobrar un plan
 
@@ -1260,7 +1331,10 @@ SECRET_KEY
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_REGION
-SES_CONFIGURATION_SET
+SES_CONFIGURATION_SET               # campañas, con aperturas y clics
+SES_TRANSACTIONAL_CONFIGURATION_SET # correo del sistema, sin ellos
+SES_WEBHOOK_SECRET        # va en la dirección del aviso; sin él, 404
+SES_TOPIC_ARN             # opcional: descarta avisos de otro tema
 SENDING_DOMAIN            # envios.panamails.com
 PAYPAL_ENV                # sandbox | live; en producción con sandbox no arranca
 PAYPAL_CLIENT_ID
@@ -1296,11 +1370,12 @@ no se descubra el día del lanzamiento.
   Panamá se le factura como exportación de servicios sin que cambie lo que paga.
   Lo que falta de esto es **pedirle sus datos de facturación al cliente**: el
   panel no guarda su RUC en ningún sitio, y una factura en Panamá lo necesita.
-- **Webhook de SNS para rebotes y quejas** (blueprint `webhooks/`). Es lo que
-  llena `suppressions` sin intervención y lo que hace ciertas las defensas
-  automáticas de la tabla de arriba. Sin él, una queja no bloquea el reenvío y
-  la pausa por umbrales depende de mirar los datos a mano. Es lo primero que
-  AWS revisa si algo va mal.
+- **Conectar el aviso de SES** siguiendo `docs/ses.md`. El código está y
+  anula solo lo que rebota o se queja, pero hasta que el tema de SNS y los
+  conjuntos de configuración existan no le llega nada. Es lo primero que AWS
+  revisa si algo va mal.
+- **La pausa automática por rebotes y quejas**, la de la tabla de «Envío». Hoy
+  depende de mirar las cifras a mano.
 - **Verificar `envios.panamails.com`** como identidad aparte en SES, con su
   propio configuration set. El correo del sistema sale por `panamails.com`
   (MAIL FROM `mail.panamails.com`, ya configurado); separar los dos es lo que

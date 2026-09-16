@@ -33,6 +33,7 @@ from models import campaign_run as sendings
 from models import contact as contacts
 from models import design as designs
 from models import import_job as imports
+from models import mail_log
 from models import payment as payments
 from models import session as sessions
 from models import suppression as suppressions
@@ -194,6 +195,23 @@ def home(account):
 
 
 # ---------------------------------------------------------------- las cuentas
+
+@bp.route("/correos")
+@only_admins
+def system_mail(account):
+    """Los correos del sistema que se le mandaron a una dirección, y qué dijo
+    Amazon de cada uno.
+
+    Es la pantalla del «no me llegó el código», que casi siempre es de alguien
+    que todavía no tiene cuenta: por eso se busca por dirección y no desde una
+    ficha. No dibuja el cuerpo de ningún correo; solo cuándo salió, qué era y
+    qué pasó después.
+    """
+    wanted = request.args.get("q", "").strip()[:200]
+    return render_template(
+        "admin/mail.html", section="correos", admin=account, search=wanted,
+        rows=mail_log.for_address(get_db(), wanted) if wanted else [])
+
 
 @bp.route("/cuentas")
 @only_admins

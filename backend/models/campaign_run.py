@@ -26,9 +26,18 @@ def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def record(db, campaign: dict[str, Any]) -> Any:
-    """Anotar el envío que acaba de terminar. Devuelve su id."""
+def record(db, campaign: dict[str, Any], *, run_id=None) -> Any:
+    """Anotar el envío que acaba de terminar. Devuelve su id.
+
+    `run_id` es el que se le dio al arrancar, con el que salió etiquetado cada
+    correo: la línea usa ese mismo, que es lo que cruza las cifras de SES con
+    el envío al que pertenecen.
+    """
+    doc: dict[str, Any] = {}
+    if run_id is not None:
+        doc["_id"] = run_id
     return db.campaign_runs.insert_one({
+        **doc,
         "account_id": campaign["account_id"],
         "campaign_id": campaign["_id"],
         # Copiados a propósito: ver más arriba.

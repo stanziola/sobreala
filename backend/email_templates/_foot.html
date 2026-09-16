@@ -14,7 +14,10 @@
           de la plantilla para que no se pueda quitar editándola. -#}
       <tr><td align="center" style="padding:18px 20px 0;font-size:13px;
                                     line-height:1.6;color:#51617A;">
-        <a href="{{ unsubscribe }}" style="color:#136A9B;">Anular la suscripción</a>
+        {#- ses:no-track: SES reescribe los enlaces para contar clics, y este no
+            se toca. Es el que tiene que funcionar siempre, y su dirección
+            firmada es la que da de baja a quien la abre. -#}
+        <a href="{{ unsubscribe }}" ses:no-track style="color:#136A9B;">Anular la suscripción</a>
         {%- if preview %}
         <br><span style="color:#7692B3;">En el correo de verdad este enlace da
         de baja a quien lo recibe. Desde aquí no hace nada.</span>

@@ -5,16 +5,16 @@ la cuenta a la que pertenece, la campaña, cuándo pasó y, cuando el evento lo
 trae, la dirección normalizada. Es lo que más crece de todo el producto: unos
 tres eventos por correo.
 
-**Todavía no lo llena nadie.** La colección se crea cuando entre el primer
-evento, y hasta entonces todas las lecturas de aquí devuelven cero. Eso es a
-propósito y es lo que la pantalla de estadísticas tiene que saber dibujar: un
-cuadro vacío que dice que aún no ha pasado nada informa; un hueco no.
-
-Quien la va a llenar es el webhook de SNS (`blueprints/webhooks/`), que es lo
-primero que hay que montar antes de la primera campaña real.
+La llenan dos: `services/sender.py`, con un `sent` por cada correo que sale,
+y el aviso de SES (`blueprints/webhooks/`), con todo lo que pasa después.
+Mientras SES no esté configurado para avisar, solo hay `sent`, y las lecturas
+de lo demás devuelven cero: un cuadro vacío que dice que aún no ha pasado nada
+informa; un hueco no.
 """
 
 from __future__ import annotations
+
+from bson import ObjectId
 
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -26,7 +26,12 @@ BOUNCE = "bounce"
 COMPLAINT = "complaint"
 OPEN = "open"
 CLICK = "click"
-KINDS = (SENT, DELIVERED, BOUNCE, COMPLAINT, OPEN, CLICK)
+REJECT = "reject"
+KINDS = (SENT, DELIVERED, BOUNCE, COMPLAINT, OPEN, CLICK, REJECT)
+
+# Lo que se cuenta de un envío, en personas y no en eventos: quien abre tres
+# veces cuenta una.
+RUN_KINDS = (DELIVERED, BOUNCE, OPEN, CLICK, COMPLAINT)
 
 # Los periodos que ofrece la pantalla, y en cuántos tramos se parte cada uno.
 # Un día se mira por horas y un mes por días: veinticuatro barras se leen, y
@@ -51,16 +56,45 @@ def since(period: str) -> datetime:
     return now() - timedelta(hours=PERIODS[clean_period(period)]["hours"])
 
 
-def record(db, account_id, *, kind: str, campaign_id=None, email: str = "",
-           at: datetime | None = None) -> Any:
-    """Anotar un evento. Lo llamará el webhook cuando exista."""
+def record(db, account_id, *, kind: str, campaign_id=None, run_id=None,
+           email: str = "", at: datetime | None = None) -> Any:
+    """Anotar un evento.
+
+    La dirección se guarda normalizada: es lo que permite contar personas y no
+    eventos, y el aviso de SES no la escribe igual que la escribió el cliente.
+    """
     return db.events.insert_one({
         "account_id": account_id,
         "campaign_id": campaign_id,
+        "run_id": run_id,
         "kind": kind,
-        "email_normalized": email,
+        "email_normalized": (email or "").strip().lower(),
         "created_at": at or now(),
     }).inserted_id
+
+
+def counts_by_run(db, account_id, run_ids: list) -> dict[Any, dict[str, int]]:
+    """Cuántas **personas** entregadas, rebotadas, que abrieron, pulsaron o se
+    quejaron, por envío. Una consulta para toda la lista, no una por fila.
+    """
+    wanted = [one for one in run_ids if isinstance(one, ObjectId)]
+    found: dict[Any, dict[str, int]] = {
+        one: {kind: 0 for kind in RUN_KINDS} for one in wanted}
+    if not wanted:
+        return found
+    for row in db.events.aggregate([
+            {"$match": {"account_id": account_id, "run_id": {"$in": wanted},
+                        "kind": {"$in": list(RUN_KINDS)}}},
+            # Primero una fila por persona y tipo, después se cuentan: así quien
+            # abre tres veces es una apertura.
+            {"$group": {"_id": {"run": "$run_id", "kind": "$kind",
+                                "who": "$email_normalized"}}},
+            {"$group": {"_id": {"run": "$_id.run", "kind": "$_id.kind"},
+                        "n": {"$sum": 1}}}]):
+        run = row["_id"]["run"]
+        if run in found:
+            found[run][row["_id"]["kind"]] = row["n"]
+    return found
 
 
 def _match(account_id, period: str, tag: str) -> dict[str, Any]:

@@ -54,6 +54,45 @@ def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+# Lo que SES dijo del mensaje después de aceptarlo. `status` sigue siendo si
+# salió de aquí; esto es otra cosa y por eso es otro campo: un correo puede
+# salir perfectamente y no llegar nunca.
+DELIVERED = "delivered"
+BOUNCED = "bounced"
+SOFT_BOUNCED = "soft_bounced"
+COMPLAINED = "complained"
+REJECTED = "rejected"
+OUTCOMES = (DELIVERED, BOUNCED, SOFT_BOUNCED, COMPLAINED, REJECTED)
+
+
+def mark(db, provider_id: str | None, *, outcome: str, detail: str = "") -> bool:
+    """Anotar qué pasó con un correo que ya había salido.
+
+    Se busca por el identificador que devolvió SES, que es el mismo que viene
+    en su aviso. Sin identificador no hay nada que marcar: será un correo
+    escrito en disco durante el desarrollo.
+    """
+    if not provider_id or outcome not in OUTCOMES:
+        return False
+    return db.mail_log.update_one(
+        {"provider_id": provider_id},
+        {"$set": {"outcome": outcome, "outcome_detail": (detail or "")[:300],
+                  "outcome_at": now()}}).modified_count == 1
+
+
+def for_address(db, address: str, *, limit: int = 50) -> list[dict[str, Any]]:
+    """Los correos del sistema que se le mandaron a esa dirección.
+
+    Sin el cuerpo: la pantalla de administración dice qué pasó con cada uno, y
+    el texto de un código de confirmación no tiene nada que hacer ahí.
+    """
+    if not address:
+        return []
+    return list(db.mail_log.find(
+        {"to_normalized": normalize_email(address)},
+        {"html": 0, "text": 0}).sort("created_at", -1).limit(limit))
+
+
 def record(db, *, to: str, subject: str, backend: str, status: str,
            html: str = "", text: str = "", purpose: str = "",
            provider_id: str | None = None, error: str | None = None,

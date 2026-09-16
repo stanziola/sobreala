@@ -127,9 +127,13 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     """El correo de un destinatario, entero, con sus cabeceras.
 
     Aquí es donde el correo deja de ser el mismo para todos: las marcas de la
-    pieza —`*|CIUDAD|*`— se cambian por lo que dice **este** contacto, y lo que
-    le falte usa el respaldo de su columna. El asunto también, que es donde más
-    rinde y lo primero que se lee.
+    pieza —`*|CIUDAD|*`— se cambian por lo que dice **este** contacto. El asunto
+    también, que es donde más rinde y lo primero que se lee.
+
+    **Y sale etiquetado** con la cuenta, la campaña y el envío. SES devuelve
+    esas etiquetas dentro de cada aviso, y son lo único que dice de quién es un
+    rebote: la misma dirección puede estar en las listas de tres clientes, y
+    anularla en las tres por el rebote de una sería anular por cuenta ajena.
     """
     fields = fields or []
     url = unsubscribe.link(contact["_id"])
@@ -150,6 +154,13 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     # lo único que hay.
     message["List-Unsubscribe"] = f"<{url}>"
     message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
+    # La cabecera que SES convierte en etiquetas del mensaje y quita antes de
+    # entregarlo. Los valores son identificadores de Mongo, que solo llevan
+    # letras y números, que es lo que SES acepta ahí.
+    tags = [("account", account.get("_id")), ("campaign", campaign.get("_id")),
+            ("run", campaign.get("run_id"))]
+    message["X-SES-MESSAGE-TAGS"] = ", ".join(
+        f"{name}={value}" for name, value in tags if value)
     message.set_content(plain_text(html))
     message.add_alternative(html, subtype="html")
     return message
@@ -225,7 +236,9 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     total = contacts.matching_count(db, account_id, tags=wanted,
                                     complete=fields)
     if campaign["status"] == campaigns.SCHEDULED:
-        campaigns.start(db, account_id, campaign["_id"], total)
+        run_id = campaigns.start(db, account_id, campaign["_id"], total)
+        # El envío tiene su id desde que arranca, y cada correo sale con él.
+        campaign = {**campaign, "run_id": run_id}
 
     position = int(campaign.get("position", 0))
     # La cuota manda sobre el tope de la tanda: no se arma lo que no puede salir.
@@ -254,7 +267,8 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
             continue
         sent += 1
         events.record(db, account_id, kind=events.SENT,
-                      campaign_id=campaign["_id"], email=one["email"])
+                      campaign_id=campaign["_id"],
+                      run_id=campaign.get("run_id"), email=one["email"])
 
     position += len(people)
     campaigns.advance(db, account_id, campaign["_id"], position=position,

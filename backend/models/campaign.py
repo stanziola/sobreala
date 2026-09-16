@@ -28,6 +28,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from bson import ObjectId
 from pymongo import ReturnDocument
 
 from models import campaign_run as runs
@@ -154,16 +155,23 @@ def due(campaign: dict[str, Any] | None) -> bool:
             and (campaign or {}).get("status") == SCHEDULED)
 
 
-def start(db, account_id, campaign_id, total: int) -> bool:
-    """Marcar que empezó. False si otro la arrancó primero.
+def start(db, account_id, campaign_id, total: int):
+    """Marcar que empezó. Devuelve el id del envío, o None si otro la arrancó
+    primero.
 
     Es la escritura que cierra la puerta de editar: a partir de aquí el asunto y
     la lista ya no se pueden cambiar.
+
+    **El envío tiene su id desde aquí**, aunque su línea en `campaign_runs` se
+    escriba al terminar: cada correo sale etiquetado con él, y los avisos de SES
+    (entregas, aperturas) llegan mientras la campaña todavía está saliendo.
     """
-    return db.campaigns.update_one(
+    run_id = ObjectId()
+    matched = db.campaigns.update_one(
         {"_id": campaign_id, "account_id": account_id, "status": SCHEDULED},
         {"$set": {"status": SENDING, "total": total, "started_at": now(),
-                  "updated_at": now()}}).matched_count == 1
+                  "run_id": run_id, "updated_at": now()}}).matched_count == 1
+    return run_id if matched else None
 
 
 def advance(db, account_id, campaign_id, *, position: int, sent: int,
@@ -192,7 +200,8 @@ def finish(db, account_id, campaign_id) -> None:
     # tanda— no es un envío: no salió un solo correo y anotarla sería llenar el
     # historial de líneas en cero.
     if done and done.get("started_at"):
-        runs.record(db, {**done, "tags": tags_of(done)})
+        runs.record(db, {**done, "tags": tags_of(done)},
+                    run_id=done.get("run_id"))
 
 
 def restart(db, account_id, campaign_id, *, when: datetime) -> bool:
@@ -211,6 +220,8 @@ def restart(db, account_id, campaign_id, *, when: datetime) -> bool:
         {"$set": {"status": SCHEDULED, "scheduled_at": when, "position": 0,
                   "total": 0, "sent": 0, "skipped": 0, "failed": 0,
                   "errors": [], "started_at": None, "finished_at": None,
+                  # El envío que viene es otro, con su propio id.
+                  "run_id": None,
                   "updated_at": now()}}).matched_count == 1
 
 

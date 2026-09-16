@@ -9,7 +9,8 @@
      se dibuja suelta, igual que la del cliente. #}
   {% set tabs = [
     ('cuentas', 'admin_tab_accounts', url_for('admin.accounts_list')),
-    ('plantillas', 'admin_designs_title', url_for('admin.designs_queue'))] %}
+    ('plantillas', 'admin_designs_title', url_for('admin.designs_queue')),
+    ('correos', 'admin_mail_title', url_for('admin.system_mail'))] %}
 
   <nav class="settings__nav" aria-label="{{ t('admin_title') }}">
     {% for slug, label, href in tabs %}

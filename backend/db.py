@@ -104,6 +104,9 @@ def ensure_indexes(db: Database | None = None) -> None:
     # Every system email that was attempted, body included, so a confirmation
     # that never arrived can be read back exactly as it left.
     db.mail_log.create_index([("to_normalized", ASCENDING)], name="by_to")
+    # Por donde lo busca el aviso de SES, que trae el identificador del mensaje
+    # y nada más.
+    db.mail_log.create_index([("provider_id", ASCENDING)], name="by_provider")
     db.mail_log.create_index([("created_at", DESCENDING)], name="by_created_at")
 
     # Audit trail of registration and sign-in attempts. No TTL here on purpose,
@@ -162,6 +165,9 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.events.create_index([("account_id", ASCENDING),
                             ("created_at", DESCENDING)],
                            name="by_account_created")
+    # Las cifras de cada envío en «Campañas enviadas».
+    db.events.create_index([("account_id", ASCENDING), ("run_id", ASCENDING),
+                            ("kind", ASCENDING)], name="by_account_run_kind")
     db.events.create_index([("account_id", ASCENDING), ("kind", ASCENDING),
                             ("created_at", DESCENDING)],
                            name="by_account_kind_created")

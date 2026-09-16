@@ -34,6 +34,7 @@ from models import campaign as campaigns
 from models import campaign_run as runs
 from models import contact as contacts
 from models import design as designs
+from models import event as events
 from services import render, sender
 from services.security import csrf_ok
 
@@ -105,6 +106,7 @@ def lists_chosen(account) -> list[str]:
 
 
 def shared(db, account, **extra):
+    sent_runs = runs.for_account(db, account["_id"])
     return {
         "account": account,
         "lists": lists_of(db, account),
@@ -116,7 +118,11 @@ def shared(db, account, **extra):
         "everyone": t("send_all_contacts"),
         # Una fila por vez que salió algo, que es otra cosa que una fila por
         # campaña: la mandada seis veces son seis envíos.
-        "runs": runs.for_account(db, account["_id"]),
+        "runs": sent_runs,
+        # Lo que contó SES de cada envío: entregados, rebotes, abiertos, con
+        # clic y quejas, en personas. Una consulta para toda la lista.
+        "run_counts": events.counts_by_run(
+            db, account["_id"], [one["_id"] for one in sent_runs]),
         "times": runs.times_by_campaign(db, account["_id"]),
         # Qué le falta a la cuenta para que un envío salga de verdad. Se enseña
         # siempre, no al final: enterarse de que no se puede después de armarlo

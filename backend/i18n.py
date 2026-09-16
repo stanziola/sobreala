@@ -1025,6 +1025,9 @@ TEXTS = {
     "send_state_skipped": "{n} anulados",
     "send_state_failed": "{n} fallaron",
     "send_errors_title": "Lo que no se pudo enviar:",
+    "send_seen": "{delivered} entregados · {bounced} rebotes · {opened} "
+                 "abiertos · {clicked} con clic",
+    "send_seen_complaints": "{n} lo marcaron como spam",
 
     # La pantalla que pregunta antes de mandar. Dice cifras y no generalidades:
     # es lo único que separa «mandé el boletín» de «le escribí a toda la base».
@@ -1071,6 +1074,27 @@ TEXTS = {
     "admin_title": "Administración",
     "admin_filter_pending": "Esperando habilitación",
     "admin_tab_accounts": "Cuentas",
+    "admin_mail_title": "Correos del sistema",
+    "admin_mail_lead": "Lo que el panel le mandó a una dirección (códigos, "
+                       "avisos, bienvenidas) y qué dijo Amazon de cada uno. "
+                       "Para cuando alguien dice que no le llegó.",
+    "admin_mail_search": "Dirección de correo",
+    "admin_mail_col_when": "Cuándo",
+    "admin_mail_col_subject": "Correo",
+    "admin_mail_col_result": "Qué pasó",
+    "admin_mail_failed": "No salió",
+    "admin_mail_outcome_delivered": "Entregado",
+    "admin_mail_outcome_bounced": "Rebotó",
+    "admin_mail_outcome_soft_bounced": "Rebote pasajero",
+    "admin_mail_outcome_complained": "Lo marcó como spam",
+    "admin_mail_outcome_rejected": "Amazon lo rechazó",
+    "admin_mail_waiting": "Enviado a Amazon, sin respuesta todavía",
+    "admin_mail_not_ses": "No salió por Amazon (desarrollo)",
+    "admin_mail_none": "No le hemos mandado nada a {address}.",
+    "admin_mail_hint": "«Entregado» quiere decir que el servidor del "
+                       "destinatario lo aceptó. Si después lo mandó a correo no "
+                       "deseado o a cuarentena, no se lo cuenta a nadie: eso solo "
+                       "lo puede mirar quien administra ese buzón.",
     # Lo que ve el administrador cuando todavía no hay ningún cliente del que
     # sacar estadísticas.
     "admin_no_clients_title": "Todavía no hay clientes",
