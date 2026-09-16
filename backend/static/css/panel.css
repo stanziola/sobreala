@@ -784,3 +784,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .marks { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
 button.mark { border: 1px solid var(--color-border); cursor: pointer; color: inherit; }
 button.mark:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+/* Un botón apagado: el plan no da para más. No es un enlace, así que no lleva
+   a ningún sitio; y sin hover ni transición, para que la mano no espere nada.
+   Lo que dice por qué va al lado, no escondido en un title. */
+.btn--off {
+  background: var(--color-surface-alt); color: var(--color-ink-soft);
+  border-color: var(--color-border); cursor: not-allowed;
+  transform: none; box-shadow: none; transition: none;
+}
+.btn--off:hover, .btn--off:focus {
+  background: var(--color-surface-alt); color: var(--color-ink-soft);
+  border-color: var(--color-border); transform: none; box-shadow: none;
+}

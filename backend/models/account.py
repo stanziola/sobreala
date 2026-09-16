@@ -251,8 +251,7 @@ def field_by_key(account: dict[str, Any] | None, key: str):
     return next((one for one in fields_of(account) if one["key"] == key), None)
 
 
-def add_field(db, account_id, *, label: str, kind: str,
-              default: str = "") -> str | None:
+def add_field(db, account_id, *, label: str, kind: str) -> str | None:
     """Crear una columna. Devuelve su clave, o None si no se pudo.
 
     No se pudo quiere decir: sin nombre, un nombre que da la misma clave que
@@ -271,11 +270,24 @@ def add_field(db, account_id, *, label: str, kind: str,
         return None
     db.accounts.update_one(
         {"_id": account_id},
-        {"$push": {"contact_fields": {
-            "key": key, "label": name, "type": fields.clean_kind(kind),
-            "default": fields.parse(default, fields.clean_kind(kind)) or ""}},
+        {"$push": {"contact_fields": {"key": key, "label": name,
+                                      "type": fields.clean_kind(kind)}},
          "$set": {"updated_at": now()}})
     return key
+
+
+def set_field_type(db, account_id, key: str, kind: str) -> bool:
+    """Cambiarle el tipo a una columna. False si esa columna no es de la cuenta.
+
+    Lo único que se puede corregir de una columna ya creada. El nombre no: es lo
+    que se escribe dentro de las piezas, y cambiarlo dejaría a las que la
+    nombran escribiendo en blanco. Que los valores encajen en el tipo nuevo lo
+    comprueba quien llama, antes de tocar nada.
+    """
+    return db.accounts.update_one(
+        {"_id": account_id, "contact_fields.key": key},
+        {"$set": {"contact_fields.$.type": fields.clean_kind(kind),
+                  "updated_at": now()}}).matched_count == 1
 
 
 def remove_field(db, account_id, key: str) -> None:

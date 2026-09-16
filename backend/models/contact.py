@@ -24,6 +24,7 @@ from pymongo import UpdateOne
 from pymongo.errors import DuplicateKeyError
 
 from models.account import normalize_email
+from services import fields
 
 # Where a list came from. Asked at import time and written on every contact,
 # because it is what has to be shown when somebody complains, and it cannot be
@@ -103,8 +104,19 @@ def delete_suppressed(db, account_id) -> int:
     return result.deleted_count
 
 
+def _complete(definitions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Las condiciones que cumple un contacto con todas sus columnas llenas.
+
+    Una por columna: el campo existe y no está vacío. Con diez columnas son
+    diez condiciones sobre el mismo documento, no diez consultas.
+    """
+    return [{f"fields.{one['key']}": {"$exists": True, "$nin": ["", None]}}
+            for one in definitions]
+
+
 def _matching(account_id, search: str, tag: str,
-              tags: list[str] | None = None) -> dict[str, Any]:
+              tags: list[str] | None = None,
+              complete: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """La consulta de la tabla, en un solo sitio.
 
     La usan la exportación y el conteo que la confirma, para que el número que
@@ -124,17 +136,26 @@ def _matching(account_id, search: str, tag: str,
         query["tags"] = {"$in": wanted}
     if search:
         query["email_normalized"] = {"$regex": f"^{_escape(normalize_email(search))}"}
+    # Solo lo encienden los caminos de envío: la lista sí los enseña, porque
+    # para completarlos hay que verlos.
+    conditions = _complete(complete or [])
+    if conditions:
+        query["$and"] = conditions
     return query
 
 
 def matching_count(db, account_id, *, search: str = "", tag: str = "",
-                   tags: list[str] | None = None) -> int:
+                   tags: list[str] | None = None,
+                   complete: list[dict[str, Any]] | None = None) -> int:
     """Cuántos saldrían con ese buscador y ese filtro."""
-    return db.contacts.count_documents(_matching(account_id, search, tag, tags))
+    return db.contacts.count_documents(
+        _matching(account_id, search, tag, tags, complete))
 
 
 def batch_for_sending(db, account_id, *, tag: str = "",
-                      tags: list[str] | None = None, skip: int = 0,
+                      tags: list[str] | None = None,
+                      complete: list[dict[str, Any]] | None = None,
+                      skip: int = 0,
                       limit: int = 100) -> list[dict[str, Any]]:
     """Un tramo de la lista, en orden fijo, para mandarle una campaña.
 
@@ -143,7 +164,7 @@ def batch_for_sending(db, account_id, *, tag: str = "",
     mitad, y de eso depende que la posición guardada signifique lo mismo en la
     tanda siguiente.
     """
-    return list(db.contacts.find(_matching(account_id, "", tag, tags))
+    return list(db.contacts.find(_matching(account_id, "", tag, tags, complete))
                 .sort("_id", 1).skip(skip).limit(limit))
 
 
@@ -173,10 +194,64 @@ def tags_in_use(db, account_id) -> list[str]:
     return sorted(db.contacts.distinct("tags", {"account_id": account_id}))
 
 
-def count_by_tag(db, account_id) -> dict[str, int]:
-    """Cuántos contactos lleva cada etiqueta, en una sola consulta."""
+def incomplete_count(db, account_id,
+                     definitions: list[dict[str, Any]]) -> int:
+    """Cuántos no tienen todas sus columnas llenas.
+
+    Son los que no van a recibir nada, así que la pantalla lo dice: crear una
+    columna nueva deja incompleta a toda la lista hasta que se complete.
+    """
+    conditions = _complete(definitions)
+    if not conditions:
+        return 0
+    return db.contacts.count_documents(
+        {"account_id": account_id, "$nor": [{"$and": conditions}]})
+
+
+def count_by_field(db, account_id,
+                   definitions: list[dict[str, Any]]) -> dict[str, int]:
+    """Cuántos contactos tienen llena cada columna.
+
+    Una consulta por columna, no por contacto: con diez columnas son diez
+    conteos sobre un índice, y es lo que deja ver de un vistazo cuál es la que
+    está dejando gente fuera de los envíos.
+    """
+    return {one["key"]: db.contacts.count_documents(
+        {"account_id": account_id,
+         f"fields.{one['key']}": {"$exists": True, "$nin": ["", None]}})
+        for one in definitions}
+
+
+def values_not_of_type(db, account_id, key: str, kind: str) -> int:
+    """Cuántos contactos tienen en esa columna algo que no es de ese tipo.
+
+    Se piden los valores distintos —no un documento por contacto— y se prueban
+    aquí, porque quien sabe si «15/03/2026» es una fecha es `services/fields.py`
+    y no la base. Es lo que se mira antes de dejar cambiar el tipo.
+    """
+    wrong = [value for value in
+             db.contacts.distinct(f"fields.{key}", {"account_id": account_id})
+             if fields.parse(value, kind) is None]
+    if not wrong:
+        return 0
+    return db.contacts.count_documents({"account_id": account_id,
+                                        f"fields.{key}": {"$in": wrong}})
+
+
+def count_by_tag(db, account_id,
+                 definitions: list[dict[str, Any]] | None = None) -> dict[str, int]:
+    """Cuántos contactos lleva cada etiqueta, en una sola consulta.
+
+    Con las columnas de la cuenta cuenta solo a los que las tienen llenas, que
+    son los que van a recibir algo: es la cifra que la pantalla de envíos pone
+    al lado de cada etiqueta.
+    """
+    wanted: dict[str, Any] = {"account_id": account_id}
+    conditions = _complete(definitions or [])
+    if conditions:
+        wanted["$and"] = conditions
     found = db.contacts.aggregate([
-        {"$match": {"account_id": account_id}},
+        {"$match": wanted},
         {"$unwind": "$tags"},
         {"$group": {"_id": "$tags", "n": {"$sum": 1}}},
     ])

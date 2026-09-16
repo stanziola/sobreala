@@ -366,12 +366,25 @@ pueda venir como venga y el correo salga parejo. Lo que no es de su tipo no se
 escribe: guardar «el martes» en una columna de fecha es guardar algo que
 después no se puede enseñar.
 
-**Cada columna tiene un respaldo**, y no es un adorno: sin él, a quien le falte
-ese dato le llega «Hola, » y el correo se ve roto.
+**Son obligatorias, y no hay texto de respaldo.** Un contacto **nuevo** solo
+entra con todas llenas —sin ellas no podría recibir nada, así que entrar sería
+entrar de peso muerto— y al que le falte una **no se le manda ningún correo**
+hasta que la tenga. Tapar el hueco con un respaldo era lo contrario de
+enseñarlo.
 
-**Se crean antes de usarse**, como las etiquetas, en `/contactos/columnas`.
-Borrar una borra lo que los contactos tenían escrito en ella; los contactos se
-quedan.
+Eso muerde el día que se crea una columna nueva: deja incompleta a toda la
+lista. Por eso se ve en los cuatro sitios donde se cuenta gente —la tabla marca
+«Incompleto», el contador lo dice, la pantalla de crearla avisa a cuántos va a
+dejar fuera, y las cifras de envío ya no los cuentan—. Lo hace una condición en
+la consulta común (`models/contact.py`) que **solo encienden los caminos de
+envío**: la lista sí los enseña, porque para completarlos hay que verlos.
+
+**Se crean desde la lista de contactos**, que es donde se está cuando hace falta
+guardar un dato más, y con el plan lleno ese botón sale apagado —y la ruta lo
+comprueba igual—. `/contactos/columnas` es para lo que ya existe: **cambiar el
+tipo**, que no se deja si algún valor no encaja en el nuevo, y borrar. El nombre
+no se cambia: es lo que las piezas ya tienen escrito dentro. Borrar una borra lo
+que los contactos tenían escrito en ella; los contactos se quedan.
 
 **`added_by` dice por dónde entró cada contacto**, `manual` o `import`. Los que
 existían antes de que el campo existiera no lo tienen y la pantalla enseña una
@@ -518,9 +531,9 @@ alrededor es nuestro— y sin escapar en el asunto, que es texto. Una marca que
 nombra una columna borrada se queda en blanco: dejarla a la vista sería mandar
 `*|CIUDAD|*` a mil personas.
 
-La vista previa se dibuja con **el respaldo de cada columna**, que es justo lo
-que va a recibir quien no tenga ese dato: enseña el caso peor y no uno inventado
-que siempre se ve bien.
+La vista previa dibuja cada marca con **el nombre de su columna** —«Ciudad»—,
+que enseña dónde va cada dato sin inventarse un valor que después no se parezca
+al de nadie.
 
 **`services/render.py` es el único sitio que arma un correo**, y la vista previa
 llama ahí, así que lo que alguien ve antes de mandar es de verdad lo que se
@@ -760,6 +773,11 @@ qué se rechaza, quién puede subir y quién aprueba la primera.
 
 Procesar el CSV **en streaming**, nunca cargarlo entero en memoria.
 
+**Un contacto nuevo solo entra con todas las columnas de la cuenta llenas.** El
+resultado dice cuántos se quedaron fuera por venir incompletos. A los que ya
+existían se les actualiza lo que traiga el archivo, columna a columna: traer la
+ciudad no le borra el monto a nadie.
+
 **El archivo no manda.** Uno de quince columnas se acepta igual: la pantalla
 enseña sus títulos y el cliente marca cuáles guardar, y es **lo que marca** lo
 que cuenta contra el límite del plan. Rechazar el archivo entero por traer
@@ -816,9 +834,10 @@ algo que mantener y auditar para pintar rectángulos.
 La llena `services/stats.py`, y **es la misma pantalla que ve el
 administrador** en `/admin/` para la cuenta que elija: una plantilla y dos
 entradas, para que no puedan separarse. **`/contactos`** tiene cinco
-pantallas: la lista —una fila por contacto, con sus etiquetas, por dónde entró,
-cuándo y si está activo o anulado—, la importación, las etiquetas, las columnas
-propias y las supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
+pantallas: la lista —una fila por contacto: su correo, su nombre, **sus
+columnas propias**, si está activo, anulado o incompleto, sus etiquetas y
+cuándo entró—, la importación, las etiquetas, las columnas propias y las
+supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
 desde un botón encima de la lista, y exportar pasa por una confirmación que dice
 cuántos van a salir. **`/plantillas`** enseña las cuatro prediseñadas para
 elegir una y llenarla, las que ya armó y las que subió como HTML. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:

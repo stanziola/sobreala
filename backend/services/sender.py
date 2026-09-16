@@ -219,7 +219,11 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         return {"blocked": ["piece"], "sent": 0, "left": 0}
 
     wanted = campaigns.tags_of(campaign)
-    total = contacts.matching_count(db, account_id, tags=wanted)
+    # A quien le falte una columna no se le manda nada, así que tampoco se
+    # cuenta: el total y las tandas miran lo mismo.
+    fields = accounts.fields_of(account)
+    total = contacts.matching_count(db, account_id, tags=wanted,
+                                    complete=fields)
     if campaign["status"] == campaigns.SCHEDULED:
         campaigns.start(db, account_id, campaign["_id"], total)
 
@@ -227,10 +231,10 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     # La cuota manda sobre el tope de la tanda: no se arma lo que no puede salir.
     room = min(limit, accounts.quota_left(account))
     people = contacts.batch_for_sending(db, account_id, tags=wanted,
+                                        complete=fields,
                                         skip=position, limit=room)
 
     ready = Piece(piece)
-    fields = accounts.fields_of(account)
     among = suppressions.among(db, account_id,
                                [one["email"] for one in people])
     sent = skipped = failed = 0

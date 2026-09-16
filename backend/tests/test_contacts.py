@@ -446,9 +446,10 @@ def test_se_guarda_por_donde_entro_cada_contacto(client, database, outbox):
     assert contacts.by_email(database, cuenta["_id"],
                              "bea@coop.com")["added_by"] == contacts.MANUAL
 
+    # El dato se guarda, pero ya no ocupa una columna de la tabla: con las
+    # columnas propias metidas ahí, el ancho es lo que escasea.
     pantalla = browser.get("/contactos").get_data(as_text=True)
-    assert "Importado" in pantalla
-    assert "A mano" in pantalla
+    assert "Cómo entró" not in pantalla
 
 
 def test_la_columna_de_estado_dice_activo_o_anulado(client, database, outbox):

@@ -16,9 +16,9 @@ Tres decisiones que se notan en todo el archivo:
     dejar que un archivo subido ejecute código en el servidor. Lo que se hace
     aquí es una sustitución nuestra, con el valor escapado. Y esa forma tampoco
     choca con las llaves que ya usan el CSS y el HTML de nadie.
-  * **Cada columna tiene un respaldo.** Un contacto sin ese dato no deja un
-    hueco en medio de la frase: escribe lo que diga la columna, «socio» o «tu
-    cooperativa».
+  * **Las columnas son obligatorias.** Un contacto solo entra en la base con
+    todas llenas, y al que le falte una no le llega ningún correo. Por eso no
+    hay texto de respaldo: tapar el hueco es lo contrario de enseñarlo.
 """
 
 from __future__ import annotations
@@ -173,8 +173,6 @@ def fill(text: str, contact: dict[str, Any] | None,
         if one is None:
             return ""
         written = show(values.get(key, ""), one.get("type", TEXT))
-        if not written:
-            written = one.get("default", "")
         return str(escape(written)) if html else written
 
     return MARK.sub(swap, text)
@@ -183,10 +181,19 @@ def fill(text: str, contact: dict[str, Any] | None,
 def sample(definitions: list[dict[str, Any]]) -> dict[str, Any]:
     """Un contacto de mentira para la vista previa.
 
-    Con el respaldo de cada columna, que es exactamente lo que va a recibir
-    quien no tenga ese dato: la vista previa enseña el peor caso y no uno
-    inventado que siempre se ve bien.
+    Cada marca se dibuja con **el nombre de su columna**, que enseña dónde va
+    cada dato sin inventarse un valor que después no se parezca al de nadie.
     """
-    return {"fields": {one["key"]: parse(one.get("default", ""),
-                                         one.get("type", TEXT)) or ""
+    return {"fields": {one["key"]: one.get("label", one["key"])
                        for one in definitions}}
+
+
+def missing(contact: dict[str, Any] | None,
+            definitions: list[dict[str, Any]]) -> list[str]:
+    """Qué columnas le faltan a ese contacto. Vacío es que está completo.
+
+    Es lo que decide quién recibe un correo y quién no: al que le falte un dato
+    no se le manda nada hasta que lo tenga.
+    """
+    values = values_of(contact)
+    return [one["label"] for one in definitions if not values.get(one["key"])]

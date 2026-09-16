@@ -17,6 +17,17 @@
 <div class="row">
   <a class="btn" href="{{ url_for('contacts.add_one') }}">{{ t('contacts_add_title') }}</a>
   <a class="btn btn--outline" href="{{ url_for('contacts.upload') }}">{{ t('contacts_import_action') }}</a>
+  {# Una columna más se agrega desde aquí, que es donde se está cuando hace
+     falta. Con el plan lleno el botón se apaga: sin hover, sin animación y sin
+     enlace. La ruta lo comprueba igual, porque apagar un botón no es un
+     permiso. #}
+  {% if field_room > 0 %}
+  <a class="btn btn--outline"
+     href="{{ url_for('contacts.add_field') }}">{{ t('fields_add_action') }}</a>
+  {% else %}
+  <span class="btn btn--off" aria-disabled="true"
+        title="{{ t('fields_full') }}">{{ t('fields_add_action') }}</span>
+  {% endif %}
   {% if total %}
   {# Se lleva el buscador y el filtro puestos, así sirve para sacar un grupo. #}
   <a class="btn btn--outline"
@@ -51,10 +62,12 @@
       <tr>
         <th>{{ t('contacts_col_email') }}</th>
         <th>{{ t('contacts_col_name') }}</th>
-        <th>{{ t('contacts_col_tags') }}</th>
-        <th>{{ t('contacts_col_how') }}</th>
-        <th>{{ t('contacts_col_added') }}</th>
+        {# Las propias van justo después del nombre, en el orden en que se
+           crearon: es lo que se mira después de saber a quién se le escribe. #}
+        {% for one in fields %}<th>{{ one.label }}</th>{% endfor %}
         <th>{{ t('contacts_col_status') }}</th>
+        <th>{{ t('contacts_col_tags') }}</th>
+        <th>{{ t('contacts_col_added') }}</th>
         <th></th>
       </tr>
     </thead>
@@ -63,24 +76,30 @@
       <tr>
         <td>{{ row.email }}</td>
         <td>{{ row.name or '' }}</td>
-        <td>
-          {% for name in row.tags %}<span class="tag tag--quiet">{{ name }}</span>{% endfor %}
-        </td>
+        {% set written = values_of(row) %}
+        {% for one in fields %}
         <td class="table__quiet">
-          {# Los que entraron antes de que este campo existiera no lo tienen, y
-             una raya es mejor que inventar por dónde entraron. #}
-          {{ t('contacts_how_' + row.added_by) if row.added_by else '—' }}</td>
-        <td class="table__quiet">{{ row.created_at|ago }}</td>
+          {{ show(written.get(one.key, ''), one.type) or '—' }}</td>
+        {% endfor %}
         <td>
           {# La supresión se preguntó una sola vez para toda la página, y no se
              guarda en el contacto: así no hay dos sitios que puedan decir cosas
              distintas sobre lo mismo. #}
           {% if row.email_normalized in blocked %}
           <span class="tag tag--warn">{{ t('contacts_status_blocked') }}</span>
+          {% elif fields and missing(row, fields) %}
+          {# Sin todas sus columnas no recibe correos, así que se ve aquí y no
+             al descubrir que la campaña salió a menos gente. #}
+          <span class="tag tag--warn"
+                title="{{ missing(row, fields)|join(', ') }}">{{ t('contacts_status_incomplete') }}</span>
           {% else %}
           <span class="tag tag--quiet">{{ t('contacts_status_active') }}</span>
           {% endif %}
         </td>
+        <td>
+          {% for name in row.tags %}<span class="tag tag--quiet">{{ name }}</span>{% endfor %}
+        </td>
+        <td class="table__quiet">{{ row.created_at|ago }}</td>
         <td>
           <div class="table__actions">
             <a class="btn btn--small btn--outline"
@@ -97,9 +116,6 @@
     </tbody>
   </table>
 </div>
-
-<p class="hint">{{ t('contacts_status_blocked_hint') }}</p>
-<p class="hint">{{ t('contacts_delete_hint') }}</p>
 
 {% if blocked_total %}
 <form method="post" action="{{ url_for('contacts.remove_suppressed') }}">

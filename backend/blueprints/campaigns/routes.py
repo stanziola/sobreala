@@ -85,7 +85,10 @@ def lists_of(db, account) -> list[dict]:
     marcar ninguna es escribirle a toda la lista: una cuenta que nunca creó una
     etiqueta tiene igualmente a quién escribirle.
     """
-    counted = contacts.count_by_tag(db, account["_id"])
+    # Con las columnas de la cuenta: quien no las tenga llenas no va a recibir
+    # nada, así que contarlo aquí sería prometer un número que no sale.
+    counted = contacts.count_by_tag(db, account["_id"],
+                                    accounts.fields_of(account))
     return [{"tag": name, "name": name, "howmany": counted.get(name, 0)}
             for name in accounts.tags_of(account)]
 
@@ -259,7 +262,8 @@ def send(raw):
                                          found.get("design_id")),
                      going=contacts.matching_count(
                          db, account["_id"],
-                         tags=campaigns.tags_of(found)),
+                         tags=campaigns.tags_of(found),
+                         complete=accounts.fields_of(account)),
                      already=runs.times(db, account["_id"], found["_id"])))
 
     if not csrf_ok(request.form.get("csrf_token")):

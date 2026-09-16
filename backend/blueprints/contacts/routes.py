@@ -72,12 +72,14 @@ def as_id(raw):
         return None
 
 
-def values_written(account) -> dict[str, str]:
+def values_written(account, errors: dict[str, str]) -> dict[str, str]:
     """Lo que el formulario escribió en cada columna de la cuenta.
 
     Se recorren las columnas que existen, no lo que llegó: un campo con un
-    nombre inventado no escribe nada. Lo que no es del tipo de su columna
-    tampoco, que es lo mismo que hace el importador.
+    nombre inventado no escribe nada.
+
+    **Todas son obligatorias**, y lo que no encaja en su tipo cuenta como que
+    falta: un contacto sin sus datos no entra, y si ya estaba, no recibe nada.
     """
     written: dict[str, str] = {}
     for one in accounts.fields_of(account):
@@ -85,6 +87,9 @@ def values_written(account) -> dict[str, str]:
         value = columns.parse(raw, one.get("type", columns.TEXT))
         if value:
             written[one["key"]] = value
+        else:
+            errors[f"col-{one['key']}"] = (
+                t("error_field_value") if raw.strip() else t("error_required"))
     return written
 
 
@@ -111,11 +116,23 @@ def shared(db, account, **extra):
         "blocked_total": total - active,
         "left": max(0, limit - active),
         "suppressed_total": suppressions.count(db, account["_id"]),
+        # Los que no tienen todas sus columnas llenas. No reciben correos, así
+        # que la cifra va donde se cuentan los contactos y no escondida.
+        "incomplete_total": contacts.incomplete_count(
+            db, account["_id"], accounts.fields_of(account)),
+        # Cuántas columnas más caben en el plan. Con cero, el botón de agregar
+        # sale apagado.
+        "field_room": (accounts.field_limit(account)
+                       - len(accounts.fields_of(account))),
         # Del registro de la cuenta y no de los contactos: así una etiqueta
         # recién creada aparece desde ese momento, aunque no tenga a nadie.
         "tags": accounts.tags_of(account),
         # Lo mismo con las columnas propias: se crean antes de usarse.
         "fields": accounts.fields_of(account),
+        # Para dibujar cada valor como se escribe y saber a quién le falta uno.
+        "show": columns.show,
+        "values_of": columns.values_of,
+        "missing": columns.missing,
         # El tope del plan lo miran dos pantallas: la de columnas y la de
         # importar, que es donde se pueden crear de golpe.
         "field_limit": accounts.field_limit(account),
@@ -170,6 +187,8 @@ def add_one():
         address = importer.clean(request.form.get("email", ""))
         source = request.form.get("source", "")
 
+        written = values_written(account, errors)
+
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         elif not address:
@@ -178,12 +197,15 @@ def add_one():
             errors["source"] = t("error_required")
         elif contacts.active_count(db, account["_id"]) >= accounts.contact_limit(account):
             errors["form"] = t("error_contacts_full")
+        elif errors:
+            # Le falta alguna columna. Cada una dice lo suyo debajo del campo.
+            errors["form"] = t("error_fields_required")
         else:
             contacts.create(
                 db, account["_id"], email=address,
                 name=request.form.get("name", "").strip(),
                 tags=tags_chosen(account),
-                values=values_written(account),
+                values=written,
                 consent=contacts.consent_of(source,
                                             request.form.get("note", "")))
             # Si esa dirección está anulada, se guarda igual pero no va a
@@ -217,15 +239,18 @@ def edit(raw):
     errors: dict[str, str] = {}
     if request.method == "POST":
         address = importer.clean(request.form.get("email", ""))
+        written = values_written(account, errors)
 
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         elif not address:
             errors["email"] = t("error_contact_email")
+        elif errors:
+            errors["form"] = t("error_fields_required")
         elif not contacts.update(db, account["_id"], contact_id, email=address,
                                  name=request.form.get("name", ""),
                                  tags=tags_chosen(account),
-                                 values=values_written(account)):
+                                 values=written):
             # Lo dice el índice único, no una consulta previa.
             errors["email"] = t("error_contact_taken")
         else:
@@ -417,21 +442,77 @@ def fields():
         "contacts/fields.html", section="columnas",
         **shared(db, account, types=columns.TYPES,
                  room=limit - len(accounts.fields_of(account)),
-                 fields_free=limit >= plans.UNLIMITED))
+                 fields_free=limit >= plans.UNLIMITED,
+                 counts=contacts.count_by_field(
+                     db, account["_id"], accounts.fields_of(account))))
 
 
-@bp.route("/contactos/columnas/nueva", methods=["POST"])
+@bp.route("/contactos/columnas/nueva", methods=["GET", "POST"])
 def add_field():
+    """Crear una columna, en su propia pantalla.
+
+    Se llega desde la lista de contactos, que es donde se está cuando hace
+    falta una columna más. Antes se creaba desde la pestaña de columnas, que es
+    a donde se va a corregir lo que ya existe, no a empezar algo.
+    """
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
 
-    if csrf_ok(request.form.get("csrf_token")):
-        if not accounts.add_field(get_db(), account["_id"],
-                                  label=request.form.get("nombre", ""),
-                                  kind=request.form.get("tipo", ""),
-                                  default=request.form.get("respaldo", "")):
-            return redirect(url_for("contacts.fields", error="columna"))
+    db = get_db()
+    errors: dict[str, str] = {}
+    limit = accounts.field_limit(account)
+    room = limit - len(accounts.fields_of(account))
+
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif room <= 0:
+            # Se comprueba aquí y no solo en el botón: apagar un botón no es un
+            # permiso.
+            errors["form"] = t("fields_full")
+        elif not accounts.add_field(db, account["_id"],
+                                    label=request.form.get("nombre", ""),
+                                    kind=request.form.get("tipo", "")):
+            errors["nombre"] = t("error_field")
+        else:
+            return redirect(url_for("contacts.fields", guardado=1))
+
+    return render_template(
+        "contacts/field-new.html", section="columnas", errors=errors,
+        **shared(db, account, types=columns.TYPES, room=room,
+                 field_limit=limit,
+                 fields_free=limit >= plans.UNLIMITED))
+
+
+@bp.route("/contactos/columnas/tipo", methods=["POST"])
+def field_type():
+    """Cambiarle el tipo a una columna que ya existe.
+
+    Lo único que se puede corregir: el nombre es lo que se escribe dentro de
+    las piezas, y cambiarlo dejaría a las que la nombran escribiendo en blanco.
+
+    **No se cambia si hay valores que no encajan** en el tipo nuevo —«Santiago»
+    en una que pasa a número—: se dice cuántos son y no se toca nada, porque
+    guardar un valor que después no se puede enseñar es perderlo en silencio.
+    """
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(url_for("contacts.fields"))
+
+    db = get_db()
+    key = request.form.get("columna", "").strip()[:columns.KEY_MAX]
+    kind = columns.clean_kind(request.form.get("tipo", ""))
+    one = accounts.field_by_key(account, key)
+    if one is None:
+        return redirect(url_for("contacts.fields"))
+
+    wrong = contacts.values_not_of_type(db, account["_id"], key, kind)
+    if wrong:
+        return redirect(url_for("contacts.fields", error="tipo", n=wrong))
+    accounts.set_field_type(db, account["_id"], key, kind)
     return redirect(url_for("contacts.fields", guardado=1))
 
 
@@ -553,7 +634,7 @@ def upload():
                 counts, stopped = importer.run(
                     db, account["_id"], archivo.stream, tags=tags,
                     consent=consent, limit=accounts.contact_limit(account),
-                    take=take)
+                    take=take, required=accounts.fields_of(account))
             except Exception as exc:  # noqa: BLE001 - written down, not hidden
                 imports.finish(db, job, status=imports.FAILED, counts={},
                                error=f"{type(exc).__name__}: {exc}")

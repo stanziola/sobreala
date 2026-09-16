@@ -13,12 +13,21 @@
     <li><span>{{ t('import_added') }}</span> <b>{{ result.counts.added }}</b></li>
     <li><span>{{ t('import_updated') }}</span> <b>{{ result.counts.updated }}</b></li>
     <li><span>{{ t('import_invalid') }}</span> <b>{{ result.counts.invalid }}</b></li>
+    {# Los que venían sin todas las columnas de la cuenta. Un contacto sin sus
+       datos no entra, porque tampoco podría recibir nada. #}
+    {% if result.counts.incomplete %}
+    <li><span>{{ t('import_incomplete') }}</span>
+      <b>{{ result.counts.incomplete }}</b></li>
+    {% endif %}
     {% if result.counts.suppressed %}
     <li><span>{{ t('import_suppressed') }}</span> <b>{{ result.counts.suppressed }}</b></li>
     {% endif %}
   </ul>
   {% if result.counts.suppressed %}
   <p class="hint">{{ t('import_suppressed_hint') }}</p>
+  {% endif %}
+  {% if result.counts.incomplete %}
+  <p class="hint">{{ t('import_incomplete_hint') }}</p>
   {% endif %}
   {% if result.stopped %}
   <p>{{ t('import_stopped') }}</p>

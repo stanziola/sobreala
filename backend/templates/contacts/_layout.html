@@ -38,6 +38,12 @@
       {{ t('contacts_counter_blocked_one') if blocked_total == 1
          else t('contacts_counter_blocked', n=blocked_total) }}
       {% endif %}
+      {# Los que no tienen todas sus columnas llenas. No reciben nada, y esto es
+         lo que impide que eso se descubra al mandar una campaña. #}
+      {% if incomplete_total %}<br>
+      {{ t('contacts_counter_incomplete_one') if incomplete_total == 1
+         else t('contacts_counter_incomplete', n=incomplete_total) }}
+      {% endif %}
     </p>
   </nav>
 

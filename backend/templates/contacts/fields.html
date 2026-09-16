@@ -12,8 +12,8 @@
 {% if request.args.get('guardado') %}
 <p class="notice notice--ok">{{ t('fields_saved') }}</p>
 {% endif %}
-{% if request.args.get('error') == 'columna' %}
-<p class="notice">{{ t('error_field') }}</p>
+{% if request.args.get('error') == 'tipo' %}
+<p class="notice">{{ t('error_field_type', n=request.args.get('n', '0')) }}</p>
 {% endif %}
 
 {% if fields %}
@@ -24,7 +24,7 @@
         <th>{{ t('fields_col_name') }}</th>
         <th>{{ t('fields_col_mark') }}</th>
         <th>{{ t('fields_col_type') }}</th>
-        <th>{{ t('fields_col_default') }}</th>
+        <th>{{ t('fields_col_filled') }}</th>
         <th></th>
       </tr>
     </thead>
@@ -35,8 +35,28 @@
         {# La marca es lo que se copia dentro de la pieza, así que se enseña
            tal cual se escribe y no explicada con palabras. #}
         <td><code class="mark">*|{{ one.key }}|*</code></td>
-        <td class="table__quiet">{{ t('fields_type_' + one.type) }}</td>
-        <td class="table__quiet">{{ one.default or t('fields_no_default') }}</td>
+        <td>
+          {# El tipo es lo único que se puede corregir: el nombre es lo que las
+             piezas ya tienen escrito dentro. #}
+          <form class="filters" method="post"
+                action="{{ url_for('contacts.field_type') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="columna" value="{{ one.key }}">
+            <label class="visually-hidden"
+                   for="tipo-{{ one.key }}">{{ t('fields_type') }}</label>
+            <select id="tipo-{{ one.key }}" name="tipo">
+              {% for kind in types %}
+              <option value="{{ kind }}"{% if kind == one.type %} selected{% endif %}>
+                {{ t('fields_type_' + kind) }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn--small btn--outline" type="submit">
+              {{ t('fields_type_save') }}</button>
+          </form>
+        </td>
+        <td class="table__quiet">
+          {# Quién la tiene llena, que es quién puede recibir un correo. #}
+          {{ t('fields_filled', n=counts.get(one.key, 0), total=total) }}</td>
         <td>
           <form method="post" action="{{ url_for('contacts.drop_field') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -54,38 +74,8 @@
 <p class="lead">{{ t('fields_empty') }}</p>
 {% endif %}
 
-<h3 class="settings__subtitle">{{ t('fields_new') }}</h3>
-{% if room > 0 %}
-<form method="post" action="{{ url_for('contacts.add_field') }}">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-  <label for="nombre">{{ t('fields_name') }}</label>
-  <input id="nombre" name="nombre" type="text" autocomplete="off"
-         maxlength="40" required placeholder="{{ t('fields_name_example') }}">
-
-  <label for="tipo">{{ t('fields_type') }}</label>
-  <select id="tipo" name="tipo">
-    {% for kind in types %}
-    <option value="{{ kind }}">{{ t('fields_type_' + kind) }}</option>
-    {% endfor %}
-  </select>
-  <p class="hint">{{ t('fields_type_hint') }}</p>
-
-  {# El respaldo no es un adorno: sin él, quien no tenga ese dato recibe
-     «Hola, » y el correo se ve roto. #}
-  <label for="respaldo">{{ t('fields_default') }}</label>
-  <input id="respaldo" name="respaldo" type="text" autocomplete="off"
-         maxlength="120" placeholder="{{ t('fields_default_example') }}">
-  <p class="hint">{{ t('fields_default_hint') }}</p>
-
-  <p class="hint">
-    {% if fields_free %}{{ t('fields_room_free') }}
-    {% else %}{{ t('fields_room', n=room) }}{% endif %}
-  </p>
-  <button class="btn" type="submit">{{ t('fields_add') }}</button>
-</form>
-{% else %}
-<p class="hint">{{ t('fields_full') }}
-  <a href="{{ site_url }}/planes/">{{ t('fields_plans') }}</a></p>
-{% endif %}
+{# Crear una se hace desde la lista de contactos, que es donde se está cuando
+   hace falta guardar un dato más. #}
+<p class="hint">{{ t('fields_new_where') }}
+  <a href="{{ url_for('contacts.index') }}">{{ t('contacts_tab_list') }}</a></p>
 {% endblock %}

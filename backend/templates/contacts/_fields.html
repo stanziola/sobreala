@@ -1,16 +1,19 @@
 {#- Las columnas propias de la cuenta, una casilla por cada una.
 
-    Espera: fields (las que existen) y written (lo que ese contacto tiene
-    escrito; vacío al agregar uno nuevo). Una cuenta que no ha creado ninguna
-    no dibuja nada, ni un título. -#}
+    Espera: fields (las que existen), written (lo que ese contacto tiene
+    escrito; vacío al agregar uno nuevo) y errors. Una cuenta que no ha creado
+    ninguna no dibuja nada, ni un título.
+
+    **Todas son obligatorias.** Un contacto sin sus datos no entra, y si ya
+    estaba, no recibe correos hasta completarlo. -#}
 {% if fields %}
 <p class="field-label">{{ t('fields_on_contact') }}</p>
 {% for one in fields %}
-{% set value = written.get(one.key, '') %}
+{% set value = request.form.get('col-' + one.key, written.get(one.key, '')) %}
 <label for="col-{{ one.key }}">{{ one.label }}</label>
 {% if one.type == 'yesno' %}
-<select id="col-{{ one.key }}" name="col-{{ one.key }}">
-  <option value="">{{ t('fields_value_empty') }}</option>
+<select id="col-{{ one.key }}" name="col-{{ one.key }}" required>
+  <option value=""{% if not value %} selected{% endif %}>{{ t('fields_pick') }}</option>
   <option value="si"{% if value == 'si' %} selected{% endif %}>{{ t('fields_yes') }}</option>
   <option value="no"{% if value == 'no' %} selected{% endif %}>{{ t('fields_no') }}</option>
 </select>
@@ -18,9 +21,12 @@
 {# El tipo decide el teclado del teléfono y poco más: lo que de verdad
    comprueba el valor es el servidor, que es el que lo guarda. #}
 <input id="col-{{ one.key }}" name="col-{{ one.key }}" maxlength="120"
-       autocomplete="off" value="{{ value }}"
-       type="{% if one.type == 'date' %}date{% elif one.type == 'number' %}text{% else %}text{% endif %}"
+       autocomplete="off" value="{{ value }}" required
+       type="{% if one.type == 'date' %}date{% else %}text{% endif %}"
        {% if one.type == 'number' %}inputmode="decimal"{% endif %}>
+{% endif %}
+{% if errors['col-' + one.key] %}
+<p class="error">{{ errors['col-' + one.key] }}</p>
 {% endif %}
 {% endfor %}
 <p class="hint">{{ t('fields_on_contact_hint') }}</p>

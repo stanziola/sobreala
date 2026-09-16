@@ -4,8 +4,8 @@ Lo que se fija aquí es lo que hace que esto sirva y no haga daño. Que el tope
 del plan lo ponga `docs/pricing.md` y no una lista copiada. Que un archivo con
 columnas de más se pueda importar igual, porque lo que cuenta es lo que el
 cliente marca. Que lo que escribió otro salga **escapado** dentro de un correo
-nuestro. Y que a quien le falte un dato le llegue el respaldo y no un hueco en
-medio de la frase.
+nuestro. Y que un contacto sin todos sus datos no entre, y si ya estaba, no
+reciba nada hasta completarlo.
 """
 
 from __future__ import annotations
@@ -42,10 +42,18 @@ def csrf(client, url="/contactos/columnas"):
         return sess["_csrf"]
 
 
-def crear(browser, nombre, tipo="text", respaldo=""):
+def crear(browser, nombre, tipo="text"):
     return browser.post("/contactos/columnas/nueva", data={
-        "csrf_token": csrf(browser), "nombre": nombre, "tipo": tipo,
-        "respaldo": respaldo})
+        "csrf_token": csrf(browser, "/contactos/columnas/nueva"),
+        "nombre": nombre, "tipo": tipo})
+
+
+def guardar_contacto(browser, email, **columnas):
+    """Agregar uno a mano, como lo manda la pantalla."""
+    data = {"csrf_token": csrf(browser, "/contactos/nuevo"),
+            "email": email, "source": "members"}
+    data.update({f"col-{key}": value for key, value in columnas.items()})
+    return browser.post("/contactos/nuevo", data=data)
 
 
 def subir(browser, texto, **extra):
@@ -86,8 +94,7 @@ def test_el_nombre_de_la_columna_da_su_marca():
 def test_lo_que_escribio_otro_sale_escapado_dentro_del_correo():
     """El HTML de alrededor es nuestro y el dato es de otro: una etiqueta
     dentro de una celda no puede convertirse en etiqueta al enviar."""
-    columnas = [{"key": "CIUDAD", "label": "Ciudad", "type": "text",
-                 "default": "tu ciudad"}]
+    columnas = [{"key": "CIUDAD", "label": "Ciudad", "type": "text"}]
     quien = {"fields": {"CIUDAD": "<b>Santiago</b> & Co"}}
 
     salida = fields.fill("Hola *|CIUDAD|*", quien, columnas)
@@ -97,19 +104,26 @@ def test_lo_que_escribio_otro_sale_escapado_dentro_del_correo():
 
 
 def test_en_el_asunto_no_se_escapa_porque_es_texto():
-    columnas = [{"key": "EMPRESA", "label": "Empresa", "type": "text",
-                 "default": ""}]
+    columnas = [{"key": "EMPRESA", "label": "Empresa", "type": "text"}]
     quien = {"fields": {"EMPRESA": "Pérez & Cía"}}
 
     assert fields.fill("Para *|EMPRESA|*", quien, columnas,
                        html=False) == "Para Pérez & Cía"
 
 
-def test_a_quien_le_falta_el_dato_le_llega_el_respaldo():
-    columnas = [{"key": "CIUDAD", "label": "Ciudad", "type": "text",
-                 "default": "tu ciudad"}]
+def test_sin_dato_la_marca_se_queda_en_blanco():
+    """No hay respaldo: a quien le falta un dato no le llega el correo, así que
+    el caso no debería darse. Si se da, no se inventa nada."""
+    columnas = [{"key": "CIUDAD", "label": "Ciudad", "type": "text"}]
 
-    assert fields.fill("Hola *|CIUDAD|*", {}, columnas) == "Hola tu ciudad"
+    assert fields.fill("Hola *|CIUDAD|*", {}, columnas) == "Hola "
+
+
+def test_la_vista_previa_dibuja_el_nombre_de_la_columna():
+    columnas = [{"key": "CIUDAD", "label": "Ciudad", "type": "text"}]
+
+    assert fields.fill("Hola *|CIUDAD|*", fields.sample(columnas),
+                       columnas) == "Hola Ciudad"
 
 
 def test_una_columna_borrada_no_deja_la_marca_a_la_vista():
@@ -149,7 +163,7 @@ def test_dos_columnas_con_el_mismo_nombre_no_se_repiten(client, database,
 def test_borrar_la_columna_borra_lo_que_tenian_escrito(client, database,
                                                        outbox):
     browser, cuenta = inside(client, database)
-    crear(browser, "Ciudad", respaldo="tu ciudad")
+    crear(browser, "Ciudad")
     contacts.create(database, cuenta["_id"], email="socio@ejemplo.com",
                     consent=contacts.consent_of(contacts.MEMBERS),
                     values={"CIUDAD": "Santiago"})
@@ -227,26 +241,109 @@ def test_lo_que_no_es_de_ese_tipo_no_se_guarda(client, database, outbox):
 
 
 def test_reimportar_otra_columna_no_borra_la_anterior(client, database, outbox):
+    """A uno que ya existe se le actualiza lo que traiga el archivo, columna a
+    columna: traer la ciudad no le borra el monto."""
     browser, cuenta = inside(client, database)
     crear(browser, "Ciudad")
     crear(browser, "Monto", tipo="number")
 
-    subir(browser, "correo,ciudad\nana@coop.com,Santiago\n")
-    subir(browser, "correo,monto\nana@coop.com,300\n")
+    subir(browser, "correo,ciudad,monto\nana@coop.com,Santiago,300\n")
+    subir(browser, "correo,ciudad\nana@coop.com,David\n")
 
     quien = contacts.by_email(database, cuenta["_id"], "ana@coop.com")
-    assert fields.values_of(quien) == {"CIUDAD": "Santiago", "MONTO": "300"}
+    assert fields.values_of(quien) == {"CIUDAD": "David", "MONTO": "300"}
+
+
+def test_un_contacto_nuevo_sin_todas_sus_columnas_no_entra(client, database,
+                                                           outbox):
+    """Sin sus datos no podría recibir nada, así que entrar sería entrar de
+    peso muerto. El resultado dice cuántos se quedaron fuera."""
+    browser, cuenta = inside(client, database)
+    crear(browser, "Ciudad")
+    crear(browser, "Monto", tipo="number")
+
+    respuesta = subir(browser, "correo,ciudad\nana@coop.com,Santiago\n"
+                               "bea@coop.com,David\n")
+
+    assert contacts.count(database, cuenta["_id"]) == 0
+    assert "Sin todos sus datos" in respuesta.get_data(as_text=True)
+
+
+def test_a_mano_tampoco_entra_sin_todas_sus_columnas(client, database, outbox):
+    browser, cuenta = inside(client, database)
+    crear(browser, "Ciudad")
+
+    respuesta = guardar_contacto(browser, "ana@coop.com")
+    assert contacts.count(database, cuenta["_id"]) == 0
+    assert "Todas las columnas son obligatorias" in respuesta.get_data(as_text=True)
+
+    guardar_contacto(browser, "ana@coop.com", CIUDAD="Santiago")
+    assert contacts.count(database, cuenta["_id"]) == 1
+
+
+def test_un_valor_que_no_es_de_su_tipo_cuenta_como_que_falta(client, database,
+                                                             outbox):
+    browser, cuenta = inside(client, database)
+    crear(browser, "Vence", tipo="date")
+
+    respuesta = guardar_contacto(browser, "ana@coop.com", VENCE="cuando sea")
+
+    assert contacts.count(database, cuenta["_id"]) == 0
+    assert "no es del tipo de la columna" in respuesta.get_data(as_text=True)
+
+
+def test_cambiar_el_tipo_no_pisa_los_valores_que_no_encajan(client, database,
+                                                            outbox):
+    browser, cuenta = inside(client, database)
+    crear(browser, "Ciudad")
+    guardar_contacto(browser, "ana@coop.com", CIUDAD="Santiago")
+
+    respuesta = browser.post("/contactos/columnas/tipo", data={
+        "csrf_token": csrf(browser, "/contactos/columnas"),
+        "columna": "CIUDAD", "tipo": "number"}, follow_redirects=True)
+
+    fresca = accounts.by_id(database, cuenta["_id"])
+    assert accounts.fields_of(fresca)[0]["type"] == "text"
+    assert "No cambié el tipo" in respuesta.get_data(as_text=True)
+
+
+def test_el_tipo_se_cambia_cuando_todo_encaja(client, database, outbox):
+    browser, cuenta = inside(client, database)
+    crear(browser, "Monto")
+    guardar_contacto(browser, "ana@coop.com", MONTO="300")
+
+    browser.post("/contactos/columnas/tipo", data={
+        "csrf_token": csrf(browser, "/contactos/columnas"),
+        "columna": "MONTO", "tipo": "number"})
+
+    fresca = accounts.by_id(database, cuenta["_id"])
+    assert accounts.fields_of(fresca)[0]["type"] == "number"
+
+
+def test_con_el_plan_lleno_la_ruta_no_crea_ninguna(client, database, outbox):
+    """Apagar el botón no es un permiso: el formulario se puede escribir a
+    mano."""
+    browser, cuenta = inside(client, database, plan="basico")
+    crear(browser, "Ciudad")
+
+    crear(browser, "Monto")
+
+    fresca = accounts.by_id(database, cuenta["_id"])
+    assert [one["key"] for one in accounts.fields_of(fresca)] == ["CIUDAD"]
 
 
 # ---------------------------------------------------------------- el envío
 
-def test_cada_uno_recibe_lo_suyo(client, database, outbox, monkeypatch):
+def test_cada_uno_recibe_lo_suyo_y_el_incompleto_no_recibe(
+        client, database, outbox, monkeypatch):
+    """Lo de cada quien en su correo. Y al que le falta el dato no le llega
+    nada: ni con un hueco ni con un texto inventado."""
     salidos: list = []
     monkeypatch.setattr(sender, "deliver",
                         lambda message: salidos.append(message) or "de-mentira")
     browser, cuenta = inside(client, database)
     accounts.clear_sending(database, cuenta["_id"], cuenta["_id"])
-    crear(browser, "Ciudad", respaldo="tu ciudad")
+    crear(browser, "Ciudad")
     contacts.create(database, cuenta["_id"], email="socio0@ejemplo.com",
                     consent=contacts.consent_of(contacts.MEMBERS),
                     values={"CIUDAD": "Santiago"})
@@ -260,14 +357,14 @@ def test_cada_uno_recibe_lo_suyo(client, database, outbox, monkeypatch):
         "csrf_token": csrf(browser, "/envios"), "asunto": "Hola *|CIUDAD|*",
         "pieza": str(pieza), "lista": "", "cuando": "ahora"})
     una = database.campaigns.find_one({"account_id": cuenta["_id"]})
+    # Y la pantalla que pregunta cuenta lo mismo que va a salir.
+    pregunta = browser.get(f"/envios/{una['_id']}/mandar").get_data(as_text=True)
+    assert "Un contacto" in pregunta
     browser.post(f"/envios/{una['_id']}/mandar",
                  data={"csrf_token": csrf(browser, "/envios")})
 
-    assert len(salidos) == 2
-    escrito = {one["To"]: one for one in salidos}
-    # El que tiene el dato, y el que no: al segundo le llega el respaldo.
-    assert escrito["socio0@ejemplo.com"]["Subject"] == "Hola Santiago"
-    assert escrito["socio1@ejemplo.com"]["Subject"] == "Hola tu ciudad"
-    cuerpo = escrito["socio0@ejemplo.com"].get_body(("html",)).get_content()
+    assert [one["To"] for one in salidos] == ["socio0@ejemplo.com"]
+    assert salidos[0]["Subject"] == "Hola Santiago"
+    cuerpo = salidos[0].get_body(("html",)).get_content()
     assert "Asamblea en Santiago" in cuerpo
     assert "*|CIUDAD|*" not in cuerpo

@@ -614,8 +614,6 @@ TEXTS = {
     "contacts_history_hint": "Cuándo entró, por dónde y qué origen se declaró. "
                              "Es lo que hay que enseñar si alguien reclama que "
                              "no dio su correo, así que no se edita.",
-    "contacts_delete_hint": "Borrarlo no levanta su supresión: si pidió la "
-                            "baja, sigue dado de baja.",
     "contacts_blocked_tag": "Suprimido",
     "contacts_saved": "Listo, guardamos el contacto.",
 
@@ -631,9 +629,10 @@ TEXTS = {
     "contacts_how_import": "Importado",
     "contacts_status_active": "Activo",
     "contacts_status_blocked": "Anulado",
-    "contacts_status_blocked_hint": "Anulado quiere decir que está en tus "
-                                    "supresiones: se guarda, pero no recibe "
-                                    "nada.",
+    "contacts_status_incomplete": "Incompleto",
+    "contacts_counter_incomplete": "{n} sin completar, que no reciben correos.",
+    "contacts_counter_incomplete_one": "Uno sin completar, que no recibe "
+                                       "correos.",
 
     # --- etiquetas ---------------------------------------------------------
     # Se crean aquí y después se eligen. Escribirlas en cada formulario era lo
@@ -660,12 +659,20 @@ TEXTS = {
     "fields_type_number": "Número",
     "fields_type_date": "Fecha",
     "fields_type_yesno": "Sí o no",
-    "fields_default": "Qué escribir si el contacto no lo tiene",
-    "fields_default_example": "tu ciudad",
-    "fields_default_hint": "Sin esto, a quien le falte ese dato le llega la "
-                           "frase con un hueco en medio.",
-    "fields_no_default": "Sin respaldo",
     "fields_add": "Crear la columna",
+    "fields_add_action": "Agregar columna",
+    "fields_new_lead": "Un dato más de cada contacto. Se guarda con él y se "
+                       "escribe dentro de tus correos.",
+    "fields_name_hint": "Con este nombre la vas a reconocer, y de él sale la "
+                        "marca que se escribe dentro de la pieza.",
+    "fields_new_warning": "Ojo: tus {n} contactos se quedan sin este dato, y "
+                          "mientras les falte no reciben correos. Se completan "
+                          "editándolos o volviendo a importar el archivo con "
+                          "esa columna.",
+    "fields_new_where": "Para crear una nueva, ve a",
+    "fields_type_save": "Guardar",
+    "fields_col_filled": "La tienen",
+    "fields_filled": "{n} de {total}",
     "fields_delete": "Borrar",
     "fields_delete_hint": "Borrar una columna borra lo que cada contacto tenía "
                           "escrito en ella. Los contactos se quedan.",
@@ -677,14 +684,19 @@ TEXTS = {
     "fields_col_name": "Columna",
     "fields_col_mark": "Se escribe así",
     "fields_col_type": "Tipo",
-    "fields_col_default": "Si falta",
     "fields_on_contact": "Sus columnas",
-    "fields_on_contact_hint": "Lo que dejes en blanco usa el respaldo de esa "
-                              "columna cuando se envíe el correo.",
-    "fields_value_empty": "Sin responder",
+    "fields_on_contact_hint": "Todas son obligatorias: un contacto sin sus "
+                              "datos no recibe correos.",
+    "fields_pick": "Elige una",
     "fields_yes": "Sí",
     "fields_no": "No",
     "error_field": "Ese nombre no sirve o ya lo tiene otra columna.",
+    "error_field_value": "Ese dato no es del tipo de la columna.",
+    "error_fields_required": "Faltan datos. Todas las columnas son "
+                             "obligatorias: un contacto sin ellas no recibiría "
+                             "ningún correo.",
+    "error_field_type": "No cambié el tipo: {n} contactos tienen ahí un valor "
+                        "que no encaja. Corrígelos primero.",
     "error_fields_full": "Marcaste más columnas de las que caben en tu plan, "
                          "que son {n}. Desmarca algunas y vuelve a intentarlo.",
 
@@ -753,6 +765,10 @@ TEXTS = {
     "import_read": "Filas leídas",
     "import_added": "Contactos nuevos",
     "import_updated": "Ya estaban y se actualizaron",
+    "import_incomplete": "Sin todos sus datos",
+    "import_incomplete_hint": "Un contacto nuevo solo entra con todas tus "
+                              "columnas llenas. A los que ya estaban se les "
+                              "actualizó lo que traía el archivo.",
     "import_invalid": "Filas sin un correo válido",
     "import_suppressed": "De los importados, están suprimidos",
     "import_suppressed_hint": "Se guardan igual, pero no van a recibir nada "

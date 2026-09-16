@@ -196,7 +196,8 @@ def _cell(row: list[str], index: int | None) -> str:
 
 def run(db, account_id, stream: Any, *, tags: list[str],
         consent: dict[str, Any], limit: int,
-        take: dict[int, dict[str, Any]] | None = None
+        take: dict[int, dict[str, Any]] | None = None,
+        required: list[dict[str, Any]] | None = None
         ) -> tuple[dict[str, int], bool]:
     """Import the whole file. Returns (counts, hit_the_limit).
 
@@ -204,7 +205,12 @@ def run(db, account_id, stream: Any, *, tags: list[str],
     is what docs/pricing.md promises. The caller says so on the screen and
     invites them to move up a plan.
     """
-    counts = {"read": 0, "added": 0, "updated": 0, "invalid": 0, "suppressed": 0}
+    counts = {"read": 0, "added": 0, "updated": 0, "invalid": 0,
+              "suppressed": 0, "incomplete": 0}
+    # Las columnas de la cuenta. Un contacto **nuevo** solo entra con todas
+    # llenas: sin ellas no podría recibir nada, así que entrar sería entrar de
+    # peso muerto. A uno que ya existe se le actualiza lo que venga.
+    wanted = [one["key"] for one in (required or [])]
     # Los anulados no ocupan sitio: no pueden recibir nada.
     room = max(0, limit - contacts.active_count(db, account_id))
     stopped = False
@@ -229,6 +235,11 @@ def run(db, account_id, stream: Any, *, tags: list[str],
         # does not fit is left out, in the order the file had them.
         fits, full = [], False
         for one, key in zip(batch, keys):
+            if key not in known and any(not one[2].get(name) for name in wanted):
+                # Nuevo y sin todas sus columnas: no entra, y se cuenta aparte
+                # para poder decir cuántos se quedaron fuera y por qué.
+                counts["incomplete"] += 1
+                continue
             if key in known:
                 fits.append(one)
             elif room > 0:
