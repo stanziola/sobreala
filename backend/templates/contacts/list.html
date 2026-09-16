@@ -82,12 +82,9 @@
           {{ show(written.get(one.key, ''), one.type) or '—' }}</td>
         {% endfor %}
         <td>
-          {# La supresión se preguntó una sola vez para toda la página, y no se
-             guarda en el contacto: así no hay dos sitios que puedan decir cosas
-             distintas sobre lo mismo. #}
-          {% if row.email_normalized in blocked %}
-          <span class="tag tag--warn">{{ t('contacts_status_blocked') }}</span>
-          {% elif fields and missing(row, fields) %}
+          {# Los anulados no llegan hasta aquí: la consulta los deja fuera y se
+             miran en Supresiones, que es su pantalla. #}
+          {% if fields and missing(row, fields) %}
           {# Sin todas sus columnas no recibe correos, así que se ve aquí y no
              al descubrir que la campaña salió a menos gente. #}
           <span class="tag tag--warn"
@@ -116,14 +113,6 @@
     </tbody>
   </table>
 </div>
-
-{% if blocked_total %}
-<form method="post" action="{{ url_for('contacts.remove_suppressed') }}">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_remove_blocked') }}</button>
-</form>
-<p class="hint">{{ t('contacts_remove_blocked_hint') }}</p>
-{% endif %}
 
 {% if matching > per_page %}
 <div class="row">

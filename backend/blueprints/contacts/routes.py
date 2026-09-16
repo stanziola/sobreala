@@ -156,15 +156,14 @@ def index():
     except ValueError:
         skip = 0
 
+    # Los anulados no salen: la consulta los deja fuera, así que esta pantalla
+    # ya no tiene que preguntar cuáles lo están.
     found, matching = contacts.page(db, account["_id"], search=search, tag=tag,
                                     limit=PER_PAGE, skip=skip)
-    # One question for the whole page, never one per row: rule 10.
-    blocked = suppressions.among(db, account["_id"],
-                                 [c["email_normalized"] for c in found])
 
     return render_template(
         "contacts/list.html", section="lista",
-        **shared(db, account, rows=found, matching=matching, blocked=blocked,
+        **shared(db, account, rows=found, matching=matching,
                  search=search, tag=tag, skip=skip, per_page=PER_PAGE))
 
 

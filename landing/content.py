@@ -723,7 +723,7 @@ ABOUT = {
 # Una página y no un ancla al pie: así se puede enlazar desde fuera, aparece en
 # los buscadores y se puede mandar por WhatsApp sola.
 CONTACT_PAGE = {
-    "meta_title": "Contacto — Panamails",
+    "meta_title": "Contacto · Panamails",
     "meta_description": "Escríbenos por WhatsApp o por correo. Respondemos el "
                         "mismo día hábil, desde Santiago de Veraguas.",
     "hero": {
@@ -849,7 +849,7 @@ PRIVACY = {
                 "para detectar abuso y para responder cuando alguien no puede "
                 "entrar. La contraseña nunca se anota, en ninguna forma.",
                 "**Los correos que te enviamos:** guardamos el mensaje completo "
-                "—destinatario, asunto y cuerpo— de cada correo del sistema. Es "
+                "(destinatario, asunto y cuerpo) de cada correo del sistema. Es "
                 "lo que nos permite responder qué salió exactamente del "
                 "servidor cuando alguien dice que no le llegó el código.",
                 "**De tus envíos:** por cada correo de campaña, si se entregó, "
@@ -896,12 +896,12 @@ PRIVACY = {
                 "funcione. Todos actúan por instrucción nuestra:",
             ],
             "items": [
-                "**Amazon Web Services (Amazon SES)** — envío de los correos.",
-                "**MongoDB Atlas** — base de datos.",
-                "**Railway** — servidor de la aplicación.",
-                "**Cloudflare** — dominio, protección contra ataques y "
+                "**Amazon Web Services (Amazon SES)**: envío de los correos.",
+                "**MongoDB Atlas**: base de datos.",
+                "**Railway**: servidor de la aplicación.",
+                "**Cloudflare**: dominio, protección contra ataques y "
                 "almacenamiento de las imágenes de los correos.",
-                "**PayPal y Yappy** — cobro de los planes.",
+                "**PayPal y Yappy**: cobro de los planes.",
             ],
             "note": (
                 "Sus servidores están fuera de Panamá, principalmente en "
@@ -952,8 +952,8 @@ PRIVACY = {
                 "Nuestros clientes no pueden quitarlo. Una baja es inmediata, "
                 "no caduca y solo se revierte si la persona vuelve a "
                 "suscribirse y confirma por correo.",
-                "Los correos del sistema —el código de confirmación, los avisos "
-                "de tu cuenta— no llevan enlace de baja porque no son "
+                "Los correos del sistema (el código de confirmación, los "
+                "avisos de tu cuenta) no llevan enlace de baja porque no son "
                 "publicidad: son parte del servicio que contrataste.",
             ],
         },

@@ -1535,7 +1535,8 @@ def settings(section: str = "cuenta"):
         plans=plans.PLANS, cycles=plans.CYCLES, currency=plans.CURRENCY,
         paypal_ready=paypal.configured(),
         plan_until=accounts.plan_until(account),
-        payments=payments.for_account(db, account["_id"]),
+        # Solo lo cobrado: los intentos a medias se miran desde la ficha.
+        payments=payments.for_account(db, account["_id"], only_paid=True),
         confirmed=accounts.is_confirmed(account),
         plan=accounts.plan_of(account),
         two_step=accounts.two_factor_on(account),

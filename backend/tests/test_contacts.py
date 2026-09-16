@@ -270,8 +270,10 @@ def test_un_suprimido_se_guarda_marcado_y_sigue_marcado(client, database, outbox
     # Entra como los demás: el envío es el que lo salta, no la importación.
     assert contacts.by_email(database, cuenta["_id"], "bea@coop.com") is not None
     assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
-    pantalla = browser.get("/contactos").get_data(as_text=True)
-    assert "Anulado" in pantalla
+    # Y se mira en Supresiones, no mezclado con los que sí pueden recibir.
+    assert "bea@coop.com" not in browser.get("/contactos").get_data(as_text=True)
+    anulados = browser.get("/contactos/supresiones").get_data(as_text=True)
+    assert "bea@coop.com" in anulados
 
 
 def test_borrar_un_contacto_no_levanta_su_supresion(client, database, outbox):
@@ -452,15 +454,21 @@ def test_se_guarda_por_donde_entro_cada_contacto(client, database, outbox):
     assert "Cómo entró" not in pantalla
 
 
-def test_la_columna_de_estado_dice_activo_o_anulado(client, database, outbox):
+def test_la_lista_deja_fuera_a_los_anulados(client, database, outbox):
+    """Un anulado no puede recibir nada, así que mezclarlo con los demás era
+    enseñar una lista que no es a la que se le escribe."""
     browser = inside(client)
     upload(browser, LISTA)
     cuenta = account_of(database)
     suppressions.add(database, cuenta["_id"], "bea@coop.com")
 
     pantalla = browser.get("/contactos").get_data(as_text=True)
+
     assert "Activo" in pantalla
-    assert "Anulado" in pantalla
+    assert "ana@coop.com" in pantalla
+    assert "bea@coop.com" not in pantalla
+    # Pero se dice cuántos hay, para que la cuenta cuadre.
+    assert "1 anulado" in pantalla
 
 
 # ----------------------------------------------------------------- editar
@@ -548,9 +556,11 @@ def test_eliminar_los_anulados_deja_las_supresiones(client, database, outbox):
     assert contacts.count(database, cuenta["_id"]) == 2
     assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
 
-    # Y si vuelve en una importación, vuelve marcada.
+    # Y si vuelve en una importación, vuelve marcada: sigue sin salir en la
+    # lista y sigue en Supresiones.
     upload(browser, LISTA)
-    assert "Anulado" in browser.get("/contactos").get_data(as_text=True)
+    assert "bea@coop.com" not in browser.get("/contactos").get_data(as_text=True)
+    assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
 
 
 def test_agregar_a_mano_una_anulada_lo_avisa(client, database, outbox):

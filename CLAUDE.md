@@ -143,6 +143,10 @@ aplicación aparte: comparte modelos y servicios con el resto.
   sistema, mensajes de error, plantillas. Los textos de interfaz van en un solo
   archivo de traducciones, no dispersos en las plantillas.
 - Comentarios en inglés.
+- **En la interfaz no se usan guiones largos.** Un inciso va entre paréntesis,
+  con comas o con dos puntos. En el texto que lee un cliente —el panel, el sitio
+  y los correos— esa raya se lee como escrita por una máquina. En los
+  comentarios del código y en este documento da igual.
 - Implementaciones mínimas y directas. No agregar funcionalidad que no se pidió.
 - **No cambiar nada que no se haya pedido.** Si al hacer una tarea aparece algo
   más —un texto flojo, una regla que se salta en silencio, algo que se podría

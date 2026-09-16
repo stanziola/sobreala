@@ -70,20 +70,9 @@ def active_count(db, account_id) -> int:
 
     Una consulta que cruza las dos colecciones, no una por contacto.
     """
-    found = list(db.contacts.aggregate([
-        {"$match": {"account_id": account_id}},
-        {"$lookup": {
-            "from": "suppressions",
-            "let": {"correo": "$email_normalized", "cuenta": "$account_id"},
-            "pipeline": [{"$match": {"$expr": {"$and": [
-                {"$eq": ["$account_id", "$$cuenta"]},
-                {"$eq": ["$email_normalized", "$$correo"]},
-            ]}}}, {"$limit": 1}],
-            "as": "anulado",
-        }},
-        {"$match": {"anulado": {"$size": 0}}},
-        {"$count": "n"},
-    ]))
+    found = list(db.contacts.aggregate(
+        [{"$match": {"account_id": account_id}}] + _drop_suppressed() +
+        [{"$count": "n"}]))
     return found[0]["n"] if found else 0
 
 
@@ -264,6 +253,10 @@ def page(db, account_id, *, search: str = "", tag: str = "",
 
     The search is a plain prefix on the normalised address, which the unique
     index already covers: no regular expression walks the whole collection.
+
+    **Los anulados no salen aquí.** No pueden recibir nada, así que mezclarlos
+    con los demás era enseñar una lista que no es a la que se le escribe; se
+    miran en Supresiones, que es su pantalla, y desde ahí se borran.
     """
     query: dict[str, Any] = {"account_id": account_id}
     if tag:
@@ -271,9 +264,35 @@ def page(db, account_id, *, search: str = "", tag: str = "",
     if search:
         cleaned = normalize_email(search)
         query["email_normalized"] = {"$regex": f"^{_escape(cleaned)}"}
-    total = db.contacts.count_documents(query)
-    found = list(db.contacts.find(query).sort("created_at", -1).skip(skip).limit(limit))
-    return found, total
+
+    stages = [{"$match": query}] + _drop_suppressed()
+    counted = list(db.contacts.aggregate(stages + [{"$count": "n"}]))
+    found = list(db.contacts.aggregate(
+        stages + [{"$sort": {"created_at": -1}},
+                  {"$skip": skip}, {"$limit": limit}]))
+    return found, (counted[0]["n"] if counted else 0)
+
+
+def _drop_suppressed() -> list[dict[str, Any]]:
+    """Los pasos que sacan de una consulta a los que están suprimidos.
+
+    La supresión vive en su propia colección y no se marca en el contacto, así
+    que la única forma de saberlo es cruzar las dos. Se cruzan **en la misma
+    consulta**, no una por contacto, que es la regla 10.
+    """
+    return [
+        {"$lookup": {
+            "from": "suppressions",
+            "let": {"correo": "$email_normalized", "cuenta": "$account_id"},
+            "pipeline": [{"$match": {"$expr": {"$and": [
+                {"$eq": ["$account_id", "$$cuenta"]},
+                {"$eq": ["$email_normalized", "$$correo"]},
+            ]}}}, {"$limit": 1}],
+            "as": "anulado",
+        }},
+        {"$match": {"anulado": {"$size": 0}}},
+        {"$unset": "anulado"},
+    ]
 
 
 def _escape(text: str) -> str:

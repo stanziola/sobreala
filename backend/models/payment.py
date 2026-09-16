@@ -105,6 +105,18 @@ def until(cycle: str, *, since: datetime | None = None) -> datetime:
     return (since or now()) + timedelta(days=DAYS.get(cycle, DAYS["monthly"]))
 
 
-def for_account(db, account_id, *, limit: int = 20) -> list[dict[str, Any]]:
-    return list(db.payments.find({"account_id": account_id})
+def for_account(db, account_id, *, limit: int = 20,
+                only_paid: bool = False) -> list[dict[str, Any]]:
+    """Los intentos de esa cuenta, lo más reciente primero.
+
+    `only_paid` es para la pantalla del cliente: ahí un intento sin cobrar se
+    quedaría para siempre al lado del pago bueno, pareciendo que se debe algo
+    cuando no se debe nada. **No se deja de escribir ninguno**: son lo que
+    permite reconciliar a quien pagó y se le cerró el navegador en el camino de
+    vuelta, y la ficha del administrador los sigue pidiendo todos.
+    """
+    wanted: dict[str, Any] = {"account_id": account_id}
+    if only_paid:
+        wanted["status"] = COMPLETED
+    return list(db.payments.find(wanted)
                 .sort("created_at", -1).limit(limit))

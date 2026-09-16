@@ -557,8 +557,10 @@ TEXTS = {
     "contacts_counter": "{total} de {limit} contactos",
     "contacts_counter_left": "Te quedan {n}.",
     "contacts_full": "Llegaste al límite de tu plan.",
-    "contacts_counter_blocked": "{n} anulados, que no cuentan.",
-    "contacts_counter_blocked_one": "1 anulado, que no cuenta.",
+    "contacts_counter_blocked": "{n} anulados, que no cuentan y se miran en "
+                                "Supresiones.",
+    "contacts_counter_blocked_one": "1 anulado, que no cuenta y se mira en "
+                                    "Supresiones.",
     "contacts_export": "Exportar",
     # Se pregunta antes de descargar: el archivo trae lo que se ve en la
     # tabla, y eso hay que poder comprobarlo antes y no abriéndolo después.
@@ -788,6 +790,14 @@ TEXTS = {
                     "escribir. Se revisan antes de cada envío, y no gastan "
                     "cuota.",
     "blocked_empty": "No hay ninguna. Es lo normal al empezar.",
+    "blocked_how": "Hoy entran aquí de dos formas: cuando alguien pulsa el "
+                   "botón de anular la suscripción en uno de tus correos, y "
+                   "cuando agregas una dirección tú misma.",
+    "blocked_bounces_soon": "Los rebotes y las quejas todavía no entran solos. "
+                            "Para eso hace falta el aviso de Amazon, que se "
+                            "configura una vez y avisa por cada correo que no "
+                            "llegó; mientras tanto, una dirección que rebota no "
+                            "se anula sola.",
     "blocked_col_email": "Correo",
     "blocked_col_reason": "Motivo",
     "blocked_col_when": "Desde",

@@ -2,6 +2,10 @@
 {% block pane %}
 <h2 class="settings__title">{{ t('blocked_title') }}</h2>
 <p class="settings__lead">{{ t('blocked_lead') }}</p>
+{# Qué mete a alguien aquí hoy, y qué falta para que entren los rebotes: sin
+   esto hay que adivinarlo, y lo que se adivina es que ya funciona. #}
+<p class="hint">{{ t('blocked_how') }}</p>
+<p class="hint">{{ t('blocked_bounces_soon') }}</p>
 
 {% if request.args.get('guardado') %}
 <p class="notice notice--ok">{{ t('blocked_saved') }}</p>
@@ -46,6 +50,16 @@
   </table>
 </div>
 <p class="hint">{{ t('blocked_locked_hint') }}</p>
+
+{# Los contactos anulados se borran desde aquí, que es donde se les mira. Las
+   supresiones se quedan: la regla 2. #}
+{% if blocked_total %}
+<form method="post" action="{{ url_for('contacts.remove_suppressed') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_remove_blocked') }}</button>
+</form>
+<p class="hint">{{ t('contacts_remove_blocked_hint') }}</p>
+{% endif %}
 {% else %}
 <p class="lead">{{ t('blocked_empty') }}</p>
 {% endif %}

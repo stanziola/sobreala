@@ -471,6 +471,7 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     browser = inside(client)
     confirm(database)
     buy(browser)
+    come_back(browser)
 
     pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
     assert "/configuracion/pagos/contratar" not in pantalla
@@ -478,6 +479,28 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     assert "PayPal" in pantalla
     assert "Yappy" in pantalla
     assert "Tus pagos" in pantalla
+
+
+def test_tus_pagos_solo_ensena_lo_que_se_cobro(client, database, outbox,
+                                               monkeypatch):
+    """Un intento a medias se quedaría ahí para siempre al lado del pago bueno,
+    pareciendo que se debe algo cuando no se debe nada. Escrito sigue, que es
+    lo que permite reconciliarlo."""
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+    buy(browser)
+    come_back(browser)
+    # Y otro que se queda a medias: se crea la orden y nadie vuelve de PayPal.
+    buy(browser, plan="negocio")
+
+    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
+
+    assert pantalla.count("Pagado") == 1
+    assert "Sin terminar" not in pantalla
+    # Los dos intentos siguen escritos, que es de lo que vive la reconciliación.
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    assert len(payments.for_account(database, cuenta["_id"])) == 2
 
 
 # ------------------------------------------- bajar de plan no se hace por la web
