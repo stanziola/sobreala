@@ -427,6 +427,10 @@ PRICING = {
         },
     },
     "annual_note": "En el plan anual pagas diez meses y usas doce.",
+    # Con RUC hay que decir si el precio lleva impuesto, y se dice donde se
+    # mira el precio y no escondido en los términos.
+    "tax_note": ("Los precios son finales e incluyen el ITBMS cuando "
+                 "corresponde. Pagues desde donde pagues, es el mismo precio."),
     # Para que nadie llegue al botón de pagar y descubra ahí que no puede.
     "before_note": (
         "Para contratar creas tu cuenta, confirmas tu correo y ya. Antes de tu "
@@ -771,8 +775,11 @@ CONTACT_PAGE = {
 # propósito mientras no exista aviso de operación; en cuanto lo haya, se
 # escribe aquí y aparece solo en las dos páginas.
 LEGAL_HOLDER = {
-    "name": "Luis Stanziola",
-    "identifier": "",
+    # El nombre completo, que es el del aviso de operación: en un documento
+    # legal no vale el de diario.
+    "name": "Luis Alfredo Stanziola Guerra",
+    "identifier": ("RUC 9-764-1273 DV 65, con aviso de operación N.° "
+                   "9-764-1273-2026-574453501"),
     "place": "Santiago de Veraguas, provincia de Veraguas, Panamá",
 }
 
@@ -784,7 +791,7 @@ def holder_line() -> str:
         quien += f", {LEGAL_HOLDER['identifier']}"
     return f"{quien}, en {LEGAL_HOLDER['place']}."
 
-UPDATED = "7 de septiembre de 2026"
+UPDATED = "15 de septiembre de 2026"
 
 PRIVACY = {
     "meta_title": "Política de privacidad · Panamails",
@@ -1055,8 +1062,17 @@ TERMS = {
                 "Los precios, los límites de contactos y de correos, y las "
                 "condiciones de cada plan son los publicados en la página de "
                 "precios al momento de contratar.",
-                "El cobro se hace por Yappy o PayPal. La tarjeta no pasa por "
-                "nuestros servidores.",
+                "Los precios publicados son finales e incluyen el ITBMS "
+                "cuando corresponde.",
+                "El precio es el mismo desde donde sea que contrates. A un "
+                "cliente de fuera de Panamá se le factura como exportación de "
+                "servicios, sin ITBMS: cambia el desglose de su factura, no lo "
+                "que paga.",
+                "Por cada pago emitimos la factura y te la enviamos al correo "
+                "de tu cuenta.",
+                "El cobro se hace por PayPal desde el panel, o por Yappy "
+                "coordinándolo con nosotros, y en ese caso activamos el plan a "
+                "mano. La tarjeta no pasa por nuestros servidores.",
                 "Los correos no usados en el mes pasan al siguiente y vencen "
                 "ahí; se consumen primero los acumulados.",
                 "El plan anual se paga por adelantado con dos meses de "

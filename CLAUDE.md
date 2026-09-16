@@ -1266,9 +1266,13 @@ no se descubra el día del lanzamiento.
   es la dirección: `POSTAL_ADDRESS` está vacía y mientras lo esté el pie no la
   dibuja. Un apartado postal de Correos de Panamá cumple el requisito sin
   publicar un domicilio particular.
-- **Aviso de operación.** Hace falta para operar y facturar en Panamá
-  (panamaemprende.gob.pa). En cuanto exista se escribe en `LEGAL_HOLDER` de
-  `landing/content.py` y aparece solo en las dos páginas legales.
+- ~~**Aviso de operación.**~~ Hecho: RUC y aviso están en `LEGAL_HOLDER` de
+  `landing/content.py`, y `holder_line()` los escribe en la frase de apertura de
+  la privacidad y de los términos. **Los precios incluyen el ITBMS**, lo dicen
+  esas dos páginas, la de planes y `docs/pricing.md`, y a un cliente de fuera de
+  Panamá se le factura como exportación de servicios sin que cambie lo que paga.
+  Lo que falta de esto es **pedirle sus datos de facturación al cliente**: el
+  panel no guarda su RUC en ningún sitio, y una factura en Panamá lo necesita.
 - **Webhook de SNS para rebotes y quejas** (blueprint `webhooks/`). Es lo que
   llena `suppressions` sin intervención y lo que hace ciertas las defensas
   automáticas de la tabla de arriba. Sin él, una queja no bloquea el reenvío y

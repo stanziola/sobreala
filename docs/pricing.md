@@ -30,6 +30,11 @@ reglas de negocio asociadas.
 **Corporativo se publica sin precio visible**: *"A la medida — contáctanos"*.
 Los $300 son referencia interna, no una promesa pública.
 
+**Los precios son finales e incluyen el ITBMS cuando corresponde.** El mismo
+precio para todos: a un cliente de fuera de Panamá se le factura como
+exportación de servicios, sin ITBMS, así que cambia el desglose de su factura y
+no lo que paga.
+
 ### Complementos
 
 | | Precio |

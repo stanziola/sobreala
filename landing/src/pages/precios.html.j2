@@ -59,6 +59,9 @@
       {% endfor %}
     </ul>
     <p class="plans__note">{{ page.annual_note }}</p>
+    {#- Con RUC hay que decir si el precio lleva impuesto, y va junto al
+        precio: en los términos lo leería una de cada cien personas. -#}
+    <p class="plans__note">{{ page.tax_note }}</p>
     {#- Para que nadie llegue al botón de pagar y descubra ahí que su cuenta
         todavía no puede contratar. -#}
     <p class="plans__note">{{ page.before_note }}</p>
