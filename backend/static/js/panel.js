@@ -47,12 +47,32 @@
     if (themeLabel) themeLabel.textContent = theme === "dark" ? MODE.light : MODE.dark;
   }
 
+  // Written on the parent domain so panamails.com and panel.panamails.com read
+  // the same choice. Anywhere else (a local run) it stays on the host, which is
+  // shared anyway: cookies ignore ports.
+  function rememberTheme(theme) {
+    var parent = /(^|\.)panamails\.com$/.test(location.hostname)
+      ? "; domain=.panamails.com" : "";
+    var secure = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = "pm_theme=" + theme + "; path=/; max-age=31536000; SameSite=Lax"
+      + parent + secure;
+  }
+
+  // A choice made before the crumb existed lives only in this origin's
+  // storage: copy it over once, so the other site learns it too.
+  if (!/(?:^|;\s*)pm_theme=/.test(document.cookie)) {
+    var saved = null;
+    try { saved = localStorage.getItem("theme"); } catch (e) {}
+    if (saved === "dark" || saved === "light") rememberTheme(saved);
+  }
+
   // The server drew the light-mode row; the head script may have chosen dark.
   if (themeLabel && currentTheme() === "dark") themeLabel.textContent = MODE.light;
 
   themeBtn.addEventListener("click", function () {
     var next = currentTheme() === "dark" ? "light" : "dark";
     try { localStorage.setItem("theme", next); } catch (e) {}
+    rememberTheme(next);
     if (themeStatus) themeStatus.textContent = next === "dark" ? MODE.dark : MODE.light;
 
     var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -445,5 +465,46 @@
       last.selectionStart = last.selectionEnd = start + mark.length;
     }
     last.focus();
+    /* Para que quien escucha lo escrito (la vista previa en vivo) se entere. */
+    last.dispatchEvent(new Event("input", { bubbles: true }));
   });
+})();
+
+/* La bandeja de cargar una plantilla. El botón es un enlace a su propia
+   página; con JavaScript, en vez de irse, abre la bandeja con el mismo
+   formulario. */
+(function () {
+  Array.prototype.forEach.call(document.querySelectorAll("[data-open-dialog]"), function (link) {
+    var dialog = document.getElementById(link.getAttribute("data-open-dialog"));
+    if (!dialog || typeof dialog.showModal !== "function") return;
+    link.addEventListener("click", function (e) {
+      e.preventDefault();
+      dialog.showModal();
+    });
+    Array.prototype.forEach.call(dialog.querySelectorAll("[data-close-dialog]"), function (btn) {
+      btn.addEventListener("click", function () { dialog.close(); });
+    });
+    /* Un clic fuera de la bandeja, en el fondo oscuro, también la cierra. */
+    dialog.addEventListener("click", function (e) {
+      if (e.target === dialog) dialog.close();
+    });
+  });
+})();
+
+/* La vista previa que se refresca sola al escribir. Pulsa por su cuenta el
+   botón de ver cómo queda, que manda al marco de al lado: la respuesta trae
+   su propia cabecera de correo, cosa que un marco llenado desde aquí no
+   tendría. Espera a que se deje de escribir un momento. */
+(function () {
+  var form = document.querySelector("[data-live-preview]");
+  if (!form || typeof form.requestSubmit !== "function") return;
+  var button = form.querySelector("[data-preview-button]");
+  if (!button) return;
+  var timer = null;
+  function refresh() { form.requestSubmit(button); }
+  form.addEventListener("input", function () {
+    clearTimeout(timer);
+    timer = setTimeout(refresh, 700);
+  });
+  refresh();
 })();

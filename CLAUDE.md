@@ -502,11 +502,73 @@ clientes, para poder abrir una cuando haga falta; las prediseñadas llenas no
 salen ahí, porque son nuestras plantillas con el texto de alguien dentro y no hay
 ningún archivo ajeno que mirar.
 
-**El HTML de un cliente no se dibuja nunca dentro del panel**, ni en el suyo ni
-en el del administrador. Se baja como `text/plain`: meterlo en una página
-nuestra sería meter el documento de otro en una sesión abierta.
+**El HTML de un cliente se dibuja solo para él, y solo en un marco aislado.**
+Es lo que deja editarlo viendo cómo queda (`/plantillas/html/<id>`): el código a
+un lado, la vista previa al otro, y un botón por columna que escribe su marca
+donde está el cursor. El marco va con `sandbox` y sin ningún permiso —origen
+opaco, sin scripts, sin ver la galleta— y la respuesta lleva la cabecera de
+seguridad de un correo, no la del panel. Antes de dibujarse pasa el validador:
+lo que no se podría guardar tampoco se enseña, y en su lugar sale por qué. Con
+JavaScript se refresca sola al dejar de escribir, pulsando por su cuenta el
+botón de ver cómo queda; un marco llenado desde el panel heredaría la cabecera
+del panel y no dejaría pasar los estilos del correo. **En el panel del
+administrador sigue sin dibujarse**: allí se baja como `text/plain`.
+
+**La pantalla de Plantillas tiene dos caminos arriba**: Crear plantilla (el
+lienzo, de todos los planes) y Cargar plantilla personalizada, que con un plan
+que no lo permite sale apagado —y la ruta lo comprueba igual—. Cargar abre una
+bandeja con el formulario; sin JavaScript el botón lleva a `/plantillas/cargar`,
+que es la misma ruta. Al cargar se va directo al editor. Debajo, dos notas —el
+dato de cada persona, con las columnas de esa cuenta, y el tope de 102 KB— y la
+lista de todas sus piezas, con Editar, Duplicar y Borrar. **Duplicar copia las
+imágenes por nombre**, así que borrar una pieza solo borra las imágenes que
+ninguna otra nombra.
+
+## El lienzo de «Crear plantilla»
+
+`/plantillas/crear` y `/plantillas/lienzo/<id>`, con `services/canvas.py` y
+`static/js/canvas.js`. **Es un lienzo libre, por diapositivas de 600 px**: texto,
+botón e imagen se ponen donde se quiera, se mueven, cambian de tamaño y de
+estilo, y se deshace y rehace. Se guarda **el lienzo en JSON con sus
+coordenadas** (`source: "canvas"`), no el HTML: el correo se arma al enviar.
+
+**Ningún lector de correo respeta posiciones libres** —Gmail las borra y Outlook
+dibuja con el motor de Word—, así que `to_html()` traduce las coordenadas a una
+**cuadrícula de tablas con medidas fijas**: reparte en franjas y columnas una y
+otra vez hasta que cada caja queda sola, con los huecos medidos alrededor. Es un
+corte en guillotina; el único arreglo que no lo admite es un molinillo, y ese no
+se deja guardar.
+
+**Las imágenes no entran en la cuadrícula: se funden en un solo fondo por
+diapositiva** (`backgrounds()`, con Pillow, al doble de resolución), que va en la
+celda de la diapositiva y, para Outlook de escritorio, en su versión VML. Por eso
+pueden encimarse entre ellas y siempre quedan atrás. **Los textos y los botones
+son texto de verdad**, encima: es lo que evita que el correo se lea como una foto
+(de lo que más va a spam), lo que deja funcionar `*|EDAD|*` y lo que se sigue
+leyendo con las imágenes bloqueadas. Por la misma razón **no se deja encimar un
+texto sobre otro ni sobre un botón**: el editor los marca en rojo y el servidor
+no guarda.
+
+**El servidor no se fía del JSON**: `parse()` lo rehace con solo lo que conoce y
+`problems()` exige fuentes de la lista (las que existen en todos los correos),
+letra de 14 a 72 px, colores `#RRGGBB`, enlaces `https://` o `mailto:`, cada cosa
+dentro de su diapositiva, e imágenes de esa cuenta. El texto se guarda como texto
+y sale escapado. La vista previa usa el mismo `to_html()` que el envío, con los
+fondos dentro de la respuesta para no guardar nada por mirar.
+
+**Las fotos del lienzo se guardan a 1200 px** y cuentan contra el tope de 20; **los
+fondos fundidos no** (`kind: "background"` en `images`): los hace el sistema. Al
+volver a guardar, los fondos viejos se borran si ninguna otra pieza los nombra,
+que es lo que pasa con una copia.
+
+El formato va **por caja de texto entera**: una caja es toda de la misma fuente,
+tamaño y color. Formato por palabra complica que llegue igual a Outlook.
 
 ## Las plantillas prediseñadas
+
+**Ya no se ofrecen.** Las piezas que alguien armó con ellas siguen en su lista y
+se editan con el formulario de siempre (`/plantillas/pieza/<id>`); empezar una
+nueva ya no se puede. Lo de abajo describe cómo funcionan esas piezas.
 
 Cuatro, en `backend/email_templates/`, en el HTML que entienden los lectores de
 correo —tablas y estilos en línea—:
@@ -859,8 +921,9 @@ columnas propias**, si está activo, anulado o incompleto, sus etiquetas y
 cuándo entró—, la importación, las etiquetas, las columnas propias y las
 supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
 desde un botón encima de la lista, y exportar pasa por una confirmación que dice
-cuántos van a salir. **`/plantillas`** enseña las cuatro prediseñadas para
-elegir una y llenarla, las que ya armó y las que subió como HTML. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
+cuántos van a salir. **`/plantillas`** tiene arriba crear y cargar, y debajo
+todas las piezas de la cuenta: las del lienzo, las cargadas en HTML y las
+prediseñadas que quedaron de antes. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
 dispositivos conectados), **Notificaciones** y **Opciones de pago**, donde se
 contrata un plan con PayPal y se ven los pagos hechos. Yappy sigue por
@@ -880,6 +943,13 @@ dos filas sueltas de algo que casi no se toca. **El panel va primero** porque es
 lo que se dedica la empresa; lo demás son ajustes, y se buscan cuando hacen
 falta. Sin sesión el mismo control es un botón de tres líneas con las dos que
 sirven sin cuenta.
+
+**El modo claro u oscuro viaja entre los dos sitios en la galleta `pm_theme`**,
+en `.panamails.com`. El sitio y el panel son dos orígenes y cada uno tiene su
+propio almacenamiento, así que guardarlo solo ahí dejaba el panel en claro
+después de elegir oscuro en el sitio. El guion de la cabecera de los dos mira
+primero la galleta; lo que alguien eligió antes de que existiera se copia a ella
+la primera vez que abre cualquiera de los dos.
 
 **El idioma está anunciado, no traducido.** El menú enseña «Español» y «Inglés
 (pronto)»; el inglés se hará cuando haya a quién dárselo.

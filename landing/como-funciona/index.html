@@ -21,7 +21,12 @@
   // Runs before the stylesheet so the page never paints the wrong theme.
   (function () {
     var t;
-    try { t = localStorage.getItem("theme"); } catch (e) {}
+    // The shared crumb first: the site and the panel are two origins, and
+    // localStorage is per origin, so only a cookie on the parent domain lets a
+    // choice made on one be seen on the other.
+    var c = /(?:^|;\s*)pm_theme=(dark|light)/.exec(document.cookie);
+    if (c) t = c[1];
+    else try { t = localStorage.getItem("theme"); } catch (e) {}
     if (t !== "dark" && t !== "light") {
       t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
@@ -207,7 +212,7 @@
         <div class="flow__body">
           <h3 class="flow__title">Arma tu mensaje</h3>
           <p class="flow__lead">Eliges una plantilla, escribes el asunto y el contenido, y lo previsualizas antes de enviar.</p>
-          <p class="flow__text">Partes de una plantilla prediseñada y cambias textos e imágenes, o subes tu propio HTML desde el plan Negocio. La previsualización te muestra el correo tal como va a llegar, y puedes enviarte una prueba a tu propia dirección para verla en tu bandeja antes de que la vea nadie más. Si prefieres no armarla tú, te diseñamos la pieza con tu marca y la reutilizas cada mes.</p>
+          <p class="flow__text">La armas en el editor, poniendo textos, botones e imágenes donde quieras, o cargas tu propio HTML desde el plan Negocio. La previsualización te muestra el correo tal como va a llegar, y puedes enviarte una prueba a tu propia dirección para verla en tu bandeja antes de que la vea nadie más. Si prefieres no armarla tú, te diseñamos la pieza con tu marca y la reutilizas cada mes.</p>
         </div>
       </li>
       <li class="flow__item">

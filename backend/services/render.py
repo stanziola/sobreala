@@ -144,6 +144,23 @@ def email(key: str, filled: dict[str, str], *, plan: str | None,
     )
 
 
+def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
+                    preview: bool = False) -> str:
+    """Un correo a partir de un cuerpo ya armado por nosotros, como el del
+    lienzo: el mismo sobre que las prediseñadas, con la baja, la dirección
+    postal y la marca de agua por fuera.
+
+    `body` tiene que venir ya escapado: aquí va dentro sin tocarlo.
+    """
+    return _env.get_template("_wrap.html").render(
+        cuerpo=Markup(body),
+        unsubscribe=unsubscribe,
+        preview=preview,
+        watermark=plans.has_watermark(plan),
+        postal=Config.POSTAL_ADDRESS,
+    )
+
+
 def foot(*, plan: str | None, unsubscribe: str = "#",
          preview: bool = False) -> str:
     """Solo lo que ponemos nosotros: la baja, la dirección postal y la marca.

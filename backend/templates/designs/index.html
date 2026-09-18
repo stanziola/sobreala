@@ -6,72 +6,78 @@
 <h1 class="settings__heading">{{ t('designs_title') }}</h1>
 <p class="settings__lead">{{ t('designs_lead') }}</p>
 
-{% if saved %}
-<p class="notice notice--ok">{{ t('designs_saved') }}</p>
-{% endif %}
-{% if updated %}
-<p class="notice notice--ok">{{ t('designs_updated') }}</p>
-{% endif %}
-{% if errors.form %}<p class="notice">{{ errors.form }}</p>{% endif %}
+{% if saved %}<p class="notice notice--ok">{{ t('designs_saved') }}</p>{% endif %}
+{% if updated %}<p class="notice notice--ok">{{ t('designs_updated') }}</p>{% endif %}
+{% if copied %}<p class="notice notice--ok">{{ t('designs_copied') }}</p>{% endif %}
 
-<h2 class="settings__subtitle">{{ t('designs_ready_title') }}</h2>
-<p class="settings__lead">{{ t('designs_ready_lead') }}</p>
-{% if built_in %}
-<div class="picks">
-  {% for one in built_in %}
-  <div class="picks__one">
-    <b>{{ one.name }}</b>
-    <p class="table__quiet">{{ one.text }}</p>
-    <a class="btn btn--small" href="{{ url_for('designs.new', key=one.key) }}">{{ t('designs_use') }}</a>
-  </div>
-  {% endfor %}
+<div class="start">
+  {# El lienzo. Es de todos los planes. #}
+  <a class="btn start__one" href="{{ url_for('designs.create') }}">{{ t('designs_create') }}</a>
+  {% if can_upload %}
+  <a class="btn start__one" href="{{ url_for('designs.upload') }}"
+     data-open-dialog="cargar">{{ t('designs_upload_button') }}</a>
+  {% else %}
+  {# Apagado y sin enlace: el plan no da. La ruta lo comprueba igual. #}
+  <span class="btn btn--off start__one" aria-disabled="true">{{ t('designs_upload_button') }}</span>
+  {% endif %}
 </div>
-{% else %}
-<p class="hint">{{ t('designs_ready_empty') }}</p>
+{% if not can_upload %}
+<p class="hint">{{ t('designs_locked', plan=upload_plan) }}
+  <a href="{{ site_url }}/planes/">{{ t('contacts_plans') }}</a></p>
 {% endif %}
 
-<h2 class="settings__subtitle">{{ t('designs_filled_title') }}</h2>
-{% if filled %}
+<ul class="notes">
+  <li>
+    {% if columns %}
+    {% set first = columns[0] %}
+    {{ t('designs_note_columns', mark='*|' ~ first.key ~ '|*', what=first.label) }}
+    <span class="notes__marks">{% for one in columns %}<code>*|{{ one.key }}|*</code>{% if not loop.last %} {% endif %}{% endfor %}</span>
+    {% else %}
+    {{ t('designs_note_columns_none') }}
+    <a href="{{ url_for('contacts.index') }}">{{ t('designs_note_columns_link') }}</a>
+    {% endif %}
+  </li>
+  <li>{{ t('designs_note_size', kb=max_kb) }}</li>
+</ul>
+
+<h2 class="settings__subtitle">{{ t('designs_mine_title') }}</h2>
+{% if mine %}
 <div class="table-wrap">
   <table class="table">
     <tbody>
-      {% for one in filled %}
+      {% for one in mine %}
       <tr>
         <td><b>{{ one.name }}</b></td>
-        <td class="table__quiet">{{ t('designs_from', name=named.get(one.template, one.template)) }}</td>
+        <td class="table__quiet">
+          {%- if one.source == 'upload' -%}
+          {{ t('designs_kind_upload', kb=((one.bytes or 0) / 1024)|round(1)) }}
+          {%- elif one.source == 'canvas' -%}
+          {%- set n = one.canvas.slides|length if one.canvas else 0 -%}
+          {{ t('designs_kind_canvas_one') if n == 1 else t('designs_kind_canvas', n=n) }}
+          {%- else -%}
+          {{ t('designs_from', name=named.get(one.template, one.template)) }}
+          {%- endif -%}
+        </td>
         <td class="table__quiet">{{ (one.updated_at or one.created_at)|ago }}</td>
         <td>
+          {% if one.source == 'upload' %}
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('designs.edit_html', raw=one._id) }}">{{ t('designs_edit') }}</a>
+          {% elif one.source == 'canvas' %}
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('designs.edit_canvas', raw=one._id) }}">{{ t('designs_edit') }}</a>
+          {% else %}
           <a class="btn btn--small btn--outline"
              href="{{ url_for('designs.piece', raw=one._id) }}">{{ t('designs_edit') }}</a>
+          {% endif %}
         </td>
         <td>
-          <form method="post" action="{{ url_for('designs.remove') }}">
+          <form method="post" action="{{ url_for('designs.copy') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="id" value="{{ one._id }}">
-            <button class="btn btn--small btn--outline" type="submit">{{ t('designs_delete') }}</button>
+            <button class="btn btn--small btn--outline" type="submit">{{ t('designs_copy') }}</button>
           </form>
         </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% else %}
-<p class="hint">{{ t('designs_filled_empty') }}</p>
-{% endif %}
-
-<h2 class="settings__subtitle">{{ t('designs_uploaded_title') }}</h2>
-{% if uploaded %}
-{# El HTML de un cliente no se dibuja dentro del panel: es de otro y esta
-   página lleva su sesión abierta. Se enseña qué es y cuánto pesa. #}
-<div class="table-wrap">
-  <table class="table">
-    <tbody>
-      {% for one in uploaded %}
-      <tr>
-        <td><b>{{ one.name }}</b></td>
-        <td class="table__quiet">{{ t('designs_size', kb=(one.bytes / 1024)|round(1)) }}</td>
-        <td class="table__quiet">{{ one.created_at|ago }}</td>
         <td>
           <form method="post" action="{{ url_for('designs.remove') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -88,35 +94,16 @@
 <p class="hint">{{ t('designs_mine_empty') }}</p>
 {% endif %}
 
-<h2 class="settings__subtitle">{{ t('designs_upload_title') }}</h2>
 {% if can_upload %}
-<p class="settings__lead">{{ t('designs_upload_hint', kb=max_kb) }}</p>
-
-{% include "designs/_columns.html" %}
-
-<form method="post" enctype="multipart/form-data" novalidate>
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-  <label for="nombre">{{ t('designs_name') }}</label>
-  <input id="nombre" name="nombre" type="text" maxlength="80" autocomplete="off">
-  <p class="hint">{{ t('designs_name_hint') }}</p>
-
-  {# El mismo botón nuestro que en importar: el del navegador no se puede
-     pintar, así que el campo se esconde y la etiqueta lo abre. #}
-  <p class="field-label" id="archivo-label">{{ t('designs_file') }}</p>
-  <div class="filepick">
-    <input id="archivo" name="archivo" type="file" accept=".html,text/html"
-           class="filepick__input" aria-labelledby="archivo-label" required>
-    <label class="btn btn--outline btn--small" for="archivo">{{ t('import_file_choose') }}</label>
-    <span class="filepick__name" data-file-name>{{ t('import_file_none') }}</span>
+{# La bandeja de cargar. Sin JavaScript el botón lleva a su propia página,
+   con el mismo formulario. #}
+<dialog class="drawer" id="cargar" aria-labelledby="cargar-titulo">
+  <div class="drawer__head">
+    <h2 class="settings__subtitle" id="cargar-titulo">{{ t('designs_upload_title') }}</h2>
+    <button class="drawer__close" type="button" data-close-dialog
+            aria-label="{{ t('designs_close') }}">×</button>
   </div>
-  {% if errors.archivo %}<p class="error">{{ errors.archivo }}</p>{% endif %}
-
-  <button class="btn" type="submit">{{ t('designs_submit') }}</button>
-</form>
-{% else %}
-{# Y el servidor lo comprueba igual: esconder un botón no es un permiso. #}
-<p class="hint">{{ t('designs_locked', plan=upload_plan) }}
-  <a href="{{ site_url }}/planes/">{{ t('contacts_plans') }}</a></p>
+  {% include "designs/_upload_form.html" %}
+</dialog>
 {% endif %}
 {% endblock %}

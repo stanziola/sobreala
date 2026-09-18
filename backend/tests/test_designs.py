@@ -62,7 +62,7 @@ def foto(ancho=1600, alto=1200, formato="JPEG"):
 
 
 def subir(client, raw, *, name="", filename="pieza.html"):
-    return client.post("/plantillas", data={
+    return client.post("/plantillas/cargar", data={
         "csrf_token": csrf(client), "nombre": name,
         "archivo": (io.BytesIO(raw), filename)},
         content_type="multipart/form-data")
@@ -109,6 +109,8 @@ def test_el_basico_no_sube_html_y_la_pantalla_lo_dice(client, database, outbox):
 
     pantalla = browser.get("/plantillas").get_data(as_text=True)
     assert "desde el plan Negocio" in pantalla
+    # El botón está, pero apagado y sin enlace.
+    assert 'href="/plantillas/cargar"' not in pantalla
 
     subir(browser, LIMPIO)
     assert designs.count(database, accounts.by_email(database, "ana@ejemplo.com")["_id"]) == 0
@@ -153,7 +155,9 @@ def test_lo_que_pasa_el_validador_queda_listo(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
 
     respuesta = subir(browser, LIMPIO, name="Primera")
-    assert "Listo, ya la puedes usar" in browser.get(
+    # Va directo a su editor, y dice que ya se puede usar.
+    assert "/plantillas/html/" in respuesta.headers["Location"]
+    assert "Ya la puedes usar" in browser.get(
         respuesta.headers["Location"]).get_data(as_text=True)
 
     subir(browser, LIMPIO, name="Segunda")
@@ -184,27 +188,62 @@ def test_plantillas_pide_sesion(client, database):
 
 # ------------------------------------------------- las prediseñadas del producto
 
-def llenar(client, key, data, *, accion="guardar"):
-    body = {"csrf_token": csrf(client, f"/plantillas/nueva/{key}"),
-            "accion": accion}
+def pieza_de_antes(client, key, email="ana@ejemplo.com", **campos):
+    """Una prediseñada llena, como las que quedaron de antes. Ya no se crean
+    desde la pantalla, pero las que existen se siguen editando."""
+    from db import get_db
+
+    with client.application.app_context():
+        db = get_db()
+        cuenta = accounts.by_email(db, email)
+        base = {one["name"]: ("x" if one.get("required") else "")
+                for one in render.fields_of(key)}
+        base.update(campos)
+        return designs.save_filled(db, cuenta["_id"], name="De antes",
+                                   template=key, filled=base)
+
+
+def llenar(client, key, data, *, accion="guardar", email="ana@ejemplo.com"):
+    """Editar una de antes, con el formulario de siempre."""
+    url = f"/plantillas/pieza/{pieza_de_antes(client, key, email)}"
+    body = {"csrf_token": csrf(client, url), "accion": accion}
     body.update(data)
-    return client.post(f"/plantillas/nueva/{key}", data=body)
+    return client.post(url, data=body)
 
 
 AVISO = {"titulo": "Corte de agua", "texto": "El martes desde las 8.",
          "boton": "", "enlace": "", "nombre": "Aviso de corte"}
 
 
-def test_las_prediseñadas_las_ve_tambien_el_basico(client, database, outbox):
-    """Son de todos los planes; lo que es de Negocio en adelante es subir HTML."""
+def test_la_pantalla_tiene_los_dos_caminos_y_no_las_prediseñadas(
+        client, database, outbox):
     browser = inside(client)
-    with_plan(database, "basico")
+    with_plan(database, "negocio")
 
     pantalla = browser.get("/plantillas").get_data(as_text=True)
-    for name in ("Aviso", "Anuncio", "Boletín", "Convocatoria"):
-        assert name in pantalla
-    # Y la puerta del HTML propio sigue cerrada.
-    assert "desde el plan Negocio" in pantalla
+    assert "Crear plantilla" in pantalla
+    assert "Cargar plantilla personalizada" in pantalla
+    assert 'href="/plantillas/cargar"' in pantalla
+    assert "Usar esta" not in pantalla
+    # Las dos notas: el dato de cada persona y el tamaño máximo.
+    assert "*|EDAD|*" in pantalla
+    assert "102 KB" in pantalla
+
+
+def test_la_nota_usa_las_columnas_de_la_cuenta(client, database, outbox):
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {
+        "contact_fields": [{"key": "CIUDAD", "label": "Ciudad", "type": "text"}]}})
+
+    pantalla = browser.get("/plantillas").get_data(as_text=True)
+    assert "*|CIUDAD|*" in pantalla
+    assert "*|EDAD|*" not in pantalla
+
+
+def test_ya_no_se_empieza_una_prediseñada(client, database, outbox):
+    browser = inside(client)
+    assert browser.get("/plantillas/nueva/aviso").status_code == 404
 
 
 def test_cada_plantilla_se_arma_con_sus_campos():
@@ -268,7 +307,8 @@ def test_lo_obligatorio_no_se_puede_dejar_vacio(client, database, outbox):
     respuesta = llenar(browser, "aviso", dict(AVISO, texto=""))
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
 
-    assert designs.count(database, cuenta["_id"]) == 0
+    # Lo guardado sigue como estaba.
+    assert designs.for_account(database, cuenta["_id"])[0]["fields"]["texto"] == "x"
     assert "Falta llenar" in respuesta.get_data(as_text=True)
 
 
@@ -284,17 +324,20 @@ def test_la_pieza_de_otro_no_se_abre(client, database, outbox):
 
 def test_una_plantilla_que_no_existe_no_se_abre(client, database, outbox):
     browser = inside(client)
-    assert browser.get("/plantillas/nueva/inventada").status_code == 404
-    # Y el sobre no es una plantilla que se pueda elegir.
-    assert browser.get("/plantillas/nueva/_wrap").status_code == 404
+    assert browser.get(
+        f"/plantillas/pieza/{pieza_de_antes(browser, 'inventada')}").status_code == 404
+    # Y el sobre no es una plantilla.
+    assert browser.get(
+        f"/plantillas/pieza/{pieza_de_antes(browser, '_wrap')}").status_code == 404
 
 
 # ---------------------------------------------------------------- las imágenes
 
 def poner_imagen(client, key, raw, *, campo="imagen", filename="foto.jpg"):
     """Elegir un archivo y pulsar «Subir imagen», como en la pantalla."""
-    return client.post(f"/plantillas/nueva/{key}", data={
-        "csrf_token": csrf(client, f"/plantillas/nueva/{key}"),
+    url = f"/plantillas/pieza/{pieza_de_antes(client, key)}"
+    return client.post(url, data={
+        "csrf_token": csrf(client, url),
         "accion": f"imagen:{campo}",
         "archivo_" + campo: (io.BytesIO(raw), filename)},
         content_type="multipart/form-data")
@@ -383,7 +426,8 @@ def test_borrar_la_pieza_borra_sus_imagenes(client, database, outbox):
     llenar(browser, "anuncio", {"titulo": "Oferta", "texto": "Hasta el viernes",
                                 "boton": "", "enlace": "", "imagen": nombre,
                                 "nombre": "Oferta"})
-    guardada = designs.for_account(database, cuenta["_id"])[0]
+    guardada = next(d for d in designs.for_account(database, cuenta["_id"])
+                    if d["fields"].get("imagen"))
     assert guardada["fields"]["imagen"] == nombre
 
     browser.post("/plantillas/borrar", data={
@@ -401,7 +445,7 @@ def test_la_imagen_de_otro_no_se_puede_poner_en_la_propia(client, database, outb
     bea = inside(client, "bea@ejemplo.com")
     llenar(bea, "anuncio", {"titulo": "Oferta", "texto": "Hasta el viernes",
                             "boton": "", "enlace": "", "imagen": de_ana,
-                            "nombre": "Oferta"})
+                            "nombre": "Oferta"}, email="bea@ejemplo.com")
 
     suya = accounts.by_email(database, "bea@ejemplo.com")
     assert designs.for_account(database, suya["_id"])[0]["fields"]["imagen"] == ""
@@ -429,3 +473,130 @@ def test_hay_un_tope_de_imagenes_por_cuenta(client, database, outbox):
     respuesta = poner_imagen(browser, "anuncio", foto())
     assert images.count(database, cuenta["_id"]) == images.LIMIT
     assert "es el máximo" in respuesta.get_data(as_text=True)
+
+
+# ------------------------------------------------------------ duplicar
+
+def test_duplicar_deja_una_copia_con_otro_nombre(client, database, outbox):
+    browser = inside(client)
+    with_plan(database, "negocio")
+    subir(browser, LIMPIO, name="Boletín")
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    original = designs.for_account(database, cuenta["_id"])[0]
+
+    browser.post("/plantillas/duplicar", data={
+        "csrf_token": csrf(browser), "id": str(original["_id"])})
+
+    nombres = sorted(d["name"] for d in designs.for_account(database, cuenta["_id"]))
+    assert nombres == ["Boletín", "Copia de Boletín"]
+
+
+def test_la_de_otro_no_se_duplica(client, database, outbox):
+    ana = inside(client)
+    with_plan(database, "negocio")
+    subir(ana, LIMPIO)
+    suya = designs.for_account(
+        database, accounts.by_email(database, "ana@ejemplo.com")["_id"])[0]
+
+    bea = inside(client, "bea@ejemplo.com")
+    bea.post("/plantillas/duplicar", data={
+        "csrf_token": csrf(bea), "id": str(suya["_id"])})
+    de_bea = accounts.by_email(database, "bea@ejemplo.com")
+    assert designs.count(database, de_bea["_id"]) == 0
+
+
+def test_borrar_la_copia_no_le_quita_la_imagen_a_la_original(client, database, outbox):
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    nombre = images.save(database, cuenta["_id"], data=foto(200, 100), ext="jpg",
+                         mime="image/jpeg")
+    original = designs.save_filled(database, cuenta["_id"], name="Oferta",
+                                   template="anuncio",
+                                   filled={"titulo": "Oferta", "texto": "Hoy",
+                                           "imagen": nombre})
+    copia = designs.duplicate(database, cuenta["_id"], original, name="Copia")
+
+    browser.post("/plantillas/borrar", data={
+        "csrf_token": csrf(browser), "id": str(copia)})
+
+    assert images.count(database, cuenta["_id"]) == 1
+    assert other(client).get(f"/img/{nombre}").status_code == 200
+
+
+# ------------------------------------------------------ editar el HTML
+
+def abrir_html(client, database, *, plan="negocio", html=LIMPIO):
+    browser = inside(client)
+    with_plan(database, plan)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    pieza = designs.save(database, cuenta["_id"], name="Boletín",
+                         html=html.decode("utf-8"))
+    return browser, f"/plantillas/html/{pieza}", pieza
+
+
+def test_el_html_se_edita_y_se_guarda(client, database, outbox):
+    browser, url, pieza = abrir_html(client, database)
+    pantalla = browser.get(url).get_data(as_text=True)
+    assert "Hola socios" in pantalla
+
+    nuevo = "<html><body><h1>Hola *|NOMBRE|*</h1></body></html>"
+    respuesta = browser.post(url, data={
+        "csrf_token": csrf(browser, url), "accion": "guardar",
+        "nombre": "Boletín de junio", "html": nuevo})
+    assert respuesta.status_code == 302
+
+    guardada = database.designs.find_one({"_id": pieza})
+    assert guardada["html"] == nuevo
+    assert guardada["name"] == "Boletín de junio"
+    assert guardada["bytes"] == len(nuevo.encode("utf-8"))
+
+
+def test_al_guardar_pasa_otra_vez_por_el_validador(client, database, outbox):
+    browser, url, pieza = abrir_html(client, database)
+    respuesta = browser.post(url, data={
+        "csrf_token": csrf(browser, url), "accion": "guardar", "nombre": "x",
+        "html": "<html><body><script>alert(1)</script></body></html>"})
+
+    assert "Hola socios" in database.designs.find_one({"_id": pieza})["html"]
+    assert "ningún lector de correo" in respuesta.get_data(as_text=True)
+
+
+def test_la_vista_previa_va_con_cabecera_de_correo_y_sin_scripts(
+        client, database, outbox):
+    browser, url, _ = abrir_html(client, database)
+    respuesta = browser.post(url, data={
+        "csrf_token": csrf(browser, url), "accion": "vista", "nombre": "x",
+        "html": "<html><body><p>Hola *|NOMBRE|*</p></body></html>"})
+
+    assert "default-src 'none'" in respuesta.headers["Content-Security-Policy"]
+    salida = respuesta.get_data(as_text=True)
+    assert "Anular la suscripción" in salida
+    # Lo que no pasaría el validador tampoco se dibuja: sale por qué.
+    mala = browser.post(url, data={
+        "csrf_token": csrf(browser, url), "accion": "vista", "nombre": "x",
+        "html": "<html><body><script>alert(1)</script></body></html>"})
+    assert "<script>" not in mala.get_data(as_text=True)
+    assert "ningún lector de correo" in mala.get_data(as_text=True)
+
+
+def test_el_html_de_otro_no_se_abre(client, database, outbox):
+    _, url, _ = abrir_html(client, database)
+    bea = inside(client, "bea@ejemplo.com")
+    assert bea.get(url).status_code == 404
+
+
+def test_quien_bajo_de_plan_no_cambia_el_html(client, database, outbox):
+    browser, url, pieza = abrir_html(client, database, plan="basico")
+    browser.post(url, data={
+        "csrf_token": csrf(browser, url), "accion": "guardar", "nombre": "x",
+        "html": "<html><body><p>Otra</p></body></html>"})
+    assert "Hola socios" in database.designs.find_one({"_id": pieza})["html"]
+
+
+# -------------------------------------------- el modo, entre los dos sitios
+
+def test_el_panel_lee_el_modo_de_la_galleta_compartida(client, database, outbox):
+    """El sitio y el panel son dos orígenes: la preferencia viaja en una
+    galleta del dominio padre, y el guion de la cabecera la mira primero."""
+    pantalla = client.get("/entrar").get_data(as_text=True)
+    assert "pm_theme=" in pantalla

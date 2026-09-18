@@ -85,6 +85,26 @@
     if (themeLabel) themeLabel.textContent = theme === "dark" ? MODE.light : MODE.dark;
   }
 
+
+  // Written on the parent domain so panamails.com and panel.panamails.com read
+  // the same choice. Anywhere else (a local run) it stays on the host, which is
+  // shared anyway: cookies ignore ports.
+  function rememberTheme(theme) {
+    var parent = /(^|\.)panamails\.com$/.test(location.hostname)
+      ? "; domain=.panamails.com" : "";
+    var secure = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = "pm_theme=" + theme + "; path=/; max-age=31536000; SameSite=Lax"
+      + parent + secure;
+  }
+
+  // A choice made before the crumb existed lives only in this origin's
+  // storage: copy it over once, so the other site learns it too.
+  if (!/(?:^|;\s*)pm_theme=/.test(document.cookie)) {
+    var saved = null;
+    try { saved = localStorage.getItem("theme"); } catch (e) {}
+    if (saved === "dark" || saved === "light") rememberTheme(saved);
+  }
+
   if (themeBtn) {
     // The build drew the light-mode row; the head script may have chosen dark.
     if (themeLabel && currentTheme() === "dark") themeLabel.textContent = MODE.light;
@@ -92,6 +112,7 @@
     themeBtn.addEventListener("click", function () {
       var next = currentTheme() === "dark" ? "light" : "dark";
       try { localStorage.setItem("theme", next); } catch (e) {}
+      rememberTheme(next);
       if (themeStatus) themeStatus.textContent = next === "dark" ? MODE.dark : MODE.light;
 
       var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;

@@ -21,7 +21,12 @@
   // Runs before the stylesheet so the page never paints the wrong theme.
   (function () {
     var t;
-    try { t = localStorage.getItem("theme"); } catch (e) {}
+    // The shared crumb first: the site and the panel are two origins, and
+    // localStorage is per origin, so only a cookie on the parent domain lets a
+    // choice made on one be seen on the other.
+    var c = /(?:^|;\s*)pm_theme=(dark|light)/.exec(document.cookie);
+    if (c) t = c[1];
+    else try { t = localStorage.getItem("theme"); } catch (e) {}
     if (t !== "dark" && t !== "light") {
       t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
@@ -253,7 +258,7 @@
      aria-hidden="true" focusable="false">  <rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="m3.5 6.5 8.5 6 8.5-6"/>
   <path d="M7 16h4"/></svg></span>
         <h3 class="feature-card__title">Campañas con plantilla o con tu HTML</h3>
-        <p>Empiezas desde una plantilla prediseñada. Si prefieres tu propio diseño, lo subes tal cual desde el plan Negocio.</p>
+        <p>La armas en el editor, poniendo textos, botones e imágenes donde quieras. Si ya tienes tu propio diseño, lo cargas desde el plan Negocio.</p>
       </li>
       <li class="feature-card">
         <span class="feature-card__icon"><svg class="icon icon--feature" viewBox="0 0 24 24" fill="none" stroke="currentColor"

@@ -55,7 +55,8 @@ def asset_version() -> str:
     out black.
     """
     stamp = 0.0
-    for name in ("static/css/panel.css", "static/js/panel.js"):
+    for name in ("static/css/panel.css", "static/js/panel.js",
+                 "static/js/canvas.js"):
         path = Path(__file__).resolve().parent / name
         if path.exists():
             stamp = max(stamp, path.stat().st_mtime)

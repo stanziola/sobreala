@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ name }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{% block content %}
+<h1 class="settings__heading">{{ name }}</h1>
+<p class="settings__lead">{{ t('designs_html_lead') }}</p>
+
+{% if fresh %}<p class="notice notice--ok">{{ t('designs_html_fresh') }}</p>{% endif %}
+{% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+<div class="compose">
+  {# Un solo formulario: guardar y ver cómo queda mandan lo mismo. Con
+     JavaScript la vista se refresca sola al escribir; sin él, con el botón. #}
+  <form class="compose__form" method="post" novalidate data-live-preview>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="nombre">{{ t('designs_name') }}</label>
+    <input id="nombre" name="nombre" type="text" maxlength="80"
+           value="{{ name }}" autocomplete="off">
+
+    {% include "designs/_columns.html" %}
+
+    <label for="html">{{ t('designs_html_code') }}</label>
+    <textarea id="html" name="html" class="code" rows="26" spellcheck="false"
+              autocomplete="off" autocapitalize="off" wrap="off">{{ html }}</textarea>
+    <p class="hint">{{ t('designs_html_size', kb=kb, max=max_kb) }}</p>
+    {% if errors.html %}<p class="error">{{ errors.html }}</p>{% endif %}
+
+    <div class="compose__actions">
+      <button class="btn" type="submit" name="accion" value="guardar">{{ t('designs_save') }}</button>
+      {# Este entra en el marco de al lado, no en la página. #}
+      <button class="btn btn--outline" type="submit" name="accion" value="vista"
+              formtarget="vista" data-preview-button>{{ t('designs_preview_button') }}</button>
+    </div>
+
+    <p class="foot"><a href="{{ url_for('designs.index') }}">{{ t('designs_fill_back') }}</a></p>
+  </form>
+
+  <div class="compose__side">
+    <h2 class="settings__subtitle">{{ t('designs_preview_title') }}</h2>
+    <p class="hint">{{ t('designs_preview_note') }}</p>
+    {% if watermark %}<p class="hint">{{ t('designs_preview_watermark') }}</p>{% endif %}
+    {# Aislado a propósito: el HTML es del cliente y esta página lleva su
+       sesión abierta. Sin permisos, así que no ejecuta nada ni ve la galleta. #}
+    <iframe class="compose__preview" name="vista" sandbox
+            title="{{ t('designs_preview_title') }}"
+            srcdoc="{{ t('designs_preview_empty', boton=t('designs_preview_button')) }}"></iframe>
+  </div>
+</div>
+{% endblock %}

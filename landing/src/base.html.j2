@@ -24,7 +24,12 @@
   // Runs before the stylesheet so the page never paints the wrong theme.
   (function () {
     var t;
-    try { t = localStorage.getItem("theme"); } catch (e) {}
+    // The shared crumb first: the site and the panel are two origins, and
+    // localStorage is per origin, so only a cookie on the parent domain lets a
+    // choice made on one be seen on the other.
+    var c = /(?:^|;\s*)pm_theme=(dark|light)/.exec(document.cookie);
+    if (c) t = c[1];
+    else try { t = localStorage.getItem("theme"); } catch (e) {}
     if (t !== "dark" && t !== "light") {
       t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }

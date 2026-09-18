@@ -40,7 +40,7 @@ from models import design as designs
 from models import event as events
 from models import suppression as suppressions
 from services import fields as columns
-from services import render, unsubscribe
+from services import canvas, imaging, render, unsubscribe
 
 # Cuántos destinatarios por vuelta. El tope existe porque esto corre dentro de
 # una petición y Railway la corta: mejor mandar cien y decir que faltan que
@@ -65,6 +65,14 @@ class Piece:
         self.built_in = design.get("source") == designs.BUILT_IN
 
     def html(self, *, plan: str | None, unsubscribe_url: str) -> str:
+        if self.design.get("source") == designs.CANVAS:
+            # Lo arma el mismo código que la vista previa del lienzo, así que
+            # lo que se vio es lo que sale.
+            grounds = [imaging.url_of(one) if one else None
+                       for one in self.design.get("backgrounds") or []]
+            return render.email_from_body(
+                canvas.to_html(self.design.get("canvas") or {"slides": []}, grounds),
+                plan=plan, unsubscribe=unsubscribe_url)
         if self.built_in:
             return render.email(self.design.get("template", ""),
                                 self.design.get("fields") or {},

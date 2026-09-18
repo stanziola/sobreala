@@ -55,7 +55,7 @@ PUBLIC_ROWS = [
     ("Correos por mes", "Correos por mes"),
     ("Etiquetas", "Etiquetas"),
     ("Columnas propias del contacto", "Columnas de datos"),
-    ("Plantillas prediseñadas", "Plantillas prediseñadas"),
+    ("Crear plantillas en el editor", "Crear plantillas en el editor"),
     ("Subir tu propio HTML", "Subir tu propio HTML"),
     ("Correos sin marca de agua", "Correos sin marca de agua"),
     ("Diseño personalizado de tu correo", "Plantillas personalizadas"),

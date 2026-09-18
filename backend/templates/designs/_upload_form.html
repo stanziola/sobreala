@@ -1,0 +1,24 @@
+{#- El formulario de cargar un HTML. Va en la bandeja de la lista y en su
+    propia página, y los dos mandan a la misma ruta. -#}
+<p class="settings__lead">{{ t('designs_upload_hint', kb=max_kb) }}</p>
+<form method="post" action="{{ url_for('designs.upload') }}"
+      enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label for="nombre">{{ t('designs_name') }}</label>
+  <input id="nombre" name="nombre" type="text" maxlength="80" autocomplete="off">
+  <p class="hint">{{ t('designs_name_hint') }}</p>
+
+  {# El mismo botón nuestro que en importar: el del navegador no se puede
+     pintar, así que el campo se esconde y la etiqueta lo abre. #}
+  <p class="field-label" id="archivo-label">{{ t('designs_file') }}</p>
+  <div class="filepick">
+    <input id="archivo" name="archivo" type="file" accept=".html,text/html"
+           class="filepick__input" aria-labelledby="archivo-label" required>
+    <label class="btn btn--outline btn--small" for="archivo">{{ t('import_file_choose') }}</label>
+    <span class="filepick__name" data-file-name>{{ t('import_file_none') }}</span>
+  </div>
+  {% if errors.archivo %}<p class="error">{{ errors.archivo }}</p>{% endif %}
+
+  <button class="btn" type="submit">{{ t('designs_submit') }}</button>
+</form>

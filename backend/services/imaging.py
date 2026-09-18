@@ -88,7 +88,7 @@ def kind(raw: bytes) -> tuple[str, str] | None:
     return None
 
 
-def shrink(raw: bytes) -> tuple[bytes, str, str]:
+def shrink(raw: bytes, *, width: int = WIDTH) -> tuple[bytes, str, str]:
     """Dejarla lista para un correo. Devuelve (datos, extensión, tipo).
 
     Sale JPEG, o PNG si la imagen tiene partes transparentes —un logo sobre
@@ -115,7 +115,7 @@ def shrink(raw: bytes) -> tuple[bytes, str, str]:
                 image = ImageOps.exif_transpose(opened) or opened
                 clear = (image.mode in ("RGBA", "LA")
                          or (image.mode == "P" and "transparency" in image.info))
-                image.thumbnail((WIDTH, HEIGHT), Image.LANCZOS)
+                image.thumbnail((width, HEIGHT), Image.LANCZOS)
                 out = BytesIO()
                 if clear:
                     image.convert("RGBA").save(out, format="PNG", optimize=True)

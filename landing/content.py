@@ -155,8 +155,9 @@ HOME = {
                 "icon": "campaign",
                 "title": "Campañas con plantilla o con tu HTML",
                 "text": (
-                    "Empiezas desde una plantilla prediseñada. Si prefieres tu propio "
-                    "diseño, lo subes tal cual desde el plan Negocio."
+                    "La armas en el editor, poniendo textos, botones e imágenes "
+                    "donde quieras. Si ya tienes tu propio diseño, lo cargas "
+                    "desde el plan Negocio."
                 ),
             },
             {
@@ -276,8 +277,8 @@ STEPS = [
         "title": "Arma tu mensaje",
         "short": "Eliges una plantilla, escribes el asunto y el contenido, y lo previsualizas antes de enviar.",
         "detail": (
-            "Partes de una plantilla prediseñada y cambias textos e imágenes, o subes "
-            "tu propio HTML desde el plan Negocio. La previsualización te muestra el "
+            "La armas en el editor, poniendo textos, botones e imágenes donde "
+            "quieras, o cargas tu propio HTML desde el plan Negocio. La previsualización te muestra el "
             "correo tal como va a llegar, y puedes enviarte una prueba a tu propia "
             "dirección para verla en tu bandeja antes de que la vea nadie más. Si "
             "prefieres no armarla tú, te diseñamos la pieza con tu marca y la "
@@ -489,19 +490,21 @@ PRICING = {
                 ),
             },
             {
-                "title": "Plantillas prediseñadas",
+                "title": "Crear plantillas en el editor",
                 "text": (
-                    "Cuatro diseños ya hechos, como un banner al que solo le "
-                    "cambias el contenido: el título, el texto y la imagen. "
-                    "Van en todos los planes, se guardan y los usas las veces "
-                    "que quieras."
+                    "Armas tu correo como una diapositiva: pones textos, "
+                    "botones e imágenes donde quieras, con tus colores y tus "
+                    "fuentes. Las imágenes van de fondo y el texto encima, "
+                    "que es como llega igual a Gmail, a Outlook y al "
+                    "teléfono. Va en todos los planes, y cada plantilla se "
+                    "guarda para usarla las veces que quieras."
                 ),
             },
             {
                 "title": "Subir tu propio HTML",
                 "text": (
-                    "Si tu diseñador te hizo un correo, lo subes tal cual y "
-                    "sale así. Y ahí, como en los nuestros, escribes tus "
+                    "Si tu diseñador te hizo un correo, lo subes y sale "
+                    "como él lo hizo. Y ahí, como en los nuestros, escribes tus "
                     "columnas de datos donde quieras: pones *|CIUDAD|* en "
                     "medio de una frase y a cada persona le llega la suya. No "
                     "es un mismo correo idéntico para toda la lista."

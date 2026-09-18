@@ -90,7 +90,7 @@ def upload_piece(navegador, nombre="Boletín"):
     navegador.get("/plantillas")
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
-    return navegador.post("/plantillas", data={
+    return navegador.post("/plantillas/cargar", data={
         "csrf_token": token, "nombre": nombre,
         "archivo": (io.BytesIO(b"<html><body><h1>Hola</h1></body></html>"),
                     "pieza.html")},

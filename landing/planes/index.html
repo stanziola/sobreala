@@ -21,7 +21,12 @@
   // Runs before the stylesheet so the page never paints the wrong theme.
   (function () {
     var t;
-    try { t = localStorage.getItem("theme"); } catch (e) {}
+    // The shared crumb first: the site and the panel are two origins, and
+    // localStorage is per origin, so only a cookie on the parent domain lets a
+    // choice made on one be seen on the other.
+    var c = /(?:^|;\s*)pm_theme=(dark|light)/.exec(document.cookie);
+    if (c) t = c[1];
+    else try { t = localStorage.getItem("theme"); } catch (e) {}
     if (t !== "dark" && t !== "light") {
       t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
@@ -350,7 +355,7 @@ Ilimitadas            </td>
 Ilimitadas            </td>
           </tr>
           <tr>
-            <th scope="row">Plantillas prediseñadas</th>
+            <th scope="row">Crear plantillas en el editor</th>
             <td>
 <span class="yes" role="img" aria-label="Incluido">✓</span>
             </td>
@@ -483,12 +488,12 @@ WhatsApp prioritario            </td>
         <p>Lo que guardas de cada persona además de su correo y su nombre: su ciudad, su número de socio, cuánto debe, cuándo vence. Las creas tú, con el nombre que quieras, y el número de la tabla indica cuántas columnas adicionales puedes guardar en tu base.</p>
       </li>
       <li class="note-card">
-        <h3 class="note-card__title">Plantillas prediseñadas</h3>
-        <p>Cuatro diseños ya hechos, como un banner al que solo le cambias el contenido: el título, el texto y la imagen. Van en todos los planes, se guardan y los usas las veces que quieras.</p>
+        <h3 class="note-card__title">Crear plantillas en el editor</h3>
+        <p>Armas tu correo como una diapositiva: pones textos, botones e imágenes donde quieras, con tus colores y tus fuentes. Las imágenes van de fondo y el texto encima, que es como llega igual a Gmail, a Outlook y al teléfono. Va en todos los planes, y cada plantilla se guarda para usarla las veces que quieras.</p>
       </li>
       <li class="note-card">
         <h3 class="note-card__title">Subir tu propio HTML</h3>
-        <p>Si tu diseñador te hizo un correo, lo subes tal cual y sale así. Y ahí, como en los nuestros, escribes tus columnas de datos donde quieras: pones *|CIUDAD|* en medio de una frase y a cada persona le llega la suya. No es un mismo correo idéntico para toda la lista.</p>
+        <p>Si tu diseñador te hizo un correo, lo subes y sale como él lo hizo. Y ahí, como en los nuestros, escribes tus columnas de datos donde quieras: pones *|CIUDAD|* en medio de una frase y a cada persona le llega la suya. No es un mismo correo idéntico para toda la lista.</p>
       </li>
       <li class="note-card">
         <h3 class="note-card__title">Plantillas personalizadas</h3>

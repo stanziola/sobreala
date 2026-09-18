@@ -1,31 +1,31 @@
-"""Plantillas: las prediseñadas del producto y el HTML que sube el cliente.
+"""Plantillas: las que carga el cliente en HTML, y las prediseñadas de antes.
 
 Dos reglas de CLAUDE.md mandan aquí:
 
-  * **Subir HTML propio es de Negocio en adelante**, y eso lo dice
-    `docs/pricing.md`, no una lista copiada a este archivo. El Básico ve las
-    prediseñadas y una línea que explica desde qué plan se puede subir.
-  * **Cada subida se revisa al entrar**, y esa revisión es automática y es la
-    única que hay sobre el archivo. La mirada de una persona ocurre una vez por
-    cuenta, antes de su primera campaña, y es sobre de dónde salió su lista, no
-    sobre el HTML.
+  * **Cargar HTML propio es de Negocio en adelante**, y eso lo dice
+    `docs/pricing.md`, no una lista copiada a este archivo. Con otro plan el
+    botón sale apagado, y la ruta lo comprueba igual.
+  * **Cada HTML se revisa al entrar y cada vez que se guarda**, y esa revisión
+    es automática y es la única que hay sobre el archivo. La mirada de una
+    persona ocurre una vez por cuenta, antes de su primera campaña, y es sobre
+    de dónde salió su lista, no sobre el HTML.
 
-El HTML subido **no se dibuja dentro del panel**. Es de otro y puede traer
-cualquier cosa; enseñarlo aquí sería meter el documento de un cliente dentro de
-una página nuestra con su sesión abierta. La pantalla enseña qué es y cuánto
-pesa.
+El HTML de un cliente **se dibuja solo para él, y solo en un marco aislado**:
+sin permiso para ejecutar nada, con origen opaco y con su propia cabecera de
+seguridad, y después de pasar el validador. Es lo que deja editarlo viendo cómo
+queda. El panel del administrador sigue sin dibujarlo: lo baja como texto.
 
-Las prediseñadas sí se dibujan, porque el HTML es nuestro y lo que escribió el
-cliente va escapado. Aun así van dentro de un marco aislado: el texto de dentro
-es de otro y esta página lleva una sesión abierta.
+Las prediseñadas ya no se ofrecen. Las piezas que alguien armó con ellas siguen
+en su lista y se editan con el formulario de siempre.
 """
 
 from __future__ import annotations
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import (Blueprint, Response, abort, g, redirect, render_template,
-                   request, url_for)
+from flask import (Blueprint, Response, abort, g, jsonify, redirect,
+                   render_template, request, url_for)
+from markupsafe import escape
 
 from blueprints.auth.routes import current_account, not_for_admins
 from db import get_db
@@ -34,7 +34,7 @@ from models import account as accounts
 from models import design as designs
 from models import image as images
 from services import fields as columns
-from services import html_check, imaging, plans, render
+from services import canvas, html_check, imaging, plans, render
 from services.security import csrf_ok
 
 bp = Blueprint("designs", __name__)
@@ -110,16 +110,11 @@ def as_id(raw):
 def shared(db, account, **extra):
     """Lo que toda la pantalla necesita: qué permite el plan y qué hay guardado."""
     plan = accounts.plan_of(account)
-    mine = designs.for_account(db, account["_id"])
     return {
         "account": account,
-        "built_in": offered(),
-        # Las llenas y las subidas se enseñan aparte: una se edita y la otra se
-        # baja, y no tienen ni las mismas columnas ni los mismos botones.
-        "filled": [one for one in mine
-                   if one.get("source") == designs.BUILT_IN],
-        "uploaded": [one for one in mine
-                     if one.get("source") != designs.BUILT_IN],
+        # Todas juntas: da igual de dónde salió cada una, se editan, se
+        # duplican y se borran desde la misma fila.
+        "mine": designs.for_account(db, account["_id"]),
         "named": {one["key"]: one["name"] for one in offered()},
         "can_upload": plans.can_upload(plan),
         # A quién ofrecerle el salto cuando su plan todavía no puede.
@@ -132,25 +127,38 @@ def shared(db, account, **extra):
     }
 
 
-@bp.route("/plantillas", methods=["GET", "POST"])
+@bp.route("/plantillas")
 def index():
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    return render_template(
+        "designs/index.html", section="plantillas",
+        **shared(get_db(), account, errors={},
+                 saved=bool(request.args.get("guardado")),
+                 updated=bool(request.args.get("cambiado")),
+                 copied=bool(request.args.get("copia"))))
+
+
+@bp.route("/plantillas/cargar", methods=["GET", "POST"])
+def upload():
+    """Cargar un HTML. Con JavaScript el formulario sale en una bandeja encima
+    de la lista; sin él, esta es su página. Las dos mandan aquí."""
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
 
     db = get_db()
     errors: dict[str, str] = {}
-
-    if request.method == "POST":
+    if not plans.can_upload(accounts.plan_of(account)):
+        # El plan se comprueba en el servidor y no solo apagando el botón:
+        # esconder un botón no es un permiso.
+        errors["form"] = t("designs_locked", plan=plan_needed())
+    elif request.method == "POST":
         archivo = request.files.get("archivo")
         name = designs.clean_name(request.form.get("nombre", ""))
-
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
-        elif not plans.can_upload(accounts.plan_of(account)):
-            # El plan se comprueba en el servidor y no solo escondiendo el
-            # formulario: esconder un botón no es un permiso.
-            errors["form"] = t("designs_locked", plan=plan_needed())
         elif not archivo or not archivo.filename:
             errors["archivo"] = t("error_required")
         else:
@@ -161,17 +169,87 @@ def index():
             else:
                 # Pasó el validador, así que queda lista. Lo que se revisa a
                 # mano es la cuenta, una vez, antes de su primera campaña.
-                designs.save(db, account["_id"],
-                             name=name or archivo.filename,
-                             html=raw.decode("utf-8"),
-                             uploaded_by=account["_id"])
-                return redirect(url_for("designs.index", guardado=1))
+                new_id = designs.save(db, account["_id"],
+                                      name=name or archivo.filename,
+                                      html=raw.decode("utf-8"),
+                                      uploaded_by=account["_id"])
+                # Directo al editor: lo siguiente que se quiere es verla y
+                # ponerle las columnas.
+                return redirect(url_for("designs.edit_html", raw=new_id,
+                                        nueva=1))
+
+    return render_template("designs/upload.html", section="plantillas",
+                           **shared(db, account, errors=errors))
+
+
+# --------------------------------------------------------- editar un HTML
+
+def html_preview(html: str, plan, fields: list[dict]) -> Response:
+    """El HTML del cliente como saldría, para el marco aislado de al lado.
+
+    Pasa por el validador antes de dibujarse: lo que no se puede guardar
+    tampoco se enseña, y en su lugar sale por qué. Lleva la cabecera de un
+    correo (la pone `app.py` al ver `email_preview`), que no deja ejecutar
+    nada, y el marco no tiene permiso para scripts ni origen propio.
+    """
+    g.email_preview = True
+    problems = html_check.check(html.encode("utf-8"))
+    if problems:
+        page = ("<!doctype html><meta charset=\"utf-8\">"
+                "<body style=\"font-family:Arial,sans-serif;padding:24px;"
+                "color:#18181B;\"><p>" + escape(explain(problems)) + "</p>")
+        return Response(page, mimetype="text/html")
+    email = render.email_from_html(html, plan=plan, preview=True)
+    return Response(columns.fill(email, columns.sample(fields), fields),
+                    mimetype="text/html")
+
+
+@bp.route("/plantillas/html/<raw>", methods=["GET", "POST"])
+def edit_html(raw):
+    """El código a un lado y cómo queda al otro. La cuenta va en la consulta."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    design_id = as_id(raw)
+    found = designs.by_id(db, account["_id"], design_id) if design_id else None
+    if found is None or found.get("source") != designs.UPLOAD:
+        abort(404)
+
+    errors: dict[str, str] = {}
+    plan = accounts.plan_of(account)
+    html = found.get("html", "")
+    name = found.get("name", "")
+
+    if request.method == "POST":
+        html = request.form.get("html", "")
+        name = designs.clean_name(request.form.get("nombre", "")) or name
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif request.form.get("accion") == "vista":
+            return html_preview(html, plan, accounts.fields_of(account))
+        elif not plans.can_upload(plan):
+            # Quien bajó de plan conserva lo que cargó y lo puede seguir
+            # usando, pero cambiar el HTML es cargar HTML.
+            errors["form"] = t("designs_locked", plan=plan_needed())
+        else:
+            problems = html_check.check(html.encode("utf-8"))
+            if problems:
+                errors["html"] = explain(problems)
+            else:
+                designs.update_html(db, account["_id"], found["_id"],
+                                    name=name, html=html)
+                return redirect(url_for("designs.index", cambiado=1))
 
     return render_template(
-        "designs/index.html", section="plantillas",
-        **shared(db, account, errors=errors,
-                 saved=bool(request.args.get("guardado")),
-                 updated=bool(request.args.get("cambiado"))))
+        "designs/html.html", section="plantillas", account=account,
+        found=found, html=html, name=name, errors=errors,
+        fresh=bool(request.args.get("nueva")),
+        columns=accounts.fields_of(account),
+        max_kb=html_check.MAX_BYTES // 1024,
+        kb=round(len(html.encode("utf-8")) / 1024, 1),
+        watermark=plans.has_watermark(plan))
 
 
 # --------------------------------------------------- llenar una prediseñada
@@ -199,9 +277,13 @@ def mine_only(db, account_id, key: str,
 def images_in(found) -> list[str]:
     """Las imágenes que nombra una pieza guardada.
 
-    Se le pregunta a la plantilla cuáles de sus casillas son imágenes, en vez
-    de adivinarlo mirando el contenido: la plantilla es quien lo sabe.
+    En un lienzo, sus fotos y sus fondos fundidos. En una prediseñada, se le
+    pregunta a la plantilla cuáles de sus casillas son imágenes, en vez de
+    adivinarlo mirando el contenido: la plantilla es quien lo sabe.
     """
+    if found.get("source") == designs.CANVAS:
+        return (canvas.images_of(found.get("canvas"))
+                + [one for one in found.get("backgrounds") or [] if one])
     fields = found.get("fields") or {}
     return [fields[one["name"]]
             for one in render.fields_of(found.get("template", ""))
@@ -336,16 +418,6 @@ def compose(account, key: str, found):
         watermark=plans.has_watermark(plan))
 
 
-@bp.route("/plantillas/nueva/<key>", methods=["GET", "POST"])
-def new(key):
-    account = signed_in()
-    if account is None:
-        return redirect(url_for("auth.login"))
-    if not render.known(key):
-        abort(404)
-    return compose(account, key, None)
-
-
 @bp.route("/plantillas/pieza/<raw>", methods=["GET", "POST"])
 def piece(raw):
     """Volver a abrir una guardada. La cuenta va en la consulta, siempre."""
@@ -362,6 +434,187 @@ def piece(raw):
     return compose(account, found["template"], found)
 
 
+# --------------------------------------------------------------- el lienzo
+
+def drop_unused(db, account_id, names) -> None:
+    """Borrar las imágenes que ya no nombra ninguna pieza de la cuenta.
+
+    Se pregunta a todas y no solo a la que cambió: al duplicar, la copia y la
+    original nombran las mismas.
+    """
+    still = {name for one in designs.for_account(db, account_id, limit=0)
+             for name in images_in(one)}
+    images.remove(db, account_id, [one for one in names if one and one not in still])
+
+
+def canvas_problems(db, account_id, doc) -> list[str]:
+    return canvas.problems(
+        doc, owns=lambda name: (imaging.valid_name(name)
+                                and images.owns(db, account_id, name)))
+
+
+def canvas_explain(problems: list[str]) -> str:
+    return " ".join(t("canvas_bad_" + one, kb=html_check.MAX_BYTES // 1024)
+                    for one in problems)
+
+
+def canvas_editor(account, found):
+    """El lienzo, el mismo para una nueva y para una guardada.
+
+    Si algo no se puede guardar, la pantalla vuelve con lo que se mandó y no con
+    lo guardado: perder el trabajo por un texto encimado sería castigar el
+    intento.
+    """
+    db = get_db()
+    errors: dict[str, str] = {}
+    doc = found.get("canvas") if found else canvas.blank()
+    name = found.get("name", "") if found else ""
+
+    if request.method == "POST":
+        name = designs.clean_name(request.form.get("nombre", "")) or name
+        posted = canvas.parse(request.form.get("lienzo", ""))
+        doc = posted or doc
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        else:
+            problems = canvas_problems(db, account["_id"], posted)
+            if not name:
+                errors["nombre"] = t("error_required")
+            if problems:
+                errors["form"] = canvas_explain(problems)
+            elif not errors:
+                load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
+                grounds = [images.save(db, account["_id"], data=raw, ext="jpg",
+                                       mime="image/jpeg", kind=images.BACKGROUND)
+                           if raw else None
+                           for raw in canvas.backgrounds(posted, load)]
+                html = canvas.to_html(posted, [imaging.url_of(one) if one else None
+                                               for one in grounds])
+                if len(html.encode("utf-8")) > html_check.MAX_BYTES:
+                    images.remove(db, account["_id"], grounds)
+                    errors["form"] = canvas_explain(["too_big"])
+                else:
+                    if found is None:
+                        designs.save_canvas(db, account["_id"], name=name,
+                                            doc=posted, backgrounds=grounds)
+                        return redirect(url_for("designs.index", guardado=1))
+                    designs.update_canvas(db, account["_id"], found["_id"],
+                                          name=name, doc=posted, backgrounds=grounds)
+                    drop_unused(db, account["_id"], found.get("backgrounds") or [])
+                    return redirect(url_for("designs.index", cambiado=1))
+
+    return render_template(
+        "designs/canvas.html", section="plantillas", account=account,
+        found=found, doc=doc, name=name, errors=errors,
+        fonts=list(canvas.FONTS), font_stacks=canvas.FONTS,
+        columns=accounts.fields_of(account),
+        limits={"minSize": canvas.MIN_SIZE, "maxSize": canvas.MAX_SIZE,
+                "minHeight": canvas.MIN_HEIGHT, "maxHeight": canvas.MAX_HEIGHT,
+                "maxSlides": canvas.MAX_SLIDES, "maxItems": canvas.MAX_ITEMS,
+                "width": canvas.WIDTH},
+        image_mb=imaging.MAX_UPLOAD // (1024 * 1024),
+        watermark=plans.has_watermark(accounts.plan_of(account)))
+
+
+@bp.route("/plantillas/crear", methods=["GET", "POST"])
+def create():
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    return canvas_editor(account, None)
+
+
+@bp.route("/plantillas/lienzo/<raw>", methods=["GET", "POST"])
+def edit_canvas(raw):
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    design_id = as_id(raw)
+    found = (designs.by_id(get_db(), account["_id"], design_id)
+             if design_id else None)
+    if found is None or found.get("source") != designs.CANVAS:
+        abort(404)
+    return canvas_editor(account, found)
+
+
+@bp.route("/plantillas/lienzo/vista", methods=["POST"])
+def canvas_preview():
+    """El lienzo como saldría, para el marco de al lado. Los fondos van dentro
+    de la respuesta: mirar cómo queda no guarda nada."""
+    account = signed_in()
+    if account is None or not csrf_ok(request.form.get("csrf_token")):
+        abort(403)
+    db = get_db()
+    g.email_preview = True
+    doc = canvas.parse(request.form.get("lienzo", ""))
+    if doc is None:
+        return Response("", mimetype="text/html")
+    # Solo las imágenes de esta cuenta: `data_of` pregunta con ella.
+    load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
+    grounds = [canvas.data_url(raw) if raw else None
+               for raw in canvas.backgrounds(doc, load)]
+    email = render.email_from_body(canvas.to_html(doc, grounds),
+                                   plan=accounts.plan_of(account), preview=True)
+    fields = accounts.fields_of(account)
+    return Response(columns.fill(email, columns.sample(fields), fields),
+                    mimetype="text/html")
+
+
+# El ancho al que se guardan las fotos del lienzo: al doble de lo que se ven, para
+# que el fondo fundido salga nítido en un teléfono.
+CANVAS_PHOTO_WIDTH = canvas.WIDTH * canvas.SCALE
+
+
+@bp.route("/plantillas/lienzo/imagen", methods=["POST"])
+def canvas_image():
+    """Subir una foto al lienzo. Contesta en JSON: la pide el editor."""
+    account = signed_in()
+    if account is None:
+        abort(403)
+    if not csrf_ok(request.form.get("csrf_token")):
+        return jsonify(error=t("error_csrf")), 400
+    db = get_db()
+    archivo = request.files.get("archivo")
+    if not archivo or not archivo.filename:
+        return jsonify(error=t("error_required")), 400
+    if images.count(db, account["_id"]) >= images.LIMIT:
+        return jsonify(error=t("designs_image_limit", n=images.LIMIT)), 400
+    raw = archivo.read(imaging.MAX_UPLOAD + 1)
+    if len(raw) > imaging.MAX_UPLOAD:
+        return jsonify(error=t("designs_image_heavy",
+                               mb=imaging.MAX_UPLOAD // (1024 * 1024))), 400
+    try:
+        data, ext, mime = imaging.shrink(raw, width=CANVAS_PHOTO_WIDTH)
+    except imaging.ImageError as exc:
+        return jsonify(error=t(IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
+                               kb=imaging.STORED_MAX // 1024)), 400
+    from io import BytesIO
+
+    from PIL import Image
+
+    with Image.open(BytesIO(data)) as opened:
+        width, height = opened.size
+    name = images.save(db, account["_id"], data=data, ext=ext, mime=mime)
+    return jsonify(name=name, url=imaging.url_of(name), width=width, height=height)
+
+
+@bp.route("/plantillas/duplicar", methods=["POST"])
+def copy():
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    if csrf_ok(request.form.get("csrf_token")):
+        design_id = as_id(request.form.get("id"))
+        db = get_db()
+        found = designs.by_id(db, account["_id"], design_id) if design_id else None
+        if found is not None:
+            designs.duplicate(db, account["_id"], found["_id"],
+                              name=t("designs_copy_name", name=found.get("name", "")))
+            return redirect(url_for("designs.index", copia=1))
+    return redirect(url_for("designs.index"))
+
+
 @bp.route("/plantillas/borrar", methods=["POST"])
 def remove():
     account = signed_in()
@@ -375,6 +628,8 @@ def remove():
             gone = designs.remove(db, account["_id"], design_id)
             if gone:
                 # Las imágenes se van con la pieza: dejarlas sería guardar
-                # para siempre lo que alguien pidió borrar.
-                images.remove(db, account["_id"], images_in(gone))
+                # para siempre lo que alguien pidió borrar. Menos las que
+                # todavía nombra otra, que es lo que deja una copia al
+                # duplicar.
+                drop_unused(db, account["_id"], images_in(gone))
     return redirect(url_for("designs.index"))

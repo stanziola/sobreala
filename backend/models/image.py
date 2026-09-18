@@ -33,17 +33,27 @@ def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def save(db, account_id, *, data: bytes, ext: str, mime: str) -> str:
+# Un fondo que el lienzo fundió al guardar. Lo hace el sistema y no el
+# cliente, así que no cuenta contra su tope: si contara, cada vez que guarda
+# una plantilla de tres diapositivas perdería tres de sus veinte.
+BACKGROUND = "background"
+
+
+def save(db, account_id, *, data: bytes, ext: str, mime: str,
+         kind: str | None = None) -> str:
     """Guardar una imagen ya achicada. Devuelve su nombre, que es su dirección."""
     name = f"{secrets.token_urlsafe(16)}.{ext}"
-    db.images.insert_one({
+    doc = {
         "account_id": account_id,
         "name": name,
         "mime": mime,
         "bytes": len(data),
         "data": Binary(data),
         "created_at": now(),
-    })
+    }
+    if kind:
+        doc["kind"] = kind
+    db.images.insert_one(doc)
     return name
 
 
@@ -65,7 +75,16 @@ def owns(db, account_id, name: str) -> bool:
 
 
 def count(db, account_id) -> int:
-    return db.images.count_documents({"account_id": account_id})
+    """Las que cuentan contra el tope: las que subió el cliente."""
+    return db.images.count_documents({"account_id": account_id,
+                                      "kind": {"$ne": BACKGROUND}})
+
+
+def data_of(db, account_id, name: str) -> bytes | None:
+    """Los bytes de una imagen de esta cuenta, para fundirla en un fondo."""
+    found = db.images.find_one({"name": name, "account_id": account_id},
+                               {"data": 1})
+    return bytes(found["data"]) if found else None
 
 
 def remove(db, account_id, names) -> int:

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ t('designs_upload_title') }}{% endblock %}
+
+{% block content %}
+<h1 class="settings__heading">{{ t('designs_upload_title') }}</h1>
+{% if errors.form %}
+<p class="error error--form">{{ errors.form }}
+  {%- if not can_upload %} <a href="{{ site_url }}/planes/">{{ t('contacts_plans') }}</a>{% endif %}</p>
+{% endif %}
+{% if can_upload %}
+{% include "designs/_upload_form.html" %}
+{% endif %}
+<p class="foot"><a href="{{ url_for('designs.index') }}">{{ t('designs_fill_back') }}</a></p>
+{% endblock %}

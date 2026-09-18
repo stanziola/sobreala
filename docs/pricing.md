@@ -17,7 +17,7 @@ reglas de negocio asociadas.
 | Precio por correo | $0.0070 | $0.0040 | $0.0024 | $0.0012 |
 | Etiquetas | 1 | 2 | 4 | Ilimitadas |
 | Columnas propias del contacto | 1 | 5 | 10 | Ilimitadas |
-| Plantillas prediseñadas | ✅ | ✅ | ✅ | ✅ |
+| Crear plantillas en el editor | ✅ | ✅ | ✅ | ✅ |
 | Subir tu propio HTML | — | ✅ | ✅ | ✅ |
 | **Correos sin marca de agua** | — | ✅ | ✅ | ✅ |
 | Diseño personalizado de tu correo | — | 1 | 3 | 5 |

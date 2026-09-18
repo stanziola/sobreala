@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}{{ name or t('canvas_title_new') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{% block content %}
+<h1 class="settings__heading">{{ name or t('canvas_title_new') }}</h1>
+<p class="settings__lead">{{ t('canvas_lead') }}</p>
+
+{% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
+<noscript><p class="notice">{{ t('canvas_noscript') }}</p></noscript>
+<p class="notice editor__narrow">{{ t('canvas_narrow') }}</p>
+
+{# Guardar manda el lienzo entero en un campo escondido. Lo llena el editor
+   justo antes de enviar. #}
+<form class="editor__head" method="post" novalidate data-canvas-save>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="lienzo" value="">
+  <div class="editor__name">
+    <label for="nombre">{{ t('designs_name') }}</label>
+    <input id="nombre" name="nombre" type="text" maxlength="80" value="{{ name }}"
+           autocomplete="off" required>
+    {% if errors.nombre %}<p class="error">{{ errors.nombre }}</p>{% endif %}
+  </div>
+  <div class="editor__actions">
+    <button class="btn btn--small btn--outline" type="button" data-undo>{{ t('canvas_undo') }}</button>
+    <button class="btn btn--small btn--outline" type="button" data-redo>{{ t('canvas_redo') }}</button>
+    <button class="btn" type="submit">{{ t('designs_save') }}</button>
+  </div>
+</form>
+<p class="error error--form" data-canvas-error hidden role="alert"></p>
+
+{% set strings = {
+  "newText": t('canvas_new_text'),
+  "newButton": t('canvas_new_button'),
+  "slide": t('canvas_slide'),
+  "slideBg": t('canvas_slide_bg'),
+  "slideUp": t('canvas_slide_up'),
+  "slideDown": t('canvas_slide_down'),
+  "slideCopy": t('canvas_slide_copy'),
+  "slideDelete": t('canvas_slide_delete'),
+  "slideConfirm": t('canvas_slide_confirm'),
+  "resizeSlide": t('canvas_resize_slide'),
+  "overlap": t('canvas_overlap'),
+  "few": t('canvas_few'),
+  "marksNeed": t('canvas_marks_need'),
+  "uploading": t('canvas_uploading'),
+  "uploadFailed": t('canvas_upload_failed'),
+  "maxSlides": t('canvas_max_slides', n=limits.maxSlides),
+  "maxItems": t('canvas_max_items', n=limits.maxItems),
+  "nameNeeded": t('canvas_name_needed'),
+  "leave": t('canvas_leave'),
+} %}
+<div class="editor" data-canvas
+     data-upload="{{ url_for('designs.canvas_image') }}"
+     data-strings='{{ strings|tojson }}'
+     data-limits='{{ limits|tojson }}'>
+
+  <aside class="editor__tools">
+    <p class="field-label">{{ t('canvas_add') }}</p>
+    <div class="editor__adds">
+      <button class="tool" type="button" data-add="text">{{ t('canvas_add_text') }}</button>
+      <button class="tool" type="button" data-add="button">{{ t('canvas_add_button') }}</button>
+      <button class="tool" type="button" data-add="image">{{ t('canvas_add_image') }}</button>
+      <button class="tool" type="button" data-add="slide">{{ t('canvas_add_slide') }}</button>
+    </div>
+    <input class="visually-hidden" type="file" accept="image/*" data-canvas-file
+           aria-label="{{ t('canvas_add_image') }}" tabindex="-1">
+    <p class="hint">{{ t('canvas_image_hint', mb=image_mb) }}</p>
+
+    {% if columns %}
+    <p class="field-label">{{ t('designs_columns_title') }}</p>
+    <p class="hint">{{ t('canvas_marks_hint') }}</p>
+    <div class="marks" data-canvas-marks>
+      {% for one in columns %}
+      <button class="mark" type="button" data-mark="*|{{ one.key }}|*"
+              title="{{ one.label }}">*|{{ one.key }}|*</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p class="hint editor__keys">{{ t('canvas_keys') }}</p>
+  </aside>
+
+  <div class="editor__main">
+    {# Una barra por cada cosa que se puede seleccionar. El editor enseña la del
+       elemento elegido y esconde las demás. #}
+    <div class="props" data-props>
+      <p class="props__none" data-props-for="none">{{ t('canvas_props_none') }}</p>
+
+      <div class="props__row" data-props-for="text button" hidden>
+        <label class="props__field" data-only="button">{{ t('canvas_button_text') }}
+          <input type="text" maxlength="60" data-prop="text"></label>
+        <label class="props__field" data-only="button">{{ t('canvas_href') }}
+          <input type="url" maxlength="500" placeholder="https://" data-prop="href"></label>
+        <label class="props__field">{{ t('canvas_font') }}
+          <select data-prop="font">
+            {% for one in fonts %}<option value="{{ one }}">{{ one }}</option>{% endfor %}
+          </select></label>
+        <label class="props__field props__field--small">{{ t('canvas_size') }}
+          <input type="number" min="{{ limits.minSize }}" max="{{ limits.maxSize }}"
+                 step="1" data-prop="size"></label>
+        <label class="props__field props__field--color">{{ t('canvas_color') }}
+          <input type="color" data-prop="color"></label>
+        <label class="props__field props__field--color" data-only="button">{{ t('canvas_button_bg') }}
+          <input type="color" data-prop="bg"></label>
+        <label class="props__check"><input type="checkbox" data-prop="bold"> {{ t('canvas_bold') }}</label>
+        <label class="props__check"><input type="checkbox" data-prop="italic"> {{ t('canvas_italic') }}</label>
+        <label class="props__field" data-only="text">{{ t('canvas_align') }}
+          <select data-prop="align">
+            <option value="left">{{ t('canvas_align_left') }}</option>
+            <option value="center">{{ t('canvas_align_center') }}</option>
+            <option value="right">{{ t('canvas_align_right') }}</option>
+          </select></label>
+        <label class="props__field props__field--small" data-only="text">{{ t('canvas_line') }}
+          <select data-prop="line">
+            <option value="1.1">1.1</option><option value="1.25">1.25</option>
+            <option value="1.4">1.4</option><option value="1.6">1.6</option>
+            <option value="1.8">1.8</option><option value="2">2</option>
+          </select></label>
+        <label class="props__field" data-only="button">{{ t('canvas_radius') }}
+          <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
+        <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+      </div>
+
+      <div class="props__row" data-props-for="image" hidden>
+        <button class="btn btn--small btn--outline" type="button" data-action="replace">{{ t('canvas_replace') }}</button>
+        <label class="props__field">{{ t('canvas_fit') }}
+          <select data-prop="fit">
+            <option value="cover">{{ t('canvas_fit_cover') }}</option>
+            <option value="contain">{{ t('canvas_fit_contain') }}</option>
+          </select></label>
+        <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="back">{{ t('canvas_back') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+      </div>
+    </div>
+
+    <p class="notice notice--warn" data-canvas-warn hidden></p>
+    <div class="stage" data-stage></div>
+  </div>
+
+  <div class="editor__side">
+    <h2 class="settings__subtitle">{{ t('designs_preview_title') }}</h2>
+    <p class="hint">{{ t('designs_preview_note') }}</p>
+    {% if watermark %}<p class="hint">{{ t('designs_preview_watermark') }}</p>{% endif %}
+    <div class="editor__frame">
+      {# Aislado: es el correo tal como sale, y esta página lleva la sesión. #}
+      <iframe name="vista" sandbox title="{{ t('designs_preview_title') }}"
+              srcdoc="{{ t('canvas_preview_wait') }}"></iframe>
+    </div>
+  </div>
+</div>
+
+{# La vista previa se pide con este formulario, hacia el marco: la respuesta trae
+   su propia cabecera de correo. #}
+<form method="post" action="{{ url_for('designs.canvas_preview') }}" target="vista"
+      data-canvas-preview hidden>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="lienzo" value="">
+  <button type="submit">{{ t('designs_preview_button') }}</button>
+</form>
+
+<script type="application/json" id="canvas-doc">{{ doc|tojson }}</script>
+<script type="application/json" id="canvas-fonts">{{ font_stacks|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/canvas.js?v={{ asset_version }}"></script>
+{% endblock %}

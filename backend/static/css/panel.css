@@ -448,6 +448,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .tag--on { color: var(--color-on-accent); background: var(--color-accent); }
 .tag--warn { color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .notice--ok { border-color: var(--color-accent); }
+/* Un aviso que no impide nada, pero que conviene leer. */
+.notice--warn { border-color: #D97706; }
 
 /* ------------------------------------------------------------- settings
    The shape of YouTube's settings screen —sections down the left, rows of
@@ -700,7 +702,171 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .foot { margin-top: 20px; font-size: .95rem; color: var(--color-ink-soft); }
 
 /* --------------------------------------------------------------- plantillas
-   Elegir una prediseñada y llenarla. */
+   Los dos caminos arriba, las notas, y la lista. */
+
+/* Crear y cargar: las dos cosas que se vienen a hacer aquí, del mismo tamaño
+   y lado a lado. Estrecha la pantalla, una debajo de otra. */
+.start { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 22px; }
+.start__one {
+  flex: 1 1 240px; justify-content: center; text-align: center;
+  padding: 18px 22px; font-size: 1.05rem;
+}
+.start__soon { font-weight: 500; font-size: .85rem; opacity: .8; }
+/* Apagado sobre el fondo de la página se perdía: lleva su borde. */
+.start__one.btn--off, .start__one.btn--off:hover {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+}
+
+/* Lo que conviene saber antes de empezar, en dos líneas y no en un párrafo. */
+.notes {
+  margin: 22px 0 0; padding: 16px 18px 16px 34px; display: grid; gap: 8px;
+  background: var(--color-surface-alt); border: 1px solid var(--color-border);
+  border-radius: 12px; color: var(--color-ink-soft); font-size: .95rem;
+}
+.notes code, .notes__marks code {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .88rem;
+  color: var(--color-ink); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: 6px; padding: 1px 6px;
+}
+.notes__marks { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 6px; }
+
+/* La bandeja de cargar: sale de la derecha, encima de la lista. */
+.drawer {
+  margin: 0 0 0 auto; height: 100%; max-height: 100%; width: min(480px, 100%);
+  padding: 22px 24px; border: 0; border-left: 1px solid var(--color-border);
+  background: var(--color-surface); color: var(--color-ink);
+  box-shadow: var(--shadow-lg);
+}
+.drawer::backdrop { background: rgba(0, 0, 0, .45); }
+.drawer__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.drawer__head .settings__subtitle { margin: 0; padding-top: 0; border-top: 0; }
+.drawer__close {
+  width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--color-border);
+  background: transparent; color: var(--color-ink); font-size: 1.3rem; line-height: 1;
+  cursor: pointer;
+}
+.drawer__close:hover { background: var(--color-surface-alt); }
+
+/* El código de una pieza: se lee en monoespaciada y no se parte en renglones,
+   que en HTML cambiaría lo que se ve al editarlo. */
+.code {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: .85rem; line-height: 1.5; white-space: pre; overflow: auto;
+  tab-size: 2; min-height: 420px;
+}
+
+/* ------------------------------------------------------------- el lienzo
+   Tres columnas: lo que se agrega, las diapositivas, y cómo queda. Por debajo
+   de 1360 px la vista previa baja; en un teléfono el lienzo se desplaza de
+   lado, porque tiene los 600 px de un correo. */
+.editor__head {
+  display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between;
+  gap: 14px; margin-top: 18px;
+}
+.editor__name { flex: 1 1 280px; max-width: 420px; }
+.editor__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.editor__actions .btn { margin-top: 0; }
+.editor__narrow { display: none; }
+@media (max-width: 760px) { .editor__narrow { display: block; } }
+
+.editor {
+  display: grid; gap: 22px; margin-top: 18px; align-items: start;
+  grid-template-columns: 170px minmax(0, 660px) minmax(0, 1fr);
+}
+@media (max-width: 1360px) {
+  .editor { grid-template-columns: 170px minmax(0, 1fr); }
+  .editor__side { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) { .editor { grid-template-columns: 1fr; } }
+
+.editor__tools { position: sticky; top: 18px; display: grid; gap: 10px; }
+.editor__adds { display: grid; gap: 8px; }
+.tool {
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--color-border);
+  background: var(--color-surface); color: var(--color-ink); font: inherit;
+  font-weight: 600; text-align: left; cursor: pointer;
+}
+.tool:hover { border-color: var(--color-accent); color: var(--color-accent-strong); }
+.editor__keys { font-size: .85rem; }
+
+/* Alto fijo: si creciera o encogiera según lo elegido, las diapositivas de
+   abajo se moverían justo mientras se hace clic en ellas. */
+.props {
+  position: sticky; top: 0; z-index: 5; padding: 10px 12px; height: 158px;
+  overflow-y: auto; box-sizing: border-box;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+.props__none { margin: 8px 0; color: var(--color-ink-soft); font-size: .92rem; }
+.props__row { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 12px; }
+.props__row .btn { margin-top: 0; }
+.props__field { display: grid; gap: 2px; font-size: .75rem; font-weight: 600;
+                color: var(--color-ink-soft); margin: 0; }
+.props__field input, .props__field select { margin: 0; min-width: 120px; padding: 6px 8px; }
+.props__field--small input, .props__field--small select { min-width: 0; width: 76px; }
+.props__field--color input { min-width: 0; width: 46px; height: 34px; padding: 2px; }
+.props__check { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem;
+                margin: 0 0 8px; }
+
+.stage { display: grid; gap: 22px; margin-top: 14px; overflow-x: auto; padding-bottom: 8px; }
+.cv-wrap { display: grid; gap: 8px; justify-items: start; }
+.cv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .88rem; }
+.cv-bar .btn { margin-top: 0; }
+.cv-bar__title { font-weight: 700; margin-right: 6px; }
+.cv-bar__bg { display: inline-flex; align-items: center; gap: 6px; margin: 0;
+              color: var(--color-ink-soft); }
+.cv-bar__bg input { width: 38px; height: 28px; padding: 1px; margin: 0; }
+.cv-wrap.is-on .cv-slide { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+
+/* La diapositiva mide lo que mide en el correo: 600 px de ancho. */
+.cv-slide {
+  position: relative; flex: none; overflow: hidden;
+  box-shadow: 0 0 0 1px var(--color-border), var(--shadow-sm);
+  touch-action: none; user-select: none;
+}
+.cv-item { position: absolute; box-sizing: border-box; cursor: move;
+           white-space: pre-wrap; overflow-wrap: break-word; }
+.cv-item--image { background-position: center; background-repeat: no-repeat;
+                  background-color: rgba(0, 0, 0, .04); z-index: 1; }
+.cv-item--text, .cv-item--button { z-index: 10; }
+/* Sin overflow escondido: taparía los tiradores de las esquinas. */
+.cv-item--button { text-align: center; white-space: nowrap; }
+.cv-item:hover { outline: 1px dashed var(--color-accent); }
+.cv-item.is-sel { outline: 2px solid var(--color-accent); }
+.cv-item.is-bad { outline: 2px solid #D92D20; background-color: rgba(217, 45, 32, .08); }
+.cv-item.is-editing { cursor: text; user-select: text; outline: 2px solid var(--color-accent);
+                      background: rgba(255, 255, 255, .6); }
+.cv-probe { visibility: hidden; left: 0; top: 0; }
+.cv-handle {
+  position: absolute; width: 12px; height: 12px; border-radius: 3px;
+  background: #FFFFFF; border: 2px solid var(--color-accent); z-index: 20;
+}
+.cv-handle--nw { left: -7px; top: -7px; cursor: nwse-resize; }
+.cv-handle--ne { right: -7px; top: -7px; cursor: nesw-resize; }
+.cv-handle--sw { left: -7px; bottom: -7px; cursor: nesw-resize; }
+.cv-handle--se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+.cv-guide { position: absolute; background: #E0368C; z-index: 30; pointer-events: none; }
+.cv-guide--x { top: 0; bottom: 0; width: 1px; }
+.cv-guide--y { left: 0; right: 0; height: 1px; }
+.cv-grip {
+  width: 600px; height: 12px; border-radius: 0 0 8px 8px; cursor: ns-resize;
+  background: var(--color-surface-alt); border: 1px solid var(--color-border); border-top: 0;
+  margin-top: -8px;
+}
+.cv-grip:hover { background: var(--color-accent-soft); }
+
+/* La vista previa: el correo a su tamaño de 600, achicado para caber. */
+.editor__side { position: sticky; top: 18px; }
+.editor__frame {
+  width: 450px; max-width: 100%; height: 720px; overflow: hidden; margin-top: 12px;
+  border: 1px solid var(--color-border); border-radius: 12px; background: #FFFFFF;
+}
+.editor__frame iframe {
+  width: 600px; height: 960px; border: 0; transform: scale(.75); transform-origin: 0 0;
+}
+
+/* De antes: las prediseñadas en tarjetas. Ya no se ofrecen, pero las clases
+   siguen por si vuelven a hacer falta en el editor. */
 
 /* Una tarjeta por plantilla: se eligen mirándolas, no leyendo una lista. */
 .picks { display: grid; gap: 14px; margin-top: 14px;

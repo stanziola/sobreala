@@ -40,6 +40,10 @@ NAME_MAX = 80
 # nuevos: un campo que a veces está es fácil de equivocar en una consulta.
 UPLOAD = "upload"
 BUILT_IN = "builtin"
+# Hecha en el lienzo de «Crear plantilla»: se guardan las diapositivas con sus
+# coordenadas y los nombres de los fondos ya fundidos, no el HTML. El correo se
+# arma al enviar, con `services/canvas.py`.
+CANVAS = "canvas"
 
 
 def now() -> datetime:
@@ -97,6 +101,58 @@ def update_filled(db, account_id, design_id, *, name: str,
         {"_id": design_id, "account_id": account_id, "source": BUILT_IN},
         {"$set": {"name": clean_name(name), "fields": dict(filled),
                   "updated_at": now()}}).matched_count == 1
+
+
+def save_canvas(db, account_id, *, name: str, doc: dict[str, Any],
+                backgrounds: list[str | None]) -> Any:
+    """Guardar un lienzo nuevo. Devuelve su id."""
+    return db.designs.insert_one({
+        "account_id": account_id,
+        "source": CANVAS,
+        "name": clean_name(name),
+        "canvas": doc,
+        "backgrounds": list(backgrounds),
+        "created_at": now(),
+        "updated_at": now(),
+    }).inserted_id
+
+
+def update_canvas(db, account_id, design_id, *, name: str, doc: dict[str, Any],
+                  backgrounds: list[str | None]) -> bool:
+    """Volver a guardar un lienzo. La cuenta va en la consulta."""
+    return db.designs.update_one(
+        {"_id": design_id, "account_id": account_id, "source": CANVAS},
+        {"$set": {"name": clean_name(name), "canvas": doc,
+                  "backgrounds": list(backgrounds),
+                  "updated_at": now()}}).matched_count == 1
+
+
+def update_html(db, account_id, design_id, *, name: str, html: str) -> bool:
+    """Volver a guardar el HTML de una pieza subida, después de editarlo.
+
+    Solo las subidas: una prediseñada llena no tiene HTML propio que cambiar.
+    La cuenta va en la consulta, así que el id de otra cuenta no encuentra nada.
+    """
+    return db.designs.update_one(
+        {"_id": design_id, "account_id": account_id, "source": UPLOAD},
+        {"$set": {"name": clean_name(name), "html": html,
+                  "bytes": len(html.encode("utf-8")),
+                  "updated_at": now()}}).matched_count == 1
+
+
+def duplicate(db, account_id, design_id, *, name: str) -> Any:
+    """Una copia de una pieza de esta cuenta, con otro nombre. Devuelve su id.
+
+    Copia lo guardado entero, imágenes incluidas: las dos nombran las mismas, y
+    por eso borrar una no borra las que la otra todavía usa (ver `remove` en
+    las rutas).
+    """
+    found = by_id(db, account_id, design_id)
+    if found is None:
+        return None
+    copy = {key: value for key, value in found.items() if key != "_id"}
+    copy.update(name=clean_name(name), created_at=now(), updated_at=now())
+    return db.designs.insert_one(copy).inserted_id
 
 
 def for_account(db, account_id, *, limit: int = 50) -> list[dict[str, Any]]:

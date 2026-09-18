@@ -824,12 +824,35 @@ TEXTS = {
     # Para el cliente son «plantillas»; en el código son «designs», porque
     # `templates/` en este proyecto ya son las plantillas Jinja del panel.
     "designs_title": "Plantillas",
-    "designs_lead": "Los diseños con los que sale tu correo. Los nuestros los "
-                    "tienes desde el primer día; los tuyos los subes en HTML.",
-    "designs_ready_title": "Plantillas prediseñadas",
-    "designs_ready_lead": "Vienen con Panamails y las tienen todos los planes.",
-    "designs_ready_empty": "Ninguna todavía. Se irán agregando y aparecerán "
-                           "aquí solas, sin que tengas que hacer nada.",
+    "designs_lead": "Las piezas con las que sale tu correo. Créalas aquí o "
+                    "carga el HTML que ya tienes.",
+    "designs_create": "Crear plantilla",
+
+    "designs_upload_button": "Cargar plantilla personalizada",
+    "designs_note_columns": "Si escribes {mark} en el texto, a cada persona le "
+                            "llega lo que tenga en su columna «{what}». Tus "
+                            "columnas:",
+    "designs_note_columns_none": "Cuando crees columnas, como Edad, y escribas "
+                                 "*|EDAD|* en el texto, a cada persona le "
+                                 "llegará su propia edad.",
+    "designs_note_columns_link": "Crear columnas en Contactos",
+    "designs_note_size": "El HTML no puede pesar más de {kb} KB: pasado eso "
+                         "Gmail corta el correo, y lo primero que se pierde es "
+                         "el botón para anular la suscripción.",
+    "designs_kind_upload": "HTML cargado, {kb} KB",
+    "designs_kind_canvas": "Hecha en el editor, {n} diapositivas",
+    "designs_kind_canvas_one": "Hecha en el editor, 1 diapositiva",
+    "designs_copy": "Duplicar",
+    "designs_copy_name": "Copia de {name}",
+    "designs_copied": "Listo, ahí tienes la copia.",
+    "designs_close": "Cerrar",
+    "designs_html_lead": "Cambia el código a la izquierda y mira a la derecha "
+                         "cómo queda. Para poner el dato de cada persona, pulsa "
+                         "una columna y se escribe donde tengas el cursor.",
+    "designs_html_fresh": "Se cargó bien. Ya la puedes usar, o cambiarle lo que "
+                          "quieras aquí.",
+    "designs_html_code": "Código HTML",
+    "designs_html_size": "Pesa {kb} KB de {max} KB.",
 
     # --- las prediseñadas ---------------------------------------------------
     # El nombre de cada una lo declara su archivo, en email_templates/; aquí va
@@ -843,7 +866,6 @@ TEXTS = {
                            "cuatro bloques.",
     "designs_tpl_convocatoria": "Una asamblea o un evento, con la fecha, la "
                                 "hora y el lugar aparte.",
-    "designs_use": "Usar esta",
     "designs_edit": "Editar",
 
     # --- llenar una prediseñada --------------------------------------------
@@ -873,9 +895,8 @@ TEXTS = {
     # --- la vista previa ---------------------------------------------------
     "designs_columns_title": "Escribir un dato de cada contacto",
     "designs_columns_hint": "Pulsa una para escribirla donde tengas el cursor, "
-                            "o cópiala tal cual. Al enviar, cada quien recibe "
-                            "lo suyo; a quien le falte ese dato le llega el "
-                            "respaldo que le pusiste a la columna.",
+                            "o escríbela a mano. Al enviar, a cada persona le "
+                            "llega su propio dato.",
     "designs_columns_manage": "Las creas y las borras en Contactos →",
     "designs_preview_title": "Vista previa",
     "designs_preview_button": "Ver cómo queda",
@@ -903,21 +924,17 @@ TEXTS = {
     # Después de achicarla; pasa con dibujos enormes llenos de detalle.
     "designs_image_big": "Esa imagen no se pudo dejar por debajo de {kb} KB. "
                          "Prueba con otra.",
-    "designs_image_gif": "Ese GIF pesa demasiado. Los GIF se guardan tal cual "
-                         "para no quitarles la animación, así que tienen que "
-                         "venir livianos.",
+    "designs_image_gif": "Ese GIF pesa demasiado. Los GIF se guardan sin "
+                         "cambios para no quitarles la animación, así que "
+                         "tienen que venir livianos.",
     "designs_image_limit": "Ya tienes {n} imágenes guardadas, que es el "
                            "máximo. Borra alguna plantilla que no uses para "
                            "liberar las suyas.",
 
     "designs_mine_title": "Tus plantillas",
-    "designs_filled_title": "Las que has armado",
-    "designs_filled_empty": "Todavía no has armado ninguna. Elige una "
-                            "de arriba y llénala.",
-    "designs_uploaded_title": "Las que has subido",
     "designs_from": "Plantilla {name}",
-    "designs_mine_empty": "Todavía no has subido ninguna.",
-    "designs_upload_title": "Subir un HTML",
+    "designs_mine_empty": "Todavía no tienes ninguna.",
+    "designs_upload_title": "Cargar plantilla personalizada",
     "designs_upload_hint": "Un archivo .html de hasta {kb} KB. Pasado ese "
                            "tamaño Gmail recorta el correo y se pierde el "
                            "botón para anular la suscripción.",
@@ -925,12 +942,11 @@ TEXTS = {
     "designs_name": "Nombre",
     "designs_name_hint": "Para reconocerla después. Si lo dejas vacío usamos "
                          "el nombre del archivo.",
-    "designs_submit": "Subir",
+    "designs_submit": "Cargar",
     "designs_saved": "Listo, ya la puedes usar.",
     "designs_delete": "Eliminar",
     "designs_size": "{kb} KB",
-    "designs_locked": "Subir tu propio HTML es desde el plan {plan}. Con tu "
-                      "plan puedes usar las plantillas prediseñadas.",
+    "designs_locked": "Cargar tu propio HTML es desde el plan {plan}.",
 
     # Por qué no se pudo guardar. Cada regla está por una razón, y la frase la
     # dice, porque «archivo inválido» no le sirve a nadie para arreglarlo.
@@ -950,6 +966,103 @@ TEXTS = {
     "designs_bad_external": "Trae CSS o imágenes de otro sitio. Un archivo de "
                             "fuera puede cambiar después de aprobado, así que "
                             "aprobarlo no significaría nada.",
+
+    # --- el lienzo de crear ---------------------------------------------------
+    "canvas_title_new": "Plantilla nueva",
+    "canvas_lead": "Agrega texto, botones e imágenes y ponlos donde quieras. "
+                   "Las imágenes van siempre de fondo, con el texto y los "
+                   "botones encima.",
+    "canvas_noscript": "El editor necesita JavaScript. Actívalo en tu "
+                       "navegador para crear plantillas.",
+    "canvas_narrow": "El editor se usa mejor en una computadora: en una "
+                     "pantalla angosta el lienzo no cabe entero.",
+    "canvas_add": "Agregar",
+    "canvas_add_text": "Texto",
+    "canvas_add_button": "Botón",
+    "canvas_add_image": "Imagen",
+    "canvas_add_slide": "Diapositiva",
+    "canvas_image_hint": "JPG, PNG, GIF o WebP, hasta {mb} MB. La imagen entra "
+                         "de fondo en la diapositiva elegida.",
+    "canvas_marks_hint": "Haz doble clic en un texto y pulsa una columna: se "
+                         "escribe donde está el cursor.",
+    "canvas_marks_need": "Primero haz doble clic en un texto, o pon el cursor "
+                         "en el texto del botón.",
+    "canvas_keys": "Flechas para mover (con Mayús, de a 10). Suprimir para "
+                   "borrar. Ctrl+Z deshace y Ctrl+Y rehace.",
+    "canvas_props_none": "Haz clic en algo para cambiarlo. Doble clic en un "
+                         "texto para escribir.",
+    "canvas_font": "Fuente",
+    "canvas_size": "Tamaño",
+    "canvas_color": "Color de la letra",
+    "canvas_bold": "Negrita",
+    "canvas_italic": "Cursiva",
+    "canvas_align": "Alineación",
+    "canvas_align_left": "Izquierda",
+    "canvas_align_center": "Centro",
+    "canvas_align_right": "Derecha",
+    "canvas_line": "Interlineado",
+    "canvas_button_text": "Texto del botón",
+    "canvas_href": "Enlace",
+    "canvas_button_bg": "Color del botón",
+    "canvas_radius": "Forma",
+    "canvas_fit": "Cómo llena su caja",
+    "canvas_fit_cover": "Recortada para llenarla",
+    "canvas_fit_contain": "Completa",
+    "canvas_replace": "Cambiar imagen",
+    "canvas_front": "Traer al frente",
+    "canvas_back": "Enviar atrás",
+    "canvas_delete": "Borrar",
+    "canvas_undo": "Deshacer",
+    "canvas_redo": "Rehacer",
+    "canvas_slide": "Diapositiva {n}",
+    "canvas_slide_bg": "Fondo",
+    "canvas_slide_up": "Subir",
+    "canvas_slide_down": "Bajar",
+    "canvas_slide_copy": "Duplicar",
+    "canvas_slide_delete": "Borrar",
+    "canvas_slide_confirm": "¿Borrar esta diapositiva con todo lo que tiene?",
+    "canvas_resize_slide": "Arrastra para cambiar el alto",
+    "canvas_new_text": "Escribe aquí",
+    "canvas_new_button": "Ver más",
+    "canvas_overlap": "Hay textos o botones encimados (en rojo). Sepáralos "
+                      "para poder guardar: en el correo no se pueden encimar.",
+    "canvas_few": "Una diapositiva tiene imagen y casi nada de texto. Un "
+                  "correo que es casi solo imagen tiene más riesgo de ir a "
+                  "spam.",
+    "canvas_uploading": "Subiendo la imagen…",
+    "canvas_upload_failed": "No se pudo subir la imagen. Prueba otra vez.",
+    "canvas_max_slides": "Caben hasta {n} diapositivas.",
+    "canvas_max_items": "Caben hasta {n} elementos por diapositiva.",
+    "canvas_name_needed": "Ponle un nombre para reconocerla después.",
+    "canvas_leave": "Tienes cambios sin guardar.",
+    "canvas_preview_wait": "La vista previa aparece aquí en un momento.",
+
+    # Por qué no se pudo guardar un lienzo.
+    "canvas_bad_broken": "El lienzo llegó dañado. Recarga la página e "
+                         "inténtalo otra vez.",
+    "canvas_bad_empty": "La plantilla no tiene ninguna diapositiva.",
+    "canvas_bad_too_many_slides": "Tiene más diapositivas de las que caben.",
+    "canvas_bad_too_many_items": "Una diapositiva tiene más elementos de los "
+                                 "que caben.",
+    "canvas_bad_height": "Una diapositiva es demasiado baja o demasiado alta.",
+    "canvas_bad_bounds": "Algo se sale de su diapositiva. Muévelo hacia "
+                         "dentro.",
+    "canvas_bad_image": "Una imagen no es de tu cuenta o ya no existe. "
+                        "Cámbiala.",
+    "canvas_bad_font": "Una fuente no está entre las que funcionan en todos "
+                       "los correos.",
+    "canvas_bad_size": "Un texto tiene un tamaño fuera de lo permitido.",
+    "canvas_bad_text_long": "Un texto es demasiado largo.",
+    "canvas_bad_button_text": "Un botón no tiene texto o tiene demasiado.",
+    "canvas_bad_href": "El enlace de un botón tiene que empezar por https:// "
+                       "o mailto:.",
+    "canvas_bad_overlap": "Hay textos o botones encimados. Sepáralos: en el "
+                          "correo no se pueden encimar.",
+    "canvas_bad_tangled": "Hay textos y botones acomodados en molinillo, "
+                          "rodeándose sin tocarse. Mueve alguno para que "
+                          "queden en filas o columnas.",
+    "canvas_bad_too_big": "El correo pasa de {kb} KB. Quita algo de texto o "
+                          "alguna diapositiva.",
 
     "menu_designs": "Plantillas",
     # --- enviar correos ----------------------------------------------------
