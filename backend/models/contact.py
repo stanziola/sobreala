@@ -363,6 +363,12 @@ def create(db, account_id, *, email: str, name: str = "",
     return added == 1
 
 
+def for_preview(db, account_id, *, limit: int = 100) -> list[dict[str, Any]]:
+    """Los primeros por dirección, para elegir con quién ver una plantilla."""
+    return list(db.contacts.find({"account_id": account_id}, {"email": 1, "name": 1})
+                .sort("email_normalized", 1).limit(limit))
+
+
 def by_id(db, account_id, contact_id) -> dict[str, Any] | None:
     """Un contacto de esta cuenta. El account_id va en la consulta, no en una
     comprobación aparte: un id de otra cuenta no encuentra nada."""

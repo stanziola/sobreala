@@ -39,3 +39,14 @@ def test_los_archivos_del_panel_estan_al_dia():
     assert not viejos, (
         "Estos archivos del panel se quedaron viejos: "
         f"{relativas(viejos)}. Corre: python backend/build_assets.py")
+
+
+def test_planes_ya_no_vende_complementos():
+    """Las recargas y las piezas adicionales se dejaron de vender: ni en el
+    documento de precios ni en la página de planes."""
+    precios = (ROOT / "docs" / "pricing.md").read_text(encoding="utf-8")
+    planes = (ROOT / "landing" / "planes" / "index.html").read_text(encoding="utf-8")
+    for texto in ("Recarga de 1,000 correos", "Diseño de pieza HTML adicional"):
+        assert texto not in precios
+        assert texto not in planes
+    assert "al recargar" not in planes

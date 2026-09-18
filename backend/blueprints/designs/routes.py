@@ -31,6 +31,7 @@ from blueprints.auth.routes import current_account, not_for_admins
 from db import get_db
 from i18n import TEXTS, t
 from models import account as accounts
+from models import contact as contacts
 from models import design as designs
 from models import image as images
 from services import fields as columns
@@ -190,7 +191,7 @@ def upload():
 
 # --------------------------------------------------------- editar un HTML
 
-def html_preview(html: str, plan, fields: list[dict]) -> Response:
+def html_preview(html: str, plan) -> Response:
     """El HTML del cliente como saldría, para el marco aislado de al lado.
 
     Pasa por el validador antes de dibujarse: lo que no se puede guardar
@@ -206,8 +207,23 @@ def html_preview(html: str, plan, fields: list[dict]) -> Response:
                 "color:#18181B;\"><p>" + escape(explain(problems)) + "</p>")
         return Response(page, mimetype="text/html")
     email = render.email_from_html(html, plan=plan, preview=True)
-    return Response(columns.preview_fill(email, fields),
+    return Response(filled_for(get_db(), current_account(), email),
                     mimetype="text/html")
+
+
+def filled_for(db, account, email: str) -> str:
+    """La vista previa con las marcas llenas: con los datos del contacto que se
+    eligió al lado, o con el nombre de cada columna en una pastilla.
+
+    El contacto se busca con la cuenta en la consulta: el de otra cuenta no
+    encuentra nada y la vista sale con las pastillas.
+    """
+    fields = accounts.fields_of(account)
+    wanted = as_id(request.form.get("contacto"))
+    person = contacts.by_id(db, account["_id"], wanted) if wanted else None
+    if person is None:
+        return columns.preview_fill(email, fields)
+    return columns.fill(email, person, fields)
 
 
 @bp.route("/plantillas/html/<raw>", methods=["GET", "POST"])
@@ -234,7 +250,7 @@ def edit_html(raw):
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         elif request.form.get("accion") == "vista":
-            return html_preview(html, plan, accounts.fields_of(account))
+            return html_preview(html, plan)
         elif not plans.can_upload(plan):
             # Quien bajó de plan conserva lo que cargó y lo puede seguir
             # usando, pero cambiar el HTML es cargar HTML.
@@ -253,6 +269,7 @@ def edit_html(raw):
         found=found, html=html, name=name, errors=errors,
         fresh=bool(request.args.get("nueva")),
         columns=marks_for(account),
+        people=contacts.for_preview(db, account["_id"]),
         max_kb=html_check.MAX_BYTES // 1024,
         kb=round(len(html.encode("utf-8")) / 1024, 1),
         watermark=plans.has_watermark(plan))
@@ -464,11 +481,20 @@ def canvas_explain(problems: list[str]) -> str:
                     for one in problems)
 
 
-def canvas_size(doc, plan, grounds: list[str | None]) -> int:
+def canvas_email(doc, plan, urls: list[str | None], shades=None, *,
+                 unsubscribe: str = "#", preview: bool = False) -> str:
+    """El correo entero de un lienzo: el cuerpo, el sobre y las reglas del modo
+    oscuro. Lo mismo que arma el envío (`sender.Piece`)."""
+    return render.email_from_body(canvas.to_html(doc, urls, shades), plan=plan,
+                                  unsubscribe=unsubscribe, preview=preview,
+                                  style=canvas.dark_css(doc, shades))
+
+
+def canvas_size(doc, plan, urls: list[str | None]) -> int:
     """Lo que pesa el correo entero, con el sobre y la baja, que es lo que
     cuenta Gmail para recortarlo."""
-    email = render.email_from_body(canvas.to_html(doc, grounds), plan=plan,
-                                   unsubscribe=UNSUBSCRIBE_SAMPLE)
+    email = canvas_email(doc, plan, urls, [doc["bg"]] * len(urls),
+                         unsubscribe=UNSUBSCRIBE_SAMPLE)
     return len(email.encode("utf-8"))
 
 
@@ -477,10 +503,10 @@ UNSUBSCRIBE_SAMPLE = "https://panel.panamails.com/baja/" + "x" * 96
 
 
 def sample_grounds(doc) -> list[str | None]:
-    """Direcciones de fondo del mismo largo que las que tendrá al guardarse."""
+    """Direcciones de imagen del mismo largo que las que tendrá al guardarse."""
     sample = imaging.url_of("x" * 22 + ".jpg")
-    return [sample if any(one["t"] == "image" for one in slide["items"]) else None
-            for slide in doc["slides"]]
+    return [sample if one["kind"] in ("picture", "backdrop") else None
+            for one in canvas.groups(doc)]
 
 
 def review_texts(found: list[dict]) -> list[str]:
@@ -497,7 +523,7 @@ def canvas_editor(account, found):
     """
     db = get_db()
     errors: dict[str, str] = {}
-    doc = found.get("canvas") if found else canvas.blank()
+    doc = (canvas.read(found.get("canvas")) if found else None) or canvas.blank()
     name = found.get("name", "") if found else ""
 
     if request.method == "POST":
@@ -521,22 +547,21 @@ def canvas_editor(account, found):
                 errors["form"] = " ".join(review_texts(spam))
             elif not errors:
                 load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
-                grounds = [images.save(db, account["_id"], data=raw, ext="jpg",
-                                       mime="image/jpeg", kind=images.BACKGROUND)
-                           if raw else None
-                           for raw in canvas.backgrounds(posted, load)]
+                grounds, shades = canvas.store(db, account["_id"], posted, load)
                 html = canvas.to_html(posted, [imaging.url_of(one) if one else None
-                                               for one in grounds])
+                                               for one in grounds], shades)
                 if len(html.encode("utf-8")) > html_check.MAX_BYTES:
                     images.remove(db, account["_id"], grounds)
                     errors["form"] = canvas_explain(["too_big"])
                 else:
                     if found is None:
                         designs.save_canvas(db, account["_id"], name=name,
-                                            doc=posted, backgrounds=grounds)
+                                            doc=posted, backgrounds=grounds,
+                                            shades=shades)
                         return redirect(url_for("designs.index", guardado=1))
                     designs.update_canvas(db, account["_id"], found["_id"],
-                                          name=name, doc=posted, backgrounds=grounds)
+                                          name=name, doc=posted, backgrounds=grounds,
+                                          shades=shades)
                     drop_unused(db, account["_id"], found.get("backgrounds") or [])
                     return redirect(url_for("designs.index", cambiado=1))
 
@@ -545,9 +570,10 @@ def canvas_editor(account, found):
         found=found, doc=doc, name=name, errors=errors,
         fonts=list(canvas.FONTS), font_stacks=canvas.FONTS,
         columns=marks_for(account),
+        people=contacts.for_preview(db, account["_id"]),
         limits={"minSize": canvas.MIN_SIZE, "maxSize": canvas.MAX_SIZE,
                 "minHeight": canvas.MIN_HEIGHT, "maxHeight": canvas.MAX_HEIGHT,
-                "maxSlides": canvas.MAX_SLIDES, "maxItems": canvas.MAX_ITEMS,
+                "maxItems": canvas.MAX_ITEMS, "altMax": canvas.ALT_MAX,
                 "width": canvas.WIDTH},
         image_mb=imaging.MAX_UPLOAD // (1024 * 1024),
         watermark=plans.has_watermark(accounts.plan_of(account)))
@@ -608,13 +634,12 @@ def canvas_preview():
         return Response("", mimetype="text/html")
     # Solo las imágenes de esta cuenta: `data_of` pregunta con ella.
     load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
-    grounds = [canvas.data_url(raw) if raw else None
-               for raw in canvas.backgrounds(doc, load)]
-    email = render.email_from_body(canvas.to_html(doc, grounds),
-                                   plan=accounts.plan_of(account), preview=True)
-    fields = accounts.fields_of(account)
-    return Response(columns.preview_fill(email, fields),
-                    mimetype="text/html")
+    made = canvas.parts(doc, load)
+    email = canvas_email(doc, accounts.plan_of(account),
+                         [canvas.data_url(raw) if raw else None for raw in made],
+                         [canvas.average(raw, doc["bg"]) if raw else None
+                          for raw in made], preview=True)
+    return Response(filled_for(db, account, email), mimetype="text/html")
 
 
 # El ancho al que se guardan las fotos del lienzo: al doble de lo que se ven, para
@@ -641,7 +666,8 @@ def canvas_image():
         return jsonify(error=t("designs_image_heavy",
                                mb=imaging.MAX_UPLOAD // (1024 * 1024))), 400
     try:
-        data, ext, mime = imaging.shrink(raw, width=CANVAS_PHOTO_WIDTH)
+        # Sin los bordes transparentes: la caja queda justo en lo que se ve.
+        data, ext, mime = imaging.shrink(imaging.trim(raw), width=CANVAS_PHOTO_WIDTH)
     except imaging.ImageError as exc:
         return jsonify(error=t(IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
                                kb=imaging.STORED_MAX // 1024)), 400

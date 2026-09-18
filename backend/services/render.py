@@ -145,15 +145,17 @@ def email(key: str, filled: dict[str, str], *, plan: str | None,
 
 
 def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
-                    preview: bool = False) -> str:
+                    preview: bool = False, style: str = "") -> str:
     """Un correo a partir de un cuerpo ya armado por nosotros, como el del
     lienzo: el mismo sobre que las prediseñadas, con la baja, la dirección
     postal y la marca de agua por fuera.
 
-    `body` tiene que venir ya escapado: aquí va dentro sin tocarlo.
+    `body` tiene que venir ya escapado: aquí va dentro sin tocarlo. `style`
+    son reglas CSS nuestras para la cabecera (las del modo oscuro).
     """
     return _env.get_template("_wrap.html").render(
         cuerpo=Markup(body),
+        estilo=Markup(style),
         unsubscribe=unsubscribe,
         preview=preview,
         watermark=plans.has_watermark(plan),

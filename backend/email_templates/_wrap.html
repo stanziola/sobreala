@@ -5,7 +5,21 @@
     que arma un correo. -#}
 <!DOCTYPE html>
 <html lang="es">
-<body style="margin:0;padding:0;background:#F1F6FC;">
+<head>
+{#- Lo que le dice a cada lector cómo abrirlo. En el teléfono, que no agrande
+    la letra por su cuenta (`text-size-adjust` en el cuerpo): el texto crecía y
+    se salía de su sitio. Sin `viewport` ni la marca que le pide al iPhone no
+    reacomodar, a propósito: el correo mide 600 fijos, y con ellas el teléfono
+    dejaría de achicarlo para que quepa y saldría cortado. Y en claro: Outlook
+    y el iPhone cambian los colores en modo oscuro, y el texto blanco de una
+    foto salía gris oscuro. `estilo` son las reglas que se lo piden a Outlook
+    color por color (`canvas.dark_css()`). -#}
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<style>:root{color-scheme:light;supported-color-schemes:light;}{{ estilo }}</style>
+</head>
+<body style="margin:0;padding:0;background:#F1F6FC;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 {{ cuerpo }}
 
 {% include "_foot.html" %}

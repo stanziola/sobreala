@@ -88,6 +88,36 @@ def kind(raw: bytes) -> tuple[str, str] | None:
     return None
 
 
+def trim(raw: bytes) -> bytes:
+    """La imagen sin sus bordes transparentes, en PNG. Si no los tiene, o no se
+    puede leer, sale tal cual: `shrink()` es quien decide si sirve.
+
+    Un logo exportado con aire transparente alrededor ocupaba en el lienzo una
+    caja más grande que lo que se ve. El GIF no se toca: recortarlo le quitaría
+    la animación.
+    """
+    found = kind(raw)
+    if found is None or found[0] == "gif":
+        return raw
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(BytesIO(raw)) as opened:
+                clear = (opened.mode in ("RGBA", "LA")
+                         or (opened.mode == "P" and "transparency" in opened.info))
+                if not clear:
+                    return raw
+                image = (ImageOps.exif_transpose(opened) or opened).convert("RGBA")
+                box = image.getchannel("A").getbbox()
+                if not box or box == (0, 0, image.width, image.height):
+                    return raw
+                out = BytesIO()
+                image.crop(box).save(out, format="PNG")
+                return out.getvalue()
+    except (Image.DecompressionBombWarning, OSError, ValueError):
+        return raw
+
+
 def shrink(raw: bytes, *, width: int = WIDTH) -> tuple[bytes, str, str]:
     """Dejarla lista para un correo. Devuelve (datos, extensión, tipo).
 

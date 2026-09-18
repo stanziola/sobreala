@@ -506,5 +506,27 @@
     clearTimeout(timer);
     timer = setTimeout(refresh, 700);
   });
+  // El selector de contacto está al otro lado de la pantalla, fuera del
+  // formulario aunque viaje con él: sus cambios no llegan por «input».
+  var person = document.querySelector("[data-preview-contact]");
+  if (person) person.addEventListener("change", refresh);
   refresh();
+})();
+
+/* Ver la vista previa como en una computadora o como en un teléfono. Es una
+   clase en el marco: lo de dentro no se toca, sigue aislado. */
+(function () {
+  var frame = document.querySelector("[data-preview-frame]");
+  if (!frame) return;
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-preview-view]");
+    if (!b) return;
+    var phone = b.getAttribute("data-preview-view") === "phone";
+    frame.classList.toggle("is-phone", phone);
+    Array.prototype.forEach.call(document.querySelectorAll("[data-preview-view]"), function (one) {
+      var on = one === b;
+      one.classList.toggle("is-on", on);
+      one.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  });
 })();

@@ -1,13 +1,14 @@
 /* El lienzo de «Crear plantilla». Sin librerías: la cabecera del panel solo deja
    cargar guiones propios.
 
-   El lienzo es un objeto en memoria ({slides: [{h, bg, items: [...]}]}) que se
-   dibuja entero cada vez que cambia. Guardar lo manda en un campo escondido y el
-   servidor lo vuelve a revisar todo (services/canvas.py): nada de lo que se
-   comprueba aquí es una garantía, solo una ayuda para no perder el trabajo.
+   El lienzo es un objeto en memoria ({h, bg, items: [...]}): una sola hoja de
+   600 px que crece hacia abajo, y que se dibuja entera cada vez que cambia.
+   Guardar lo manda en un campo escondido y el servidor lo vuelve a revisar todo
+   (services/canvas.py): nada de lo que se comprueba aquí es una garantía, solo
+   una ayuda para no perder el trabajo.
 
-   Las imágenes van siempre atrás y los textos y botones delante: así es como
-   llega el correo, con las imágenes fundidas en el fondo. */
+   Las fotos y los rectángulos van siempre atrás, en el orden de la lista, y los
+   textos y botones delante: así es como llega el correo. */
 (function () {
   "use strict";
 
@@ -18,11 +19,14 @@
   var L = JSON.parse(root.getAttribute("data-limits") || "{}");
   var FONTS = JSON.parse(document.getElementById("canvas-fonts").textContent || "{}");
   var doc = JSON.parse(document.getElementById("canvas-doc").textContent || "{}");
-  if (!doc.slides || !doc.slides.length) doc = { slides: [{ h: 400, bg: "#FFFFFF", items: [] }] };
+  if (!doc.items) doc = { v: 2, h: 600, bg: "#FFFFFF", items: [] };
 
   var W = L.width || 600;
   var SNAP = 6;
   var FRONT = { text: true, button: true };
+  var BACK = { image: true, shape: true };
+  // Cuánto aire se deja debajo de lo último al agregar algo.
+  var GAP = 20;
 
   var stage = root.querySelector("[data-stage]");
   var props = root.querySelector("[data-props]");
@@ -32,8 +36,7 @@
   var saveForm = document.querySelector("[data-canvas-save]");
   var previewForm = document.querySelector("[data-canvas-preview]");
 
-  var sel = null;          // {s: slide index, i: item index} o null
-  var slideOn = 0;         // la diapositiva donde se agrega
+  var sel = null;          // el índice del elemento elegido, o null
   var editing = null;      // el elemento de texto que se está escribiendo
   var lastField = null;    // el último campo de la barra que tuvo el cursor
   var dirty = false;
@@ -44,7 +47,7 @@
 
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function item() { return sel ? doc.slides[sel.s].items[sel.i] : null; }
+  function item() { return sel === null ? null : doc.items[sel] || null; }
   function linePx(one) { return Math.round(one.size * (one.line || 1.4)); }
 
   function say(text) {
@@ -57,25 +60,32 @@
     return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
   }
 
-  function overlapsIn(slide) {
+  /* Lo que no se puede guardar, para pintarlo en rojo: dos textos o botones
+     encimados, y una foto con enlace que tiene algo encima (el enlace no
+     sobrevive a fundirse con otra cosa). */
+  function badOnes() {
     var bad = {};
-    slide.items.forEach(function (a, i) {
-      if (!FRONT[a.t]) return;
-      slide.items.forEach(function (b, j) {
-        if (j <= i || !FRONT[b.t]) return;
-        if (touch(a, b)) { bad[i] = true; bad[j] = true; }
+    doc.items.forEach(function (a, i) {
+      doc.items.forEach(function (b, j) {
+        if (j <= i || !touch(a, b)) return;
+        if (FRONT[a.t] && FRONT[b.t]) { bad[i] = "overlap"; bad[j] = "overlap"; }
+        if (a.t === "image" && a.href) bad[i] = bad[i] || "link";
+        if (b.t === "image" && b.href) bad[j] = bad[j] || "link";
       });
     });
     return bad;
   }
 
-  function fewWords(slide) {
-    var image = false, words = 0;
-    slide.items.forEach(function (one) {
-      if (one.t === "image") image = true;
-      else words += (one.text || "").split(/\s+/).filter(Boolean).length;
-    });
-    return image && words < 5;
+  function lowest() {
+    var bottom = 0;
+    doc.items.forEach(function (one) { bottom = Math.max(bottom, one.y + one.h); });
+    return bottom;
+  }
+
+  /* La hoja crece sola cuando algo pasa del borde de abajo. */
+  function grow() {
+    var need = lowest();
+    if (need > doc.h) doc.h = Math.min(need, L.maxHeight);
   }
 
   /* ------------------------------------------------------------- historia */
@@ -125,6 +135,11 @@
       el.style.backgroundSize = one.fit === "contain" ? "contain" : "cover";
       return;
     }
+    if (one.t === "shape") {
+      el.style.backgroundColor = one.bg;
+      el.style.borderRadius = one.radius + "px";
+      return;
+    }
     el.style.fontFamily = FONTS[one.font] || FONTS.Arial || "Arial, sans-serif";
     el.style.fontSize = one.size + "px";
     el.style.color = one.color;
@@ -140,6 +155,11 @@
     }
   }
 
+  // Las fotos y los rectángulos se tiran también de los lados: en una foto,
+  // las esquinas guardan su proporción y los lados la recortan.
+  var CORNERS = ["nw", "ne", "sw", "se"];
+  var SIDES = ["n", "s", "e", "w"];
+
   function render() {
     // Vaciar el lienzo acorta la página un instante y el navegador salta de
     // posición: el segundo clic de un doble clic caería en otra cosa. Se
@@ -147,112 +167,46 @@
     var scrollY = window.scrollY;
     stage.style.minHeight = stage.offsetHeight + "px";
     stage.textContent = "";
-    var anyOverlap = false, anyFew = false;
-    doc.slides.forEach(function (slide, s) {
-      var wrap = document.createElement("section");
-      wrap.className = "cv-wrap" + (s === slideOn ? " is-on" : "");
 
-      var bar = document.createElement("div");
-      bar.className = "cv-bar";
-      var title = document.createElement("span");
-      title.className = "cv-bar__title";
-      title.textContent = (S.slide || "{n}").replace("{n}", s + 1);
-      bar.appendChild(title);
-      var bg = document.createElement("label");
-      bg.className = "cv-bar__bg";
-      bg.textContent = S.slideBg + " ";
-      var picker = document.createElement("input");
-      picker.type = "color";
-      picker.value = slide.bg;
-      picker.setAttribute("data-slide-bg", s);
-      bg.appendChild(picker);
-      bar.appendChild(bg);
-      // El tamaño: los listos y el alto a mano. El ancho es siempre el de un
-      // correo, 600.
-      var size = document.createElement("label");
-      size.className = "cv-bar__bg";
-      size.textContent = S.size + " ";
-      var pick = document.createElement("select");
-      pick.setAttribute("data-slide-size", s);
-      [["", S.sizeCustom], ["200", S.sizeBanner], ["600", S.sizeSquare], ["900", S.sizeTall]]
-        .forEach(function (pair) {
-          var o = document.createElement("option");
-          o.value = pair[0];
-          o.textContent = pair[1];
-          if (String(slide.h) === pair[0]) o.selected = true;
-          pick.appendChild(o);
+    var sheet = document.createElement("div");
+    sheet.className = "cv-sheet";
+    sheet.style.width = W + "px";
+    sheet.style.height = doc.h + "px";
+    sheet.style.backgroundColor = doc.bg;
+
+    var bad = badOnes(), notes = {};
+    doc.items.forEach(function (one, i) {
+      var el = document.createElement("div");
+      el.className = "cv-item cv-item--" + one.t;
+      el.setAttribute("data-item", i);
+      if (bad[i]) { el.className += " is-bad"; notes[bad[i]] = true; }
+      if (sel === i) el.className += " is-sel";
+      if (FRONT[one.t]) el.textContent = one.text;
+      paintItem(el, one);
+      if (sel === i) {
+        var handles = BACK[one.t] ? CORNERS.concat(SIDES) : CORNERS;
+        handles.forEach(function (where) {
+          var h = document.createElement("span");
+          h.className = "cv-handle cv-handle--" + where;
+          h.setAttribute("data-handle", where);
+          el.appendChild(h);
         });
-      size.appendChild(pick);
-      bar.appendChild(size);
-      var tall = document.createElement("label");
-      tall.className = "cv-bar__bg";
-      tall.textContent = S.height + " ";
-      var number = document.createElement("input");
-      number.type = "number";
-      number.min = L.minHeight;
-      number.max = L.maxHeight;
-      number.step = 10;
-      number.value = slide.h;
-      number.className = "cv-bar__h";
-      number.setAttribute("data-slide-h", s);
-      tall.appendChild(number);
-      bar.appendChild(tall);
-
-      [["up", S.slideUp], ["down", S.slideDown], ["copy", S.slideCopy], ["delete", S.slideDelete]]
-        .forEach(function (pair) {
-          var b = document.createElement("button");
-          b.type = "button";
-          b.className = "btn btn--small btn--outline";
-          b.textContent = pair[1];
-          b.setAttribute("data-slide-op", pair[0]);
-          b.setAttribute("data-slide", s);
-          bar.appendChild(b);
-        });
-      wrap.appendChild(bar);
-
-      var box = document.createElement("div");
-      box.className = "cv-slide";
-      box.setAttribute("data-slide", s);
-      box.style.width = W + "px";
-      box.style.height = slide.h + "px";
-      box.style.backgroundColor = slide.bg;
-
-      var bad = overlapsIn(slide);
-      slide.items.forEach(function (one, i) {
-        var el = document.createElement("div");
-        el.className = "cv-item cv-item--" + one.t;
-        el.setAttribute("data-item", i);
-        if (bad[i]) { el.className += " is-bad"; anyOverlap = true; }
-        if (sel && sel.s === s && sel.i === i) el.className += " is-sel";
-        if (one.t !== "image") el.textContent = one.text;
-        paintItem(el, one);
-        if (sel && sel.s === s && sel.i === i) {
-          ["nw", "ne", "sw", "se"].forEach(function (corner) {
-            var h = document.createElement("span");
-            h.className = "cv-handle cv-handle--" + corner;
-            h.setAttribute("data-handle", corner);
-            el.appendChild(h);
-          });
-        }
-        box.appendChild(el);
-      });
-      wrap.appendChild(box);
-
-      var grip = document.createElement("div");
-      grip.className = "cv-grip";
-      grip.title = S.resizeSlide;
-      grip.setAttribute("data-grip", s);
-      wrap.appendChild(grip);
-
-      if (fewWords(slide)) anyFew = true;
-      stage.appendChild(wrap);
+      }
+      sheet.appendChild(el);
     });
+    stage.appendChild(sheet);
 
-    var notes = [];
-    if (anyOverlap) notes.push(S.overlap);
-    if (anyFew) notes.push(S.few);
-    warn.textContent = notes.join(" ");
-    warn.hidden = !notes.length;
+    var grip = document.createElement("div");
+    grip.className = "cv-grip";
+    grip.title = S.resizeSheet;
+    grip.setAttribute("data-grip", "");
+    stage.appendChild(grip);
+
+    var said = [];
+    if (notes.overlap) said.push(S.overlap);
+    if (notes.link) said.push(S.linkOverlap);
+    warn.textContent = said.join(" ");
+    warn.hidden = !said.length;
     showProps();
     stage.style.minHeight = "";
     if (window.scrollY !== scrollY) window.scrollTo(window.scrollX, scrollY);
@@ -264,11 +218,14 @@
     Array.prototype.forEach.call(props.querySelectorAll("[data-props-for]"), function (row) {
       row.hidden = row.getAttribute("data-props-for").split(" ").indexOf(kind) < 0;
     });
+    var page = props.querySelector("[data-page-bg]");
+    if (page && page !== document.activeElement) page.value = doc.bg;
     if (!one) return;
     Array.prototype.forEach.call(props.querySelectorAll("[data-only]"), function (el) {
       el.hidden = el.getAttribute("data-only") !== kind;
     });
-    Array.prototype.forEach.call(props.querySelectorAll("[data-prop]"), function (input) {
+    var row = props.querySelector('[data-props-for~="' + kind + '"]');
+    Array.prototype.forEach.call(row.querySelectorAll("[data-prop]"), function (input) {
       var name = input.getAttribute("data-prop");
       if (!(name in one)) return;
       if (input === document.activeElement) return;
@@ -277,9 +234,10 @@
     });
   }
 
-  /* Un texto crece para que quepa lo escrito: así el correo no lo corta. */
-  function fitText(s, i) {
-    var one = doc.slides[s].items[i];
+  /* Un texto crece para que quepa lo escrito: así el correo no lo corta. Y si
+     pasa del borde de abajo, crece la hoja. */
+  function fitText(i) {
+    var one = doc.items[i];
     if (!one || one.t !== "text") return;
     var probe = document.createElement("div");
     probe.className = "cv-item cv-item--text cv-probe";
@@ -289,47 +247,44 @@
     stage.appendChild(probe);
     var need = Math.ceil(probe.scrollHeight);
     stage.removeChild(probe);
-    var room = doc.slides[s].h - one.y;
-    if (need > one.h) one.h = Math.min(need, room);
+    if (need > one.h) one.h = Math.min(need, L.maxHeight - one.y);
+    grow();
   }
 
   /* ------------------------------------------------------------ agregar */
 
-  function freeY(slide, h) {
-    var bottom = 0;
-    slide.items.forEach(function (one) {
-      if (FRONT[one.t]) bottom = Math.max(bottom, one.y + one.h);
-    });
-    var y = bottom ? bottom + 20 : 40;
-    return y + h <= slide.h ? y : Math.max(0, slide.h - h);
+  /* Debajo de lo último, con aire. La hoja crece si hace falta. */
+  function freeY(h) {
+    var bottom = lowest();
+    var y = bottom ? bottom + GAP : 40;
+    return Math.max(0, Math.min(y, L.maxHeight - h));
+  }
+
+  function place(one) {
+    if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
+    one.y = freeY(one.h);
+    doc.items.push(one);
+    sel = doc.items.length - 1;
+    grow();
+    render(); commit();
+    var el = stage.querySelector('[data-item="' + sel + '"]');
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
   }
 
   function add(kind) {
     say("");
-    if (kind === "slide") {
-      if (doc.slides.length >= L.maxSlides) { say(S.maxSlides); return; }
-      doc.slides.push({ h: 400, bg: "#FFFFFF", items: [] });
-      slideOn = doc.slides.length - 1;
-      sel = null;
-      render(); commit();
-      return;
-    }
-    var slide = doc.slides[slideOn];
-    if (slide.items.length >= L.maxItems) { say(S.maxItems); return; }
+    if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
     if (kind === "image") { pickImage(null); return; }
-    var one;
     if (kind === "text") {
-      one = { t: "text", x: 40, w: W - 80, h: 34, text: S.newText, font: "Arial",
-              size: 22, color: "#18181B", bold: false, italic: false, align: "left", line: 1.4 };
-    } else {
-      one = { t: "button", x: (W - 200) / 2, w: 200, h: 48, text: S.newButton,
+      place({ t: "text", x: 40, w: W - 80, h: 34, text: S.newText, font: "Arial",
+              size: 22, color: "#18181B", bold: false, italic: false, align: "left", line: 1.4 });
+    } else if (kind === "button") {
+      place({ t: "button", x: (W - 200) / 2, w: 200, h: 48, text: S.newButton,
               href: "https://", font: "Arial", size: 16, color: "#FFFFFF", bg: "#31A9E8",
-              bold: true, italic: false, align: "center", radius: 8 };
+              bold: true, italic: false, align: "center", radius: 8 });
+    } else if (kind === "shape") {
+      place({ t: "shape", x: 0, w: W, h: 160, bg: "#E0F2FE", radius: 0 });
     }
-    one.y = freeY(slide, one.h);
-    slide.items.push(one);
-    sel = { s: slideOn, i: slide.items.length - 1 };
-    render(); commit();
   }
 
   /* Subir una foto. Con `replace`, cambia la del elemento elegido. */
@@ -352,22 +307,24 @@
       .then(function (answer) {
         if (answer.error || !answer.name) { say(answer.error || S.uploadFailed); return; }
         say("");
-        if (replacing) {
-          doc.slides[replacing.s].items[replacing.i].name = answer.name;
-        } else {
-          var slide = doc.slides[slideOn];
-          // Entra a la mitad y centrada, para que se pueda mover y quepa otra
-          // al lado. «Llenar la diapositiva» la pone de fondo completo.
-          var w = W / 2;
-          var h = Math.min(slide.h, Math.round(w * answer.height / Math.max(answer.width, 1)));
-          h = Math.max(h, 16);
-          // Atrás de todo: las imágenes van al principio de la lista.
-          slide.items.unshift({ t: "image", x: Math.round((W - w) / 2),
-                                y: Math.round((slide.h - h) / 2), w: w, h: h,
-                                name: answer.name, fit: "cover" });
-          sel = { s: slideOn, i: 0 };
+        var r = answer.width / Math.max(answer.height, 1);
+        if (replacing !== null) {
+          var one = doc.items[replacing];
+          one.name = answer.name;
+          one.r = Math.round(r * 10000) / 10000;
+          // La caja toma la proporción de la foto nueva, con el mismo ancho.
+          one.h = Math.max(16, Math.round(one.w / r));
+          delete one.fit;
+          grow();
+          render(); commit();
+          return;
         }
-        render(); commit();
+        // Entra a la mitad del ancho, con su proporción: se puede mover y
+        // cabe otra al lado. «Ancho completo» la estira.
+        var w = W / 2;
+        var h = Math.max(16, Math.min(Math.round(w / r), L.maxHeight));
+        place({ t: "image", x: Math.round((W - w) / 2), w: w, h: h, name: answer.name,
+                r: Math.round(r * 10000) / 10000, href: "", alt: "" });
       })
       .catch(function () { say(S.uploadFailed); });
   });
@@ -386,11 +343,11 @@
     });
   }
 
-  /* Las líneas a las que se pega: los bordes y el centro de la diapositiva, y
-     los bordes y el centro de las demás cajas. */
-  function snap(slide, moving, x, y, w, h) {
-    var xs = [0, W / 2, W], ys = [0, slide.h / 2, slide.h];
-    slide.items.forEach(function (one, i) {
+  /* Las líneas a las que se pega: los bordes y el centro de la hoja a lo
+     ancho, y los bordes y el centro de las demás cajas. */
+  function snap(moving, x, y, w, h) {
+    var xs = [0, W / 2, W], ys = [0];
+    doc.items.forEach(function (one, i) {
       if (i === moving) return;
       xs.push(one.x, one.x + one.w / 2, one.x + one.w);
       ys.push(one.y, one.y + one.h / 2, one.y + one.h);
@@ -398,7 +355,7 @@
     var lines = [];
     function best(pos, size, targets, axis) {
       var edges = [pos, pos + size / 2, pos + size], found = null;
-      edges.forEach(function (edge, k) {
+      edges.forEach(function (edge) {
         targets.forEach(function (target) {
           var d = target - edge;
           if (Math.abs(d) <= SNAP && (!found || Math.abs(d) < Math.abs(found.d))) {
@@ -414,76 +371,83 @@
   }
 
   stage.addEventListener("pointerdown", function (e) {
-    var grip = e.target.closest("[data-grip]");
-    if (grip) {
-      var s = +grip.getAttribute("data-grip");
-      var lowest = 0;
-      doc.slides[s].items.forEach(function (one) { lowest = Math.max(lowest, one.y + one.h); });
-      drag = { mode: "grip", s: s, y0: e.clientY, h0: doc.slides[s].h, min: Math.max(L.minHeight, lowest) };
+    if (e.target.closest("[data-grip]")) {
+      drag = { mode: "grip", y0: e.clientY, h0: doc.h,
+               min: Math.max(L.minHeight, lowest()) };
       e.preventDefault();
       return;
     }
-    var box = e.target.closest(".cv-slide");
-    if (!box) return;
-    var s2 = +box.getAttribute("data-slide");
+    var sheet = e.target.closest(".cv-sheet");
+    if (!sheet) return;
     var el = e.target.closest(".cv-item");
     if (!el) {
       if (editing) editing.blur();
-      sel = null; slideOn = s2;
+      sel = null;
       render();
       return;
     }
     if (el.isContentEditable) return;
     var i = +el.getAttribute("data-item");
     var handle = e.target.closest("[data-handle]");
-    slideOn = s2;
-    if (!sel || sel.s !== s2 || sel.i !== i) { sel = { s: s2, i: i }; render(); }
-    var one = item();
-    // Sin captura del puntero: con ella el doble clic le llegaría al lienzo
-    // entero y no al texto. El movimiento se escucha en la ventana.
+    if (sel !== i) { sel = i; render(); }
+    // Sin captura del puntero: con ella el doble clic le llegaría a la hoja
+    // entera y no al texto. El movimiento se escucha en la ventana.
     // Mover se llama «drag» y no «move»: el tamaño se decide mirando si el
     // modo trae n, s, e u o, y «move» trae una e.
-    drag = { mode: handle ? handle.getAttribute("data-handle") : "drag", s: s2, i: i,
-             x0: e.clientX, y0: e.clientY, start: clone(one), moved: false };
+    drag = { mode: handle ? handle.getAttribute("data-handle") : "drag", i: i,
+             x0: e.clientX, y0: e.clientY, start: clone(item()), moved: false };
     e.preventDefault();
   });
 
   window.addEventListener("pointermove", function (e) {
     if (!drag) return;
+    var sheet = stage.querySelector(".cv-sheet");
     if (drag.mode === "grip") {
-      var h = clamp(Math.round(drag.h0 + e.clientY - drag.y0), drag.min, L.maxHeight);
-      doc.slides[drag.s].h = h;
-      var box0 = stage.querySelector('.cv-slide[data-slide="' + drag.s + '"]');
-      if (box0) box0.style.height = h + "px";
+      doc.h = clamp(Math.round(drag.h0 + e.clientY - drag.y0), drag.min, L.maxHeight);
+      if (sheet) sheet.style.height = doc.h + "px";
       drag.moved = true;
       return;
     }
-    var slide = doc.slides[drag.s], one = slide.items[drag.i], a = drag.start;
+    var one = doc.items[drag.i], a = drag.start;
     var dx = Math.round(e.clientX - drag.x0), dy = Math.round(e.clientY - drag.y0);
     if (!dx && !dy && !drag.moved) return;
     drag.moved = true;
-    var x = a.x, y = a.y, w = a.w, hh = a.h;
-    if (drag.mode === "drag") { x = a.x + dx; y = a.y + dy; }
-    if (drag.mode.indexOf("e") >= 0) w = a.w + dx;
-    if (drag.mode.indexOf("s") >= 0) hh = a.h + dy;
-    if (drag.mode.indexOf("w") >= 0) { x = a.x + dx; w = a.w - dx; }
-    if (drag.mode.indexOf("n") >= 0) { y = a.y + dy; hh = a.h - dy; }
-    w = Math.max(16, w); hh = Math.max(16, hh);
-    var fit = drag.mode === "drag" ? snap(slide, drag.i, x, y, w, hh) : { x: x, y: y, lines: [] };
+    var mode = drag.mode, x = a.x, y = a.y, w = a.w, h = a.h;
+    if (mode === "drag") { x = a.x + dx; y = a.y + dy; }
+    else if (one.t === "image" && mode.length === 2) {
+      // Una esquina de una foto: crece o encoge sin deformarse.
+      var ratio = a.w / Math.max(a.h, 1);
+      w = Math.max(16, mode.indexOf("e") >= 0 ? a.w + dx : a.w - dx);
+      h = Math.max(16, Math.round(w / ratio));
+      if (mode.indexOf("w") >= 0) x = a.x + a.w - w;
+      if (mode.indexOf("n") >= 0) y = a.y + a.h - h;
+    } else {
+      if (mode.indexOf("e") >= 0) w = a.w + dx;
+      if (mode.indexOf("s") >= 0) h = a.h + dy;
+      if (mode.indexOf("w") >= 0) { x = a.x + dx; w = a.w - dx; }
+      if (mode.indexOf("n") >= 0) { y = a.y + dy; h = a.h - dy; }
+    }
+    w = Math.max(16, w); h = Math.max(16, h);
+    var fit = mode === "drag" ? snap(drag.i, x, y, w, h) : { x: x, y: y, lines: [] };
     one.x = clamp(Math.round(fit.x), 0, W - Math.min(w, W));
-    one.y = clamp(Math.round(fit.y), 0, slide.h - Math.min(hh, slide.h));
+    one.y = clamp(Math.round(fit.y), 0, L.maxHeight - Math.min(h, L.maxHeight));
     one.w = Math.min(w, W - one.x);
-    one.h = Math.min(hh, slide.h - one.y);
-    var box = stage.querySelector('.cv-slide[data-slide="' + drag.s + '"]');
-    var el = box && box.querySelector('[data-item="' + drag.i + '"]');
+    one.h = Math.min(h, L.maxHeight - one.y);
+    if (one.t === "image" && one.fit) delete one.fit;
+    // La hoja crece mientras se arrastra hacia abajo.
+    if (one.y + one.h > doc.h) {
+      doc.h = one.y + one.h;
+      if (sheet) sheet.style.height = doc.h + "px";
+    }
+    var el = sheet && sheet.querySelector('[data-item="' + drag.i + '"]');
     if (el) {
       paintItem(el, one);
-      var bad = overlapsIn(slide);
-      Array.prototype.forEach.call(box.querySelectorAll(".cv-item"), function (other) {
+      var bad = badOnes();
+      Array.prototype.forEach.call(sheet.querySelectorAll(".cv-item"), function (other) {
         other.classList.toggle("is-bad", !!bad[+other.getAttribute("data-item")]);
       });
     }
-    if (box) guides(box, fit.lines);
+    if (sheet) guides(sheet, fit.lines);
   });
 
   function endDrag() {
@@ -491,7 +455,7 @@
     var was = drag;
     drag = null;
     if (was.moved) {
-      if (was.mode !== "grip" && was.mode !== "drag") fitText(was.s, was.i);
+      if (was.mode !== "grip" && was.mode !== "drag") fitText(was.i);
       render(); commit();
     }
   }
@@ -503,9 +467,7 @@
   stage.addEventListener("dblclick", function (e) {
     var el = e.target.closest(".cv-item--text");
     if (!el) return;
-    var s = +el.closest(".cv-slide").getAttribute("data-slide");
-    var i = +el.getAttribute("data-item");
-    sel = { s: s, i: i };
+    sel = +el.getAttribute("data-item");
     Array.prototype.forEach.call(el.querySelectorAll(".cv-handle"), function (h) { h.remove(); });
     try { el.contentEditable = "plaintext-only"; } catch (err) { el.contentEditable = "true"; }
     if (el.contentEditable !== "plaintext-only") el.contentEditable = "true";
@@ -528,23 +490,27 @@
   });
 
   stage.addEventListener("input", function (e) {
-    if (!editing || e.target !== editing || !sel) return;
+    if (!editing || e.target !== editing || sel === null) return;
     var one = item();
     if (!one) return;
     one.text = editing.innerText.replace(/\n$/, "");
     var need = Math.ceil(editing.scrollHeight);
     if (need > one.h) {
-      one.h = Math.min(need, doc.slides[sel.s].h - one.y);
+      one.h = Math.min(need, L.maxHeight - one.y);
       editing.style.height = one.h + "px";
+      if (one.y + one.h > doc.h) {
+        doc.h = one.y + one.h;
+        stage.querySelector(".cv-sheet").style.height = doc.h + "px";
+      }
     }
   });
 
   stage.addEventListener("focusout", function (e) {
     if (!editing || e.target !== editing) return;
-    var s = sel ? sel.s : null, i = sel ? sel.i : null;
+    var i = sel;
     editing.contentEditable = "false";
     editing = null;
-    if (s !== null) fitText(s, i);
+    if (i !== null) fitText(i);
     render(); commit();
   });
 
@@ -583,6 +549,14 @@
   });
 
   props.addEventListener("input", function (e) {
+    var page = e.target.closest("[data-page-bg]");
+    if (page) {
+      doc.bg = page.value.toUpperCase();
+      var sheet = stage.querySelector(".cv-sheet");
+      if (sheet) sheet.style.backgroundColor = doc.bg;
+      commitSoon();
+      return;
+    }
     var input = e.target.closest("[data-prop]");
     var one = item();
     if (!input || !one) return;
@@ -594,12 +568,14 @@
       if (name === "size") value = clamp(value, L.minSize, L.maxSize);
     }
     if (name === "line") value = parseFloat(value);
+    if (name === "bg" || name === "color") value = String(value).toUpperCase();
     one[name] = value;
-    if (one.t === "text") fitText(sel.s, sel.i);
-    var box = stage.querySelector('.cv-slide[data-slide="' + sel.s + '"]');
-    var el = box && box.querySelector('[data-item="' + sel.i + '"]');
+    if (one.t === "text") fitText(sel);
+    var el = stage.querySelector('[data-item="' + sel + '"]');
     if (el && name === "text") el.firstChild ? (el.firstChild.nodeValue = value) : (el.textContent = value);
     if (el) paintItem(el, one);
+    // El enlace de una foto cambia lo que se puede encimar: se repinta.
+    if (name === "href" && one.t === "image") render();
     commitSoon();
   });
 
@@ -610,73 +586,33 @@
     var one = item();
     if (!b || !one) return;
     var what = b.getAttribute("data-action");
-    var list = doc.slides[sel.s].items;
+    var list = doc.items;
     if (what === "delete") {
-      list.splice(sel.i, 1);
+      list.splice(sel, 1);
       sel = null;
     } else if (what === "replace") {
-      pickImage({ s: sel.s, i: sel.i });
+      pickImage(sel);
       return;
-    } else if (what === "fill") {
-      one.x = 0; one.y = 0; one.w = W; one.h = doc.slides[sel.s].h; one.fit = "cover";
+    } else if (what === "full") {
+      // Todo el ancho, con la proporción de la foto (o la de su caja, en las
+      // que se guardaron antes de que se anotara).
+      var r = one.r || (one.w / Math.max(one.h, 1));
+      one.x = 0; one.w = W;
+      if (one.t === "image") { one.h = Math.max(16, Math.round(W / r)); delete one.fit; }
+      one.y = Math.min(one.y, L.maxHeight - one.h);
+      grow();
     } else if (what === "front" || what === "back") {
-      // Solo entre imágenes: los textos y botones siempre van delante.
-      var pictures = [];
-      list.forEach(function (x, k) { if (x.t === "image") pictures.push(k); });
-      var at = pictures.indexOf(sel.i);
-      var to = what === "front" ? pictures[at + 1] : pictures[at - 1];
+      // Solo entre fotos y rectángulos: los textos y botones siempre van
+      // delante.
+      var backs = [];
+      list.forEach(function (x, k) { if (BACK[x.t]) backs.push(k); });
+      var at = backs.indexOf(sel);
+      var to = what === "front" ? backs[at + 1] : backs[at - 1];
       if (to === undefined) return;
-      var tmp = list[to]; list[to] = list[sel.i]; list[sel.i] = tmp;
-      sel.i = to;
+      var tmp = list[to]; list[to] = list[sel]; list[sel] = tmp;
+      sel = to;
     }
     render(); commit();
-  });
-
-  /* ------------------------------------------------------ las diapositivas */
-
-  stage.addEventListener("click", function (e) {
-    var b = e.target.closest("[data-slide-op]");
-    if (!b) return;
-    var s = +b.getAttribute("data-slide"), op = b.getAttribute("data-slide-op");
-    var slides = doc.slides;
-    if (op === "up" && s > 0) { slides.splice(s - 1, 0, slides.splice(s, 1)[0]); slideOn = s - 1; }
-    else if (op === "down" && s < slides.length - 1) { slides.splice(s + 1, 0, slides.splice(s, 1)[0]); slideOn = s + 1; }
-    else if (op === "copy") {
-      if (slides.length >= L.maxSlides) { say(S.maxSlides); return; }
-      slides.splice(s + 1, 0, clone(slides[s])); slideOn = s + 1;
-    } else if (op === "delete") {
-      if (slides.length === 1) return;
-      if (slides[s].items.length && !window.confirm(S.slideConfirm)) return;
-      slides.splice(s, 1); slideOn = Math.max(0, s - 1);
-    } else return;
-    sel = null;
-    render(); commit();
-  });
-
-  // El alto de una diapositiva, desde la lista o escrito. Nunca más bajo que
-  // lo que tiene dentro: eso cortaría una caja.
-  function setHeight(s, value) {
-    var lowest = 0;
-    doc.slides[s].items.forEach(function (one) { lowest = Math.max(lowest, one.y + one.h); });
-    var h = clamp(Math.round(value) || 0, Math.max(L.minHeight, lowest), L.maxHeight);
-    doc.slides[s].h = h;
-    render(); commit();
-  }
-  stage.addEventListener("change", function (e) {
-    var pick = e.target.closest("[data-slide-size]");
-    if (pick && pick.value) setHeight(+pick.getAttribute("data-slide-size"), +pick.value);
-    var number = e.target.closest("[data-slide-h]");
-    if (number) setHeight(+number.getAttribute("data-slide-h"), +number.value);
-  });
-
-  stage.addEventListener("input", function (e) {
-    var picker = e.target.closest("[data-slide-bg]");
-    if (!picker) return;
-    var s = +picker.getAttribute("data-slide-bg");
-    doc.slides[s].bg = picker.value.toUpperCase();
-    var box = stage.querySelector('.cv-slide[data-slide="' + s + '"]');
-    if (box) box.style.backgroundColor = picker.value;
-    commitSoon();
   });
 
   /* ---------------------------------------------------------------- teclas */
@@ -690,20 +626,21 @@
       if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); redo(); return; }
     }
     if (typing || !item()) return;
-    var one = item(), slide = doc.slides[sel.s], step = e.shiftKey ? 10 : 1;
+    var one = item(), step = e.shiftKey ? 10 : 1;
     if (e.key === "Delete" || e.key === "Backspace") {
-      slide.items.splice(sel.i, 1); sel = null; render(); commit(); e.preventDefault(); return;
+      doc.items.splice(sel, 1); sel = null; render(); commit(); e.preventDefault(); return;
     }
     if (e.key === "Escape") { sel = null; render(); return; }
     var moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
     if (!moves[e.key]) return;
     e.preventDefault();
     one.x = clamp(one.x + moves[e.key][0], 0, W - one.w);
-    one.y = clamp(one.y + moves[e.key][1], 0, slide.h - one.h);
+    one.y = clamp(one.y + moves[e.key][1], 0, L.maxHeight - one.h);
+    grow();
     render(); commitSoon();
   });
 
-  root.querySelector("[data-add]") && root.addEventListener("click", function (e) {
+  root.addEventListener("click", function (e) {
     var b = e.target.closest("[data-add]");
     if (b) add(b.getAttribute("data-add"));
   });
@@ -714,8 +651,12 @@
 
   saveForm.addEventListener("submit", function (e) {
     if (editing) editing.blur();
-    var anyBad = doc.slides.some(function (slide) { return Object.keys(overlapsIn(slide)).length; });
-    if (anyBad) { e.preventDefault(); say(S.overlap); return; }
+    var bad = badOnes();
+    if (Object.keys(bad).length) {
+      e.preventDefault();
+      say(Object.keys(bad).some(function (k) { return bad[k] === "overlap"; }) ? S.overlap : S.linkOverlap);
+      return;
+    }
     if (checkBlocked) { e.preventDefault(); return; }
     if (!saveForm.querySelector("#nombre").value.trim()) {
       e.preventDefault(); say(S.nameNeeded); saveForm.querySelector("#nombre").focus(); return;
@@ -761,12 +702,20 @@
       .catch(function () { /* sin revisión no se bloquea: el servidor revisa igual */ });
   }
 
+  /* Con quién se ve: los nombres de las columnas, o los datos de un contacto. */
+  var person = document.querySelector("[data-preview-contact]");
+  function sendPreview() {
+    previewForm.querySelector("[name=lienzo]").value = JSON.stringify(doc);
+    previewForm.querySelector("[name=contacto]").value = person ? person.value : "";
+    previewForm.submit();
+  }
+  if (person) person.addEventListener("change", sendPreview);
+
   var previewTimer = null;
   function schedulePreview() {
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function () {
-      previewForm.querySelector("[name=lienzo]").value = JSON.stringify(doc);
-      previewForm.submit();
+      sendPreview();
       runCheck();
     }, 800);
   }
@@ -777,7 +726,34 @@
     e.returnValue = S.leave;
   });
 
+  /* Las fotos guardadas antes de que se anotara su proporción la leen de la
+     imagen. Las que iban «completas» dentro de una caja más grande se
+     ajustan a lo que se ve: la caja abraza la foto. */
+  function learnRatios() {
+    doc.items.forEach(function (one) {
+      if (one.t !== "image" || (one.r && one.fit !== "contain")) return;
+      var probe = new Image();
+      probe.onload = function () {
+        var r = probe.naturalWidth / Math.max(probe.naturalHeight, 1);
+        one.r = Math.round(r * 10000) / 10000;
+        if (one.fit === "contain") {
+          var w = Math.min(one.w, Math.round(one.h * r)), h = Math.round(w / r);
+          one.x += Math.round((one.w - w) / 2);
+          one.y += Math.round((one.h - h) / 2);
+          one.w = w; one.h = h;
+          delete one.fit;
+          render();
+        }
+        past[past.length - 1] = JSON.stringify(doc);
+        if (!dirty) saved = JSON.stringify(doc);
+      };
+      probe.src = "/img/" + encodeURIComponent(one.name);
+    });
+  }
+
+  grow();
   render();
   past.push(JSON.stringify(doc));
+  learnRatios();
   schedulePreview();
 })();

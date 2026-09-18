@@ -11,6 +11,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 import pyotp
+from bson import ObjectId
 from conftest import login, register
 
 from models import account as accounts
@@ -88,12 +89,12 @@ def test_la_serie_cuenta_cada_evento_en_su_tramo(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     ahora = events.now()
 
-    events.record(database, cuenta["_id"], kind=events.SENT, at=ahora)
-    events.record(database, cuenta["_id"], kind=events.SENT, at=ahora)
-    events.record(database, cuenta["_id"], kind=events.BOUNCE, at=ahora)
+    events.record(database, cuenta["_id"], kind=events.SENT, at=ahora, email="a@coop.com")
+    events.record(database, cuenta["_id"], kind=events.SENT, at=ahora, email="b@coop.com")
+    events.record(database, cuenta["_id"], kind=events.BOUNCE, at=ahora, email="b@coop.com")
     # Uno de hace tres días: fuera de las últimas 24 horas.
     events.record(database, cuenta["_id"], kind=events.SENT,
-                  at=ahora - timedelta(days=3))
+                  at=ahora - timedelta(days=3), email="c@coop.com")
 
     dia = events.totals(database, cuenta["_id"], period="24h")
     assert dia[events.SENT] == 2
@@ -105,6 +106,46 @@ def test_la_serie_cuenta_cada_evento_en_su_tramo(client, database, outbox):
     serie = events.series(database, cuenta["_id"], period="24h")
     assert sum(row[events.SENT] for row in serie) == 2
     assert events.busiest(serie, (events.SENT, events.BOUNCE)) == 3
+
+
+def test_la_grafica_cuenta_personas_como_como_le_fue(client, database, outbox):
+    """Quien abre tres veces el mismo envío es una apertura, en el tramo en que
+    abrió por primera vez: la gráfica y «Cómo le fue» cuentan lo mismo."""
+    inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    ahora = events.now()
+    envio = ObjectId()
+    for minutos in (50, 20, 5):
+        events.record(database, cuenta["_id"], kind=events.OPEN, run_id=envio,
+                      email="ana@coop.com", at=ahora - timedelta(minutes=minutos))
+    events.record(database, cuenta["_id"], kind=events.OPEN, run_id=envio,
+                  email="luis@coop.com", at=ahora)
+
+    serie = events.series(database, cuenta["_id"], period="1h",
+                          kinds=(events.OPEN, events.CLICK))
+    assert sum(row[events.OPEN] for row in serie) == 2
+    assert events.people(database, cuenta["_id"], period="1h")[events.OPEN] == 2
+    # La de Ana cae donde abrió la primera vez, hace 50 minutos.
+    primero = next(i for i, row in enumerate(serie) if row[events.OPEN])
+    assert primero < len(serie) - 5
+
+
+def test_la_barra_de_correos_del_mes(client, database, outbox):
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    sin_plan = browser.get("/panel").get_data(as_text=True)
+    assert "Sin plan contratado: no hay correos incluidos." in sin_plan
+
+    accounts.activate_plan(database, cuenta["_id"], "negocio",
+                           events.now() + timedelta(days=30))
+    accounts.add_sent(database, cuenta["_id"], 12600)
+    pantalla = browser.get("/panel").get_data(as_text=True)
+    assert "12,600 de 15,000 correos" in pantalla
+    # Sin fecha de renovación: todavía no hay renovación automática.
+    assert "se renuevan" not in pantalla
+    # Pasado el 80 %, ámbar.
+    assert 'class="meter__svg is-high"' in pantalla
+    assert '<rect class="meter__used" width="84"' in pantalla
 
 
 def test_los_eventos_de_otra_cuenta_no_se_mezclan(client, database, outbox):

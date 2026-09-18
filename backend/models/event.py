@@ -206,7 +206,11 @@ def people(db, account_id, *, period: str = DEFAULT_PERIOD, tag: str = "",
 def series(db, account_id, *, period: str = DEFAULT_PERIOD, tag: str = "",
            campaign=None, zone=None,
            kinds: tuple[str, ...] = (SENT, BOUNCE)) -> list[dict[str, Any]]:
-    """Cuántos de cada tipo en cada tramo del periodo, en orden.
+    """Cuántas personas de cada tipo en cada tramo del periodo, en orden.
+
+    **Personas y no eventos**, como `people()`: quien abre tres veces el mismo
+    envío es una apertura, y cae en el tramo en que abrió por primera vez. Si
+    no, la gráfica y «Cómo le fue» contarían cosas distintas.
 
     Devuelve **todos** los tramos, también los que no tienen nada: una gráfica
     con huecos donde no pasó nada miente sobre la forma del tiempo. Cada tramo
@@ -223,7 +227,10 @@ def series(db, account_id, *, period: str = DEFAULT_PERIOD, tag: str = "",
     for row in db.events.aggregate([
             {"$match": {**_match(db, account_id, period, tag, campaign, zone),
                         "kind": {"$in": list(kinds)}}},
-            {"$group": {"_id": {"kind": "$kind", "at": "$created_at"},
+            {"$group": {"_id": {"run": "$run_id", "kind": "$kind",
+                                "who": "$email_normalized"},
+                        "first": {"$min": "$created_at"}}},
+            {"$group": {"_id": {"kind": "$_id.kind", "at": "$first"},
                         "n": {"$sum": 1}}}]):
         at = row["_id"]["at"]
         if at.tzinfo is None:

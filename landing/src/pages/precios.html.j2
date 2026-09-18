@@ -138,33 +138,17 @@
   </div>
 </section>
 
-<section class="section section--alt" aria-labelledby="addons-title">
-  <div class="shell">
-    <div class="split split--wide">
-      <div>
-        <p class="eyebrow">{{ page.addons.eyebrow }}</p>
-        <h2 class="section__title" id="addons-title">{{ page.addons.title }}</h2>
-        <p class="section__intro">{{ page.addons.intro }}</p>
-        <ul class="addons">
-          {% for addon in pricing_data.addons %}
-          <li class="addon">
-            <div>
-              <h3 class="addon__name">{{ addon.name }}</h3>
-              <p class="addon__text">{{ addon.text }}</p>
-            </div>
-            <span class="addon__price">{{ addon.price }}</span>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-      <div class="included">
-        <h2 class="included__title">{{ page.included.title }}</h2>
-        <ul class="included__list">
-          {% for item in page.included['items'] %}
-          <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-      </div>
+{# Lo que va en todos los planes. Hubo al lado una lista de complementos
+   (recargas y piezas adicionales) y se dejaron de vender. #}
+<section class="section section--alt" aria-labelledby="included-title">
+  <div class="shell shell--narrow">
+    <div class="included">
+      <h2 class="included__title" id="included-title">{{ page.included.title }}</h2>
+      <ul class="included__list">
+        {% for item in page.included['items'] %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
     </div>
   </div>
 </section>

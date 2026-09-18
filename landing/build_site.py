@@ -109,7 +109,7 @@ def _parse_table(lines: list[str], start: int) -> tuple[list[str], dict[str, lis
 
 
 def read_pricing(path: Path = PRICING_MD) -> dict:
-    """Extract the plans and add-ons tables from docs/pricing.md.
+    """Extract the plans table from docs/pricing.md.
 
     Parsed at build time on purpose: the numbers live in exactly one file, so the
     site can never disagree with the document.
@@ -117,7 +117,6 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
     lines = path.read_text(encoding="utf-8").splitlines()
     plans_header: list[str] = []
     plans_rows: dict[str, list[str]] = {}
-    addons: list[tuple[str, str]] = []
 
     section = None
     i = 0
@@ -125,12 +124,10 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
         line = lines[i]
         if line.startswith("## ") or line.startswith("### "):
             section = line.lstrip("# ").strip()
-        elif line.lstrip().startswith("|") and section in ("Planes", "Complementos"):
+        elif line.lstrip().startswith("|") and section == "Planes":
             header, rows, i = _parse_table(lines, i)
-            if section == "Planes" and not plans_rows:
+            if not plans_rows:
                 plans_header, plans_rows = header, rows
-            elif section == "Complementos" and not addons:
-                addons = [(k, v[0]) for k, v in rows.items()]
             continue
         i += 1
 
@@ -169,14 +166,7 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
         ],
     }
 
-    descriptions = content.PRICING["addons"]["descriptions"]
-    return {
-        "plans": plans,
-        "table": table,
-        "addons": [
-            {"name": n, "price": p, "text": descriptions.get(n, "")} for n, p in addons
-        ],
-    }
+    return {"plans": plans, "table": table}
 
 
 # --------------------------------------------------------------------------- assets

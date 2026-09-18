@@ -9,8 +9,9 @@ dos a la vez y no hay forma de que una se quede atrás.
 tramos de las gráficas empiezan en punto o a medianoche de su zona, y las marcas
 del eje se escriben en ella.
 
-Solo enseña envíos, aperturas y porcentajes. Los contactos, las importaciones y
-el plan viven en sus propias pantallas.
+Enseña envíos, aperturas, porcentajes y, al final, cuántos correos del mes lleva
+gastados la cuenta. Los contactos, las importaciones y el plan viven en sus
+propias pantallas.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from bson.errors import InvalidId
 from i18n import MONTHS, t
 from models import account as accounts
 from models import event as events
-from services import clock
+from services import clock, plans
 
 DAYS = ("lun", "mar", "mié", "jue", "vie", "sáb", "dom")
 WEEKDAYS = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado",
@@ -138,6 +139,29 @@ def rates(counted: dict[str, int]) -> list[dict[str, Any]]:
     ]
 
 
+# ------------------------------------------------------------- la cuota
+
+# Desde aquí la barra se pone ámbar: es cuando docs/pricing.md dice que se avisa.
+QUOTA_WARN = 80
+
+
+def quota(whose: dict[str, Any]) -> dict[str, Any] | None:
+    """Cuántos correos del mes lleva y cuántos trae su plan. None sin plan.
+
+    El mes es el de `accounts.quota_month()`. No se dice cuándo vuelve a cero:
+    todavía no hay renovación automática del plan, y anunciar una fecha haría
+    pensar que la hay.
+    """
+    allowed = plans.emails_a_month(accounts.plan_of(whose))
+    if not allowed:
+        return None
+    used = accounts.sent_this_month(whose)
+    pct = min(100, round(used * 100 / allowed))
+    return {"used": f"{used:,}", "allowed": f"{allowed:,}",
+            "pct": pct, "level": ("full" if used >= allowed
+                                  else "high" if pct >= QUOTA_WARN else "")}
+
+
 def _campaign(raw: str, choices: list[dict[str, Any]]):
     """La campaña elegida, si es de esta cuenta. Una ajena no filtra por nada."""
     try:
@@ -184,4 +208,5 @@ def screen(db, whose: dict[str, Any], *, period: str = "", tag: str = "",
                           [(events.OPEN, "open", "lines"),
                            (events.CLICK, "click", "lines")], zone),
         "rates": rates(events.people(db, whose["_id"], **where)),
+        "quota": quota(whose),
     }

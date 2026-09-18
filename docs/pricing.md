@@ -35,13 +35,6 @@ precio para todos: a un cliente de fuera de Panamá se le factura como
 exportación de servicios, sin ITBMS, así que cambia el desglose de su factura y
 no lo que paga.
 
-### Complementos
-
-| | Precio |
-|---|---|
-| Recarga de 1,000 correos | $15 |
-| Diseño de pieza HTML adicional | $60 |
-
 ### Regla de proporción
 
 El límite de correos es siempre **5x el límite de contactos**. Cualquier plan
@@ -75,7 +68,8 @@ nuevo debe respetarla: permite 5 campañas mensuales a la lista completa.
 
 1. Aviso al cliente al **80%** del consumo.
 2. Al **100%** la campaña **se pausa** — no falla ni se pierde.
-3. Al comprar una recarga, el envío **retoma desde el correo donde se detuvo**.
+3. Al empezar el mes siguiente o al subir de plan, el envío **retoma desde el
+   correo donde se detuvo**.
 
 Requiere guardar la posición de envío de cada campaña, no solo un contador global.
 

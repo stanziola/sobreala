@@ -80,3 +80,22 @@
 {% with c = engaging, label = t('stats_engage_title') %}
 {% include "_bars.html" %}
 {% endwith %}
+
+{# ---------------------------------------------------- correos del mes --- #}
+{#- Cuánto de la cuota del plan se ha gastado este mes. La barra es un SVG y no
+    un ancho escrito en `style`: la cabecera del panel no deja estilos en línea. -#}
+<h2 class="settings__subtitle">{{ t('stats_quota_title') }}</h2>
+{% if quota %}
+<div class="meter meter--quota">
+  <p class="meter__label">{{ t('stats_quota_of', used=quota.used, allowed=quota.allowed) }}</p>
+  <div class="meter__bar" aria-hidden="true">
+    <svg class="meter__svg{% if quota.level %} is-{{ quota.level }}{% endif %}" viewBox="0 0 100 8"
+         preserveAspectRatio="none">
+      <rect class="meter__used" width="{{ quota.pct }}" height="8"/>
+    </svg>
+  </div>
+</div>
+{% else %}
+<p class="hint">{{ t('stats_quota_none') }}
+  {% if not pick %}<a href="{{ site_url }}/planes/">{{ t('stats_quota_plans') }}</a>{% endif %}</p>
+{% endif %}

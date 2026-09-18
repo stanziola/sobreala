@@ -68,11 +68,13 @@ class Piece:
         if self.design.get("source") == designs.CANVAS:
             # Lo arma el mismo código que la vista previa del lienzo, así que
             # lo que se vio es lo que sale.
-            grounds = [imaging.url_of(one) if one else None
-                       for one in self.design.get("backgrounds") or []]
+            doc = canvas.read(self.design.get("canvas")) or canvas.blank()
+            urls = [imaging.url_of(one) if one else None
+                    for one in self.design.get("backgrounds") or []]
+            shades = self.design.get("shades") or []
             return render.email_from_body(
-                canvas.to_html(self.design.get("canvas") or {"slides": []}, grounds),
-                plan=plan, unsubscribe=unsubscribe_url)
+                canvas.to_html(doc, urls, shades), plan=plan,
+                unsubscribe=unsubscribe_url, style=canvas.dark_css(doc, shades))
         if self.built_in:
             return render.email(self.design.get("template", ""),
                                 self.design.get("fields") or {},
@@ -255,6 +257,11 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
                                         complete=fields,
                                         skip=position, limit=room)
 
+    if (piece.get("source") == designs.CANVAS
+            and (piece.get("canvas") or {}).get("v") != canvas.VERSION):
+        # Guardada cuando el lienzo iba por diapositivas: sus imágenes son de
+        # otra forma. Se rehacen una vez, antes del primer correo.
+        piece = designs.upgrade_canvas(db, account_id, piece)
     ready = Piece(piece)
     among = suppressions.among(db, account_id,
                                [one["email"] for one in people])

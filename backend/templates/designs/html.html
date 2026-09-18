@@ -12,7 +12,7 @@
 <div class="compose">
   {# Un solo formulario: guardar y ver cómo queda mandan lo mismo. Con
      JavaScript la vista se refresca sola al escribir; sin él, con el botón. #}
-  <form class="compose__form" method="post" novalidate data-live-preview>
+  <form class="compose__form" id="html-form" method="post" novalidate data-live-preview>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <label for="nombre">{{ t('designs_name') }}</label>
@@ -41,9 +41,10 @@
     <h2 class="settings__subtitle">{{ t('designs_preview_title') }}</h2>
     <p class="hint">{{ t('designs_preview_note') }}</p>
     {% if watermark %}<p class="hint">{{ t('designs_preview_watermark') }}</p>{% endif %}
+    {% with preview_form = "html-form" %}{% include "designs/_preview_tools.html" %}{% endwith %}
     {# Aislado a propósito: el HTML es del cliente y esta página lleva su
        sesión abierta. Sin permisos, así que no ejecuta nada ni ve la galleta. #}
-    <iframe class="compose__preview" name="vista" sandbox
+    <iframe class="compose__preview" name="vista" sandbox data-preview-frame
             title="{{ t('designs_preview_title') }}"
             srcdoc="{{ t('designs_preview_empty', boton=t('designs_preview_button')) }}"></iframe>
   </div>

@@ -92,7 +92,7 @@ panamails/
     │   ├── campaigns/      # crear, programar, enviar por tandas. HECHO
     │   ├── unsubscribe/    # la baja, sin sesión. HECHO
     │   ├── analytics/      # métricas, exportar CSV/PDF
-    │   ├── billing/        # planes, cuota, recargas, acumulado
+    │   ├── billing/        # planes, cuota, acumulado
     │   └── webhooks/       # SNS de SES. HECHO. PayPal y Yappy, no
     ├── models/
     ├── make_admin.py       # da el rol de administrador al primero, a mano
@@ -538,52 +538,111 @@ ninguna otra nombra.
 ## El lienzo de «Crear plantilla»
 
 `/plantillas/crear` y `/plantillas/lienzo/<id>`, con `services/canvas.py` y
-`static/js/canvas.js`. **Es un lienzo libre, por diapositivas de 600 px**: texto,
-botón e imagen se ponen donde se quiera, se mueven, cambian de tamaño y de
-estilo, y se deshace y rehace. Se guarda **el lienzo en JSON con sus
-coordenadas** (`source: "canvas"`), no el HTML: el correo se arma al enviar.
+`static/js/canvas.js`. **Es una sola hoja de 600 px que crece hacia abajo**:
+texto, botón, imagen y rectángulo se ponen donde se quiera, se mueven, cambian
+de tamaño y de estilo, y se deshace y rehace. Se guarda **el lienzo en JSON con
+sus coordenadas** (`source: "canvas"`, `{v: 2, h, bg, items}`), no el HTML: el
+correo se arma al enviar.
+
+**Hubo diapositivas y se quitaron** (septiembre de 2026). `canvas.read()`
+convierte lo guardado así: las apila en una hoja, y el color de cada una pasa a
+ser un rectángulo del ancho entero. Se abre ya convertida, queda guardada en la
+forma nueva al volver a guardarla, y **el envío la rehace una vez antes del
+primer correo** (`designs.upgrade_canvas()`), porque sus imágenes guardadas eran
+de otra forma.
+
+**La hoja crece sola** cuando algo pasa del borde de abajo (un texto que se
+alarga, algo arrastrado más abajo) y nunca queda más baja que lo que tiene
+dentro; arrastrar el borde de abajo deja más o menos aire. Sin tamaños listos ni
+número de alto: si crece sola, sobran. El ancho no se toca, 600 px es lo que se
+lee bien en todos los buzones. Topes: **4,000 px de alto y 60 elementos**; lo que
+de verdad limita es la barra de peso.
 
 **Ningún lector de correo respeta posiciones libres** —Gmail las borra y Outlook
 dibuja con el motor de Word—, así que `to_html()` traduce las coordenadas a una
-**cuadrícula de tablas con medidas fijas**: reparte en franjas y columnas una y
-otra vez hasta que cada caja queda sola, con los huecos medidos alrededor. Es un
-corte en guillotina; el único arreglo que no lo admite es un molinillo, y ese no
-se deja guardar.
+**cuadrícula de tablas con medidas fijas**. Primero junta en **grupos**
+(`groups()`) lo que se toca o se encima, y lo que se encima con la caja de un
+grupo; después reparte los grupos en franjas y columnas una y otra vez hasta que
+cada uno queda solo, con los huecos medidos alrededor. Es un corte en
+guillotina; el único arreglo que no lo admite es un molinillo, y ese no se deja
+guardar.
 
-**Las imágenes no entran en la cuadrícula: se funden en un solo fondo por
-diapositiva** (`backgrounds()`, con Pillow, al doble de resolución), que va en la
-celda de la diapositiva y, para Outlook de escritorio, en su versión VML. Por eso
-pueden encimarse entre ellas y siempre quedan atrás. **Los textos y los botones
-son texto de verdad**, encima: es lo que evita que el correo se lea como una foto
-(de lo que más va a spam), lo que deja funcionar `*|EDAD|*` y lo que se sigue
-leyendo con las imágenes bloqueadas. Por la misma razón **no se deja encimar un
-texto sobre otro ni sobre un botón**: el editor los marca en rojo y el servidor
-no guarda.
+Cada grupo sale de una de cuatro formas, y eso es lo que arregló cómo llegaba a
+Gmail y a Outlook en el teléfono:
+
+| Grupo | Cómo sale |
+|---|---|
+| Un texto o un botón solo | Su celda |
+| Un rectángulo, con o sin texto encima, que llena el grupo | **Una celda de color**, sin imagen |
+| Fotos o rectángulos sin nada encima | **Una imagen de verdad (`<img>`)**, fundida al doble |
+| Fotos con texto o botones encima | **Un fondo de esa zona**, con el texto dentro |
+
+- **Una foto es un `<img>` y no un fondo.** Antes cada foto era el fondo de su
+  diapositiva: en Gmail del teléfono el fondo se escalaba por su cuenta y la
+  foto salía corrida respecto al texto. Un `<img>` en su celda baja con lo de
+  arriba si algo crece.
+- **El fondo del texto sobre una foto mide exactamente su celda**, a una
+  resolución y no al doble, para que ningún lector tenga que escalarlo. Debajo
+  lleva **el color promedio de la foto** (`shades`), que es lo que se ve si no
+  carga: el texto blanco se sigue leyendo. Para Outlook de escritorio va en VML,
+  solo en esa zona.
+- **El botón lleva su versión VML** (`v:roundrect`) para Outlook de escritorio,
+  que es lo único que dibuja con sus esquinas, su color y su letra; los demás
+  leen el enlace. Dentro de un fondo VML no, que Outlook dibuja mal un VML dentro
+  de otro. **La letra del texto se repite en un `<span>`**, porque dentro de un
+  fondo VML Outlook ignora la de la celda.
+
+**Los textos y los botones son texto de verdad**: es lo que evita que el correo
+se lea como una foto (de lo que más va a spam), lo que deja funcionar `*|EDAD|*`
+y lo que se sigue leyendo con las imágenes bloqueadas. Por eso **no se deja
+encimar un texto sobre otro ni sobre un botón**, y **una foto con enlace no
+puede tener nada encima**: fundida con otra cosa, el enlace sería de toda la
+imagen. El editor los marca en rojo y el servidor no guarda.
+
+**El modo oscuro no cambia los colores del diseño.** Outlook en el teléfono y en
+la web «corrige» colores en oscuro: el texto blanco sobre una foto salía gris
+oscuro y un botón negro se quedaba sin fondo. Cada color lleva una clase
+(`pmc-FFFFFF` la letra, `pmb-000000` el fondo) y `canvas.dark_css()` escribe en
+la cabecera una regla por color con `[data-ogsc]` y `[data-ogsb]`, que es lo que
+Outlook respeta. El sobre (`email_templates/_wrap.html`) dice además
+`color-scheme: light`, para el iPhone. Gmail en oscuro invierte todo y eso no se
+puede evitar.
+
+**El sobre tampoco deja que el teléfono agrande la letra**
+(`-webkit-text-size-adjust:100%`): el texto crecía y se salía de su sitio. **Sin
+`viewport` ni `x-apple-disable-message-reformatting`, a propósito**: el correo
+mide 600 fijos, y con ellas el teléfono dejaría de achicarlo y saldría cortado.
 
 **El servidor no se fía del JSON**: `parse()` lo rehace con solo lo que conoce y
 `problems()` exige fuentes de la lista (las que existen en todos los correos),
 letra de 14 a 72 px, colores `#RRGGBB`, enlaces `https://` o `mailto:`, cada cosa
-dentro de su diapositiva, e imágenes de esa cuenta. El texto se guarda como texto
-y sale escapado. La vista previa usa el mismo `to_html()` que el envío, con los
-fondos dentro de la respuesta para no guardar nada por mirar.
+dentro de la hoja, e imágenes de esa cuenta. El texto se guarda como texto y sale
+escapado. La vista previa usa el mismo `to_html()` que el envío, con las
+imágenes dentro de la respuesta para no guardar nada por mirar.
 
-**Las fotos del lienzo se guardan a 1200 px** y cuentan contra el tope de 20; **los
-fondos fundidos no** (`kind: "background"` en `images`): los hace el sistema. Al
-volver a guardar, los fondos viejos se borran si ninguna otra pieza los nombra,
-que es lo que pasa con una copia.
+**Las fotos del lienzo se guardan a 1200 px** y cuentan contra el tope de 20; **las
+imágenes de los grupos no** (`kind: "background"` en `images`, el nombre es de
+cuando eran fondos): las hace el sistema. Se guardan en `backgrounds` y sus
+colores en `shades`, en el orden de `groups()`. Al volver a guardar, las viejas
+se borran si ninguna otra pieza las nombra, que es lo que pasa con una copia.
+
+**Al subir una foto se recortan sus bordes transparentes** (`imaging.trim()`): un
+logo exportado con aire alrededor ocupaba una caja más grande que lo que se ve.
+Entra **debajo de lo último, a la mitad del ancho**, para poder moverla y poner
+otra al lado. **Las esquinas la agrandan sin deformarla y los lados la
+recortan**, así que la caja siempre abraza la foto; la proporción se guarda en
+`r`. «Ancho completo» la estira a 600 con su proporción. Lleva **enlace**
+opcional y **descripción**, que va en el `alt`: es lo que se lee con las imágenes
+bloqueadas.
 
 El formato va **por caja de texto entera**: una caja es toda de la misma fuente,
 tamaño y color. Formato por palabra complica que llegue igual a Outlook.
 
-**El alto de cada diapositiva lo elige quien la arma**: tres tamaños listos
-(Banner 600×200, Cuadrada 600×600, Vertical 600×900) y un número para el alto
-exacto, además de arrastrar el borde de abajo. El ancho no se toca: 600 px es lo
-que se lee bien en todos los buzones. Nunca queda más bajo que lo que ya tiene
-dentro.
-
-**Una foto nueva entra a la mitad del ancho y centrada**, para que se pueda
-mover y poner dos en la misma diapositiva; «Llenar la diapositiva» la estira
-entera cuando se quiere de fondo.
+**La vista previa se ve con un contacto de verdad o con las pastillas**, y como
+en una computadora o como en un teléfono (el correo achicado a 375 px, que es lo
+que hace Gmail). El contacto se busca con la cuenta en la consulta: el de otra
+no encuentra nada. Las dos cosas están también en el editor de HTML
+(`templates/designs/_preview_tools.html`).
 
 ### Solo se guarda lo que tiene pinta de llegar a la bandeja
 
@@ -594,9 +653,9 @@ más manda a spam:
 | Regla | Límite |
 |---|---|
 | Texto de verdad | Al menos 300 caracteres |
-| Imágenes | Como mucho la mitad de la superficie (encimadas cuentan una vez) |
+| Imágenes | Como mucho la mitad de la superficie (encimadas cuentan una vez; un rectángulo de color no cuenta) |
 | Peso del correo armado | Debajo de los 102 KB, donde Gmail lo corta |
-| Enlaces y botones | Como mucho 8 |
+| Enlaces de botones e imágenes | Como mucho 8 |
 | Acortadores (bit.ly y compañía) | Ninguno |
 | Mayúsculas | Menos del 30 % de las letras |
 | Signos repetidos (`!!`, `??`) | Ninguno |
@@ -607,7 +666,7 @@ hace cada destinatario, no el correo. Es quitar lo que se sabe que resta.
 
 **La misma revisión corre mientras se trabaja**, en `POST
 /plantillas/lienzo/revisar`, que devuelve la lista y **el peso del correo tal
-como sale** —con el pie de la baja y los fondos—. El editor lo dibuja como una
+como sale** —con el pie de la baja y las imágenes—. El editor lo dibuja como una
 barra de cuánto queda antes de los 102 KB, en ámbar pasado el 70 % y en rojo
 pasado el 90 %.
 
@@ -958,7 +1017,7 @@ manda al panel, y a un administrador lo devuelve a `/admin`.
 pantalla se llame así: cambiarla rompería los enlaces guardados y el correo de
 bienvenida a cambio de nada. **Solo enseña envíos**: los contactos, las
 importaciones y el plan tienen sus propias pantallas y salieron de aquí. Tiene
-tres partes, con filtro por periodo, por etiqueta y por **campaña**:
+cuatro partes, con filtro por periodo, por etiqueta y por **campaña**:
 
 - **«Cómo le fue»**: enviados, y el porcentaje de entregados, rebotes,
   aperturas, clics y quejas, **en personas** (`events.people()`, la misma
@@ -966,6 +1025,15 @@ tres partes, con filtro por periodo, por etiqueta y por **campaña**:
   demás sobre lo entregado. Debajo, fijo, que las aperturas son aproximadas y
   que entregado no es la bandeja.
 - **Envíos y rebotes**, en barras apiladas, y **aperturas y clics**, en líneas.
+  **También en personas**: quien abre tres veces el mismo envío es una
+  apertura, en el tramo en que abrió por primera vez. Antes la gráfica contaba
+  eventos y no cuadraba con «Cómo le fue».
+- **Correos de este mes**, al final: lo gastado de la cuota del plan
+  (`sent_counts` contra `docs/pricing.md`) en una barra, ámbar desde el 80 %
+  (cuando se avisa) y roja al 100 %. **No dice cuándo se renueva**: todavía no
+  hay renovación automática, y una fecha haría pensar que sí. Sin plan lo dice
+  y enlaza a /planes. Es un SVG y no un ancho en `style`, que la cabecera
+  del panel no deja.
 - Cada gráfica lleva **la escala a la izquierda** (números redondos,
   `stats.nice_top()`), **el eje del tiempo abajo** y **un cuadrito por tramo**
   al pasar el ratón, tocar o enfocar con el teclado, que se abre solo con CSS.

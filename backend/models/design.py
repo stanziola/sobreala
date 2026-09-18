@@ -104,27 +104,67 @@ def update_filled(db, account_id, design_id, *, name: str,
 
 
 def save_canvas(db, account_id, *, name: str, doc: dict[str, Any],
-                backgrounds: list[str | None]) -> Any:
-    """Guardar un lienzo nuevo. Devuelve su id."""
+                backgrounds: list[str | None],
+                shades: list[str | None] | None = None) -> Any:
+    """Guardar un lienzo nuevo. Devuelve su id.
+
+    `backgrounds` son las imágenes de sus grupos y `shades` su color promedio,
+    en el orden de `canvas.groups()` (se llaman así desde que eran los fondos
+    de cada diapositiva).
+    """
     return db.designs.insert_one({
         "account_id": account_id,
         "source": CANVAS,
         "name": clean_name(name),
         "canvas": doc,
         "backgrounds": list(backgrounds),
+        "shades": list(shades or []),
         "created_at": now(),
         "updated_at": now(),
     }).inserted_id
 
 
-def update_canvas(db, account_id, design_id, *, name: str, doc: dict[str, Any],
-                  backgrounds: list[str | None]) -> bool:
+def update_canvas(db, account_id, design_id, *, name: str | None = None,
+                  doc: dict[str, Any], backgrounds: list[str | None],
+                  shades: list[str | None] | None = None) -> bool:
     """Volver a guardar un lienzo. La cuenta va en la consulta."""
+    changes = {"canvas": doc, "backgrounds": list(backgrounds),
+               "shades": list(shades or []), "updated_at": now()}
+    if name is not None:
+        changes["name"] = clean_name(name)
     return db.designs.update_one(
         {"_id": design_id, "account_id": account_id, "source": CANVAS},
-        {"$set": {"name": clean_name(name), "canvas": doc,
-                  "backgrounds": list(backgrounds),
-                  "updated_at": now()}}).matched_count == 1
+        {"$set": changes}).matched_count == 1
+
+
+def still_named(db, account_id) -> set[str]:
+    """Las imágenes fundidas que alguna pieza de la cuenta todavía nombra."""
+    return {name for one in db.designs.find(
+        {"account_id": account_id, "source": CANVAS}, {"backgrounds": 1})
+        for name in one.get("backgrounds") or [] if name}
+
+
+def upgrade_canvas(db, account_id, found: dict[str, Any]) -> dict[str, Any]:
+    """Un lienzo guardado por diapositivas, pasado a hoja con sus imágenes nuevas.
+
+    Lo llama el envío: una campaña con una pieza vieja tiene que salir bien
+    aunque nadie la haya vuelto a abrir. Las imágenes viejas se borran si
+    ninguna otra pieza las nombra (una copia hecha antes, por ejemplo).
+    """
+    from models import image as images
+    from services import canvas
+
+    doc = canvas.read(found.get("canvas"))
+    if doc is None:
+        return found
+    names, shades = canvas.store(
+        db, account_id, doc, lambda one: images.data_of(db, account_id, one))
+    update_canvas(db, account_id, found["_id"], doc=doc, backgrounds=names,
+                  shades=shades)
+    kept = still_named(db, account_id)
+    images.remove(db, account_id, [one for one in found.get("backgrounds") or []
+                                   if one and one not in kept])
+    return {**found, "canvas": doc, "backgrounds": names, "shades": shades}
 
 
 def update_html(db, account_id, design_id, *, name: str, html: str) -> bool:

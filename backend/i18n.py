@@ -532,15 +532,16 @@ TEXTS = {
                         "quiere decir que el servidor de la persona lo aceptó, "
                         "no que haya llegado a su bandeja.",
     "stats_engage_title": "Aperturas y clics",
-    "stats_engage_lead": "Cuántas veces se abrieron tus correos y cuántas veces "
-                         "se pulsó un enlace en el periodo que elijas.",
+    "stats_engage_lead": "Cuántas personas abrieron tus correos y cuántas "
+                         "pulsaron un enlace en el periodo que elijas. Quien "
+                         "abre tres veces cuenta una.",
     "stats_tag": "Etiqueta",
     "stats_all_tags": "Todas las etiquetas",
     "stats_apply": "Ver",
 
     "stats_sending_title": "Envíos y rebotes",
-    "stats_sending_lead": "Cuántos correos salieron y cuántos rebotaron en el "
-                          "periodo que elijas.",
+    "stats_sending_lead": "A cuántas personas les salió un correo y a cuántas "
+                          "les rebotó en el periodo que elijas.",
     "stats_sent": "Enviados",
     "stats_bounce": "Rebotes",
     "stats_delivery": "Entregados",
@@ -549,6 +550,10 @@ TEXTS = {
     "stats_click": "Clics",
     # Lo que se lee cuando la gráfica sale vacía. Se dibuja igual, con sus ejes,
     # porque un cuadro vacío que se explica dice más que un hueco.
+    "stats_quota_title": "Correos de este mes",
+    "stats_quota_of": "{used} de {allowed} correos",
+    "stats_quota_none": "Sin plan contratado: no hay correos incluidos.",
+    "stats_quota_plans": "Ver los planes",
     "stats_nothing": "Todavía no se ha realizado ninguna acción sobre esto. "
                      "Aquí van a aparecer tus envíos en cuanto salga la primera "
                      "campaña.",
@@ -992,8 +997,9 @@ TEXTS = {
 
     # --- el lienzo de crear ---------------------------------------------------
     "canvas_title_new": "Plantilla nueva",
-    "canvas_lead": "Agrega texto, botones e imágenes y ponlos donde quieras. "
-                   "Las imágenes van siempre de fondo, con el texto y los "
+    "canvas_lead": "Agrega texto, botones, imágenes y rectángulos y ponlos "
+                   "donde quieras. La hoja crece sola hacia abajo. Las "
+                   "imágenes y los rectángulos van atrás, con el texto y los "
                    "botones encima.",
     "canvas_noscript": "El editor necesita JavaScript. Actívalo en tu "
                        "navegador para crear plantillas.",
@@ -1003,9 +1009,10 @@ TEXTS = {
     "canvas_add_text": "Texto",
     "canvas_add_button": "Botón",
     "canvas_add_image": "Imagen",
-    "canvas_add_slide": "Diapositiva",
-    "canvas_image_hint": "JPG, PNG, GIF o WebP, hasta {mb} MB. La imagen entra "
-                         "de fondo en la diapositiva elegida.",
+    "canvas_add_shape": "Rectángulo",
+    "canvas_image_hint": "JPG, PNG, GIF o WebP, hasta {mb} MB. Entra debajo de "
+                         "lo último, a la mitad del ancho. Los bordes "
+                         "transparentes se recortan solos.",
     "canvas_marks_hint": "Haz doble clic en un texto y pulsa una columna: se "
                          "escribe donde está el cursor.",
     "canvas_marks_need": "Primero haz doble clic en un texto, o pon el cursor "
@@ -1014,6 +1021,14 @@ TEXTS = {
                    "borrar. Ctrl+Z deshace y Ctrl+Y rehace.",
     "canvas_props_none": "Haz clic en algo para cambiarlo. Doble clic en un "
                          "texto para escribir.",
+    "canvas_page_bg": "Color de la hoja",
+    "canvas_shape_bg": "Color",
+    "canvas_image_href": "Enlace al pulsarla (opcional)",
+    "canvas_image_alt": "Descripción",
+    "canvas_image_alt_hint": "Lo que se lee si la imagen no carga",
+    "canvas_full_width": "Ancho completo",
+    "canvas_image_tip": "Las esquinas la agrandan sin deformarla; los lados la "
+                        "recortan.",
     "canvas_font": "Fuente",
     "canvas_size": "Tamaño",
     "canvas_color": "Color de la letra",
@@ -1028,59 +1043,44 @@ TEXTS = {
     "canvas_href": "Enlace",
     "canvas_button_bg": "Color del botón",
     "canvas_radius": "Forma",
-    "canvas_fit": "Cómo llena su caja",
-    "canvas_fit_cover": "Recortada para llenarla",
-    "canvas_fit_contain": "Completa",
     "canvas_replace": "Cambiar imagen",
     "canvas_front": "Traer al frente",
     "canvas_back": "Enviar atrás",
     "canvas_delete": "Borrar",
     "canvas_undo": "Deshacer",
     "canvas_redo": "Rehacer",
-    "canvas_slide": "Diapositiva {n}",
-    "canvas_slide_bg": "Fondo",
-    "canvas_slide_up": "Subir",
-    "canvas_slide_down": "Bajar",
-    "canvas_slide_copy": "Duplicar",
-    "canvas_slide_delete": "Borrar",
-    "canvas_slide_confirm": "¿Borrar esta diapositiva con todo lo que tiene?",
-    "canvas_resize_slide": "Arrastra para cambiar el alto",
+    "canvas_resize_sheet": "Arrastra para dejar más o menos espacio abajo",
     "canvas_new_text": "Escribe aquí",
     "canvas_new_button": "Ver más",
     "canvas_overlap": "Hay textos o botones encimados (en rojo). Sepáralos "
                       "para poder guardar: en el correo no se pueden encimar.",
-    "canvas_few": "Una diapositiva tiene imagen y casi nada de texto. Un "
-                  "correo que es casi solo imagen tiene más riesgo de ir a "
-                  "spam.",
+    "canvas_link_overlap": "Una imagen con enlace tiene algo encima (en "
+                          "rojo). Sepáralos o quítale el enlace: en el correo "
+                          "se funden en una sola imagen y el enlace se "
+                          "perdería.",
     "canvas_uploading": "Subiendo la imagen…",
     "canvas_upload_failed": "No se pudo subir la imagen. Prueba otra vez.",
-    "canvas_max_slides": "Caben hasta {n} diapositivas.",
-    "canvas_max_items": "Caben hasta {n} elementos por diapositiva.",
+    "canvas_max_items": "Caben hasta {n} elementos.",
     "canvas_name_needed": "Ponle un nombre para reconocerla después.",
     "canvas_leave": "Tienes cambios sin guardar.",
     "canvas_preview_wait": "La vista previa aparece aquí en un momento.",
+    "preview_as": "Ver con",
+    "preview_as_marks": "Los nombres de las columnas",
+    "preview_view": "Cómo se ve",
+    "preview_desk": "Computadora",
+    "preview_phone": "Teléfono",
 
     # Por qué no se pudo guardar un lienzo.
-    "canvas_slide_size": "Tamaño",
-    "canvas_size_banner": "Banner (600 × 200)",
-    "canvas_size_square": "Cuadrada (600 × 600)",
-    "canvas_size_tall": "Vertical (600 × 900)",
-    "canvas_size_custom": "A medida",
-    "canvas_height": "Alto",
-    "canvas_fill_slide": "Llenar la diapositiva",
     "canvas_meter": "Peso del correo:",
     "canvas_meter_of": "{kb} KB de {max} KB",
     "canvas_check_ok": "Listo: no tiene nada que lo mande a spam.",
     "canvas_check_title": "Para poder guardar, arregla esto:",
     "canvas_bad_broken": "El lienzo llegó dañado. Recarga la página e "
                          "inténtalo otra vez.",
-    "canvas_bad_empty": "La plantilla no tiene ninguna diapositiva.",
-    "canvas_bad_too_many_slides": "Tiene más diapositivas de las que caben.",
-    "canvas_bad_too_many_items": "Una diapositiva tiene más elementos de los "
-                                 "que caben.",
-    "canvas_bad_height": "Una diapositiva es demasiado baja o demasiado alta.",
-    "canvas_bad_bounds": "Algo se sale de su diapositiva. Muévelo hacia "
-                         "dentro.",
+    "canvas_bad_empty": "La plantilla está vacía.",
+    "canvas_bad_too_many_items": "Tiene más elementos de los que caben.",
+    "canvas_bad_height": "La hoja es demasiado baja o demasiado alta.",
+    "canvas_bad_bounds": "Algo se sale de la hoja. Muévelo hacia dentro.",
     "canvas_bad_image": "Una imagen no es de tu cuenta o ya no existe. "
                         "Cámbiala.",
     "canvas_bad_font": "Una fuente no está entre las que funcionan en todos "
@@ -1088,15 +1088,17 @@ TEXTS = {
     "canvas_bad_size": "Un texto tiene un tamaño fuera de lo permitido.",
     "canvas_bad_text_long": "Un texto es demasiado largo.",
     "canvas_bad_button_text": "Un botón no tiene texto o tiene demasiado.",
-    "canvas_bad_href": "El enlace de un botón tiene que empezar por https:// "
-                       "o mailto:.",
+    "canvas_bad_href": "El enlace de un botón o de una imagen tiene que "
+                       "empezar por https:// o mailto:.",
     "canvas_bad_overlap": "Hay textos o botones encimados. Sepáralos: en el "
                           "correo no se pueden encimar.",
-    "canvas_bad_tangled": "Hay textos y botones acomodados en molinillo, "
-                          "rodeándose sin tocarse. Mueve alguno para que "
-                          "queden en filas o columnas.",
-    "canvas_bad_too_big": "El correo pasa de {kb} KB. Quita algo de texto o "
-                          "alguna diapositiva.",
+    "canvas_bad_tangled": "Hay cosas acomodadas en molinillo, rodeándose "
+                          "sin tocarse. Mueve alguna para que queden en filas "
+                          "o columnas.",
+    "canvas_bad_link_overlap": "Una imagen con enlace tiene algo encima. "
+                               "Sepáralos o quítale el enlace.",
+    "canvas_bad_too_big": "El correo pasa de {kb} KB. Quita algo de "
+                          "texto.",
 
     # Lo que tiene riesgo de ir a spam. Con cualquiera, no se guarda.
     "canvas_spam_few_text": "Tiene muy poco texto ({n} caracteres). Escribe al "
@@ -1106,8 +1108,9 @@ TEXTS = {
                                "sean como mucho la mitad: el resto, texto.",
     "canvas_spam_too_big": "Pesa {kb} KB y el máximo es {max} KB. Pasado eso "
                            "Gmail lo corta.",
-    "canvas_spam_many_links": "Tiene {n} botones. Deja {max} como mucho.",
-    "canvas_spam_shortener": "Un botón usa un enlace acortado ({what}). Pon la "
+    "canvas_spam_many_links": "Tiene {n} enlaces entre botones e imágenes. "
+                              "Deja {max} como mucho.",
+    "canvas_spam_shortener": "Un enlace está acortado ({what}). Pon la "
                              "dirección completa: los acortadores esconden a "
                              "dónde llevan.",
     "canvas_spam_caps": "Tiene demasiadas MAYÚSCULAS. Escríbelo normal.",

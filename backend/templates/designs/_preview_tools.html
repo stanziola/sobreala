@@ -1,0 +1,18 @@
+{#- Encima de la vista previa: con los datos de quién se ve, y si en una
+    computadora o en un teléfono. El selector de contacto va con el formulario
+    que pide la vista (`form`, si no está dentro de él); el ancho lo cambia
+    panel.js con una clase, sin tocar el marco aislado. -#}
+<div class="preview-tools">
+  <label class="preview-tools__who">{{ t('preview_as') }}
+    <select name="contacto" data-preview-contact{% if preview_form %} form="{{ preview_form }}"{% endif %}>
+      <option value="">{{ t('preview_as_marks') }}</option>
+      {% for one in people %}
+      <option value="{{ one._id }}">{{ one.email }}{% if one.name %} ({{ one.name }}){% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="preview-tools__view" role="group" aria-label="{{ t('preview_view') }}">
+    <button class="chip is-on" type="button" data-preview-view="desk" aria-pressed="true">{{ t('preview_desk') }}</button>
+    <button class="chip" type="button" data-preview-view="phone" aria-pressed="false">{{ t('preview_phone') }}</button>
+  </div>
+</div>

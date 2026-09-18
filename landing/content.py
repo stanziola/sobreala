@@ -380,7 +380,8 @@ HOW = {
                 "title": "Sin sorpresas al llegar al límite",
                 "text": (
                     "Te avisamos al 80% de tu cuota. Si la agotas a mitad de campaña, se "
-                    "pausa en vez de fallar, y al recargar sigue desde donde se quedó."
+                    "pausa en vez de fallar, y al empezar el mes o al subir de plan, sigue "
+                    "desde donde se quedó."
                 ),
             },
         ],
@@ -539,21 +540,6 @@ PRICING = {
                 ),
             },
         ],
-    },
-    "addons": {
-        "eyebrow": "Complementos",
-        "title": "Si necesitas más",
-        "intro": "Se agregan cuando hacen falta, sin cambiar de plan.",
-        "descriptions": {
-            "Recarga de 1,000 correos": (
-                "Si agotas tu cuota a mitad de mes, la campaña pausada retoma desde "
-                "donde se quedó."
-            ),
-            "Diseño de pieza HTML adicional": (
-                "Diseñamos una pieza más con tu marca, además de las que incluye tu "
-                "plan. Hasta dos rondas de cambios, entrega en tres días hábiles."
-            ),
-        },
     },
     "included": {
         "title": "En todos los planes, sin excepción",

@@ -47,29 +47,15 @@
 {% set strings = {
   "newText": t('canvas_new_text'),
   "newButton": t('canvas_new_button'),
-  "slide": t('canvas_slide'),
-  "slideBg": t('canvas_slide_bg'),
-  "slideUp": t('canvas_slide_up'),
-  "slideDown": t('canvas_slide_down'),
-  "slideCopy": t('canvas_slide_copy'),
-  "slideDelete": t('canvas_slide_delete'),
-  "slideConfirm": t('canvas_slide_confirm'),
-  "resizeSlide": t('canvas_resize_slide'),
+  "resizeSheet": t('canvas_resize_sheet'),
   "overlap": t('canvas_overlap'),
-  "few": t('canvas_few'),
+  "linkOverlap": t('canvas_link_overlap'),
   "marksNeed": t('canvas_marks_need'),
   "uploading": t('canvas_uploading'),
   "uploadFailed": t('canvas_upload_failed'),
-  "maxSlides": t('canvas_max_slides', n=limits.maxSlides),
   "maxItems": t('canvas_max_items', n=limits.maxItems),
   "nameNeeded": t('canvas_name_needed'),
   "leave": t('canvas_leave'),
-  "size": t('canvas_slide_size'),
-  "sizeBanner": t('canvas_size_banner'),
-  "sizeSquare": t('canvas_size_square'),
-  "sizeTall": t('canvas_size_tall'),
-  "sizeCustom": t('canvas_size_custom'),
-  "height": t('canvas_height'),
   "meterOf": t('canvas_meter_of'),
 } %}
 <div class="editor" data-canvas
@@ -84,7 +70,7 @@
       <button class="tool" type="button" data-add="text">{{ t('canvas_add_text') }}</button>
       <button class="tool" type="button" data-add="button">{{ t('canvas_add_button') }}</button>
       <button class="tool" type="button" data-add="image">{{ t('canvas_add_image') }}</button>
-      <button class="tool" type="button" data-add="slide">{{ t('canvas_add_slide') }}</button>
+      <button class="tool" type="button" data-add="shape">{{ t('canvas_add_shape') }}</button>
     </div>
     <input class="visually-hidden" type="file" accept="image/*" data-canvas-file
            aria-label="{{ t('canvas_add_image') }}" tabindex="-1">
@@ -107,7 +93,12 @@
     {# Una barra por cada cosa que se puede seleccionar. El editor enseña la del
        elemento elegido y esconde las demás. #}
     <div class="props" data-props>
-      <p class="props__none" data-props-for="none">{{ t('canvas_props_none') }}</p>
+      {# Sin nada elegido: la hoja. #}
+      <div class="props__row" data-props-for="none">
+        <p class="props__none">{{ t('canvas_props_none') }}</p>
+        <label class="props__field props__field--color">{{ t('canvas_page_bg') }}
+          <input type="color" data-page-bg></label>
+      </div>
 
       <div class="props__row" data-props-for="text button" hidden>
         <label class="props__field" data-only="button">{{ t('canvas_button_text') }}
@@ -145,13 +136,25 @@
       </div>
 
       <div class="props__row" data-props-for="image" hidden>
+        <label class="props__field">{{ t('canvas_image_href') }}
+          <input type="url" maxlength="500" placeholder="https://" data-prop="href"></label>
+        <label class="props__field">{{ t('canvas_image_alt') }}
+          <input type="text" maxlength="{{ limits.altMax }}" data-prop="alt"
+                 placeholder="{{ t('canvas_image_alt_hint') }}"></label>
         <button class="btn btn--small btn--outline" type="button" data-action="replace">{{ t('canvas_replace') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="fill">{{ t('canvas_fill_slide') }}</button>
-        <label class="props__field">{{ t('canvas_fit') }}
-          <select data-prop="fit">
-            <option value="cover">{{ t('canvas_fit_cover') }}</option>
-            <option value="contain">{{ t('canvas_fit_contain') }}</option>
-          </select></label>
+        <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="back">{{ t('canvas_back') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+        <p class="props__tip">{{ t('canvas_image_tip') }}</p>
+      </div>
+
+      <div class="props__row" data-props-for="shape" hidden>
+        <label class="props__field props__field--color">{{ t('canvas_shape_bg') }}
+          <input type="color" data-prop="bg"></label>
+        <label class="props__field">{{ t('canvas_radius') }}
+          <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
+        <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="back">{{ t('canvas_back') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
@@ -166,7 +169,8 @@
     <h2 class="settings__subtitle">{{ t('designs_preview_title') }}</h2>
     <p class="hint">{{ t('designs_preview_note') }}</p>
     {% if watermark %}<p class="hint">{{ t('designs_preview_watermark') }}</p>{% endif %}
-    <div class="editor__frame">
+    {% include "designs/_preview_tools.html" %}
+    <div class="editor__frame" data-preview-frame>
       {# Aislado: es el correo tal como sale, y esta página lleva la sesión. #}
       <iframe name="vista" sandbox title="{{ t('designs_preview_title') }}"
               srcdoc="{{ t('canvas_preview_wait') }}"></iframe>
@@ -180,6 +184,7 @@
       data-canvas-preview hidden>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="lienzo" value="">
+  <input type="hidden" name="contacto" value="">
   <button type="submit">{{ t('designs_preview_button') }}</button>
 </form>
 
