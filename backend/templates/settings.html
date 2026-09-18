@@ -51,7 +51,7 @@
     {# ------------------------------------------------------------ cuenta #}
     {% if section == 'cuenta' %}
     <h2 class="settings__title">{{ t('settings_section_account') }}</h2>
-    <p class="settings__lead">{{ t('settings_account_lead') }}</p>
+    <hr class="settings__rule">
 
     {% call row(t('settings_account_contact'), '') %}
     <span class="setting__value">{{ account.contact_name }}</span>
@@ -65,19 +65,15 @@
     <p class="notice notice--ok">{{ t('settings_account_email_done') }}</p>
     {% endif %}
 
-    {# El aviso a la dirección anterior se dice aquí y no se esconde: quien
-       cambia su correo tiene derecho a saber que su dirección vieja se va a
-       enterar. #}
-    {% call row(t('settings_account_email'),
-                t('settings_account_email_hint') + ' ' + t('settings_account_email_warns')) %}
+    {% call row(t('settings_account_email'), '') %}
     <span class="setting__value">{{ account.email }}</span>
     {% if not confirmed %}<span class="tag tag--warn">{{ t('settings_account_email_pending') }}</span>{% endif %}
     <a class="btn btn--small btn--outline"
        href="{{ url_for('auth.change_email') }}">{{ t('settings_account_email_change') }}</a>
     {% endcall %}
 
+    {# Sin etiqueta a la derecha: repetía la primera palabra de la frase. #}
     {% call row(t('settings_account_status'), t('panel_status_' + status_of(account))) %}
-    <span class="tag tag--quiet">{{ t('status_short_' + status_of(account)) }}</span>
     {% endcall %}
 
     {# Nada escribe todavía el campo del plan, así que hoy todas las cuentas
@@ -91,12 +87,13 @@
     <span class="setting__value setting__value--muted">{{ t('settings_account_no_plan') }}</span>
     <a class="btn btn--small btn--outline" href="{{ site_url }}/planes/">{{ t('settings_account_plans') }}</a>
     {% endif %}
+    <a class="btn btn--small btn--outline"
+       href="{{ url_for('auth.settings', section='pagos') }}">{{ t('settings_account_to_billing') }}</a>
     {% endcall %}
 
     {# --------------------------------------------------------- seguridad #}
     {% elif section == 'seguridad' %}
     <h2 class="settings__title">{{ t('settings_section_security') }}</h2>
-    <p class="settings__lead">{{ t('settings_security_lead') }}</p>
 
     {% if request.args.get('cambiada') %}
     <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
@@ -118,7 +115,6 @@
     {% endcall %}
 
     <h3 class="settings__subtitle">{{ t('devices_title') }}</h3>
-    <p class="settings__lead">{{ t('devices_lead') }}</p>
 
     <ul class="devices">
       {% for device in devices %}
@@ -161,27 +157,23 @@
     {# ---------------------------------------------------- notificaciones #}
     {% elif section == 'notificaciones' %}
     <h2 class="settings__title">{{ t('settings_section_notifications') }}</h2>
-    <p class="settings__lead">
-      {{ t('settings_admin_notifications_lead') if is_admin
-         else t('settings_notifications_lead') }}</p>
 
     {% if request.args.get('guardado') %}
     <p class="notice notice--ok">{{ t('settings_notifications_saved') }}</p>
     {% endif %}
 
-    {# Sin título encima: que estos no se pueden apagar ya lo dice la frase de
-       arriba y lo repite el candado con su etiqueta en cada fila. Decirlo una
-       tercera vez con un encabezado sonaba a explicación de más. #}
-    <ul class="fixed">
-      {% for label in [t('settings_fixed_codes'), t('settings_fixed_password'),
-                       t('settings_fixed_two_step')] %}
-      <li class="fixed__item">
-        <span class="fixed__icon">{% include "_icon-lock.svg" %}</span>
-        <span>{{ label }}</span>
-        <span class="tag tag--quiet">{{ t('settings_fixed_tag') }}</span>
-      </li>
-      {% endfor %}
-    </ul>
+    {# Los de seguridad no se pueden apagar: su interruptor está encendido y
+       bloqueado, así se ve de un vistazo que siempre salen, sin decirlo con
+       palabras. No va dentro del formulario: no manda nada. #}
+    {% for label in [t('settings_fixed_codes'), t('settings_fixed_password'),
+                     t('settings_fixed_two_step')] %}
+    {% call row(label, '', id='fijo-' ~ loop.index) %}
+    <label class="switch switch--locked">
+      <input type="checkbox" checked disabled aria-labelledby="fijo-{{ loop.index }}">
+      <span class="switch__track"><span class="switch__knob"></span></span>
+    </label>
+    {% endcall %}
+    {% endfor %}
 
     <form method="post" action="{{ url_for('auth.settings', section='notificaciones') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -230,7 +222,6 @@
     {# ------------------------------------------------------------- pagos #}
     {% elif section == 'pagos' %}
     <h2 class="settings__title">{{ t('settings_section_payments') }}</h2>
-    <p class="settings__lead">{{ t('settings_payments_lead') }}</p>
 
     {% if request.args.get('hecho') %}
     <p class="notice notice--ok">{{ t('pay_done') }}</p>
@@ -245,7 +236,7 @@
     {# ----- tu plan: con su fecha, en la zona de quien mira. Sin botón para
        cancelar: no hay cobro automático que cancelar. ----- #}
     <h3 class="settings__subtitle">{{ t('billing_plan_title') }}</h3>
-    {% call row(t('billing_plan_row'), t('settings_payments_current_hint')) %}
+    {% call row(t('billing_plan_row'), '') %}
     {% if plan %}
     <span class="setting__value">{{ plans[plan].name if plan in plans else plan }}</span>
     {% if plan_until %}<span class="tag tag--quiet">{{ t('billing_until', when=plan_until|on_date) }}</span>{% endif %}
@@ -254,16 +245,11 @@
     {% endif %}
     {% endcall %}
 
-    {# ----- con qué has pagado: sacado de los pagos, nada guardado aquí ----- #}
+    {# ----- los métodos: por ahora solo cuáles hay. Aquí se guardará el de
+       cada cuenta el día que haya cobros recurrentes. ----- #}
     <h3 class="settings__subtitle">{{ t('billing_methods_title') }}</h3>
-    {% set by_paypal = used_methods.get('paypal') %}
-    {% call row(t('settings_payments_paypal'),
-                t('billing_paypal_used', who=by_paypal|join(', ')) if by_paypal
-                else (t('billing_paypal_used_plain') if by_paypal is not none
-                      else t('settings_payments_paypal_desc'))) %}
-    {% if by_paypal is not none %}
-    <span class="tag tag--on">{{ t('billing_used') }}</span>
-    {% elif paypal_ready %}
+    {% call row(t('settings_payments_paypal'), t('settings_payments_paypal_desc')) %}
+    {% if paypal_ready %}
     <span class="tag tag--quiet">{{ t('settings_payments_ready') }}</span>
     {% else %}
     <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
@@ -280,7 +266,8 @@
 
     <p class="hint">{{ t('settings_payments_hint') }}</p>
 
-    {# ----- las facturas: una fila por pago cobrado ----- #}
+    {# ----- las facturas: escondidas por ahora (`invoices.SHOWN`) ----- #}
+    {% if invoices_shown %}
     <h3 class="settings__subtitle">{{ t('billing_invoices_title') }}</h3>
     {% if payments %}
     <div class="table-wrap">
@@ -311,6 +298,7 @@
     <p class="hint">{{ t('billing_invoices_hint') }}</p>
     {% else %}
     <p class="hint">{{ t('billing_invoices_none') }}</p>
+    {% endif %}
     {% endif %}
     {% endif %}
 

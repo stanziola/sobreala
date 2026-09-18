@@ -124,6 +124,7 @@
 
 {# Los pagos cobrados, y la factura de cada uno. Las facturas se emiten a
    mano: aquí se sube el PDF y el cliente lo baja desde Facturación. #}
+{% if invoices_shown %}
 <h3 class="settings__subtitle" id="facturas">{{ t('admin_invoices_title') }}</h3>
 {% if request.args.get('factura') == 'ok' %}
 <p class="notice notice--ok">{{ t('admin_invoice_done') }}</p>
@@ -161,6 +162,7 @@
 </div>
 {% else %}
 <p class="hint">{{ t('admin_invoices_none') }}</p>
+{% endif %}
 {% endif %}
 
 <h3 class="settings__subtitle">{{ t('admin_imports_title') }}</h3>

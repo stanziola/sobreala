@@ -200,7 +200,9 @@ def test_each_section_draws_its_own(client, database, outbox):
     assert "Tus dispositivos" in security
 
     notices = inside.get("/configuracion/notificaciones").get_data(as_text=True)
-    assert "Siempre activo" in notices
+    # Los de seguridad: encendidos y bloqueados, sin frase que lo diga.
+    assert "switch--locked" in notices
+    assert "Siempre activo" not in notices
     assert 'name="new_login"' in notices
     # The fixed ones are listed, and none of them is a field that could be sent.
     assert 'name="password_changed"' not in notices
@@ -234,7 +236,7 @@ def test_el_administrador_tiene_notificaciones_y_son_las_suyas(
     assert 'name="campaigns"' not in pantalla
     assert 'name="billing"' not in pantalla
     # Y los de seguridad siguen sin interruptor, como en cualquier cuenta.
-    assert "Siempre activo" in pantalla
+    assert "switch--locked" in pantalla
 
 
 def test_el_administrador_guarda_solo_sus_avisos(client, database, outbox):

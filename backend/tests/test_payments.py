@@ -478,11 +478,16 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     # Y sí sigue diciendo qué tienes y qué se te ha cobrado.
     assert "PayPal" in pantalla
     assert "Yappy" in pantalla
-    assert "Facturas" in pantalla
+    assert "Facturación" in pantalla
 
 
 def test_tus_pagos_solo_ensena_lo_que_se_cobro(client, database, outbox,
                                                monkeypatch):
+    from models import invoice as invoices
+
+    # Las facturas están escondidas por ahora; esto prueba cómo se ven el día
+    # que se enciendan.
+    monkeypatch.setattr(invoices, "SHOWN", True)
     """Un intento a medias se quedaría ahí para siempre al lado del pago bueno,
     pareciendo que se debe algo cuando no se debe nada. Escrito sigue, que es
     lo que permite reconciliarlo."""

@@ -215,4 +215,6 @@ def test_la_pantalla_de_cuenta_ofrece_cambiarlo(client, database, outbox):
     pantalla = browser.get("/configuracion").get_data(as_text=True)
 
     assert "/cuenta/correo" in pantalla
-    assert "le avisamos a la dirección anterior" in pantalla.lower()
+    # La nota de que se avisa a la dirección vieja ya no va en la pantalla;
+    # el aviso sale igual.
+    assert "le avisamos a la dirección anterior" not in pantalla.lower()

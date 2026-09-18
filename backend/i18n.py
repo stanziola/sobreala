@@ -323,15 +323,12 @@ TEXTS = {
     "settings_section_notifications": "Notificaciones",
     "settings_section_payments": "Facturación",
 
-    "settings_account_lead": "Los datos con los que abriste tu cuenta.",
     "settings_account_contact": "Tu nombre",
     "settings_account_company": "Empresa u organización",
     "settings_account_email": "Correo de tu cuenta",
-    "settings_account_email_hint": "Aquí te llegan los códigos y los avisos.",
     "settings_account_email_pending": "Sin confirmar",
     "settings_account_email_change": "Cambiar",
-    "settings_account_email_warns": "Si lo cambias, le avisamos a la dirección "
-                                    "anterior.",
+    "settings_account_to_billing": "Ir a facturación",
     "settings_account_email_done": "Listo, tu correo cambió. Le avisamos a la "
                                    "dirección anterior.",
     "settings_account_status": "Estado de tu cuenta",
@@ -350,11 +347,10 @@ TEXTS = {
     "settings_security_lead": "Todo lo que decide quién puede entrar a tu "
                               "cuenta.",
     "settings_password_row": "Contraseña",
-    "settings_password_desc": "Cámbiala cuando quieras. Al hacerlo cerramos la "
-                              "sesión en los demás dispositivos.",
+    "settings_password_desc": "Si la cambias, se cierra la sesión en los "
+                              "demás dispositivos.",
     "settings_password_action": "Cambiar",
-    "settings_two_step_desc": "Un código de tu teléfono además de la "
-                              "contraseña, para que saberla no baste.",
+    "settings_two_step_desc": "Tipo: aplicación de códigos.",
     "settings_two_step_manage": "Administrar",
     "settings_two_step_turn_on": "Activar",
 
@@ -416,7 +412,7 @@ TEXTS = {
     "settings_payments_lead": "Tu plan, con qué has pagado y tus facturas. "
                               "Los planes se eligen en el sitio.",
     "billing_plan_title": "Tu plan",
-    "billing_plan_row": "Plan contratado",
+    "billing_plan_row": "Plan",
     "billing_until": "hasta el {when}",
     "billing_methods_title": "Métodos de pago",
     "billing_used": "Lo has usado",

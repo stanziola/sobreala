@@ -189,6 +189,9 @@ def test_el_filtro_por_etiqueta_ya_filtra(client, database, outbox):
 # ------------------------------------------------------------ facturación
 
 def pagado(client, database, monkeypatch):
+    # Las facturas están escondidas por ahora (`invoices.SHOWN`); estas pruebas
+    # fijan cómo funcionan el día que se enciendan.
+    monkeypatch.setattr(invoices, "SHOWN", True)
     fake_paypal(monkeypatch)
     browser = inside(client)
     confirm(database)
@@ -258,7 +261,26 @@ def test_al_cobrar_se_guarda_quien_pago(client, database, outbox, monkeypatch):
     come_back(browser)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert payments.for_account(database, cuenta["_id"])[0]["payer_email"] == "ana@coop.com"
-    assert "ana@coop.com" in browser.get("/configuracion/pagos").get_data(as_text=True)
+    # Se guarda, pero no se enseña: es para cuando haya cobros recurrentes.
+    assert "ana@coop.com" not in browser.get("/configuracion/pagos").get_data(as_text=True)
+
+
+def test_con_las_facturas_escondidas_no_se_ven_ni_se_suben(client, database, outbox,
+                                                          monkeypatch):
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+    buy(browser)
+    come_back(browser)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    pago = payments.for_account(database, cuenta["_id"], only_paid=True)[0]
+
+    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
+    assert "Factura en camino" not in pantalla
+    admin, _ = make_admin(client, database)
+    ficha = admin.get(f"/admin/cuentas/{cuenta['_id']}").get_data(as_text=True)
+    assert "Pagos y facturas" not in ficha
+    assert browser.get(f"/configuracion/pagos/factura/{pago['_id']}").status_code == 404
 
 
 # ------------------------------------------------------------ borrar contactos

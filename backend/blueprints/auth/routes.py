@@ -1541,8 +1541,8 @@ def settings(section: str = "cuenta"):
         plan_until=accounts.plan_until(account),
         # Solo lo cobrado: los intentos a medias se miran desde la ficha.
         payments=paid,
-        used_methods=payments.used_methods(paid),
         invoices=invoices.paid_with_invoice(db, account["_id"]),
+        invoices_shown=invoices.SHOWN,
         confirmed=accounts.is_confirmed(account),
         plan=accounts.plan_of(account),
         two_step=accounts.two_factor_on(account),
@@ -1675,7 +1675,7 @@ def invoice_file(raw):
     except (InvalidId, TypeError):
         abort(404)
     found = invoices.for_payment(get_db(), account["_id"], payment_id)
-    if found is None:
+    if found is None or not invoices.SHOWN:
         abort(404)
     paid = get_db().payments.find_one({"_id": payment_id,
                                        "account_id": account["_id"]}) or {}

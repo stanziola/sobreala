@@ -269,6 +269,7 @@ def account_page(account, raw):
         # Los cobrados, para subirles la factura que se emitió a mano.
         paid=payments.for_account(db, client["_id"], only_paid=True, limit=50),
         invoices=invoices.paid_with_invoice(db, client["_id"]),
+        invoices_shown=invoices.SHOWN,
         invoice_mb=invoices.MAX_BYTES // (1024 * 1024))
 
 
@@ -399,6 +400,8 @@ def upload_invoice(account, raw):
     Subir otra al mismo pago la reemplaza. La primera vez se le avisa al
     cliente; al reemplazarla no, que ya sabe que la tiene.
     """
+    if not invoices.SHOWN:
+        abort(404)
     db = get_db()
     client = wanted(raw)
     back = url_for("admin.account_page", raw=raw) + "#facturas"

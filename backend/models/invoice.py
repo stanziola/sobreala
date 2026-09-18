@@ -17,6 +17,10 @@ from typing import Any
 
 from bson.binary import Binary
 
+# Por ahora las facturas no se enseñan ni se suben: todo lo de abajo está
+# hecho y probado, y volver a encenderlo es cambiar esto a True.
+SHOWN = False
+
 MAX_BYTES = 2 * 1024 * 1024
 # Así empieza todo PDF. Se mira lo que trae dentro, no cómo se llama.
 MAGIC = b"%PDF-"

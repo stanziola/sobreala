@@ -492,6 +492,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
    seguidas donde una sección empieza justo después de una. */
 .setting + .settings__subtitle { padding-top: 14px; border-top: 0; }
 .settings__lead { margin-bottom: 6px; color: var(--color-ink-soft); font-size: .95rem; }
+/* La raya bajo el título de una sección que no lleva frase debajo. */
+.settings__rule { margin: 14px 0 0; border: 0; border-top: 1px solid var(--color-border); }
 .settings__pane form { margin: 0; }
 
 
@@ -541,6 +543,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 }
 .switch input:checked + .switch__track { background: var(--color-accent); }
 .switch input:checked + .switch__track .switch__knob { transform: translateX(20px); }
+/* Encendido y bloqueado: un aviso que siempre sale. Se ve apagado de
+   color para que se lea como algo que no se toca. */
+.switch--locked { cursor: not-allowed; }
+.switch--locked input:checked + .switch__track { background: var(--color-field); opacity: .7; }
 .switch input:focus-visible + .switch__track { outline: 2px solid var(--color-accent-strong); outline-offset: 2px; }
 
 /* Two-step verification: the QR, the secret to type by hand, and the recovery

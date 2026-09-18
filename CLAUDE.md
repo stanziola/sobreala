@@ -463,8 +463,8 @@ checkout de PayPal. Es la regla 9.
 Pasar de `created` a `completed` es una **escritura condicional**, y es la única
 que decide si se alarga un plan: recargar la página de vuelta entra otra vez y
 se va con las manos vacías en lugar de regalar otro periodo. Al cobrar se guarda
-también `payer_email`, la cuenta de PayPal que pagó, que es lo que enseña
-Facturación como método usado.
+también `payer_email`, la cuenta de PayPal que pagó. **Se guarda y no se
+enseña**: es para cuando haya cobros recurrentes.
 
 ### `invoices`
 **El PDF de la factura de cada pago cobrado**, que se emite a mano y se sube
@@ -960,10 +960,18 @@ prediseñadas que quedaron de antes. Y todo lo demás vive en **`/configuracion`
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
 dispositivos conectados), **Notificaciones** y **Facturación**
 (`/configuracion/pagos`, que no cambió de dirección porque ahí vuelve PayPal):
-el plan con su fecha exacta, los métodos con los que se ha pagado —PayPal y la
-cuenta que pagó, sacados de los pagos; nada guardado— y una fila por pago
-cobrado con su factura para descargar, o «Factura en camino». No hay botón para
-cancelar la renovación porque no hay cobro automático; va el día que lo haya.
+el plan con su fecha exacta y los métodos de pago que hay. Los métodos son hoy
+solo la lista; ahí se guardará el de cada cuenta el día que haya cobros
+recurrentes. **Las facturas están hechas pero escondidas** (`invoices.SHOWN`,
+en `False`): ni se enseñan al cliente ni se suben desde administración, y
+encenderlas es cambiar esa línea. No hay botón para cancelar la renovación
+porque no hay cobro automático; va el día que lo haya.
+
+**Configuración va sin frases de relleno.** Cada fila dice su nombre y, solo si
+hace falta, una línea: que cambiar la contraseña cierra las demás sesiones, y
+el tipo de verificación en dos pasos. Los avisos de seguridad, que no se pueden
+apagar, salen en Notificaciones con su interruptor **encendido y bloqueado**, sin
+una etiqueta que lo diga.
 
 ### La hora de quien mira
 
