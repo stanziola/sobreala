@@ -45,6 +45,7 @@
   --color-surface: #1B1B1E;       /* cards, a visible step above the page */
   --color-surface-alt: #121214;   /* alternating section background */
   --color-border: #34343A;
+  --color-hover: #2C2C31;
   /* Mismo problema de noche: el borde de arriba no llega a 3:1 sobre las
    * tarjetas. Este da 3.4:1. */
   --color-field: #6E6E77;

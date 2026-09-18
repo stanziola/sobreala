@@ -7,6 +7,20 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#3166A7" id="theme-color">
 <script nonce="{{ csp_nonce }}">
+  // The device's time zone, for the server: every date and hour on these
+  // screens is written in it, and an hour typed here is read in it. Only
+  // rewritten when it changes.
+  (function () {
+    try {
+      var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      var had = /(?:^|;\s*)pm_tz=([^;]*)/.exec(document.cookie);
+      if (zone && (!had || decodeURIComponent(had[1]) !== zone)) {
+        document.cookie = "pm_tz=" + encodeURIComponent(zone)
+          + "; path=/; max-age=31536000; SameSite=Lax"
+          + (location.protocol === "https:" ? "; Secure" : "");
+      }
+    } catch (e) {}
+  })();
   // Runs before the stylesheet so the page never paints the wrong theme.
   (function () {
     var t;

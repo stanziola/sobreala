@@ -462,7 +462,18 @@ checkout de PayPal. Es la regla 9.
 
 Pasar de `created` a `completed` es una **escritura condicional**, y es la única
 que decide si se alarga un plan: recargar la página de vuelta entra otra vez y
-se va con las manos vacías en lugar de regalar otro periodo.
+se va con las manos vacías en lugar de regalar otro periodo. Al cobrar se guarda
+también `payer_email`, la cuenta de PayPal que pagó, que es lo que enseña
+Facturación como método usado.
+
+### `invoices`
+**El PDF de la factura de cada pago cobrado**, que se emite a mano y se sube
+desde la ficha de la cuenta en administración («Pagos y facturas»). Uno por
+pago: subir otro lo reemplaza, y queda en `admin_events`. Solo entra lo que
+empieza como un PDF, hasta 2 MB. Lo baja solo la cuenta dueña, desde
+Facturación, **siempre como archivo** y nunca dentro de una página del panel. La
+primera vez que se sube se le avisa al cliente, con el interruptor de «Pagos y
+plan».
 
 ### `designs`
 Las piezas de un cliente. Se llaman «diseños» y no «templates» porque en este
@@ -901,17 +912,37 @@ manda al panel, y a un administrador lo devuelve a `/admin`.
 
 **`/panel` es la pantalla de Estadísticas.** La dirección no cambió aunque la
 pantalla se llame así: cambiarla rompería los enlaces guardados y el correo de
-bienvenida a cambio de nada. Enseña las cifras de la cuenta —contactos activos y
-anulados, etiquetas, importaciones, plan y cuota— y las **gráficas de envíos y
-rebotes**, con filtro por periodo y por etiqueta.
+bienvenida a cambio de nada. **Solo enseña envíos**: los contactos, las
+importaciones y el plan tienen sus propias pantallas y salieron de aquí. Tiene
+tres partes, con filtro por periodo, por etiqueta y por **campaña**:
 
-Las gráficas leen `events`, que **todavía no llena nadie**, así que hoy salen
-vacías. Se dibujan igual, con sus ejes y su leyenda, y encima la frase de que
-aún no se ha hecho nada: un cuadro vacío que se explica enseña de antemano la
-forma que va a tener, y un hueco no. **Son SVG generado en la plantilla, sin
-JavaScript y sin librerías**: la cabecera del panel solo deja cargar guiones
-propios, así que una de un CDN no cargaría, y traerse una al repositorio sería
-algo que mantener y auditar para pintar rectángulos.
+- **«Cómo le fue»**: enviados, y el porcentaje de entregados, rebotes,
+  aperturas, clics y quejas, **en personas** (`events.people()`, la misma
+  cuenta que «Campañas enviadas»). Entregados y rebotes sobre lo enviado; lo
+  demás sobre lo entregado. Debajo, fijo, que las aperturas son aproximadas y
+  que entregado no es la bandeja.
+- **Envíos y rebotes**, en barras apiladas, y **aperturas y clics**, en líneas.
+- Cada gráfica lleva **la escala a la izquierda** (números redondos,
+  `stats.nice_top()`), **el eje del tiempo abajo** y **un cuadrito por tramo**
+  al pasar el ratón, tocar o enfocar con el teclado, que se abre solo con CSS.
+
+**Seis periodos**: la última hora (cada 5 minutos), hoy (por hora desde la
+medianoche), 24 horas, 7 y 30 días (por día) y 90 días (por semana). **Los
+tramos se cortan en la zona del dispositivo** (`events.slots()`): un día empieza
+a medianoche de quien mira y no a la de UTC.
+
+**El filtro por etiqueta mira los envíos y no los eventos**, que no la llevan:
+un evento es de un envío (`run_id`) y el envío guarda a qué etiquetas salió.
+Antes buscaba la etiqueta en el evento y no filtraba nada. **El de campaña** sale
+de `campaign_runs`, así que aparecen también las borradas que tienen envíos; una
+campaña de otra cuenta en la dirección no filtra por nada.
+
+**Son SVG generado en la plantilla, sin librerías**: la cabecera del panel solo
+deja cargar guiones propios. **Todo lo que es texto va fuera del SVG**, que se
+estira a lo ancho; el eje es una fila de casillas del mismo ancho que las barras,
+y los puntos de las líneas son líneas de largo cero con la punta redonda y trazo
+que no se escala, para que no salgan ovalados. Sin datos se dibujan igual, con
+la frase de que aún no ha pasado nada.
 
 La llena `services/stats.py`, y **es la misma pantalla que ve el
 administrador** en `/admin/` para la cuenta que elija: una plantilla y dos
@@ -921,13 +952,30 @@ columnas propias**, si está activo, anulado o incompleto, sus etiquetas y
 cuándo entró—, la importación, las etiquetas, las columnas propias y las
 supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
 desde un botón encima de la lista, y exportar pasa por una confirmación que dice
-cuántos van a salir. **`/plantillas`** tiene arriba crear y cargar, y debajo
+cuántos van a salir. **Borrar también pregunta**: el botón de cada fila, y el de
+eliminar los anulados, llevan a una pantalla que dice cuántos se van y tiene el
+botón rojo; el que borra es el POST. **`/plantillas`** tiene arriba crear y cargar, y debajo
 todas las piezas de la cuenta: las del lienzo, las cargadas en HTML y las
 prediseñadas que quedaron de antes. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
-dispositivos conectados), **Notificaciones** y **Opciones de pago**, donde se
-contrata un plan con PayPal y se ven los pagos hechos. Yappy sigue por
-construir.
+dispositivos conectados), **Notificaciones** y **Facturación**
+(`/configuracion/pagos`, que no cambió de dirección porque ahí vuelve PayPal):
+el plan con su fecha exacta, los métodos con los que se ha pagado —PayPal y la
+cuenta que pagó, sacados de los pagos; nada guardado— y una fila por pago
+cobrado con su factura para descargar, o «Factura en camino». No hay botón para
+cancelar la renovación porque no hay cobro automático; va el día que lo haya.
+
+### La hora de quien mira
+
+**Todo se guarda en UTC y todo se escribe en la zona del dispositivo de quien
+mira** (`services/clock.py`). El guion de la cabecera del panel escribe la
+galleta `pm_tz` con la zona del navegador; la primera página de un dispositivo
+nuevo todavía no la trae y sale en hora de Panamá. `on_date` y `at_moment` la
+usan, las gráficas cortan sus tramos en ella, y **una hora escrita para
+programar una campaña se lee en ella** —antes se tomaba como UTC, y las 3 de la
+tarde de Panamá quedaban para las 10 de la mañana—. La cuenta guarda la última
+zona vista en `time_zone`, que es la de los correos que le llegan sin estar
+mirando. Lo relativo («hace 2 horas») no depende de la zona.
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: panel,

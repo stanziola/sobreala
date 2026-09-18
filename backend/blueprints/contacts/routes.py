@@ -262,6 +262,24 @@ def edit(raw):
                            **shared(db, account))
 
 
+@bp.route("/contactos/borrar/<raw>")
+def remove_ask(raw):
+    """Antes de borrar uno, la pantalla que pregunta. No borra nada: el que
+    borra es el POST. Es fácil pulsar Eliminar sin querer en una lista larga."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    db = get_db()
+    contact_id = as_id(raw)
+    row = contacts.by_id(db, account["_id"], contact_id) if contact_id else None
+    if row is None:
+        abort(404)
+    return render_template("contacts/remove.html", section="lista", going=1,
+                           rows=[row], action=url_for("contacts.remove"),
+                           back=request.referrer or url_for("contacts.index"),
+                           **shared(db, account))
+
+
 @bp.route("/contactos/borrar", methods=["POST"])
 def remove():
     account = signed_in()
@@ -276,12 +294,23 @@ def remove():
     return redirect(request.form.get("volver") or url_for("contacts.index"))
 
 
-@bp.route("/contactos/anulados/eliminar", methods=["POST"])
+@bp.route("/contactos/anulados/eliminar", methods=["GET", "POST"])
 def remove_suppressed():
-    """Borrar los contactos anulados. Las supresiones se quedan."""
+    """Borrar los contactos anulados. Las supresiones se quedan.
+
+    El GET es la pantalla que dice cuántos se van y pregunta; el POST borra.
+    """
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
+    if request.method == "GET":
+        db = get_db()
+        context = shared(db, account)
+        return render_template(
+            "contacts/remove.html", section="supresiones",
+            going=context["blocked_total"], rows=[], blocked=True,
+            action=url_for("contacts.remove_suppressed"),
+            back=url_for("contacts.blocked"), **context)
 
     if csrf_ok(request.form.get("csrf_token")):
         contacts.delete_suppressed(get_db(), account["_id"])

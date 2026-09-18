@@ -101,11 +101,9 @@
           <div class="table__actions">
             <a class="btn btn--small btn--outline"
                href="{{ url_for('contacts.edit', raw=row._id) }}">{{ t('contacts_edit') }}</a>
-            <form method="post" action="{{ url_for('contacts.remove') }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden" name="email" value="{{ row.email }}">
-              <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_delete') }}</button>
-            </form>
+            {# Un enlace y no un formulario: lleva a la pantalla que pregunta. #}
+            <a class="btn btn--small btn--outline"
+               href="{{ url_for('contacts.remove_ask', raw=row._id) }}">{{ t('contacts_delete') }}</a>
           </div>
         </td>
       </tr>

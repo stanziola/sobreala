@@ -632,7 +632,7 @@ def test_su_menu_lleva_estadisticas_encima_de_administracion(client, database,
 
 
 def test_su_configuracion_es_seguridad_y_notificaciones(client, database, outbox):
-    """Cuenta y Opciones de pago no significan nada en una cuenta que no
+    """Cuenta y Facturación no significan nada en una cuenta que no
     compra. Seguridad sí, y Notificaciones con su propia lista."""
     admin, _ = make_admin(client, database)
 
@@ -641,7 +641,7 @@ def test_su_configuracion_es_seguridad_y_notificaciones(client, database, outbox
 
     pantalla = admin.get("/configuracion/seguridad").get_data(as_text=True)
     assert "Contraseña" in pantalla
-    assert "Opciones de pago" not in pantalla
+    assert "Facturación" not in pantalla
 
     avisos = admin.get("/configuracion/notificaciones").get_data(as_text=True)
     assert 'name="admin_signup"' in avisos
@@ -677,7 +677,7 @@ def test_un_cliente_sigue_llegando_a_todo(client, database, outbox):
     assert "Administración" not in menu
 
     pagos = navegador.get("/configuracion/pagos").get_data(as_text=True)
-    assert "Opciones de pago" in pagos
+    assert "Facturación" in pagos
 
 
 # ----------------------------------- la única aprobación que queda

@@ -33,6 +33,9 @@
   --color-surface: #FFFFFF;       /* cards and panels sitting on the page */
   --color-surface-alt: #F4F4F5;   /* alternating section background */
   --color-border: #CFCFD4;    /* lineas que separan: tarjetas, filas, bloques */
+  /* Lo que se marca al pasar el ratón por una fila de un menú. Más oscuro que
+   * las secciones alternas: sobre el blanco del menú aquel no se distinguía. */
+  --color-hover: #E4E4E7;
   /* El contorno de un campo tiene que verse, y --color-border no llega: un
    * borde de control necesita 3:1. Este da 3.42:1 sobre blanco. Va aparte para
    * que oscurecer los campos no oscurezca cada linea de la pagina. */
@@ -83,6 +86,7 @@
   --color-surface: #1B1B1E;       /* cards, a visible step above the page */
   --color-surface-alt: #121214;   /* alternating section background */
   --color-border: #34343A;
+  --color-hover: #2C2C31;
   /* Mismo problema de noche: el borde de arriba no llega a 3:1 sobre las
    * tarjetas. Este da 3.4:1. */
   --color-field: #6E6E77;
@@ -219,7 +223,7 @@ a { color: var(--color-accent-strong); }
   border: 0; border-radius: 9px; cursor: pointer;
   transition: background-color var(--fast) var(--ease);
 }
-a.menu__item:hover, button.menu__item:hover { background: var(--color-surface-alt); text-decoration: none; }
+a.menu__item:hover, button.menu__item:hover { background: var(--color-hover); text-decoration: none; }
 .menu__icons {
   display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px;
   color: var(--color-ink-soft);
@@ -624,6 +628,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
    único que distingue las series: cada barra lleva su título y debajo va la
    leyenda con los nombres. */
 .chart { margin-top: 14px; }
+/* La escala a la izquierda, la gráfica al lado, y debajo de la gráfica su eje. */
+.chart__frame {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 8px;
+}
+.chart__scale {
+  display: flex; flex-direction: column; justify-content: space-between;
+  height: 220px; text-align: right; font-size: .75rem; line-height: 1;
+  color: var(--color-ink-soft); font-variant-numeric: tabular-nums;
+}
+.chart__scale span { transform: translateY(-50%); }
+.chart__scale span:first-child { transform: none; }
+.chart__scale span:last-child { transform: translateY(-100%); }
+.chart__plot { position: relative; height: 220px; }
 .chart__svg {
   display: block; width: 100%; height: 220px;
   background: var(--color-surface-alt); border-radius: 10px;
@@ -632,27 +649,67 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .chart__axis { stroke: var(--color-field); stroke-width: 1.5; }
 .chart__bar--sent { fill: var(--color-accent); }
 .chart__bar--bounce { fill: var(--color-ink-soft); }
-.chart__axis-x {
-  display: flex; justify-content: space-between; gap: 12px;
-  margin: 6px 0 0; font-size: .82rem; color: var(--color-ink-soft);
+.chart__line { stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.chart__line--open, .chart__dot--open { stroke: var(--color-accent); }
+.chart__line--click, .chart__dot--click { stroke: var(--color-ink-soft); }
+.chart__dot { stroke-width: 7; stroke-linecap: round; }
+
+/* Una columna transparente por tramo. Señalarla (con el ratón, un dedo o el
+   teclado) la marca y abre su cuadrito. */
+.chart__cols { position: absolute; inset: 0; display: flex; }
+.chart__col { position: relative; flex: 1 1 0; outline: none; border-radius: 4px; }
+.chart__col:hover, .chart__col:focus-visible { background: rgba(127, 127, 127, .12); }
+.chart__tip {
+  display: none; position: absolute; z-index: 5; bottom: calc(100% + 6px);
+  left: 50%; transform: translateX(-50%); min-width: 150px; padding: 8px 10px;
+  background: var(--color-surface); color: var(--color-ink);
+  border: 1px solid var(--color-border); border-radius: 8px; box-shadow: var(--shadow);
+  font-size: .8rem; line-height: 1.4; white-space: nowrap; pointer-events: none;
 }
-.chart__legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 10px 0 0;
+.chart__col:hover .chart__tip, .chart__col:focus-visible .chart__tip { display: grid; gap: 2px; }
+/* Los de las orillas se abren hacia dentro para no salirse de la pantalla. */
+.chart__col:first-child .chart__tip, .chart__col:nth-child(2) .chart__tip { left: 0; transform: none; }
+.chart__col:last-child .chart__tip, .chart__col:nth-last-child(2) .chart__tip {
+  left: auto; right: 0; transform: none; }
+.chart__tip-row { display: inline-flex; align-items: center; gap: 6px; }
+.chart__tip-row::before { content: ""; width: 9px; height: 9px; border-radius: 2px; }
+
+/* El eje del tiempo: una casilla por tramo, del ancho de su barra. */
+.chart__axis-x {
+  display: flex; margin: 6px 0 0; height: 1.2em;
+  font-size: .75rem; color: var(--color-ink-soft);
+}
+.chart__axis-x span { flex: 1 1 0; min-width: 0; text-align: center;
+                      white-space: nowrap; overflow: visible; }
+.chart__legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 10px 0 0 52px;
                  font-size: .88rem; }
 .chart__key { display: inline-flex; align-items: center; gap: 7px; }
 .chart__key::before {
   content: ""; width: 12px; height: 12px; border-radius: 3px;
 }
-.chart__key--sent::before { background: var(--color-accent); }
-.chart__key--bounce::before { background: var(--color-ink-soft); }
+.chart__key--sent::before, .chart__key--open::before { background: var(--color-accent); }
+.chart__key--bounce::before, .chart__key--click::before { background: var(--color-ink-soft); }
 /* Cuando no hay nada, el cuadro se dibuja igual y la frase va encima: enseña de
    antemano la forma que va a tener, que es más de lo que dice un hueco. */
-.chart--empty { position: relative; }
 .chart__nothing {
-  position: absolute; top: 0; left: 0; right: 0; height: 220px;
+  position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   margin: 0; padding: 0 24px; text-align: center;
   font-size: .92rem; color: var(--color-ink-soft);
 }
+
+/* Cómo le fue: una tarjeta por cifra, el porcentaje grande y de cuántos. */
+.rates {
+  margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+.rates__one {
+  display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+}
+.rates__name { font-size: .8rem; font-weight: 600; color: var(--color-ink-soft); }
+.rates__big { font-size: 1.5rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.rates__of { font-size: .8rem; color: var(--color-ink-soft); font-variant-numeric: tabular-nums; }
 
 .counts--wide { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 gap: 6px 24px; }
@@ -956,6 +1013,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .marks { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
 button.mark { border: 1px solid var(--color-border); cursor: pointer; color: inherit; }
 button.mark:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+/* Rojo: para lo que no tiene vuelta atrás, como borrar. Solo en la pantalla
+   que ya preguntó, no en la lista. */
+.btn--danger { background: #D92D20; color: #FFFFFF; border-color: #D92D20; }
+.btn--danger:hover { background: #B42318; border-color: #B42318; }
 
 /* Un botón apagado: el plan no da para más. No es un enlace, así que no lleva
    a ningún sitio; y sin hover ni transición, para que la mano no espere nada.

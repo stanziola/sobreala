@@ -1,0 +1,25 @@
+{% extends "contacts/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('contacts_remove_title') }}</h2>
+
+{# Se dice cuántos, con el número, antes de hacer nada: un contacto borrado no
+   vuelve, y en una lista larga es fácil pulsar Eliminar en la fila de al lado. #}
+<p class="lead">
+  {% if going == 1 %}{{ t('contacts_remove_one') }}
+  {% else %}{{ t('contacts_remove_many', n=going) }}{% endif %}
+</p>
+{% for row in rows %}
+<p class="hint"><b>{{ row.email }}</b>{% if row.name %} · {{ row.name }}{% endif %}</p>
+{% endfor %}
+<p class="hint">{{ t('contacts_remove_keeps') }}</p>
+
+<div class="row">
+  <form method="post" action="{{ action }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for row in rows %}<input type="hidden" name="email" value="{{ row.email }}">{% endfor %}
+    <button class="btn btn--danger" type="submit"{% if not going %} disabled{% endif %}>
+      {{ t('contacts_remove_confirm_one') if going == 1 else t('contacts_remove_confirm_many', n=going) }}</button>
+  </form>
+  <a class="btn btn--outline" href="{{ back }}">{{ t('contacts_remove_cancel') }}</a>
+</div>
+{% endblock %}

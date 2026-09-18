@@ -54,6 +54,9 @@
   --color-surface: #FFFFFF;       /* cards and panels sitting on the page */
   --color-surface-alt: #F4F4F5;   /* alternating section background */
   --color-border: #CFCFD4;    /* lineas que separan: tarjetas, filas, bloques */
+  /* Lo que se marca al pasar el ratón por una fila de un menú. Más oscuro que
+   * las secciones alternas: sobre el blanco del menú aquel no se distinguía. */
+  --color-hover: #E4E4E7;
   /* El contorno de un campo tiene que verse, y --color-border no llega: un
    * borde de control necesita 3:1. Este da 3.42:1 sobre blanco. Va aparte para
    * que oscurecer los campos no oscurezca cada linea de la pagina. */

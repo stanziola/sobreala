@@ -29,6 +29,7 @@ from flask import render_template, url_for
 
 from config import Config
 from i18n import on_date, t  # noqa: F401  (on_date se reexporta)
+from services import clock
 from models import account as accounts
 from models import mail_log
 from services import mailer, plans
@@ -100,7 +101,7 @@ def paid(account, *, plan: str, until, renewed: bool) -> bool:
     name = plan_name(plan)
     which = "renewed" if renewed else "started"
     paragraphs = [t(f"mail_plan_{which}_body", plan=name),
-                  t("mail_plan_until", until=on_date(until))]
+                  t("mail_plan_until", until=on_date(until, clock.for_account(account)))]
     note = None
     if not accounts.can_send(account):
         # Lo que nadie adivina: pagar no habilita el envío, eso es la otra
@@ -116,6 +117,23 @@ def paid(account, *, plan: str, until, renewed: bool) -> bool:
         note=note, foot=switch_off_hint())
 
 
+def invoice_ready(account, *, paid_at) -> bool:
+    """Ya está la factura de un pago. Es papeleo de un cobro, así que va con el
+    interruptor de «Pagos y plan»."""
+    if not accounts.wants(account, accounts.BILLING):
+        return False
+    when = on_date(paid_at, clock.for_account(account)) if paid_at else ""
+    return deliver(
+        account, purpose=mail_log.INVOICE,
+        subject=t("mail_invoice_subject"),
+        heading=t("mail_invoice_heading"),
+        paragraphs=[t("mail_invoice_body", when=when)],
+        button={"href": f"{Config.APP_BASE_URL}"
+                        f"{url_for('auth.settings', section='pagos')}",
+                "label": t("mail_invoice_button")},
+        foot=switch_off_hint())
+
+
 def expiring(account, *, plan: str, until, days: int) -> bool:
     if not accounts.wants(account, accounts.PLAN_STATE):
         return False
@@ -123,10 +141,10 @@ def expiring(account, *, plan: str, until, days: int) -> bool:
     return deliver(
         account, purpose=mail_log.PLAN_EXPIRING,
         subject=t("mail_plan_expiring_subject", plan=name,
-                  until=on_date(until)),
+                  until=on_date(until, clock.for_account(account))),
         heading=t("mail_plan_expiring_heading", days=days),
         paragraphs=[t("mail_plan_expiring_body", plan=name,
-                      until=on_date(until))],
+                      until=on_date(until, clock.for_account(account)))],
         button={"href": f"{Config.APP_BASE_URL}"
                         f"{url_for('auth.checkout', plan=plan)}",
                 "label": t("mail_plan_expiring_button")},
@@ -141,7 +159,7 @@ def expired(account, *, plan: str, until) -> bool:
         account, purpose=mail_log.PLAN_EXPIRED,
         subject=t("mail_plan_expired_subject", plan=name),
         heading=t("mail_plan_expired_heading", plan=name),
-        paragraphs=[t("mail_plan_expired_body", until=on_date(until)),
+        paragraphs=[t("mail_plan_expired_body", until=on_date(until, clock.for_account(account))),
                     t("mail_plan_expired_kept")],
         button={"href": f"{Config.APP_BASE_URL}"
                         f"{url_for('auth.checkout', plan=plan)}",
@@ -341,7 +359,7 @@ def plan_end_to_admins(db, client, *, plan: str, until) -> bool:
             subject=t("mail_admin_plan_end_subject", company=about(client)),
             heading=t("mail_admin_plan_end_heading", company=about(client)),
             paragraphs=[t("mail_admin_plan_end_body", company=about(client),
-                          plan=plan_name(plan), until=on_date(until)),
+                          plan=plan_name(plan), until=on_date(until, clock.for_account(admin))),
                         t("mail_admin_plan_end_kept")],
             button={"href": file_of(client),
                     "label": t("mail_admin_plan_end_button")},

@@ -122,6 +122,47 @@
 </ul>
 <p class="hint">{{ t('admin_privacy_note') }}</p>
 
+{# Los pagos cobrados, y la factura de cada uno. Las facturas se emiten a
+   mano: aquí se sube el PDF y el cliente lo baja desde Facturación. #}
+<h3 class="settings__subtitle" id="facturas">{{ t('admin_invoices_title') }}</h3>
+{% if request.args.get('factura') == 'ok' %}
+<p class="notice notice--ok">{{ t('admin_invoice_done') }}</p>
+{% elif request.args.get('factura') == 'mala' %}
+<p class="notice">{{ t('admin_invoice_bad', mb=invoice_mb) }}</p>
+{% endif %}
+{% if paid %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for one in paid %}
+      <tr>
+        <td>{{ (one.completed_at or one.created_at)|on_date }}</td>
+        <td class="table__quiet">{{ one.plan }} · {{ t('pay_cycle_' + one.cycle) }}</td>
+        <td class="table__quiet">{{ one.currency }} {{ one.amount }}</td>
+        <td>
+          {% if one._id in invoices %}<span class="tag tag--on">{{ t('admin_invoice_has') }}</span>
+          {% else %}<span class="tag tag--quiet">{{ t('billing_invoice_pending') }}</span>{% endif %}
+        </td>
+        <td>
+          <form class="invoice-up" method="post" enctype="multipart/form-data"
+                action="{{ url_for('admin.upload_invoice', raw=client._id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="pago" value="{{ one._id }}">
+            <label class="visually-hidden" for="factura-{{ one._id }}">{{ t('admin_invoice_file') }}</label>
+            <input id="factura-{{ one._id }}" name="archivo" type="file" accept="application/pdf,.pdf" required>
+            <button class="btn btn--small btn--outline" type="submit">
+              {{ t('admin_invoice_replace') if one._id in invoices else t('admin_invoice_upload') }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('admin_invoices_none') }}</p>
+{% endif %}
+
 <h3 class="settings__subtitle">{{ t('admin_imports_title') }}</h3>
 {% if history %}
 <div class="table-wrap">

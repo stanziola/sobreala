@@ -1,67 +1,111 @@
-{#- Una gráfica de barras en SVG, dibujada aquí y sin una línea de JavaScript.
+{#- Una gráfica, dibujada aquí y sin una línea de JavaScript.
 
     La cabecera del panel solo deja cargar guiones propios, así que una librería
     de un CDN no se cargaría; y traerse una al repositorio sería algo que
-    mantener y auditar para dibujar unos rectángulos.
+    mantener y auditar para dibujar unos rectángulos y unas líneas.
 
-    Cuando no hay nada que dibujar se dibuja igual: los ejes, la rejilla y la
-    leyenda, con una frase encima. Un cuadro vacío que se explica dice más que
-    un hueco, y además enseña de antemano la forma que va a tener.
+    Las barras y las líneas van en SVG, estirado a lo ancho. **Todo lo que es
+    texto va fuera del SVG** (la escala, las marcas del eje y el cuadrito de cada
+    tramo), porque dentro se estiraría con él.
 
-    rows  — un dict por tramo, con su `at` y un conteo por tipo
-    kinds — los tipos a apilar, en orden, con su clase de color
-    top   — el tramo más alto, que fija la altura
+    El detalle de cada tramo es una columna transparente encima de la gráfica que
+    se puede señalar con el ratón, tocar o enfocar con el teclado: el cuadrito se
+    abre solo con CSS.
+
+    c     — lo que arma `services/stats.chart()`: kinds, shape, rows (con su
+            valor, su cuadrito y su marca del eje), top y lines
+    label — el nombre de la gráfica, para quien no la ve
 -#}
 {% set ancho = 720 %}
 {% set alto = 200 %}
-{% set hueco = 2 %}
-{% set paso = (ancho / (rows|length or 1)) %}
-<div class="chart{% if not top %} chart--empty{% endif %}">
-  <svg class="chart__svg" viewBox="0 0 {{ ancho }} {{ alto + 22 }}"
-       role="img" preserveAspectRatio="none"
-       aria-label="{{ label }}">
-    {#- La rejilla: cuatro líneas para poder leer una altura sin adivinarla. -#}
-    {% for n in range(5) %}
-    <line class="chart__grid" x1="0" x2="{{ ancho }}"
-          y1="{{ alto * n / 4 }}" y2="{{ alto * n / 4 }}"/>
-    {% endfor %}
+{% set n = c.rows|length or 1 %}
+{% set paso = ancho / n %}
+<div class="chart{% if not c.top %} chart--empty{% endif %}">
+  <div class="chart__frame">
+    {#- La escala, de arriba abajo. -#}
+    <div class="chart__scale" aria-hidden="true">
+      {% for value in c.lines|reverse %}<span>{{ value }}</span>{% endfor %}
+    </div>
 
-    {% if top %}
-    {% for row in rows %}
-    {% set x = loop.index0 * paso %}
-    {#- Apiladas: cada tipo empieza donde acabó el anterior. -#}
-    {% set ns = namespace(base=0) %}
-    {% for kind, css in kinds %}
-    {% set valor = row[kind] %}
-    {% if valor %}
-    {% set altura = alto * valor / top %}
-    {% set ns.base = ns.base + altura %}
-    <rect class="chart__bar chart__bar--{{ css }}"
-          x="{{ x }}" width="{{ [paso - hueco, 1]|max }}"
-          y="{{ alto - ns.base }}" height="{{ altura }}">
-      <title>{{ row.at|ago }} · {{ t('stats_' + kind) }}: {{ valor }}</title>
-    </rect>
-    {% endif %}
-    {% endfor %}
-    {% endfor %}
-    {% endif %}
+    <div class="chart__plot">
+      <svg class="chart__svg" viewBox="0 0 {{ ancho }} {{ alto }}"
+           role="img" preserveAspectRatio="none" aria-label="{{ label }}">
+        {% for i in range(5) %}
+        <line class="chart__grid" x1="0" x2="{{ ancho }}"
+              y1="{{ alto * i / 4 }}" y2="{{ alto * i / 4 }}"/>
+        {% endfor %}
 
-    <line class="chart__axis" x1="0" x2="{{ ancho }}" y1="{{ alto }}" y2="{{ alto }}"/>
-  </svg>
+        {% if c.top %}
+        {% if c.shape == 'bars' %}
+        {% for row in c.rows %}
+        {% set x = loop.index0 * paso %}
+        {#- Apiladas: cada tipo empieza donde acabó el anterior. -#}
+        {% set ns = namespace(base=0) %}
+        {% for kind in c.kinds %}
+        {% set valor = row['values'][kind.key] %}
+        {% if valor %}
+        {% set altura = alto * valor / c.top %}
+        {% set ns.base = ns.base + altura %}
+        <rect class="chart__bar chart__bar--{{ kind.css }}"
+              x="{{ x + paso * 0.12 }}" width="{{ [paso * 0.76, 1]|max }}"
+              y="{{ alto - ns.base }}" height="{{ altura }}"/>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+        {% else %}
+        {#- El trazo y los puntos no se estiran con la gráfica: un punto hecho de
+            una línea de largo cero con la punta redonda sigue siendo redondo. -#}
+        {% for kind in c.kinds %}
+        <polyline class="chart__line chart__line--{{ kind.css }}" fill="none"
+                  vector-effect="non-scaling-stroke"
+                  points="{% for row in c.rows %}{{ (loop.index0 + 0.5) * paso }},{{ alto - alto * row['values'][kind.key] / c.top }} {% endfor %}"/>
+        {% for row in c.rows %}
+        {% set y = alto - alto * row['values'][kind.key] / c.top %}
+        <line class="chart__dot chart__dot--{{ kind.css }}" vector-effect="non-scaling-stroke"
+              x1="{{ (loop.index0 + 0.5) * paso }}" x2="{{ (loop.index0 + 0.5) * paso }}"
+              y1="{{ y }}" y2="{{ y }}"/>
+        {% endfor %}
+        {% endfor %}
+        {% endif %}
+        {% endif %}
 
-  {#- El eje del tiempo va fuera del SVG: así el texto no se estira con él. -#}
-  <p class="chart__axis-x">
-    <span>{{ rows[0].at|ago if rows else t('stats_axis_none') }}</span>
-    <span>{{ t('stats_period_' + period) }}</span>
-  </p>
+        <line class="chart__axis" x1="0" x2="{{ ancho }}" y1="{{ alto }}" y2="{{ alto }}"/>
+      </svg>
+
+      {#- Una columna por tramo, para señalarla. -#}
+      {% if c.top %}
+      <div class="chart__cols">
+        {% for row in c.rows %}
+        <div class="chart__col" tabindex="0">
+          <span class="chart__tip" role="tooltip">
+            <b>{{ row.tip }}</b>
+            {% for kind in c.kinds %}
+            <span class="chart__tip-row chart__key--{{ kind.css }}">{{ t('stats_' + kind.key) }}: {{ row['values'][kind.key] }}</span>
+            {% endfor %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if not c.top %}
+      <p class="chart__nothing">{{ t('stats_nothing') }}</p>
+      {% endif %}
+    </div>
+
+    {#- El eje del tiempo, en la hora de quien mira: una casilla por tramo, del
+        mismo ancho que su barra, y la marca solo en las que toca. Así no hace
+        falta posicionar nada a mano (y la cabecera del panel no deja estilos
+        escritos en la página). Va debajo de la gráfica, no de la escala. -#}
+    <span></span>
+    <div class="chart__axis-x" aria-hidden="true">
+      {% for row in c.rows %}<span>{{ row.tick }}</span>{% endfor %}
+    </div>
+  </div>
 
   <p class="chart__legend">
-    {% for kind, css in kinds %}
-    <span class="chart__key chart__key--{{ css }}">{{ t('stats_' + kind) }}</span>
+    {% for kind in c.kinds %}
+    <span class="chart__key chart__key--{{ kind.css }}">{{ t('stats_' + kind.key) }}</span>
     {% endfor %}
   </p>
-
-  {% if not top %}
-  <p class="chart__nothing">{{ t('stats_nothing') }}</p>
-  {% endif %}
 </div>

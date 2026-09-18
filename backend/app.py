@@ -13,7 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
 from db import ensure_indexes_once, health, indexes_ready
-from i18n import ago, at_moment, t
+from i18n import ago, at_moment, on_date, t
 from models.account import (is_admin, plan_of,
                             status_of as account_status_of)
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
@@ -142,6 +142,7 @@ def create_app(overrides: dict | None = None) -> Flask:
     app.jinja_env.filters["ago"] = ago
     # Para lo que va a pasar, no para lo que pasó: «17 de septiembre a las 09:00».
     app.jinja_env.filters["at_moment"] = at_moment
+    app.jinja_env.filters["on_date"] = on_date
 
     @app.before_request
     def _csp_nonce():
@@ -185,6 +186,15 @@ def create_app(overrides: dict | None = None) -> Flask:
                     # trato: cualquier script de ese dominio puede leerlo.
                     plan = plan_of(account)
                     wanted = f"1:{plan}" if plan else "1"
+                # La última zona en la que se vio esta cuenta: es la de los
+                # correos que le llegan sin estar mirando, como un plan que
+                # vence. Solo se escribe cuando cambia.
+                from services import clock
+                seen = clock.cookie_zone()
+                if account and seen and account.get("time_zone") != seen:
+                    from db import get_db
+                    get_db().accounts.update_one(
+                        {"_id": account["_id"]}, {"$set": {"time_zone": seen}})
             except Exception:  # noqa: BLE001 - la página vale más que la migaja
                 wanted = "1"
         if wanted and request.cookies.get(HINT_COOKIE) != wanted:

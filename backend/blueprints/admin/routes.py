@@ -26,6 +26,7 @@ from flask import (Blueprint, Response, abort, redirect, render_template,
 
 from blueprints.auth.routes import current_account
 from db import get_db
+from i18n import t
 from models import account as accounts
 from models import admin_event as decisions
 from models import auth_event as events
@@ -33,6 +34,7 @@ from models import campaign_run as sendings
 from models import contact as contacts
 from models import design as designs
 from models import import_job as imports
+from models import invoice as invoices
 from models import mail_log
 from models import payment as payments
 from models import session as sessions
@@ -191,7 +193,8 @@ def home(account):
         "admin/stats.html", admin=account, account=account, pick=clients,
         **stats.screen(db, whose,
                        period=request.args.get("periodo", ""),
-                       tag=request.args.get("etiqueta", "")))
+                       tag=request.args.get("etiqueta", ""),
+                       campaign=request.args.get("campana", "")))
 
 
 # ---------------------------------------------------------------- las cuentas
@@ -262,7 +265,11 @@ def account_page(account, raw):
         activity_kinds=list(KINDS),
         activity_only=shown,
         describe=sessions.describe,
-        sources=contacts.SOURCES)
+        sources=contacts.SOURCES,
+        # Los cobrados, para subirles la factura que se emitió a mano.
+        paid=payments.for_account(db, client["_id"], only_paid=True, limit=50),
+        invoices=invoices.paid_with_invoice(db, client["_id"]),
+        invoice_mb=invoices.MAX_BYTES // (1024 * 1024))
 
 
 @bp.route("/cuentas/<raw>/actualizar", methods=["POST"])
@@ -381,6 +388,47 @@ def clear_sending(account, raw):
                          account_id=client["_id"], before=None, after="cleared",
                          reason=reason)
     return redirect(url_for("admin.account_page", raw=raw, hecho=1))
+
+
+@bp.route("/cuentas/<raw>/factura", methods=["POST"])
+@only_admins
+def upload_invoice(account, raw):
+    """Subir el PDF de la factura de un pago cobrado de esa cuenta.
+
+    Solo PDF de verdad (se mira cómo empieza, no cómo se llama) y hasta 2 MB.
+    Subir otra al mismo pago la reemplaza. La primera vez se le avisa al
+    cliente; al reemplazarla no, que ya sabe que la tiene.
+    """
+    db = get_db()
+    client = wanted(raw)
+    back = url_for("admin.account_page", raw=raw) + "#facturas"
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    try:
+        payment_id = ObjectId(request.form.get("pago", ""))
+    except (InvalidId, TypeError):
+        return redirect(back)
+    paid = db.payments.find_one({"_id": payment_id, "account_id": client["_id"],
+                                 "status": payments.COMPLETED})
+    if paid is None:
+        return redirect(back)
+
+    archivo = request.files.get("archivo")
+    raw_pdf = archivo.read(invoices.MAX_BYTES + 1) if archivo else b""
+    if not raw_pdf or len(raw_pdf) > invoices.MAX_BYTES or not invoices.is_pdf(raw_pdf):
+        return redirect(url_for("admin.account_page", raw=raw,
+                                factura="mala") + "#facturas")
+
+    first = invoices.save(db, client["_id"], payment_id, data=raw_pdf,
+                          uploaded_by=account["_id"])
+    decisions.record(db, kind=decisions.INVOICE, admin_id=account["_id"],
+                     account_id=client["_id"], before=None if first else "factura",
+                     after=str(payment_id),
+                     reason=t("admin_invoice_reason_first" if first
+                              else "admin_invoice_reason_again"))
+    if first:
+        notices.invoice_ready(client, paid_at=paid.get("completed_at"))
+    return redirect(url_for("admin.account_page", raw=raw, factura="ok") + "#facturas")
 
 
 # ---------------------------------------------------- las plantillas subidas

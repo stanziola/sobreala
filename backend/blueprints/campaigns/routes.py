@@ -36,6 +36,7 @@ from models import contact as contacts
 from models import design as designs
 from models import event as events
 from services import render, sender
+from services import clock
 from services.security import csrf_ok
 
 bp = Blueprint("campaigns", __name__)
@@ -64,12 +65,11 @@ def read_when(raw: str) -> datetime | None:
     """La fecha que se escribió, en UTC.
 
     El navegador manda la hora del reloj de quien la escribió y sin zona. Se
-    toma como UTC a propósito: el servidor corre en UTC y hoy no se le pregunta
-    a nadie su zona horaria. Está anotado en CLAUDE.md como lo que hay que
-    resolver antes de que esto lo use un cliente de verdad.
+    entiende en la zona de su dispositivo (`services/clock.py`) y se guarda en
+    UTC: «a las 3 de la tarde» desde Panamá son las 20:00 UTC.
     """
     try:
-        return datetime.strptime(raw, WHEN_FORMAT).replace(tzinfo=timezone.utc)
+        return clock.to_utc(datetime.strptime(raw, WHEN_FORMAT))
     except (ValueError, TypeError):
         return None
 
@@ -220,7 +220,8 @@ def edit(raw):
         "campaigns/edit.html", section="envios",
         **shared(db, account, errors=errors, form=request.form,
                  campaign=found,
-                 when=found["scheduled_at"].strftime(WHEN_FORMAT)))
+                 # Vuelve a salir en la hora de quien la mira.
+                 when=clock.local(found["scheduled_at"]).strftime(WHEN_FORMAT)))
 
 
 @bp.route("/envios/<raw>/borrar", methods=["POST"])

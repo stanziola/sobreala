@@ -22,8 +22,9 @@ from ipaddress import ip_address
 from bson import ObjectId
 from bson.errors import InvalidId
 from email_validator import EmailNotValidError, validate_email
-from flask import (Blueprint, current_app, g, has_request_context, redirect,
-                   render_template, request, session, url_for)
+from flask import (Blueprint, Response, abort, current_app, g,
+                   has_request_context, redirect, render_template, request,
+                   session, url_for)
 from markupsafe import Markup
 
 from config import Config
@@ -32,6 +33,7 @@ from i18n import t
 from models import account as accounts
 from models import auth_event as events
 from models import mail_log
+from models import invoice as invoices
 from models import payment as payments
 from models import session as sessions
 from models import token as tokens
@@ -1467,7 +1469,8 @@ def panel():
         "stats.html", account=account, pick=None,
         **stats.screen(db, account,
                        period=request.args.get("periodo", ""),
-                       tag=request.args.get("etiqueta", "")))
+                       tag=request.args.get("etiqueta", ""),
+                       campaign=request.args.get("campana", "")))
 
 
 # --------------------------------------------------------------- settings
@@ -1530,13 +1533,16 @@ def settings(section: str = "cuenta"):
                                 guardado=1))
 
     here = current_session()
+    paid = payments.for_account(db, account["_id"], only_paid=True, limit=100)
     return render_template(
         "settings.html", section=section, sections=sections, account=account,
         plans=plans.PLANS, cycles=plans.CYCLES, currency=plans.CURRENCY,
         paypal_ready=paypal.configured(),
         plan_until=accounts.plan_until(account),
         # Solo lo cobrado: los intentos a medias se miran desde la ficha.
-        payments=payments.for_account(db, account["_id"], only_paid=True),
+        payments=paid,
+        used_methods=payments.used_methods(paid),
+        invoices=invoices.paid_with_invoice(db, account["_id"]),
         confirmed=accounts.is_confirmed(account),
         plan=accounts.plan_of(account),
         two_step=accounts.two_factor_on(account),
@@ -1657,6 +1663,29 @@ def checkout(plan: str):
         plan_until=accounts.plan_until(account))
 
 
+@bp.route("/configuracion/pagos/factura/<raw>")
+def invoice_file(raw):
+    """Bajar la factura de un pago. Solo la cuenta dueña, y siempre como archivo:
+    un PDF no se abre dentro de una página del panel."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    try:
+        payment_id = ObjectId(raw)
+    except (InvalidId, TypeError):
+        abort(404)
+    found = invoices.for_payment(get_db(), account["_id"], payment_id)
+    if found is None:
+        abort(404)
+    paid = get_db().payments.find_one({"_id": payment_id,
+                                       "account_id": account["_id"]}) or {}
+    when = paid.get("completed_at") or found.get("uploaded_at")
+    name = f"factura-panamails-{when:%Y-%m-%d}.pdf" if when else "factura-panamails.pdf"
+    return Response(bytes(found["data"]), mimetype="application/pdf", headers={
+        "Content-Disposition": f'attachment; filename="{name}"',
+        "Cache-Control": "no-store"})
+
+
 @bp.route("/configuracion/pagos/contratar", methods=["POST"])
 def start_payment():
     """Crear la orden en PayPal y mandar al cliente a pagarla.
@@ -1767,7 +1796,7 @@ def finish_payment():
                  account_id=account["_id"])
         return redirect(f"{back}?error=monto")
 
-    if not payments.complete(db, attempt["_id"]):
+    if not payments.complete(db, attempt["_id"], payer_email=result.get("payer", "")):
         return redirect(f"{back}?hecho=1")
 
     # Renovar es pagar el mismo plan que todavía corre; cambiarlo o volver

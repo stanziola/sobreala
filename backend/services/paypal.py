@@ -142,4 +142,7 @@ def capture(order_id: str) -> dict[str, str]:
         "status": answer.get("status", ""),
         "amount": captured.get("value", ""),
         "currency": captured.get("currency_code", ""),
+        # La cuenta de PayPal que pagó, para que Facturación diga con qué se
+        # ha pagado. Es un correo, no un dato de tarjeta.
+        "payer": ((answer.get("payer") or {}).get("email_address") or "")[:200],
     }

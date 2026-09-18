@@ -33,6 +33,9 @@
   --color-surface: #FFFFFF;       /* cards and panels sitting on the page */
   --color-surface-alt: #F4F4F5;   /* alternating section background */
   --color-border: #CFCFD4;    /* lineas que separan: tarjetas, filas, bloques */
+  /* Lo que se marca al pasar el ratón por una fila de un menú. Más oscuro que
+   * las secciones alternas: sobre el blanco del menú aquel no se distinguía. */
+  --color-hover: #E4E4E7;
   /* El contorno de un campo tiene que verse, y --color-border no llega: un
    * borde de control necesita 3:1. Este da 3.42:1 sobre blanco. Va aparte para
    * que oscurecer los campos no oscurezca cada linea de la pagina. */
@@ -83,6 +86,7 @@
   --color-surface: #1B1B1E;       /* cards, a visible step above the page */
   --color-surface-alt: #121214;   /* alternating section background */
   --color-border: #34343A;
+  --color-hover: #2C2C31;
   /* Mismo problema de noche: el borde de arriba no llega a 3:1 sobre las
    * tarjetas. Este da 3.4:1. */
   --color-field: #6E6E77;
@@ -349,7 +353,7 @@ button { font: inherit; color: inherit; }
   transition: background-color var(--fast) var(--ease);
 }
 a.usermenu__item:hover, button.usermenu__item:hover {
-  background: var(--color-surface-alt); text-decoration: none;
+  background: var(--color-hover); text-decoration: none;
 }
 .usermenu__icons {
   display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px;

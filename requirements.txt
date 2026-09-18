@@ -33,5 +33,10 @@ Pillow>=10.0
 pyotp>=2.9
 segno>=1.6
 
+# Las zonas horarias. La hora de cada pantalla sale en la del dispositivo de
+# quien mira, y Python no trae la base de zonas en Windows ni en todos los
+# servidores.
+tzdata>=2024.1
+
 # Pruebas
 pytest>=8.0

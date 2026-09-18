@@ -81,7 +81,7 @@ def by_order(db, account_id, order_id: str) -> dict[str, Any] | None:
                                  "order_id": order_id})
 
 
-def complete(db, payment_id) -> bool:
+def complete(db, payment_id, *, payer_email: str = "") -> bool:
     """Marcar el pago como cobrado. **False si ya lo estaba.**
 
     Es la única escritura que decide si se alarga un plan, y por eso es
@@ -90,7 +90,8 @@ def complete(db, payment_id) -> bool:
     """
     result = db.payments.update_one(
         {"_id": payment_id, "status": CREATED},
-        {"$set": {"status": COMPLETED, "completed_at": now()}})
+        {"$set": {"status": COMPLETED, "completed_at": now(),
+                  "payer_email": payer_email}})
     return result.modified_count == 1
 
 
@@ -98,6 +99,18 @@ def fail(db, payment_id, reason: str) -> None:
     db.payments.update_one({"_id": payment_id, "status": CREATED},
                            {"$set": {"status": FAILED, "error": reason[:200],
                                      "completed_at": now()}})
+
+
+def used_methods(paid: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """Con qué se ha pagado, sacado de los pagos cobrados: el método y las
+    cuentas que pagaron por él. Nada de esto es un dato de tarjeta."""
+    used: dict[str, list[str]] = {}
+    for one in paid:
+        method = one.get("method") or PAYPAL
+        who = used.setdefault(method, [])
+        if one.get("payer_email") and one["payer_email"] not in who:
+            who.append(one["payer_email"])
+    return used
 
 
 def until(cycle: str, *, since: datetime | None = None) -> datetime:

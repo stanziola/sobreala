@@ -478,7 +478,7 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     # Y sí sigue diciendo qué tienes y qué se te ha cobrado.
     assert "PayPal" in pantalla
     assert "Yappy" in pantalla
-    assert "Tus pagos" in pantalla
+    assert "Facturas" in pantalla
 
 
 def test_tus_pagos_solo_ensena_lo_que_se_cobro(client, database, outbox,
@@ -496,7 +496,8 @@ def test_tus_pagos_solo_ensena_lo_que_se_cobro(client, database, outbox,
 
     pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
 
-    assert pantalla.count("Pagado") == 1
+    # Una fila por pago cobrado, esperando su factura; el intento a medias no.
+    assert pantalla.count("Factura en camino") == 1
     assert "Sin terminar" not in pantalla
     # Los dos intentos siguen escritos, que es de lo que vive la reconciliación.
     cuenta = accounts.by_email(database, "ana@ejemplo.com")

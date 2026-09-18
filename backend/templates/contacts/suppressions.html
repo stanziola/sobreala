@@ -54,10 +54,8 @@
 {# Los contactos anulados se borran desde aquí, que es donde se les mira. Las
    supresiones se quedan: la regla 2. #}
 {% if blocked_total %}
-<form method="post" action="{{ url_for('contacts.remove_suppressed') }}">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_remove_blocked') }}</button>
-</form>
+<a class="btn btn--small btn--outline"
+   href="{{ url_for('contacts.remove_suppressed') }}">{{ t('contacts_remove_blocked') }}</a>
 <p class="hint">{{ t('contacts_remove_blocked_hint') }}</p>
 {% endif %}
 {% else %}

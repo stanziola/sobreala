@@ -321,7 +321,7 @@ TEXTS = {
     "settings_section_account": "Cuenta",
     "settings_section_security": "Seguridad",
     "settings_section_notifications": "Notificaciones",
-    "settings_section_payments": "Opciones de pago",
+    "settings_section_payments": "Facturación",
 
     "settings_account_lead": "Los datos con los que abriste tu cuenta.",
     "settings_account_contact": "Tu nombre",
@@ -413,13 +413,24 @@ TEXTS = {
     "settings_notifications_save": "Guardar",
     "settings_notifications_saved": "Listo, guardamos lo que elegiste.",
 
-    "settings_payments_lead": "Desde dónde te cobramos, qué tienes contratado "
-                              "y qué se te ha cobrado. Los planes se eligen en "
-                              "el sitio.",
+    "settings_payments_lead": "Tu plan, con qué has pagado y tus facturas. "
+                              "Los planes se eligen en el sitio.",
+    "billing_plan_title": "Tu plan",
+    "billing_plan_row": "Plan contratado",
+    "billing_until": "hasta el {when}",
+    "billing_methods_title": "Métodos de pago",
+    "billing_used": "Lo has usado",
+    "billing_paypal_used": "Has pagado con la cuenta de PayPal {who}.",
+    "billing_paypal_used_plain": "Has pagado con tu cuenta de PayPal.",
+    "billing_invoices_title": "Facturas",
+    "billing_download": "Descargar factura",
+    "billing_invoice_pending": "Factura en camino",
+    "billing_invoices_hint": "Te avisamos por correo cuando tu factura está "
+                             "lista para descargar.",
+    "billing_invoices_none": "Todavía no tienes pagos.",
     "settings_payments_ready": "Disponible",
     "settings_payments_paypal": "PayPal",
-    "settings_payments_paypal_desc": "Para pagar con tu cuenta de PayPal, y "
-                                     "para que se renueve solo.",
+    "settings_payments_paypal_desc": "Para pagar con tu cuenta de PayPal.",
     "settings_payments_card": "Tarjeta de crédito o débito",
     "settings_payments_card_desc": "Visa y Mastercard, sin necesidad de tener "
                                    "cuenta de PayPal.",
@@ -501,13 +512,39 @@ TEXTS = {
     "panel_soon_tag": "Próximamente",
     "panel_greeting": "Hola, {name}",
     "panel_settings_link": "Ir a configuración",
+    "admin_invoices_title": "Pagos y facturas",
+    "admin_invoices_none": "Esta cuenta no tiene pagos cobrados.",
+    "admin_invoice_has": "Con factura",
+    "admin_invoice_file": "PDF de la factura",
+    "admin_invoice_upload": "Subir factura",
+    "admin_invoice_replace": "Reemplazar",
+    "admin_invoice_done": "Listo, la factura quedó subida.",
+    "admin_invoice_bad": "Eso no es un PDF, o pesa más de {mb} MB.",
+    "admin_invoice_reason_first": "Factura subida",
+    "admin_invoice_reason_again": "Factura reemplazada",
     "stats_of": "Estadísticas de {name}",
     "stats_pick": "Cuenta",
     "stats_pick_hint": "Ves lo mismo que ve esa empresa en su pantalla.",
     "stats_period": "Periodo",
+    "stats_period_1h": "Última hora",
+    "stats_period_hoy": "Hoy",
     "stats_period_24h": "Últimas 24 horas",
     "stats_period_7d": "Últimos 7 días",
     "stats_period_30d": "Últimos 30 días",
+    "stats_period_90d": "Últimos 90 días",
+    "stats_week_of": "Semana del {day}",
+    "stats_campaign": "Campaña",
+    "stats_all_campaigns": "Todas las campañas",
+    "stats_rates_title": "Cómo le fue",
+    "stats_rate_of": "{n} de {of}",
+    "stats_rates_note": "Se cuentan personas: quien abre tres veces cuenta una. "
+                        "Las aperturas son aproximadas (algunos buzones abren "
+                        "solos los correos y otros no avisan), y «entregado» "
+                        "quiere decir que el servidor de la persona lo aceptó, "
+                        "no que haya llegado a su bandeja.",
+    "stats_engage_title": "Aperturas y clics",
+    "stats_engage_lead": "Cuántas veces se abrieron tus correos y cuántas veces "
+                         "se pulsó un enlace en el periodo que elijas.",
     "stats_tag": "Etiqueta",
     "stats_all_tags": "Todas las etiquetas",
     "stats_apply": "Ver",
@@ -526,19 +563,7 @@ TEXTS = {
     "stats_nothing": "Todavía no se ha realizado ninguna acción sobre esto. "
                      "Aquí van a aparecer tus envíos en cuanto salga la primera "
                      "campaña.",
-    "stats_axis_none": "Sin datos",
 
-    "stats_contacts_title": "Tus contactos",
-    "stats_contacts": "Activos",
-    "stats_blocked": "Anulados",
-    "stats_tags_in_use": "Etiquetas en uso",
-    "stats_of_limit": "de {n}",
-    "stats_imports_title": "Importaciones",
-    "stats_imports_none": "Todavía no has importado ninguna lista.",
-    "stats_plan_title": "Tu plan",
-    "stats_plan_none": "Sin plan contratado.",
-    "stats_emails_month": "Correos al mes",
-    "stats_emails_used": "{used} de {limit} este mes",
     "panel_unconfirmed": "Todavía no confirmas tu correo. Revisa tu bandeja o "
                          "pide otro código.",
     "panel_unconfirmed_action": "Pedir otro código",
@@ -606,6 +631,15 @@ TEXTS = {
     "contacts_col_tags": "Etiquetas",
     "contacts_col_added": "Agregado",
     "contacts_delete": "Eliminar",
+    "contacts_remove_title": "Eliminar contactos",
+    "contacts_remove_one": "Vas a eliminar 1 contacto.",
+    "contacts_remove_many": "Vas a eliminar {n} contactos.",
+    "contacts_remove_keeps": "Si alguno anuló su suscripción o rebotó, eso se "
+                             "queda: aunque lo vuelvas a importar, no recibirá "
+                             "correos.",
+    "contacts_remove_confirm_one": "Sí, eliminar 1 contacto",
+    "contacts_remove_confirm_many": "Sí, eliminar {n} contactos",
+    "contacts_remove_cancel": "Cancelar",
     "contacts_edit": "Editar",
     "contacts_edit_title": "Editar el contacto",
     "contacts_edit_lead": "Puedes cambiar su dirección, su nombre y sus "
@@ -1583,6 +1617,11 @@ TEXTS = {
                                 "plantillas siguen ahí, y vuelven a servir en "
                                 "cuanto renueve.",
     "mail_admin_plan_end_button": "Ver la ficha",
+    "mail_invoice_subject": "Ya está tu factura",
+    "mail_invoice_heading": "Tu factura está lista",
+    "mail_invoice_body": "La factura de tu pago del {when} ya está lista. La "
+                         "descargas desde Configuración, en Facturación.",
+    "mail_invoice_button": "Ir a Facturación",
 }
 
 
@@ -1595,17 +1634,32 @@ MONTHS = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
           "agosto", "septiembre", "octubre", "noviembre", "diciembre")
 
 
-def on_date(when) -> str:
-    """La fecha como la escribiría una persona.
+def _in_zone(when, zone=None):
+    """Un momento con zona, llevado a la de quien lo va a leer.
+
+    Una fecha sin hora ni zona (la de una columna de un contacto, por ejemplo)
+    es una fecha de calendario y no se mueve: el 15 de marzo es el 15 de marzo
+    en cualquier sitio.
+    """
+    if getattr(when, "tzinfo", None) is None:
+        return when
+    from services import clock
+    return clock.local(when, zone)
+
+
+def on_date(when, zone=None) -> str:
+    """La fecha como la escribiría una persona, en la zona de quien la lee.
 
     A mano y no con `strftime`, que da el mes en el idioma del servidor: en
     Railway saldría «September» en una pantalla en español.
     """
+    when = _in_zone(when, zone)
     return f"{when.day} de {MONTHS[when.month - 1]} de {when.year}"
 
 
-def at_moment(when) -> str:
+def at_moment(when, zone=None) -> str:
     """La fecha y la hora, para algo que va a pasar."""
+    when = _in_zone(when, zone)
     return f"{on_date(when)} a las {when:%H:%M}"
 
 

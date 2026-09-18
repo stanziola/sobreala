@@ -62,7 +62,6 @@
        value="{{ form.get('fecha', when if campaign else '') }}"
        aria-label="{{ t('send_when_later') }}">
 {% if errors.fecha %}<p class="error">{{ errors.fecha }}</p>{% endif %}
-{#- La hora es la del reloj de quien la escribe y se guarda tal cual, en UTC.
-    Preguntar la zona horaria es lo que falta antes de que esto lo use alguien
-    que no esté en Panamá. -#}
+{#- La hora es la del reloj de quien la escribe: se entiende en la zona de su
+    dispositivo y se guarda en UTC (services/clock.py). -#}
 <p class="hint">{{ t('send_when_hint') }}</p>

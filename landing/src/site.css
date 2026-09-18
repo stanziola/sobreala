@@ -234,7 +234,7 @@ button { font: inherit; color: inherit; }
   transition: background-color var(--fast) var(--ease);
 }
 a.usermenu__item:hover, button.usermenu__item:hover {
-  background: var(--color-surface-alt); text-decoration: none;
+  background: var(--color-hover); text-decoration: none;
 }
 .usermenu__icons {
   display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px;
