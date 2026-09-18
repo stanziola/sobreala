@@ -454,6 +454,102 @@ def to_html(doc: dict[str, Any], grounds: list[str | None]) -> str:
     return "\n".join(parts)
 
 
+# ------------------------------------------------------ que no vaya a spam
+
+# Lo que se exige para guardar. El contenido es una parte de si un correo llega
+# (lo que más pesa es la reputación del dominio y su autenticación), pero es la
+# parte que decide quien arma la pieza. Cada regla sale de lo que miran los
+# filtros de verdad: un correo que es casi pura imagen es el truco clásico del
+# spam para esconder el texto, los enlaces acortados esconden a dónde llevan, y
+# las mayúsculas y los signos de más son reglas con puntaje en SpamAssassin.
+MIN_TEXT = 300            # caracteres de texto real en todo el correo
+MAX_IMAGE_SHARE = 0.5     # la mitad del correo, como mucho, es imagen
+MAX_BUTTONS = 8
+MAX_CAPS = 0.3            # de las letras, cuántas pueden ir en mayúscula
+SHORTENERS = ("bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd",
+              "buff.ly", "cutt.ly", "rebrand.ly", "shorturl.at", "rb.gy",
+              "tiny.cc", "t.ly", "s.id")
+# Palabras que los filtros castigan en cualquier idioma que lean. Sin acentos y
+# en minúscula, que es como se compara.
+TRIGGERS = ("gratis", "ganaste", "ganador", "dinero facil", "haz clic aqui",
+            "compra ya", "sin costo", "urgente", "oferta limitada", "free",
+            "winner", "click here", "$$$")
+
+
+def _fold(text: str) -> str:
+    import unicodedata
+
+    plain = unicodedata.normalize("NFKD", text or "")
+    return "".join(c for c in plain if not unicodedata.combining(c)).lower()
+
+
+def _covered(slide: dict[str, Any], cell: int = 10) -> int:
+    """Cuánta superficie de la diapositiva tapan sus imágenes, sin contar dos
+    veces la que tapan dos encimadas. Se mide en casillas de 10 px."""
+    seen: set[tuple[int, int]] = set()
+    for one in slide["items"]:
+        if one["t"] != "image":
+            continue
+        for gx in range(max(one["x"], 0) // cell, min(one["x"] + one["w"], WIDTH) // cell):
+            for gy in range(max(one["y"], 0) // cell,
+                            min(one["y"] + one["h"], slide["h"]) // cell):
+                seen.add((gx, gy))
+    return len(seen) * cell * cell
+
+
+def review(doc: dict[str, Any], size: int, *, limit: int) -> list[dict[str, Any]]:
+    """Lo que hace que este correo tenga riesgo de ir a spam. Vacío es que no.
+
+    Cada motivo lleva su clave y, si hace falta, el detalle (qué palabra, cuánto
+    pesa). La pantalla lo traduce. Con cualquiera, no se guarda.
+    """
+    found: list[dict[str, Any]] = []
+    front = [one for slide in doc["slides"] for one in slide["items"]
+             if one["t"] in FRONT]
+    words = " ".join(one.get("text", "") for one in front)
+    plain_text = MARK_RE.sub("", words)
+
+    # Caracteres como los cuenta una persona: con los espacios entre palabras.
+    letters = len(" ".join(plain_text.split()))
+    if letters < MIN_TEXT:
+        found.append({"key": "few_text", "n": letters, "min": MIN_TEXT})
+
+    area = sum(WIDTH * slide["h"] for slide in doc["slides"]) or 1
+    pictures = sum(_covered(slide) for slide in doc["slides"])
+    if pictures / area > MAX_IMAGE_SHARE:
+        found.append({"key": "image_heavy", "pct": round(100 * pictures / area)})
+
+    if size > limit:
+        found.append({"key": "too_big", "kb": round(size / 1024), "max": limit // 1024})
+
+    buttons = [one for one in front if one["t"] == "button"]
+    if len(buttons) > MAX_BUTTONS:
+        found.append({"key": "many_links", "n": len(buttons), "max": MAX_BUTTONS})
+    for one in buttons:
+        host = one["href"].split("://", 1)[-1].split("/", 1)[0].lower()
+        if host.startswith("www."):
+            host = host[4:]
+        if host in SHORTENERS:
+            found.append({"key": "shortener", "what": host})
+            break
+
+    alpha = [c for c in plain_text if c.isalpha()]
+    if len(alpha) >= 20 and sum(c.isupper() for c in alpha) / len(alpha) > MAX_CAPS:
+        found.append({"key": "caps"})
+    if "!!" in plain_text or "¡¡" in plain_text or plain_text.count("!") > 3:
+        found.append({"key": "shouting"})
+
+    folded = _fold(plain_text)
+    for word in TRIGGERS:
+        if re.search(r"(?<![a-z0-9])" + re.escape(word) + r"(?![a-z0-9])", folded):
+            found.append({"key": "trigger", "what": word})
+            break
+    return found
+
+
+MARK_RE = re.compile(r"\*\|[A-Z0-9_]+\|\*")
+
+
 def images_of(doc: dict[str, Any] | None) -> list[str]:
     """Las fotos que nombra un lienzo (no los fondos, que van aparte)."""
     if not doc:

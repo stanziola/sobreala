@@ -29,6 +29,21 @@
 </form>
 <p class="error error--form" data-canvas-error hidden role="alert"></p>
 
+{# Cuánto pesa el correo y qué le falta para no ir a spam. Se recalcula mientras
+   se trabaja, con la misma revisión que hace el servidor al guardar: con
+   cualquier motivo en la lista, Guardar no se deja pulsar. #}
+<div class="check" data-canvas-check>
+  <div class="meter">
+    <p class="meter__label">{{ t('canvas_meter') }} <b data-meter-text>…</b></p>
+    <div class="meter__bar" aria-hidden="true"><span data-meter-fill></span></div>
+  </div>
+  <p class="check__ok" data-check-ok hidden>{{ t('canvas_check_ok') }}</p>
+  <div class="check__bad" data-check-bad hidden>
+    <p class="check__title">{{ t('canvas_check_title') }}</p>
+    <ul data-check-list></ul>
+  </div>
+</div>
+
 {% set strings = {
   "newText": t('canvas_new_text'),
   "newButton": t('canvas_new_button'),
@@ -49,9 +64,17 @@
   "maxItems": t('canvas_max_items', n=limits.maxItems),
   "nameNeeded": t('canvas_name_needed'),
   "leave": t('canvas_leave'),
+  "size": t('canvas_slide_size'),
+  "sizeBanner": t('canvas_size_banner'),
+  "sizeSquare": t('canvas_size_square'),
+  "sizeTall": t('canvas_size_tall'),
+  "sizeCustom": t('canvas_size_custom'),
+  "height": t('canvas_height'),
+  "meterOf": t('canvas_meter_of'),
 } %}
 <div class="editor" data-canvas
      data-upload="{{ url_for('designs.canvas_image') }}"
+     data-review="{{ url_for('designs.canvas_review') }}"
      data-strings='{{ strings|tojson }}'
      data-limits='{{ limits|tojson }}'>
 
@@ -123,6 +146,7 @@
 
       <div class="props__row" data-props-for="image" hidden>
         <button class="btn btn--small btn--outline" type="button" data-action="replace">{{ t('canvas_replace') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="fill">{{ t('canvas_fill_slide') }}</button>
         <label class="props__field">{{ t('canvas_fit') }}
           <select data-prop="fit">
             <option value="cover">{{ t('canvas_fit_cover') }}</option>

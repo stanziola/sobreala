@@ -131,7 +131,25 @@ def test_el_fondo_se_funde_al_doble():
 
 # ------------------------------------------------------------ las rutas
 
-def guardar(browser, doc, *, url="/plantillas/crear", nombre="Asamblea"):
+# Un párrafo como el de un correo de verdad: con él, el lienzo pasa la revisión
+# antispam (texto suficiente, sin mayúsculas ni palabras gancho).
+PARRAFO = ("Te esperamos el sábado a las nueve de la mañana en el salón de la "
+           "cooperativa para la asamblea anual de socios. Vamos a presentar el "
+           "informe del año, elegir la nueva junta directiva y conversar sobre "
+           "los proyectos del próximo periodo. Trae tu carné de socio y llega "
+           "unos minutos antes para registrarte en la entrada.")
+
+
+def con_texto(doc):
+    """El lienzo con una diapositiva más, de puro texto, para que se pueda
+    guardar: cada prueba mira otra cosa, no la revisión antispam."""
+    return {"slides": doc["slides"] + [{"h": 400, "bg": "#FFFFFF", "items": [
+        texto(20, 20, w=560, h=320, text=PARRAFO)]}]}
+
+
+def guardar(browser, doc, *, url="/plantillas/crear", nombre="Asamblea",
+            completar=True):
+    doc = con_texto(doc) if completar else doc
     return browser.post(url, data={"csrf_token": csrf(browser, url),
                                    "nombre": nombre, "lienzo": json.dumps(doc)})
 
@@ -258,3 +276,99 @@ def test_un_lienzo_sale_en_una_campana_con_su_baja(client, database, outbox,
     assert "Asamblea anual de socios" in cuerpo
     assert 'href="https://coop.com"' in cuerpo
     assert "Anular la suscripción" in cuerpo
+
+
+# ------------------------------------------------ nombre, correo y la pastilla
+
+def test_nombre_y_correo_se_llenan_sin_crear_columnas():
+    from services import fields
+
+    contacto = {"name": "Ana Moreno", "email": "ana@coop.com", "fields": {}}
+    assert fields.fill("Hola *|NOMBRE|*, *|CORREO|*", contacto, []) ==         "Hola Ana Moreno, ana@coop.com"
+    # Escapado dentro del correo, como cualquier dato de otro.
+    assert fields.fill("*|NOMBRE|*", {"name": "<b>Ana</b>"}, []) == "&lt;b&gt;Ana&lt;/b&gt;"
+
+
+def test_no_se_puede_crear_una_columna_nombre(client, database, outbox):
+    inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    assert accounts.add_field(database, cuenta["_id"], label="Nombre", kind="text") is None
+    assert accounts.add_field(database, cuenta["_id"], label="Correo", kind="text") is None
+
+
+def test_la_vista_previa_ensena_la_marca_como_pastilla():
+    from services import fields
+
+    html = ('<p>Hola *|NOMBRE|*</p>'
+            '<a href="https://coop.com/?q=*|EDAD|*">Ver *|EDAD|*</a>')
+    salida = fields.preview_fill(html, [{"key": "EDAD", "label": "Edad", "type": "number"}])
+    assert '<span style="background:#E0F2FE' in salida and ">Nombre</span>" in salida
+    # Dentro de un atributo, sin etiqueta: rompería el enlace.
+    assert 'href="https://coop.com/?q=Edad"' in salida
+
+
+# ------------------------------------------------------- la revisión antispam
+
+def revisar(*items, h=400):
+    doc = leer(lienzo(*items, h=h))
+    return [one["key"] for one in canvas.review(doc, 20000, limit=102 * 1024)]
+
+
+def test_un_correo_con_texto_suficiente_pasa():
+    assert revisar(texto(20, 20, w=560, h=320, text=PARRAFO)) == []
+
+
+def test_poco_texto_no_se_guarda():
+    assert "few_text" in revisar(texto(20, 20, text="Hola"))
+
+
+def test_mas_imagen_que_texto_no_se_guarda():
+    claves = revisar({"t": "image", "x": 0, "y": 0, "w": 600, "h": 400, "name": "a.jpg"},
+                     texto(20, 20, w=560, h=320, text=PARRAFO))
+    assert "image_heavy" in claves
+
+
+def test_dos_imagenes_encimadas_no_cuentan_dos_veces():
+    # Media página de foto y media de texto: justo en el límite. La segunda foto
+    # va encima de la primera y no tapa nada nuevo.
+    foto = {"t": "image", "x": 0, "y": 0, "w": 600, "h": 400, "name": "a.jpg"}
+    encima = {"t": "image", "x": 150, "y": 100, "w": 300, "h": 200, "name": "b.jpg"}
+    doc = leer({"slides": [
+        {"h": 400, "bg": "#FFFFFF", "items": [foto, encima]},
+        {"h": 400, "bg": "#FFFFFF", "items": [texto(20, 20, w=560, h=320, text=PARRAFO)]}]})
+    claves = [one["key"] for one in canvas.review(doc, 20000, limit=102 * 1024)]
+    assert "image_heavy" not in claves
+
+
+def test_enlaces_acortados_mayusculas_gritos_y_palabras_gancho():
+    assert "shortener" in revisar(texto(20, 20, w=560, h=300, text=PARRAFO),
+                                  boton(20, 340, href="https://bit.ly/abc"))
+    assert "caps" in revisar(texto(20, 20, w=560, h=320, text=PARRAFO.upper()))
+    assert "shouting" in revisar(texto(20, 20, w=560, h=320, text=PARRAFO + " ¡Ven!!"))
+    assert "trigger" in revisar(texto(20, 20, w=560, h=320, text=PARRAFO + " Es gratis."))
+
+
+def test_lo_que_puede_ir_a_spam_no_se_guarda(client, database, outbox):
+    browser = inside(client)
+    respuesta = guardar(browser, lienzo(texto(40, 40, text="Hola")), completar=False)
+    assert respuesta.status_code == 200
+    assert "muy poco texto" in respuesta.get_data(as_text=True)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    assert designs.count(database, cuenta["_id"]) == 0
+
+
+def test_la_revision_dice_cuanto_pesa_y_que_falta(client, database, outbox):
+    browser = inside(client)
+    respuesta = browser.post("/plantillas/lienzo/revisar", data={
+        "csrf_token": csrf(browser, "/plantillas/crear"),
+        "lienzo": json.dumps(lienzo(texto(40, 40, text="Hola")))})
+    datos = respuesta.get_json()
+    assert datos["ok"] is False
+    assert datos["max"] == 102 * 1024
+    assert 0 < datos["bytes"] < datos["max"]
+    assert any("muy poco texto" in one for one in datos["issues"])
+
+
+def test_estadisticas_ya_no_lleva_a_configuracion(client, database, outbox):
+    browser = inside(client)
+    assert "Ir a configuración" not in browser.get("/panel").get_data(as_text=True)

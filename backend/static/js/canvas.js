@@ -167,6 +167,37 @@
       picker.setAttribute("data-slide-bg", s);
       bg.appendChild(picker);
       bar.appendChild(bg);
+      // El tamaño: los listos y el alto a mano. El ancho es siempre el de un
+      // correo, 600.
+      var size = document.createElement("label");
+      size.className = "cv-bar__bg";
+      size.textContent = S.size + " ";
+      var pick = document.createElement("select");
+      pick.setAttribute("data-slide-size", s);
+      [["", S.sizeCustom], ["200", S.sizeBanner], ["600", S.sizeSquare], ["900", S.sizeTall]]
+        .forEach(function (pair) {
+          var o = document.createElement("option");
+          o.value = pair[0];
+          o.textContent = pair[1];
+          if (String(slide.h) === pair[0]) o.selected = true;
+          pick.appendChild(o);
+        });
+      size.appendChild(pick);
+      bar.appendChild(size);
+      var tall = document.createElement("label");
+      tall.className = "cv-bar__bg";
+      tall.textContent = S.height + " ";
+      var number = document.createElement("input");
+      number.type = "number";
+      number.min = L.minHeight;
+      number.max = L.maxHeight;
+      number.step = 10;
+      number.value = slide.h;
+      number.className = "cv-bar__h";
+      number.setAttribute("data-slide-h", s);
+      tall.appendChild(number);
+      bar.appendChild(tall);
+
       [["up", S.slideUp], ["down", S.slideDown], ["copy", S.slideCopy], ["delete", S.slideDelete]]
         .forEach(function (pair) {
           var b = document.createElement("button");
@@ -325,9 +356,14 @@
           doc.slides[replacing.s].items[replacing.i].name = answer.name;
         } else {
           var slide = doc.slides[slideOn];
-          var h = Math.min(slide.h, Math.round(W * answer.height / Math.max(answer.width, 1)));
+          // Entra a la mitad y centrada, para que se pueda mover y quepa otra
+          // al lado. «Llenar la diapositiva» la pone de fondo completo.
+          var w = W / 2;
+          var h = Math.min(slide.h, Math.round(w * answer.height / Math.max(answer.width, 1)));
+          h = Math.max(h, 16);
           // Atrás de todo: las imágenes van al principio de la lista.
-          slide.items.unshift({ t: "image", x: 0, y: 0, w: W, h: Math.max(h, 16),
+          slide.items.unshift({ t: "image", x: Math.round((W - w) / 2),
+                                y: Math.round((slide.h - h) / 2), w: w, h: h,
                                 name: answer.name, fit: "cover" });
           sel = { s: slideOn, i: 0 };
         }
@@ -581,6 +617,8 @@
     } else if (what === "replace") {
       pickImage({ s: sel.s, i: sel.i });
       return;
+    } else if (what === "fill") {
+      one.x = 0; one.y = 0; one.w = W; one.h = doc.slides[sel.s].h; one.fit = "cover";
     } else if (what === "front" || what === "back") {
       // Solo entre imágenes: los textos y botones siempre van delante.
       var pictures = [];
@@ -613,6 +651,22 @@
     } else return;
     sel = null;
     render(); commit();
+  });
+
+  // El alto de una diapositiva, desde la lista o escrito. Nunca más bajo que
+  // lo que tiene dentro: eso cortaría una caja.
+  function setHeight(s, value) {
+    var lowest = 0;
+    doc.slides[s].items.forEach(function (one) { lowest = Math.max(lowest, one.y + one.h); });
+    var h = clamp(Math.round(value) || 0, Math.max(L.minHeight, lowest), L.maxHeight);
+    doc.slides[s].h = h;
+    render(); commit();
+  }
+  stage.addEventListener("change", function (e) {
+    var pick = e.target.closest("[data-slide-size]");
+    if (pick && pick.value) setHeight(+pick.getAttribute("data-slide-size"), +pick.value);
+    var number = e.target.closest("[data-slide-h]");
+    if (number) setHeight(+number.getAttribute("data-slide-h"), +number.value);
   });
 
   stage.addEventListener("input", function (e) {
@@ -662,6 +716,7 @@
     if (editing) editing.blur();
     var anyBad = doc.slides.some(function (slide) { return Object.keys(overlapsIn(slide)).length; });
     if (anyBad) { e.preventDefault(); say(S.overlap); return; }
+    if (checkBlocked) { e.preventDefault(); return; }
     if (!saveForm.querySelector("#nombre").value.trim()) {
       e.preventDefault(); say(S.nameNeeded); saveForm.querySelector("#nombre").focus(); return;
     }
@@ -669,12 +724,50 @@
     dirty = false;
   });
 
+  /* La barra de peso y la revisión antispam. Las pide al servidor, que hace
+     la misma cuenta que al guardar; mientras haya un motivo, Guardar no se
+     deja pulsar. */
+  var check = document.querySelector("[data-canvas-check]");
+  var saveButton = saveForm.querySelector("button[type=submit]");
+  var checkBlocked = false;
+  function runCheck() {
+    if (!check) return;
+    var body = new FormData();
+    body.append("csrf_token", saveForm.querySelector("[name=csrf_token]").value);
+    body.append("lienzo", JSON.stringify(doc));
+    fetch(root.getAttribute("data-review"), { method: "POST", body: body, credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (answer) {
+        var share = Math.min(1, answer.bytes / Math.max(answer.max, 1));
+        var fill = check.querySelector("[data-meter-fill]");
+        fill.style.width = (share * 100).toFixed(1) + "%";
+        fill.className = share > 0.9 ? "is-full" : (share > 0.7 ? "is-high" : "");
+        check.querySelector("[data-meter-text]").textContent =
+          S.meterOf.replace("{kb}", Math.ceil(answer.bytes / 1024))
+                   .replace("{max}", Math.round(answer.max / 1024));
+        var list = check.querySelector("[data-check-list]");
+        list.textContent = "";
+        (answer.issues || []).forEach(function (text) {
+          var li = document.createElement("li");
+          li.textContent = text;
+          list.appendChild(li);
+        });
+        checkBlocked = !answer.ok;
+        check.querySelector("[data-check-bad]").hidden = answer.ok;
+        check.querySelector("[data-check-ok]").hidden = !answer.ok;
+        saveButton.disabled = checkBlocked;
+        saveButton.classList.toggle("btn--off", checkBlocked);
+      })
+      .catch(function () { /* sin revisión no se bloquea: el servidor revisa igual */ });
+  }
+
   var previewTimer = null;
   function schedulePreview() {
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function () {
       previewForm.querySelector("[name=lienzo]").value = JSON.stringify(doc);
       previewForm.submit();
+      runCheck();
     }, 800);
   }
 

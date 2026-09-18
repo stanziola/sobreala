@@ -100,6 +100,12 @@ def explain(problems: list[str]) -> str:
     return " ".join(said)
 
 
+def marks_for(account) -> list[dict]:
+    """Los botones de marcas: el nombre y el correo, que trae todo contacto, y
+    después las columnas de la cuenta."""
+    return columns.built_in_marks() + accounts.fields_of(account)
+
+
 def as_id(raw):
     try:
         return ObjectId(raw)
@@ -122,7 +128,7 @@ def shared(db, account, **extra):
         "max_kb": html_check.MAX_BYTES // 1024,
         # Las columnas propias de la cuenta, para poder escribirlas dentro de
         # una pieza sin tener que acordarse de cómo se llamaban.
-        "columns": accounts.fields_of(account),
+        "columns": marks_for(account),
         **extra,
     }
 
@@ -200,7 +206,7 @@ def html_preview(html: str, plan, fields: list[dict]) -> Response:
                 "color:#18181B;\"><p>" + escape(explain(problems)) + "</p>")
         return Response(page, mimetype="text/html")
     email = render.email_from_html(html, plan=plan, preview=True)
-    return Response(columns.fill(email, columns.sample(fields), fields),
+    return Response(columns.preview_fill(email, fields),
                     mimetype="text/html")
 
 
@@ -246,7 +252,7 @@ def edit_html(raw):
         "designs/html.html", section="plantillas", account=account,
         found=found, html=html, name=name, errors=errors,
         fresh=bool(request.args.get("nueva")),
-        columns=accounts.fields_of(account),
+        columns=marks_for(account),
         max_kb=html_check.MAX_BYTES // 1024,
         kb=round(len(html.encode("utf-8")) / 1024, 1),
         watermark=plans.has_watermark(plan))
@@ -350,7 +356,7 @@ def preview(key: str, filled: dict[str, str], plan,
     g.email_preview = True
     fields = fields or []
     html = render.email(key, filled, plan=plan, preview=True)
-    return Response(columns.fill(html, columns.sample(fields), fields),
+    return Response(columns.preview_fill(html, fields),
                     mimetype="text/html")
 
 
@@ -413,7 +419,7 @@ def compose(account, key: str, found):
                           if one.get("type") == "image" else ""))
                 for one in render.fields_of(key)],
         name=name, errors=errors, found=found,
-        columns=accounts.fields_of(account),
+        columns=marks_for(account),
         image_mb=imaging.MAX_UPLOAD // (1024 * 1024),
         watermark=plans.has_watermark(plan))
 
@@ -458,6 +464,30 @@ def canvas_explain(problems: list[str]) -> str:
                     for one in problems)
 
 
+def canvas_size(doc, plan, grounds: list[str | None]) -> int:
+    """Lo que pesa el correo entero, con el sobre y la baja, que es lo que
+    cuenta Gmail para recortarlo."""
+    email = render.email_from_body(canvas.to_html(doc, grounds), plan=plan,
+                                   unsubscribe=UNSUBSCRIBE_SAMPLE)
+    return len(email.encode("utf-8"))
+
+
+# Una dirección de baja del largo de las de verdad, para pesar el correo.
+UNSUBSCRIBE_SAMPLE = "https://panel.panamails.com/baja/" + "x" * 96
+
+
+def sample_grounds(doc) -> list[str | None]:
+    """Direcciones de fondo del mismo largo que las que tendrá al guardarse."""
+    sample = imaging.url_of("x" * 22 + ".jpg")
+    return [sample if any(one["t"] == "image" for one in slide["items"]) else None
+            for slide in doc["slides"]]
+
+
+def review_texts(found: list[dict]) -> list[str]:
+    return [t("canvas_spam_" + one["key"], **{k: v for k, v in one.items() if k != "key"})
+            for one in found]
+
+
 def canvas_editor(account, found):
     """El lienzo, el mismo para una nueva y para una guardada.
 
@@ -478,10 +508,17 @@ def canvas_editor(account, found):
             errors["form"] = t("error_csrf")
         else:
             problems = canvas_problems(db, account["_id"], posted)
+            spam = [] if problems or posted is None else canvas.review(
+                posted, canvas_size(posted, accounts.plan_of(account),
+                                    sample_grounds(posted)),
+                limit=html_check.MAX_BYTES)
             if not name:
                 errors["nombre"] = t("error_required")
             if problems:
                 errors["form"] = canvas_explain(problems)
+            elif spam:
+                # Solo se guarda lo que tiene pocas probabilidades de ir a spam.
+                errors["form"] = " ".join(review_texts(spam))
             elif not errors:
                 load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
                 grounds = [images.save(db, account["_id"], data=raw, ext="jpg",
@@ -507,7 +544,7 @@ def canvas_editor(account, found):
         "designs/canvas.html", section="plantillas", account=account,
         found=found, doc=doc, name=name, errors=errors,
         fonts=list(canvas.FONTS), font_stacks=canvas.FONTS,
-        columns=accounts.fields_of(account),
+        columns=marks_for(account),
         limits={"minSize": canvas.MIN_SIZE, "maxSize": canvas.MAX_SIZE,
                 "minHeight": canvas.MIN_HEIGHT, "maxHeight": canvas.MAX_HEIGHT,
                 "maxSlides": canvas.MAX_SLIDES, "maxItems": canvas.MAX_ITEMS,
@@ -537,6 +574,26 @@ def edit_canvas(raw):
     return canvas_editor(account, found)
 
 
+@bp.route("/plantillas/lienzo/revisar", methods=["POST"])
+def canvas_review():
+    """Cuánto pesa y qué le falta para no ir a spam. Lo pide el editor mientras
+    se trabaja, para la barra y la lista; es la misma revisión que al guardar."""
+    account = signed_in()
+    if account is None or not csrf_ok(request.form.get("csrf_token")):
+        abort(403)
+    db = get_db()
+    doc = canvas.parse(request.form.get("lienzo", ""))
+    if doc is None:
+        return jsonify(ok=False, bytes=0, max=html_check.MAX_BYTES,
+                       issues=[canvas_explain(["broken"])])
+    size = canvas_size(doc, accounts.plan_of(account), sample_grounds(doc))
+    problems = canvas_problems(db, account["_id"], doc)
+    issues = ([canvas_explain([one]) for one in problems]
+              + review_texts(canvas.review(doc, size, limit=html_check.MAX_BYTES)))
+    return jsonify(ok=not issues, bytes=size, max=html_check.MAX_BYTES,
+                   issues=issues)
+
+
 @bp.route("/plantillas/lienzo/vista", methods=["POST"])
 def canvas_preview():
     """El lienzo como saldría, para el marco de al lado. Los fondos van dentro
@@ -556,7 +613,7 @@ def canvas_preview():
     email = render.email_from_body(canvas.to_html(doc, grounds),
                                    plan=accounts.plan_of(account), preview=True)
     fields = accounts.fields_of(account)
-    return Response(columns.fill(email, columns.sample(fields), fields),
+    return Response(columns.preview_fill(email, fields),
                     mimetype="text/html")
 
 

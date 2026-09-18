@@ -141,6 +141,17 @@ def show(value: str, kind: str) -> str:
 
 # ------------------------------------------------------- ponerlas en el texto
 
+# Lo que trae todo contacto sin que nadie cree una columna: su nombre y su
+# correo. Se escriben igual que las columnas (`*|NOMBRE|*`), y por eso nadie
+# puede crear una columna con esas claves (`accounts.add_field`).
+BUILT_IN = {"NOMBRE": ("name", "Nombre"), "CORREO": ("email", "Correo")}
+
+
+def built_in_marks() -> list[dict[str, str]]:
+    """Las dos que siempre hay, con su nombre, para los botones de marcas."""
+    return [{"key": key, "label": label} for key, (_, label) in BUILT_IN.items()]
+
+
 def mark(key: str) -> str:
     """La marca que se escribe dentro de la pieza para esa columna."""
     return f"*|{key}|*"
@@ -171,11 +182,47 @@ def fill(text: str, contact: dict[str, Any] | None,
         key = found.group(1)
         one = known.get(key)
         if one is None:
+            if key in BUILT_IN:
+                written = str((contact or {}).get(BUILT_IN[key][0]) or "")
+                return str(escape(written)) if html else written
             return ""
         written = show(values.get(key, ""), one.get("type", TEXT))
         return str(escape(written)) if html else written
 
     return MARK.sub(swap, text)
+
+
+# Cómo se ve una marca en la vista previa: una pastilla con el nombre del dato,
+# para que se lea de un vistazo que ahí va algo distinto en cada correo. Solo en
+# la vista previa; al enviar va el dato de cada quien, sin adornos.
+PILL = ("background:#E0F2FE;color:#075985;border-radius:6px;padding:0 6px;"
+        "font-weight:600;")
+TAG = re.compile(r"(<[^>]*>)")
+
+
+def preview_fill(html: str, definitions: list[dict[str, Any]]) -> str:
+    """El correo de la vista previa, con cada marca como pastilla.
+
+    Solo en el texto: una marca dentro de un atributo (el enlace de un botón)
+    se llena con el nombre a secas, porque una etiqueta ahí dentro rompería el
+    atributo.
+    """
+    names = {one["key"]: one.get("label", one["key"]) for one in definitions}
+    names.update({key: label for key, (_, label) in BUILT_IN.items()
+                  if key not in names})
+
+    def pill(found: re.Match) -> str:
+        label = names.get(found.group(1))
+        if label is None:
+            return ""
+        return f'<span style="{PILL}">{escape(label)}</span>'
+
+    def plain(found: re.Match) -> str:
+        return str(escape(names.get(found.group(1), "")))
+
+    parts = TAG.split(html or "")
+    return "".join(MARK.sub(plain if part.startswith("<") else pill, part)
+                   for part in parts)
 
 
 def sample(definitions: list[dict[str, Any]]) -> dict[str, Any]:

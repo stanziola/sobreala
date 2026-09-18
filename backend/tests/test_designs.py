@@ -225,8 +225,9 @@ def test_la_pantalla_tiene_los_dos_caminos_y_no_las_prediseñadas(
     assert "Cargar plantilla personalizada" in pantalla
     assert 'href="/plantillas/cargar"' in pantalla
     assert "Usar esta" not in pantalla
-    # Las dos notas: el dato de cada persona y el tamaño máximo.
-    assert "*|EDAD|*" in pantalla
+    # Las dos notas: el dato de cada persona y el tamaño máximo. Sin columnas
+    # propias quedan el nombre y el correo, que trae todo contacto.
+    assert "*|NOMBRE|*" in pantalla and "*|CORREO|*" in pantalla
     assert "102 KB" in pantalla
 
 

@@ -575,6 +575,42 @@ que es lo que pasa con una copia.
 El formato va **por caja de texto entera**: una caja es toda de la misma fuente,
 tamaño y color. Formato por palabra complica que llegue igual a Outlook.
 
+**El alto de cada diapositiva lo elige quien la arma**: tres tamaños listos
+(Banner 600×200, Cuadrada 600×600, Vertical 600×900) y un número para el alto
+exacto, además de arrastrar el borde de abajo. El ancho no se toca: 600 px es lo
+que se lee bien en todos los buzones. Nunca queda más bajo que lo que ya tiene
+dentro.
+
+**Una foto nueva entra a la mitad del ancho y centrada**, para que se pueda
+mover y poner dos en la misma diapositiva; «Llenar la diapositiva» la estira
+entera cuando se quiere de fondo.
+
+### Solo se guarda lo que tiene pinta de llegar a la bandeja
+
+`canvas.review()` es una revisión **que bloquea**: con cualquier motivo en la
+lista, el servidor no guarda y el botón de Guardar no se deja pulsar. Mira lo que
+más manda a spam:
+
+| Regla | Límite |
+|---|---|
+| Texto de verdad | Al menos 300 caracteres |
+| Imágenes | Como mucho la mitad de la superficie (encimadas cuentan una vez) |
+| Peso del correo armado | Debajo de los 102 KB, donde Gmail lo corta |
+| Enlaces y botones | Como mucho 8 |
+| Acortadores (bit.ly y compañía) | Ninguno |
+| Mayúsculas | Menos del 30 % de las letras |
+| Signos repetidos (`!!`, `??`) | Ninguno |
+| Palabras gancho («gratis», «ganaste», «haz clic aquí»…) | Ninguna |
+
+No es una garantía: la bandeja la deciden la reputación del dominio y lo que
+hace cada destinatario, no el correo. Es quitar lo que se sabe que resta.
+
+**La misma revisión corre mientras se trabaja**, en `POST
+/plantillas/lienzo/revisar`, que devuelve la lista y **el peso del correo tal
+como sale** —con el pie de la baja y los fondos—. El editor lo dibuja como una
+barra de cuánto queda antes de los 102 KB, en ámbar pasado el 70 % y en rojo
+pasado el 90 %.
+
 ## Las plantillas prediseñadas
 
 **Ya no se ofrecen.** Las piezas que alguien armó con ellas siguen en su lista y
@@ -612,9 +648,17 @@ alrededor es nuestro— y sin escapar en el asunto, que es texto. Una marca que
 nombra una columna borrada se queda en blanco: dejarla a la vista sería mandar
 `*|CIUDAD|*` a mil personas.
 
+**`*|NOMBRE|*` y `*|CORREO|*` existen siempre**, en todas las cuentas: son el
+nombre y la dirección que trae todo contacto (`fields.BUILT_IN`). Por eso
+ninguna columna propia puede llamarse así. A una persona sin nombre le llega
+ese hueco en blanco: «Hola ,». Conviene escribirla donde un hueco no estorbe.
+
 La vista previa dibuja cada marca con **el nombre de su columna** —«Ciudad»—,
 que enseña dónde va cada dato sin inventarse un valor que después no se parezca
-al de nadie.
+al de nadie. **Va en una pastilla celeste** (`fields.preview_fill()`), para que
+se vea de un vistazo qué cambia en cada correo; dentro de un atributo, como un
+enlace, va el nombre solo, sin pastilla, que la rompería. La pastilla es solo de
+la vista previa: lo que sale lleva el dato tal cual.
 
 **`services/render.py` es el único sitio que arma un correo**, y la vista previa
 llama ahí, así que lo que alguien ve antes de mandar es de verdad lo que se

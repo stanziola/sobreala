@@ -266,7 +266,9 @@ def add_field(db, account_id, *, label: str, kind: str) -> str | None:
     existing = fields_of(account)
     if len(existing) >= field_limit(account):
         return None
-    if any(one["key"] == key for one in existing):
+    if any(one["key"] == key for one in existing) or key in fields.BUILT_IN:
+        # Una columna «Nombre» o «Correo» chocaría con los datos que ya trae
+        # todo contacto.
         return None
     db.accounts.update_one(
         {"_id": account_id},

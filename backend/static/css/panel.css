@@ -855,7 +855,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 /* Alto fijo: si creciera o encogiera según lo elegido, las diapositivas de
    abajo se moverían justo mientras se hace clic en ellas. */
 .props {
-  position: sticky; top: 0; z-index: 5; padding: 10px 12px; height: 158px;
+  position: sticky; top: 0; z-index: 40; padding: 10px 12px; height: 158px;
   overflow-y: auto; box-sizing: border-box;
   background: var(--color-surface); border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -882,8 +882,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .cv-wrap.is-on .cv-slide { outline: 2px solid var(--color-accent); outline-offset: 3px; }
 
 /* La diapositiva mide lo que mide en el correo: 600 px de ancho. */
+/* `isolation` encierra las capas de dentro: sin eso, un texto o un botón de
+   la diapositiva pasaba por encima de la barra al desplazarse. Sin overflow
+   escondido, para que los tiradores de una caja pegada al borde se vean. */
 .cv-slide {
-  position: relative; flex: none; overflow: hidden;
+  position: relative; flex: none; isolation: isolate;
   box-shadow: 0 0 0 1px var(--color-border), var(--shadow-sm);
   touch-action: none; user-select: none;
 }
@@ -917,6 +920,28 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   margin-top: -8px;
 }
 .cv-grip:hover { background: var(--color-accent-soft); }
+
+.cv-bar select, .cv-bar__h { margin: 0; padding: 4px 6px; width: auto; font-size: .85rem; }
+.cv-bar__h { width: 92px; }
+
+/* El peso del correo y la revisión antispam, encima del lienzo. */
+.check {
+  display: grid; gap: 10px; margin-top: 14px; padding: 12px 14px;
+  border: 1px solid var(--color-border); border-radius: 12px;
+  background: var(--color-surface);
+}
+.meter { display: grid; gap: 6px; }
+.meter__label { margin: 0; font-size: .85rem; color: var(--color-ink-soft); }
+.meter__label b { color: var(--color-ink); font-variant-numeric: tabular-nums; }
+.meter__bar { height: 8px; border-radius: 99px; background: var(--color-surface-alt);
+              border: 1px solid var(--color-border); overflow: hidden; }
+.meter__bar span { display: block; height: 100%; width: 0; background: var(--color-accent);
+                   transition: width .3s ease; }
+.meter__bar span.is-high { background: #D97706; }
+.meter__bar span.is-full { background: #D92D20; }
+.check__ok { margin: 0; font-size: .9rem; font-weight: 600; color: #15803D; }
+.check__title { margin: 0 0 4px; font-size: .9rem; font-weight: 700; color: #B42318; }
+.check__bad ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: .88rem; }
 
 /* La vista previa: el correo a su tamaño de 600, achicado para caber. */
 .editor__side { position: sticky; top: 18px; }

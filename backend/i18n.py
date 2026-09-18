@@ -501,7 +501,6 @@ TEXTS = {
     # mes que todavía no tiene datos.
     "panel_soon_tag": "Próximamente",
     "panel_greeting": "Hola, {name}",
-    "panel_settings_link": "Ir a configuración",
     "admin_invoices_title": "Pagos y facturas",
     "admin_invoices_none": "Esta cuenta no tiene pagos cobrados.",
     "admin_invoice_has": "Con factura",
@@ -1062,6 +1061,17 @@ TEXTS = {
     "canvas_preview_wait": "La vista previa aparece aquí en un momento.",
 
     # Por qué no se pudo guardar un lienzo.
+    "canvas_slide_size": "Tamaño",
+    "canvas_size_banner": "Banner (600 × 200)",
+    "canvas_size_square": "Cuadrada (600 × 600)",
+    "canvas_size_tall": "Vertical (600 × 900)",
+    "canvas_size_custom": "A medida",
+    "canvas_height": "Alto",
+    "canvas_fill_slide": "Llenar la diapositiva",
+    "canvas_meter": "Peso del correo:",
+    "canvas_meter_of": "{kb} KB de {max} KB",
+    "canvas_check_ok": "Listo: no tiene nada que lo mande a spam.",
+    "canvas_check_title": "Para poder guardar, arregla esto:",
     "canvas_bad_broken": "El lienzo llegó dañado. Recarga la página e "
                          "inténtalo otra vez.",
     "canvas_bad_empty": "La plantilla no tiene ninguna diapositiva.",
@@ -1087,6 +1097,24 @@ TEXTS = {
                           "queden en filas o columnas.",
     "canvas_bad_too_big": "El correo pasa de {kb} KB. Quita algo de texto o "
                           "alguna diapositiva.",
+
+    # Lo que tiene riesgo de ir a spam. Con cualquiera, no se guarda.
+    "canvas_spam_few_text": "Tiene muy poco texto ({n} caracteres). Escribe al "
+                            "menos {min}: un correo casi sin texto es de lo que "
+                            "más va a spam.",
+    "canvas_spam_image_heavy": "Las imágenes ocupan el {pct} % del correo. Que "
+                               "sean como mucho la mitad: el resto, texto.",
+    "canvas_spam_too_big": "Pesa {kb} KB y el máximo es {max} KB. Pasado eso "
+                           "Gmail lo corta.",
+    "canvas_spam_many_links": "Tiene {n} botones. Deja {max} como mucho.",
+    "canvas_spam_shortener": "Un botón usa un enlace acortado ({what}). Pon la "
+                             "dirección completa: los acortadores esconden a "
+                             "dónde llevan.",
+    "canvas_spam_caps": "Tiene demasiadas MAYÚSCULAS. Escríbelo normal.",
+    "canvas_spam_shouting": "Tiene demasiados signos de exclamación. Deja uno, "
+                            "como mucho.",
+    "canvas_spam_trigger": "Dice «{what}», que los filtros de spam castigan. "
+                           "Dilo de otra forma.",
 
     "menu_designs": "Plantillas",
     # --- enviar correos ----------------------------------------------------
