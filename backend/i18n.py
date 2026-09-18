@@ -386,11 +386,6 @@ TEXTS = {
     "settings_notice_new_login_desc": "Te avisamos cuando alguien entra a tu "
                                       "cuenta desde un dispositivo que no "
                                       "habías usado.",
-    "settings_soon_title": "Cuando empiecen los envíos",
-    "settings_soon_lead": "Estas tres cosas todavía no existen en Panamails, "
-                          "así que por ahora no te va a llegar nada. Lo que "
-                          "elijas se guarda y se respeta desde el día en que "
-                          "empiecen.",
     "settings_notice_billing": "Pagos y plan",
     "settings_notice_billing_desc": "El comprobante cuando contratas o renuevas "
                                     "un plan.",
@@ -411,7 +406,6 @@ TEXTS = {
 
     "settings_payments_lead": "Tu plan, con qué has pagado y tus facturas. "
                               "Los planes se eligen en el sitio.",
-    "billing_plan_title": "Tu plan",
     "billing_plan_row": "Plan",
     "billing_until": "hasta el {when}",
     "billing_methods_title": "Métodos de pago",
@@ -419,6 +413,7 @@ TEXTS = {
     "billing_paypal_used": "Has pagado con la cuenta de PayPal {who}.",
     "billing_paypal_used_plain": "Has pagado con tu cuenta de PayPal.",
     "billing_invoices_title": "Facturas",
+    "billing_history_title": "Historial de compras",
     "billing_download": "Descargar factura",
     "billing_invoice_pending": "Factura en camino",
     "billing_invoices_hint": "Te avisamos por correo cuando tu factura está "
@@ -434,7 +429,6 @@ TEXTS = {
     "settings_payments_yappy_desc": "Para pagar desde tu banco en Panamá, sin "
                                     "tarjeta.",
     "settings_soon_tag": "Próximamente",
-    "settings_payments_current_hint": "Lo que tienes contratado ahora mismo.",
 
     # --- pagos -------------------------------------------------------------
     "pay_checkout_title": "Contratar {plan}",

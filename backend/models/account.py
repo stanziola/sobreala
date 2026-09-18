@@ -517,6 +517,11 @@ IMPORTS = "imports"
 CAMPAIGNS = "campaigns"
 MONTHLY = "monthly"
 NOTICES = (NEW_LOGIN, BILLING, PLAN_STATE, IMPORTS, CAMPAIGNS, MONTHLY)
+# Los de partes que todavía no mandan nada. No se ofrecen: un interruptor de algo
+# que no existe es dejar las cosas a medias. Y como sin interruptor `wants()` los
+# da por sí, el día que empiecen a salir llegan sin que nadie encienda nada; ese
+# día basta con sacarlos de aquí para que la pantalla los ofrezca.
+PENDING = (IMPORTS, CAMPAIGNS, MONTHLY)
 
 # Los de una cuenta de administrador, que son otros y por eso son otra tupla:
 # no hablan de su cuenta sino de lo que pasa en las de los clientes. Una cuenta
@@ -549,7 +554,9 @@ def notices_for(account: dict[str, Any] | None) -> tuple[str, ...]:
     propia cuenta. Enseñarle a cada uno los del otro sería ofrecer interruptores
     de correos que no va a recibir nunca.
     """
-    return ADMIN_NOTICES if is_admin(account) else NOTICES
+    if is_admin(account):
+        return ADMIN_NOTICES
+    return tuple(name for name in NOTICES if name not in PENDING)
 
 
 def set_notifications(db, account_id, wanted: dict[str, bool], *,

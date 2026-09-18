@@ -109,7 +109,9 @@ def test_the_two_step_notice_has_no_switch(client, database, outbox):
     stored = accounts.by_email(database, "ana@ejemplo.com")["notifications"]
     assert "two_factor" not in stored
     assert "password_changed" not in stored
-    assert set(stored) == set(accounts.NOTICES)
+    # Solo los que se ofrecen: los que todavía no mandan nada no se guardan, y
+    # por eso el día que empiecen a salir llegan sin encender nada.
+    assert set(stored) == set(accounts.NOTICES) - set(accounts.PENDING)
 
     turn_on_two_step(inside)
     assert bodies(outbox, "ya pide un segundo paso")

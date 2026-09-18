@@ -72,8 +72,8 @@
        href="{{ url_for('auth.change_email') }}">{{ t('settings_account_email_change') }}</a>
     {% endcall %}
 
-    {# Sin etiqueta a la derecha: repetía la primera palabra de la frase. #}
-    {% call row(t('settings_account_status'), t('panel_status_' + status_of(account))) %}
+    {% call row(t('settings_account_status'), '') %}
+    <span class="setting__value">{{ t('status_short_' + status_of(account)) }}</span>
     {% endcall %}
 
     {# Nada escribe todavía el campo del plan, así que hoy todas las cuentas
@@ -202,19 +202,6 @@
       {{ toggle('plan_state', t('settings_notice_plan_state'),
                 t('settings_notice_plan_state_desc'), notifications.plan_state) }}
 
-      {# Se enseñan desde ya, agrupadas y dicho con claridad que todavía no
-         hay nada que avisar: lo que se elija aquí se guarda y se respeta el
-         día que esas partes existan. #}
-      <h3 class="settings__subtitle">{{ t('settings_soon_title') }}</h3>
-      <p class="settings__lead">{{ t('settings_soon_lead') }}</p>
-
-      {{ toggle('imports', t('settings_notice_imports'),
-                t('settings_notice_imports_desc'), notifications.imports) }}
-      {{ toggle('campaigns', t('settings_notice_campaigns'),
-                t('settings_notice_campaigns_desc'), notifications.campaigns) }}
-      {{ toggle('monthly', t('settings_notice_monthly'),
-                t('settings_notice_monthly_desc'), notifications.monthly) }}
-
       <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
       {% endif %}
     </form>
@@ -235,7 +222,7 @@
 
     {# ----- tu plan: con su fecha, en la zona de quien mira. Sin botón para
        cancelar: no hay cobro automático que cancelar. ----- #}
-    <h3 class="settings__subtitle">{{ t('billing_plan_title') }}</h3>
+    <hr class="settings__rule">
     {% call row(t('billing_plan_row'), '') %}
     {% if plan %}
     <span class="setting__value">{{ plans[plan].name if plan in plans else plan }}</span>
@@ -264,11 +251,9 @@
     <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
     {% endcall %}
 
-    <p class="hint">{{ t('settings_payments_hint') }}</p>
-
-    {# ----- las facturas: escondidas por ahora (`invoices.SHOWN`) ----- #}
-    {% if invoices_shown %}
-    <h3 class="settings__subtitle">{{ t('billing_invoices_title') }}</h3>
+    {# ----- lo que se ha comprado. La columna de la factura solo sale cuando
+       las facturas se enciendan (`invoices.SHOWN`). ----- #}
+    <h3 class="settings__subtitle">{{ t('billing_history_title') }}</h3>
     {% if payments %}
     <div class="table-wrap">
       <table class="table">
@@ -282,6 +267,7 @@
                era lo único que había. #}
             <td class="table__quiet">{{ t('pay_method_' + (one.method or 'paypal')) }}</td>
             <td class="table__quiet">{{ one.currency }} {{ one.amount }}</td>
+            {% if invoices_shown %}
             <td>
               {% if one._id in invoices %}
               <a class="btn btn--small btn--outline"
@@ -290,15 +276,15 @@
               <span class="tag tag--quiet">{{ t('billing_invoice_pending') }}</span>
               {% endif %}
             </td>
+            {% endif %}
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    <p class="hint">{{ t('billing_invoices_hint') }}</p>
+    {% if invoices_shown %}<p class="hint">{{ t('billing_invoices_hint') }}</p>{% endif %}
     {% else %}
     <p class="hint">{{ t('billing_invoices_none') }}</p>
-    {% endif %}
     {% endif %}
     {% endif %}
 

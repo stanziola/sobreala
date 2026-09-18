@@ -960,9 +960,9 @@ prediseñadas que quedaron de antes. Y todo lo demás vive en **`/configuracion`
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
 dispositivos conectados), **Notificaciones** y **Facturación**
 (`/configuracion/pagos`, que no cambió de dirección porque ahí vuelve PayPal):
-el plan con su fecha exacta y los métodos de pago que hay. Los métodos son hoy
-solo la lista; ahí se guardará el de cada cuenta el día que haya cobros
-recurrentes. **Las facturas están hechas pero escondidas** (`invoices.SHOWN`,
+el plan con su fecha exacta, los métodos de pago que hay y el historial de
+compras (una fila por pago cobrado). Los métodos son hoy solo la lista; ahí se
+guardará el de cada cuenta el día que haya cobros recurrentes. **Las facturas están hechas pero escondidas** (`invoices.SHOWN`,
 en `False`): ni se enseñan al cliente ni se suben desde administración, y
 encenderlas es cambiar esa línea. No hay botón para cancelar la renovación
 porque no hay cobro automático; va el día que lo haya.
@@ -971,7 +971,11 @@ porque no hay cobro automático; va el día que lo haya.
 hace falta, una línea: que cambiar la contraseña cierra las demás sesiones, y
 el tipo de verificación en dos pasos. Los avisos de seguridad, que no se pueden
 apagar, salen en Notificaciones con su interruptor **encendido y bloqueado**, sin
-una etiqueta que lo diga.
+una etiqueta que lo diga. **Los avisos de lo que todavía no existe
+(importaciones, campañas y el resumen mensual) no se ofrecen**
+(`accounts.PENDING`): un interruptor de algo que no manda nada es dejarlo a
+medias. Sin interruptor valen «sí», así que el día que empiecen a salir llegan
+solos; ofrecerlos es sacarlos de esa tupla.
 
 ### La hora de quien mira
 
