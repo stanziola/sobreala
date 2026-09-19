@@ -64,7 +64,7 @@ class Piece:
         self.design = design
         self.built_in = design.get("source") == designs.BUILT_IN
 
-    def html(self, *, plan: str | None, unsubscribe_url: str) -> str:
+    def html(self, *, plan: str | None, unsubscribe_url: str, postal: str = "") -> str:
         if self.design.get("source") == designs.CANVAS:
             # Lo arma el mismo código que la vista previa del lienzo, así que
             # lo que se vio es lo que sale.
@@ -74,12 +74,13 @@ class Piece:
             shades = self.design.get("shades") or []
             return render.email_from_body(
                 canvas.to_html(doc, urls, shades), plan=plan,
-                unsubscribe=unsubscribe_url, style=canvas.dark_css(doc, shades))
+                unsubscribe=unsubscribe_url, style=canvas.dark_css(doc, shades),
+                postal=postal)
         if self.built_in:
             return render.email(self.design.get("template", ""),
                                 self.design.get("fields") or {},
-                                plan=plan, unsubscribe=unsubscribe_url)
-        return render.email_from_html(self.design.get("html", ""), plan=plan,
+                                plan=plan, unsubscribe=unsubscribe_url, postal=postal)
+        return render.email_from_html(self.design.get("html", ""), plan=plan, postal=postal,
                                       unsubscribe=unsubscribe_url)
 
 
@@ -147,7 +148,8 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     """
     fields = fields or []
     url = unsubscribe.link(contact["_id"])
-    html = piece.html(plan=accounts.plan_of(account), unsubscribe_url=url)
+    html = piece.html(plan=accounts.plan_of(account), unsubscribe_url=url,
+                      postal=accounts.postal_of(account))
     html = columns.fill(html, contact, fields)
 
     message = EmailMessage(policy=POLICY)
@@ -216,6 +218,9 @@ def blocked(account: dict[str, Any]) -> list[str]:
         why.append("quota")
     if not accounts.can_send(account):
         why.append("cleared")
+    # Sin la dirección de la empresa no sale: la ley la pide al pie.
+    if not accounts.postal_of(account):
+        why.append("postal")
     return why
 
 

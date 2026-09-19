@@ -7,28 +7,22 @@ reglas de negocio asociadas.
 
 ## Planes
 
-| | Básico | Negocio | Empresa | Corporativo |
-|---|---|---|---|---|
-| **Precio mensual** | $35 | $60 | $120 | $300 |
-| **Precio anual** (2 meses gratis) | $350 | $600 | $1,200 | $3,000 |
-| Contactos | 1,000 | 3,000 | 10,000 | 50,000 |
-| Correos por mes | 5,000 | 15,000 | 50,000 | 250,000 |
-| Campañas a lista completa | 5 | 5 | 5 | 5 |
-| Precio por correo | $0.0070 | $0.0040 | $0.0024 | $0.0012 |
-| Etiquetas | 1 | 2 | 4 | Ilimitadas |
-| Columnas propias del contacto | 1 | 5 | 10 | Ilimitadas |
-| Crear plantillas en el editor | ✅ | ✅ | ✅ | ✅ |
-| Subir tu propio HTML | — | ✅ | ✅ | ✅ |
-| **Correos sin marca de agua** | — | ✅ | ✅ | ✅ |
-| Diseño personalizado de tu correo | — | 1 | 3 | 5 |
-| Analytics completo | ✅ | ✅ | ✅ | ✅ |
-| Exportar CSV y PDF | ✅ | ✅ | ✅ | ✅ |
-| Usuarios | 1 | 2 | 3 | 5 |
-| Soporte | Email 48h | Email 24h | WhatsApp, mismo día | WhatsApp prioritario |
-| Sesión de arranque dedicada | — | — | — | ✅ |
-
-**Corporativo se publica sin precio visible**: *"A la medida — contáctanos"*.
-Los $300 son referencia interna, no una promesa pública.
+| | Básico | Negocio | Empresa |
+|---|---|---|---|
+| **Precio mensual** | $35 | $60 | $120 |
+| **Precio anual** (2 meses gratis) | $350 | $600 | $1,200 |
+| Contactos | 1,000 | 3,000 | 10,000 |
+| Correos por mes | 5,000 | 15,000 | 50,000 |
+| Campañas a lista completa | 5 | 5 | 5 |
+| Precio por correo | $0.0070 | $0.0040 | $0.0024 |
+| Etiquetas | 1 | 2 | 4 |
+| Columnas propias del contacto | 1 | 5 | 10 |
+| Crear plantillas en el editor | ✅ | ✅ | ✅ |
+| Subir tu propio HTML | — | ✅ | ✅ |
+| **Correos sin marca de agua** | — | ✅ | ✅ |
+| Analytics completo | ✅ | ✅ | ✅ |
+| Exportar CSV y PDF | ✅ | ✅ | ✅ |
+| Usuarios | 1 | 2 | 3 |
 
 **Los precios son finales e incluyen el ITBMS cuando corresponde.** El mismo
 precio para todos: a un cliente de fuera de Panamá se le factura como
@@ -78,29 +72,15 @@ Requiere guardar la posición de envío de cada campaña, no solo un contador gl
 - La importación se detiene y se notifica que debe subir de plan.
 - Los contactos ya cargados no se borran.
 
-### Diseño personalizado de tu correo (Negocio en adelante)
-
-- Se diseña **una vez** con la marca, colores, logo y tipografía del cliente; él
-  la reutiliza cada mes cambiando textos e imágenes.
-- Hasta **2 rondas de cambios**, entrega en **3 días hábiles**.
-- El cliente entrega textos, imágenes y logo.
-- **No acumulable** de un mes al siguiente.
-
 ### Marca de agua (solo Básico)
 
 - Los correos enviados desde el plan **Básico** llevan una firma discreta al pie:
-  *"Enviado con Panamails"*, con enlace al sitio.
+  el ala de Panamails y *"Enviado con Panamails"*, con enlace al sitio.
 - **A partir de Negocio los correos salen sin ninguna marca.**
 - La firma va separada del enlace de baja: el enlace de baja de un click es
   obligatorio en **todos** los planes y nunca se quita.
 - Doble función: incentivo de upgrade, y publicidad gratuita en cada correo que
   envía un cliente de entrada.
-
-### Sesión de arranque dedicada (Corporativo)
-
-- 1 sesión de hasta 2 horas, por videollamada o presencial: importación de
-  contactos, configuración del dominio de envío, primera campaña y recorrido
-  por el panel.
 
 ---
 

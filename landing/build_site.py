@@ -58,11 +58,9 @@ PUBLIC_ROWS = [
     ("Crear plantillas en el editor", "Crear plantillas en el editor"),
     ("Subir tu propio HTML", "Subir tu propio HTML"),
     ("Correos sin marca de agua", "Correos sin marca de agua"),
-    ("Diseño personalizado de tu correo", "Plantillas personalizadas"),
     ("Analytics completo", "Estadísticas de cada campaña"),
     ("Exportar CSV y PDF", "Exportar a CSV y PDF"),
     ("Usuarios", "Usuarios de la cuenta"),
-    ("Soporte", "Soporte"),
 ]
 
 # Filas cuyo número es el del plan pero cuya función todavía se está
@@ -72,10 +70,7 @@ PUBLIC_ROWS = [
 SOON_ROWS = {"Usuarios"}
 
 # Rows shown on the plan cards, above the fold.
-CARD_ROWS = ["Contactos", "Correos por mes", "Usuarios", "Soporte"]
-
-# Plans published without a price, by the document's own instruction.
-NO_PUBLIC_PRICE = {"Corporativo"}
+CARD_ROWS = ["Contactos", "Correos por mes", "Usuarios"]
 
 
 def slug(name: str) -> str:
@@ -150,7 +145,6 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
             "key": slug(name),
             "monthly": cell("Precio mensual", name),
             "yearly": cell("Precio anual (2 meses gratis)", name),
-            "has_public_price": name not in NO_PUBLIC_PRICE,
             "highlights": [
                 {"label": dict(PUBLIC_ROWS)[r], "value": cell(r, name)} for r in CARD_ROWS
             ],

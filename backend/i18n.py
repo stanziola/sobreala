@@ -331,6 +331,16 @@ TEXTS = {
     "settings_account_to_billing": "Ir a facturación",
     "settings_account_email_done": "Listo, tu correo cambió. Le avisamos a la "
                                    "dirección anterior.",
+    "settings_postal": "Dirección postal",
+    "settings_postal_hint": "Sale al pie de tus campañas: la ley pide la "
+                            "dirección física de quien envía. Un apartado "
+                            "postal sirve.",
+    "settings_postal_placeholder": "Calle, ciudad, provincia",
+    "settings_postal_save": "Guardar",
+    "settings_postal_done": "Listo, tu dirección quedó guardada.",
+    "admin_postal_missing": "Todavía no la escribió",
+    "settings_postal_bad": "Escribe una dirección de entre {min} y {max} "
+                           "caracteres.",
     "settings_account_status": "Estado de tu cuenta",
     # La misma palabra que la etiqueta corta de la fila; la frase larga que la
     # explica sigue siendo panel_status_*, que es la que ya se enseñaba.
@@ -1178,6 +1188,9 @@ TEXTS = {
 
     # Por qué una cuenta todavía no puede mandar. Se enseñan arriba del todo.
     "send_blocked_plan": "Para enviar hace falta un plan contratado.",
+    "send_blocked_postal": "Falta la dirección postal de tu empresa, que la ley "
+                           "pide al pie de cada correo.",
+    "send_blocked_postal_link": "Escribirla en Configuración",
     "send_blocked_quota": "Se acabaron los correos de tu plan este mes.",
     "send_blocked_cleared": "Falta que habilitemos el envío de tu cuenta. Es "
                             "una sola vez, miramos de dónde salió tu lista y te "

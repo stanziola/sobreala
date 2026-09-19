@@ -246,9 +246,9 @@ HOME = {
             {
                 "q": "¿Ustedes me diseñan el correo?",
                 "a": (
-                    "Sí, es un servicio aparte. Diseñamos la pieza con tu marca y la "
-                    "reutilizas cada mes cambiando textos e imágenes. Los planes de "
-                    "Negocio en adelante incluyen plantillas personalizadas."
+                    "No hace falta: la armas tú en el editor, con tu logo, tus "
+                    "colores y tus fotos. Y desde el plan Negocio puedes subir tu "
+                    "propio HTML si ya tienes un diseño."
                 ),
             },
         ],
@@ -280,9 +280,7 @@ STEPS = [
             "La armas en el editor, poniendo textos, botones e imágenes donde "
             "quieras, o cargas tu propio HTML desde el plan Negocio. La previsualización te muestra el "
             "correo tal como va a llegar, y puedes enviarte una prueba a tu propia "
-            "dirección para verla en tu bandeja antes de que la vea nadie más. Si "
-            "prefieres no armarla tú, te diseñamos la pieza con tu marca y la "
-            "reutilizas cada mes."
+            "dirección para verla en tu bandeja antes de que la vea nadie más."
         ),
     },
     {
@@ -421,12 +419,6 @@ PRICING = {
             "pitch": "Para cooperativas y colegios con una lista grande.",
             "featured": False,
         },
-        "Corporativo": {
-            "pitch": "Para una lista muy grande, con acompañamiento.",
-            "featured": False,
-            "custom_price": "A la medida",
-            "custom_note": "Contáctanos",
-        },
     },
     "annual_note": "En el plan anual pagas diez meses y usas doce.",
     # Con RUC hay que decir si el precio lleva impuesto, y se dice donde se
@@ -509,15 +501,6 @@ PRICING = {
                     "columnas de datos donde quieras: pones *|CIUDAD|* en "
                     "medio de una frase y a cada persona le llega la suya. No "
                     "es un mismo correo idéntico para toda la lista."
-                ),
-            },
-            {
-                "title": "Plantillas personalizadas",
-                "text": (
-                    "Las diseñamos nosotros con tu marca, tus colores y tu "
-                    "logo, y quedan guardadas en tu cuenta. El número dice "
-                    "cuántas incluye tu plan; después las reutilizas cada mes "
-                    "cambiando textos e imágenes, sin volver a pedirnos nada."
                 ),
             },
             {
@@ -621,10 +604,6 @@ ABOUT = {
                     "Panamails es una plataforma de email marketing: un panel donde una "
                     "empresa sube sus contactos, arma un correo y lo envía a toda su "
                     "lista de una vez. Ofertas, recordatorios, convocatorias, boletines."
-                ),
-                (
-                    "También diseñamos las piezas de correo como servicio, para quien "
-                    "prefiere no armarlas por su cuenta."
                 ),
             ],
         },
@@ -781,6 +760,8 @@ def holder_line() -> str:
     return f"{quien}, en {LEGAL_HOLDER['place']}."
 
 UPDATED = "15 de septiembre de 2026"
+# Los términos cambiaron solos: dejaron de ofrecer el diseño como servicio.
+TERMS_UPDATED = "18 de septiembre de 2026"
 
 PRIVACY = {
     "meta_title": "Política de privacidad · Panamails",
@@ -1009,7 +990,7 @@ TERMS = {
             "vale la pena leerlas: las de envío tienen consecuencias reales."
         ),
     },
-    "updated": UPDATED,
+    "updated": TERMS_UPDATED,
     "sections": [
         {
             "title": "1. Quién presta el servicio",
@@ -1022,9 +1003,7 @@ TERMS = {
             "title": "2. Qué es el servicio",
             "paragraphs": [
                 "Panamails es una plataforma de email marketing: subes tus "
-                "contactos, armas una campaña y la envías desde un panel. "
-                "También ofrecemos el diseño de las piezas de correo como "
-                "servicio aparte.",
+                "contactos, armas una campaña y la envías desde un panel.",
                 "La plataforma está en construcción. Algunas funciones no "
                 "existen todavía y otras pueden cambiar; los cambios "
                 "importantes se avisan.",

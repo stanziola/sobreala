@@ -109,12 +109,6 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
     if not names or MONTHLY not in prices or YEARLY not in prices:
         raise RuntimeError(f"no encontré las filas de precios en {path}")
 
-    # Corporativo se publica sin precio visible: «a la medida, contáctanos».
-    # Eso no es un detalle de diseño, es lo que decide si se puede comprar por
-    # la web o hay que hablar antes.
-    hidden = {slug(name) for name in names
-              if f"**{name} se publica sin precio visible**" in text}
-
     plans: dict[str, dict[str, Any]] = {}
     for index, name in enumerate(names):
         key = slug(name)
@@ -127,7 +121,6 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             "upload": uploads[index] if index < len(uploads) else False,
             "clean": clean[index] if index < len(clean) else False,
             "emails": emails[index] if index < len(emails) else None,
-            "public": key not in hidden,
         }
     return plans
 
@@ -144,13 +137,9 @@ def price(plan: str, cycle: str) -> Decimal | None:
 
 
 def buyable(plan: str) -> bool:
-    """Si se puede contratar desde la web.
-
-    Corporativo no: va sin precio público y se acuerda hablando. Dejarlo
-    comprable pondría un precio donde el documento dice que no hay ninguno.
-    """
-    found = PLANS.get(plan)
-    return bool(found and found["public"])
+    """Si se puede contratar desde la web: todo plan de `docs/pricing.md`, que
+    son todos con precio. Uno que no está ahí no se compra."""
+    return plan in PLANS
 
 
 def field_limit(plan: str | None) -> int:
@@ -236,7 +225,7 @@ def first_upload_plan() -> str | None:
     """El plan más barato que sí puede subir. Es lo que la pantalla ofrece a
     quien todavía no puede."""
     for key, plan in PLANS.items():
-        if plan["upload"] and plan["public"]:
+        if plan["upload"]:
             return key
     return None
 

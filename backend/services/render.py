@@ -119,13 +119,18 @@ def drawn(key: str, filled: dict[str, str]) -> dict[str, str]:
     return ready
 
 
+# El ala del pie del plan Básico (la genera build_assets.py). Con la dirección
+# entera: el correo se abre lejos del panel.
+LOGO_URL = f"{Config.APP_BASE_URL}/static/img/email-logo.png"
+
+
 def body(key: str, filled: dict[str, str]) -> str:
     """Solo la pieza del cliente, sin lo que se inyecta."""
     return _env.get_template(f"{key}.html").render(**drawn(key, filled))
 
 
 def email(key: str, filled: dict[str, str], *, plan: str | None,
-          unsubscribe: str = "#", preview: bool = False) -> str:
+          unsubscribe: str = "#", preview: bool = False, postal: str = "") -> str:
     """El correo entero, tal como saldría.
 
     `unsubscribe` es el enlace de baja, único por destinatario. En la vista
@@ -140,12 +145,13 @@ def email(key: str, filled: dict[str, str], *, plan: str | None,
         unsubscribe=unsubscribe,
         preview=preview,
         watermark=plans.has_watermark(plan),
-        postal=Config.POSTAL_ADDRESS,
+        logo=LOGO_URL,
+        postal=postal,
     )
 
 
 def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
-                    preview: bool = False, style: str = "") -> str:
+                    preview: bool = False, style: str = "", postal: str = "") -> str:
     """Un correo a partir de un cuerpo ya armado por nosotros, como el del
     lienzo: el mismo sobre que las prediseñadas, con la baja, la dirección
     postal y la marca de agua por fuera.
@@ -159,12 +165,13 @@ def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
         unsubscribe=unsubscribe,
         preview=preview,
         watermark=plans.has_watermark(plan),
-        postal=Config.POSTAL_ADDRESS,
+        logo=LOGO_URL,
+        postal=postal,
     )
 
 
 def foot(*, plan: str | None, unsubscribe: str = "#",
-         preview: bool = False) -> str:
+         preview: bool = False, postal: str = "") -> str:
     """Solo lo que ponemos nosotros: la baja, la dirección postal y la marca.
 
     Existe aparte porque a una pieza subida por el cliente no se le puede poner
@@ -173,7 +180,7 @@ def foot(*, plan: str | None, unsubscribe: str = "#",
     """
     return _env.get_template("_foot.html").render(
         unsubscribe=unsubscribe, preview=preview,
-        watermark=plans.has_watermark(plan), postal=Config.POSTAL_ADDRESS)
+        watermark=plans.has_watermark(plan), logo=LOGO_URL, postal=postal)
 
 
 # Dónde termina el documento de un cliente. Se busca sin distinguir mayúsculas
@@ -182,7 +189,7 @@ CLOSING = re.compile(r"</body\s*>", re.IGNORECASE)
 
 
 def email_from_html(html: str, *, plan: str | None, unsubscribe: str = "#",
-                    preview: bool = False) -> str:
+                    preview: bool = False, postal: str = "") -> str:
     """Un correo a partir del HTML que subió el cliente.
 
     Se le inyecta el pie justo antes de que cierre el cuerpo; si no cierra
@@ -190,7 +197,7 @@ def email_from_html(html: str, *, plan: str | None, unsubscribe: str = "#",
     formas la baja sale **dentro** del correo y no la puede quitar nadie
     editando su archivo, que es de lo que trata la regla 3.
     """
-    pie = foot(plan=plan, unsubscribe=unsubscribe, preview=preview)
+    pie = foot(plan=plan, unsubscribe=unsubscribe, preview=preview, postal=postal)
     found = list(CLOSING.finditer(html))
     if not found:
         return html + pie

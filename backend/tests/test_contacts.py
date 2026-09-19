@@ -697,8 +697,8 @@ def test_el_tope_de_etiquetas_sale_del_documento_de_precios():
     assert plans.tag_limit("negocio") == 2
     assert plans.tag_limit("empresa") == 4
     assert plans.tag_limit(None) == plans.FREE_TAGS
-    # Corporativo dice «Ilimitadas», y eso no es un número de la tabla.
-    assert plans.tag_limit("corporativo") >= plans.UNLIMITED
+    # Si una fila dice «Ilimitadas», eso no es un número de la tabla.
+    assert plans._count("Ilimitadas") == plans.UNLIMITED
 
 
 # ------------------------------------------------- exportar pregunta antes

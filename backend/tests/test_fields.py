@@ -343,6 +343,8 @@ def test_cada_uno_recibe_lo_suyo_y_el_incompleto_no_recibe(
                         lambda message: salidos.append(message) or "de-mentira")
     browser, cuenta = inside(client, database)
     accounts.clear_sending(database, cuenta["_id"], cuenta["_id"])
+    # La dirección del pie, que sin ella no se envía.
+    accounts.set_postal(database, cuenta["_id"], "Apartado 0816-00001, Santiago")
     crear(browser, "Ciudad")
     contacts.create(database, cuenta["_id"], email="socio0@ejemplo.com",
                     consent=contacts.consent_of(contacts.MEMBERS),

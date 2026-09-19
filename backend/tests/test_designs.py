@@ -267,7 +267,7 @@ def test_lo_que_escribe_el_cliente_sale_como_texto(client, database, outbox):
 
 def test_el_correo_siempre_trae_la_baja():
     """La regla 3: en todos los planes y sin excepción."""
-    for plan in (None, "basico", "negocio", "empresa", "corporativo"):
+    for plan in (None, "basico", "negocio", "empresa"):
         armado = render.email("aviso", AVISO, plan=plan)
         assert "Anular la suscripción" in armado
 
@@ -276,7 +276,7 @@ def test_la_marca_de_agua_es_solo_de_quien_no_la_ha_pagado():
     """La regla 4: al subir de plan desaparece sola, sin tocar la pieza."""
     assert "Enviado con" in render.email("aviso", AVISO, plan="basico")
     assert "Enviado con" in render.email("aviso", AVISO, plan=None)
-    for plan in ("negocio", "empresa", "corporativo"):
+    for plan in ("negocio", "empresa"):
         assert "Enviado con" not in render.email("aviso", AVISO, plan=plan)
 
 

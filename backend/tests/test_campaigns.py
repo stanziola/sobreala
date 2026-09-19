@@ -35,8 +35,11 @@ def csrf(client, url="/envios"):
         return sess["_csrf"]
 
 
+POSTAL = "Apartado 0816-00001, Santiago, Veraguas"
+
+
 def ready(client, database, *, email="ana@ejemplo.com", plan="basico",
-          cleared=True, howmany=3, tag=""):
+          cleared=True, howmany=3, tag="", postal=POSTAL):
     """Una cuenta que sí puede enviar, con sus contactos y una pieza guardada."""
     register(client, email=email)
     browser = other(client)
@@ -47,6 +50,8 @@ def ready(client, database, *, email="ana@ejemplo.com", plan="basico",
         accounts.set_plan(database, account["_id"], plan)
     if cleared:
         accounts.clear_sending(database, account["_id"], account["_id"])
+    if postal:
+        accounts.set_postal(database, account["_id"], postal)
     if tag:
         accounts.add_tag(database, account["_id"], tag)
 

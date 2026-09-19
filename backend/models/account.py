@@ -394,6 +394,34 @@ def can_send(account: dict[str, Any] | None) -> bool:
     return bool(account and account.get("sending_cleared_at"))
 
 
+# La dirección postal de la empresa, que va al pie de sus campañas.
+POSTAL_MIN = 10
+POSTAL_MAX = 200
+
+
+def postal_of(account: dict[str, Any] | None) -> str:
+    """La dirección física de la empresa, o vacío si todavía no la escribió.
+
+    La ley CAN-SPAM la pide en todo correo publicitario, y es la de quien
+    anuncia: la de cada cliente, no la de Panamails.
+    """
+    return str((account or {}).get("postal_address") or "")
+
+
+def clean_postal(raw: str) -> str | None:
+    """La dirección en una línea, o None si no es una dirección que se pueda
+    guardar: vacía, muy corta o de más de 200 caracteres."""
+    text = " ".join(str(raw or "").split())
+    if not POSTAL_MIN <= len(text) <= POSTAL_MAX:
+        return None
+    return text
+
+
+def set_postal(db, account_id, address: str) -> None:
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"postal_address": address, "updated_at": now()}})
+
+
 def clear_sending(db, account_id, admin_id) -> bool:
     """Habilitar el envío. False si ya lo estaba.
 
@@ -582,7 +610,6 @@ PLAN_CONTACTS = {
     "basico": 1000,
     "negocio": 3000,
     "empresa": 10000,
-    "corporativo": 50000,
 }
 
 

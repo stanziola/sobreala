@@ -2,8 +2,8 @@
 
 Plataforma de email marketing para negocios de Panamá. Las empresas clientes
 suben sus contactos, arman campañas (ofertas, recordatorios, eventos) y las
-envían desde un panel web. Panamails también les ofrece el diseño de las piezas
-HTML como servicio.
+envían desde un panel web. Las piezas las arma cada cliente en el editor, o sube
+su propio HTML: el diseño como servicio aparte se dejó de ofrecer.
 
 Mercado principal: Santiago de Veraguas y el interior. Cliente típico:
 cooperativas de ahorro y crédito, colegios privados, gremios, universidades y
@@ -345,7 +345,7 @@ cuente una sola vez contra el límite, reciba un solo correo, y consuma un solo
 correo de la cuota.
 
 **Cuántas etiquetas caben lo dice el plan**, leído de `docs/pricing.md` como los
-precios: 1 · 2 · 4 · ilimitadas, y **1 sin plan**, como el Básico. No se copia el
+precios: 1 · 2 · 4, y **1 sin plan**, como el Básico. No se copia el
 número al backend por la misma razón que no se copian los precios. Una
 consecuencia que conviene tener presente: con una sola etiqueta no se puede
 segmentar, así que el Básico tampoco; si algún día estorba, es cambiar una fila
@@ -364,7 +364,7 @@ ciudad, número de socio, monto, fecha de vencimiento. Viven en
 `contact_fields` del documento de la cuenta —nombre, clave, tipo y respaldo— y
 sus valores en `fields` del contacto, así que escribir un correo personalizado
 no agrega ni una consulta. Cuántas caben lo dice `docs/pricing.md`, como las
-etiquetas: 1 · 5 · 10 · ilimitadas, y 1 sin plan.
+etiquetas: 1 · 5 · 10, y 1 sin plan.
 
 Cuatro tipos —texto, número, fecha y sí/no— y cada uno se gana el sitio
 haciendo dos cosas: decidir qué se acepta al importar, y cómo se escribe al
@@ -723,8 +723,8 @@ la vista previa: lo que sale lleva el dato tal cual.
 llama ahí, así que lo que alguien ve antes de mandar es de verdad lo que se
 manda. Pone, por este orden: lo que escribió el cliente **escapado** —un
 `<script>` en el título sale como texto—, el botón de anular la suscripción, la
-dirección postal si está configurada, y la marca de agua solo si el plan la
-lleva. Las tres van fuera de la pieza, que es lo que hacen las reglas 3 y 4
+dirección postal **de la cuenta** si ya la escribió, y la marca de agua solo si
+el plan la lleva. Las tres van fuera de la pieza, que es lo que hacen las reglas 3 y 4
 ciertas: el cliente no las puede quitar editando lo suyo, y la marca desaparece
 sola al subir de plan porque nadie la copió a ningún sitio.
 
@@ -893,7 +893,10 @@ visitante, no lo que la plataforma sabe de su propio tráfico.
    cliente no lo puede quitar. Es único por destinatario (con token). Va en
    todos los planes, sin excepción, más la cabecera `List-Unsubscribe`.
 4. **La marca de agua "Enviado con Panamails" se inyecta al enviar, solo en el
-   plan Básico.** Al subir de plan desaparece sola.
+   plan Básico**, con el ala de la marca al lado (`static/img/email-logo.png`,
+   que genera `build_assets.py` desde `brand/logo/logo.png`, en PNG porque Gmail
+   y Outlook no dibujan SVG). Al subir de plan desaparece sola, y Negocio y
+   Empresa no llevan ninguna mención. No la exige ninguna ley: es publicidad.
 5. **Los contactos no se duplican.** Toda importación es un upsert sobre
    `{account_id, email_normalized}`.
 6. **De los tokens de correo solo se guarda su hash**, nunca el valor que va
@@ -1261,11 +1264,10 @@ Además:
 1. **Tasa de rebotes y quejas agregada en la portada** — la de Panamails, no la
    de cada cliente. Es la métrica que puede cerrar el negocio.
 2. Estado de pagos y renovaciones (Yappy puede requerir cobro manual).
-3. Cola de solicitudes de diseño, con estado y fecha límite de 3 días hábiles.
-4. Envíos en curso, pausados y fallidos.
-5. Ver el panel como el cliente, para soporte. Queda registrado.
-6. Registro de actividad: aprobaciones, cambios de plan, pausas, con motivo.
-7. Buscador global de direcciones, para suprimir a quien escriba pidiendo la baja.
+3. Envíos en curso, pausados y fallidos.
+4. Ver el panel como el cliente, para soporte. Queda registrado.
+5. Registro de actividad: aprobaciones, cambios de plan, pausas, con motivo.
+6. Buscador global de direcciones, para suprimir a quien escriba pidiendo la baja.
 
 ---
 
@@ -1549,9 +1551,9 @@ administra, porque el que pagó queda esperando una habilitación que hace una
 persona. Los dos van después de todo lo que decide algo: si el correo no sale,
 el pago sigue cobrado y el plan activo.
 
-**Corporativo no se compra por la web.** `docs/pricing.md` dice que va sin precio
-público, a la medida: su botón lleva a contacto. Ponerlo comprable sería poner un
-precio donde el documento dice que no hay ninguno.
+**Hubo un cuarto plan, Corporativo, y se quitó** (septiembre de 2026): iba sin
+precio público y a la medida. Quedan tres, todos con precio y todos comprables
+por la web.
 
 **El plan se elige en `/planes`, no dentro del panel.** El botón de cada plan
 del sitio público lleva a `/contratar/<plan>`, que enseña lo que cuesta y tiene
@@ -1577,8 +1579,8 @@ Ver `docs/pricing.md` para la tabla completa, límites y reglas. Los costos, los
 márgenes y el análisis de competencia están en `docs/pricing-interno.md`, que
 está en `.gitignore` a propósito y no debe subirse.
 
-Resumen: Básico $35 · Negocio $60 · Empresa $120 · Corporativo $300 (a la
-medida, sin precio público). `docs/pricing.md` es la fuente de verdad; el sitio
+Resumen: Básico $35 · Negocio $60 · Empresa $120. `docs/pricing.md` es la
+fuente de verdad; el sitio
 público lee sus tablas al construirse, así que no hay que copiar cifras a mano. El límite de correos es siempre **5x** el de
 contactos. Anual = 2 meses gratis. Los correos no usados pasan al mes siguiente
 y vencen ahí; se consumen primero los acumulados.
@@ -1604,7 +1606,6 @@ PAYPAL_SECRET
 PAYPAL_WEBHOOK_ID         # para comprobar los avisos; todavía sin usar
 YAPPY_MERCHANT_ID
 YAPPY_SECRET
-POSTAL_ADDRESS            # el pie de las campañas; vacía, todavía no existe
 ```
 
 Nunca commitear el `.env`. En Railway van como variables del servicio.
@@ -1618,13 +1619,14 @@ hace falta para que alguien reciba su código de confirmación, y **sí** hace
 falta antes de que salga la primera campaña de un cliente. Está aquí para que
 no se descubra el día del lanzamiento.
 
-- **Dirección postal física en el pie de cada campaña.** La CAN-SPAM de Estados
-  Unidos la exige en todo correo publicitario, y basta un destinatario con
-  Gmail o Hotmail para caer en su ámbito. Ya va inyectada al armar el correo,
-  junto a la baja y a la marca de agua, no en el HTML del cliente; lo que falta
-  es la dirección: `POSTAL_ADDRESS` está vacía y mientras lo esté el pie no la
-  dibuja. Un apartado postal de Correos de Panamá cumple el requisito sin
-  publicar un domicilio particular.
+- ~~**Dirección postal física en el pie de cada campaña.**~~ Hecho, y **es la de
+  cada cliente**: la CAN-SPAM la pide en todo correo publicitario (basta un
+  destinatario con Gmail o Hotmail) y es la de quien anuncia, no la de
+  Panamails. Se escribe en Configuración → Cuenta (`postal_address`, de 10 a
+  200 caracteres), va inyectada al pie junto a la baja, y **sin ella no se
+  envía**: `sender.blocked()` dice `postal`. El administrador la ve en la
+  ficha y no la edita. Hubo una sola para todos en la variable `POSTAL_ADDRESS`,
+  y se quitó. Un apartado postal cumple sin publicar un domicilio.
 - ~~**Aviso de operación.**~~ Hecho: RUC y aviso están en `LEGAL_HOLDER` de
   `landing/content.py`, y `holder_line()` los escribe en la frase de apertura de
   la privacidad y de los términos. **Los precios incluyen el ITBMS**, lo dicen

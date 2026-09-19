@@ -110,9 +110,9 @@ def test_una_cuenta_aprobada_llega_a_paypal(client, database, outbox, monkeypatc
     assert pedido["amount"] == plans.amount("basico", "monthly")
 
 
-def test_corporativo_no_se_compra_por_la_web(client, database, outbox, monkeypatch):
-    """docs/pricing.md dice que va sin precio público: comprarlo aquí pondría
-    un precio donde el documento dice que no hay ninguno."""
+def test_un_plan_que_ya_no_existe_no_se_compra(client, database, outbox, monkeypatch):
+    """Corporativo se quitó de docs/pricing.md: quien tenga el enlace viejo no
+    puede comprarlo."""
     fake_paypal(monkeypatch)
     browser = inside(client)
     confirm(database)
@@ -451,9 +451,9 @@ def test_un_metodo_que_todavia_no_cobra_no_abre_ninguna_puerta(
     assert intento["method"] == "paypal"
 
 
-def test_corporativo_no_tiene_pantalla_de_contratar(client, database, outbox,
-                                                    monkeypatch):
-    """Va sin precio público: comprarlo pondría un precio donde no hay ninguno."""
+def test_un_plan_que_no_existe_no_tiene_pantalla_de_contratar(client, database, outbox,
+                                                               monkeypatch):
+    """Ni uno que se quitó ni uno inventado."""
     fake_paypal(monkeypatch)
     browser = inside(client)
     confirm(database)
@@ -558,7 +558,7 @@ def test_la_escalera_sale_del_documento_de_precios():
     """Sin copiar aquí una lista de nombres que un día lo contradiga."""
     from services import plans
 
-    assert [plans.rank(k) for k in plans.PLANS] == [0, 1, 2, 3]
+    assert [plans.rank(k) for k in plans.PLANS] == [0, 1, 2]
     assert plans.rank(None) == -1 and plans.rank("inventado") == -1
     assert plans.is_downgrade("negocio", "basico") is True
     assert plans.is_downgrade("negocio", "negocio") is False

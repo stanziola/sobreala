@@ -206,7 +206,8 @@ def html_preview(html: str, plan) -> Response:
                 "<body style=\"font-family:Arial,sans-serif;padding:24px;"
                 "color:#18181B;\"><p>" + escape(explain(problems)) + "</p>")
         return Response(page, mimetype="text/html")
-    email = render.email_from_html(html, plan=plan, preview=True)
+    email = render.email_from_html(html, plan=plan, preview=True,
+                                   postal=accounts.postal_of(current_account()))
     return Response(filled_for(get_db(), current_account(), email),
                     mimetype="text/html")
 
@@ -372,7 +373,8 @@ def preview(key: str, filled: dict[str, str], plan,
     """
     g.email_preview = True
     fields = fields or []
-    html = render.email(key, filled, plan=plan, preview=True)
+    html = render.email(key, filled, plan=plan, preview=True,
+                        postal=accounts.postal_of(current_account()))
     return Response(columns.preview_fill(html, fields),
                     mimetype="text/html")
 
@@ -487,7 +489,8 @@ def canvas_email(doc, plan, urls: list[str | None], shades=None, *,
     oscuro. Lo mismo que arma el envío (`sender.Piece`)."""
     return render.email_from_body(canvas.to_html(doc, urls, shades), plan=plan,
                                   unsubscribe=unsubscribe, preview=preview,
-                                  style=canvas.dark_css(doc, shades))
+                                  style=canvas.dark_css(doc, shades),
+                                  postal=accounts.postal_of(current_account()))
 
 
 def canvas_size(doc, plan, urls: list[str | None]) -> int:

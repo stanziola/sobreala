@@ -1512,7 +1512,19 @@ def settings(section: str = "cuenta"):
         return redirect(url_for("auth.settings", section=sections[0]))
 
     db = get_db()
-    if request.method == "POST":
+    postal_error = ""
+    if request.method == "POST" and section == "cuenta":
+        # La dirección postal, lo único que se escribe en Cuenta.
+        if not csrf_ok(request.form.get("csrf_token")):
+            return redirect(url_for("auth.settings", section="cuenta"))
+        address = accounts.clean_postal(request.form.get("direccion", ""))
+        if address is not None:
+            accounts.set_postal(db, account["_id"], address)
+            return redirect(url_for("auth.settings", section="cuenta",
+                                    direccion=1) + "#direccion")
+        postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
+                         max=accounts.POSTAL_MAX)
+    elif request.method == "POST":
         if section != "notificaciones":
             return redirect(url_for("auth.settings", section=section))
         if csrf_ok(request.form.get("csrf_token")):
@@ -1552,6 +1564,10 @@ def settings(section: str = "cuenta"):
         devices=sessions.for_account(db, account["_id"]),
         here=here["_id"] if here else None,
         describe=sessions.describe,
+        postal=(request.form.get("direccion", "") if postal_error
+                else accounts.postal_of(account)),
+        postal_error=postal_error,
+        postal_max=accounts.POSTAL_MAX,
     )
 
 
@@ -1641,8 +1657,7 @@ def checkout(plan: str):
     if answer:
         return answer
 
-    # Corporativo va sin precio público: comprarlo por la web pondría un precio
-    # donde docs/pricing.md dice que no hay ninguno.
+    # Un plan que no está en docs/pricing.md no se compra.
     if not plans.buyable(plan):
         return redirect(url_for("auth.settings", section="pagos", error="plan"))
 
@@ -1713,8 +1728,7 @@ def start_payment():
     # no solo en la pantalla, porque un formulario se escribe a mano.
     if not accounts.can_buy(account):
         return redirect(url_for("auth.settings", section="pagos", error="estado"))
-    # Corporativo va sin precio público: comprarlo por la web pondría un precio
-    # donde docs/pricing.md dice que no hay ninguno.
+    # Un plan que no está en docs/pricing.md no se compra.
     amount = plans.amount(plan, cycle) if plans.buyable(plan) else None
     if amount is None:
         return redirect(url_for("auth.settings", section="pagos", error="plan"))

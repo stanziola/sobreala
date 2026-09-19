@@ -490,8 +490,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    Corporativo, que solo dice «A la medida», le quedaba el resto. Con el mínimo
    en cero las cuatro miden exactamente lo mismo y el texto se acomoda dentro. */
 .plans { display: grid; gap: 18px; align-items: stretch; }
-@media (min-width: 640px) { .plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1060px) { .plans { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 860px) { .plans { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .plan {
   position: relative; display: flex; flex-direction: column;
   padding: 26px 24px; border-radius: var(--radius-lg);
@@ -509,7 +508,6 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .plan__pitch { margin-top: 6px; min-height: 3.2em; color: var(--color-ink-soft); font-size: .95rem; }
 .plan__price { margin-top: 18px; display: flex; align-items: baseline; gap: 6px; }
 .plan__amount { font-size: 2.4rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
-.plan__amount--custom { font-size: 1.6rem; }
 .plan__period { color: var(--color-ink-soft); font-weight: 500; }
 .plan__yearly { margin-top: 6px; font-size: .88rem; color: var(--color-ink-soft); }
 .plan__list { margin: 22px 0 24px; padding-top: 18px; border-top: 1px solid var(--color-border); display: grid; gap: 10px; flex: 1; }

@@ -72,6 +72,24 @@
        href="{{ url_for('auth.change_email') }}">{{ t('settings_account_email_change') }}</a>
     {% endcall %}
 
+    {% if request.args.get('direccion') %}
+    <p class="notice notice--ok">{{ t('settings_postal_done') }}</p>
+    {% endif %}
+
+    {# La dirección física de la empresa: va al pie de sus campañas, porque la
+       ley la pide y es la de quien anuncia. Sin ella no se puede enviar. #}
+    {% call row(t('settings_postal'), t('settings_postal_hint'), id='direccion') %}
+    <form class="setting__form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="visually-hidden" for="direccion-campo">{{ t('settings_postal') }}</label>
+      <input id="direccion-campo" name="direccion" type="text" maxlength="{{ postal_max }}"
+             value="{{ postal }}" autocomplete="street-address"
+             placeholder="{{ t('settings_postal_placeholder') }}">
+      <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
+      {% if postal_error %}<p class="error">{{ postal_error }}</p>{% endif %}
+    </form>
+    {% endcall %}
+
     {% call row(t('settings_account_status'), '') %}
     <span class="setting__value">{{ t('status_short_' + status_of(account)) }}</span>
     {% endcall %}

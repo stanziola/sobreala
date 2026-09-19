@@ -143,13 +143,6 @@ class Config:
         return ("https://api-m.paypal.com" if cls.PAYPAL_ENV == "live"
                 else "https://api-m.sandbox.paypal.com")
 
-    # La dirección postal que la ley CAN-SPAM exige al pie de todo correo
-    # publicitario, y basta un destinatario con Gmail para caer en su ámbito. Un
-    # apartado de Correos de Panamá cumple sin publicar un domicilio particular.
-    # Vacía mientras no exista: el pie no la dibuja, y sigue anotada en
-    # CLAUDE.md como pendiente antes de la primera campaña real.
-    POSTAL_ADDRESS = os.getenv("POSTAL_ADDRESS", "")
-
     @classmethod
     def paypal_checkout(cls) -> str:
         """El sitio al que el navegador va a pagar.

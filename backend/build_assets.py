@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Generate backend/static/css/panel.css, templates/_wing.svg and the favicon.
+"""Generate backend/static/css/panel.css, templates/_wing.svg, the favicon
+and the small wing for the footer of Básico campaigns.
 
 Same idea as write_css() in landing/build_site.py: the brand colour variables
 are prepended to the stylesheet, so the panel has no hex codes of its own and
@@ -137,7 +138,27 @@ def build() -> list[Path]:
         if source.exists():
             shutil.copy2(source, img / name)
             written.append(img / name)
+    written.append(email_logo(img))
     return written
+
+
+# El ala que va al pie de las campañas del plan Básico, junto a «Enviado con
+# Panamails». En PNG y no en SVG, que Outlook y Gmail no dibujan, y al doble del
+# tamaño al que se ve (32 px) para que salga nítida en un teléfono. Es el PNG de
+# la marca tal cual, solo achicado.
+EMAIL_LOGO = "email-logo.png"
+EMAIL_LOGO_HEIGHT = 64
+
+
+def email_logo(img: Path) -> Path:
+    from PIL import Image
+
+    out = img / EMAIL_LOGO
+    with Image.open(BRAND_DIR / "logo" / "logo.png") as source:
+        width = round(source.width * EMAIL_LOGO_HEIGHT / source.height)
+        source.convert("RGB").resize((width, EMAIL_LOGO_HEIGHT), Image.LANCZOS).save(
+            out, format="PNG", optimize=True)
+    return out
 
 
 def check() -> list[Path]:
