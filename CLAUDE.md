@@ -1659,7 +1659,23 @@ va de una cifra a otra con un contador propio. Las dos cifras salen de
 `docs/pricing.md` como todo lo demás (`monthly_value`, `yearly_value`,
 `yearly_monthly` en `build_site.py`), no escritas en el marcado.
 
-Tres cosas de ese interruptor:
+**El descuento del año se anuncia como «-20%»** y tampoco está escrito a mano:
+`build_site.discount()` y `plans.discount()` lo sacan de las dos filas de precio
+(`1 − anual / (mensual × 12)`), cada uno para su lado. Por eso los precios son
+múltiplos de cinco: con ellos el 20% da entero en las tres cifras, y la tarjeta
+no enseña un «$12.80». La pastilla **solo se enciende con el anual puesto**: en
+mensual queda apagada, para que nadie lea ese descuento como el precio que está
+mirando.
+
+**Al pasar el ratón por una tarjeta, esa crece y las otras dos se achican**, así
+que la que se mira queda sola al frente. Va bajo `@media (hover: hover)` y de
+860 px en adelante: en el teléfono no hay ratón, y con «reducir movimiento» no
+se mueve nada. Para que eso funcione, `plans.js` **le quita a cada tarjeta las
+clases de la entrada y su `transition-delay` al terminarla**: ese retraso se
+quedaba puesto y la regla de la entrada, más específica, le ganaba al hover de la
+recomendada.
+
+Tres cosas más de ese interruptor:
 
 - **La página nace en mensual y con todo dibujado**, así que sin JavaScript se
   leen los tres planes, sus precios y sus botones. **El interruptor sí se
@@ -1670,8 +1686,11 @@ Tres cosas de ese interruptor:
   queda el mes, que es lo de siempre. `nav.js` sigue mandando en el texto del
   botón: esto solo le toca la dirección.
 - **Con «reducir movimiento» puesto no se anima nada**: el precio cambia de
-  golpe, las tarjetas nacen puestas y no sale confeti. El confeti es nuestro, en
-  un `<canvas>` que se borra solo a los dos segundos, sin ninguna dependencia.
+  golpe, las tarjetas nacen puestas y no sale confeti. El confeti es nuestro,
+  sin ninguna dependencia: sale del centro del interruptor y cae por **la
+  pantalla entera**, en un `<canvas>` fijo que no recibe clics y que se borra
+  solo cuando el último papelito sale de vista. Medía lo que el interruptor y se
+  cortaba al primer salto.
 
 **`form-action` de la cabecera tiene que permitir todo sitio al que se pueda
 acabar yendo desde un formulario.** Esa regla gobierna también la redirección que
@@ -1690,10 +1709,10 @@ Ver `docs/pricing.md` para la tabla completa, límites y reglas. Los costos, los
 márgenes y el análisis de competencia están en `docs/pricing-interno.md`, que
 está en `.gitignore` a propósito y no debe subirse.
 
-Resumen: Básico $16 · Negocio $25 · Empresa $55. `docs/pricing.md` es la
+Resumen: Básico $15 · Negocio $25 · Empresa $55. `docs/pricing.md` es la
 fuente de verdad; el sitio
 público lee sus tablas al construirse, así que no hay que copiar cifras a mano. El límite de correos es siempre **5x** el de
-contactos. Anual = 2 meses gratis. Los correos no usados pasan al mes siguiente
+contactos. Anual = 20% de descuento. Los correos no usados pasan al mes siguiente
 y vencen ahí; se consumen primero los acumulados.
 
 ---

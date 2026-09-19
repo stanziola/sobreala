@@ -520,7 +520,7 @@ TEXTS = {
     "pay_choose": "Contratar un plan",
     "pay_choose_lead": "El pago se hace en la página de PayPal. Al volver, tu "
                        "cuenta queda activa al momento.",
-    "pay_prices": "${month} al mes · ${year} al año, con dos meses gratis.",
+    "pay_prices": "${month} al mes · ${year} al año, con {off}% de descuento.",
     # Con qué se paga. Los tres se enseñan siempre: esconder los que faltan
     # haría que quien no tiene PayPal cerrara la página creyendo que no puede
     # pagar de ninguna forma.

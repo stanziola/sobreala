@@ -4,7 +4,7 @@
 <div class="card card--narrow">
   <h1>{{ t('pay_checkout_title', plan=one.name) }}</h1>
   <p class="lead">{{ t('pay_prices', month='%.2f'|format(one.monthly),
-                       year='%.2f'|format(one.yearly)) }}</p>
+                       year='%.2f'|format(one.yearly), off=discount) }}</p>
 
   {% if current == plan and plan_until %}
   <p class="hint">{{ t('pay_renewing', when=plan_until|ago) }}</p>

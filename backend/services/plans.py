@@ -252,3 +252,16 @@ def amount(plan: str, cycle: str) -> str | None:
     """El monto tal como lo quiere PayPal: dos decimales, en texto."""
     value = price(plan, cycle)
     return f"{value:.2f}" if value is not None else None
+
+
+def discount(plan: str) -> int:
+    """Cuánto se ahorra pagando el año, en por ciento y redondeado.
+
+    Sale de las dos cifras de docs/pricing.md, como todo lo demás: la pantalla
+    no puede anunciar un descuento que el documento no dé.
+    """
+    monthly = price(plan, MONTHLY)
+    yearly = price(plan, YEARLY)
+    if not monthly or not yearly:
+        return 0
+    return round((1 - yearly / (monthly * 12)) * 100)

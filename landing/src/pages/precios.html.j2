@@ -25,7 +25,7 @@
         <button class="cycle__option" type="button" data-cycle-set="yearly"
                 aria-pressed="false">{{ page.cycle.yearly }}</button>
       </div>
-      <span class="cycle__save">{{ page.cycle.save }}</span>
+      <span class="cycle__save">{{ page.cycle.save.format(off=pricing_data.yearly_off) }}</span>
       {#- El confeti se dibuja aquí y se borra solo. Es adorno: no lleva texto
           ni recibe el foco. -#}
       <canvas class="cycle__confetti" data-confetti aria-hidden="true"></canvas>
@@ -37,7 +37,7 @@
           data-plan
           data-monthly="{{ plan.monthly_value }}"
           data-yearly-monthly="{{ plan.yearly_monthly }}"
-          data-note-monthly="{{ page.cycle.monthly_note.format(yearly=plan.yearly) }}"
+          data-note-monthly="{{ page.cycle.monthly_note.format(yearly=plan.yearly, off=pricing_data.yearly_off) }}"
           data-note-yearly="{{ page.cycle.yearly_note.format(yearly=plan.yearly) }}">
         {% if plan.get('badge') %}
         <span class="plan__badge">
@@ -52,7 +52,7 @@
           <span class="plan__amount"><span class="plan__currency">$</span><span data-price>{{ plan.monthly_value }}</span></span>
           <span class="plan__period">{{ page.cycle.per_month }}</span>
         </p>
-        <p class="plan__yearly" data-note>{{ page.cycle.monthly_note.format(yearly=plan.yearly) }}</p>
+        <p class="plan__yearly" data-note>{{ page.cycle.monthly_note.format(yearly=plan.yearly, off=pricing_data.yearly_off) }}</p>
         <ul class="plan__list">
           {% for h in plan.highlights %}
           <li>
@@ -80,7 +80,7 @@
       </li>
       {% endfor %}
     </ul>
-    <p class="plans__note">{{ page.annual_note }}</p>
+    <p class="plans__note">{{ page.annual_note.format(off=pricing_data.yearly_off) }}</p>
     {#- Con RUC hay que decir si el precio lleva impuesto, y va junto al
         precio: en los términos lo leería una de cada cien personas. -#}
     <p class="plans__note">{{ page.tax_note }}</p>

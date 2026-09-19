@@ -109,27 +109,38 @@ def test_las_tarjetas_traen_los_dos_precios_y_nacen_en_mensual():
 
     assert 'data-cycle-set="monthly"' in html and 'data-cycle-set="yearly"' in html
     # El anual entre doce, que es lo que se enseña al elegir año.
-    for mensual, anual, equivalente in (("16", "160", "13"), ("25", "250", "21"),
-                                        ("55", "550", "46")):
+    for mensual, anual, equivalente in (("15", "144", "12"), ("25", "240", "20"),
+                                        ("55", "528", "44")):
         assert f'data-monthly="{mensual}"' in html
         assert f'data-yearly-monthly="{equivalente}"' in html
         assert f"se cobra ${anual} al año" in html
     # Nace con el mensual dibujado: sin el guion, eso es lo que se lee.
-    assert '<span data-price>16</span>' in html
+    assert '<span data-price>15</span>' in html
     # Y el guion de esta página solo lo baja esta página.
     assert "/assets/js/plans.js" in html
     assert "plans.js" not in (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
 
 
-def test_el_equivalente_mensual_sale_del_documento():
+def test_el_equivalente_mensual_y_el_descuento_salen_del_documento():
+    """Ni el equivalente mensual ni el «-20%» están escritos a mano: los dos
+    salen de las dos filas de precio de docs/pricing.md."""
     import sys
 
     sys.path.insert(0, str(ROOT / "landing"))
     import build_site
 
-    for one in build_site.read_pricing()["plans"]:
+    precios = build_site.read_pricing()
+    for one in precios["plans"]:
         assert one["yearly_monthly"] == round(one["yearly_value"] / 12)
-        assert one["yearly_value"] == one["monthly_value"] * 10
+        assert one["yearly_off"] == 20
+        # Las tres cifras dan enteras, que es lo que enseña la tarjeta.
+        assert one["yearly_value"] == one["monthly_value"] * 12 * 80 // 100
+    assert precios["yearly_off"] == "20%"
+
+    html = (ROOT / "landing" / "planes" / "index.html").read_text(encoding="utf-8")
+    assert '<span class="cycle__save">-20%</span>' in html
+    # Y el panel lo saca del mismo documento, para la pantalla de contratar.
+    assert plans.discount("basico") == 20
 
 
 def test_el_ciclo_elegido_en_el_sitio_llega_al_panel(client, database, outbox,

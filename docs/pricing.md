@@ -9,12 +9,12 @@ reglas de negocio asociadas.
 
 | | Básico | Negocio | Empresa |
 |---|---|---|---|
-| **Precio mensual** | $16 | $25 | $55 |
-| **Precio anual** (2 meses gratis) | $160 | $250 | $550 |
+| **Precio mensual** | $15 | $25 | $55 |
+| **Precio anual** (20% de descuento) | $144 | $240 | $528 |
 | Contactos | 1,000 | 3,000 | 10,000 |
 | Correos por mes | 5,000 | 15,000 | 50,000 |
 | Campañas a lista completa | 5 | 5 | 5 |
-| Precio por correo | $0.0032 | $0.0017 | $0.0011 |
+| Precio por correo | $0.0030 | $0.0017 | $0.0011 |
 | Etiquetas | 1 | 2 | 4 |
 | Columnas propias del contacto | 1 | 5 | 10 |
 | Crear plantillas en el editor | ✅ | ✅ | ✅ |
@@ -41,7 +41,7 @@ nuevo debe respetarla: permite 5 campañas mensuales a la lista completa.
 ### Suscripción
 
 - Sin permanencia mínima. Cancelable desde el panel en cualquier momento.
-- El plan anual se paga por adelantado y equivale a 10 meses.
+- El plan anual se paga por adelantado y lleva un 20% de descuento.
 - Métodos de pago: Yappy, PayPal y tarjeta vía PayPal.
 - **Pendiente de confirmar con Yappy**: si soporta cobros recurrentes. Si no,
   el cobro recurrente va solo por PayPal y a los clientes de Yappy se les envía

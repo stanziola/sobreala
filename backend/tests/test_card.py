@@ -130,7 +130,7 @@ def test_lo_que_dice_el_navegador_no_decide(client, database, outbox, monkeypatc
     pay_card(browser)
     intento = database.payments.find_one({})
 
-    respuesta = back_from_card(browser, intento["_id"], TotalPagado="16.00")
+    respuesta = back_from_card(browser, intento["_id"], TotalPagado="15.00")
 
     assert "error=cobro" in respuesta.headers["Location"]
     assert database.payments.find_one({})["status"] == payments.FAILED
@@ -191,7 +191,7 @@ def test_la_vuelta_y_el_aviso_dan_un_solo_periodo(client, database, outbox,
     # Paga y cierra el navegador: llega primero el aviso.
     aviso = client.post(f"/webhooks/paguelofacil/{SECRETO}", json={
         "codOper": "OPER-1", "status": 1, "operationType": "AUTH_CAPTURE",
-        "totalPay": "16.00", "description": f"Panamails Básico · {intento['_id']}"})
+        "totalPay": "15.00", "description": f"Panamails Básico · {intento['_id']}"})
     assert aviso.status_code == 200
     hasta = accounts.plan_until(accounts.by_id(database, cuenta["_id"]))
     assert hasta is not None
@@ -221,10 +221,10 @@ def test_un_aviso_que_no_se_entiende_se_contesta_200(client, database, outbox,
 # ------------------------------------------------------------ los precios
 
 def test_los_precios_nuevos():
-    assert plans.amount("basico", "monthly") == "16.00"
+    assert plans.amount("basico", "monthly") == "15.00"
     assert plans.amount("negocio", "monthly") == "25.00"
     assert plans.amount("empresa", "monthly") == "55.00"
-    assert plans.amount("empresa", "yearly") == "550.00"
+    assert plans.amount("empresa", "yearly") == "528.00"
 
 
 def test_la_cabecera_deja_ir_a_pagar_con_tarjeta(client, database, outbox):
@@ -253,7 +253,7 @@ def test_el_enlace_a_un_sitio_desconocido_no_se_sigue(monkeypatch):
 
     monkeypatch.setattr("urllib.request.urlopen", respuesta)
     try:
-        paguelofacil.create_link(amount="16.00", description="Panamails",
+        paguelofacil.create_link(amount="15.00", description="Panamails",
                                  reference="abc", return_url="https://panel/volver")
     except paguelofacil.PagueloFacilError:
         pass

@@ -81,6 +81,17 @@ def money(cell: str) -> int:
     return int(digits) if digits else 0
 
 
+def discount(monthly: int, yearly: int) -> int:
+    """Cuánto se ahorra al año, en por ciento y redondeado.
+
+    Sale de las dos cifras del documento de precios y no escrito a mano: si un
+    día cambian, la etiqueta del sitio cambia con ellas.
+    """
+    if not monthly or not yearly:
+        return 0
+    return round((1 - yearly / (monthly * 12)) * 100)
+
+
 def slug(name: str) -> str:
     """«Básico» → «basico», que es como el panel llama a cada plan.
 
@@ -148,7 +159,7 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
     for name in names:
         extra = content.PRICING["plans"].get(name, {})
         monthly = cell("Precio mensual", name)
-        yearly = cell("Precio anual (2 meses gratis)", name)
+        yearly = cell("Precio anual (20% de descuento)", name)
         plans.append({
             "name": name,
             # Con qué nombre lo conoce el panel, para el botón de contratar.
@@ -162,6 +173,10 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
             "monthly_value": money(monthly),
             "yearly_value": money(yearly),
             "yearly_monthly": round(money(yearly) / 12),
+            # Cuánto se ahorra pagando el año, sacado de las dos cifras de
+            # arriba: así la etiqueta no puede decir un descuento que el
+            # documento no dé.
+            "yearly_off": discount(money(monthly), money(yearly)),
             "highlights": [
                 {"label": dict(PUBLIC_ROWS)[r], "value": cell(r, name)} for r in CARD_ROWS
             ],
@@ -177,7 +192,12 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
         ],
     }
 
-    return {"plans": plans, "table": table}
+    # El descuento que se anuncia en la pastilla y en la nota de abajo. Si los
+    # tres planes no dieran el mismo, se dice el más chico: es el único que se
+    # cumple en todos.
+    off = min((one["yearly_off"] for one in plans), default=0)
+
+    return {"plans": plans, "table": table, "yearly_off": f"{off}%"}
 
 
 # --------------------------------------------------------------------------- assets

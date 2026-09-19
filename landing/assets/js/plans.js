@@ -17,6 +17,7 @@
   var quiet = window.matchMedia("(prefers-reduced-motion: reduce)");
   var options = Array.prototype.slice.call(root.querySelectorAll("[data-cycle-set]"));
   var confettiCanvas = root.querySelector("[data-confetti]");
+  var save = root.querySelector(".cycle__save");
   var yearly = false;
 
   // El interruptor solo existe si este archivo corrió: un botón que no hace
@@ -73,6 +74,8 @@
       one.classList.toggle("is-on", on);
       one.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    // El descuento es del año: con el mes puesto se queda apagado.
+    if (save) save.classList.toggle("is-on", yearly);
   }
 
   options.forEach(function (one) {
@@ -98,8 +101,16 @@
     var watcher = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-in");
-        watcher.unobserve(entry.target);
+        var card = entry.target;
+        card.classList.add("is-in");
+        watcher.unobserve(card);
+        // Al terminar de entrar, la tarjeta se queda como nació en el CSS: sin
+        // las clases de la entrada y sin su retraso, que si no se queda puesto
+        // y el hover tardaría en arrancar.
+        window.setTimeout(function () {
+          card.classList.remove("plan--enter", "is-in");
+          card.style.transitionDelay = "";
+        }, 900 + (parseInt(card.style.transitionDelay, 10) || 0));
       });
     }, { threshold: 0.2 });
     cards.forEach(function (card) { watcher.observe(card); });
@@ -107,54 +118,61 @@
 
   /* -------------------------------------------------------- el confeti */
 
-  /* Unos papelitos cayendo sobre el interruptor al elegir el año. Se dibuja en
-     su propio canvas, dura dos segundos y se borra solo: no deja nada corriendo
-     ni escucha nada. */
+  /* Unos papelitos que salen del interruptor al elegir el año y caen hasta
+     abajo de la pantalla. Se dibujan en su propio canvas, que ocupa la ventana
+     entera y no recibe clics, y se borra solo cuando el último sale de vista:
+     no deja nada corriendo ni escucha nada. */
   var COLORS = ["#2F6FB3", "#31A9E8", "#0B3B5C", "#E0F2FE"];
-  var PIECES = 70;
-  var LIFE_MS = 2000;
+  var PIECES = 90;
+  var MAX_MS = 9000;        // por si alguno se queda dando vueltas
 
   function confetti() {
     if (!confettiCanvas || quiet.matches) return;
-    // El lienzo es más grande que el interruptor, para que los papelitos se
-    // vean caer; el punto de salida es el centro del botón, no el del lienzo.
-    var box = confettiCanvas.getBoundingClientRect();
+    var wide = confettiCanvas.clientWidth;
+    var tall = confettiCanvas.clientHeight;
+    // El punto de salida es el centro del interruptor, en coordenadas de la
+    // ventana: el canvas va fijo, así que son las mismas.
     var from = (root.querySelector(".cycle__switch") || root).getBoundingClientRect();
-    var originX = from.left + from.width / 2 - box.left;
-    var originY = from.top + from.height / 2 - box.top;
+    var originX = from.left + from.width / 2;
+    var originY = from.top + from.height / 2;
     var scale = window.devicePixelRatio || 1;
-    confettiCanvas.width = box.width * scale;
-    confettiCanvas.height = box.height * scale;
+    confettiCanvas.width = wide * scale;
+    confettiCanvas.height = tall * scale;
     var pen = confettiCanvas.getContext("2d");
     if (!pen) return;
     pen.setTransform(scale, 0, 0, scale, 0, 0);
 
     var bits = [];
     for (var i = 0; i < PIECES; i++) {
-      var angle = (-90 + (Math.random() - 0.5) * 70) * Math.PI / 180;
+      var angle = (-90 + (Math.random() - 0.5) * 90) * Math.PI / 180;
       var speed = 3 + Math.random() * 4;
       bits.push({
         x: originX, y: originY,
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-        size: 3 + Math.random() * 3,
+        size: 4 + Math.random() * 4,
         color: COLORS[i % COLORS.length],
-        spin: (Math.random() - 0.5) * 0.3, turn: Math.random() * Math.PI,
+        spin: (Math.random() - 0.5) * 0.14, turn: Math.random() * Math.PI,
+        // Cada uno se mece a su aire mientras baja, como un papel de verdad.
+        sway: 0.4 + Math.random() * 0.8, phase: Math.random() * Math.PI * 2,
       });
     }
 
     var started = 0;
     function draw(now) {
       if (!started) started = now;
-      var life = (now - started) / LIFE_MS;
-      pen.clearRect(0, 0, box.width, box.height);
-      if (life >= 1) return;
-      pen.globalAlpha = 1 - life;
+      var life = now - started;
+      pen.clearRect(0, 0, wide, tall);
+      var alive = 0;
       bits.forEach(function (bit) {
-        bit.x += bit.vx;
+        // La mitad de gravedad que antes y un tope de caída: bajan despacio y
+        // se ven llegar al final de la pantalla.
+        bit.vy = Math.min(bit.vy + 0.055, 2.6);
+        bit.vx *= 0.995;
+        bit.x += bit.vx + Math.sin((life / 600) + bit.phase) * bit.sway * 0.5;
         bit.y += bit.vy;
-        bit.vy += 0.18;          // la gravedad
-        bit.vx *= 0.99;
         bit.turn += bit.spin;
+        if (bit.y - bit.size > tall) return;
+        alive++;
         pen.save();
         pen.translate(bit.x, bit.y);
         pen.rotate(bit.turn);
@@ -162,6 +180,10 @@
         pen.fillRect(-bit.size / 2, -bit.size / 2, bit.size, bit.size * 1.6);
         pen.restore();
       });
+      if (!alive || life > MAX_MS) {
+        pen.clearRect(0, 0, wide, tall);
+        return;
+      }
       requestAnimationFrame(draw);
     }
     requestAnimationFrame(draw);

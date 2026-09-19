@@ -391,8 +391,8 @@ HOW = {
 PRICING = {
     "meta_title": "Precios · Panamails",
     "meta_description": (
-        "Planes de Panamails desde $16 al mes, con contactos, correos mensuales y "
-        "soporte que responde. Plan anual con dos meses gratis."
+        "Planes de Panamails desde $15 al mes, con contactos, correos mensuales y "
+        "soporte que responde. Plan anual con 20% de descuento."
     ),
     "hero": {
         "eyebrow": "Precios",
@@ -420,16 +420,17 @@ PRICING = {
             "featured": False,
         },
     },
-    "annual_note": "En el plan anual pagas diez meses y usas doce.",
+    "annual_note": "El plan anual se paga de una vez y sale un {off} más barato.",
     # El interruptor de las tarjetas. Son dos botones de verdad: sin JavaScript
     # la página se queda en mensual, que es como nace, y los precios siguen ahí.
     "cycle": {
         "label": "Cómo quieres pagar",
         "monthly": "Mensual",
         "yearly": "Anual",
-        "save": "dos meses gratis",
+        # La pastilla al lado de Anual: el descuento, que es lo que se mira.
+        "save": "-{off}",
         # Lo que dice la tarjeta debajo del precio, en cada ciclo.
-        "monthly_note": "{yearly} al año, dos meses gratis",
+        "monthly_note": "{yearly} al año, {off} de descuento",
         "yearly_note": "se cobra {yearly} al año",
         "per_month": "/ mes",
     },
@@ -1053,7 +1054,7 @@ TERMS = {
                 "mano. La tarjeta no pasa por nuestros servidores.",
                 "Los correos no usados en el mes pasan al siguiente y vencen "
                 "ahí; se consumen primero los acumulados.",
-                "El plan anual se paga por adelantado con dos meses de "
+                "El plan anual se paga por adelantado con un 20% de "
                 "descuento.",
                 "Los pagos no son reembolsables, salvo un cobro duplicado o un "
                 "error nuestro, que devolvemos por el mismo medio.",

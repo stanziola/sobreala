@@ -1780,6 +1780,8 @@ def checkout(plan: str):
     wanted = "yearly" if request.args.get("ciclo") == "anual" else "monthly"
     return render_template(
         "checkout.html", plan=plan, one=plans.PLANS[plan], cycle=wanted,
+        # Lo que se ahorra con el año, leído del documento de precios.
+        discount=plans.discount(plan),
         # Bajar de plan no se hace por la web: lo que ya se pagó no se
         # devuelve, así que quitarle sitio a una cuenta a cambio de nada tiene
         # que pasar por una conversación. Renovar el mismo sí, que es sumarle

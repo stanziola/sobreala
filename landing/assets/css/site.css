@@ -614,7 +614,8 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   position: relative; display: flex; flex-direction: column;
   padding: 26px 24px; border-radius: var(--radius-lg);
   background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);
-  transition: transform var(--normal) var(--ease), box-shadow var(--normal) var(--ease);
+  transition: transform var(--normal) var(--ease), box-shadow var(--normal) var(--ease),
+              opacity var(--normal) var(--ease);
 }
 .plan:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 .plan--featured { border: 2px solid var(--color-accent); box-shadow: var(--shadow); }
@@ -650,8 +651,11 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .cycle { display: none; }
 .cycle.is-ready {
   position: relative; display: flex; align-items: center; justify-content: center;
-  gap: 12px; margin-bottom: 22px; flex-wrap: wrap;
+  gap: 12px; margin-bottom: 30px; flex-wrap: wrap;
 }
+/* Donde la recomendada sube, su pastilla de «Recomendado» sobresale por encima
+   del borde: sin este aire se metía debajo de los botones. */
+@media (min-width: 860px) { .cycle.is-ready { margin-bottom: 46px; } }
 .cycle__switch { display: inline-flex; padding: 4px; border-radius: 999px;
                  background: var(--color-surface-alt); border: 1px solid var(--color-border); }
 .cycle__option {
@@ -661,12 +665,26 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 }
 .cycle__option:hover { color: var(--color-ink); }
 .cycle__option.is-on { background: var(--color-accent); color: var(--color-on-accent); }
-.cycle__save { color: var(--color-accent-strong); font-weight: 600; font-size: .95rem; }
-/* Más ancho y más alto que el interruptor: si midiera lo mismo, los papelitos
-   se cortarían al primer salto. No recibe clics ni ocupa sitio. */
+/* El descuento es del plan anual, así que solo se enciende con el anual
+   puesto: en mensual queda apagado, para que nadie lo lea como el precio que
+   está mirando. */
+.cycle__save {
+  padding: 5px 12px; border-radius: 999px; font-weight: 700; font-size: .9rem;
+  background: var(--color-surface-alt); color: var(--color-ink-soft);
+  border: 1px solid var(--color-border);
+  transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease),
+              border-color var(--fast) var(--ease);
+}
+.cycle__save.is-on {
+  background: var(--color-accent); color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+/* Ocupa la pantalla entera para que los papelitos caigan hasta abajo y no se
+   corten en el borde de una caja. Va fijo, no recibe clics y no ocupa sitio en
+   la página. */
 .cycle__confetti {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -35%);
-  width: min(720px, 96vw); height: 300px; pointer-events: none; z-index: 2;
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 60;
 }
 
 /* La entrada de las tarjetas: el guion les pone la clase y las suelta al
@@ -680,9 +698,25 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    cuál es sin tener que leer la etiqueta. */
 @media (min-width: 860px) {
   .plans .plan--featured { transform: translateY(-14px) scale(1.02); }
-  .plans .plan--featured:hover { transform: translateY(-18px) scale(1.02); }
   .plans .plan--featured.plan--enter { transform: translateY(26px) scale(1.02); }
   .plans .plan--featured.plan--enter.is-in { transform: translateY(-14px) scale(1.02); }
+}
+
+/* Al pasar el ratón por una tarjeta, esa crece y se levanta y las otras dos se
+   achican y se apagan un poco: la que se mira queda sola al frente. Solo con
+   ratón de verdad y en pantalla ancha (en el teléfono no hay hover), y con
+   «reducir movimiento» no se mueve nada.
+
+   El guion le quita a cada tarjeta las clases de la entrada al terminarla, así
+   que aquí no hay que pelear con ellas. */
+@media (hover: hover) and (min-width: 860px) and (prefers-reduced-motion: no-preference) {
+  .plans:hover .plan { transform: scale(.97); opacity: .85; }
+  .plans:hover .plan--featured { transform: translateY(-14px) scale(.99); }
+  .plans .plan:hover {
+    transform: translateY(-10px) scale(1.04); opacity: 1;
+    box-shadow: var(--shadow-lg); z-index: 2;
+  }
+  .plans .plan--featured:hover { transform: translateY(-18px) scale(1.05); }
 }
 
 .table-hint { margin-bottom: 8px; font-size: .85rem; color: var(--color-ink-soft); }
