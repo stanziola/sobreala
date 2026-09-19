@@ -234,7 +234,7 @@
     {% if request.args.get('error') %}
     <p class="notice">{{ t('pay_error_' + request.args.get('error'), n=0)
                           if request.args.get('error') in
-                          ['estado','plan','paypal','cancelado','orden','cobro','monto']
+                          ['estado','plan','paypal','tarjeta','cancelado','orden','cobro','monto']
                           else t('pay_error_paypal') }}</p>
     {% endif %}
 
@@ -262,7 +262,11 @@
     {% endcall %}
 
     {% call row(t('settings_payments_card'), t('settings_payments_card_desc')) %}
+    {% if card_ready %}
+    <span class="tag tag--quiet">{{ t('settings_payments_ready') }}</span>
+    {% else %}
     <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
+    {% endif %}
     {% endcall %}
 
     {% call row(t('settings_payments_yappy'), t('settings_payments_yappy_desc')) %}
@@ -283,7 +287,9 @@
             <td class="table__quiet">{{ t('pay_cycle_' + one.cycle) }}</td>
             {# Lo de antes no lleva método escrito y se lee como PayPal, que
                era lo único que había. #}
-            <td class="table__quiet">{{ t('pay_method_' + (one.method or 'paypal')) }}</td>
+            <td class="table__quiet">{{ t('pay_method_' + (one.method or 'paypal')) }}
+              {#- De la tarjeta, solo sus últimos cuatro números. -#}
+              {% if one.card_last4 %} · {{ t('pay_card_ending', last4=one.card_last4) }}{% endif %}</td>
             <td class="table__quiet">{{ one.currency }} {{ one.amount }}</td>
             {% if invoices_shown %}
             <td>

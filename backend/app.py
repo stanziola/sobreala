@@ -249,11 +249,12 @@ def create_app(overrides: dict | None = None) -> Flask:
             "connect-src 'self'",
             # `form-action` gobierna también la redirección que viene
             # después de enviar un formulario, así que aquí va todo sitio al
-            # que se pueda acabar yendo desde uno: el checkout de PayPal, y el
-            # sitio público, que es donde aterriza un cliente al entrar. Sin
-            # ellos el navegador se planta y el botón parece no hacer nada.
+            # que se pueda acabar yendo desde uno: el checkout de PayPal, el
+            # de Paguélofácil, y el sitio público, que es donde aterriza un
+            # cliente al entrar. Sin ellos el navegador se planta y el botón
+            # parece no hacer nada.
             f"form-action 'self' {Config.paypal_checkout()} "
-            f"{Config.PUBLIC_SITE_URL}",
+            f"{' '.join(Config.paguelofacil_checkout())} {Config.PUBLIC_SITE_URL}",
             "frame-ancestors 'none'",
             "base-uri 'none'",
             "object-src 'none'",

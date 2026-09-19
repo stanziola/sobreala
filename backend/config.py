@@ -156,6 +156,49 @@ class Config:
         return ("https://www.paypal.com" if cls.PAYPAL_ENV == "live"
                 else "https://www.sandbox.paypal.com")
 
+    # Tarjetas Visa y Mastercard, con el enlace de pago de Paguélofácil: la
+    # tarjeta se escribe en su página, nunca en la nuestra (regla 9). El código
+    # web (CCLW) crea los enlaces; el token consulta las transacciones, que es
+    # lo que decide si alguien pagó. El secreto va en la dirección del aviso
+    # automático que ellos mandan, como el de SES.
+    PAGUELOFACIL_ENV = os.getenv("PAGUELOFACIL_ENV", "sandbox").strip().lower()
+    PAGUELOFACIL_CCLW = os.getenv("PAGUELOFACIL_CCLW", "")
+    PAGUELOFACIL_TOKEN = os.getenv("PAGUELOFACIL_TOKEN", "")
+    PAGUELOFACIL_WEBHOOK_SECRET = os.getenv("PAGUELOFACIL_WEBHOOK_SECRET", "")
+
+    @classmethod
+    def paguelofacil_link(cls) -> str:
+        """Donde se piden los enlaces de pago."""
+        return ("https://secure.paguelofacil.com/LinkDeamon.cfm"
+                if cls.PAGUELOFACIL_ENV == "live"
+                else "https://sandbox.paguelofacil.com/LinkDeamon.cfm")
+
+    # La página donde el cliente escribe la tarjeta. La de producción es la que
+    # devuelve el enlace de pago; la de sandbox no está documentada, y por eso
+    # se puede fijar a mano con esta variable si al probar resulta otra.
+    PAGUELOFACIL_CHECKOUT = os.getenv("PAGUELOFACIL_CHECKOUT", "").strip().rstrip("/")
+
+    @classmethod
+    def paguelofacil_checkout(cls) -> list[str]:
+        """Los sitios a los que se puede mandar a pagar con tarjeta.
+
+        Van por nombre en la cabecera `form-action`, que no admite comodines en
+        este panel, y `create_link()` se niega a mandar a cualquier otro: una
+        dirección que no esté aquí se para antes de salir.
+        """
+        if cls.PAGUELOFACIL_CHECKOUT:
+            return [cls.PAGUELOFACIL_CHECKOUT]
+        if cls.PAGUELOFACIL_ENV == "live":
+            return ["https://checkout.paguelofacil.com"]
+        return ["https://checkout-sand.paguelofacil.com",
+                "https://sandbox.paguelofacil.com"]
+
+    @classmethod
+    def paguelofacil_admin(cls) -> str:
+        """Donde se consultan las transacciones."""
+        return ("https://admin.paguelofacil.com" if cls.PAGUELOFACIL_ENV == "live"
+                else "https://sandbox.paguelofacil.com")
+
     @classmethod
     def check(cls) -> None:
         if not cls.SECRET_KEY:
@@ -180,6 +223,15 @@ class Config:
             raise RuntimeError(
                 "PAYPAL_ENV sigue en sandbox con credenciales puestas: los "
                 "cobros no llegarian a ninguna cuenta de verdad")
+        if cls.PAGUELOFACIL_ENV not in ("sandbox", "live"):
+            raise RuntimeError(
+                f"PAGUELOFACIL_ENV debe ser sandbox o live, no {cls.PAGUELOFACIL_ENV!r}")
+        # Lo mismo que con PayPal: una tarjeta de prueba no le paga a nadie.
+        if cls.ENV != "development" and cls.PAGUELOFACIL_CCLW \
+                and cls.PAGUELOFACIL_ENV != "live":
+            raise RuntimeError(
+                "PAGUELOFACIL_ENV sigue en sandbox con credenciales puestas: "
+                "los cobros con tarjeta no llegarian a ninguna cuenta de verdad")
         if cls.MAIL_BACKEND not in ("file", "smtp", "ses"):
             raise RuntimeError(f"unknown MAIL_BACKEND: {cls.MAIL_BACKEND!r}")
         if cls.MAIL_BACKEND == "smtp" and not cls.MAIL_SMTP_USER:

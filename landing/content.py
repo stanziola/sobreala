@@ -391,7 +391,7 @@ HOW = {
 PRICING = {
     "meta_title": "Precios · Panamails",
     "meta_description": (
-        "Planes de Panamails desde $35 al mes, con contactos, correos mensuales y "
+        "Planes de Panamails desde $16 al mes, con contactos, correos mensuales y "
         "soporte que responde. Plan anual con dos meses gratis."
     ),
     "hero": {

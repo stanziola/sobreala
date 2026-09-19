@@ -16,7 +16,7 @@
   <p class="notice">{{ t('pay_downgrade') }}</p>
   {% elif not can_buy %}
   <p class="notice">{{ t('pay_suspended') if suspended else t('pay_needs_email') }}</p>
-  {% elif not paypal_ready %}
+  {% elif not methods %}
   <p class="notice">{{ t('pay_not_ready') }}</p>
   {% else %}
   {# Un solo formulario: primero con qué se paga y después por cuánto tiempo,

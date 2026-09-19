@@ -9,12 +9,12 @@ reglas de negocio asociadas.
 
 | | Básico | Negocio | Empresa |
 |---|---|---|---|
-| **Precio mensual** | $35 | $60 | $120 |
-| **Precio anual** (2 meses gratis) | $350 | $600 | $1,200 |
+| **Precio mensual** | $16 | $25 | $55 |
+| **Precio anual** (2 meses gratis) | $160 | $250 | $550 |
 | Contactos | 1,000 | 3,000 | 10,000 |
 | Correos por mes | 5,000 | 15,000 | 50,000 |
 | Campañas a lista completa | 5 | 5 | 5 |
-| Precio por correo | $0.0070 | $0.0040 | $0.0024 |
+| Precio por correo | $0.0032 | $0.0017 | $0.0011 |
 | Etiquetas | 1 | 2 | 4 |
 | Columnas propias del contacto | 1 | 5 | 10 |
 | Crear plantillas en el editor | ✅ | ✅ | ✅ |

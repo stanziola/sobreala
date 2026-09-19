@@ -39,6 +39,7 @@ from models import session as sessions
 from models import token as tokens
 from services import mailer
 from services import notices
+from services import paguelofacil
 from services import paypal
 from services import plans
 from services import stats
@@ -1550,6 +1551,7 @@ def settings(section: str = "cuenta"):
         "settings.html", section=section, sections=sections, account=account,
         plans=plans.PLANS, cycles=plans.CYCLES, currency=plans.CURRENCY,
         paypal_ready=paypal.configured(),
+        card_ready=paguelofacil.configured(),
         plan_until=accounts.plan_until(account),
         # Solo lo cobrado: los intentos a medias se miran desde la ficha.
         payments=paid,
@@ -1671,9 +1673,11 @@ def checkout(plan: str):
         currency=plans.CURRENCY,
         can_buy=accounts.can_buy(account),
         suspended=accounts.is_suspended(account),
-        paypal_ready=paypal.configured(),
-        methods=payments.METHODS,
-        soon=payments.SOON,
+        methods=ready_methods(),
+        # Los que faltan se enseñan igual y dicen «pronto»: esconderlos haría
+        # que quien no tiene PayPal cerrara la página creyendo que no puede
+        # pagar de ninguna forma.
+        soon=[one for one in payments.ALL if one not in ready_methods()],
         current=accounts.plan_of(account),
         plan_until=accounts.plan_until(account))
 
@@ -1701,13 +1705,22 @@ def invoice_file(raw):
         "Cache-Control": "no-store"})
 
 
+def ready_methods() -> list[str]:
+    """Con qué se puede pagar ahora mismo: los métodos que tienen cobro hecho y,
+    de esos, los que tienen sus credenciales puestas."""
+    ready = {payments.PAYPAL: paypal.configured(),
+             payments.CARD: paguelofacil.configured()}
+    return [one for one in payments.METHODS if ready.get(one)]
+
+
 @bp.route("/configuracion/pagos/contratar", methods=["POST"])
 def start_payment():
-    """Crear la orden en PayPal y mandar al cliente a pagarla.
+    """Crear la orden en PayPal, o el enlace de pago de Paguélofácil si es con
+    tarjeta, y mandar al cliente a pagarla.
 
     Nada se activa aquí. Lo único que hace esta ruta es anotar el intento y
     abrir el checkout; quien decide si alguien pagó es la vuelta, comparando lo
-    que responda PayPal contra lo que ese plan cuesta.
+    que responda quien cobra contra lo que ese plan cuesta.
     """
     account = current_account()
     if account is None:
@@ -1736,19 +1749,35 @@ def start_payment():
     # escribe a mano y el botón gris del sitio es solo un aviso.
     if plans.is_downgrade(accounts.plan_of(account), plan):
         return redirect(url_for("auth.checkout", plan=plan))
-    if not paypal.configured():
-        return redirect(url_for("auth.settings", section="pagos", error="paypal"))
 
-    # Con qué eligió pagar. Lo que no sea uno de los que cobran hoy se lee
-    # como PayPal: el formulario se puede escribir a mano, y tarjeta y Yappy
-    # están anunciados pero todavía no cobran nada.
+    # Con qué eligió pagar. Lo que no se pueda usar ahora mismo se lee como
+    # PayPal: el formulario se puede escribir a mano, y Yappy (o la tarjeta sin
+    # sus credenciales) está anunciado pero no cobra nada.
+    ready = ready_methods()
     method = request.form.get("metodo", "")
-    if method not in payments.METHODS:
+    if method not in ready:
         method = payments.PAYPAL
+    if method not in ready:
+        return redirect(url_for("auth.settings", section="pagos", error="paypal"))
 
     attempt = payments.start(db, account["_id"], plan=plan, cycle=cycle,
                              amount=amount, currency=plans.CURRENCY,
                              method=method)
+    if method == payments.CARD:
+        try:
+            code, checkout_url = paguelofacil.create_link(
+                amount=amount,
+                description=f"Panamails {plans.PLANS[plan]['name']}",
+                reference=str(attempt),
+                return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_card')}")
+        except paguelofacil.PagueloFacilError as exc:
+            payments.fail(db, attempt, str(exc))
+            return redirect(url_for("auth.settings", section="pagos", error="tarjeta"))
+        payments.attach_link(db, attempt, code)
+        log_auth(db, events.PAYMENT, events.CREATED, email=account["email"],
+                 account_id=account["_id"])
+        return redirect(checkout_url)
+
     try:
         order_id, approve = paypal.create(
             amount=amount, currency=plans.CURRENCY,
@@ -1810,8 +1839,24 @@ def finish_payment():
                  account_id=account["_id"])
         return redirect(f"{back}?error=monto")
 
-    if not payments.complete(db, attempt["_id"], payer_email=result.get("payer", "")):
-        return redirect(f"{back}?hecho=1")
+    settle(db, account, attempt, payer_email=result.get("payer", ""))
+    return redirect(f"{back}?hecho=1")
+
+
+def settle(db, account, attempt, *, payer_email: str = "", last4: str = "",
+           order_id: str = "") -> bool:
+    """Lo que pasa después de un cobro comprobado: marcarlo, activar el plan y
+    avisar. **False si ese intento ya estaba cobrado**, y entonces no se hace
+    nada más.
+
+    Es la misma para PayPal, para la vuelta de la tarjeta y para el aviso
+    automático de Paguélofácil, así que las tres hacen exactamente lo mismo. La
+    escritura condicional de `payments.complete()` es lo que impide que dos de
+    ellas den dos periodos por un solo pago.
+    """
+    if not payments.complete(db, attempt["_id"], payer_email=payer_email,
+                             last4=last4, order_id=order_id):
+        return False
 
     # Renovar es pagar el mismo plan que todavía corre; cambiarlo o volver
     # después de que venciera es contratar. Se mira antes de activar, que es
@@ -1830,6 +1875,78 @@ def finish_payment():
     # sale, el pago sigue cobrado y el plan activo.
     notices.paid(account, plan=attempt["plan"], until=until, renewed=renewed)
     notices.payment_to_admins(db, account, plan=attempt["plan"])
+    return True
+
+
+def card_verdict(attempt, oper: str) -> tuple[str, dict | None]:
+    """Si la operación `oper` de Paguélofácil paga este intento. Devuelve un
+    motivo vacío si sí, o la clave del error si no, y lo que dijo Paguélofácil.
+
+    Se le pregunta a Paguélofácil y no se mira lo que trajo el navegador, que
+    cualquiera escribe. Tres cosas: que esté aprobada y capturada, que sea por
+    lo que cuesta el plan, y que su descripción lleve la referencia de **este**
+    intento, así una operación pagada para otro no sirve para este.
+    """
+    try:
+        found = paguelofacil.find(oper)
+    except paguelofacil.PagueloFacilError:
+        return "tarjeta", None
+    if not paguelofacil.paid(found):
+        return "cobro", found
+    if str(attempt["_id"]) not in found["description"]:
+        return "orden", found
+    if found["amount"] != plans.amount(attempt["plan"], attempt["cycle"]):
+        return "monto", found
+    return "", found
+
+
+@bp.route("/configuracion/pagos/tarjeta/volver", methods=["GET", "POST"])
+def finish_card():
+    """La vuelta de Paguélofácil después de pagar con tarjeta.
+
+    Trae nuestro intento en `PARM_1` y la operación en `Oper`, además de un
+    «Estado» y un monto que no se leen: los escribe cualquiera. Se consulta la
+    operación y solo entonces se activa. Si el aviso automático llegó antes y
+    ya lo cobró, aquí solo se dice que está hecho.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    back = url_for("auth.settings", section="pagos")
+    values = request.values
+    try:
+        attempt_id = ObjectId(values.get("PARM_1", ""))
+    except (InvalidId, TypeError):
+        return redirect(f"{back}?error=orden")
+    attempt = payments.by_id(db, attempt_id, account["_id"])
+    if attempt is None or attempt.get("method") != payments.CARD:
+        return redirect(f"{back}?error=orden")
+    if attempt["status"] != payments.CREATED:
+        return redirect(f"{back}?hecho=1")
+
+    oper = values.get("Oper", "")[:64]
+    if not oper:
+        # Volvió sin operación: canceló o se le venció el enlace. El intento se
+        # queda como está, por si el aviso automático cuenta otra cosa.
+        return redirect(f"{back}?error=cancelado")
+
+    why, found = card_verdict(attempt, oper)
+    if why == "tarjeta":
+        return redirect(f"{back}?error=tarjeta")
+    if why:
+        payments.fail(db, attempt["_id"],
+                      f"{why}: {found['status'] if found else '-'} "
+                      f"{found['operation'] if found else ''} "
+                      f"{found['amount'] if found else ''}")
+        if why == "monto":
+            log_auth(db, events.PAYMENT, events.INVALID, email=account["email"],
+                     account_id=account["_id"])
+        return redirect(f"{back}?error={why}")
+
+    settle(db, account, attempt, payer_email=found["email"],
+           last4=found["last4"], order_id=oper)
     return redirect(f"{back}?hecho=1")
 
 

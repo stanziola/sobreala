@@ -31,7 +31,7 @@ plano.
 | Landing | HTML/CSS/JS estático | Cloudflare Pages |
 | DNS, WAF, rate limiting | Cloudflare (modo proxied, SSL Full strict) | — |
 | Imágenes de correos | En la propia base, servidas por el panel | Railway |
-| Pagos | PayPal. Tarjeta y Yappy, anunciados y sin pasarela todavía | — |
+| Pagos | PayPal, y tarjeta por Paguélofácil (falta la afiliación). Yappy, anunciado | — |
 
 **No usar Brevo ni SMTP propio.** Brevo prohíbe en sus términos enviar en nombre
 de terceros y sus tarifas dan margen negativo. El SMTP propio o de una cuenta
@@ -1480,8 +1480,8 @@ reales antes de poner el corte.
 ## Cobrar un plan
 
 Se contrata desde **Configuración → Opciones de pago**. Hoy es un **pago suelto**
-de un mes o un año, no una suscripción: PayPal cobra una vez y el plan queda
-activo por ese periodo. La renovación se avisa a mano, igual que ya estaba
+de un mes o un año, no una suscripción: PayPal, o Paguélofácil con tarjeta,
+cobra una vez y el plan queda activo por ese periodo. La renovación se avisa a mano, igual que ya estaba
 previsto para Yappy. La suscripción que se renueva sola pide crear un producto y
 un plan por cada uno de los nuestros en el panel de PayPal, y el webhook
 funcionando; es el paso siguiente, no este.
@@ -1513,22 +1513,53 @@ falta un control aparte para elegirlo.
 
 | Método | Estado |
 |---|---|
-| PayPal | Cobra, y es el único que cobra hoy |
-| Tarjeta de crédito o débito | Anunciado. Falta la pasarela |
+| PayPal | Cobra |
+| Tarjeta de crédito o débito | Cobra por **Paguélofácil**, en cuanto tenga sus credenciales |
 | Yappy | Anunciado. Falta la integración |
 
 **Los tres se enseñan siempre**, también los que faltan: esconderlos haría que
 quien no tiene cuenta de PayPal cerrara la página creyendo que no puede pagar de
-ninguna forma. Los que no cobran **no son un control que se pueda mandar** —no
-tienen radio, solo una etiqueta—, y `payments.METHODS` es lo único que la ruta
-acepta, así que un formulario escrito a mano con `metodo=yappy` acaba pagando
-por PayPal en vez de abrir una puerta que no existe.
+ninguna forma. Los que no se pueden usar ahora **no son un control que se pueda
+mandar** —no tienen radio, solo «pronto»—, y la ruta solo acepta los de
+`ready_methods()` (los de `payments.METHODS` con sus credenciales puestas), así
+que un formulario escrito a mano con `metodo=yappy` acaba pagando por PayPal en
+vez de abrir una puerta que no existe.
 
-**La tarjeta no va a ir por el checkout de PayPal.** Va a ser una pasarela con
-afiliación de comercio en Panamá —Paguélofácil, BAC Credomatic o Tilopay son las
-que hay—, y esa decisión está pendiente. Sea cual sea, **el pago ocurre en la
-página del proveedor**: la regla 9 no cambia, y meter los campos de la tarjeta
-en el panel obligaría a una certificación PCI que este producto no va a tener.
+### La tarjeta: Paguélofácil
+
+**Visa y Mastercard sin PayPal**, porque no todo el que tiene tarjeta tiene
+cuenta de PayPal. Stripe no acepta comercios de Panamá; de las pasarelas locales
+se eligió Paguélofácil (`services/paguelofacil.py`), con su **enlace de pago**:
+el cliente escribe la tarjeta en la página de Paguélofácil y vuelve. **La
+tarjeta no toca el panel** —la regla 9 no cambia, y meter sus campos aquí
+obligaría a una certificación PCI que este producto no va a tener—; de ella se
+guardan solo los últimos cuatro números (`card_last4`), que la lista de pagos
+enseña.
+
+```
+Contratar con Tarjeta  →  intento en payments (method card, provider paguelofacil)
+  →  enlace de pago (PARM_1 = el intento, y el intento dentro de la descripción)
+  →  paga en Paguélofácil  →  vuelve a /configuracion/pagos/tarjeta/volver
+  →  el servidor CONSULTA la operación (Oper) con el token
+  →  aprobada, capturada, por el monto del plan y de ESE intento: se activa
+```
+
+- **Lo que trae el navegador no decide nada**: «Estado=Aprobada» se escribe a
+  mano. Decide `card_verdict()`, que pregunta por la operación. Se piden tres
+  cosas: aprobada y capturada (`paguelofacil.paid()`), el monto del plan, y que
+  su descripción lleve el id de **ese** intento, así una operación de otro pago
+  no sirve.
+- **El aviso automático** (`POST /webhooks/paguelofacil/<secreto>`) es para quien
+  paga y cierra el navegador. Hace la misma consulta. Lo activa Paguélofácil
+  cuando se le pide por correo.
+- **La vuelta, el aviso y PayPal terminan en la misma `settle()`**: marca el
+  pago, activa el plan y manda los dos correos. La escritura condicional de
+  `payments.complete()` hace que dos de ellas no den dos periodos.
+- **Solo se manda a una página de pago conocida**
+  (`Config.paguelofacil_checkout()`). Es la que `form-action` deja abrir, por
+  nombre y sin comodines. La de sandbox no está documentada: si resulta otra,
+  se fija con `PAGUELOFACIL_CHECKOUT`.
+- Sin `PAGUELOFACIL_CCLW` y `PAGUELOFACIL_TOKEN`, la tarjeta dice «pronto».
 
 Cada intento de pago anota **con qué se eligió pagar** (`method`), así que la
 lista de pagos lo dice. Lo escrito antes de esto no lo lleva y se lee como
@@ -1579,7 +1610,7 @@ Ver `docs/pricing.md` para la tabla completa, límites y reglas. Los costos, los
 márgenes y el análisis de competencia están en `docs/pricing-interno.md`, que
 está en `.gitignore` a propósito y no debe subirse.
 
-Resumen: Básico $35 · Negocio $60 · Empresa $120. `docs/pricing.md` es la
+Resumen: Básico $16 · Negocio $25 · Empresa $55. `docs/pricing.md` es la
 fuente de verdad; el sitio
 público lee sus tablas al construirse, así que no hay que copiar cifras a mano. El límite de correos es siempre **5x** el de
 contactos. Anual = 2 meses gratis. Los correos no usados pasan al mes siguiente
@@ -1604,6 +1635,11 @@ PAYPAL_ENV                # sandbox | live; en producción con sandbox no arranc
 PAYPAL_CLIENT_ID
 PAYPAL_SECRET
 PAYPAL_WEBHOOK_ID         # para comprobar los avisos; todavía sin usar
+PAGUELOFACIL_ENV          # sandbox | live; en producción con sandbox no arranca
+PAGUELOFACIL_CCLW         # el código web del comercio: crea los enlaces de pago
+PAGUELOFACIL_TOKEN        # consulta las transacciones, que es lo que decide
+PAGUELOFACIL_WEBHOOK_SECRET  # va en la dirección del aviso; sin él, 404
+PAGUELOFACIL_CHECKOUT     # opcional: la página de pago, si no es la de siempre
 YAPPY_MERCHANT_ID
 YAPPY_SECRET
 ```

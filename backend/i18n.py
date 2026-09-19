@@ -452,8 +452,6 @@ TEXTS = {
     "pay_choose_lead": "El pago se hace en la página de PayPal. Al volver, tu "
                        "cuenta queda activa al momento.",
     "pay_prices": "${month} al mes · ${year} al año, con dos meses gratis.",
-    "pay_custom": "A la medida, sin precio público. Hablamos y lo armamos "
-                  "contigo.",
     # Con qué se paga. Los tres se enseñan siempre: esconder los que faltan
     # haría que quien no tiene PayPal cerrara la página creyendo que no puede
     # pagar de ninguna forma.
@@ -465,7 +463,9 @@ TEXTS = {
                               "Nosotros nunca vemos tus datos.",
     "pay_method_card": "Tarjeta de crédito o débito",
     "pay_method_card_desc": "Visa y Mastercard, sin necesidad de tener cuenta "
-                            "de PayPal. Estamos afiliando el comercio.",
+                            "de PayPal. Se paga en la página de Paguélofácil: "
+                            "nosotros nunca vemos tu tarjeta.",
+    "pay_card_ending": "terminada en {last4}",
     "pay_method_yappy": "Yappy",
     "pay_method_yappy_desc": "Desde tu banco en Panamá, sin tarjeta.",
     "pay_cycle_title": "Por cuánto tiempo",
@@ -487,17 +487,20 @@ TEXTS = {
                        "va el comprobante y los avisos del plan.",
     "pay_suspended": "Tu cuenta está suspendida, así que no puede contratar. "
                      "Escríbenos y lo revisamos.",
-    "pay_not_ready": "El pago con PayPal todavía no está disponible. "
+    "pay_not_ready": "El pago en línea todavía no está disponible. "
                      "Escríbenos y lo resolvemos por otra vía.",
     "pay_error_estado": "Tu cuenta todavía no puede contratar un plan. Confirma tu correo, o escríbenos si está suspendida.",
     "pay_error_plan": "Ese plan no se contrata por aquí.",
     "pay_error_paypal": "No pudimos hablar con PayPal en este momento. "
                         "Vuelve a intentarlo en unos minutos.",
+    "pay_error_tarjeta": "No pudimos hablar con Paguélofácil en este momento. "
+                         "Si ya pagaste, en unos minutos se activa solo; si "
+                         "no, vuelve a intentarlo.",
     "pay_error_cancelado": "Cancelaste el pago. No se cobró nada.",
     "pay_error_orden": "No encontramos ese pago. Si te cobraron, escríbenos "
                        "con la fecha y lo revisamos.",
-    "pay_error_cobro": "PayPal no confirmó el cobro, así que no activamos "
-                       "nada. Si te cobraron, escríbenos.",
+    "pay_error_cobro": "El pago no se confirmó, así que no activamos nada. Si "
+                       "te cobraron, escríbenos.",
     "pay_error_monto": "El monto cobrado no coincide con el del plan, así que "
                        "no activamos nada. Escríbenos y lo revisamos.",
     "settings_payments_hint": "Panamails nunca guarda los datos de tu tarjeta: "
