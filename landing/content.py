@@ -513,13 +513,11 @@ PRICING = {
             {
                 "title": "Usuarios de la cuenta",
                 "text": (
-                    "Cuántas personas de tu empresa entran con su propio "
-                    "acceso. El dueño puede todo: cambiar la contraseña, el "
-                    "plan y los datos de la cuenta. Al empleado le das lo "
-                    "suyo: subir contactos, ponerles etiquetas, armar "
-                    "plantillas y mandar campañas, sin tocar el plan ni el "
-                    "pago. Se está construyendo: hoy cada cuenta tiene un solo "
-                    "acceso."
+                    "Cuántas personas de tu empresa entran, cada una con su "
+                    "correo y su contraseña, y el dueño cuenta. Él puede todo: "
+                    "el plan, el pago y los datos de la cuenta. A cada persona "
+                    "le marcas lo suyo: ver las cifras, subir contactos, armar "
+                    "plantillas o mandar campañas."
                 ),
             },
         ],

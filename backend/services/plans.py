@@ -33,6 +33,8 @@ FREE_TAGS = 1
 # Y las columnas propias del contacto, por lo mismo: quien todavía no paga
 # prueba con lo que trae el Básico.
 FREE_FIELDS = 1
+# Y cuántas personas entran a una cuenta sin plan: el dueño, y nadie más.
+FREE_USERS = 1
 
 MONTHLY = "monthly"
 YEARLY = "yearly"
@@ -79,6 +81,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
     uploads: list[bool] = []
     emails: list[int | None] = []
     clean: list[bool] = []
+    users: list[int | None] = []
 
     for line in text.splitlines():
         if not line.lstrip().startswith("|"):
@@ -105,6 +108,8 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             clean = [c.strip() == "✅" for c in cells[1:]]
         elif cells[0].strip("* ") == "Subir tu propio HTML":
             uploads = [c.strip() == "✅" for c in cells[1:]]
+        elif cells[0].strip("* ") == "Usuarios" and len(cells) - 1 == len(names):
+            users = [_count(c) for c in cells[1:]]
 
     if not names or MONTHLY not in prices or YEARLY not in prices:
         raise RuntimeError(f"no encontré las filas de precios en {path}")
@@ -121,6 +126,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             "upload": uploads[index] if index < len(uploads) else False,
             "clean": clean[index] if index < len(clean) else False,
             "emails": emails[index] if index < len(emails) else None,
+            "users": users[index] if index < len(users) else None,
         }
     return plans
 
@@ -165,6 +171,18 @@ def tag_limit(plan: str | None) -> int:
     if not found or found["tags"] is None:
         return FREE_TAGS
     return found["tags"]
+
+
+def users(plan: str | None) -> int:
+    """Cuántas personas pueden entrar a una cuenta de ese plan, de
+    `docs/pricing.md`. **El dueño cuenta**, así que Básico es él y nadie más.
+
+    Sin plan, una: la del dueño. Leída y no copiada, como las etiquetas.
+    """
+    found = PLANS.get(plan or "")
+    if not found or found.get("users") is None:
+        return FREE_USERS
+    return found["users"]
 
 
 def emails_a_month(plan: str | None) -> int | None:

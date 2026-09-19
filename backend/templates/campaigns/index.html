@@ -24,12 +24,14 @@
 </p>
 {% endif %}
 
+{% if can_send %}
 <h2 class="settings__subtitle">{{ t('send_new') }}</h2>
 <form method="post" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% include "campaigns/_form.html" %}
   <button class="btn" type="submit">{{ t('send_submit') }}</button>
 </form>
+{% endif %}
 
 <h2 class="settings__subtitle">{{ t('send_yours') }}</h2>
 {% if campaigns %}
@@ -63,19 +65,22 @@
         </td>
         <td>
           {# Un enlace y no un formulario: lo que hay al otro lado es la
-             pantalla que pregunta, y el que manda es su botón. #}
+             pantalla que pregunta, y el que manda es su botón. Un usuario que
+             solo puede mirar no lo ve: la ruta lo comprueba igual. #}
+          {% if can_send %}
           <a class="btn btn--small"
              href="{{ url_for('campaigns.send', raw=one._id) }}">
             {{ t('send_continue') if one.status == 'sending' else t('send_now') }}</a>
+          {% endif %}
         </td>
         <td>
-          {% if editable(one) %}
+          {% if can_send and editable(one) %}
           <a class="btn btn--small btn--outline"
              href="{{ url_for('campaigns.edit', raw=one._id) }}">{{ t('send_edit') }}</a>
           {% endif %}
         </td>
         <td>
-          {% if editable(one) %}
+          {% if can_send and editable(one) %}
           <form method="post" action="{{ url_for('campaigns.remove', raw=one._id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="btn btn--small btn--outline" type="submit">{{ t('send_delete') }}</button>

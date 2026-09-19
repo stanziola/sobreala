@@ -22,7 +22,8 @@ from bson.errors import InvalidId
 from flask import (Blueprint, Response, abort, redirect, render_template,
                    request, url_for)
 
-from blueprints.auth.routes import current_account, not_for_admins, log_auth
+from blueprints.auth.routes import (current_account, current_workspace,
+                                    log_auth, needs, not_for_admins)
 from config import Config
 from db import get_db
 from i18n import t
@@ -39,13 +40,15 @@ from services.security import csrf_ok
 bp = Blueprint("contacts", __name__)
 
 @bp.before_request
-def keep_admins_out():
-    """Un administrador no tiene contactos que mirar, así que vuelve a /admin.
+def keep_out():
+    """Quién no entra aquí: un administrador, que no tiene contactos que mirar,
+    y un usuario de una cuenta sin ese permiso.
 
     Va aquí y no en un decorador por ruta: esta pantalla tiene varias y una
     nueva heredaría la puerta sin que nadie se acuerde de ponérsela.
     """
-    return not_for_admins(current_account())
+    account = current_account()
+    return not_for_admins(account) or needs(account, accounts.CONTACTS)
 
 
 # How many rows one screen of the list shows.
@@ -61,8 +64,12 @@ KNOWN_HEADERS = ",".join(importer.EMAIL_HEADERS + importer.NAME_HEADERS)
 
 
 def signed_in():
-    """The account behind this request, or None. Every route starts here."""
-    return current_account()
+    """**La cuenta de la empresa**, o None. Every route starts here.
+
+    Para un usuario que la empresa creó es la de su dueño: los contactos son de
+    ella, no de quien los mira (`current_workspace()`).
+    """
+    return current_workspace()
 
 
 def as_id(raw):

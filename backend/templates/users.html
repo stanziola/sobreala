@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ t('users_edit_title') if member else t('users_new_title') }}{% endblock %}
+
+{#- Crear un usuario o cambiarle los permisos. Pantalla aparte y no una fila de
+    Seguridad: los permisos son casillas con su explicación, y eso no cabe al
+    lado de un nombre.
+
+    Al crear no se pide contraseña. Le llega una invitación y la pone él: el
+    dueño no conoce la contraseña de nadie. -#}
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('users_edit_title') if member else t('users_new_title') }}</h1>
+  <p class="lead">{{ t('users_form_lead') }}</p>
+
+  {% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% if member %}
+    {# El nombre y el correo no se cambian desde aquí: el correo es su llave, y
+       cambiárselo desde fuera sería sacarlo de su propia cuenta. #}
+    <p class="hint">{{ member.contact_name }} · {{ member.email }}</p>
+    {% else %}
+    <label for="nombre">{{ t('users_name') }}</label>
+    <input id="nombre" name="nombre" type="text" maxlength="80" autocomplete="off"
+           value="{{ form.get('nombre', '') }}">
+    {% if errors.nombre %}<p class="error">{{ errors.nombre }}</p>{% endif %}
+
+    <label for="correo">{{ t('users_email') }}</label>
+    <input id="correo" name="correo" type="email" autocomplete="off"
+           value="{{ form.get('correo', '') }}">
+    {% if errors.correo %}<p class="error">{{ errors.correo }}</p>{% endif %}
+    <p class="hint">{{ t('users_email_hint') }}</p>
+    {% endif %}
+
+    <p class="field-label">{{ t('users_permissions') }}</p>
+    {% set chosen = form.getlist('permiso') if form.getlist('permiso')
+                      else (member.permissions if member else []) %}
+    {% for name in permissions %}
+    <label class="check">
+      <input type="checkbox" name="permiso" value="{{ name }}"
+             {%- if name in chosen %} checked{% endif %}>
+      <span>{{ t('users_can_' + name) }} <span class="hint">{{ t('users_can_' + name + '_desc') }}</span></span>
+    </label>
+    {% endfor %}
+    <p class="hint">{{ t('users_permissions_hint') }}</p>
+
+    <button class="btn" type="submit">
+      {{ t('users_save') if member else t('users_invite') }}</button>
+  </form>
+
+  <p class="foot">
+    <a href="{{ url_for('auth.settings', section='seguridad') }}#usuarios">{{ t('users_back') }}</a>
+  </p>
+</div>
+{% endblock %}

@@ -132,6 +132,71 @@
       {{ t('settings_two_step_manage') if two_step else t('settings_two_step_turn_on') }}</a>
     {% endcall %}
 
+    {# ----- los usuarios de la cuenta. Solo los ve el dueño: un usuario tiene
+       esta pantalla para su contraseña, su segundo factor y sus dispositivos,
+       y nada más. ----- #}
+    {% if not is_member %}
+    <h3 class="settings__subtitle" id="usuarios">{{ t('users_title') }}</h3>
+    <p class="settings__lead">{{ t('users_lead') }}</p>
+
+    {% if request.args.get('usuario') == 'invitado' %}
+    <p class="notice notice--ok">{{ t('users_invited_ok') }}</p>
+    {% elif request.args.get('usuario') == 'guardado' %}
+    <p class="notice notice--ok">{{ t('users_saved_ok') }}</p>
+    {% endif %}
+
+    {% call row(t('users_seats', used=seats_used, seats=seats),
+                '' if seats_left else t('users_seats_full')) %}
+    {% if seats_left %}
+    <a class="btn btn--small" href="{{ url_for('auth.user_form') }}">{{ t('users_new') }}</a>
+    {% else %}
+    <a class="btn btn--small btn--outline" href="{{ site_url }}/planes/">{{ t('users_more_seats') }}</a>
+    {% endif %}
+    {% endcall %}
+
+    {% for one in members %}
+    <div class="setting">
+      <div class="setting__text">
+        <h3 class="setting__title">{{ one.contact_name }}</h3>
+        <p class="setting__desc">{{ one.email }} ·
+          {{ (one.permissions or [])|map('permission_name')|join(', ') or t('users_no_permissions') }}</p>
+      </div>
+      <div class="setting__action">
+        {% if one.status == 'disabled' %}
+        <span class="tag tag--warn">{{ t('users_state_disabled') }}</span>
+        {% elif not one.password_hash %}
+        <span class="tag tag--warn">{{ t('users_state_invited') }}</span>
+        {% else %}
+        <span class="tag tag--quiet">{{ t('users_state_active') }}</span>
+        {% endif %}
+        {% if one.two_factor and one.two_factor.enabled_at %}
+        <span class="tag tag--quiet">{{ t('users_has_two_step') }}</span>
+        {% endif %}
+        <a class="btn btn--small btn--outline"
+           href="{{ url_for('auth.user_form', raw=one._id) }}">{{ t('users_edit') }}</a>
+        {# Cada acción es su propio formulario: son POST, y lo que hacen no se
+           deshace pulsando atrás. #}
+        <form method="post" action="{{ url_for('auth.user_state', raw=one._id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% if not one.password_hash and one.status != 'disabled' %}
+          <button class="btn btn--small btn--outline" type="submit"
+                  name="accion" value="reenviar">{{ t('users_resend') }}</button>
+          {% endif %}
+          {% if one.status == 'disabled' %}
+          <button class="btn btn--small btn--outline" type="submit"
+                  name="accion" value="activar">{{ t('users_enable') }}</button>
+          {% else %}
+          <button class="btn btn--small btn--outline" type="submit"
+                  name="accion" value="desactivar">{{ t('users_disable') }}</button>
+          {% endif %}
+          <button class="btn btn--small btn--danger" type="submit"
+                  name="accion" value="borrar">{{ t('users_delete') }}</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
     <h3 class="settings__subtitle">{{ t('devices_title') }}</h3>
 
     <ul class="devices">

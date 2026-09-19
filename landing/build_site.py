@@ -67,7 +67,9 @@ PUBLIC_ROWS = [
 # construyendo. Se dibujan con su marca al lado, para que nadie contrate
 # esperando algo que hoy no puede usar. Hoy: una cuenta es un solo acceso, sin
 # empleados ni permisos.
-SOON_ROWS = {"Usuarios"}
+# Ninguna fila está por venir ahora mismo. La lista se queda: es donde se marca
+# lo que se anuncia antes de existir.
+SOON_ROWS: set[str] = set()
 
 # Rows shown on the plan cards, above the fold.
 CARD_ROWS = ["Contactos", "Correos por mes", "Usuarios"]

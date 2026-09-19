@@ -234,8 +234,8 @@ TEXTS = {
                           "cuando quieras.",
     "close_change": "Cambiar mi contraseña",
 
-    # --- two-step verification ---------------------------------------------
-    "two_step_title": "Verificación en dos pasos",
+    # --- autenticación de múltiples factores --------------------------------
+    "two_step_title": "Autenticación de múltiples factores",
     "two_step_off_lead": "Añade un segundo candado a tu cuenta: además de tu "
                          "contraseña, un código que genera una app en tu "
                          "teléfono y cambia cada 30 segundos.",
@@ -261,7 +261,8 @@ TEXTS = {
     "two_step_disable_desc": "Tu cuenta vuelve a entrar solo con la "
                              "contraseña. Los códigos de respaldo dejan de "
                              "servir.",
-    "two_step_confirm_disable": "Vas a desactivar la verificación en dos pasos.",
+    "two_step_confirm_disable": "Vas a desactivar la autenticación de "
+                                "múltiples factores.",
     "two_step_regenerate": "Generar códigos de respaldo nuevos",
     "two_step_regenerate_desc": "Los ocho anteriores dejan de servir al "
                                 "momento. Útil si perdiste el papel donde los "
@@ -293,17 +294,18 @@ TEXTS = {
     "two_step_codes_done": "Ya los guardé",
 
     "two_step_code_title": "Escribe el código de tu app",
-    "two_step_code_lead": "Tu cuenta tiene verificación en dos pasos. Abre la "
-                          "app en tu teléfono y escribe el código que muestra.",
+    "two_step_code_lead": "Tu cuenta tiene autenticación de múltiples "
+                          "factores. Abre la app en tu teléfono y escribe el "
+                          "código que muestra.",
     "two_step_submit": "Entrar",
     "two_step_lost": "No tengo mi teléfono",
     "two_step_recovery_label": "Escribe uno de tus códigos de respaldo",
 
-    "panel_two_step_link": "Verificación en dos pasos",
+    "panel_two_step_link": "Autenticación de múltiples factores",
     "panel_two_step_on": "activada",
     "panel_two_step_off": "desactivada",
-    "two_step_turned_off": "Listo, la verificación en dos pasos quedó "
-                           "desactivada.",
+    "two_step_turned_off": "Listo, la autenticación de múltiples factores "
+                           "quedó desactivada.",
 
     # --- password ----------------------------------------------------------
     "password_title": "Cambiar tu contraseña",
@@ -362,6 +364,73 @@ TEXTS = {
     "settings_password_action": "Cambiar",
     "settings_two_step_desc": "Tipo: aplicación de códigos.",
     "settings_two_step_manage": "Administrar",
+
+    # --- los usuarios de la cuenta -----------------------------------------
+    # El dueño le da entrada a alguien de su equipo, con su propio correo y su
+    # propia contraseña, y le marca lo que puede hacer.
+    "users_title": "Usuarios",
+    "users_lead": "Personas de tu equipo que entran a esta cuenta, cada una con "
+                  "su correo y su contraseña. Tú decides lo que puede hacer "
+                  "cada una.",
+    "users_seats": "{used} de {seats} usuarios",
+    "users_seats_full": "Tu plan no permite más. Para agregar a alguien más, "
+                        "sube de plan.",
+    "users_more_seats": "Ver los planes",
+    "users_new": "Crear usuario",
+    "users_new_title": "Crear un usuario",
+    "users_edit_title": "Cambiar lo que puede hacer",
+    "users_form_lead": "Le llega una invitación a su correo y ahí pone su "
+                       "contraseña. Tú nunca la ves.",
+    "users_name": "Nombre de la persona",
+    "users_email": "Su correo",
+    "users_email_hint": "Tiene que ser suyo, no el de la empresa: es a donde "
+                        "llega la invitación, el aviso de un ingreso nuevo y "
+                        "la recuperación de su contraseña.",
+    "users_email_taken": "Ese correo ya tiene una cuenta en Panamails. Usa "
+                         "otro.",
+    "users_permissions": "Qué puede hacer",
+    "users_permissions_hint": "Sin marcar nada, solo entra y cambia su "
+                              "contraseña. Enviar correos incluye ver las "
+                              "campañas.",
+    "users_no_permissions": "Sin permisos",
+    "users_can_stats": "Ver estadísticas",
+    "users_can_stats_desc": "Las cifras de los envíos y las gráficas.",
+    "users_can_campaigns": "Ver campañas",
+    "users_can_campaigns_desc": "Las campañas y el detalle de cada envío, sin "
+                                "poder mandar.",
+    "users_can_send": "Enviar correos",
+    "users_can_send_desc": "Armar campañas y mandarlas.",
+    "users_can_contacts": "Modificar contactos",
+    "users_can_contacts_desc": "La lista, importar, etiquetas, columnas y "
+                               "supresiones.",
+    "users_can_designs": "Crear o editar plantillas",
+    "users_can_designs_desc": "El editor y el HTML propio.",
+    "users_invite": "Invitar",
+    "users_save": "Guardar",
+    "users_back": "Volver a Seguridad",
+    "users_edit": "Permisos",
+    "users_resend": "Reenviar invitación",
+    "users_enable": "Activar",
+    "users_disable": "Desactivar",
+    "users_delete": "Borrar",
+    "users_state_active": "Activo",
+    "users_state_invited": "Invitación pendiente",
+    "users_state_disabled": "Desactivado",
+    "users_has_two_step": "Con segundo factor",
+    "users_invited_ok": "Listo, le mandamos la invitación a su correo.",
+    "users_saved_ok": "Listo, guardamos sus permisos.",
+    "users_no_seats": "Tu plan no permite más usuarios.",
+
+    # La pantalla donde esa persona pone su contraseña.
+    "invite_title": "Pon tu contraseña",
+    "invite_lead": "{company} te dio entrada a su cuenta de Panamails. Elige "
+                   "una contraseña y entras.",
+    "invite_password": "Tu contraseña",
+    "invite_action": "Entrar",
+    "invite_gone_title": "Esta invitación ya no sirve",
+    "invite_gone_lead": "Se usó o se venció. Pídele a quien te invitó que te "
+                        "mande otra.",
+    "invite_to_login": "Ir a entrar",
     "settings_two_step_turn_on": "Activar",
 
     "settings_notifications_lead": "Qué correos te mandamos. Los que avisan de "
@@ -389,8 +458,8 @@ TEXTS = {
                                            "exista el proceso automático.",
     "settings_fixed_codes": "Códigos de confirmación y de recuperación",
     "settings_fixed_password": "Tu contraseña cambió",
-    "settings_fixed_two_step": "Se activó o se desactivó la verificación en "
-                               "dos pasos",
+    "settings_fixed_two_step": "Se activó o se desactivó la autenticación de "
+                               "múltiples factores",
     "settings_fixed_tag": "Siempre activo",
     "settings_notice_new_login": "Ingreso desde un dispositivo nuevo",
     "settings_notice_new_login_desc": "Te avisamos cuando alguien entra a tu "
@@ -1391,7 +1460,7 @@ TEXTS = {
     "admin_act_password_change": "Cambió la contraseña",
     "admin_act_recover": "Recuperó la contraseña",
     "admin_act_correct_email": "Corrigió su correo",
-    "admin_act_two_factor": "Verificación en dos pasos",
+    "admin_act_two_factor": "Autenticación de múltiples factores",
     "admin_act_session_closed": "Cerró una sesión desde el aviso por correo",
     "admin_act_import": "Importó {file}",
     "admin_act_import_counts": "{added} nuevos · {updated} actualizados · "
@@ -1434,8 +1503,9 @@ TEXTS = {
     "admin_sending_pending": "Todavía no puede enviar",
 
     "admin_two_step_needed": "Para entrar a administración activa antes la "
-                             "verificación en dos pasos. Es la cuenta que "
-                             "puede suspender y habilitar a todos los demás.",
+                             "autenticación de múltiples factores. Es la "
+                             "cuenta que puede suspender y habilitar a todos "
+                             "los demás.",
 
     # --- errors ------------------------------------------------------------
     "error_required": "Completa este campo.",
@@ -1571,8 +1641,20 @@ TEXTS = {
     # two-step on with a phone that is not the owner's is how an account gets
     # taken away for good, and turning it off is the first thing anybody does
     # after getting in.
-    "mail_two_step_on_subject": "Activaste la verificación en dos pasos",
-    "mail_two_step_off_subject": "Desactivaste la verificación en dos pasos",
+    # La invitación a entrar como usuario de una cuenta.
+    "mail_invite_subject": "{company} te invitó a su cuenta de Panamails",
+    "mail_invite_heading": "Te dieron entrada a {company}",
+    "mail_invite_body": "Vas a poder entrar a la cuenta de {company} en "
+                        "Panamails con tu propio correo. Pulsa el botón y "
+                        "elige tu contraseña.",
+    "mail_invite_expires": "El enlace sirve una sola vez y vence en {days} "
+                           "días.",
+    "mail_invite_button": "Poner mi contraseña",
+    "mail_invite_foot": "Si no esperabas esto, no hagas nada: sin poner una "
+                        "contraseña, la invitación no sirve.",
+
+    "mail_two_step_on_subject": "Activaste la autenticación de múltiples factores",
+    "mail_two_step_off_subject": "Desactivaste la autenticación de múltiples factores",
     "mail_two_step_on_heading": "Tu cuenta ya pide un segundo paso",
     "mail_two_step_off_heading": "Tu cuenta dejó de pedir el segundo paso",
     "mail_two_step_on_body": "Desde ahora, al entrar desde un dispositivo "

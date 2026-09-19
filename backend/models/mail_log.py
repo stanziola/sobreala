@@ -46,6 +46,8 @@ ADMIN_PLAN_END = "admin_plan_end"
 # Cambiar el correo de la cuenta: el código va a la dirección nueva y el aviso
 # a la vieja, así que son dos mensajes distintos y a dos sitios distintos.
 EMAIL_CHANGE_CODE = "email_change_code"
+# La invitación a entrar como usuario de una cuenta.
+INVITE = "invite"
 EMAIL_CHANGED = "email_changed"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"

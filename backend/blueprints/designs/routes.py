@@ -27,7 +27,8 @@ from flask import (Blueprint, Response, abort, g, jsonify, redirect,
                    render_template, request, url_for)
 from markupsafe import escape
 
-from blueprints.auth.routes import current_account, not_for_admins
+from blueprints.auth.routes import (current_account, current_workspace, needs,
+                                    not_for_admins)
 from db import get_db
 from i18n import TEXTS, t
 from models import account as accounts
@@ -41,17 +42,21 @@ from services.security import csrf_ok
 bp = Blueprint("designs", __name__)
 
 @bp.before_request
-def keep_admins_out():
-    """Un administrador no tiene plantillas que mirar, así que vuelve a /admin.
+def keep_out():
+    """Quién no entra aquí: un administrador, que no tiene plantillas que
+    mirar, y un usuario de una cuenta sin ese permiso.
 
     Va aquí y no en un decorador por ruta: esta pantalla tiene varias y una
     nueva heredaría la puerta sin que nadie se acuerde de ponérsela.
     """
-    return not_for_admins(current_account())
+    account = current_account()
+    return not_for_admins(account) or needs(account, accounts.DESIGNS)
 
 
 def signed_in():
-    return current_account()
+    """La cuenta de la empresa: las plantillas son suyas, también cuando las
+    arma un usuario que ella creó."""
+    return current_workspace()
 
 
 def offered() -> list[dict[str, str]]:
@@ -207,8 +212,8 @@ def html_preview(html: str, plan) -> Response:
                 "color:#18181B;\"><p>" + escape(explain(problems)) + "</p>")
         return Response(page, mimetype="text/html")
     email = render.email_from_html(html, plan=plan, preview=True,
-                                   postal=accounts.postal_of(current_account()))
-    return Response(filled_for(get_db(), current_account(), email),
+                                   postal=accounts.postal_of(current_workspace()))
+    return Response(filled_for(get_db(), current_workspace(), email),
                     mimetype="text/html")
 
 
@@ -374,7 +379,7 @@ def preview(key: str, filled: dict[str, str], plan,
     g.email_preview = True
     fields = fields or []
     html = render.email(key, filled, plan=plan, preview=True,
-                        postal=accounts.postal_of(current_account()))
+                        postal=accounts.postal_of(current_workspace()))
     return Response(columns.preview_fill(html, fields),
                     mimetype="text/html")
 
@@ -490,7 +495,7 @@ def canvas_email(doc, plan, urls: list[str | None], shades=None, *,
     return render.email_from_body(canvas.to_html(doc, urls, shades), plan=plan,
                                   unsubscribe=unsubscribe, preview=preview,
                                   style=canvas.dark_css(doc, shades),
-                                  postal=accounts.postal_of(current_account()))
+                                  postal=accounts.postal_of(current_workspace()))
 
 
 def canvas_size(doc, plan, urls: list[str | None]) -> int:

@@ -228,8 +228,9 @@ def _load_account() -> dict | None:
         forget_active()
         return None
     # Suspender a alguien que ya estaba dentro tiene que sacarlo, no esperar a
-    # que se le ocurra salir.
-    if accounts.is_suspended(account):
+    # que se le ocurra salir. Lo mismo con un usuario desactivado y con uno
+    # cuya empresa acaban de suspender.
+    if accounts.is_suspended(account) or not member_may_enter(get_db(), account):
         forget_active()
         return None
     sessions.touch(get_db(), doc)
@@ -251,9 +252,18 @@ def bar_account():
         return {}
     try:
         account = current_account()
-        return {"bar_account": account, "bar_admin": accounts.is_admin(account)}
+        return {"bar_account": account, "bar_admin": accounts.is_admin(account),
+                # Qué filas enseñarle: un usuario ve solo lo que su empresa le
+                # dio. Las rutas lo comprueban igual, porque esconder una fila
+                # no es un permiso.
+                "bar_can": {name: accounts.can(account, name)
+                            for name in accounts.PERMISSIONS},
+                # El nombre de arriba es el de la empresa, también para un
+                # usuario suyo: es la cuenta en la que está trabajando.
+                "bar_company": (current_workspace() or {}).get("company_name", "")}
     except Exception:  # noqa: BLE001 - the page is worth more than the menu
-        return {"bar_account": None, "bar_admin": False}
+        return {"bar_account": None, "bar_admin": False, "bar_can": {},
+                "bar_company": ""}
 
 
 def landing(account: dict | None) -> str:
@@ -320,6 +330,84 @@ def inside(account: dict | None) -> str:
     if accounts.is_admin(account):
         return url_for("admin.home")
     return url_for("auth.panel")
+
+
+def member_may_enter(db, account: dict | None) -> bool:
+    """Si un usuario de una empresa puede estar dentro.
+
+    Dos cosas lo dejan fuera y ninguna es suya: que el dueño lo haya
+    desactivado, y que la empresa esté suspendida. Una empresa suspendida sin
+    esto seguiría teniendo a su equipo dentro.
+    """
+    if not accounts.is_member(account):
+        return True
+    if account.get("status") == accounts.DISABLED:
+        return False
+    owner = accounts.by_id(db, account["owner_id"])
+    return owner is not None and not accounts.is_suspended(owner)
+
+
+def current_workspace() -> dict | None:
+    """**De quién son los datos** que esta petición mira: de la empresa.
+
+    Para una empresa es ella misma. Para un usuario que ella creó, la cuenta
+    del dueño. Así los contactos, las plantillas y las campañas siguen
+    colgando de un solo `account_id` y ninguna consulta tuvo que cambiar: lo
+    que cambia es de quién es la cuenta que se les pasa.
+
+    `current_account()` sigue diciendo **quién** es, que es otra cosa: el
+    segundo factor, los dispositivos y la contraseña son de la persona.
+    """
+    if hasattr(g, "_workspace"):
+        return g._workspace
+    account = current_account()
+    g._workspace = (accounts.owner_of(get_db(), account)
+                    if accounts.is_member(account) else account)
+    return g._workspace
+
+
+# A dónde llevar a un usuario según lo que puede. En orden: la primera que
+# pueda abrir es su pantalla de entrada, y si no puede ninguna le queda su
+# Seguridad, que siempre es suya.
+HOMES = (
+    (accounts.STATS, "auth.panel"),
+    (accounts.CAMPAIGNS, "campaigns.index"),
+    (accounts.CONTACTS, "contacts.index"),
+    (accounts.DESIGNS, "designs.index"),
+)
+
+
+def home_for(account: dict | None) -> str:
+    for permission, where in HOMES:
+        if accounts.can(account, permission):
+            return url_for(where)
+    return url_for("auth.settings", section="seguridad")
+
+
+def needs(account: dict | None, permission: str):
+    """Un redirect si esta cuenta no puede abrir esa pantalla.
+
+    Se comprueba en la ruta y no solo en el menú, como con los administradores:
+    esconder una fila no es un permiso. Quien no la tiene cae en la primera que
+    sí pueda abrir, no en una pantalla de error.
+
+    Devuelve None cuando no hay nada que hacer, para poder escribir
+    `answer = needs(account, ...)` sin envolver cada vista en un decorador.
+    """
+    if accounts.can(account, permission):
+        return None
+    return redirect(home_for(account))
+
+
+def owner_only(account: dict | None):
+    """Un redirect si quien mira es un usuario y no el dueño.
+
+    La cuenta, la facturación, contratar un plan, la dirección postal y los
+    usuarios son de la empresa. Un usuario tiene su Seguridad, y nada más.
+    """
+    if accounts.is_member(account):
+        return redirect(url_for("auth.settings", section="seguridad"))
+    return None
 
 
 def not_for_admins(account: dict | None):
@@ -997,7 +1085,11 @@ def login():
                 # Suspendida es suspendida: hasta ahora el estado se enseñaba y
                 # no impedía nada. Se comprueba después de la contraseña, para
                 # no decirle a un desconocido qué cuentas están suspendidas.
-                if accounts.is_suspended(account):
+                if accounts.is_suspended(account) or not member_may_enter(db, account):
+                    # Suspendida es suspendida, y un usuario desactivado —o uno
+                    # cuya empresa está suspendida— tampoco entra. Se comprueba
+                    # después de la contraseña, para no decirle a un desconocido
+                    # qué cuentas están suspendidas.
                     errors["form"] = t("error_suspended")
                     log_auth(db, events.LOGIN, events.SUSPENDED,
                              email=email_value, account_id=account["_id"])
@@ -1457,18 +1549,21 @@ def panel():
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
-    answer = not_for_admins(account)
+    answer = not_for_admins(account) or needs(account, accounts.STATS)
     if answer:
         return answer
 
     db = get_db()
+    # Las cifras son las de la empresa, también cuando las mira un usuario suyo.
+    company = current_workspace()
     # Sin proceso en segundo plano, entrar al panel es el único momento en que
-    # alguien puede enterarse de que su plan está por vencerse o ya venció.
-    notices.plan_watch(db, account)
+    # alguien puede enterarse de que su plan está por vencerse o ya venció. El
+    # aviso es de la empresa y va a su dirección, no a la de quien miró.
+    notices.plan_watch(db, company)
 
     return render_template(
-        "stats.html", account=account, pick=None,
-        **stats.screen(db, account,
+        "stats.html", account=company, pick=None,
+        **stats.screen(db, company,
                        period=request.args.get("periodo", ""),
                        tag=request.args.get("etiqueta", ""),
                        campaign=request.args.get("campana", "")))
@@ -1477,6 +1572,7 @@ def panel():
 # --------------------------------------------------------------- settings
 
 # The four sections, in the order the sidebar lists them.
+MEMBER_SECTIONS = ("seguridad",)
 SECTIONS = ("cuenta", "seguridad", "notificaciones", "pagos")
 
 # Del administrador dos. Cuenta y Pagos no significan nada en una cuenta que no
@@ -1487,8 +1583,17 @@ ADMIN_SECTIONS = ("seguridad", "notificaciones")
 
 
 def sections_for(account: dict | None) -> tuple[str, ...]:
-    """Las secciones que esa cuenta puede abrir. La primera es la de entrada."""
-    return ADMIN_SECTIONS if accounts.is_admin(account) else SECTIONS
+    """Las secciones que esa cuenta puede abrir. La primera es la de entrada.
+
+    Un usuario tiene **solo Seguridad**: su contraseña, su autenticación de
+    múltiples factores y sus dispositivos. La cuenta, los avisos y la
+    facturación son de la empresa que lo creó.
+    """
+    if accounts.is_admin(account):
+        return ADMIN_SECTIONS
+    if accounts.is_member(account):
+        return MEMBER_SECTIONS
+    return SECTIONS
 
 
 @bp.route("/configuracion", methods=["GET", "POST"])
@@ -1570,6 +1675,11 @@ def settings(section: str = "cuenta"):
                 else accounts.postal_of(account)),
         postal_error=postal_error,
         postal_max=accounts.POSTAL_MAX,
+        # Los usuarios de la cuenta, en Seguridad. Un usuario no los ve: esta
+        # pantalla es suya para su contraseña y su segundo factor.
+        is_member=accounts.is_member(account),
+        **({} if accounts.is_member(account) or accounts.is_admin(account)
+           else users_screen(db, account)),
     )
 
 
@@ -1655,7 +1765,8 @@ def checkout(plan: str):
     if account is None:
         # El plan viaja por su nombre para que, al entrar, siga hasta aquí.
         return redirect(url_for("auth.login", plan=plan))
-    answer = not_for_admins(account)
+    # Un usuario de la cuenta no compra planes: eso es del dueño.
+    answer = not_for_admins(account) or owner_only(account)
     if answer:
         return answer
 
@@ -1725,8 +1836,9 @@ def start_payment():
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
-    # Una cuenta de administrador no compra planes: no tiene a quién escribirle.
-    answer = not_for_admins(account)
+    # Una cuenta de administrador no compra planes: no tiene a quién
+    # escribirle. Un usuario tampoco: el plan es de la empresa.
+    answer = not_for_admins(account) or owner_only(account)
     if answer:
         return answer
 
@@ -1948,6 +2060,180 @@ def finish_card():
     settle(db, account, attempt, payer_email=found["email"],
            last4=found["last4"], order_id=oper)
     return redirect(f"{back}?hecho=1")
+
+
+# ------------------------------------------------------ los usuarios de la cuenta
+
+# Cuántos días vale la invitación. Una semana: lo suficiente para que alguien la
+# abra el lunes siguiente, y no tanto como para que un correo viejo siga
+# abriendo la cuenta meses después.
+INVITE_DAYS = 7
+
+
+def invite_link(db, member) -> str:
+    """Un enlace nuevo para poner la contraseña. Los anteriores dejan de valer:
+    si el dueño lo reenvía es porque el otro se perdió."""
+    tokens.discard(db, member["_id"], tokens.INVITE)
+    raw = tokens.issue_link(db, member["_id"], tokens.INVITE, {},
+                            days=INVITE_DAYS)
+    return f"{Config.APP_BASE_URL}{url_for('auth.accept_invite', token=raw)}"
+
+
+def send_invite(db, owner, member) -> bool:
+    return notices.invited(member, company=owner.get("company_name", ""),
+                           link=invite_link(db, member), days=INVITE_DAYS)
+
+
+def users_screen(db, owner):
+    """Lo que la sección Usuarios necesita saber."""
+    return {
+        "members": accounts.members_of(db, owner["_id"]),
+        "seats": plans.users(accounts.plan_of(owner)),
+        "seats_used": accounts.seats_used(db, owner["_id"]),
+        "seats_left": accounts.seats_left(db, owner),
+    }
+
+
+@bp.route("/configuracion/usuarios/nuevo", methods=["GET", "POST"])
+@bp.route("/configuracion/usuarios/<raw>", methods=["GET", "POST"])
+def user_form(raw: str = ""):
+    """Crear un usuario o cambiarle los permisos.
+
+    Pantalla aparte y no una fila: los permisos son casillas con su explicación,
+    y eso no cabe al lado de un nombre. Al crear no se pide contraseña: le llega
+    una invitación y la pone él.
+    """
+    owner = current_account()
+    if owner is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(owner) or owner_only(owner)
+    if answer:
+        return answer
+
+    db = get_db()
+    member = None
+    if raw:
+        member_id = as_object_id(raw)
+        member = accounts.member_of(db, owner["_id"], member_id) if member_id else None
+        if member is None:
+            abort(404)
+
+    errors: dict[str, str] = {}
+    form = request.form
+    if request.method == "POST":
+        name = form.get("nombre", "").strip()[:80]
+        email = clean_email(form.get("correo", ""))
+        wanted = accounts.clean_permissions(form.getlist("permiso"))
+        if not csrf_ok(form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif member is not None:
+            accounts.set_permissions(db, owner["_id"], member["_id"], wanted)
+            return redirect(url_for("auth.settings", section="seguridad",
+                                    usuario="guardado") + "#usuarios")
+        else:
+            if not name:
+                errors["nombre"] = t("error_required")
+            if email is None:
+                errors["correo"] = t("error_email")
+            # El sitio se mira aquí y no solo en la pantalla: el formulario se
+            # escribe a mano, y una cuenta llena podría seguir invitando.
+            elif accounts.seats_left(db, owner) <= 0:
+                errors["form"] = t("users_no_seats")
+            if not errors:
+                made = accounts.add_member(db, owner, contact_name=name,
+                                           email=email, permissions=wanted)
+                if made is None:
+                    # Esa dirección ya tiene cuenta en Panamails. No se dice de
+                    # quién es, pero sí que no se puede usar: quien invita tiene
+                    # que poder arreglarlo.
+                    errors["correo"] = t("users_email_taken")
+                else:
+                    send_invite(db, owner, made)
+                    log_auth(db, events.SETTINGS, events.OK,
+                             email=made["email"], account_id=made["_id"])
+                    return redirect(url_for("auth.settings", section="seguridad",
+                                            usuario="invitado") + "#usuarios")
+
+    return render_template(
+        "users.html", account=owner, member=member, errors=errors, form=form,
+        permissions=accounts.PERMISSIONS, implies=accounts.IMPLIES,
+        **users_screen(db, owner))
+
+
+@bp.route("/configuracion/usuarios/<raw>/estado", methods=["POST"])
+def user_state(raw):
+    """Desactivar, activar, reenviar la invitación o borrar a un usuario.
+
+    Desactivar y borrar **le cierran las sesiones**: quitarle la entrada y
+    dejarlo dentro no es quitarle la entrada.
+    """
+    owner = current_account()
+    if owner is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(owner) or owner_only(owner)
+    if answer:
+        return answer
+
+    db = get_db()
+    back = url_for("auth.settings", section="seguridad") + "#usuarios"
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    member_id = as_object_id(raw)
+    member = accounts.member_of(db, owner["_id"], member_id) if member_id else None
+    if member is None:
+        return redirect(back)
+
+    what = request.form.get("accion", "")
+    if what == "borrar":
+        sessions.revoke_others(db, member["_id"])
+        accounts.remove_member(db, owner["_id"], member["_id"])
+    elif what == "desactivar":
+        accounts.set_member_status(db, owner["_id"], member["_id"], disabled=True)
+        sessions.revoke_others(db, member["_id"])
+    elif what == "activar":
+        accounts.set_member_status(db, owner["_id"], member["_id"], disabled=False)
+    elif what == "reenviar":
+        send_invite(db, owner, member)
+    return redirect(back)
+
+
+@bp.route("/invitacion/<token>", methods=["GET", "POST"])
+def accept_invite(token):
+    """Aceptar la invitación: poner la contraseña y entrar.
+
+    El enlace es de un solo uso y vence. Lo que prueba es que esa dirección es
+    suya, que es exactamente lo que probaría un código; por eso al terminar el
+    correo queda confirmado y la sesión se abre aquí mismo.
+    """
+    db = get_db()
+    found = tokens.find_link(db, token, tokens.INVITE)
+    member = accounts.by_id(db, found["account_id"]) if found else None
+    if member is None or not accounts.is_member(member):
+        return render_template("invite.html", gone=True), 410
+
+    owner = accounts.by_id(db, member["owner_id"])
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        else:
+            problem = password_problem(password)
+            if problem:
+                errors["password"] = problem
+            elif not tokens.spend(db, found):
+                # Alguien lo usó mientras tanto: el enlace vale una vez.
+                return render_template("invite.html", gone=True), 410
+            else:
+                accounts.accept_invitation(db, member["_id"], password)
+                fresh = accounts.by_id(db, member["_id"])
+                sign_in(fresh)
+                log_auth(db, events.LOGIN, events.OK, email=fresh["email"],
+                         account_id=fresh["_id"])
+                return redirect(home_for(fresh))
+
+    return render_template("invite.html", member=member, owner=owner,
+                           errors=errors, gone=False)
 
 
 # --------------------------------------------------------- cambiar el correo

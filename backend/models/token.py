@@ -34,6 +34,10 @@ SESSION_REVOKE = "session_revoke"
 # Cambiar el correo de una cuenta que ya está confirmada. El código va a la
 # dirección **nueva**: es lo que prueba que existe y que es de quien la escribió.
 EMAIL_CHANGE = "email_change"
+# La invitación a entrar como usuario de una cuenta. Un enlace y no un código:
+# quien lo recibe todavía no tiene contraseña, así que lo que el enlace prueba
+# es que esa dirección es suya, y al otro lado pone la suya.
+INVITE = "invite"
 
 # Why a code was refused, so the visitor gets a useful message instead of a
 # generic error. UNKNOWN is "there is no code waiting for this account"; INVALID

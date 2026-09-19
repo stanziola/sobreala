@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ t('invite_title') }}{% endblock %}
+
+{#- Aceptar la invitación: la persona pone **su** contraseña y entra.
+
+    El enlace vale una vez y vence. Gastado o vencido dicen lo mismo, como los
+    demás enlaces del panel: quien lo tiene en la mano no se entera de cuál de
+    las dos cosas pasó. -#}
+{% block content %}
+<div class="card card--narrow">
+  {% if gone %}
+  <h1>{{ t('invite_gone_title') }}</h1>
+  <p class="lead">{{ t('invite_gone_lead') }}</p>
+  <p class="foot"><a href="{{ url_for('auth.login') }}">{{ t('invite_to_login') }}</a></p>
+  {% else %}
+  <h1>{{ t('invite_title') }}</h1>
+  <p class="lead">{{ t('invite_lead', company=owner.company_name if owner else '') }}</p>
+  <p class="hint">{{ member.email }}</p>
+
+  {% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="password">{{ t('invite_password') }}</label>
+    <input id="password" name="password" type="password" required
+           autocomplete="new-password" minlength="{{ password_min }}"
+           aria-describedby="password-rules">
+
+    {# Las mismas cuatro reglas que al registrarse, con sus mismas marcas: el
+       guion las encuentra por data-rules y no le importa en qué página está. #}
+    <p class="rules__title" id="password-rules">{{ t('password_rules_title') }}</p>
+    <ul class="rules" data-rules data-min="{{ password_min }}">
+      {% for rule in ['length', 'upper', 'digit', 'symbol'] %}
+      <li class="rules__item" data-rule="{{ rule }}">
+        <span class="rules__check" aria-hidden="true">{% include "_icon-check.svg" %}</span>
+        {{ t('password_rule_' + rule, min=password_min) if rule == 'length'
+           else t('password_rule_' + rule) }}
+        <span class="visually-hidden" data-state></span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
+    <button class="btn" type="submit">{{ t('invite_action') }}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -26,7 +26,8 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from flask import Blueprint, abort, redirect, render_template, request, url_for
 
-from blueprints.auth.routes import current_account, not_for_admins
+from blueprints.auth.routes import (current_account, current_workspace, needs,
+                                    not_for_admins)
 from db import get_db
 from i18n import t
 from models import account as accounts
@@ -46,12 +47,23 @@ WHEN_FORMAT = "%Y-%m-%dT%H:%M"
 
 
 @bp.before_request
-def keep_admins_out():
-    return not_for_admins(current_account())
+def keep_out():
+    """Un administrador no tiene a quién escribirle, y un usuario entra solo si
+    la empresa le dio al menos ver las campañas. Mandar pide su propio permiso,
+    y eso se comprueba en las dos rutas que mandan."""
+    account = current_account()
+    return not_for_admins(account) or needs(account, accounts.CAMPAIGNS)
 
 
 def signed_in():
-    return current_account()
+    """La cuenta de la empresa: las campañas, los contactos y la cuota son
+    suyos, también cuando los mira un usuario que ella creó."""
+    return current_workspace()
+
+
+def may_send():
+    """Un redirect si quien mira puede ver las campañas pero no mandarlas."""
+    return needs(current_account(), accounts.SEND)
 
 
 def as_id(raw):
@@ -131,6 +143,9 @@ def shared(db, account, **extra):
         "quota": accounts.quota_left(account),
         "editable": campaigns.editable,
         "due": campaigns.due,
+        # Un usuario puede tener solo «ver las campañas»: entonces la pantalla
+        # se lee entera y no enseña botones que su cuenta no puede pulsar.
+        "can_send": accounts.can(current_account(), accounts.SEND),
         **extra,
     }
 
@@ -145,6 +160,9 @@ def index():
     errors: dict[str, str] = {}
 
     if request.method == "POST":
+        answer = may_send()
+        if answer:
+            return answer
         errors = save(db, account, None)
         if not errors:
             return redirect(url_for("campaigns.index", guardado=1))
@@ -210,6 +228,9 @@ def edit(raw):
 
     errors: dict[str, str] = {}
     if request.method == "POST":
+        answer = may_send()
+        if answer:
+            return answer
         errors = save(db, account, found)
         if not errors:
             return redirect(url_for("campaigns.index", guardado=1))
@@ -283,6 +304,9 @@ def remove(raw):
     if account is None:
         return redirect(url_for("auth.login"))
 
+    answer = may_send()
+    if answer:
+        return answer
     if csrf_ok(request.form.get("csrf_token")):
         campaign_id = as_id(raw)
         if campaign_id:
@@ -306,6 +330,9 @@ def send(raw):
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
+    answer = may_send()
+    if answer:
+        return answer
 
     db = get_db()
     campaign_id = as_id(raw)

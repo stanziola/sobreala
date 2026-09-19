@@ -8,7 +8,7 @@
 <details class="menu" data-menu>
   <summary class="menu__button">
     {% if bar_account %}
-    <span class="menu__who">{{ bar_account.company_name }}</span>
+    <span class="menu__who">{{ bar_company or bar_account.company_name }}</span>
     {% else %}
     <span class="menu__bars" aria-hidden="true"><span></span><span></span><span></span></span>
     <span class="visually-hidden">{{ t('menu_options') }}</span>
@@ -39,24 +39,33 @@
     {% else %}
     {# El panel va primero porque es a lo que se dedica la empresa: lo demás son
        ajustes de la cuenta, y se buscan cuando hace falta. #}
+    {# Un usuario de la cuenta ve solo lo que su empresa le dio. #}
+    {% if bar_can.stats %}
     <a class="menu__item" href="{{ url_for('auth.panel') }}">
       <span class="menu__icons">{% include "_icon-chart.svg" %}</span>
       <span>{{ t('nav_panel') }}</span>
     </a>
+    {% endif %}
     {# Debajo de Estadísticas: primero se mira cómo va, después se manda. #}
+    {% if bar_can.campaigns %}
     <a class="menu__item" href="{{ url_for('campaigns.index') }}">
       <span class="menu__icons">{% include "_icon-send.svg" %}</span>
       <span>{{ t('menu_send') }}</span>
     </a>
+    {% endif %}
+    {% if bar_can.contacts %}
     <a class="menu__item" href="{{ url_for('contacts.index') }}">
       <span class="menu__icons">{% include "_icon-people.svg" %}</span>
       <span>{{ t('menu_contacts') }}</span>
     </a>
+    {% endif %}
     {# Debajo de contactos: primero a quién le escribes, después con qué. #}
+    {% if bar_can.designs %}
     <a class="menu__item" href="{{ url_for('designs.index') }}">
       <span class="menu__icons">{% include "_icon-mail.svg" %}</span>
       <span>{{ t('menu_designs') }}</span>
     </a>
+    {% endif %}
     {% endif %}
     <a class="menu__item" href="{{ url_for('auth.settings') }}">
       <span class="menu__icons">{% include "_icon-gear.svg" %}</span>

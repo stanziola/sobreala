@@ -117,6 +117,24 @@ def paid(account, *, plan: str, until, renewed: bool) -> bool:
         note=note, foot=switch_off_hint())
 
 
+def invited(member, *, company: str, link: str, days: int) -> bool:
+    """La invitación a entrar como usuario de una cuenta.
+
+    Va a la dirección de esa persona y lleva un enlace de un solo uso para que
+    ponga **su** contraseña: el dueño no conoce la contraseña de nadie. No tiene
+    interruptor: es el único correo que esa cuenta va a recibir si nunca lo
+    abre, y sin él la invitación no existe.
+    """
+    return deliver(
+        member, purpose=mail_log.INVITE,
+        subject=t("mail_invite_subject", company=company),
+        heading=t("mail_invite_heading", company=company),
+        paragraphs=[t("mail_invite_body", company=company),
+                    t("mail_invite_expires", days=days)],
+        button={"href": link, "label": t("mail_invite_button")},
+        foot=t("mail_invite_foot"))
+
+
 def invoice_ready(account, *, paid_at) -> bool:
     """Ya está la factura de un pago. Es papeleo de un cobro, así que va con el
     interruptor de «Pagos y plan»."""

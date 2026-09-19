@@ -35,7 +35,35 @@ STATUSES = (REGISTERED, ACTIVE, SUSPENDED)
 # aprobarse a sí mismo el primer día.
 CLIENT = "client"
 ADMIN = "admin"
-ROLES = (CLIENT, ADMIN)
+MEMBER = "member"
+ROLES = (CLIENT, ADMIN, MEMBER)
+
+# --------------------------------------------------- los usuarios de una cuenta
+#
+# Un usuario es **su propio documento de cuenta** con `owner_id` apuntando a la
+# empresa. Así entra con su correo y su contraseña, tiene sus dispositivos y su
+# propio segundo factor, y nada de eso hubo que escribirlo dos veces. Lo que ve
+# y toca sigue siendo de la empresa: los datos cuelgan del dueño
+# (`current_workspace()` en las rutas), y aquí solo se guarda quién es y qué
+# puede.
+#
+# El dueño lo puede todo, siempre, y no lleva permisos escritos: lo que decide
+# es no tener `owner_id`. Una cuenta de administrador de Panamails no tiene
+# ninguno de estos permisos, porque esas pantallas no son suyas.
+STATS = "stats"          # Estadísticas
+CAMPAIGNS = "campaigns"  # ver las campañas y el detalle de cada envío
+SEND = "send"            # guardar, editar y mandar campañas
+CONTACTS = "contacts"    # la lista, importar, etiquetas, columnas, supresiones
+DESIGNS = "designs"      # crear, editar y borrar plantillas
+PERMISSIONS = (STATS, CAMPAIGNS, SEND, CONTACTS, DESIGNS)
+
+# Mandar es también mirar: quien puede enviar una campaña puede abrir la
+# pantalla donde está el botón.
+IMPLIES = {SEND: (CAMPAIGNS,)}
+
+# Un usuario al que se le quitó la entrada sin borrarlo: lo suyo se queda, pero
+# no abre sesión.
+DISABLED = "disabled"
 
 
 def normalize_email(email: str) -> str:
@@ -320,6 +348,173 @@ def is_admin(account: dict[str, Any] | None) -> bool:
     return (account or {}).get("role") == ADMIN
 
 
+# ------------------------------------------------- los usuarios de una cuenta
+
+def is_member(account: dict[str, Any] | None) -> bool:
+    """Si esta cuenta es un usuario que alguien creó, y no una empresa."""
+    return bool((account or {}).get("owner_id"))
+
+
+def owner_id_of(account: dict[str, Any] | None) -> Any:
+    """De quién son los datos que esta cuenta mira: de su dueño, o suyos."""
+    one = account or {}
+    return one.get("owner_id") or one.get("_id")
+
+
+def owner_of(db, account: dict[str, Any] | None) -> dict[str, Any] | None:
+    """La cuenta de la empresa: la del dueño si esto es un usuario, o la misma.
+
+    Es lo que hace que un usuario vea los contactos, las plantillas y las
+    campañas de su empresa sin que ninguna consulta cambie: todas siguen
+    preguntando por un `account_id`, y aquí se decide cuál.
+    """
+    if account is None or not is_member(account):
+        return account
+    return by_id(db, account["owner_id"])
+
+
+def clean_permissions(wanted) -> list[str]:
+    """Los permisos que llegan de un formulario, dejados en los que existen.
+
+    Mandar arrastra ver: quien puede enviar una campaña puede abrir la pantalla
+    donde está el botón, y guardarlo al revés dejaría un usuario que manda pero
+    no ve lo que mandó.
+    """
+    found = {one for one in (wanted or []) if one in PERMISSIONS}
+    for name, implied in IMPLIES.items():
+        if name in found:
+            found.update(implied)
+    return [one for one in PERMISSIONS if one in found]
+
+
+def can(account: dict[str, Any] | None, permission: str) -> bool:
+    """Si esta cuenta puede hacer eso.
+
+    El dueño lo puede todo: su cuenta es la empresa. Un administrador de
+    Panamails, nada de esto: no tiene contactos a los que escribirle. Un usuario,
+    lo que el dueño le marcó.
+    """
+    one = account or {}
+    if not one or is_admin(one):
+        return False
+    if not is_member(one):
+        return True
+    if one.get("status") == DISABLED:
+        return False
+    return permission in (one.get("permissions") or [])
+
+
+def members_of(db, owner_id) -> list[dict[str, Any]]:
+    """Los usuarios de esa empresa, el más antiguo primero."""
+    return list(db.accounts.find({"owner_id": owner_id}).sort("created_at", 1))
+
+
+def member_of(db, owner_id, member_id) -> dict[str, Any] | None:
+    """Uno de esa empresa. El dueño va en la consulta, así que el usuario de
+    otra no encuentra nada."""
+    return db.accounts.find_one({"_id": member_id, "owner_id": owner_id})
+
+
+def add_member(db, owner, *, contact_name: str, email: str,
+               permissions: list[str]) -> dict[str, Any] | None:
+    """Crear un usuario de esa empresa, **sin contraseña**: la pone él con el
+    enlace de la invitación. None si esa dirección ya tiene cuenta.
+
+    No se copia el nombre de la empresa: sale del dueño, así que cambiarlo no
+    deja usuarios con el nombre viejo.
+    """
+    moment = now()
+    doc = {
+        "owner_id": owner["_id"],
+        "role": MEMBER,
+        "contact_name": contact_name.strip(),
+        "email": email.strip(),
+        "email_normalized": normalize_email(email),
+        "password_hash": "",
+        "email_confirmed_at": None,
+        "status": REGISTERED,
+        "permissions": clean_permissions(permissions),
+        "invited_by": owner["_id"],
+        "invited_at": moment,
+        "created_at": moment,
+        "updated_at": moment,
+        "last_login_at": None,
+        "password_history": [],
+    }
+    try:
+        result = db.accounts.insert_one(doc)
+    except DuplicateKeyError:
+        return None
+    doc["_id"] = result.inserted_id
+    return doc
+
+
+def set_permissions(db, owner_id, member_id, permissions: list[str]) -> bool:
+    """Cambiar lo que puede hacer un usuario. El dueño va en la consulta."""
+    return db.accounts.update_one(
+        {"_id": member_id, "owner_id": owner_id},
+        {"$set": {"permissions": clean_permissions(permissions),
+                  "updated_at": now()}}).matched_count == 1
+
+
+def set_member_status(db, owner_id, member_id, *, disabled: bool) -> bool:
+    """Quitarle o devolverle la entrada sin borrarlo.
+
+    Quien vuelve queda como estaba: si ya había puesto su contraseña, activo; y
+    si todavía no aceptó la invitación, esperando a aceptarla.
+    """
+    found = member_of(db, owner_id, member_id)
+    if found is None:
+        return False
+    if disabled:
+        status = DISABLED
+    else:
+        status = ACTIVE if found.get("password_hash") else REGISTERED
+    db.accounts.update_one({"_id": member_id},
+                           {"$set": {"status": status, "updated_at": now()}})
+    return True
+
+
+def remove_member(db, owner_id, member_id) -> bool:
+    """Borrar un usuario. Lo que hizo se queda en `auth_events`, que no se
+    borra: lo que pasó, pasó."""
+    return db.accounts.delete_one({"_id": member_id,
+                                   "owner_id": owner_id}).deleted_count == 1
+
+
+def accept_invitation(db, member_id, password: str) -> None:
+    """La contraseña que acaba de poner quien aceptó la invitación.
+
+    El correo queda confirmado: el enlace llegó a esa dirección, que es
+    exactamente lo que probaría un código.
+    """
+    moment = now()
+    db.accounts.update_one(
+        {"_id": member_id},
+        {"$set": {"password_hash": hash_password(password),
+                  "email_confirmed_at": moment, "status": ACTIVE,
+                  "updated_at": moment},
+         "$push": {"password_history": hash_password(password)}})
+
+
+def seats_used(db, owner_id) -> int:
+    """Cuántos sitios ocupa esta cuenta: el dueño y sus usuarios.
+
+    Los invitados que todavía no aceptaron cuentan: si no, se podrían mandar
+    veinte invitaciones y llenarse la cuenta al día siguiente.
+    """
+    return 1 + db.accounts.count_documents({"owner_id": owner_id})
+
+
+def seats_left(db, owner: dict[str, Any] | None) -> int:
+    """Cuántos usuarios más caben. Nunca negativo: un cambio de plan puede
+    dejar a una cuenta con más de los que le tocan, y a nadie se le quita la
+    entrada por eso."""
+    if owner is None:
+        return 0
+    return max(0, plans.users(plan_of(owner)) - seats_used(db, owner["_id"]))
+
+
 def status_of(account: dict[str, Any] | None) -> str:
     """El estado de esa cuenta, siempre uno de los que el código conoce.
 
@@ -491,8 +686,9 @@ def renews_from(account: dict[str, Any] | None, plan: str):
 def by_status(db) -> dict[str, int]:
     """How many accounts sit in each state, for the admin front page."""
     counted = {name: 0 for name in STATUSES}
-    for row in db.accounts.aggregate([{"$group": {"_id": "$status",
-                                                  "n": {"$sum": 1}}}]):
+    for row in db.accounts.aggregate([
+            {"$match": {"owner_id": {"$exists": False}}},
+            {"$group": {"_id": "$status", "n": {"$sum": 1}}}]):
         if row["_id"] in counted:
             counted[row["_id"]] = row["n"]
     return counted
@@ -507,12 +703,15 @@ def search(db, *, status: str = "", text: str = "", pending: bool = False,
     administrador no paga nunca, se quedaban en «registrada» para siempre, que
     es lo que hacía que la columna de estado se leyera mal.
 
+    **Ni los usuarios que una empresa creó**, por lo mismo: el cliente es la
+    empresa, y su ficha ya dice quiénes entran a ella.
+
     `pending` es la otra cola que pide acción: pagaron y todavía no pueden
     enviar.
     """
     import re
 
-    query: dict[str, Any] = {"role": {"$ne": ADMIN}}
+    query: dict[str, Any] = {"role": {"$ne": ADMIN}, "owner_id": {"$exists": False}}
     if status in STATUSES:
         query["status"] = status
     if pending:

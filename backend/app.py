@@ -143,6 +143,8 @@ def create_app(overrides: dict | None = None) -> Flask:
     # Para lo que va a pasar, no para lo que pasó: «17 de septiembre a las 09:00».
     app.jinja_env.filters["at_moment"] = at_moment
     app.jinja_env.filters["on_date"] = on_date
+    # El nombre en español de un permiso de usuario, para la lista de Usuarios.
+    app.jinja_env.filters["permission_name"] = lambda name: t("users_can_" + name)
 
     @app.before_request
     def _csp_nonce():

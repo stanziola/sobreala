@@ -52,6 +52,10 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.accounts.create_index([("email_normalized", ASCENDING)], unique=True,
                              name="uniq_email_normalized")
     db.accounts.create_index([("status", ASCENDING)], name="by_status")
+    # Los usuarios que crea una empresa: su documento es una cuenta más, con el
+    # dueño apuntado aquí. Es lo que lista su Configuración y lo que la tabla de
+    # administración deja fuera.
+    db.accounts.create_index([("owner_id", ASCENDING)], name="by_owner")
     # make_admin.py --lista pregunta justamente por esto.
     db.accounts.create_index([("role", ASCENDING)], name="by_role")
     # Las cuentas de antes de que el rol existiera. Una sola vez: a partir de

@@ -103,7 +103,7 @@ panamails/
     │   ├── notices.py      # los avisos de la cuenta: plan, habilitación,
     │   │                   # suspensión, y el aviso de pago para el admin
     │   ├── security.py     # contraseñas, CSRF, límite de intentos
-    │   ├── totp.py         # verificación en dos pasos
+    │   ├── totp.py         # autenticación de múltiples factores
     │   ├── importer.py     # CSV en streaming, upsert por lotes
     │   ├── plans.py        # precios, etiquetas y quién sube HTML, de docs/pricing.md
     │   ├── html_check.py   # revisa el HTML que sube un cliente
@@ -212,6 +212,61 @@ suspensión**, desde `/admin/cuentas/<id>` y con un motivo que queda escrito en
 `admin_events`. `suspended` no es decorativo: una cuenta suspendida no abre
 sesión, y al suspenderla se le cierran las que tuviera abiertas.
 
+### Los usuarios de la cuenta
+
+**Una empresa puede darle entrada a alguien de su equipo**, con sus permisos:
+ver estadísticas, ver campañas, enviar correos, modificar contactos y crear o
+editar plantillas.
+
+**Un usuario es su propio documento de `accounts`**, con `owner_id` apuntando a
+la empresa y `permissions` con lo que puede. Se hizo así y no con una colección
+aparte porque el inicio de sesión, la contraseña, la autenticación de múltiples
+factores, los dispositivos y los avisos ya funcionan por documento de cuenta:
+nada de eso hubo que escribirlo dos veces.
+
+**Lo que ve y toca sigue siendo de la empresa.** `current_workspace()` devuelve
+la cuenta dueña y es lo que reciben los tres blueprints en su `signed_in()`, así
+que las consultas siguen preguntando por un solo `account_id` y no cambió
+ninguna. `current_account()` sigue diciendo **quién** es: su correo, su
+contraseña y su segundo factor son suyos, no de la empresa.
+
+| Quién | Qué puede |
+|---|---|
+| El dueño | Todo, siempre. No lleva permisos escritos: lo que decide es no tener `owner_id` |
+| Un usuario | Lo que el dueño le marcó (`accounts.can()`), y **su** Seguridad |
+| Un administrador de Panamails | Ninguno de estos permisos: no tiene clientes a los que escribirle |
+
+- **Mandar arrastra ver**: `SEND` implica `CAMPAIGNS`, porque un usuario que
+  manda y no ve lo que mandó no tiene sentido (`clean_permissions()`).
+- **Se comprueba en la ruta**, con `needs()` en el `before_request` de cada
+  blueprint y en las cuatro rutas que escriben o mandan campañas. El menú
+  esconde lo que no puede, pero esconder una fila no es un permiso. Quien abre
+  algo que no le toca cae en la primera pantalla que sí puede, y si no puede
+  ninguna, en su Seguridad.
+- **Del dueño y solo del dueño**: Configuración → Cuenta, Notificaciones,
+  Facturación, contratar un plan, la dirección postal y los usuarios mismos
+  (`owner_only()`).
+- **Cuántos caben lo dice el plan**, leído de `docs/pricing.md` como los precios
+  (`plans.users()`), y **el dueño cuenta**: Básico 1, Negocio 2, Empresa 3, y 1
+  sin plan. Una invitación sin aceptar ocupa sitio, porque si no se podrían
+  mandar veinte. Si un cambio de plan deja más usuarios de los que caben, nadie
+  pierde la entrada: no se puede crear otro y la pantalla lo dice.
+- **El alta es por invitación**: el dueño escribe nombre, correo y permisos, y
+  a esa persona le llega un enlace de un solo uso que vence en siete días
+  (`tokens.INVITE`) para poner **su** contraseña. El dueño nunca conoce la
+  contraseña de nadie, y reenviarla deja sin valor la anterior. Al aceptarla el
+  correo queda confirmado: el enlace llegó a esa dirección, que es lo que
+  probaría un código.
+- **El correo es propio de cada persona, no el de la empresa.** Es a donde va
+  la invitación, el aviso de un dispositivo nuevo y la recuperación de su
+  contraseña, y es lo que hace que `auth_events` diga quién hizo qué. El índice
+  único de correos lo garantiza: una dirección con cuenta no se puede invitar.
+- **Desactivar y borrar le cierran las sesiones** en el momento: quitarle la
+  entrada y dejarlo dentro no es quitarle la entrada. Una empresa suspendida
+  deja fuera también a su equipo (`member_may_enter()`).
+- **La tabla de administración no lista usuarios**, como no lista
+  administradores: el cliente es la empresa, y su ficha ya dice quiénes entran.
+
 ### La habilitación para enviar
 
 `sending_cleared_at` en la cuenta, y `sending_cleared_by` con quién la puso. **Es
@@ -237,7 +292,7 @@ suspender y leer las cifras de todos los clientes.
 **Una cuenta de administrador solo administra.** No tiene panel de envíos, ni
 contactos, ni plantillas, ni puede comprar un plan: no tiene a quién escribirle,
 así que esas pantallas le saldrían vacías. De Configuración le quedan dos:
-**Seguridad** —contraseña, dos pasos y dispositivos—, que es lo que hay que
+**Seguridad** —contraseña, múltiples factores y dispositivos—, que es lo que hay que
 cuidar en la cuenta que puede suspender y habilitar a todas las demás, y
 **Notificaciones**, que es la misma pantalla con otra lista: qué le avisamos de
 las cuentas de sus clientes. Las filas se esconden del menú
@@ -275,7 +330,9 @@ veces la misma prueba no protege de nada.
 cada una que la cuenta usó, y cambiarla las compara todas: si alguien conoció
 una, volver a ponerla devolvería la cuenta al mismo estado.
 
-**Verificación en dos pasos, opcional para cada cliente.** `two_factor` guarda
+**Autenticación de múltiples factores, opcional para cada cuenta.** Se llamó
+«verificación en dos pasos» hasta septiembre de 2026; es el mismo segundo
+factor, una app de códigos. `two_factor` guarda
 el secreto de la app de códigos —TOTP: el servidor tiene que calcular los mismos
 dígitos que el teléfono, así que ese sí va tal cual y no como hash—, el último
 intervalo usado, para que un código no sirva dos veces, y los **hashes** de ocho
@@ -1076,8 +1133,9 @@ eliminar los anulados, llevan a una pantalla que dice cuántos se van y tiene el
 botón rojo; el que borra es el POST. **`/plantillas`** tiene arriba crear y cargar, y debajo
 todas las piezas de la cuenta: las del lienzo, las cargadas en HTML y las
 prediseñadas que quedaron de antes. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
-**Cuenta** (datos, estado y plan), **Seguridad** (contraseña, dos pasos y
-dispositivos conectados), **Notificaciones** y **Facturación**
+**Cuenta** (datos, estado y plan), **Seguridad** (contraseña, autenticación de
+múltiples factores, dispositivos conectados y **los usuarios de la cuenta**),
+**Notificaciones** y **Facturación**
 (`/configuracion/pagos`, que no cambió de dirección porque ahí vuelve PayPal):
 el plan con su fecha exacta, los métodos de pago que hay y el historial de
 compras (una fila por pago cobrado). Los métodos son hoy solo la lista; ahí se
@@ -1088,7 +1146,7 @@ porque no hay cobro automático; va el día que lo haya.
 
 **Configuración va sin frases de relleno.** Cada fila dice su nombre y, solo si
 hace falta, una línea: que cambiar la contraseña cierra las demás sesiones, y
-el tipo de verificación en dos pasos. Los avisos de seguridad, que no se pueden
+el tipo de autenticación de múltiples factores. Los avisos de seguridad, que no se pueden
 apagar, salen en Notificaciones con su interruptor **encendido y bloqueado**, sin
 una etiqueta que lo diga. **Los avisos de lo que todavía no existe
 (importaciones, campañas y el resumen mensual) no se ofrecen**
