@@ -31,7 +31,6 @@
 </form>
 
 <h2 class="settings__subtitle">{{ t('send_yours') }}</h2>
-<p class="settings__lead">{{ t('send_yours_lead') }}</p>
 {% if campaigns %}
 <div class="table-wrap">
   <table class="table">
@@ -123,10 +122,14 @@
           {% endif %}
         </td>
         <td class="table__quiet">{{ one.finished_at|ago }}</td>
+        <td>
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('campaigns.run_detail', raw=one._id) }}">{{ t('send_details') }}</a>
+        </td>
       </tr>
       {% if one.errors %}
       <tr>
-        <td colspan="3" class="table__quiet">
+        <td colspan="4" class="table__quiet">
           {{ t('send_errors_title') }}
           {% for bad in one.errors %}<br>{{ bad.email }}: {{ bad.error }}{% endfor %}
         </td>

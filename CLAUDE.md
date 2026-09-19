@@ -848,7 +848,11 @@ por correo, ~200 bytes cada uno.
 **Retención: 12 meses en detalle, después solo totales por campaña.**
 
 **La llenan dos sitios**: el envío de campañas, con un `sent` por correo que
-sale, y el aviso de SES (ver «Lo que cuenta Amazon»), con lo demás. Cada evento
+sale, y el aviso de SES (ver «Lo que cuenta Amazon»), con lo demás. **Un evento
+por envío, persona y tipo** (`events.record()`, con `$setOnInsert`): quien abre
+el mismo correo mil veces deja una apertura, la primera, y un clic en dos
+enlaces del mismo correo es un clic. Así las cifras no se inflan y la colección
+no crece con cada reapertura. Cada evento
 lleva el `run_id` del envío y la dirección normalizada, que es lo que permite
 contar **personas y no eventos**: quien abre tres veces cuenta una. Lo hace
 `events.counts_by_run()`, una consulta para toda la lista de «Campañas
@@ -1347,6 +1351,22 @@ La pantalla tiene **dos listas y son dos cosas distintas**: «Campañas
 guardadas», que se corrigen y se vuelven a mandar, y «Campañas enviadas», una
 línea por cada vez que salió algo, leída de `campaign_runs`. Una campaña
 mandada seis veces es una fila arriba y seis abajo.
+
+**Cada envío tiene su «Detalles»** (`/envios/enviados/<id>`): una fila por
+persona a la que le salió, con si le llegó (lo último que contó Amazon:
+entregado, rebotó, rechazado o spam), cuándo lo abrió y cuándo pulsó por
+primera vez. Se filtra por etiqueta y por **qué pasó** (entregados, rebotaron,
+rechazados, spam, lo abrieron, pulsaron, no lo abrieron: `events.OUTCOMES`), se
+busca por correo o nombre, y va de a 50. «Rebotó» es lo mismo que enseña la
+columna: quien rebotó y después se quejó sale como spam, no en los dos. Los filtros se resuelven primero en Contactos (`contacts.emails_matching()`)
+y solo después se miran los eventos de esas personas (`events.recipients()`),
+para no traer una lista grande entera. Las etiquetas y el nombre son los de hoy;
+quien ya no está en Contactos sale con su dirección y lo dice. Es la lista de
+direcciones de **su propia** cuenta: lo que la ficha del administrador no enseña
+sigue sin enseñarse.
+
+**El formulario no lleva la ayuda de las columnas.** Escribir `*|NOMBRE|*` en el
+asunto sigue funcionando, pero los botones de las marcas viven en Plantillas.
 
 **Mandar pasa siempre por una pantalla que pregunta.** El botón de la lista es
 un enlace a `GET /envios/<id>/mandar`, que no manda nada: dice el asunto, a qué

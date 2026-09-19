@@ -111,15 +111,25 @@ def record(db, account_id, *, kind: str, campaign_id=None, run_id=None,
 
     La dirección se guarda normalizada: es lo que permite contar personas y no
     eventos, y el aviso de SES no la escribe igual que la escribió el cliente.
+
+    **Uno por envío, persona y tipo.** Quien abre el mismo correo mil veces deja
+    una apertura, la primera; un clic en dos enlaces del mismo correo es un
+    clic. Se escribe solo si no existe (`$setOnInsert`), así que las cifras no
+    se inflan y la colección, que es la que más crece, no crece con cada
+    reapertura. Sin envío o sin dirección no hay a quién atarlo, y se anota
+    tal cual.
     """
-    return db.events.insert_one({
-        "account_id": account_id,
-        "campaign_id": campaign_id,
-        "run_id": run_id,
-        "kind": kind,
-        "email_normalized": (email or "").strip().lower(),
-        "created_at": at or now(),
-    }).inserted_id
+    email = (email or "").strip().lower()
+    doc = {"account_id": account_id, "campaign_id": campaign_id, "run_id": run_id,
+           "kind": kind, "email_normalized": email, "created_at": at or now()}
+    if run_id is None or not email:
+        return db.events.insert_one(doc).inserted_id
+    key = {"account_id": account_id, "run_id": run_id, "email_normalized": email,
+           "kind": kind}
+    found = db.events.find_one_and_update(
+        key, {"$setOnInsert": doc}, upsert=True, projection={"_id": 1},
+        return_document=True)
+    return found["_id"]
 
 
 def counts_by_run(db, account_id, run_ids: list) -> dict[Any, dict[str, int]]:
@@ -240,6 +250,69 @@ def series(db, account_id, *, period: str = DEFAULT_PERIOD, tag: str = "",
         if 0 <= index < len(tramos):
             tramos[index][row["_id"]["kind"]] += row["n"]
     return tramos
+
+
+# Lo que dice «Llegó» en el detalle de un envío, del más fuerte al más flojo:
+# si Amazon contó una queja, eso es lo que hay que ver aunque antes dijera que
+# lo entregó.
+REACHED = (COMPLAINT, BOUNCE, REJECT, DELIVERED, SENT)
+
+
+def _has(kind: str) -> dict[str, Any]:
+    return {"kinds.k": kind}
+
+
+def _lacks(*kinds: str) -> dict[str, Any]:
+    return {"kinds.k": {"$nin": list(kinds)}}
+
+
+# El filtro «Qué pasó» del detalle de un envío. Los de «Llegó» siguen el mismo
+# orden que REACHED, así que filtrar por «Rebotó» trae justo a quien la columna
+# enseña como rebotado, y no también a quien después lo marcó como spam.
+OUTCOMES: dict[str, dict[str, Any]] = {
+    "entregados": {"$and": [_has(DELIVERED), _lacks(COMPLAINT, BOUNCE, REJECT)]},
+    "rebotes": {"$and": [_has(BOUNCE), _lacks(COMPLAINT)]},
+    "rechazados": {"$and": [_has(REJECT), _lacks(COMPLAINT, BOUNCE)]},
+    "spam": _has(COMPLAINT),
+    "abrieron": _has(OPEN),
+    "pulsaron": _has(CLICK),
+    "sin_abrir": _lacks(OPEN),
+}
+
+
+def recipients(db, account_id, run_id, *, emails: list[str] | None = None,
+               outcome: str = "", skip: int = 0,
+               limit: int = 50) -> tuple[int, list[dict[str, Any]]]:
+    """A quién le salió un envío, con lo que pasó con cada uno. Una página.
+
+    Devuelve cuántos son en total y la página: cada persona con su dirección y,
+    por tipo, la primera vez que pasó (`at`). `emails`, si viene, deja solo a
+    esas personas: es el filtro de la pantalla, que se resuelve antes en
+    Contactos para no traer la lista entera. `outcome` es una clave de
+    `OUTCOMES`; una que no existe no filtra.
+    """
+    match: dict[str, Any] = {"account_id": account_id, "run_id": run_id}
+    if emails is not None:
+        match["email_normalized"] = {"$in": emails}
+    rows = list(db.events.aggregate([
+        {"$match": match},
+        {"$group": {"_id": {"who": "$email_normalized", "kind": "$kind"},
+                    "at": {"$min": "$created_at"}}},
+        {"$group": {"_id": "$_id.who",
+                    "kinds": {"$push": {"k": "$_id.kind", "v": "$at"}}}},
+        {"$match": {"_id": {"$ne": ""}, **OUTCOMES.get(outcome, {})}},
+        {"$sort": {"_id": 1}},
+        {"$facet": {"total": [{"$count": "n"}],
+                    "page": [{"$skip": skip}, {"$limit": limit}]}},
+    ]))
+    found = rows[0] if rows else {"total": [], "page": []}
+    total = found["total"][0]["n"] if found["total"] else 0
+    page = []
+    for row in found["page"]:
+        at = {one["k"]: one["v"] for one in row["kinds"]}
+        page.append({"email": row["_id"], "at": at,
+                     "reached": next((kind for kind in REACHED if kind in at), SENT)})
+    return total, page
 
 
 def campaigns_sent(db, account_id) -> list[dict[str, Any]]:

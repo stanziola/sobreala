@@ -53,6 +53,12 @@ def record(db, campaign: dict[str, Any], *, run_id=None) -> Any:
     }).inserted_id
 
 
+def by_id(db, account_id, run_id) -> dict[str, Any] | None:
+    """Un envío de esta cuenta. El de otra no encuentra nada: la cuenta va en
+    la consulta."""
+    return db.campaign_runs.find_one({"_id": run_id, "account_id": account_id})
+
+
 def for_account(db, account_id, *, limit: int = 50) -> list[dict[str, Any]]:
     """Lo que ha salido de esta cuenta, lo más reciente primero."""
     return list(db.campaign_runs.find({"account_id": account_id})

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ t('run_title') }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{#- El detalle de un envío: una fila por persona a la que le salió, con lo que
+    contó Amazon de cada una. Cada cosa cuenta una vez (`events.record()`), así
+    que «Abrió» es la primera apertura aunque haya abierto veinte. -#}
+{% block content %}
+<h1 class="settings__heading">{{ run.subject }}</h1>
+<p class="settings__lead">
+  {{ t('run_sent_on', when=run.finished_at|at_moment) }}
+  · {{ (run.tags or [])|join(' · ') or everyone }}
+  · {{ t('send_state_sent', n=run.sent or 0) }}
+  {% if seen and seen.values()|sum %}
+  · {{ t('send_seen', delivered=seen.delivery, bounced=seen.bounce,
+         opened=seen.open, clicked=seen.click) }}
+  {% endif %}
+</p>
+<p class="hint">{{ t('run_lead') }}</p>
+
+{# Buscar y filtrar, en un GET: la dirección guarda lo que estás mirando. #}
+<form class="filters" method="get" action="{{ url_for('campaigns.run_detail', raw=run._id) }}">
+  <label class="visually-hidden" for="q">{{ t('run_search') }}</label>
+  <input id="q" name="q" type="search" value="{{ search }}"
+         placeholder="{{ t('run_search') }}" autocomplete="off">
+
+  <label class="visually-hidden" for="etiqueta">{{ t('run_tag') }}</label>
+  <select id="etiqueta" name="etiqueta">
+    <option value="">{{ t('run_all_tags') }}</option>
+    {% for name in tags %}
+    <option value="{{ name }}"{% if name == tag %} selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="visually-hidden" for="estado">{{ t('run_outcome') }}</label>
+  <select id="estado" name="estado">
+    <option value="">{{ t('run_outcome_all') }}</option>
+    {% for name in outcomes %}
+    <option value="{{ name }}"{% if name == outcome %} selected{% endif %}>{{ t('run_outcome_' + name) }}</option>
+    {% endfor %}
+  </select>
+
+  <button class="btn btn--small btn--outline" type="submit">{{ t('run_apply') }}</button>
+  {% if search or tag or outcome %}
+  <a class="btn btn--small btn--outline"
+     href="{{ url_for('campaigns.run_detail', raw=run._id) }}">{{ t('run_clear') }}</a>
+  {% endif %}
+</form>
+
+{% if people %}
+<p class="hint">{{ t('run_count_one') if total == 1 else t('run_count', n=total) }}</p>
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>{{ t('run_email') }}</th>
+        <th>{{ t('run_name') }}</th>
+        <th>{{ t('contacts_col_tags') }}</th>
+        <th>{{ t('run_reached') }}</th>
+        <th>{{ t('run_opened') }}</th>
+        <th>{{ t('run_clicked') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for one in people %}
+      <tr>
+        <td>{{ one.contact.email if one.contact else one.email }}</td>
+        <td>
+          {% if one.contact %}{{ one.contact.name or '' }}
+          {% else %}<span class="table__quiet">{{ t('run_gone') }}</span>{% endif %}
+        </td>
+        <td>
+          {% for name in (one.contact.tags if one.contact else []) %}<span class="tag tag--quiet">{{ name }}</span>{% endfor %}
+        </td>
+        <td>
+          <span class="tag {{ 'tag--warn' if one.reached in ('bounce', 'complaint', 'reject') else 'tag--quiet' }}">
+            {{ t('run_reached_' + one.reached) }}</span>
+        </td>
+        <td class="table__quiet">{{ one.at.open|ago if one.at.open else '—' }}</td>
+        <td class="table__quiet">{{ one.at.click|ago if one.at.click else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if pages > 1 %}
+<div class="row">
+  <span class="hint">{{ t('run_page', page=page, pages=pages) }}</span>
+  {% if page > 1 %}
+  <a class="btn btn--small btn--outline"
+     href="{{ url_for('campaigns.run_detail', raw=run._id, q=search, etiqueta=tag, estado=outcome, pagina=page - 1) }}">
+    {{ t('run_prev') }}</a>
+  {% endif %}
+  {% if page < pages %}
+  <a class="btn btn--small btn--outline"
+     href="{{ url_for('campaigns.run_detail', raw=run._id, q=search, etiqueta=tag, estado=outcome, pagina=page + 1) }}">
+    {{ t('run_next') }}</a>
+  {% endif %}
+</div>
+{% endif %}
+{% else %}
+<p class="lead">{{ t('run_none') if search or tag or outcome else t('run_empty') }}</p>
+{% endif %}
+
+<p class="hint">{{ t('run_note') }}</p>
+
+<p class="foot">
+  <a href="{{ url_for('campaigns.index') }}">{{ t('send_back') }}</a>
+</p>
+{% endblock %}

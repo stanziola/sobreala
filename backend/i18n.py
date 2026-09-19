@@ -1123,14 +1123,12 @@ TEXTS = {
     # --- enviar correos ----------------------------------------------------
     "menu_send": "Enviar correos",
     "send_title": "Enviar correos",
-    "send_lead": "Elige a quién le escribes y con qué pieza. Puedes mandarlo "
+    "send_lead": "Elige a quién le escribes y qué plantilla. Puedes mandarlo "
                  "ahora o dejarlo programado.",
     "send_new": "Nueva campaña",
     "send_submit": "Guardar la campaña",
     "send_save": "Guardar los cambios",
     "send_yours": "Campañas guardadas",
-    "send_yours_lead": "Se guardan armadas y se mandan las veces que haga "
-                       "falta. Corregir una no cambia lo que ya salió.",
     "send_none": "Todavía no has armado ninguna.",
     "send_runs_title": "Campañas enviadas",
     "send_runs_lead": "Una línea por cada vez que salió algo, lo último "
@@ -1143,7 +1141,7 @@ TEXTS = {
     "send_subject": "Asunto",
     "send_subject_hint": "Lo primero que se lee, y muchas veces lo único. "
                          "Corto y concreto.",
-    "send_list": "A quién",
+    "send_list": "Etiquetas",
     "send_list_hint": "Marca las etiquetas que quieras. Quien lleve más de una "
                       "recibe un solo correo. Sin marcar ninguna le escribes a "
                       "toda tu lista.",
@@ -1151,7 +1149,7 @@ TEXTS = {
                       "toda tu lista.",
     "send_all_contacts": "Todos mis contactos",
     "send_howmany": "{n} contactos",
-    "send_piece": "Con qué plantilla",
+    "send_piece": "Plantilla",
     "send_no_pieces": "Todavía no tienes ninguna plantilla guardada. Arma una "
                       "primero en",
     "send_when": "Cuándo",
@@ -1203,8 +1201,8 @@ TEXTS = {
     "send_confirm_lead": "Un correo que sale no se puede recoger. Mira a quién "
                          "le va a llegar antes de mandarla.",
     "send_confirm_subject": "Asunto",
-    "send_confirm_list": "A quién",
-    "send_confirm_piece": "Con qué plantilla",
+    "send_confirm_list": "Etiquetas",
+    "send_confirm_piece": "Plantilla",
     "send_confirm_going_none": "Ahora mismo no hay nadie en esa lista, así que "
                                "no hay a quién mandarla.",
     "send_confirm_going_one": "Un contacto",
@@ -1222,6 +1220,47 @@ TEXTS = {
                              "{total}. Se manda la siguiente tanda.",
     "send_confirm_yes": "Sí, enviarla",
     "send_confirm_no": "Cancelar",
+    "send_details": "Detalles",
+    "run_title": "Detalle del envío",
+    "run_lead": "Una fila por persona a la que le salió. Cada cosa cuenta una "
+                "vez: la primera apertura y el primer clic.",
+    "run_sent_on": "Salió {when}",
+    "run_tag": "Etiqueta",
+    "run_all_tags": "Todas las etiquetas",
+    "run_search": "Buscar por correo o nombre",
+    "run_outcome": "Qué pasó",
+    "run_outcome_all": "Todos",
+    "run_outcome_entregados": "Entregados",
+    "run_outcome_rebotes": "Rebotaron",
+    "run_outcome_rechazados": "Rechazados",
+    "run_outcome_spam": "Lo marcaron como spam",
+    "run_outcome_abrieron": "Lo abrieron",
+    "run_outcome_pulsaron": "Pulsaron",
+    "run_outcome_sin_abrir": "No lo abrieron",
+    "run_apply": "Buscar",
+    "run_clear": "Quitar filtros",
+    "run_email": "Correo",
+    "run_name": "Nombre",
+    "run_reached": "Llegó",
+    "run_opened": "Abrió",
+    "run_clicked": "Pulsó",
+    "run_reached_sent": "Enviado",
+    "run_reached_delivery": "Entregado",
+    "run_reached_bounce": "Rebotó",
+    "run_reached_reject": "Rechazado",
+    "run_reached_complaint": "Lo marcó como spam",
+    "run_gone": "Ya no está en tus contactos",
+    "run_none": "Nadie coincide con ese filtro.",
+    "run_empty": "Todavía no hay nada que contar de este envío.",
+    "run_count": "{n} personas",
+    "run_count_one": "1 persona",
+    "run_page": "Página {page} de {pages}",
+    "run_prev": "Anterior",
+    "run_next": "Siguiente",
+    "run_note": "Las aperturas son aproximadas: algunos buzones abren los "
+                "correos solos y otros no avisan. «Entregado» quiere decir que "
+                "el servidor de la persona lo aceptó, no que haya llegado a su "
+                "bandeja.",
     "send_edit_title": "Editar la campaña",
     "send_edit_lead": "Se puede cambiar mientras no haya empezado a salir.",
 

@@ -17,6 +17,7 @@ suppression never went anywhere.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
@@ -361,6 +362,28 @@ def create(db, account_id, *, email: str, name: str = "",
     added, _ = upsert_many(db, account_id, [(email, name, values or {})],
                            tags=tags or [], consent=consent, added_by=MANUAL)
     return added == 1
+
+
+def emails_matching(db, account_id, *, tag: str = "", text: str = "") -> list[str]:
+    """Las direcciones de los contactos que llevan esa etiqueta y cuyo correo o
+    nombre contienen ese texto. Para filtrar el detalle de un envío."""
+    query: dict[str, Any] = {"account_id": account_id}
+    if tag:
+        query["tags"] = tag
+    if text:
+        pattern = {"$regex": re.escape(text), "$options": "i"}
+        query["$or"] = [{"email_normalized": pattern}, {"name": pattern}]
+    return [one["email_normalized"] for one in
+            db.contacts.find(query, {"email_normalized": 1})]
+
+
+def by_emails(db, account_id, emails: list[str]) -> dict[str, dict[str, Any]]:
+    """Los contactos de esas direcciones, por dirección. Una consulta con `$in`."""
+    if not emails:
+        return {}
+    return {one["email_normalized"]: one for one in db.contacts.find(
+        {"account_id": account_id, "email_normalized": {"$in": emails}},
+        {"email": 1, "email_normalized": 1, "name": 1, "tags": 1})}
 
 
 def for_preview(db, account_id, *, limit: int = 100) -> list[dict[str, Any]]:

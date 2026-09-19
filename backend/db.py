@@ -171,6 +171,11 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.events.create_index([("account_id", ASCENDING), ("kind", ASCENDING),
                             ("created_at", DESCENDING)],
                            name="by_account_kind_created")
+    # Uno por envío, persona y tipo (`events.record()`), y el detalle de un
+    # envío, que agrupa por persona.
+    db.events.create_index([("account_id", ASCENDING), ("run_id", ASCENDING),
+                            ("email_normalized", ASCENDING), ("kind", ASCENDING)],
+                           name="by_account_run_email_kind")
 
     # El HTML que sube cada cliente. Sin TTL: una pieza aprobada es lo que hay
     # que poder volver a mirar cuando alguien pregunte qué se envió.

@@ -11,7 +11,6 @@
        value="{{ form.get('asunto', campaign.subject if campaign else '') }}">
 {% if errors.asunto %}<p class="error">{{ errors.asunto }}</p>{% endif %}
 <p class="hint">{{ t('send_subject_hint') }}</p>
-{% include "designs/_columns.html" %}
 
 {# Casillas y no un desplegable: se le puede escribir a varias etiquetas a la
    vez, y quien lleve más de una de las marcadas recibe un solo correo, porque

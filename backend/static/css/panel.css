@@ -922,8 +922,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 }
 .cv-grip:hover { background: var(--color-accent-soft); }
 
-/* El peso del correo y la revisión antispam, encima del lienzo. */
-.check {
+/* El peso del correo y la revisión antispam, encima del lienzo. Su propia
+   clase: `.check` es la de las casillas del panel, y compartirla les ponía
+   borde y fondo de recuadro a todas. */
+.review {
   display: grid; gap: 10px; margin-top: 14px; padding: 12px 14px;
   border: 1px solid var(--color-border); border-radius: 12px;
   background: var(--color-surface);
@@ -943,9 +945,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .meter__used { fill: var(--color-accent); }
 .meter__svg.is-high .meter__used { fill: #D97706; }
 .meter__svg.is-full .meter__used { fill: #D92D20; }
-.check__ok { margin: 0; font-size: .9rem; font-weight: 600; color: #15803D; }
-.check__title { margin: 0 0 4px; font-size: .9rem; font-weight: 700; color: #B42318; }
-.check__bad ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: .88rem; }
+.review__ok { margin: 0; font-size: .9rem; font-weight: 600; color: #15803D; }
+.review__title { margin: 0 0 4px; font-size: .9rem; font-weight: 700; color: #B42318; }
+.review__bad ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: .88rem; }
 
 /* La vista previa: el correo a su tamaño de 600, achicado para caber. */
 .editor__side { position: sticky; top: 18px; }

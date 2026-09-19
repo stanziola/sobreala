@@ -32,14 +32,14 @@
 {# Cuánto pesa el correo y qué le falta para no ir a spam. Se recalcula mientras
    se trabaja, con la misma revisión que hace el servidor al guardar: con
    cualquier motivo en la lista, Guardar no se deja pulsar. #}
-<div class="check" data-canvas-check>
+<div class="review" data-canvas-check>
   <div class="meter">
     <p class="meter__label">{{ t('canvas_meter') }} <b data-meter-text>…</b></p>
     <div class="meter__bar" aria-hidden="true"><span data-meter-fill></span></div>
   </div>
-  <p class="check__ok" data-check-ok hidden>{{ t('canvas_check_ok') }}</p>
-  <div class="check__bad" data-check-bad hidden>
-    <p class="check__title">{{ t('canvas_check_title') }}</p>
+  <p class="review__ok" data-check-ok hidden>{{ t('canvas_check_ok') }}</p>
+  <div class="review__bad" data-check-bad hidden>
+    <p class="review__title">{{ t('canvas_check_title') }}</p>
     <ul data-check-list></ul>
   </div>
 </div>

@@ -24,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 
 from blueprints.auth.routes import current_account, not_for_admins
 from db import get_db
@@ -129,8 +129,6 @@ def shared(db, account, **extra):
         # todo es la peor forma de enterarse.
         "blocked": sender.blocked(account),
         "quota": accounts.quota_left(account),
-        # Para escribirlas en el asunto, que es lo primero que se lee.
-        "columns": accounts.fields_of(account),
         "editable": campaigns.editable,
         "due": campaigns.due,
         **extra,
@@ -222,6 +220,61 @@ def edit(raw):
                  campaign=found,
                  # Vuelve a salir en la hora de quien la mira.
                  when=clock.local(found["scheduled_at"]).strftime(WHEN_FORMAT)))
+
+
+# Cuántas personas por página en el detalle de un envío.
+PER_PAGE = 50
+
+
+@bp.route("/envios/enviados/<raw>")
+def run_detail(raw):
+    """A quién le salió un envío y qué pasó con cada uno: si le llegó, si lo
+    abrió, si pulsó. Una fila por persona, con la primera vez de cada cosa.
+
+    El filtro por etiqueta y el buscador se resuelven primero en Contactos: se
+    busca quién cumple y solo se miran los eventos de esas personas. Las
+    etiquetas y el nombre son los de hoy; quien ya no está en Contactos sale con
+    su dirección y lo dice.
+    """
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+
+    db = get_db()
+    run_id = as_id(raw)
+    found = runs.by_id(db, account["_id"], run_id) if run_id else None
+    if found is None:
+        abort(404)
+
+    known = accounts.tags_of(account)
+    tag = request.args.get("etiqueta", "")
+    tag = tag if tag in known else ""
+    search = " ".join(request.args.get("q", "").split())[:100]
+    outcome = request.args.get("estado", "")
+    outcome = outcome if outcome in events.OUTCOMES else ""
+    try:
+        page = max(1, int(request.args.get("pagina", "1")))
+    except ValueError:
+        page = 1
+
+    emails = None
+    if tag or search:
+        emails = contacts.emails_matching(db, account["_id"], tag=tag, text=search)
+    total, people = events.recipients(db, account["_id"], found["_id"], emails=emails,
+                                      outcome=outcome, skip=(page - 1) * PER_PAGE,
+                                      limit=PER_PAGE)
+    # Nombre y etiquetas de la página, en una consulta (regla 10).
+    here = contacts.by_emails(db, account["_id"], [one["email"] for one in people])
+    for one in people:
+        one["contact"] = here.get(one["email"])
+
+    return render_template(
+        "campaigns/run.html", section="envios", account=account, run=found,
+        people=people, total=total, page=page,
+        pages=max(1, -(-total // PER_PAGE)), tag=tag, tags=known, search=search,
+        outcome=outcome, outcomes=list(events.OUTCOMES),
+        seen=events.counts_by_run(db, account["_id"], [found["_id"]]).get(found["_id"]),
+        everyone=t("send_all_contacts"))
 
 
 @bp.route("/envios/<raw>/borrar", methods=["POST"])
