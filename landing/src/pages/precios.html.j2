@@ -13,20 +13,51 @@
 <section class="section section--overlap" aria-labelledby="planes-title">
   <div class="shell">
     <h2 class="visually-hidden" id="planes-title">Planes</h2>
+
+    {#- Mensual o anual. Dos botones de verdad, no un interruptor dibujado: se
+        pulsan con el teclado y dicen cuál está puesto con aria-pressed. La
+        página **nace en mensual**, así que sin JavaScript se ven los precios de
+        siempre y los botones de contratar funcionan igual. -#}
+    <div class="cycle" data-cycle role="group" aria-label="{{ page.cycle.label }}">
+      <div class="cycle__switch">
+        <button class="cycle__option is-on" type="button" data-cycle-set="monthly"
+                aria-pressed="true">{{ page.cycle.monthly }}</button>
+        <button class="cycle__option" type="button" data-cycle-set="yearly"
+                aria-pressed="false">{{ page.cycle.yearly }}</button>
+      </div>
+      <span class="cycle__save">{{ page.cycle.save }}</span>
+      {#- El confeti se dibuja aquí y se borra solo. Es adorno: no lleva texto
+          ni recibe el foco. -#}
+      <canvas class="cycle__confetti" data-confetti aria-hidden="true"></canvas>
+    </div>
+
     <ul class="plans">
       {% for plan in pricing_data.plans %}
-      <li class="plan{% if plan.featured %} plan--featured{% endif %}">
-        {% if plan.get('badge') %}<span class="plan__badge">{{ plan.badge }}</span>{% endif %}
+      <li class="plan{% if plan.featured %} plan--featured{% endif %}"
+          data-plan
+          data-monthly="{{ plan.monthly_value }}"
+          data-yearly-monthly="{{ plan.yearly_monthly }}"
+          data-note-monthly="{{ page.cycle.monthly_note.format(yearly=plan.yearly) }}"
+          data-note-yearly="{{ page.cycle.yearly_note.format(yearly=plan.yearly) }}">
+        {% if plan.get('badge') %}
+        <span class="plan__badge">
+          <svg class="icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"
+               aria-hidden="true" focusable="false"><path d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4-5.8-3-5.8 3 1.1-6.4L2.6 9.4l6.5-.9z"/></svg>
+          {{ plan.badge }}</span>
+        {% endif %}
         <h3 class="plan__name">{{ plan.name }}</h3>
         <p class="plan__pitch">{{ plan.pitch }}</p>
         <p class="plan__price">
-          <span class="plan__amount">{{ plan.monthly }}</span>
-          <span class="plan__period">/ mes</span>
+          {#- El signo va aparte del número: lo que se anima es la cifra. -#}
+          <span class="plan__amount"><span class="plan__currency">$</span><span data-price>{{ plan.monthly_value }}</span></span>
+          <span class="plan__period">{{ page.cycle.per_month }}</span>
         </p>
-        <p class="plan__yearly">{{ plan.yearly }} al año, dos meses gratis</p>
+        <p class="plan__yearly" data-note>{{ page.cycle.monthly_note.format(yearly=plan.yearly) }}</p>
         <ul class="plan__list">
           {% for h in plan.highlights %}
-          <li><span class="plan__value">{{ h.value }}</span> <span class="plan__label">{{ h.label|lower }}</span></li>
+          <li>
+            <span class="plan__check">{% include "partials/icon-check.svg.j2" %}</span>
+            <span class="plan__value">{{ h.value }}</span> <span class="plan__label">{{ h.label|lower }}</span></li>
           {% endfor %}
         </ul>
         {# El botón lleva a contratarlo en el panel, que es quien puede cobrar:
@@ -44,6 +75,7 @@
            data-label-upgrade="{{ plan_buttons.upgrade.format(name=plan.name) }}"
            data-label-renew="{{ plan_buttons.renew.format(name=plan.name) }}"
            data-label-covered="{{ plan_buttons.covered }}"
+           data-buy="{{ panel.base_url }}/contratar/{{ plan.key }}"
            href="{{ panel.base_url }}/contratar/{{ plan.key }}">{{ plan_buttons.start.format(name=plan.name) }}</a>
       </li>
       {% endfor %}
@@ -145,4 +177,8 @@
 
 {% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
 
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/plans.js" defer></script>
 {% endblock %}

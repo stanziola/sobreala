@@ -98,3 +98,56 @@ def test_sin_testigo_no_se_guarda(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     browser.post("/configuracion/cuenta", data={"direccion": "Calle 50, Panamá"})
     assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == ""
+
+
+# ------------------------------------------------------ mensual y anual
+
+def test_las_tarjetas_traen_los_dos_precios_y_nacen_en_mensual():
+    """El interruptor no inventa cifras: las dos salen de docs/pricing.md, y la
+    página sirve igual sin JavaScript, en mensual."""
+    html = (ROOT / "landing" / "planes" / "index.html").read_text(encoding="utf-8")
+
+    assert 'data-cycle-set="monthly"' in html and 'data-cycle-set="yearly"' in html
+    # El anual entre doce, que es lo que se enseña al elegir año.
+    for mensual, anual, equivalente in (("16", "160", "13"), ("25", "250", "21"),
+                                        ("55", "550", "46")):
+        assert f'data-monthly="{mensual}"' in html
+        assert f'data-yearly-monthly="{equivalente}"' in html
+        assert f"se cobra ${anual} al año" in html
+    # Nace con el mensual dibujado: sin el guion, eso es lo que se lee.
+    assert '<span data-price>16</span>' in html
+    # Y el guion de esta página solo lo baja esta página.
+    assert "/assets/js/plans.js" in html
+    assert "plans.js" not in (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
+
+
+def test_el_equivalente_mensual_sale_del_documento():
+    import sys
+
+    sys.path.insert(0, str(ROOT / "landing"))
+    import build_site
+
+    for one in build_site.read_pricing()["plans"]:
+        assert one["yearly_monthly"] == round(one["yearly_value"] / 12)
+        assert one["yearly_value"] == one["monthly_value"] * 10
+
+
+def test_el_ciclo_elegido_en_el_sitio_llega_al_panel(client, database, outbox,
+                                                     monkeypatch):
+    from test_payments import confirm, fake_paypal, inside
+
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+
+    def resaltado(url):
+        """Cuál de los dos botones va sin `btn--outline`, que es el pintado."""
+        pantalla = browser.get(url).get_data(as_text=True)
+        return [one for one in ("monthly", "yearly")
+                if f'class="btn"\n              type="submit" name="cycle" value="{one}"'
+                in pantalla]
+
+    assert resaltado("/contratar/basico?ciclo=anual") == ["yearly"]
+    assert resaltado("/contratar/basico") == ["monthly"]
+    # Un valor inventado se lee como mensual, que es lo de siempre.
+    assert resaltado("/contratar/basico?ciclo=cualquiera") == ["monthly"]

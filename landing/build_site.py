@@ -75,6 +75,12 @@ SOON_ROWS: set[str] = set()
 CARD_ROWS = ["Contactos", "Correos por mes", "Usuarios"]
 
 
+def money(cell: str) -> int:
+    """«$1,200» → 1200. Lo que la tabla escribe para leerse, como número."""
+    digits = "".join(c for c in cell if c.isdigit())
+    return int(digits) if digits else 0
+
+
 def slug(name: str) -> str:
     """«Básico» → «basico», que es como el panel llama a cada plan.
 
@@ -141,12 +147,21 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
     plans = []
     for name in names:
         extra = content.PRICING["plans"].get(name, {})
+        monthly = cell("Precio mensual", name)
+        yearly = cell("Precio anual (2 meses gratis)", name)
         plans.append({
             "name": name,
             # Con qué nombre lo conoce el panel, para el botón de contratar.
             "key": slug(name),
-            "monthly": cell("Precio mensual", name),
-            "yearly": cell("Precio anual (2 meses gratis)", name),
+            "monthly": monthly,
+            "yearly": yearly,
+            # Las mismas cifras como números, para el interruptor de mensual y
+            # anual: el guion no tiene que interpretar «$1,200». El equivalente
+            # mensual del anual es lo que se enseña al elegir año, porque es lo
+            # que se compara con el precio de al lado.
+            "monthly_value": money(monthly),
+            "yearly_value": money(yearly),
+            "yearly_monthly": round(money(yearly) / 12),
             "highlights": [
                 {"label": dict(PUBLIC_ROWS)[r], "value": cell(r, name)} for r in CARD_ROWS
             ],

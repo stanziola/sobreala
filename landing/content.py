@@ -421,6 +421,18 @@ PRICING = {
         },
     },
     "annual_note": "En el plan anual pagas diez meses y usas doce.",
+    # El interruptor de las tarjetas. Son dos botones de verdad: sin JavaScript
+    # la página se queda en mensual, que es como nace, y los precios siguen ahí.
+    "cycle": {
+        "label": "Cómo quieres pagar",
+        "monthly": "Mensual",
+        "yearly": "Anual",
+        "save": "dos meses gratis",
+        # Lo que dice la tarjeta debajo del precio, en cada ciclo.
+        "monthly_note": "{yearly} al año, dos meses gratis",
+        "yearly_note": "se cobra {yearly} al año",
+        "per_month": "/ mes",
+    },
     # Con RUC hay que decir si el precio lleva impuesto, y se dice donde se
     # mira el precio y no escondido en los términos.
     "tax_note": ("Los precios son finales e incluyen el ITBMS cuando "

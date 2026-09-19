@@ -63,11 +63,13 @@
 
     <p class="field-label">{{ t('pay_cycle_title') }}</p>
     <div class="row">
-      {% for cycle in ['monthly', 'yearly'] %}
-      <button class="btn{% if cycle == 'yearly' %} btn--outline{% endif %}"
-              type="submit" name="cycle" value="{{ cycle }}">
-        {{ t('pay_' + cycle) }} · {{ currency }}
-        {{ '%.2f'|format(one.yearly if cycle == 'yearly' else one.monthly) }}</button>
+      {#- El resaltado es el ciclo con el que se llegó desde /planes, o el mes.
+          Los dos botones cobran igual: lo que decide es cuál se pulsa. -#}
+      {% for one_cycle in ['monthly', 'yearly'] %}
+      <button class="btn{% if one_cycle != cycle %} btn--outline{% endif %}"
+              type="submit" name="cycle" value="{{ one_cycle }}">
+        {{ t('pay_' + one_cycle) }} · {{ currency }}
+        {{ '%.2f'|format(one.yearly if one_cycle == 'yearly' else one.monthly) }}</button>
       {% endfor %}
     </div>
   </form>

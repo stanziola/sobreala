@@ -622,18 +622,68 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   position: absolute; top: -13px; left: 20px; padding: 4px 12px;
   border-radius: 999px; background: var(--color-accent); color: var(--color-on-accent);
   font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: 5px;
 }
 .plan__name { font-size: 1.3rem; font-weight: 800; }
 .plan__pitch { margin-top: 6px; min-height: 3.2em; color: var(--color-ink-soft); font-size: .95rem; }
 .plan__price { margin-top: 18px; display: flex; align-items: baseline; gap: 6px; }
-.plan__amount { font-size: 2.4rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+/* Tabulares: mientras el número corre de 16 a 13, cada cifra ocupa lo mismo y
+   el precio no se mueve de sitio. */
+.plan__amount { font-size: 2.4rem; font-weight: 800; letter-spacing: -.02em; line-height: 1;
+                font-variant-numeric: tabular-nums; }
+.plan__currency { margin-right: 1px; }
 .plan__period { color: var(--color-ink-soft); font-weight: 500; }
 .plan__yearly { margin-top: 6px; font-size: .88rem; color: var(--color-ink-soft); }
 .plan__list { margin: 22px 0 24px; padding-top: 18px; border-top: 1px solid var(--color-border); display: grid; gap: 10px; flex: 1; }
 .plan__list li { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; line-height: 1.35; }
+.plan__check { display: inline-grid; place-items: center; color: var(--color-accent); }
+.plan__check .icon { width: 15px; height: 15px; }
 .plan__value { font-weight: 700; }
 .plan__label { color: var(--color-ink-soft); font-size: .95rem; }
 .plans__note { margin-top: 20px; text-align: center; color: var(--color-ink-soft); font-size: .95rem; }
+
+/* El interruptor de mensual y anual. Dos botones de verdad, uno pegado al
+   otro, y el que está puesto se pinta. El canvas del confeti va encima, sin
+   recibir clics: es adorno. */
+/* Nace escondido y lo enseña el guion: sin JavaScript sería un botón que no
+   hace nada, y la página en mensual se lee igual de bien sin él. */
+.cycle { display: none; }
+.cycle.is-ready {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 22px; flex-wrap: wrap;
+}
+.cycle__switch { display: inline-flex; padding: 4px; border-radius: 999px;
+                 background: var(--color-surface-alt); border: 1px solid var(--color-border); }
+.cycle__option {
+  padding: 8px 18px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--color-ink-soft); font: inherit; font-weight: 600; cursor: pointer;
+  transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.cycle__option:hover { color: var(--color-ink); }
+.cycle__option.is-on { background: var(--color-accent); color: var(--color-on-accent); }
+.cycle__save { color: var(--color-accent-strong); font-weight: 600; font-size: .95rem; }
+/* Más ancho y más alto que el interruptor: si midiera lo mismo, los papelitos
+   se cortarían al primer salto. No recibe clics ni ocupa sitio. */
+.cycle__confetti {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -35%);
+  width: min(720px, 96vw); height: 300px; pointer-events: none; z-index: 2;
+}
+
+/* La entrada de las tarjetas: el guion les pone la clase y las suelta al
+   llegar a ellas. Nacen puestas, así que sin JavaScript no falta nada, y con
+   «reducir movimiento» la regla de arriba deja la transición en cero. */
+.plan--enter { opacity: 0; transform: translateY(26px); }
+.plan--enter.is-in { opacity: 1; transform: none; }
+.plan--enter { transition: opacity .5s var(--ease), transform .6s var(--ease),
+                           box-shadow var(--normal) var(--ease); }
+/* La recomendada queda levantada, como en su estado de hover, para que se vea
+   cuál es sin tener que leer la etiqueta. */
+@media (min-width: 860px) {
+  .plans .plan--featured { transform: translateY(-14px) scale(1.02); }
+  .plans .plan--featured:hover { transform: translateY(-18px) scale(1.02); }
+  .plans .plan--featured.plan--enter { transform: translateY(26px) scale(1.02); }
+  .plans .plan--featured.plan--enter.is-in { transform: translateY(-14px) scale(1.02); }
+}
 
 .table-hint { margin-bottom: 8px; font-size: .85rem; color: var(--color-ink-soft); }
 @media (min-width: 900px) { .table-hint { display: none; } }

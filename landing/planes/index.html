@@ -193,66 +193,112 @@
 
 <section class="section section--overlap" aria-labelledby="planes-title">
   <div class="shell">
-    <h2 class="visually-hidden" id="planes-title">Planes</h2>
+    <h2 class="visually-hidden" id="planes-title">Planes</h2><div class="cycle" data-cycle role="group" aria-label="Cómo quieres pagar">
+      <div class="cycle__switch">
+        <button class="cycle__option is-on" type="button" data-cycle-set="monthly"
+                aria-pressed="true">Mensual</button>
+        <button class="cycle__option" type="button" data-cycle-set="yearly"
+                aria-pressed="false">Anual</button>
+      </div>
+      <span class="cycle__save">dos meses gratis</span><canvas class="cycle__confetti" data-confetti aria-hidden="true"></canvas>
+    </div>
+
     <ul class="plans">
-      <li class="plan">
+      <li class="plan"
+          data-plan
+          data-monthly="16"
+          data-yearly-monthly="13"
+          data-note-monthly="$160 al año, dos meses gratis"
+          data-note-yearly="se cobra $160 al año">
         <h3 class="plan__name">Básico</h3>
         <p class="plan__pitch">Para empezar con una lista pequeña.</p>
-        <p class="plan__price">
-          <span class="plan__amount">$16</span>
+        <p class="plan__price"><span class="plan__amount"><span class="plan__currency">$</span><span data-price>16</span></span>
           <span class="plan__period">/ mes</span>
         </p>
-        <p class="plan__yearly">$160 al año, dos meses gratis</p>
+        <p class="plan__yearly" data-note>$160 al año, dos meses gratis</p>
         <ul class="plan__list">
-          <li><span class="plan__value">1,000</span> <span class="plan__label">contactos</span></li>
-          <li><span class="plan__value">5,000</span> <span class="plan__label">correos por mes</span></li>
-          <li><span class="plan__value">1</span> <span class="plan__label">usuarios de la cuenta</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">1,000</span> <span class="plan__label">contactos</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">5,000</span> <span class="plan__label">correos por mes</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">1</span> <span class="plan__label">usuarios de la cuenta</span></li>
         </ul>
 <a class="btn btn--outline btn--block"
            data-hide-for-admin data-plan-rank="0"
            data-label-upgrade="Mejorar a Básico"
            data-label-renew="Renovar Básico"
            data-label-covered="Ya tienes todas las ventajas"
+           data-buy="https://panel.panamails.com/contratar/basico"
            href="https://panel.panamails.com/contratar/basico">Empezar con Básico</a>
       </li>
-      <li class="plan plan--featured">
-<span class="plan__badge">Recomendado</span>        <h3 class="plan__name">Negocio</h3>
+      <li class="plan plan--featured"
+          data-plan
+          data-monthly="25"
+          data-yearly-monthly="21"
+          data-note-monthly="$250 al año, dos meses gratis"
+          data-note-yearly="se cobra $250 al año">
+        <span class="plan__badge">
+          <svg class="icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"
+               aria-hidden="true" focusable="false"><path d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4-5.8-3-5.8 3 1.1-6.4L2.6 9.4l6.5-.9z"/></svg>
+          Recomendado</span>
+        <h3 class="plan__name">Negocio</h3>
         <p class="plan__pitch">Para quien ya envía cada mes y quiere su propio diseño.</p>
-        <p class="plan__price">
-          <span class="plan__amount">$25</span>
+        <p class="plan__price"><span class="plan__amount"><span class="plan__currency">$</span><span data-price>25</span></span>
           <span class="plan__period">/ mes</span>
         </p>
-        <p class="plan__yearly">$250 al año, dos meses gratis</p>
+        <p class="plan__yearly" data-note>$250 al año, dos meses gratis</p>
         <ul class="plan__list">
-          <li><span class="plan__value">3,000</span> <span class="plan__label">contactos</span></li>
-          <li><span class="plan__value">15,000</span> <span class="plan__label">correos por mes</span></li>
-          <li><span class="plan__value">2</span> <span class="plan__label">usuarios de la cuenta</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">3,000</span> <span class="plan__label">contactos</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">15,000</span> <span class="plan__label">correos por mes</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">2</span> <span class="plan__label">usuarios de la cuenta</span></li>
         </ul>
 <a class="btn btn--primary btn--block"
            data-hide-for-admin data-plan-rank="1"
            data-label-upgrade="Mejorar a Negocio"
            data-label-renew="Renovar Negocio"
            data-label-covered="Ya tienes todas las ventajas"
+           data-buy="https://panel.panamails.com/contratar/negocio"
            href="https://panel.panamails.com/contratar/negocio">Empezar con Negocio</a>
       </li>
-      <li class="plan">
+      <li class="plan"
+          data-plan
+          data-monthly="55"
+          data-yearly-monthly="46"
+          data-note-monthly="$550 al año, dos meses gratis"
+          data-note-yearly="se cobra $550 al año">
         <h3 class="plan__name">Empresa</h3>
         <p class="plan__pitch">Para cooperativas y colegios con una lista grande.</p>
-        <p class="plan__price">
-          <span class="plan__amount">$55</span>
+        <p class="plan__price"><span class="plan__amount"><span class="plan__currency">$</span><span data-price>55</span></span>
           <span class="plan__period">/ mes</span>
         </p>
-        <p class="plan__yearly">$550 al año, dos meses gratis</p>
+        <p class="plan__yearly" data-note>$550 al año, dos meses gratis</p>
         <ul class="plan__list">
-          <li><span class="plan__value">10,000</span> <span class="plan__label">contactos</span></li>
-          <li><span class="plan__value">50,000</span> <span class="plan__label">correos por mes</span></li>
-          <li><span class="plan__value">3</span> <span class="plan__label">usuarios de la cuenta</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">10,000</span> <span class="plan__label">contactos</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">50,000</span> <span class="plan__label">correos por mes</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">3</span> <span class="plan__label">usuarios de la cuenta</span></li>
         </ul>
 <a class="btn btn--outline btn--block"
            data-hide-for-admin data-plan-rank="2"
            data-label-upgrade="Mejorar a Empresa"
            data-label-renew="Renovar Empresa"
            data-label-covered="Ya tienes todas las ventajas"
+           data-buy="https://panel.panamails.com/contratar/empresa"
            href="https://panel.panamails.com/contratar/empresa">Empezar con Empresa</a>
       </li>
     </ul>
@@ -604,6 +650,6 @@
   </div>
 </footer>
 
-<script src="/assets/js/nav.js" defer></script>
+<script src="/assets/js/nav.js" defer></script><script src="/assets/js/plans.js" defer></script>
 </body>
 </html>

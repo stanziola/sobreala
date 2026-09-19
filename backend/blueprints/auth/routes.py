@@ -1774,8 +1774,12 @@ def checkout(plan: str):
     if not plans.buyable(plan):
         return redirect(url_for("auth.settings", section="pagos", error="plan"))
 
+    # Quien llegó desde /planes con el interruptor en anual encuentra ese botón
+    # resaltado. Es un adorno de la pantalla: lo que cobra es el botón que se
+    # pulse, y un valor inventado se lee como mensual.
+    wanted = "yearly" if request.args.get("ciclo") == "anual" else "monthly"
     return render_template(
-        "checkout.html", plan=plan, one=plans.PLANS[plan],
+        "checkout.html", plan=plan, one=plans.PLANS[plan], cycle=wanted,
         # Bajar de plan no se hace por la web: lo que ya se pagó no se
         # devuelve, así que quitarle sitio a una cuenta a cambio de nada tiene
         # que pasar por una conversación. Renovar el mismo sí, que es sumarle

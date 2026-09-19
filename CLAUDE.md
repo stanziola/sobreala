@@ -1651,6 +1651,28 @@ una dirección**, y al abrir sesión sigue hasta ahí. Configuración → Opcion
 pago ya no vende: dice desde dónde se cobra, qué plan hay contratado y qué se ha
 cobrado.
 
+**Las tarjetas de `/planes` tienen su interruptor de mensual y anual**, con
+`landing/assets/js/plans.js`, el único guion que baja una sola página (el bloque
+`scripts` de `src/base.html.j2`). En anual cada tarjeta enseña **el equivalente
+mensual** —el anual entre doce— y debajo lo que se cobra de verdad, y el número
+va de una cifra a otra con un contador propio. Las dos cifras salen de
+`docs/pricing.md` como todo lo demás (`monthly_value`, `yearly_value`,
+`yearly_monthly` en `build_site.py`), no escritas en el marcado.
+
+Tres cosas de ese interruptor:
+
+- **La página nace en mensual y con todo dibujado**, así que sin JavaScript se
+  leen los tres planes, sus precios y sus botones. **El interruptor sí se
+  esconde sin el guion** (`.cycle` nace en `display: none` y `plans.js` le pone
+  `is-ready`): un botón que no hace nada es peor que no tenerlo.
+- **El botón de cada plan lleva el ciclo al panel**, con `?ciclo=anual`, y
+  `/contratar/<plan>` resalta ese botón. Sin parámetro, o con uno inventado,
+  queda el mes, que es lo de siempre. `nav.js` sigue mandando en el texto del
+  botón: esto solo le toca la dirección.
+- **Con «reducir movimiento» puesto no se anima nada**: el precio cambia de
+  golpe, las tarjetas nacen puestas y no sale confeti. El confeti es nuestro, en
+  un `<canvas>` que se borra solo a los dos segundos, sin ninguna dependencia.
+
 **`form-action` de la cabecera tiene que permitir todo sitio al que se pueda
 acabar yendo desde un formulario.** Esa regla gobierna también la redirección que
 sigue al envío, así que con solo `'self'` el navegador se planta y desde fuera
