@@ -60,6 +60,8 @@
   "many": t('canvas_many'),
   "copied": t('canvas_copied'),
   "pasteUrl": t('canvas_paste_url'),
+  "sheetLeast": t('canvas_sheet_least'),
+  "cropHow": t('canvas_crop_how'),
 } %}
 <div class="editor" data-canvas
      data-upload="{{ url_for('designs.canvas_image') }}"
@@ -92,7 +94,16 @@
       {% endfor %}
     </div>
     {% endif %}
-    <p class="hint editor__keys">{{ t('canvas_keys') }}</p>
+    {#- Los atajos, todos juntos y a un clic. Es un <details>, así que abre
+        sin JavaScript. -#}
+    <details class="keys">
+      <summary class="btn btn--small btn--outline">{{ t('canvas_keys') }}</summary>
+      <dl class="keys__list">
+        {% for what, how in keys %}
+        <dt>{{ what }}</dt><dd>{{ how }}</dd>
+        {% endfor %}
+      </dl>
+    </details>
   </aside>
 
   <div class="editor__main">
@@ -104,6 +115,11 @@
         <p class="props__none">{{ t('canvas_props_none') }}</p>
         <label class="props__field props__field--color">{{ t('canvas_page_bg') }}
           <input type="color" data-page-bg></label>
+        {#- El alto también se arrastra por el tirador de abajo de la hoja;
+            escrito es para cuando se quiere una medida exacta. -#}
+        <label class="props__field props__field--small">{{ t('canvas_sheet_h') }}
+          <input type="number" min="{{ limits.minHeight }}" max="{{ limits.maxHeight }}"
+                 step="10" data-sheet-h></label>
       </div>
 
       {# Varios a la vez: lo que se puede hacer con un montón, no con uno.
@@ -173,6 +189,8 @@
         <label class="props__field props__field--small">{{ t('canvas_rot') }}
           <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
         <button class="btn btn--small btn--outline" type="button" data-action="straight">{{ t('canvas_rot_zero') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="crop">{{ t('canvas_crop') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="uncrop">{{ t('canvas_uncrop') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="replace">{{ t('canvas_replace') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>

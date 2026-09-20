@@ -30,7 +30,7 @@ from markupsafe import escape
 from blueprints.auth.routes import (current_account, current_workspace, needs,
                                     not_for_admins)
 from db import get_db
-from i18n import TEXTS, t
+from i18n import CANVAS_KEYS, TEXTS, t
 from models import account as accounts
 from models import contact as contacts
 from models import design as designs
@@ -577,7 +577,7 @@ def canvas_editor(account, found):
         "designs/canvas.html", section="plantillas", account=account,
         found=found, doc=doc, name=name, errors=errors,
         fonts=list(canvas.FONTS), font_stacks=canvas.FONTS,
-        columns=marks_for(account),
+        columns=marks_for(account), keys=CANVAS_KEYS,
         people=contacts.for_preview(db, account["_id"]),
         limits={"minSize": canvas.MIN_SIZE, "maxSize": canvas.MAX_SIZE,
                 "minHeight": canvas.MIN_HEIGHT, "maxHeight": canvas.MAX_HEIGHT,

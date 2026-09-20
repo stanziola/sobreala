@@ -54,15 +54,38 @@
   {% for one in rates %}
   <li class="rates__one">
     <span class="rates__name">{{ t('stats_' + one.key) }}</span>
-    {% if one.pct is none %}
-    <b class="rates__big">{{ one.n }}</b>
-    {% else %}
-    <b class="rates__big">{{ one.pct }} %</b>
+    <span class="rates__line">
+      {% if one.pct is none %}
+      <b class="rates__big">{{ one.n }}</b>
+      {% else %}
+      <b class="rates__big">{{ one.pct }} %</b>
+      {% endif %}
+      {#- La pastilla compara con el periodo anterior. El color dice si mejoró,
+          no si subió: más rebotes es rojo con la flecha hacia arriba. -#}
+      {% if one.change %}
+      <span class="trend{{ ' is-good' if one.change.good else ' is-bad' }}"
+            title="{{ t('stats_change_up' if one.change.up else 'stats_change_down',
+                        pct=one.change.pct) }}">
+        <svg class="icon" viewBox="0 0 16 16" width="12" height="12" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true" focusable="false">
+          {% if one.change.up %}
+          <path d="M2.5 11.5 6.5 6.5l3 3 4-5"/><path d="M13.5 8V4.5H10"/>
+          {% else %}
+          <path d="M2.5 4.5 6.5 9.5l3-3 4 5"/><path d="M13.5 8v3.5H10"/>
+          {% endif %}
+        </svg>
+        {{ '+' if one.change.up else '-' }}{{ one.change.pct }} %
+      </span>
+      {% endif %}
+    </span>
+    {% if one.pct is not none %}
     <span class="rates__of">{{ t('stats_rate_of', n=one.n, of=one.of) }}</span>
     {% endif %}
   </li>
   {% endfor %}
 </ul>
+<p class="hint">{{ t('stats_change_note') }}</p>
 <p class="hint">{{ t('stats_rates_note') }}</p>
 
 {# --------------------------------------------------- envíos y rebotes --- #}

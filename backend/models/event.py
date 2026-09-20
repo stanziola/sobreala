@@ -105,6 +105,24 @@ def since(period: str, zone=None) -> datetime:
     return slots(period, zone)[0]
 
 
+def window(period: str, zone=None, *, back: int = 0):
+    """Desde cuándo y hasta cuándo se mira, en UTC.
+
+    Con `back=0` es el periodo de ahora, y se deja abierto por arriba: es lo de
+    siempre, y un aviso de Amazon con la hora un poco adelantada sigue contando.
+    Con `back=1` es **el tramo de antes**, del mismo largo y pegado a él: los 7
+    días anteriores a los últimos 7, y en «hoy», ayer hasta la misma hora. Es lo
+    que compara la pantalla de Estadísticas.
+    """
+    starts = slots(period, zone)
+    step = PERIODS[clean_period(period)]["step"]
+    start, end = starts[0], starts[-1] + step
+    if not back:
+        return start, None
+    length = end - start
+    return start - length * back, start - length * (back - 1)
+
+
 def record(db, account_id, *, kind: str, campaign_id=None, run_id=None,
            email: str = "", at: datetime | None = None) -> Any:
     """Anotar un evento.
@@ -157,7 +175,7 @@ def counts_by_run(db, account_id, run_ids: list) -> dict[Any, dict[str, int]]:
 
 
 def _match(db, account_id, period: str, tag: str = "", campaign=None,
-           zone=None) -> dict[str, Any]:
+           zone=None, back: int = 0) -> dict[str, Any]:
     """La consulta que comparten la serie, los totales y los porcentajes.
 
     En un solo sitio para que el número de arriba y la barra de abajo no puedan
@@ -167,8 +185,11 @@ def _match(db, account_id, period: str, tag: str = "", campaign=None,
     un evento es de un envío (`run_id`), y el envío guarda a qué etiquetas
     salió. Antes se buscaba en el evento y el filtro no encontraba nada.
     """
-    query: dict[str, Any] = {"account_id": account_id,
-                             "created_at": {"$gte": since(period, zone)}}
+    start, end = window(period, zone, back=back)
+    when: dict[str, Any] = {"$gte": start}
+    if end is not None:
+        when["$lt"] = end
+    query: dict[str, Any] = {"account_id": account_id, "created_at": when}
     if campaign is not None:
         query["campaign_id"] = campaign
     if tag:
@@ -195,16 +216,19 @@ def totals(db, account_id, *, period: str = DEFAULT_PERIOD, tag: str = "",
 
 
 def people(db, account_id, *, period: str = DEFAULT_PERIOD, tag: str = "",
-           campaign=None, zone=None) -> dict[str, int]:
+           campaign=None, zone=None, back: int = 0) -> dict[str, int]:
     """Cuántas **personas** de cada tipo, contadas por envío.
 
     Quien abre tres veces el mismo envío es una apertura; quien recibe dos
     envíos de la misma campaña cuenta en los dos. Es la misma cuenta que
     «Campañas enviadas», para que los porcentajes digan lo mismo.
+
+    Con `back=1` se cuenta el tramo anterior, que es contra lo que compara la
+    pantalla.
     """
     counted = {kind: 0 for kind in KINDS}
     for row in db.events.aggregate([
-            {"$match": _match(db, account_id, period, tag, campaign, zone)},
+            {"$match": _match(db, account_id, period, tag, campaign, zone, back)},
             {"$group": {"_id": {"run": "$run_id", "kind": "$kind",
                                 "who": "$email_normalized"}}},
             {"$group": {"_id": "$_id.kind", "n": {"$sum": 1}}}]):

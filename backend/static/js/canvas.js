@@ -39,6 +39,7 @@
   var picked = [];         // los índices elegidos, que pueden ser varios
   var sel = null;          // el único elegido, o null si son varios o ninguno
   var bench = null;        // lo último copiado, si el portapapeles no deja leer
+  var cropping = null;     // el índice de la foto que se está recortando
   var editing = null;      // el elemento de texto que se está escribiendo
   var lastField = null;    // el último campo de la barra que tuvo el cursor
   var dirty = false;
@@ -57,6 +58,10 @@
   /* Todo pasa por aquí: `sel` es lo elegido cuando es uno solo, que es como
      funciona la barra de propiedades, y `picked` es la lista. */
   function pick(what) {
+    // Elegir otra cosa cierra el recorte: el recuadro es de esa foto.
+    if (cropping !== null && (what === null || what === undefined || what !== cropping)) {
+      cropping = null;
+    }
     var list = what === null || what === undefined ? []
       : (typeof what === "number" ? [what] : what.slice());
     picked = list.filter(function (i, at) {
@@ -201,7 +206,19 @@
     el.style.transform = one.rot ? "rotate(" + one.rot + "deg)" : "";
     if (one.t === "image") {
       el.style.backgroundImage = "url('/img/" + encodeURIComponent(one.name) + "')";
-      el.style.backgroundSize = one.fit === "contain" ? "contain" : "cover";
+      var cut = one.crop;
+      if (cut) {
+        // El pedazo elegido llena la caja. El recuadro guarda la proporción de
+        // la caja, así que llenarla no deforma nada: es lo mismo que hace el
+        // servidor al armar el correo.
+        el.style.backgroundSize = (100 / cut[2]).toFixed(2) + "% " + (100 / cut[3]).toFixed(2) + "%";
+        el.style.backgroundPosition =
+          (cut[2] < 1 ? cut[0] / (1 - cut[2]) * 100 : 0).toFixed(2) + "% " +
+          (cut[3] < 1 ? cut[1] / (1 - cut[3]) * 100 : 0).toFixed(2) + "%";
+      } else {
+        el.style.backgroundSize = one.fit === "contain" ? "contain" : "cover";
+        el.style.backgroundPosition = "";
+      }
       return;
     }
     if (one.t === "shape") {
@@ -266,6 +283,7 @@
       }
       sheet.appendChild(el);
     });
+    if (cropping !== null) cropLayer(sheet);
     stage.appendChild(sheet);
 
     var grip = document.createElement("div");
@@ -296,6 +314,8 @@
     });
     var page = props.querySelector("[data-page-bg]");
     if (page && page !== document.activeElement) page.value = doc.bg;
+    var high = props.querySelector("[data-sheet-h]");
+    if (high && high !== document.activeElement) high.value = String(doc.h);
     if (!one || kind === "many") return;
     // «data-only» vale para el tipo («button») y para la figura de un
     // rectángulo («shape-ellipse»): el redondeo es del rectángulo y el aviso
@@ -467,6 +487,25 @@
     }
     var sheet = e.target.closest(".cv-sheet");
     if (!sheet) return;
+
+    // Mientras se recorta, el ratón es del recuadro: mover dentro, estirar por
+    // las esquinas, y un clic fuera termina.
+    if (cropping !== null) {
+      var handle = e.target.closest("[data-crop-handle]");
+      var frame = e.target.closest("[data-crop-frame]");
+      if (handle || frame) {
+        var box = frame || e.target.closest("[data-crop]").querySelector("[data-crop-frame]");
+        drag = { mode: "crop-" + (handle ? handle.getAttribute("data-crop-handle") : "move"),
+                 x0: e.clientX, y0: e.clientY, frame: box, moved: false,
+                 start: { x: parseFloat(box.style.left), y: parseFloat(box.style.top),
+                          w: parseFloat(box.style.width), h: parseFloat(box.style.height) } };
+        e.preventDefault();
+        return;
+      }
+      if (!e.target.closest("[data-crop]")) { stopCrop(); return; }
+      e.preventDefault();
+      return;
+    }
     var el = e.target.closest(".cv-item");
     if (!el) {
       // Arrastrar sobre la hoja vacía encierra lo que toque el recuadro.
@@ -514,6 +553,33 @@
       doc.h = clamp(Math.round(drag.h0 + e.clientY - drag.y0), drag.min, L.maxHeight);
       if (sheet) sheet.style.height = doc.h + "px";
       drag.moved = true;
+      return;
+    }
+    if (drag.mode.indexOf("crop-") === 0) {
+      var cropped = doc.items[cropping];
+      if (!cropped) return;
+      var a = drag.start;
+      var cdx = Math.round(e.clientX - drag.x0), cdy = Math.round(e.clientY - drag.y0);
+      drag.moved = true;
+      var ratio = cropped.w / Math.max(cropped.h, 1);
+      var want;
+      if (drag.mode === "crop-move") {
+        want = { x: a.x + cdx, y: a.y + cdy, w: a.w };
+      } else {
+        // La esquina de enfrente se queda donde está: lo que crece es hacia
+        // donde se tira.
+        var wide = drag.mode.indexOf("e") >= 0 ? a.w + cdx : a.w - cdx;
+        var tall = wide / ratio;
+        want = { w: wide,
+                 x: drag.mode.indexOf("w") >= 0 ? a.x + a.w - wide : a.x,
+                 y: drag.mode.indexOf("n") >= 0 ? a.y + a.h - tall : a.y };
+      }
+      cropped.crop = cropFrom(cropped, want);
+      var seat = photoBox(cropped);
+      drag.frame.style.left = (cropped.crop[0] * seat.w) + "px";
+      drag.frame.style.top = (cropped.crop[1] * seat.h) + "px";
+      drag.frame.style.width = (cropped.crop[2] * seat.w) + "px";
+      drag.frame.style.height = (cropped.crop[3] * seat.h) + "px";
       return;
     }
     if (drag.mode === "marquee") {
@@ -576,8 +642,15 @@
     var fit = mode === "drag" ? snap(drag.i, x, y, w, h) : { x: x, y: y, lines: [] };
     one.x = clamp(Math.round(fit.x), 0, W - Math.min(w, W));
     one.y = clamp(Math.round(fit.y), 0, L.maxHeight - Math.min(h, L.maxHeight));
-    one.w = Math.min(w, W - one.x);
-    one.h = Math.min(h, L.maxHeight - one.y);
+    var wide = Math.min(w, W - one.x), tall = Math.min(h, L.maxHeight - one.y);
+    // Al topar con el borde de la hoja, una foto tirada de una esquina se
+    // quedaba con el ancho recortado y el alto entero: cambiaba de proporción
+    // y se veía estirada. Si el ancho se recorta, el alto lo sigue.
+    if (one.t === "image" && mode.length === 2 && wide !== w) {
+      tall = Math.max(16, Math.round(wide * h / w));
+    }
+    one.w = wide;
+    one.h = tall;
     if (one.t === "image" && one.fit) delete one.fit;
     // La hoja crece mientras se arrastra hacia abajo.
     if (one.y + one.h > doc.h) {
@@ -599,6 +672,10 @@
     if (!drag) return;
     var was = drag;
     drag = null;
+    if (was.mode.indexOf("crop-") === 0) {
+      if (was.moved) { render(); commitSoon(); }
+      return;
+    }
     if (was.mode === "marquee") {
       var mark = was.sheet.querySelector(".cv-marquee");
       if (mark) mark.remove();
@@ -716,6 +793,20 @@
       doc.bg = page.value.toUpperCase();
       var sheet = stage.querySelector(".cv-sheet");
       if (sheet) sheet.style.backgroundColor = doc.bg;
+      commitSoon();
+      return;
+    }
+    // El alto de la hoja se escribe, y también se arrastra por el tirador de
+    // abajo. Nunca por debajo de lo que ya hay dentro: eso lo dejaría fuera.
+    var high = e.target.closest("[data-sheet-h]");
+    if (high) {
+      var want = parseInt(high.value, 10);
+      if (isNaN(want)) return;
+      var least = Math.max(L.minHeight, lowest());
+      doc.h = clamp(want, least, L.maxHeight);
+      say(doc.h !== want ? S.sheetLeast.replace("{px}", doc.h) : "");
+      var box = stage.querySelector(".cv-sheet");
+      if (box) box.style.height = doc.h + "px";
       commitSoon();
       return;
     }
@@ -850,6 +941,14 @@
       delete one.g;
     } else if (what === "straight") {
       one.rot = 0;
+    } else if (what === "crop") {
+      cropping = cropping === sel ? null : sel;
+      say(cropping === null ? "" : S.cropHow);
+      render();
+      return;
+    } else if (what === "uncrop") {
+      delete one.crop;
+      cropping = null;
     } else if (what === "replace") {
       pickImage(sel);
       return;
@@ -900,7 +999,10 @@
     if (e.key === "Delete" || e.key === "Backspace") {
       dropPicked(); render(); commit(); e.preventDefault(); return;
     }
-    if (e.key === "Escape") { pick(null); render(); return; }
+    if (e.key === "Escape") {
+      if (cropping !== null) { stopCrop(); return; }
+      pick(null); render(); return;
+    }
     var moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
     if (!moves[e.key]) return;
     e.preventDefault();
@@ -914,6 +1016,79 @@
     grow();
     render(); commitSoon();
   });
+
+  /* -------------------------------------------------------- recortar */
+
+  /* Recortar no toca la foto subida: se guarda qué pedazo se ve (`crop`, de 0
+     a 1) y el correo se arma con eso, así que se puede cambiar mañana.
+
+     Mientras se recorta, la caja de la foto enseña la foto entera y encima va
+     un recuadro. **El recuadro guarda la proporción de la caja**, así que lo
+     que se ve nunca sale deformado: solo más cerca o más lejos. */
+
+  /* Dónde queda la foto entera dentro de su caja, que es sobre lo que se
+     dibuja el recuadro. */
+  function photoBox(one) {
+    var r = one.r || (one.w / Math.max(one.h, 1));
+    var w = one.w, h = Math.round(one.w / r);
+    if (h > one.h) { h = one.h; w = Math.round(one.h * r); }
+    return { x: one.x + Math.round((one.w - w) / 2),
+             y: one.y + Math.round((one.h - h) / 2), w: w, h: h };
+  }
+
+  function cropOf(one) {
+    return one.crop ? one.crop.slice() : [0, 0, 1, 1];
+  }
+
+  function cropLayer(sheet) {
+    var one = doc.items[cropping];
+    if (!one || one.t !== "image") { cropping = null; return; }
+    var seat = photoBox(one), cut = cropOf(one);
+
+    var layer = document.createElement("div");
+    layer.className = "cv-crop";
+    layer.setAttribute("data-crop", "");
+    layer.style.left = seat.x + "px";
+    layer.style.top = seat.y + "px";
+    layer.style.width = seat.w + "px";
+    layer.style.height = seat.h + "px";
+    layer.style.backgroundImage = "url('/img/" + encodeURIComponent(one.name) + "')";
+
+    var frame = document.createElement("div");
+    frame.className = "cv-crop__frame";
+    frame.setAttribute("data-crop-frame", "");
+    frame.style.left = (cut[0] * seat.w) + "px";
+    frame.style.top = (cut[1] * seat.h) + "px";
+    frame.style.width = (cut[2] * seat.w) + "px";
+    frame.style.height = (cut[3] * seat.h) + "px";
+    CORNERS.forEach(function (where) {
+      var h = document.createElement("span");
+      h.className = "cv-handle cv-handle--" + where;
+      h.setAttribute("data-crop-handle", where);
+      frame.appendChild(h);
+    });
+    layer.appendChild(frame);
+    sheet.appendChild(layer);
+  }
+
+  /* El recuadro, en fracciones de la foto, con la proporción de la caja y sin
+     salirse ni quedar más chico que un veinteavo. */
+  function cropFrom(one, box) {
+    var seat = photoBox(one);
+    var ratio = one.w / Math.max(one.h, 1);
+    var w = clamp(box.w, seat.w * 0.05, seat.w);
+    var h = w / ratio;
+    if (h > seat.h) { h = seat.h; w = h * ratio; }
+    var x = clamp(box.x, 0, seat.w - w), y = clamp(box.y, 0, seat.h - h);
+    return [+(x / seat.w).toFixed(4), +(y / seat.h).toFixed(4),
+            +(w / seat.w).toFixed(4), +(h / seat.h).toFixed(4)];
+  }
+
+  function stopCrop() {
+    if (cropping === null) return;
+    cropping = null;
+    render(); commit();
+  }
 
   /* ----------------------------------------------------- copiar y pegar */
 

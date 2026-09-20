@@ -128,6 +128,29 @@ def _clean(text: Any, limit: int) -> str:
     return "".join(c for c in text if c == "\n" or c >= " ")[:limit + 1]
 
 
+MIN_CROP = 0.05
+
+
+def _crop(raw: Any) -> list[float] | None:
+    """Qué parte de la foto se ve: x, y, ancho y alto, de 0 a 1.
+
+    Sin recorte se ve entera, que es lo de siempre. Lo que no sea cuatro
+    números dentro de la foto, o un pedazo más chico que un veinteavo, se
+    descarta: el recuadro lo escribe el navegador.
+    """
+    if not isinstance(raw, (list, tuple)) or len(raw) != 4:
+        return None
+    try:
+        x, y, w, h = (round(float(one), 4) for one in raw)
+    except (TypeError, ValueError):
+        return None
+    if min(x, y) < 0 or min(w, h) < MIN_CROP or x + w > 1.0001 or y + h > 1.0001:
+        return None
+    if (x, y, w, h) == (0, 0, 1, 1):
+        return None
+    return [x, y, min(w, 1 - x), min(h, 1 - y)]
+
+
 def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
     kind = raw.get("t")
     if kind not in KINDS:
@@ -152,6 +175,9 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         one["r"] = round(ratio, 4) if 0.05 <= ratio <= 20 else 0
         one["href"] = str(raw.get("href") or "").strip()[:HREF_MAX + 1]
         one["alt"] = " ".join(_clean(raw.get("alt"), ALT_MAX).split())[:ALT_MAX]
+        cut = _crop(raw.get("crop"))
+        if cut:
+            one["crop"] = cut
         # Grados, como en CSS: hacia la derecha. El texto y el botón no giran,
         # que girarlos sería convertirlos en imagen.
         one["rot"] = _int(raw.get("rot")) % 360
@@ -458,6 +484,15 @@ def _paint(group: dict[str, Any], page: str, load, scale: int):
             continue
         with Image.open(BytesIO(raw)) as opened:
             picture = opened.convert("RGBA")
+        cut = one.get("crop")
+        if cut:
+            # Lo que el cliente dejó dentro del recuadro. La foto guardada no
+            # se toca: el recorte vive en la pieza y se puede cambiar mañana.
+            wide, tall = picture.size
+            left, top = round(cut[0] * wide), round(cut[1] * tall)
+            picture = picture.crop((left, top,
+                                    min(wide, left + round(cut[2] * wide)),
+                                    min(tall, top + round(cut[3] * tall))))
         if one.get("fit") == "contain":
             picture.thumbnail(box, Image.LANCZOS)
             spot = (spot[0] + (box[0] - picture.width) // 2,

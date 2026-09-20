@@ -218,3 +218,86 @@ def test_sin_clientes_el_administrador_ve_por_que(client, database, outbox):
 
     texto = admin.get("/admin/").get_data(as_text=True)
     assert "Todavía no hay clientes" in texto
+
+
+# --------------------------------------------- comparar con el periodo anterior
+
+def test_el_tramo_anterior_va_pegado_y_mide_lo_mismo():
+    ahora = events.window("7d")
+    antes = events.window("7d", back=1)
+    assert ahora[1] is None, "el de ahora se deja abierto por arriba"
+    assert antes[1] == ahora[0], "el de antes termina donde empieza el de ahora"
+    assert antes[1] - antes[0] == timedelta(days=7)
+    # «Hoy» se compara con ayer hasta la misma hora, no con un dia entero.
+    hoy = events.window("hoy")
+    ayer = events.window("hoy", back=1)
+    assert ayer[1] == hoy[0]
+    assert ayer[1] - ayer[0] == events.slots("hoy")[-1] + timedelta(hours=1) - hoy[0]
+
+
+def test_la_pastilla_dice_cuanto_cambio_y_si_eso_es_mejor(client, database, outbox):
+    """Verde es que mejoro y rojo que empeoro, no que subiera: el doble de
+    aperturas es verde y el doble de rebotes es rojo."""
+    inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    ahora = events.now()
+    antes = ahora - timedelta(days=8)          # dentro de los 7 dias anteriores
+
+    for quien in ("a", "b", "c", "d"):
+        events.record(database, cuenta["_id"], kind=events.SENT, at=ahora,
+                      email=f"{quien}@coop.com")
+        events.record(database, cuenta["_id"], kind=events.DELIVERED, at=ahora,
+                      email=f"{quien}@coop.com")
+        events.record(database, cuenta["_id"], kind=events.SENT, at=antes,
+                      email=f"{quien}@coop.com")
+        events.record(database, cuenta["_id"], kind=events.DELIVERED, at=antes,
+                      email=f"{quien}@coop.com")
+    # Aperturas: una antes, dos ahora. Rebotes: uno antes, dos ahora.
+    events.record(database, cuenta["_id"], kind=events.OPEN, at=antes, email="a@coop.com")
+    for quien in ("a", "b"):
+        events.record(database, cuenta["_id"], kind=events.OPEN, at=ahora,
+                      email=f"{quien}@coop.com")
+    events.record(database, cuenta["_id"], kind=events.BOUNCE, at=antes, email="c@coop.com")
+    for quien in ("c", "d"):
+        events.record(database, cuenta["_id"], kind=events.BOUNCE, at=ahora,
+                      email=f"{quien}@coop.com")
+
+    from services import stats
+    filas = {one["key"]: one for one in stats.rates(
+        events.people(database, cuenta["_id"], period="7d"),
+        events.people(database, cuenta["_id"], period="7d", back=1))}
+
+    assert filas["open"]["change"] == {"pct": 100, "up": True, "good": True}
+    assert filas["bounce"]["change"] == {"pct": 100, "up": True, "good": False}
+    # Lo que no se movio no lleva pastilla, y tampoco los enviados, que son los
+    # mismos cuatro en los dos tramos.
+    assert filas["sent"]["change"] is None
+    assert filas["delivery"]["change"] is None
+
+
+def test_sin_nada_antes_no_hay_con_que_comparar(client, database, outbox):
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    events.record(database, cuenta["_id"], kind=events.SENT, email="a@coop.com")
+
+    from services import stats
+    filas = stats.rates(
+        events.people(database, cuenta["_id"], period="7d"),
+        events.people(database, cuenta["_id"], period="7d", back=1))
+    assert all(one["change"] is None for one in filas)
+    pantalla = browser.get("/panel?periodo=7d").get_data(as_text=True)
+    assert "trend" not in pantalla
+    assert "comparan con el periodo anterior" in pantalla
+
+
+def test_el_cambio_no_se_redondea_antes_de_comparar():
+    """Con el 12.5 % redondeado a 12, un 25 % se leia como «+108 %»: la cuenta
+    se hace con la proporcion exacta."""
+    from services import stats
+
+    ahora = {events.SENT: 8, events.DELIVERED: 8, events.BOUNCE: 2,
+             events.OPEN: 0, events.CLICK: 0, events.COMPLAINT: 0}
+    antes = dict(ahora, **{events.BOUNCE: 1})
+    filas = {one["key"]: one for one in stats.rates(ahora, antes)}
+    assert filas["bounce"]["pct"] == 25
+    assert filas["bounce"]["change"] == {"pct": 100, "up": True, "good": False}

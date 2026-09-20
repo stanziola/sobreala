@@ -684,3 +684,40 @@ def test_lo_girado_se_pinta_girado():
         esquina = hecha.getpixel((2, 2))
     assert medio[2] > 60 and medio[0] < 60, medio    # el centro, pintado
     assert esquina == (255, 255, 255), esquina       # la esquina, la hoja
+
+
+# ------------------------------------------------------------ el recorte
+
+def test_la_foto_se_guarda_recortada_y_se_pinta_asi():
+    """El recorte vive en la pieza y la imagen subida no se toca: se puede
+    cambiar mañana."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    # Una foto de dos mitades: arriba azul, abajo roja.
+    fuente = Image.new("RGB", (400, 400), (20, 60, 200))
+    fuente.paste((200, 30, 30), (0, 200, 400, 400))
+    crudo = BytesIO()
+    fuente.save(crudo, format="JPEG", quality=90)
+    datos = crudo.getvalue()
+
+    def mitad(cut):
+        doc = leer(lienzo(imagen(0, 0, 200, 100, crop=cut), h=200))
+        pintada = canvas.parts(doc, lambda name: datos)[0]
+        with Image.open(BytesIO(pintada)) as hecha:
+            return hecha.getpixel((hecha.width // 2, hecha.height // 2))
+
+    arriba = mitad([0, 0, 1, 0.5])
+    abajo = mitad([0, 0.5, 1, 0.5])
+    assert arriba[2] > 120 and arriba[0] < 90, arriba     # azul
+    assert abajo[0] > 120 and abajo[2] < 90, abajo        # rojo
+
+
+def test_un_recorte_inventado_no_entra():
+    for malo in ("todo", [0, 0], [0, 0, 0.01, 0.5], [0.9, 0, 0.5, 0.5],
+                 [-0.1, 0, 0.5, 0.5], [0, 0, 1, 1], None):
+        leido = leer(lienzo(imagen(0, 0, 200, 100, crop=malo)))
+        assert "crop" not in leido["items"][0], malo
+    bueno = leer(lienzo(imagen(0, 0, 200, 100, crop=[0.1, 0.2, 0.5, 0.25])))
+    assert bueno["items"][0]["crop"] == [0.1, 0.2, 0.5, 0.25]

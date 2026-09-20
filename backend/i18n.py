@@ -608,6 +608,16 @@ TEXTS = {
     "stats_all_campaigns": "Todas las campañas",
     "stats_rates_title": "Cómo le fue",
     "stats_rate_of": "{n} de {of}",
+    # La pastilla del cambio. «Mejor» y «peor» y no «subió» y «bajó»: más
+    # rebotes es peor aunque la flecha apunte arriba.
+    "stats_change_up": "{pct} % más que en el periodo anterior",
+    "stats_change_down": "{pct} % menos que en el periodo anterior",
+    "stats_change_note": "Las pastillas comparan con el periodo anterior de la "
+                         "misma duración: con los últimos 7 días puestos, con "
+                         "los 7 de antes. Verde es que mejoró y rojo que "
+                         "empeoró, así que más rebotes o más quejas van en "
+                         "rojo aunque la flecha suba. Donde antes no hubo "
+                         "envíos no hay con qué comparar y no sale pastilla.",
     "stats_rates_note": "Se cuentan personas: quien abre tres veces cuenta una. "
                         "Las aperturas son aproximadas (algunos buzones abren "
                         "solos los correos y otros no avisan), y «entregado» "
@@ -1099,15 +1109,16 @@ TEXTS = {
                          "escribe donde está el cursor.",
     "canvas_marks_need": "Primero haz doble clic en un texto, o pon el cursor "
                          "en el texto del botón.",
-    "canvas_keys": "Flechas para mover (con Mayús, de a 10). Suprimir para "
-                   "borrar. Ctrl+Z deshace y Ctrl+Y rehace. Ctrl+C, Ctrl+V y "
-                   "Ctrl+D para copiar, pegar y duplicar.",
+    "canvas_keys": "Atajos del teclado",
     "canvas_props_none": "Haz clic en algo para cambiarlo. Doble clic en un "
                          "texto para escribir. Con Mayús pulsas varios, y "
                          "arrastrando sobre la hoja los encierras.",
     "canvas_rights": "Sube solo imágenes de las que tengas derechos: respondes "
                      "por ellas. También puedes pegar una con Ctrl+V.",
     "canvas_page_bg": "Color de la hoja",
+    "canvas_sheet_h": "Alto de la hoja",
+    "canvas_sheet_least": "La hoja no puede quedar por debajo de lo que tiene "
+                          "dentro: se quedó en {px} px.",
     "canvas_shape_bg": "Color",
     "canvas_shape_kind": "Figura",
     "canvas_shape_rect": "Rectángulo",
@@ -1138,6 +1149,11 @@ TEXTS = {
     "canvas_button_bg": "Color del botón",
     "canvas_radius": "Forma",
     "canvas_replace": "Cambiar imagen",
+    "canvas_crop": "Recortar",
+    "canvas_uncrop": "Quitar el recorte",
+    "canvas_crop_how": "Arrastra el recuadro para elegir qué parte se ve, y "
+                       "sus esquinas para acercar o alejar. Pulsa Esc o fuera "
+                       "de la foto cuando termines.",
     "canvas_front": "Traer al frente",
     "canvas_back": "Enviar atrás",
     "canvas_delete": "Borrar",
@@ -1821,6 +1837,22 @@ TEXTS = {
 def t(key: str, **kwargs) -> str:
     text = TEXTS[key]
     return text.format(**kwargs) if kwargs else text
+
+
+# Los atajos del lienzo, en un solo sitio: la lista de la pantalla sale de
+# aquí. No van en TEXTS porque `t()` devuelve texto, no pares.
+CANVAS_KEYS = (
+    ("Mover lo elegido", "Flechas (con Mayús, de a 10)"),
+    ("Borrar", "Suprimir o Retroceso"),
+    ("Deshacer y rehacer", "Ctrl+Z y Ctrl+Y"),
+    ("Copiar, cortar y pegar", "Ctrl+C, Ctrl+X y Ctrl+V"),
+    ("Duplicar", "Ctrl+D"),
+    ("Elegir todo", "Ctrl+A"),
+    ("Elegir varios", "Mayús y clic, o arrastrar sobre la hoja"),
+    ("Escribir en un texto", "Doble clic"),
+    ("Pegar una foto", "Ctrl+V"),
+    ("Soltar lo elegido, salir del texto o del recorte", "Esc"),
+)
 
 
 MONTHS = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",

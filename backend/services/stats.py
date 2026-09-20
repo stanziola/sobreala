@@ -118,12 +118,13 @@ def _share(part: int, whole: int) -> int | None:
     return round(part * 100 / whole) if whole else None
 
 
-def rates(counted: dict[str, int]) -> list[dict[str, Any]]:
-    """Cómo le fue: cada cifra con su porcentaje y de cuántos.
+# Qué cifras son mejores cuanto más bajas: subir de rebotes o de quejas es
+# malo, así que la pastilla va roja aunque la flecha suba.
+WORSE_UP = ("bounce", "complaint")
 
-    Rebotes y entregados se miden contra lo que salió; abiertos, clics y quejas
-    contra lo que llegó, que es a quien le pudo pasar.
-    """
+
+def _counted(counted: dict[str, int]) -> list[dict[str, Any]]:
+    """Cada cifra con su porcentaje y de cuántos, sin comparar con nada."""
     sent, delivered = counted[events.SENT], counted[events.DELIVERED]
     return [
         {"key": "sent", "n": sent, "pct": None, "of": None},
@@ -137,6 +138,52 @@ def rates(counted: dict[str, int]) -> list[dict[str, Any]]:
         {"key": "complaint", "n": counted[events.COMPLAINT],
          "pct": _share(counted[events.COMPLAINT], delivered), "of": delivered},
     ]
+
+
+def _ratio(one: dict[str, Any]) -> float | None:
+    """La proporción exacta de una fila, sin el redondeo que se enseña."""
+    return one["n"] / one["of"] if one["of"] else None
+
+
+def _change(key: str, now_value, before_value) -> dict[str, Any] | None:
+    """Cuánto cambió contra el periodo anterior, en por ciento.
+
+    Se compara lo mismo con lo mismo: en «Enviados», cuántos; en el resto, su
+    porcentaje. Sin nada antes no se devuelve nada, que es mejor que inventar
+    un «+100 %» donde no había con qué comparar. Y **el color lo decide si
+    mejoró, no si subió**: más rebotes es rojo aunque la flecha apunte arriba.
+    """
+    if not before_value or now_value is None:
+        return None
+    pct = round((now_value - before_value) * 100 / before_value)
+    if pct == 0:
+        return None
+    up = pct > 0
+    return {"pct": abs(pct), "up": up, "good": up != (key in WORSE_UP)}
+
+
+def rates(counted: dict[str, int],
+          before: dict[str, int] | None = None) -> list[dict[str, Any]]:
+    """Cómo le fue: cada cifra con su porcentaje, de cuántos y su cambio.
+
+    Rebotes y entregados se miden contra lo que salió; abiertos, clics y quejas
+    contra lo que llegó, que es a quien le pudo pasar. `before` son las mismas
+    cuentas del periodo anterior, para la pastilla.
+    """
+    rows = _counted(counted)
+    if before is None:
+        return rows
+    old = {one["key"]: one for one in _counted(before)}
+    for one in rows:
+        was = old[one["key"]]
+        # Los enviados se comparan en cuántos; los demás, en su proporción, y
+        # **sin redondear antes**: con el 12.5 % de rebotes redondeado a 12, un
+        # 25 % se leía como «+108 %» en vez de como el doble que es.
+        if one["pct"] is None:
+            one["change"] = _change(one["key"], one["n"], was["n"])
+        else:
+            one["change"] = _change(one["key"], _ratio(one), _ratio(was))
+    return rows
 
 
 # ------------------------------------------------------------- la cuota
@@ -207,6 +254,7 @@ def screen(db, whose: dict[str, Any], *, period: str = "", tag: str = "",
         "engaging": chart(period, engaging,
                           [(events.OPEN, "open", "lines"),
                            (events.CLICK, "click", "lines")], zone),
-        "rates": rates(events.people(db, whose["_id"], **where)),
+        "rates": rates(events.people(db, whose["_id"], **where),
+                       events.people(db, whose["_id"], back=1, **where)),
         "quota": quota(whose),
     }

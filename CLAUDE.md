@@ -633,9 +633,13 @@ de otra forma.
 
 **La hoja crece sola** cuando algo pasa del borde de abajo (un texto que se
 alarga, algo arrastrado más abajo) y nunca queda más baja que lo que tiene
-dentro; arrastrar el borde de abajo deja más o menos aire. Sin tamaños listos ni
-número de alto: si crece sola, sobran. El ancho no se toca, 600 px es lo que se
-lee bien en todos los buzones. Topes: **4,000 px de alto y 60 elementos**; lo que
+dentro; arrastrar el borde de abajo deja más o menos aire. **El alto también se
+escribe**, en la barra de cuando no hay nada elegido: crecer sola cubre el caso
+de siempre, pero no el de querer una medida exacta, y el tirador solo no se
+encontraba. Lo escrito se limita entre lo que hay dentro y los 4,000 px, y
+cuando no cabe se queda en el mínimo **y lo dice**. Sin tamaños listos, que esos
+sí sobran. El ancho no se toca, 600 px es lo que se lee bien en todos los
+buzones. Topes: **4,000 px de alto y 60 elementos**; lo que
 de verdad limita es la barra de peso.
 
 **Ningún lector de correo respeta posiciones libres** —Gmail las borra y Outlook
@@ -731,6 +735,15 @@ cuando eran fondos): las hace el sistema. Se guardan en `backgrounds` y sus
 colores en `shades`, en el orden de `groups()`. Al volver a guardar, las viejas
 se borran si ninguna otra pieza las nombra, que es lo que pasa con una copia.
 
+**La foto se recorta sin tocar el archivo subido.** «Recortar» abre la foto
+entera con un recuadro encima: lo de dentro es lo que se ve. Se guarda como
+`crop` (x, y, ancho y alto, de 0 a 1) en la pieza, así que se puede cambiar
+mañana, y `_paint()` recorta antes del ajuste que ya hacía. **El recuadro
+guarda la proporción de la caja**, así que lo que se ve nunca sale deformado:
+solo más cerca o más lejos. Antes no había manera: al tirar de una esquina
+hasta el borde de la hoja, el ancho se recortaba y el alto no, la caja cambiaba
+de proporción y la foto se veía estirada; ahora el alto sigue al ancho.
+
 **Al subir una foto se recortan sus bordes transparentes** (`imaging.trim()`): un
 logo exportado con aire alrededor ocupaba una caja más grande que lo que se ve.
 Entra **debajo de lo último, a la mitad del ancho**, para poder moverla y poner
@@ -742,6 +755,11 @@ bloqueadas.
 
 El formato va **por caja de texto entera**: una caja es toda de la misma fuente,
 tamaño y color. Formato por palabra complica que llegue igual a Outlook.
+
+**Los atajos del teclado viven detrás de un botón** («Atajos del teclado», un
+`<details>`, así que abre sin JavaScript) y salen de una sola lista,
+`i18n.CANVAS_KEYS`: antes eran una línea suelta que no cabía y que se quedaba
+vieja cada vez que se agregaba uno.
 
 **La vista previa se ve con un contacto de verdad o con las pastillas**, y como
 en una computadora o como en un teléfono (el correo achicado a 375 px, que es lo
@@ -1136,6 +1154,16 @@ cuatro partes, con filtro por periodo, por etiqueta y por **campaña**:
   cuenta que «Campañas enviadas»). Entregados y rebotes sobre lo enviado; lo
   demás sobre lo entregado. Debajo, fijo, que las aperturas son aproximadas y
   que entregado no es la bandeja.
+- **Cada cifra lleva su pastilla contra el periodo anterior**, del mismo largo
+  y pegado a él: con los últimos 7 días puestos, los 7 de antes, y en «hoy»,
+  ayer hasta la misma hora (`events.window(period, back=1)`, que sale de
+  `slots()` y por eso corta en la zona de quien mira). **El color dice si
+  mejoró, no si subió**: más rebotes o más quejas van en rojo con la flecha
+  hacia arriba (`stats.WORSE_UP`). Los enviados se comparan en cuántos y el
+  resto **en su proporción exacta, sin el redondeo que se enseña**: con el
+  12.5 % de rebotes redondeado a 12, un 25 % se leía como «+108 %» en vez de
+  como el doble que es. Donde antes no hubo envíos no hay con qué comparar y no
+  se dibuja pastilla, en vez de inventar un «+100 %».
 - **Envíos y rebotes**, en barras apiladas, y **aperturas y clics**, en líneas.
   **También en personas**: quien abre tres veces el mismo envío es una
   apertura, en el tramo en que abrió por primera vez. Antes la gráfica contaba
