@@ -151,13 +151,32 @@
     b = bounds(one);
     if (b.x + b.w > W) one.x -= (b.x + b.w - W);
     if (one.x < 0) one.x = 0;
-    grow();
+    b = bounds(one);
+    if (b.y + b.h > doc.h) one.y -= (b.y + b.h - doc.h);
+    if (one.y < 0) one.y = 0;
   }
 
-  /* La hoja crece sola cuando algo pasa del borde de abajo. */
-  function grow() {
-    var need = lowest();
-    if (need > doc.h) doc.h = Math.min(need, L.maxHeight);
+  /* La hoja **no crece sola**: su alto solo cambia con el tirador de abajo o
+     con el contador de la barra. Lo que se inserta busca sitio dentro, lo que
+     se arrastra topa con el borde, y un texto que ya no cabe se queda cortado
+     y se avisa. */
+
+  /* Dónde cabe algo de este alto, sin mover la hoja. Debajo de lo último si
+     cabe; si no, el primer hueco libre contando desde arriba. `null` es que no
+     hay sitio. */
+  function roomFor(h) {
+    var bottom = lowest();
+    var y = bottom ? bottom + GAP : 40;
+    if (y + h <= doc.h) return y;
+    for (var top = 0; top + h <= doc.h; top += 10) {
+      var libre = true;
+      doc.items.forEach(function (one) {
+        var b = bounds(one);
+        if (top < b.y + b.h && b.y < top + h) libre = false;
+      });
+      if (libre) return top;
+    }
+    return null;
   }
 
   /* ------------------------------------------------------------- historia */
@@ -222,9 +241,18 @@
       return;
     }
     if (one.t === "shape") {
-      el.style.backgroundColor = one.bg;
+      // El color va en un hijo y no en la caja: el recorte de las figuras
+      // (`clip-path`) también recortaría los tiradores, que son hijos suyos.
+      var fill = el.querySelector(".cv-fill");
+      if (!fill) {
+        fill = document.createElement("span");
+        fill.className = "cv-fill";
+        el.insertBefore(fill, el.firstChild);
+      }
+      fill.style.backgroundColor = one.bg;
       // Un círculo es su caja redondeada del todo; un óvalo, si no es cuadrada.
-      el.style.borderRadius = one.shape === "ellipse" ? "50%" : one.radius + "px";
+      fill.style.borderRadius = one.shape === "ellipse" ? "50%" : one.radius + "px";
+      fill.style.clipPath = CLIPS[one.shape] || "";
       return;
     }
     el.style.fontFamily = FONTS[one.font] || FONTS.Arial || "Arial, sans-serif";
@@ -241,6 +269,15 @@
       el.style.borderRadius = one.radius + "px";
     }
   }
+
+  /* Las figuras que el navegador dibuja recortando su caja. Son las mismas
+     que `services/canvas.py` pinta con Pillow, para que el editor y el correo
+     enseñen lo mismo. */
+  var CLIPS = {
+    triangle: "polygon(50% 0%, 100% 100%, 0% 100%)",
+    star: "polygon(50.0% 0.0%, 38.2% 33.8%, 2.4% 34.5%, 31.0% 56.2%, 20.6% 90.5%, 50.0% 70.0%, 79.4% 90.5%, 69.0% 56.2%, 97.6% 34.5%, 61.8% 33.8%)",
+    arrow: "polygon(0% 30%, 60% 30%, 60% 0%, 100% 50%, 60% 100%, 60% 70%, 0% 70%)",
+  };
 
   // Las fotos y los rectángulos se tiran también de los lados: en una foto,
   // las esquinas guardan su proporción y los lados la recortan.
@@ -280,6 +317,15 @@
           h.setAttribute("data-handle", where);
           el.appendChild(h);
         });
+        // El tirador de giro, encima de la caja y solo en lo que gira: las
+        // fotos y las figuras. Un texto no gira, que sería volverlo imagen.
+        if (BACK[one.t]) {
+          var turn = document.createElement("span");
+          turn.className = "cv-turn";
+          turn.setAttribute("data-turn", "");
+          turn.title = S.rotDrag;
+          el.appendChild(turn);
+        }
       }
       sheet.appendChild(el);
     });
@@ -348,25 +394,20 @@
     stage.appendChild(probe);
     var need = Math.ceil(probe.scrollHeight);
     stage.removeChild(probe);
-    if (need > one.h) one.h = Math.min(need, L.maxHeight - one.y);
-    grow();
+    // Crece hasta el borde de la hoja y ahí se detiene: el alto de la hoja solo
+    // lo mueve quien la arrastra o escribe su número. Lo que no cabe se avisa.
+    if (need > one.h) one.h = Math.min(need, doc.h - one.y);
   }
 
   /* ------------------------------------------------------------ agregar */
 
-  /* Debajo de lo último, con aire. La hoja crece si hace falta. */
-  function freeY(h) {
-    var bottom = lowest();
-    var y = bottom ? bottom + GAP : 40;
-    return Math.max(0, Math.min(y, L.maxHeight - h));
-  }
-
   function place(one) {
     if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
-    one.y = freeY(one.h);
+    var y = roomFor(one.h);
+    if (y === null) { say(S.noRoom); return; }
+    one.y = y;
     doc.items.push(one);
     pick(doc.items.length - 1);
-    grow();
     render(); commit();
     var el = stage.querySelector('[data-item="' + sel + '"]');
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
@@ -380,8 +421,10 @@
       place({ t: "text", x: 40, w: W - 80, h: 34, text: S.newText, font: "Arial",
               size: 22, color: "#18181B", bold: false, italic: false, align: "left", line: 1.4 });
     } else if (kind === "button") {
+      // Sin `https://` escrito dentro: el campo lo enseña como marca de agua.
+      // Escrito, quien pegaba una dirección acababa con «https://https://…».
       place({ t: "button", x: (W - 200) / 2, w: 200, h: 48, text: S.newButton,
-              href: "https://", font: "Arial", size: 16, color: "#FFFFFF", bg: "#31A9E8",
+              href: "", font: "Arial", size: 16, color: "#FFFFFF", bg: "#31A9E8",
               bold: true, italic: false, align: "center", radius: 8 });
     } else if (kind === "shape") {
       place({ t: "shape", x: 0, w: W, h: 160, bg: "#E0F2FE", radius: 0,
@@ -423,7 +466,6 @@
           // La caja toma la proporción de la foto nueva, con el mismo ancho.
           one.h = Math.max(16, Math.round(one.w / r));
           delete one.fit;
-          grow();
           render(); commit();
           return;
         }
@@ -520,6 +562,16 @@
     }
     if (el.isContentEditable) return;
     var i = +el.getAttribute("data-item");
+    var turn = e.target.closest("[data-turn]");
+    if (turn) {
+      var box = doc.items[i];
+      var seat = el.getBoundingClientRect();
+      drag = { mode: "turn", i: i, moved: false,
+               cx: seat.left + seat.width / 2, cy: seat.top + seat.height / 2,
+               start: clone(box) };
+      e.preventDefault();
+      return;
+    }
     var handle = e.target.closest("[data-handle]");
     if (e.shiftKey && !handle) {
       // Mayús suma y quita, y arrastra al grupo entero con él.
@@ -553,6 +605,20 @@
       doc.h = clamp(Math.round(drag.h0 + e.clientY - drag.y0), drag.min, L.maxHeight);
       if (sheet) sheet.style.height = doc.h + "px";
       drag.moved = true;
+      return;
+    }
+    if (drag.mode === "turn") {
+      var turning = doc.items[drag.i];
+      if (!turning) return;
+      drag.moved = true;
+      // Cero es hacia arriba, y hacia la derecha como en CSS.
+      var angle = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);
+      var degrees = Math.round(angle * 180 / Math.PI) + 90;
+      if (e.shiftKey) degrees = Math.round(degrees / 15) * 15;
+      turning.rot = ((degrees % 360) + 360) % 360;
+      fitRot(turning);
+      var spun = sheet && sheet.querySelector('[data-item="' + drag.i + '"]');
+      if (spun) paintItem(spun, turning);
       return;
     }
     if (drag.mode.indexOf("crop-") === 0) {
@@ -609,17 +675,14 @@
     if (drag.mode === "drag" && drag.many.length > 1) {
       var box = around(drag.starts);
       var mx = clamp(dx, -box.x, W - (box.x + box.w));
-      var my = clamp(dy, -box.y, L.maxHeight - (box.y + box.h));
+      var my = clamp(dy, -box.y, doc.h - (box.y + box.h));
       drag.many.forEach(function (k, at) {
         doc.items[k].x = drag.starts[at].x + mx;
         doc.items[k].y = drag.starts[at].y + my;
         var moved = sheet && sheet.querySelector('[data-item="' + k + '"]');
         if (moved) paintItem(moved, doc.items[k]);
       });
-      if (box.y + box.h + my > doc.h) {
-        doc.h = box.y + box.h + my;
-        if (sheet) sheet.style.height = doc.h + "px";
-      }
+
       if (sheet) guides(sheet, []);
       return;
     }
@@ -641,8 +704,8 @@
     w = Math.max(16, w); h = Math.max(16, h);
     var fit = mode === "drag" ? snap(drag.i, x, y, w, h) : { x: x, y: y, lines: [] };
     one.x = clamp(Math.round(fit.x), 0, W - Math.min(w, W));
-    one.y = clamp(Math.round(fit.y), 0, L.maxHeight - Math.min(h, L.maxHeight));
-    var wide = Math.min(w, W - one.x), tall = Math.min(h, L.maxHeight - one.y);
+    one.y = clamp(Math.round(fit.y), 0, doc.h - Math.min(h, doc.h));
+    var wide = Math.min(w, W - one.x), tall = Math.min(h, doc.h - one.y);
     // Al topar con el borde de la hoja, una foto tirada de una esquina se
     // quedaba con el ancho recortado y el alto entero: cambiaba de proporción
     // y se veía estirada. Si el ancho se recorta, el alto lo sigue.
@@ -652,11 +715,7 @@
     one.w = wide;
     one.h = tall;
     if (one.t === "image" && one.fit) delete one.fit;
-    // La hoja crece mientras se arrastra hacia abajo.
-    if (one.y + one.h > doc.h) {
-      doc.h = one.y + one.h;
-      if (sheet) sheet.style.height = doc.h + "px";
-    }
+
     var el = sheet && sheet.querySelector('[data-item="' + drag.i + '"]');
     if (el) {
       paintItem(el, one);
@@ -672,6 +731,10 @@
     if (!drag) return;
     var was = drag;
     drag = null;
+    if (was.mode === "turn") {
+      if (was.moved) { render(); commit(); }
+      return;
+    }
     if (was.mode.indexOf("crop-") === 0) {
       if (was.moved) { render(); commitSoon(); }
       return;
@@ -735,13 +798,13 @@
     one.text = editing.innerText.replace(/\n$/, "");
     var need = Math.ceil(editing.scrollHeight);
     if (need > one.h) {
-      one.h = Math.min(need, L.maxHeight - one.y);
+      one.h = Math.min(need, doc.h - one.y);
       editing.style.height = one.h + "px";
-      if (one.y + one.h > doc.h) {
-        doc.h = one.y + one.h;
-        stage.querySelector(".cv-sheet").style.height = doc.h + "px";
-      }
     }
+    // Si ya no cabe, se dice: en el correo ese texto sale entero y empuja lo
+    // de abajo, así que el editor y el correo dejarían de parecerse.
+    warn.textContent = need > one.h ? S.textCut : "";
+    warn.hidden = !(need > one.h);
   });
 
   stage.addEventListener("focusout", function (e) {
@@ -785,6 +848,19 @@
 
   props.addEventListener("focusin", function (e) {
     if (e.target.matches('input[type="text"], input[type="url"]')) lastField = e.target;
+  });
+
+  /* Al salir del campo del enlace, lo que se escribió sin esquema lo lleva:
+     «coop.com/asamblea» queda como «https://coop.com/asamblea». */
+  props.addEventListener("focusout", function (e) {
+    var field = e.target.closest && e.target.closest("[data-href]");
+    var one = item();
+    if (!field || !one) return;
+    var value = field.value.trim();
+    if (!value || /^(https:\/\/|mailto:)/i.test(value)) return;
+    field.value = "https://" + value.replace(/^(http:\/\/|\/+)/i, "");
+    one.href = field.value;
+    render(); commit();
   });
 
   props.addEventListener("input", function (e) {
@@ -864,7 +940,6 @@
       out.push(doc.items.length - 1);
     });
     pick(out);
-    grow();
     render(); commit();
   }
 
@@ -924,7 +999,6 @@
       else if (what === "spread-x") spreadPicked("x");
       else if (what === "spread-y") spreadPicked("y");
       else return;
-      grow();
       render(); commit();
       return;
     }
@@ -958,8 +1032,7 @@
       var r = one.r || (one.w / Math.max(one.h, 1));
       one.x = 0; one.w = W;
       if (one.t === "image") { one.h = Math.max(16, Math.round(W / r)); delete one.fit; }
-      one.y = Math.min(one.y, L.maxHeight - one.h);
-      grow();
+      one.y = Math.min(one.y, Math.max(0, doc.h - one.h));
     } else if (what === "front" || what === "back") {
       // Solo entre fotos y rectángulos: los textos y botones siempre van
       // delante.
@@ -1010,10 +1083,9 @@
     // abarca: si no, el de la orilla se quedaría atrás.
     var list = chosen(), box = around(list);
     var mx = clamp(moves[e.key][0], -box.x, W - (box.x + box.w));
-    var my = clamp(moves[e.key][1], -box.y, L.maxHeight - (box.y + box.h));
+    var my = clamp(moves[e.key][1], -box.y, doc.h - (box.y + box.h));
     list.forEach(function (one) { one.x += mx; one.y += my; });
     list.forEach(fitRot);
-    grow();
     render(); commitSoon();
   });
 
@@ -1238,6 +1310,8 @@
 
   /* Con quién se ve: los nombres de las columnas, o los datos de un contacto. */
   var person = document.querySelector("[data-preview-contact]");
+  var previewDialog = document.querySelector("[data-preview-dialog]");
+
   function sendPreview() {
     previewForm.querySelector("[name=lienzo]").value = JSON.stringify(doc);
     previewForm.querySelector("[name=contacto]").value = person ? person.value : "";
@@ -1245,11 +1319,24 @@
   }
   if (person) person.addEventListener("change", sendPreview);
 
+  /* La vista previa vive en su ventana: **cerrada no se le pide nada al
+     servidor**, y al abrirla se refresca con lo que haya en ese momento. La
+     revisión antispam sí corre siempre: es la que no deja guardar, y esconder
+     por qué está apagado el botón sería esconderlo. */
+  function previewOpen() {
+    return !previewDialog || previewDialog.open;
+  }
+
+  if (previewDialog) {
+    var opener = document.querySelector('[data-open-dialog="vista-previa"]');
+    if (opener) opener.addEventListener("click", function () { sendPreview(); });
+  }
+
   var previewTimer = null;
   function schedulePreview() {
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function () {
-      sendPreview();
+      if (previewOpen()) sendPreview();
       runCheck();
     }, 800);
   }
@@ -1285,7 +1372,6 @@
     });
   }
 
-  grow();
   render();
   past.push(JSON.stringify(doc));
   learnRatios();

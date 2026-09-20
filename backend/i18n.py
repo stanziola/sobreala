@@ -1027,8 +1027,8 @@ TEXTS = {
                          "Gmail corta el correo, y lo primero que se pierde es "
                          "el botón para anular la suscripción.",
     "designs_kind_upload": "HTML cargado, {kb} KB",
-    "designs_kind_canvas": "Hecha en el editor, {n} diapositivas",
-    "designs_kind_canvas_one": "Hecha en el editor, 1 diapositiva",
+    # Las diapositivas se quitaron en septiembre de 2026: ahora es una hoja.
+    "designs_kind_sheet": "Hecha en el editor",
     "designs_copy": "Duplicar",
     "designs_copy_name": "Copia de {name}",
     "designs_copied": "Listo, ahí tienes la copia.",
@@ -1156,10 +1156,10 @@ TEXTS = {
 
     # --- el lienzo de crear ---------------------------------------------------
     "canvas_title_new": "Plantilla nueva",
-    "canvas_lead": "Agrega texto, botones, imágenes y rectángulos y ponlos "
-                   "donde quieras. La hoja crece sola hacia abajo. Las "
-                   "imágenes y los rectángulos van atrás, con el texto y los "
-                   "botones encima.",
+    "canvas_lead": "Agrega texto, botones, imágenes y figuras y ponlos donde "
+                   "quieras. El alto de la hoja lo pones tú: escríbelo arriba "
+                   "o arrastra su borde de abajo. Las imágenes y las figuras "
+                   "van atrás, con el texto y los botones encima.",
     "canvas_noscript": "El editor necesita JavaScript. Actívalo en tu "
                        "navegador para crear plantillas.",
     "canvas_narrow": "El editor se usa mejor en una computadora: en una "
@@ -1189,12 +1189,22 @@ TEXTS = {
     "canvas_shape_bg": "Color",
     "canvas_shape_kind": "Figura",
     "canvas_shape_rect": "Rectángulo",
+    "canvas_shape_line": "Línea divisoria",
     "canvas_shape_ellipse": "Círculo",
+    "canvas_shape_triangle": "Triángulo",
+    "canvas_shape_star": "Estrella",
+    "canvas_shape_arrow": "Flecha",
     "canvas_rot": "Giro",
     "canvas_rot_zero": "Enderezar",
-    "canvas_shape_tip": "El círculo viaja como imagen: el correo no sabe "
-                        "dibujarlo, y eso suma a la parte del correo que es "
-                        "imagen.",
+    "canvas_shape_tip": "Esta figura viaja como imagen: el correo no sabe "
+                        "dibujarla, y eso suma a la parte del correo que es "
+                        "imagen. El rectángulo y la línea no.",
+    "canvas_rot_drag": "Arrastra para girar (con Mayús, de 15 en 15)",
+    "canvas_no_room": "No cabe en la hoja. Hazla más alta con el contador de "
+                      "arriba o arrastrando el borde de abajo.",
+    "canvas_text_cut": "Un texto no cabe en la hoja y se ve cortado aquí. En "
+                       "el correo sale entero y empuja lo de abajo: hazla más "
+                       "alta o acorta el texto.",
     "canvas_image_href": "Enlace al pulsarla (opcional)",
     "canvas_image_alt": "Descripción",
     "canvas_image_alt_hint": "Lo que se lee si la imagen no carga",
@@ -1283,6 +1293,9 @@ TEXTS = {
     "canvas_bad_bounds": "Algo se sale de la hoja. Muévelo hacia dentro.",
     "canvas_bad_image": "Una imagen no es de tu cuenta o ya no existe. "
                         "Cámbiala.",
+    "canvas_bad_alt": "A una imagen le falta la descripción. Es lo que se lee "
+                      "cuando el buzón bloquea las imágenes, así que sin ella "
+                      "no se guarda.",
     "canvas_bad_font": "Una fuente no está entre las que funcionan en todos "
                        "los correos.",
     "canvas_bad_size": "Un texto tiene un tamaño fuera de lo permitido.",

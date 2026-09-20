@@ -22,8 +22,26 @@
     {% if errors.nombre %}<p class="error">{{ errors.nombre }}</p>{% endif %}
   </div>
   <div class="editor__actions">
-    <button class="btn btn--small btn--outline" type="button" data-undo>{{ t('canvas_undo') }}</button>
-    <button class="btn btn--small btn--outline" type="button" data-redo>{{ t('canvas_redo') }}</button>
+    {#- Flechas curvas, que es como se reconocen deshacer y rehacer. El nombre
+        sigue estando para quien no ve el icono. -#}
+    <button class="btn btn--small btn--outline btn--icon" type="button" data-undo
+            title="{{ t('canvas_undo') }}" aria-label="{{ t('canvas_undo') }}">
+      <svg class="icon" viewBox="0 0 24 24" width="17" height="17" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>
+      </svg>
+    </button>
+    <button class="btn btn--small btn--outline btn--icon" type="button" data-redo
+            title="{{ t('canvas_redo') }}" aria-label="{{ t('canvas_redo') }}">
+      <svg class="icon" viewBox="0 0 24 24" width="17" height="17" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M20 9H9a5 5 0 0 0 0 10h6"/><path d="m16 5 4 4-4 4"/>
+      </svg>
+    </button>
+    <button class="btn btn--small btn--outline" type="button"
+            data-open-dialog="vista-previa">{{ t('designs_preview_button') }}</button>
     <button class="btn" type="submit">{{ t('designs_save') }}</button>
   </div>
 </form>
@@ -62,6 +80,9 @@
   "pasteUrl": t('canvas_paste_url'),
   "sheetLeast": t('canvas_sheet_least'),
   "cropHow": t('canvas_crop_how'),
+  "noRoom": t('canvas_no_room'),
+  "textCut": t('canvas_text_cut'),
+  "rotDrag": t('canvas_rot_drag'),
 } %}
 <div class="editor" data-canvas
      data-upload="{{ url_for('designs.canvas_image') }}"
@@ -94,16 +115,10 @@
       {% endfor %}
     </div>
     {% endif %}
-    {#- Los atajos, todos juntos y a un clic. Es un <details>, así que abre
-        sin JavaScript. -#}
-    <details class="keys">
-      <summary class="btn btn--small btn--outline">{{ t('canvas_keys') }}</summary>
-      <dl class="keys__list">
-        {% for what, how in keys %}
-        <dt>{{ what }}</dt><dd>{{ how }}</dd>
-        {% endfor %}
-      </dl>
-    </details>
+    {#- Los atajos, en su propia ventana: en esta columna angosta no se leían.
+        La abre panel.js, el mismo que abre la bandeja de cargar. -#}
+    <button class="btn btn--small btn--outline" type="button"
+            data-open-dialog="atajos">{{ t('canvas_keys') }}</button>
   </aside>
 
   <div class="editor__main">
@@ -149,7 +164,8 @@
         <label class="props__field" data-only="button">{{ t('canvas_button_text') }}
           <input type="text" maxlength="60" data-prop="text"></label>
         <label class="props__field" data-only="button">{{ t('canvas_href') }}
-          <input type="url" maxlength="500" placeholder="https://" data-prop="href"></label>
+          <input type="url" maxlength="500" placeholder="https://" data-prop="href"
+                 data-href></label>
         <label class="props__field">{{ t('canvas_font') }}
           <select data-prop="font">
             {% for one in fonts %}<option value="{{ one }}">{{ one }}</option>{% endfor %}
@@ -182,17 +198,17 @@
 
       <div class="props__row" data-props-for="image" hidden>
         <label class="props__field">{{ t('canvas_image_href') }}
-          <input type="url" maxlength="500" placeholder="https://" data-prop="href"></label>
+          <input type="url" maxlength="500" placeholder="https://" data-prop="href"
+                 data-href></label>
+        {#- Obligatoria: es lo que se lee cuando el buzón bloquea las imágenes,
+            y sin ella el servidor no guarda. -#}
         <label class="props__field">{{ t('canvas_image_alt') }}
-          <input type="text" maxlength="{{ limits.altMax }}" data-prop="alt"
+          <input type="text" maxlength="{{ limits.altMax }}" data-prop="alt" required
                  placeholder="{{ t('canvas_image_alt_hint') }}"></label>
         <label class="props__field props__field--small">{{ t('canvas_rot') }}
           <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
-        <button class="btn btn--small btn--outline" type="button" data-action="straight">{{ t('canvas_rot_zero') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="crop">{{ t('canvas_crop') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="uncrop">{{ t('canvas_uncrop') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="replace">{{ t('canvas_replace') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="back">{{ t('canvas_back') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
@@ -204,14 +220,14 @@
           <input type="color" data-prop="bg"></label>
         <label class="props__field">{{ t('canvas_shape_kind') }}
           <select data-prop="shape">
-            <option value="rect">{{ t('canvas_shape_rect') }}</option>
-            <option value="ellipse">{{ t('canvas_shape_ellipse') }}</option>
+            {% for one in ('rect', 'line', 'ellipse', 'triangle', 'star', 'arrow') %}
+            <option value="{{ one }}">{{ t('canvas_shape_' + one) }}</option>
+            {% endfor %}
           </select></label>
         <label class="props__field" data-only="shape-rect">{{ t('canvas_radius') }}
           <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
         <label class="props__field props__field--small">{{ t('canvas_rot') }}
           <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
-        <button class="btn btn--small btn--outline" type="button" data-action="straight">{{ t('canvas_rot_zero') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="back">{{ t('canvas_back') }}</button>
@@ -224,18 +240,26 @@
     <div class="stage" data-stage></div>
   </div>
 
-  <div class="editor__side">
-    <h2 class="settings__subtitle">{{ t('designs_preview_title') }}</h2>
-    <p class="hint">{{ t('designs_preview_note') }}</p>
-    {% if watermark %}<p class="hint">{{ t('designs_preview_watermark') }}</p>{% endif %}
-    {% include "designs/_preview_tools.html" %}
-    <div class="editor__frame" data-preview-frame>
-      {# Aislado: es el correo tal como sale, y esta página lleva la sesión. #}
-      <iframe name="vista" sandbox title="{{ t('designs_preview_title') }}"
-              srcdoc="{{ t('canvas_preview_wait') }}"></iframe>
-    </div>
-  </div>
 </div>
+
+{# La vista previa, en su propia ventana: al lado del lienzo se veía lo mismo dos
+   veces y dejaba el lienzo sin ancho. Se refresca sola mientras está abierta. #}
+<dialog class="drawer drawer--wide" id="vista-previa" data-preview-dialog
+        aria-labelledby="vista-titulo">
+  <div class="drawer__head">
+    <h2 class="settings__subtitle" id="vista-titulo">{{ t('designs_preview_title') }}</h2>
+    <button class="drawer__close" type="button" data-close-dialog
+            aria-label="{{ t('designs_close') }}">×</button>
+  </div>
+  <p class="hint">{{ t('designs_preview_note') }}</p>
+  {% if watermark %}<p class="hint">{{ t('designs_preview_watermark') }}</p>{% endif %}
+  {% include "designs/_preview_tools.html" %}
+  <div class="editor__frame" data-preview-frame>
+    {# Aislado: es el correo tal como sale, y esta página lleva la sesión. #}
+    <iframe name="vista" sandbox title="{{ t('designs_preview_title') }}"
+            srcdoc="{{ t('canvas_preview_wait') }}"></iframe>
+  </div>
+</dialog>
 
 {# La vista previa se pide con este formulario, hacia el marco: la respuesta trae
    su propia cabecera de correo. #}
@@ -246,6 +270,20 @@
   <input type="hidden" name="contacto" value="">
   <button type="submit">{{ t('designs_preview_button') }}</button>
 </form>
+
+{# Los atajos del teclado, en dos columnas y con sitio para leerlos. #}
+<dialog class="drawer drawer--wide" id="atajos" aria-labelledby="atajos-titulo">
+  <div class="drawer__head">
+    <h2 class="settings__subtitle" id="atajos-titulo">{{ t('canvas_keys') }}</h2>
+    <button class="drawer__close" type="button" data-close-dialog
+            aria-label="{{ t('designs_close') }}">×</button>
+  </div>
+  <dl class="keys__list">
+    {% for what, how in keys %}
+    <dt>{{ what }}</dt><dd>{{ how }}</dd>
+    {% endfor %}
+  </dl>
+</dialog>
 
 <script type="application/json" id="canvas-doc">{{ doc|tojson }}</script>
 <script type="application/json" id="canvas-fonts">{{ font_stacks|tojson }}</script>

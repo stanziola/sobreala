@@ -91,11 +91,13 @@ FONTS = {
 }
 ALIGNS = ("left", "center", "right")
 FITS = ("cover", "contain")
-# Un rectángulo, o un círculo (un óvalo si la caja no es cuadrada). El
-# rectángulo puede salir como celda de color; el círculo no, porque Outlook de
-# escritorio ignora `border-radius` y lo dibujaría cuadrado, así que se pinta
-# en la imagen del grupo.
-SHAPES = ("rect", "ellipse")
+# Las figuras. El rectángulo y la línea (que es un rectángulo bajito) pueden
+# salir como **celda de color**, que es lo más liviano que hay en un correo; las
+# demás se pintan en la imagen del grupo, porque Outlook de escritorio ignora
+# `border-radius` y no sabe dibujar un polígono.
+SHAPES = ("rect", "line", "ellipse", "triangle", "star", "arrow")
+# Cuáles siguen siendo una celda de color cuando llenan su grupo.
+FLAT = ("rect", "line")
 
 COLOR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 # Un enlace de botón o de imagen: una página segura o un correo. Ni
@@ -358,7 +360,7 @@ def groups(doc: dict[str, Any]) -> list[dict[str, Any]]:
         if not backs:
             kind = "front"
         elif (len(backs) == 1 and backs[0]["t"] == "shape"
-              and backs[0].get("shape", "rect") == "rect"
+              and backs[0].get("shape", "rect") in FLAT
               and not backs[0].get("rot")
               and _box(backs) == box):
             kind = "color"
@@ -420,6 +422,10 @@ def problems(doc: dict[str, Any] | None, *, owns=lambda name: True) -> list[str]
                 add("image")
             if one["href"] and not HREF.match(one["href"]):
                 add("href")
+            # Sin descripción no se guarda: es lo que se lee cuando el buzón
+            # bloquea las imágenes, que pasa en la mitad de los casos.
+            if not one["alt"].strip():
+                add("alt")
             continue
         if one["font"] not in FONTS:
             add("font")
@@ -457,6 +463,33 @@ def linked_alone(doc: dict[str, Any]) -> list[int]:
 
 # --------------------------------------------------------- las imágenes fundidas
 
+def _triangle(w: int, h: int) -> list[tuple[float, float]]:
+    return [(w / 2, 0), (w, h), (0, h)]
+
+
+def _star(w: int, h: int) -> list[tuple[float, float]]:
+    """Una estrella de cinco puntas dentro de su caja."""
+    import math
+
+    points = []
+    for n in range(10):
+        # Empezando arriba, y alternando punta y valle.
+        angle = math.pi / 2 + n * math.pi / 5
+        far = 1.0 if n % 2 == 0 else 0.4
+        points.append((w / 2 + math.cos(angle) * w / 2 * far,
+                       h / 2 - math.sin(angle) * h / 2 * far))
+    return points
+
+
+def _arrow(w: int, h: int) -> list[tuple[float, float]]:
+    """Una flecha hacia la derecha. Para que apunte a otro lado se gira."""
+    return [(0, h * 0.3), (w * 0.6, h * 0.3), (w * 0.6, 0), (w, h / 2),
+            (w * 0.6, h), (w * 0.6, h * 0.7), (0, h * 0.7)]
+
+
+POLYGONS = {"triangle": _triangle, "star": _star, "arrow": _arrow}
+
+
 def _paint(group: dict[str, Any], page: str, load, scale: int):
     """Las fotos y los rectángulos de un grupo, pintados en su caja."""
     from PIL import Image, ImageDraw, ImageOps
@@ -472,8 +505,12 @@ def _paint(group: dict[str, Any], page: str, load, scale: int):
             piece = Image.new("RGBA", box, (0, 0, 0, 0))
             pen = ImageDraw.Draw(piece)
             corners = (0, 0, box[0] - 1, box[1] - 1)
-            if one.get("shape") == "ellipse":
+            figure = one.get("shape", "rect")
+            if figure == "ellipse":
                 pen.ellipse(corners, fill=one["bg"])
+            elif figure in POLYGONS:
+                pen.polygon(POLYGONS[figure](box[0] - 1, box[1] - 1),
+                            fill=one["bg"])
             else:
                 pen.rounded_rectangle(corners, radius=one["radius"] * scale,
                                       fill=one["bg"])

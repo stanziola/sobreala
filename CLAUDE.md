@@ -582,6 +582,15 @@ botón de ver cómo queda; un marco llenado desde el panel heredaría la cabecer
 del panel y no dejaría pasar los estilos del correo. **En el panel del
 administrador sigue sin dibujarse**: allí se baja como `text/plain`.
 
+**La lista de plantillas son tarjetas con el correo dentro.** Cada una enseña la
+pieza armada como correo, achicada en un marco aislado (`sandbox`, sin permisos,
+con `loading="lazy"`), y debajo el nombre, de qué clase es, cuándo se tocó y
+Editar, Duplicar y Borrar. Lo sirve **`GET /plantillas/<id>/vista`**, que arma
+las tres clases de pieza con lo que ya existía (`html_preview()`,
+`canvas_email()` y `preview()`) y lleva la cabecera de correo; la pieza de otra
+cuenta responde 404. Una tabla de nombres obligaba a abrir cada una para
+acordarse de cuál era.
+
 **La pantalla de Plantillas tiene dos caminos arriba**: Crear plantilla (el
 lienzo, de todos los planes) y Cargar plantilla personalizada, que con un plan
 que no lo permite sale apagado —y la ruta lo comprueba igual—. Cargar abre una
@@ -631,15 +640,19 @@ forma nueva al volver a guardarla, y **el envío la rehace una vez antes del
 primer correo** (`designs.upgrade_canvas()`), porque sus imágenes guardadas eran
 de otra forma.
 
-**La hoja crece sola** cuando algo pasa del borde de abajo (un texto que se
-alarga, algo arrastrado más abajo) y nunca queda más baja que lo que tiene
-dentro; arrastrar el borde de abajo deja más o menos aire. **El alto también se
-escribe**, en la barra de cuando no hay nada elegido: crecer sola cubre el caso
-de siempre, pero no el de querer una medida exacta, y el tirador solo no se
-encontraba. Lo escrito se limita entre lo que hay dentro y los 4,000 px, y
-cuando no cabe se queda en el mínimo **y lo dice**. Sin tamaños listos, que esos
-sí sobran. El ancho no se toca, 600 px es lo que se lee bien en todos los
-buzones. Topes: **4,000 px de alto y 60 elementos**; lo que
+**El alto de la hoja lo pone quien la usa, y nada más.** Se escribe en la barra
+de cuando no hay nada elegido o se arrastra el borde de abajo; **insertar,
+mover y cambiar de tamaño ya no la estiran**. Antes crecía sola y agregar un
+texto al final alargaba la página sin haberlo pedido. Lo que se inserta busca
+sitio dentro (debajo de lo último, o el primer hueco libre) y si no hay, no
+entra y se dice. Lo escrito se limita entre lo que hay dentro y los 4,000 px, y
+cuando no cabe se queda en el mínimo **y lo dice**.
+
+Eso deja un caso en el que el editor y el correo no dicen lo mismo, y conviene
+tenerlo presente: **un texto que ya no cabe se ve cortado en el editor** (con su
+aviso), mientras que en el correo sale entero y empuja lo de abajo. Se eligió
+así a cambio de que la hoja no se mueva sola; la vista previa enseña la verdad.
+El ancho no se toca, 600 px es lo que se lee bien en todos los buzones. Topes: **4,000 px de alto y 60 elementos**; lo que
 de verdad limita es la barra de peso.
 
 **Ningún lector de correo respeta posiciones libres** —Gmail las borra y Outlook
@@ -661,15 +674,18 @@ Gmail y a Outlook en el teléfono:
 | Fotos o rectángulos sin nada encima | **Una imagen de verdad (`<img>`)**, fundida al doble |
 | Fotos con texto o botones encima | **Un fondo de esa zona**, con el texto dentro |
 
-- **La geometría son dos figuras: rectángulo y círculo** (un óvalo si la caja
-  no es cuadrada). El rectángulo sale como celda de color cuando llena su
-  grupo; **el círculo no puede**, porque Outlook de escritorio ignora
-  `border-radius` y lo dibujaría cuadrado, así que se pinta en la imagen del
-  grupo. Eso tiene un costo que conviene saber: un círculo viaja como imagen y
-  suma a la mitad de superficie que la revisión permite. Una línea no hace
-  falta: es un rectángulo delgado.
-- **Las fotos y las figuras giran** (`rot`, en grados y hacia la derecha, como
-  en CSS); **el texto y los botones no**, porque girarlos obligaría a
+- **La geometría son seis figuras**: rectángulo, línea divisoria, círculo,
+  triángulo, estrella y flecha. El rectángulo y la línea salen como celda de
+  color cuando llenan su grupo; **las otras cuatro no pueden**, porque Outlook
+  de escritorio ignora `border-radius` y no sabe dibujar un polígono, así que se
+  pintan en la imagen del grupo (`ImageDraw.polygon`) y suman a la mitad de
+  superficie que la revisión permite. **El editor las dibuja con el mismo
+  recorte** (`clip-path` con los mismos puntos), sobre un hijo de la caja y no
+  sobre ella: recortar la caja recortaría también sus tiradores.
+- **Las fotos y las figuras giran** con un tirador encima de la caja, como en un
+  editor de diapositivas (arrastrar gira, con Mayús de 15 en 15), o escribiendo
+  los grados (`rot`, hacia la derecha como en CSS); **el texto y los botones
+  no**, porque girarlos obligaría a
   convertirlos en imagen y ahí se pierden `*|NOMBRE|*`, la lectura con las
   imágenes bloqueadas y los 300 caracteres de texto real que pide la revisión.
   Para el efecto de siempre queda **una figura girada detrás del texto
@@ -744,6 +760,11 @@ solo más cerca o más lejos. Antes no había manera: al tirar de una esquina
 hasta el borde de la hoja, el ancho se recortaba y el alto no, la caja cambiaba
 de proporción y la foto se veía estirada; ahora el alto sigue al ancho.
 
+**La descripción de una foto es obligatoria** (`problems()` da `alt`): es lo que
+se lee cuando el buzón bloquea las imágenes, que pasa en la mitad de los casos,
+y lo único que queda de esa foto para quien usa un lector de pantalla. Una pieza
+vieja con fotos sin descripción las pide la próxima vez que se guarde.
+
 **Al subir una foto se recortan sus bordes transparentes** (`imaging.trim()`): un
 logo exportado con aire alrededor ocupaba una caja más grande que lo que se ve.
 Entra **debajo de lo último, a la mitad del ancho**, para poder moverla y poner
@@ -756,10 +777,21 @@ bloqueadas.
 El formato va **por caja de texto entera**: una caja es toda de la misma fuente,
 tamaño y color. Formato por palabra complica que llegue igual a Outlook.
 
-**Los atajos del teclado viven detrás de un botón** («Atajos del teclado», un
-`<details>`, así que abre sin JavaScript) y salen de una sola lista,
-`i18n.CANVAS_KEYS`: antes eran una línea suelta que no cabía y que se quedaba
-vieja cada vez que se agregaba uno.
+**Los atajos del teclado viven detrás de un botón**, en su propia ventana
+(`<dialog>`, la misma que abre `panel.js` para la bandeja de cargar) y en dos
+columnas: en la columna angosta del editor no se leían. Salen de una sola lista,
+`i18n.CANVAS_KEYS`.
+
+**La vista previa también es una ventana**, y no la columna de al lado: allí se
+veía dos veces lo mismo y le quitaba ancho al lienzo. **Solo se refresca
+mientras está abierta**, y al abrirla; cerrada no se le pide nada al servidor.
+La barra de peso y la revisión antispam se quedan fuera, a la vista: son las que
+no dejan guardar.
+
+**El enlace de un botón nace vacío**, con `https://` como marca de agua y no
+escrito dentro: escrito, quien pegaba una dirección acababa con
+«https://https://coop.com». Al salir del campo, lo que no trae esquema se lo
+lleva.
 
 **La vista previa se ve con un contacto de verdad o con las pastillas**, y como
 en una computadora o como en un teléfono (el correo achicado a 375 px, que es lo

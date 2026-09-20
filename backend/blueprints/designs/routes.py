@@ -464,6 +464,49 @@ def piece(raw):
     return compose(account, found["template"], found)
 
 
+@bp.route("/plantillas/<raw>/vista")
+def piece_view(raw):
+    """Una pieza guardada, armada como correo, para el marco de su tarjeta.
+
+    La misma vista que se dibuja al editarla, pero de lo guardado y por GET, que
+    es lo que un `<iframe>` puede pedir. Sirve para las tres clases de pieza. La
+    cuenta va en la consulta: la de otra no encuentra nada.
+
+    Lleva la cabecera de un correo (la pone `app.py` al ver `email_preview`) y
+    el marco va con `sandbox` y sin permisos: el HTML de dentro es del cliente.
+    """
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    db = get_db()
+    design_id = as_id(raw)
+    found = designs.by_id(db, account["_id"], design_id) if design_id else None
+    if found is None:
+        abort(404)
+
+    plan = accounts.plan_of(account)
+    source = found.get("source")
+    if source == designs.UPLOAD:
+        return html_preview(found.get("html", ""), plan)
+    if source == designs.CANVAS:
+        g.email_preview = True
+        doc = canvas.read(found.get("canvas"))
+        if doc is None:
+            return Response("", mimetype="text/html")
+        grounds = found.get("backgrounds") or []
+        shades = found.get("shades") or []
+        email = canvas_email(
+            doc, plan,
+            [imaging.url_of(one) if one else None for one in grounds],
+            shades, preview=True)
+        return Response(filled_for(db, account, email), mimetype="text/html")
+    if not render.known(found.get("template", "")):
+        abort(404)
+    return preview(found["template"], render.clean(found["template"],
+                                                   found.get("fields") or {}),
+                   plan, accounts.fields_of(account))
+
+
 # --------------------------------------------------------------- el lienzo
 
 def drop_unused(db, account_id, names) -> None:

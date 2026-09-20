@@ -42,54 +42,53 @@
 
 <h2 class="settings__subtitle">{{ t('designs_mine_title') }}</h2>
 {% if mine %}
-<div class="table-wrap">
-  <table class="table">
-    <tbody>
-      {% for one in mine %}
-      <tr>
-        <td><b>{{ one.name }}</b></td>
-        <td class="table__quiet">
-          {%- if one.source == 'upload' -%}
-          {{ t('designs_kind_upload', kb=((one.bytes or 0) / 1024)|round(1)) }}
-          {%- elif one.source == 'canvas' -%}
-          {%- set n = one.canvas.slides|length if one.canvas else 0 -%}
-          {{ t('designs_kind_canvas_one') if n == 1 else t('designs_kind_canvas', n=n) }}
-          {%- else -%}
-          {{ t('designs_from', name=named.get(one.template, one.template)) }}
-          {%- endif -%}
-        </td>
-        <td class="table__quiet">{{ (one.updated_at or one.created_at)|ago }}</td>
-        <td>
-          {% if one.source == 'upload' %}
-          <a class="btn btn--small btn--outline"
-             href="{{ url_for('designs.edit_html', raw=one._id) }}">{{ t('designs_edit') }}</a>
-          {% elif one.source == 'canvas' %}
-          <a class="btn btn--small btn--outline"
-             href="{{ url_for('designs.edit_canvas', raw=one._id) }}">{{ t('designs_edit') }}</a>
-          {% else %}
-          <a class="btn btn--small btn--outline"
-             href="{{ url_for('designs.piece', raw=one._id) }}">{{ t('designs_edit') }}</a>
-          {% endif %}
-        </td>
-        <td>
-          <form method="post" action="{{ url_for('designs.copy') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="id" value="{{ one._id }}">
-            <button class="btn btn--small btn--outline" type="submit">{{ t('designs_copy') }}</button>
-          </form>
-        </td>
-        <td>
-          <form method="post" action="{{ url_for('designs.remove') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="id" value="{{ one._id }}">
-            <button class="btn btn--small btn--outline" type="submit">{{ t('designs_delete') }}</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+{#- Tarjetas y no una tabla: lo primero que se busca es cuál era, y eso se
+    reconoce mirándolo. Cada una enseña el correo tal como sale, en un marco
+    aislado y achicado, que se pide solo cuando se acerca (`loading="lazy"`). -#}
+<ul class="cards">
+  {% for one in mine %}
+  <li class="card-piece">
+    <div class="card-piece__view">
+      <iframe src="{{ url_for('designs.piece_view', raw=one._id) }}" sandbox
+              loading="lazy" tabindex="-1" title="{{ one.name }}"></iframe>
+    </div>
+    <div class="card-piece__body">
+      <p class="card-piece__name"><b>{{ one.name }}</b></p>
+      <p class="card-piece__what">
+        {%- if one.source == 'upload' -%}
+        {{ t('designs_kind_upload', kb=((one.bytes or 0) / 1024)|round(1)) }}
+        {%- elif one.source == 'canvas' -%}
+        {{ t('designs_kind_sheet') }}
+        {%- else -%}
+        {{ t('designs_from', name=named.get(one.template, one.template)) }}
+        {%- endif %} · {{ (one.updated_at or one.created_at)|ago }}
+      </p>
+      <div class="card-piece__doing">
+        {% if one.source == 'upload' %}
+        <a class="btn btn--small btn--outline"
+           href="{{ url_for('designs.edit_html', raw=one._id) }}">{{ t('designs_edit') }}</a>
+        {% elif one.source == 'canvas' %}
+        <a class="btn btn--small btn--outline"
+           href="{{ url_for('designs.edit_canvas', raw=one._id) }}">{{ t('designs_edit') }}</a>
+        {% else %}
+        <a class="btn btn--small btn--outline"
+           href="{{ url_for('designs.piece', raw=one._id) }}">{{ t('designs_edit') }}</a>
+        {% endif %}
+        <form method="post" action="{{ url_for('designs.copy') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ one._id }}">
+          <button class="btn btn--small btn--outline" type="submit">{{ t('designs_copy') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('designs.remove') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ one._id }}">
+          <button class="btn btn--small btn--outline" type="submit">{{ t('designs_delete') }}</button>
+        </form>
+      </div>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
 {% else %}
 <p class="hint">{{ t('designs_mine_empty') }}</p>
 {% endif %}

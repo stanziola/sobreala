@@ -42,7 +42,10 @@ def boton(x, y, w=160, h=44, **extra):
 
 
 def imagen(x, y, w, h, name="a.jpg", **extra):
-    return dict({"t": "image", "x": x, "y": y, "w": w, "h": h, "name": name}, **extra)
+    # Con descripción por defecto: sin ella no se guarda, y lo que fija esa
+    # regla es su propia prueba, no todas las demás.
+    return dict({"t": "image", "x": x, "y": y, "w": w, "h": h, "name": name,
+                 "alt": "La sede de la cooperativa"}, **extra)
 
 
 def rectangulo(x, y, w, h, bg="#0B3B5C", **extra):
@@ -721,3 +724,37 @@ def test_un_recorte_inventado_no_entra():
         assert "crop" not in leido["items"][0], malo
     bueno = leer(lienzo(imagen(0, 0, 200, 100, crop=[0.1, 0.2, 0.5, 0.25])))
     assert bueno["items"][0]["crop"] == [0.1, 0.2, 0.5, 0.25]
+
+
+def test_sin_descripcion_una_foto_no_se_guarda(client, database, outbox):
+    """Es lo que se lee cuando el buzon bloquea las imagenes."""
+    doc = leer(lienzo(imagen(0, 0, 200, 100, alt=""), texto(0, 120, w=560, h=160)))
+    assert "alt" in canvas.problems(doc)
+    assert "alt" not in canvas.problems(
+        leer(lienzo(imagen(0, 0, 200, 100), texto(0, 120, w=560, h=160))))
+
+    browser = inside(client)
+    respuesta = guardar(browser, lienzo(imagen(0, 0, 600, 200, alt="  "),
+                                        texto(20, 220, w=560, h=200, text=PARRAFO)),
+                        completar=False)
+    assert "falta la descripción" in respuesta.get_data(as_text=True)
+
+
+def test_las_figuras_nuevas_se_pintan_y_la_linea_sigue_siendo_color():
+    from io import BytesIO
+
+    from PIL import Image
+
+    # La linea y el rectangulo, celda de color; las otras cuatro, imagen.
+    assert tipos(lienzo(rectangulo(0, 0, 600, 8, shape="line"))) == ["color"]
+    for figura in ("ellipse", "triangle", "star", "arrow"):
+        assert tipos(lienzo(rectangulo(0, 0, 200, 200, shape=figura))) == ["picture"], figura
+
+    for figura in ("triangle", "star", "arrow"):
+        doc = leer(lienzo(rectangulo(0, 0, 200, 200, shape=figura, bg="#0B3B5C")))
+        pintada = canvas.parts(doc, lambda name: None)[0]
+        with Image.open(BytesIO(pintada)) as hecha:
+            medio = hecha.getpixel((hecha.width // 2, hecha.height // 2))
+            esquina = hecha.getpixel((2, 2))
+        assert medio[2] > 60 and medio[0] < 60, (figura, medio)
+        assert esquina == (255, 255, 255), (figura, esquina)

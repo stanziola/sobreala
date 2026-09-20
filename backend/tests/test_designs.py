@@ -601,3 +601,38 @@ def test_el_panel_lee_el_modo_de_la_galleta_compartida(client, database, outbox)
     galleta del dominio padre, y el guion de la cabecera la mira primero."""
     pantalla = client.get("/entrar").get_data(as_text=True)
     assert "pm_theme=" in pantalla
+
+
+# ------------------------------------------- la vista de cada tarjeta
+
+def test_la_tarjeta_ensena_el_correo_de_la_pieza(client, database, outbox):
+    """Las tres clases de pieza se dibujan por la misma ruta, que es lo que
+    llevan dentro las tarjetas de Plantillas."""
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+
+    subida = designs.save(database, cuenta["_id"], name="La mía",
+                         html="<html><body><p>Hola socia</p></body></html>")
+    vista = browser.get(f"/plantillas/{subida}/vista")
+    assert vista.status_code == 200
+    assert "Hola socia" in vista.get_data(as_text=True)
+    # Con la cabecera de un correo, no con la del panel.
+    assert "unsafe-inline" in vista.headers["Content-Security-Policy"]
+
+    # Y la pantalla las trae en tarjetas, con su marco.
+    pantalla = browser.get("/plantillas").get_data(as_text=True)
+    assert "card-piece" in pantalla
+    assert f"/plantillas/{subida}/vista" in pantalla
+    assert "sandbox" in pantalla
+
+
+def test_la_vista_de_otra_cuenta_no_se_abre(client, database, outbox):
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    suya = designs.save(database, cuenta["_id"], name="La mía",
+                       html="<html><body><p>Hola</p></body></html>")
+
+    # Sin sesión, a entrar; con la sesión de otra cuenta, no existe.
+    assert other(client).get(f"/plantillas/{suya}/vista").status_code == 302
+    ajena = inside(client, email="bea@ejemplo.com")
+    assert ajena.get(f"/plantillas/{suya}/vista").status_code == 404
