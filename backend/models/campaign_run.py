@@ -65,6 +65,27 @@ def for_account(db, account_id, *, limit: int = 50) -> list[dict[str, Any]]:
                 .sort("finished_at", -1).limit(limit))
 
 
+def between(db, account_id, start, end=None, *, tag: str = "", campaign=None,
+            limit: int = 50) -> list[dict[str, Any]]:
+    """Los envíos que salieron en ese tramo, con los filtros de la pantalla.
+
+    Es lo que dibuja «Tus mejores campañas»: sus cifras las pone después
+    `events.counts_by_run()`, la misma consulta que usa «Campañas enviadas»,
+    para que las dos pantallas no puedan decir cosas distintas.
+    """
+    when: dict[str, Any] = {"$gte": start}
+    if end is not None:
+        when["$lt"] = end
+    # Por cuándo terminó, que siempre está escrito: `started_at` se copia de la
+    # campaña y puede faltar.
+    query: dict[str, Any] = {"account_id": account_id, "finished_at": when}
+    if tag:
+        query["tags"] = tag
+    if campaign is not None:
+        query["campaign_id"] = campaign
+    return list(db.campaign_runs.find(query).sort("finished_at", -1).limit(limit))
+
+
 def for_campaign(db, account_id, campaign_id, *,
                  limit: int = 50) -> list[dict[str, Any]]:
     return list(db.campaign_runs

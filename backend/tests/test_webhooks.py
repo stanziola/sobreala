@@ -262,3 +262,22 @@ def test_correos_del_sistema_encuentra_por_direccion_sin_ensenar_el_cuerpo(
     assert "Tu código" in pantalla
     assert "Entregado" in pantalla
     assert "123456" not in pantalla
+
+
+def test_el_aviso_de_clic_guarda_su_enlace(client, database):
+    """SES manda la direccion dentro del aviso, y hasta ahora se tiraba."""
+    cuenta, campana, envio = ObjectId(), ObjectId(), ObjectId()
+    for enlace in ("https://coop.com/asamblea", "https://coop.com/horario"):
+        notify(client, campaign_event(
+            "Click", account=cuenta, campaign=campana, run=envio,
+            to="ana@coop.com",
+            click={"timestamp": "2026-09-16T12:02:00.000Z", "link": enlace,
+                   "ipAddress": "190.0.0.1", "userAgent": "Mozilla"}))
+
+    # Un solo clic, con los dos enlaces dentro: la cifra no se infla.
+    guardados = list(database.events.find({"account_id": cuenta,
+                                           "kind": events.CLICK}))
+    assert len(guardados) == 1
+    assert sorted(guardados[0]["links"]) == ["https://coop.com/asamblea",
+                                             "https://coop.com/horario"]
+    assert [one["n"] for one in events.top_links(database, cuenta, period="30d")] == [1, 1]

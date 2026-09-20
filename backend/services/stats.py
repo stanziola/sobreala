@@ -17,6 +17,7 @@ propias pantallas.
 from __future__ import annotations
 
 import math
+from datetime import timedelta, timezone
 from typing import Any
 
 from bson import ObjectId
@@ -24,7 +25,9 @@ from bson.errors import InvalidId
 
 from i18n import MONTHS, t
 from models import account as accounts
+from models import campaign_run as campaign_runs
 from models import event as events
+from models import suppression as suppressions
 from services import clock, plans
 
 DAYS = ("lun", "mar", "mié", "jue", "vie", "sáb", "dom")
@@ -118,15 +121,20 @@ def _share(part: int, whole: int) -> int | None:
     return round(part * 100 / whole) if whole else None
 
 
-# Qué cifras son mejores cuanto más bajas: subir de rebotes o de quejas es
-# malo, así que la pastilla va roja aunque la flecha suba.
-WORSE_UP = ("bounce", "complaint")
+# Qué cifras son mejores cuanto más bajas: subir de rebotes, de quejas o de
+# bajas es malo, así que la pastilla va roja aunque la flecha suba.
+WORSE_UP = ("bounce", "complaint", "leave")
 
 
-def _counted(counted: dict[str, int]) -> list[dict[str, Any]]:
-    """Cada cifra con su porcentaje y de cuántos, sin comparar con nada."""
+def _counted(counted: dict[str, int], leaves: int | None = None) -> list[dict[str, Any]]:
+    """Cada cifra con su porcentaje y de cuántos, sin comparar con nada.
+
+    `leaves` son las bajas del tramo, que no salen de `events` sino de
+    `suppressions`: el enlace de baja firma el contacto y no la campaña, así que
+    con un filtro puesto no se pueden atribuir y llegan como None.
+    """
     sent, delivered = counted[events.SENT], counted[events.DELIVERED]
-    return [
+    rows = [
         {"key": "sent", "n": sent, "pct": None, "of": None},
         {"key": "delivery", "n": delivered, "pct": _share(delivered, sent), "of": sent},
         {"key": "bounce", "n": counted[events.BOUNCE],
@@ -138,6 +146,10 @@ def _counted(counted: dict[str, int]) -> list[dict[str, Any]]:
         {"key": "complaint", "n": counted[events.COMPLAINT],
          "pct": _share(counted[events.COMPLAINT], delivered), "of": delivered},
     ]
+    if leaves is not None:
+        rows.append({"key": "leave", "n": leaves,
+                     "pct": _share(leaves, delivered), "of": delivered})
+    return rows
 
 
 def _ratio(one: dict[str, Any]) -> float | None:
@@ -162,20 +174,24 @@ def _change(key: str, now_value, before_value) -> dict[str, Any] | None:
     return {"pct": abs(pct), "up": up, "good": up != (key in WORSE_UP)}
 
 
-def rates(counted: dict[str, int],
-          before: dict[str, int] | None = None) -> list[dict[str, Any]]:
+def rates(counted: dict[str, int], before: dict[str, int] | None = None,
+          *, leaves: int | None = None,
+          leaves_before: int | None = None) -> list[dict[str, Any]]:
     """Cómo le fue: cada cifra con su porcentaje, de cuántos y su cambio.
 
-    Rebotes y entregados se miden contra lo que salió; abiertos, clics y quejas
-    contra lo que llegó, que es a quien le pudo pasar. `before` son las mismas
-    cuentas del periodo anterior, para la pastilla.
+    Rebotes y entregados se miden contra lo que salió; abiertos, clics, quejas y
+    bajas contra lo que llegó, que es a quien le pudo pasar. `before` son las
+    mismas cuentas del periodo anterior, para la pastilla.
     """
-    rows = _counted(counted)
+    rows = _counted(counted, leaves)
     if before is None:
         return rows
-    old = {one["key"]: one for one in _counted(before)}
+    old = {one["key"]: one for one in _counted(before, leaves_before)}
     for one in rows:
-        was = old[one["key"]]
+        was = old.get(one["key"])
+        if was is None:
+            one["change"] = None
+            continue
         # Los enviados se comparan en cuántos; los demás, en su proporción, y
         # **sin redondear antes**: con el 12.5 % de rebotes redondeado a 12, un
         # 25 % se leía como «+108 %» en vez de como el doble que es.
@@ -209,6 +225,112 @@ def quota(whose: dict[str, Any]) -> dict[str, Any] | None:
                                   else "high" if pct >= QUOTA_WARN else "")}
 
 
+# ------------------------------------------- las tarjetas que no son cifras
+
+# Cuántas campañas y cuántos meses se enseñan.
+TOP_RUNS = 8
+GROWTH_MONTHS = 12
+
+
+def best_runs(db, account_id, runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Los envíos del periodo, del que más abrieron al que menos.
+
+    Las cifras las pone `events.counts_by_run()`, la misma consulta que usa
+    «Campañas enviadas»: las dos pantallas no pueden decir cosas distintas.
+    """
+    if not runs:
+        return []
+    counted = events.counts_by_run(db, account_id, [one["_id"] for one in runs])
+    out = []
+    for one in runs:
+        seen = counted.get(one["_id"], {})
+        delivered = seen.get(events.DELIVERED, 0)
+        out.append({
+            "_id": one["_id"],
+            "subject": one.get("subject", ""),
+            "at": one.get("finished_at"),
+            "sent": one.get("sent", 0),
+            "delivered": delivered,
+            "open": _share(seen.get(events.OPEN, 0), delivered),
+            "click": _share(seen.get(events.CLICK, 0), delivered),
+        })
+    # Sin entregados no hay porcentaje, y esos van al final.
+    out.sort(key=lambda one: (one["open"] is None, -(one["open"] or 0),
+                              -(one["click"] or 0)))
+    return out[:TOP_RUNS]
+
+
+def _chart_of(rows: list[dict[str, Any]], kinds, shape: str) -> dict[str, Any]:
+    """Una gráfica con la forma que espera `_bars.html`, ya armada.
+
+    La misma plantilla que dibuja los envíos dibuja estas: una gráfica más es
+    una consulta, no un dibujo nuevo.
+    """
+    top = max((max(row["values"][kind["key"]] for kind in kinds)
+               for row in rows), default=0)
+    ceiling, lines = nice_top(top)
+    return {"kinds": kinds, "shape": shape, "rows": rows,
+            "top": ceiling, "lines": lines}
+
+
+def when_open(db, account_id, zone) -> dict[str, Any]:
+    """Cuándo abre la lista: por día de la semana y por hora, en su zona."""
+    found = events.when_opened(db, account_id, zone)
+    total = sum(found["days"])
+    kinds = [{"key": "open", "css": "open"}]
+    days = [{"values": {"open": n}, "tip": WEEKDAYS[i].capitalize(),
+             "tick": DAYS[i]} for i, n in enumerate(found["days"])]
+    # Una marca cada tres horas: veinticuatro números seguidos no se leen.
+    hours = [{"values": {"open": n}, "tip": f"{i}:00",
+              "tick": str(i) if i % 3 == 0 else ""}
+             for i, n in enumerate(found["hours"])]
+    return {
+        "total": total,
+        "days": _chart_of(days, kinds, "bars"),
+        "hours": _chart_of(hours, kinds, "bars"),
+        "top_day": (WEEKDAYS[found["days"].index(max(found["days"]))]
+                    if total else ""),
+        "top_hour": (f"{found['hours'].index(max(found['hours']))}:00"
+                     if total else ""),
+        "days_counted": events.WHEN_DAYS,
+    }
+
+
+def growth(db, account_id, zone) -> dict[str, Any]:
+    """Altas y bajas por mes, los últimos doce.
+
+    **No es el total de cada mes**: un contacto borrado a mano no deja rastro,
+    así que lo que se puede contar es quién entró y a quién se dejó de escribir.
+    Las bajas son todas las supresiones, no solo las voluntarias: un rebote duro
+    también es alguien a quien ya no se le manda nada.
+    """
+    from models import contact as contacts
+    from models import suppression as suppressions
+
+    here = clock.local(events.now(), zone)
+    first = here.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    edges = []
+    for _ in range(GROWTH_MONTHS):
+        edges.append(first)
+        first = (first - timedelta(days=1)).replace(day=1)
+    edges.reverse()
+
+    rows = []
+    for at, nxt in zip(edges, edges[1:] + [None]):
+        start = at.astimezone(timezone.utc)
+        end = nxt.astimezone(timezone.utc) if nxt else None
+        rows.append({
+            "tick": MONTHS[at.month - 1][:3],
+            "tip": f"{MONTHS[at.month - 1]} {at.year}",
+            "values": {"added": contacts.added_between(db, account_id, start, end),
+                       "left": suppressions.count_between(db, account_id, start, end)},
+        })
+    # En líneas y no en barras apiladas: altas y bajas una encima de otra
+    # sumarían un total que no significa nada.
+    return _chart_of(rows, [{"key": "added", "css": "added"},
+                            {"key": "left", "css": "left"}], "lines")
+
+
 def _campaign(raw: str, choices: list[dict[str, Any]]):
     """La campaña elegida, si es de esta cuenta. Una ajena no filtra por nada."""
     try:
@@ -239,6 +361,25 @@ def screen(db, whose: dict[str, Any], *, period: str = "", tag: str = "",
                             **where)
     engaging = events.series(db, whose["_id"], kinds=(events.OPEN, events.CLICK),
                              **where)
+
+    # Las bajas no salen de `events`: el enlace de baja firma el contacto y no
+    # la campaña (services/unsubscribe.py), así que con un filtro puesto no se
+    # pueden atribuir y la tarjeta no se dibuja, en vez de enseñar las de toda
+    # la cuenta como si fueran las del filtro.
+    leaves = leaves_before = None
+    filtered = bool(tag) or chosen is not None
+    if not filtered:
+        start, end = events.window(period, zone)
+        leaves = suppressions.count_between(db, whose["_id"], start, end,
+                                            reason=suppressions.UNSUBSCRIBE)
+        was_start, was_end = events.window(period, zone, back=1)
+        leaves_before = suppressions.count_between(db, whose["_id"], was_start,
+                                                   was_end,
+                                                   reason=suppressions.UNSUBSCRIBE)
+
+    start, end = events.window(period, zone)
+    runs = campaign_runs.between(db, whose["_id"], start, end, tag=tag,
+                                 campaign=chosen)
     return {
         "whose": whose,
         "confirmed": accounts.is_confirmed(whose),
@@ -255,6 +396,14 @@ def screen(db, whose: dict[str, Any], *, period: str = "", tag: str = "",
                           [(events.OPEN, "open", "lines"),
                            (events.CLICK, "click", "lines")], zone),
         "rates": rates(events.people(db, whose["_id"], **where),
-                       events.people(db, whose["_id"], back=1, **where)),
+                       events.people(db, whose["_id"], back=1, **where),
+                       leaves=leaves, leaves_before=leaves_before),
+        # Contra qué compara la pastilla, con el nombre del periodo puesto.
+        "before": t("stats_before_" + period),
+        "leaves_off": filtered,
+        "best": best_runs(db, whose["_id"], runs),
+        "links": events.top_links(db, whose["_id"], **where),
+        "when": when_open(db, whose["_id"], zone),
+        "growth": growth(db, whose["_id"], zone),
         "quota": quota(whose),
     }

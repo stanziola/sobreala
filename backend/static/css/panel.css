@@ -658,8 +658,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 }
 .chart__grid { stroke: var(--color-border); stroke-width: 1; }
 .chart__axis { stroke: var(--color-field); stroke-width: 1.5; }
-.chart__bar--sent { fill: var(--color-accent); }
-.chart__bar--bounce { fill: var(--color-ink-soft); }
+/* Dos colores para todo: el de la marca para lo que se busca (envíos,
+   aperturas, altas) y el apagado para lo que no (rebotes, clics, bajas). Las
+   barras de «Cuándo abren» y las líneas del crecimiento usan las mismas
+   claves, así que van aquí y no en reglas aparte. */
+.chart__bar--sent, .chart__bar--open, .chart__bar--added { fill: var(--color-accent); }
+.chart__bar--bounce, .chart__bar--click, .chart__bar--left { fill: var(--color-ink-soft); }
+.chart__line--added, .chart__dot--added { stroke: var(--color-accent); }
+.chart__line--left, .chart__dot--left { stroke: var(--color-ink-soft); }
 .chart__line { stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .chart__line--open, .chart__dot--open { stroke: var(--color-accent); }
 .chart__line--click, .chart__dot--click { stroke: var(--color-ink-soft); }
@@ -694,12 +700,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
                       white-space: nowrap; overflow: visible; }
 .chart__legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 10px 0 0 52px;
                  font-size: .88rem; }
+.filters__export { display: flex; gap: 8px; margin-top: 10px; }
+
+/* Una dirección larga parte donde haga falta en vez de estirar la tabla. */
+.table__wrap { overflow-wrap: anywhere; max-width: 520px; }
+
 .chart__key { display: inline-flex; align-items: center; gap: 7px; }
 .chart__key::before {
   content: ""; width: 12px; height: 12px; border-radius: 3px;
 }
-.chart__key--sent::before, .chart__key--open::before { background: var(--color-accent); }
-.chart__key--bounce::before, .chart__key--click::before { background: var(--color-ink-soft); }
+.chart__key--sent::before, .chart__key--open::before,
+.chart__key--added::before { background: var(--color-accent); }
+.chart__key--bounce::before, .chart__key--click::before,
+.chart__key--left::before { background: var(--color-ink-soft); }
 /* Cuando no hay nada, el cuadro se dibuja igual y la frase va encima: enseña de
    antemano la forma que va a tener, que es más de lo que dice un hueco. */
 .chart__nothing {

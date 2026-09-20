@@ -79,6 +79,23 @@ def count(db, account_id) -> int:
     return db.suppressions.count_documents({"account_id": account_id})
 
 
+def count_between(db, account_id, start, end=None, *, reason: str | None = None) -> int:
+    """Cuántas se anotaron en ese tramo. Es lo que cuenta las bajas del periodo
+    en Estadísticas, y las altas y bajas por mes.
+
+    `end` abierto cuenta hasta ahora. Con `reason` se piden solo las de un
+    motivo, que es como se cuentan las bajas de verdad (`unsubscribe`) aparte de
+    las que puso un rebote.
+    """
+    when: dict[str, Any] = {"$gte": start}
+    if end is not None:
+        when["$lt"] = end
+    query: dict[str, Any] = {"account_id": account_id, "created_at": when}
+    if reason:
+        query["reason"] = reason
+    return db.suppressions.count_documents(query)
+
+
 def for_account(db, account_id, *, limit: int = 200) -> list[dict[str, Any]]:
     return list(db.suppressions.find({"account_id": account_id})
                 .sort("created_at", -1).limit(limit))

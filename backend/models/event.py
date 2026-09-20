@@ -123,8 +123,11 @@ def window(period: str, zone=None, *, back: int = 0):
     return start - length * back, start - length * (back - 1)
 
 
+LINK_MAX = 300
+
+
 def record(db, account_id, *, kind: str, campaign_id=None, run_id=None,
-           email: str = "", at: datetime | None = None) -> Any:
+           email: str = "", at: datetime | None = None, link: str = "") -> Any:
     """Anotar un evento.
 
     La dirección se guarda normalizada: es lo que permite contar personas y no
@@ -136,18 +139,49 @@ def record(db, account_id, *, kind: str, campaign_id=None, run_id=None,
     se inflan y la colección, que es la que más crece, no crece con cada
     reapertura. Sin envío o sin dirección no hay a quién atarlo, y se anota
     tal cual.
+
+    `link` es la dirección que pulsó, que SES manda dentro del aviso de clic.
+    Se suma al evento con `$addToSet`, **no crea otro**: el clic sigue siendo
+    uno por persona y dentro quedan los enlaces distintos que pulsó, que es lo
+    que cuenta «Enlaces más pulsados».
     """
     email = (email or "").strip().lower()
     doc = {"account_id": account_id, "campaign_id": campaign_id, "run_id": run_id,
            "kind": kind, "email_normalized": email, "created_at": at or now()}
+    link = (link or "").strip()[:LINK_MAX]
     if run_id is None or not email:
+        if link:
+            doc["links"] = [link]
         return db.events.insert_one(doc).inserted_id
     key = {"account_id": account_id, "run_id": run_id, "email_normalized": email,
            "kind": kind}
+    write: dict[str, Any] = {"$setOnInsert": doc}
+    if link:
+        write["$addToSet"] = {"links": link}
     found = db.events.find_one_and_update(
-        key, {"$setOnInsert": doc}, upsert=True, projection={"_id": 1},
-        return_document=True)
+        key, write, upsert=True, projection={"_id": 1}, return_document=True)
     return found["_id"]
+
+
+def top_links(db, account_id, *, period: str = DEFAULT_PERIOD, tag: str = "",
+              campaign=None, zone=None, limit: int = 8) -> list[dict[str, Any]]:
+    """Qué enlaces pulsó más gente en el periodo.
+
+    **Personas y no clics**, como todo lo demás: quien pulsa el mismo enlace
+    tres veces cuenta una. Solo hay números desde el día en que el aviso de
+    clic empezó a guardar la dirección: lo de antes no la tiene y no se puede
+    inventar.
+    """
+    match = _match(db, account_id, period, tag, campaign, zone)
+    match["kind"] = CLICK
+    match["links"] = {"$exists": True, "$ne": []}
+    return [{"link": row["_id"], "n": row["n"]} for row in db.events.aggregate([
+        {"$match": match},
+        {"$unwind": "$links"},
+        {"$group": {"_id": {"link": "$links", "who": "$email_normalized"}}},
+        {"$group": {"_id": "$_id.link", "n": {"$sum": 1}}},
+        {"$sort": {"n": -1, "_id": 1}},
+        {"$limit": limit}])]
 
 
 def counts_by_run(db, account_id, run_ids: list) -> dict[Any, dict[str, int]]:
@@ -337,6 +371,35 @@ def recipients(db, account_id, run_id, *, emails: list[str] | None = None,
         page.append({"email": row["_id"], "at": at,
                      "reached": next((kind for kind in REACHED if kind in at), SENT)})
     return total, page
+
+
+WHEN_DAYS = 90
+
+
+def when_opened(db, account_id, zone=None) -> dict[str, list[int]]:
+    """Cuánta gente abre cada día de la semana y a cada hora, para saber cuándo
+    mandar.
+
+    **Los últimos 90 días, siempre**, y no el periodo de la pantalla: con «la
+    última hora» puesta esto no diría nada. Se cuenta en la zona de quien mira,
+    que es la única en la que «las nueve de la mañana» significa algo, y se
+    cuentan **personas por envío**, como todo lo demás: quien abre tres veces
+    el mismo correo es una apertura.
+    """
+    from services import clock
+
+    zone = zone or clock.current()
+    start = now() - timedelta(days=WHEN_DAYS)
+    days, hours = [0] * 7, [0] * 24
+    for row in db.events.aggregate([
+            {"$match": {"account_id": account_id, "kind": OPEN,
+                        "created_at": {"$gte": start}}},
+            {"$group": {"_id": {"run": "$run_id", "who": "$email_normalized"},
+                        "at": {"$min": "$created_at"}}}]):
+        when = clock.local(row["at"], zone)
+        days[when.weekday()] += 1
+        hours[when.hour] += 1
+    return {"days": days, "hours": hours}
 
 
 def campaigns_sent(db, account_id) -> list[dict[str, Any]]:

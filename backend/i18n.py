@@ -612,12 +612,18 @@ TEXTS = {
     # rebotes es peor aunque la flecha apunte arriba.
     "stats_change_up": "{pct} % más que en el periodo anterior",
     "stats_change_down": "{pct} % menos que en el periodo anterior",
-    "stats_change_note": "Las pastillas comparan con el periodo anterior de la "
-                         "misma duración: con los últimos 7 días puestos, con "
-                         "los 7 de antes. Verde es que mejoró y rojo que "
-                         "empeoró, así que más rebotes o más quejas van en "
-                         "rojo aunque la flecha suba. Donde antes no hubo "
-                         "envíos no hay con qué comparar y no sale pastilla.",
+    "stats_change_note": "Las pastillas comparan con {antes}. Verde es que "
+                         "mejoró y rojo que empeoró, así que más rebotes, más "
+                         "quejas o más bajas van en rojo aunque la flecha "
+                         "suba. Donde antes no hubo envíos no hay con qué "
+                         "comparar y no sale pastilla.",
+    # Contra qué compara cada periodo: el mismo tramo, justo antes.
+    "stats_before_1h": "la hora anterior",
+    "stats_before_hoy": "ayer hasta esta misma hora",
+    "stats_before_24h": "las 24 horas anteriores",
+    "stats_before_7d": "los 7 días anteriores",
+    "stats_before_30d": "los 30 días anteriores",
+    "stats_before_90d": "los 90 días anteriores",
     "stats_rates_note": "Se cuentan personas: quien abre tres veces cuenta una. "
                         "Las aperturas son aproximadas (algunos buzones abren "
                         "solos los correos y otros no avisan), y «entregado» "
@@ -640,6 +646,67 @@ TEXTS = {
     "stats_complaint": "Quejas",
     "stats_open": "Aperturas",
     "stats_click": "Clics",
+    "stats_leave": "Bajas",
+    "stats_leaves_off": "Las bajas no se cuentan con un filtro puesto: el "
+                        "enlace de baja sabe quién se fue, no de qué campaña. "
+                        "Quita el filtro de etiqueta o de campaña para verlas.",
+
+    # Tus mejores campañas.
+    "stats_best_title": "Tus mejores campañas",
+    "stats_best_lead": "Los envíos del periodo, del que más abrieron al que "
+                       "menos. Pulsa uno para ver a quién le llegó.",
+    "stats_best_subject": "Asunto",
+    "stats_best_when": "Cuándo salió",
+    "stats_best_sent": "Salieron",
+    "stats_best_open": "Aperturas",
+    "stats_best_click": "Clics",
+    "stats_best_none": "En este periodo no salió ninguna campaña.",
+
+    # Bajarse lo que enseña la pantalla.
+    "export_title": "Estadísticas de Panamails",
+    "export_account": "Cuenta",
+    "export_compared": "Comparado con",
+    "export_made": "Generado",
+    "export_figure": "Cifra",
+    "export_value": "Valor",
+    "export_of": "De cuántos",
+    "export_change": "Cambio",
+    "export_slot": "Tramo",
+    "export_csv": "Bajar CSV",
+    "export_pdf": "Bajar PDF",
+
+    # Enlaces más pulsados.
+    "stats_links_title": "Enlaces más pulsados",
+    "stats_links_lead": "Cuántas personas pulsaron cada enlace en el periodo. "
+                        "Quien pulsa el mismo tres veces cuenta una.",
+    "stats_links_who": "Personas",
+    "stats_links_none": "Todavía no hay clics con su enlace anotado. Se "
+                        "empieza a guardar desde ahora: los clics de antes no "
+                        "traían la dirección.",
+
+    # Cuándo abren tus correos.
+    "stats_when_title": "Cuándo abren tus correos",
+    "stats_when_lead": "De los últimos 90 días, sin importar el periodo que "
+                       "elijas arriba: es para decidir cuándo mandar, y con "
+                       "una hora de datos eso no se puede decir.",
+    "stats_when_days": "Por día de la semana",
+    "stats_when_hours": "Por hora del día",
+    "stats_when_best": "Tu lista abre más los {day} y alrededor de las {hour}.",
+    "stats_when_few": "Con pocos envíos esto todavía no dice gran cosa: se "
+                      "afina solo a medida que mandes más.",
+    "stats_when_none": "Todavía no hay aperturas en los últimos 90 días.",
+
+    # Crecimiento de la lista.
+    "stats_growth_title": "Crecimiento de la lista",
+    "stats_growth_lead": "Cuántos contactos entraron y a cuántos se dejó de "
+                         "escribir cada mes, en los últimos doce.",
+    "stats_added": "Entraron",
+    "stats_left": "Se fueron",
+    "stats_growth_note": "Las bajas incluyen los rebotes duros y las quejas, "
+                         "no solo a quien pulsó el enlace de baja. Y borrar un "
+                         "contacto a mano no queda anotado, así que esto son "
+                         "altas y bajas, no el total de cada mes.",
+    "stats_growth_none": "Todavía no hay altas ni bajas que enseñar.",
     # Lo que se lee cuando la gráfica sale vacía. Se dibuja igual, con sus ejes,
     # porque un cuadro vacío que se explica dice más que un hueco.
     "stats_quota_title": "Correos de este mes",

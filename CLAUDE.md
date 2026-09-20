@@ -91,7 +91,7 @@ panamails/
     │   ├── admin/          # aprobar cuentas, ficha de cliente y piezas. HECHO
     │   ├── campaigns/      # crear, programar, enviar por tandas. HECHO
     │   ├── unsubscribe/    # la baja, sin sesión. HECHO
-    │   ├── analytics/      # métricas, exportar CSV/PDF
+    │   ├── analytics/      # bajarse Estadísticas en CSV y en PDF. HECHO
     │   ├── billing/        # planes, cuota, acumulado
     │   └── webhooks/       # SNS de SES. HECHO. PayPal y Yappy, no
     ├── models/
@@ -1155,9 +1155,12 @@ cuatro partes, con filtro por periodo, por etiqueta y por **campaña**:
   demás sobre lo entregado. Debajo, fijo, que las aperturas son aproximadas y
   que entregado no es la bandeja.
 - **Cada cifra lleva su pastilla contra el periodo anterior**, del mismo largo
-  y pegado a él: con los últimos 7 días puestos, los 7 de antes, y en «hoy»,
-  ayer hasta la misma hora (`events.window(period, back=1)`, que sale de
-  `slots()` y por eso corta en la zona de quien mira). **El color dice si
+  y pegado a él, **sea cual sea el periodo puesto**: las últimas 24 horas
+  contra las 24 de antes, hoy contra ayer hasta la misma hora, los 90 días
+  contra los 90 anteriores (`events.window(period, back=1)`, que sale de
+  `slots()` y por eso corta en la zona de quien mira). La nota de abajo nombra
+  el periodo elegido (`stats_before_*`): decía «los 7 días» siempre y se leía
+  como si solo comparara eso. **El color dice si
   mejoró, no si subió**: más rebotes o más quejas van en rojo con la flecha
   hacia arriba (`stats.WORSE_UP`). Los enviados se comparan en cuántos y el
   resto **en su proporción exacta, sin el redondeo que se enseña**: con el
@@ -1177,6 +1180,34 @@ cuatro partes, con filtro por periodo, por etiqueta y por **campaña**:
 - Cada gráfica lleva **la escala a la izquierda** (números redondos,
   `stats.nice_top()`), **el eje del tiempo abajo** y **un cuadrito por tramo**
   al pasar el ratón, tocar o enfocar con el teclado, que se abre solo con CSS.
+- **Bajas**, que hasta ahora no estaban en ningún lado: salen de
+  `suppressions` por fecha (`count_between()`), no de `events`. **Con un filtro
+  de etiqueta o de campaña puesto no se dibujan**: el enlace de baja firma el
+  contacto y no la campaña (`services/unsubscribe.py`), así que no se pueden
+  atribuir, y enseñar las de toda la cuenta como si fueran las del filtro sería
+  mentir. La pantalla dice por qué faltan.
+- **Tus mejores campañas**: los envíos del periodo ordenados por aperturas, con
+  enlace a su «Detalles». Sus cifras salen de `events.counts_by_run()`, la
+  misma consulta de «Campañas enviadas», así que las dos pantallas no pueden
+  decir cosas distintas.
+- **Enlaces más pulsados**: qué enlace pulsó más gente. SES manda la dirección
+  dentro del aviso de clic y se guarda **en el mismo evento** (`links`, con
+  `$addToSet`), no en uno nuevo: el clic sigue siendo uno por envío y persona.
+  Solo cuenta desde que esto existe, y la pantalla lo dice.
+- **Cuándo abren tus correos**, por día de la semana y por hora, en la zona de
+  quien mira: **siempre los últimos 90 días**, sin el filtro de periodo, porque
+  con «la última hora» puesta no diría nada.
+- **Crecimiento de la lista**: altas y bajas por mes, los últimos doce. No es el
+  total de cada mes: **borrar un contacto a mano no deja rastro**, y las bajas
+  cuentan todas las supresiones, no solo el enlace de baja.
+- **Bajarse lo que se está viendo**, en CSV y en PDF
+  (`blueprints/analytics/`, que llevaba vacío desde el primer día aunque
+  `docs/pricing.md` lo promete en los tres planes). Las dos rutas llaman al
+  mismo `stats.screen()` con los filtros de la dirección, así que el archivo y
+  la pantalla no pueden decir cosas distintas. El CSV va con punto y coma y BOM,
+  como el de contactos; el PDF lo arma `reportlab`. **Solo para el cliente**: el
+  administrador mira las cifras de quien elija, y bajarse su archivo es otra
+  decisión.
 
 **Seis periodos**: la última hora (cada 5 minutos), hoy (por hora desde la
 medianoche), 24 horas, 7 y 30 días (por día) y 90 días (por semana). **Los

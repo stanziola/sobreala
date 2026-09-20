@@ -14,6 +14,7 @@ import pyotp
 from bson import ObjectId
 from conftest import login, register
 
+from i18n import t
 from models import account as accounts
 from models import event as events
 
@@ -287,7 +288,7 @@ def test_sin_nada_antes_no_hay_con_que_comparar(client, database, outbox):
     assert all(one["change"] is None for one in filas)
     pantalla = browser.get("/panel?periodo=7d").get_data(as_text=True)
     assert "trend" not in pantalla
-    assert "comparan con el periodo anterior" in pantalla
+    assert "comparan con los 7 días anteriores" in pantalla
 
 
 def test_el_cambio_no_se_redondea_antes_de_comparar():
@@ -301,3 +302,155 @@ def test_el_cambio_no_se_redondea_antes_de_comparar():
     filas = {one["key"]: one for one in stats.rates(ahora, antes)}
     assert filas["bounce"]["pct"] == 25
     assert filas["bounce"]["change"] == {"pct": 100, "up": True, "good": False}
+
+
+def test_la_nota_nombra_el_periodo_que_esta_puesto(client, database, outbox):
+    """Decia «los 7 dias» siempre, y se leia como si solo comparara eso."""
+    browser = inside(client)
+    for periodo, frase in (("24h", "las 24 horas anteriores"),
+                           ("hoy", "ayer hasta esta misma hora"),
+                           ("1h", "la hora anterior"),
+                           ("90d", "los 90 días anteriores")):
+        pantalla = browser.get(f"/panel?periodo={periodo}").get_data(as_text=True)
+        assert f"comparan con {frase}" in pantalla, periodo
+
+
+# ------------------------------------------------- las tarjetas nuevas
+
+def sembrar(database, cuenta, *, run=None, cuando=None, abren=(), pulsan=(),
+            gente=("a", "b", "c", "d")):
+    """Un envio: a `gente` le sale y le llega, y algunos abren y pulsan."""
+    run = run or ObjectId()
+    cuando = cuando or events.now()
+    for quien in gente:
+        for kind in (events.SENT, events.DELIVERED):
+            events.record(database, cuenta["_id"], kind=kind, run_id=run,
+                          email=f"{quien}@coop.com", at=cuando)
+    for quien in abren:
+        events.record(database, cuenta["_id"], kind=events.OPEN, run_id=run,
+                      email=f"{quien}@coop.com", at=cuando)
+    for quien in pulsan:
+        events.record(database, cuenta["_id"], kind=events.CLICK, run_id=run,
+                      email=f"{quien}@coop.com", at=cuando)
+    return run
+
+
+def test_las_bajas_se_cuentan_y_con_un_filtro_no_se_ensenan(client, database, outbox):
+    """El enlace de baja firma el contacto, no la campana: con un filtro
+    puesto no se pueden atribuir, y se dice en vez de enganar."""
+    from models import suppression as suppressions
+    from services import stats
+
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    sembrar(database, cuenta)
+    suppressions.add(database, cuenta["_id"], "a@coop.com",
+                     reason=suppressions.UNSUBSCRIBE)
+    suppressions.add(database, cuenta["_id"], "b@coop.com",
+                     reason=suppressions.HARD_BOUNCE)
+
+    filas = {one["key"]: one for one in stats.screen(database, cuenta, period="7d")["rates"]}
+    # Solo la voluntaria: el rebote duro ya se cuenta como rebote.
+    assert filas["leave"]["n"] == 1
+    assert filas["leave"]["of"] == 4
+
+    # La etiqueta tiene que ser de la cuenta: una ajena no filtra por nada.
+    accounts.add_tag(database, cuenta["_id"], "Socios")
+    cuenta = accounts.by_id(database, cuenta["_id"])
+    con_filtro = stats.screen(database, cuenta, period="7d", tag="Socios")
+    assert con_filtro["leaves_off"] is True
+    assert all(one["key"] != "leave" for one in con_filtro["rates"])
+    assert t("stats_leaves_off")[:30] in browser.get(
+        "/panel?periodo=7d&etiqueta=Socios").get_data(as_text=True)
+
+
+def test_las_mejores_campanas_van_de_mas_abierta_a_menos(client, database, outbox):
+    from models import campaign_run as runs
+    from services import stats
+
+    inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    floja = sembrar(database, cuenta, abren=("a",))
+    buena = sembrar(database, cuenta, abren=("a", "b", "c"), pulsan=("a",))
+    for run, asunto in ((floja, "Aviso de corte"), (buena, "Asamblea anual")):
+        database.campaign_runs.insert_one({
+            "_id": run, "account_id": cuenta["_id"], "campaign_id": ObjectId(),
+            "subject": asunto, "tags": [], "sent": 4, "skipped": 0, "failed": 0,
+            "started_at": events.now(), "finished_at": events.now()})
+
+    mejores = stats.screen(database, cuenta, period="7d")["best"]
+    assert [one["subject"] for one in mejores] == ["Asamblea anual", "Aviso de corte"]
+    assert mejores[0]["open"] == 75 and mejores[0]["click"] == 25
+    # Las mismas cifras que «Campanas enviadas» para ese envio.
+    contadas = events.counts_by_run(database, cuenta["_id"], [buena])[buena]
+    assert contadas[events.OPEN] == 3
+    assert runs.between(database, cuenta["_id"], *events.window("7d"))
+
+
+def test_cuando_abren_cuenta_en_la_hora_de_quien_mira(client, database, outbox):
+    from zoneinfo import ZoneInfo
+
+    from services import stats
+
+    inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    # Las 02:00 UTC de hoy son las 21:00 del dia anterior en Panama.
+    cuando = events.now().astimezone(ZoneInfo("UTC")).replace(hour=2, minute=0)
+    events.record(database, cuenta["_id"], kind=events.OPEN, run_id=ObjectId(),
+                  email="a@coop.com", at=cuando)
+
+    panama = stats.when_open(database, cuenta["_id"], ZoneInfo("America/Panama"))
+    assert panama["total"] == 1
+    assert panama["top_hour"] == "21:00"
+    utc = stats.when_open(database, cuenta["_id"], ZoneInfo("UTC"))
+    assert utc["top_hour"] == "2:00"
+
+
+def test_el_crecimiento_cuenta_altas_y_bajas(client, database, outbox):
+    from models import contact as contacts
+    from models import suppression as suppressions
+    from services import stats
+
+    inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    contacts.upsert_many(database, cuenta["_id"], [("nueva@coop.com", "Nueva")],
+                         tags=[], consent=contacts.consent_of("pantalla"))
+    suppressions.add(database, cuenta["_id"], "vieja@coop.com",
+                     reason=suppressions.COMPLAINT)
+
+    crecimiento = stats.screen(database, cuenta, period="7d")["growth"]
+    ultimo = crecimiento["rows"][-1]["values"]
+    assert ultimo["added"] == 1
+    # Las bajas cuentan todas las supresiones, no solo el enlace de baja.
+    assert ultimo["left"] == 1
+    assert len(crecimiento["rows"]) == stats.GROWTH_MONTHS
+
+
+def test_el_enlace_del_clic_se_guarda_y_dos_siguen_siendo_un_clic(client, database, outbox):
+    """SES manda la direccion dentro del aviso de clic. Se suma al evento, no
+    crea otro: el clic sigue siendo uno por persona."""
+    from services import stats
+
+    inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    run = ObjectId()
+    for quien in ("a", "b"):
+        for kind in (events.SENT, events.DELIVERED):
+            events.record(database, cuenta["_id"], kind=kind, run_id=run,
+                          email=f"{quien}@coop.com")
+    # Ana pulsa dos enlaces distintos; Beto, uno.
+    events.record(database, cuenta["_id"], kind=events.CLICK, run_id=run,
+                  email="a@coop.com", link="https://coop.com/asamblea")
+    events.record(database, cuenta["_id"], kind=events.CLICK, run_id=run,
+                  email="a@coop.com", link="https://coop.com/horario")
+    events.record(database, cuenta["_id"], kind=events.CLICK, run_id=run,
+                  email="b@coop.com", link="https://coop.com/asamblea")
+
+    assert database.events.count_documents(
+        {"account_id": cuenta["_id"], "kind": events.CLICK}) == 2
+    assert events.people(database, cuenta["_id"], period="7d")[events.CLICK] == 2
+
+    enlaces = events.top_links(database, cuenta["_id"], period="7d")
+    assert enlaces == [{"link": "https://coop.com/asamblea", "n": 2},
+                       {"link": "https://coop.com/horario", "n": 1}]
+    assert stats.screen(database, cuenta, period="7d")["links"] == enlaces

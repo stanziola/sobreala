@@ -38,5 +38,10 @@ segno>=1.6
 # servidores.
 tzdata>=2024.1
 
+# El PDF de Estadísticas, que docs/pricing.md promete en los tres planes.
+# Python puro y sin librerías del sistema, que es lo que hace que el despliegue
+# de Railway siga siendo `pip install` y nada más.
+reportlab>=4.0
+
 # Pruebas
 pytest>=8.0

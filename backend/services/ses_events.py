@@ -112,11 +112,14 @@ def _campaign(db, message, kind, ours, account_id, campaign_id, run_id,
     """Un aviso de un correo de campaña: evento, y anular si toca."""
     permanent = (kind == "Bounce" and
                  (message.get("bounce") or {}).get("bounceType") == "Permanent")
+    # La dirección que pulsó, que solo viene en los avisos de clic. Se guarda
+    # dentro del mismo evento: el clic sigue siendo uno por persona.
+    link = (message.get("click") or {}).get("link") or "" if kind == "Click" else ""
     for one in people:
         if not one["email"]:
             continue
         events.record(db, account_id, kind=ours, campaign_id=campaign_id,
-                      run_id=run_id, email=one["email"], at=at)
+                      run_id=run_id, email=one["email"], at=at, link=link)
         # Un rebote permanente es una dirección que no existe, y una queja es
         # alguien que dijo que esto es spam: las dos se anulan **en esa cuenta**
         # y no se pueden levantar. Un rebote pasajero (buzón lleno, servidor

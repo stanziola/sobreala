@@ -55,6 +55,20 @@ def consent_of(source: str, note: str = "") -> dict[str, Any]:
     }
 
 
+def added_between(db, account_id, start, end=None) -> int:
+    """Cuántos contactos entraron en ese tramo, para el crecimiento de la lista.
+
+    Usa el índice `{account_id, created_at}` que ya existe. Lo que **no** se
+    puede contar es lo borrado a mano, que no deja rastro: por eso la pantalla
+    enseña altas y bajas y no el total de cada mes.
+    """
+    when: dict[str, Any] = {"$gte": start}
+    if end is not None:
+        when["$lt"] = end
+    return db.contacts.count_documents({"account_id": account_id,
+                                        "created_at": when})
+
+
 def count(db, account_id) -> int:
     """Todos los que hay, anulados incluidos. Es lo que enseña la pantalla."""
     return db.contacts.count_documents({"account_id": account_id})

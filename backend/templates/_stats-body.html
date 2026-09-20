@@ -45,6 +45,16 @@
   <button class="btn btn--small" type="submit">{{ t('stats_apply') }}</button>
 </form>
 
+{#- Bajarse lo que se está viendo, con los mismos filtros. Solo el cliente: el
+    administrador mira las cifras de quien elija, y bajarse su archivo es otra
+    decisión. -#}
+{% if not pick %}
+<p class="filters__export">
+  <a class="btn btn--small btn--outline" href="{{ url_for('analytics.as_csv', periodo=period, etiqueta=tag, campana=campaign) }}">{{ t('export_csv') }}</a>
+  <a class="btn btn--small btn--outline" href="{{ url_for('analytics.as_pdf', periodo=period, etiqueta=tag, campana=campaign) }}">{{ t('export_pdf') }}</a>
+</p>
+{% endif %}
+
 {# ------------------------------------------------------ cómo le fue --- #}
 {#- Personas y no eventos: quien abre tres veces cuenta una. Los porcentajes de
     abiertos, clics y quejas son sobre los entregados, que es a quien le pudo
@@ -85,7 +95,11 @@
   </li>
   {% endfor %}
 </ul>
-<p class="hint">{{ t('stats_change_note') }}</p>
+<p class="hint">{{ t('stats_change_note', antes=before) }}</p>
+{#- Las bajas se cuentan por cuenta y no por campaña: el enlace de baja firma el
+    contacto. Con un filtro puesto no se pueden atribuir, así que no se enseñan
+    y se dice por qué. -#}
+{% if leaves_off %}<p class="hint">{{ t('stats_leaves_off') }}</p>{% endif %}
 <p class="hint">{{ t('stats_rates_note') }}</p>
 
 {# --------------------------------------------------- envíos y rebotes --- #}
@@ -103,6 +117,89 @@
 {% with c = engaging, label = t('stats_engage_title') %}
 {% include "_bars.html" %}
 {% endwith %}
+
+{# ------------------------------------------------- mejores campañas --- #}
+<h2 class="settings__subtitle">{{ t('stats_best_title') }}</h2>
+<p class="settings__lead">{{ t('stats_best_lead') }}</p>
+{% if best %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">{{ t('stats_best_subject') }}</th>
+        <th scope="col">{{ t('stats_best_when') }}</th>
+        <th scope="col">{{ t('stats_best_sent') }}</th>
+        <th scope="col">{{ t('stats_best_open') }}</th>
+        <th scope="col">{{ t('stats_best_click') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for one in best %}
+      <tr>
+        <td>{% if pick %}{{ one.subject }}{% else %}
+          <a href="{{ url_for('campaigns.run_detail', raw=one._id) }}">{{ one.subject }}</a>
+          {% endif %}</td>
+        <td>{{ one.at|ago }}</td>
+        <td>{{ one.sent }}</td>
+        <td>{% if one.open is none %}—{% else %}{{ one.open }} %{% endif %}</td>
+        <td>{% if one.click is none %}—{% else %}{{ one.click }} %{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('stats_best_none') }}</p>
+{% endif %}
+
+{# ------------------------------------------------ enlaces --- #}
+<h2 class="settings__subtitle">{{ t('stats_links_title') }}</h2>
+<p class="settings__lead">{{ t('stats_links_lead') }}</p>
+{% if links %}
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr><th scope="col">{{ t('stats_links_title') }}</th>
+          <th scope="col">{{ t('stats_links_who') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for one in links %}
+      {#- Sin enlace de verdad: es una dirección que escribió el cliente en su
+          pieza, y esta página no la abre por nadie. -#}
+      <tr><td class="table__wrap">{{ one.link }}</td><td>{{ one.n }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('stats_links_none') }}</p>
+{% endif %}
+
+{# ------------------------------------------------ cuándo abren --- #}
+<h2 class="settings__subtitle">{{ t('stats_when_title') }}</h2>
+<p class="settings__lead">{{ t('stats_when_lead') }}</p>
+{% if when.total %}
+<p class="hint">{{ t('stats_when_best', day=when.top_day, hour=when.top_hour) }}</p>
+<h3 class="field-label">{{ t('stats_when_days') }}</h3>
+{% with c = when.days, label = t('stats_when_days') %}
+{% include "_bars.html" %}
+{% endwith %}
+<h3 class="field-label">{{ t('stats_when_hours') }}</h3>
+{% with c = when.hours, label = t('stats_when_hours') %}
+{% include "_bars.html" %}
+{% endwith %}
+<p class="hint">{{ t('stats_when_few') }}</p>
+{% else %}
+<p class="hint">{{ t('stats_when_none') }}</p>
+{% endif %}
+
+{# --------------------------------------------- crecimiento de la lista --- #}
+<h2 class="settings__subtitle">{{ t('stats_growth_title') }}</h2>
+<p class="settings__lead">{{ t('stats_growth_lead') }}</p>
+{% with c = growth, label = t('stats_growth_title') %}
+{% include "_bars.html" %}
+{% endwith %}
+<p class="hint">{{ t('stats_growth_note') }}</p>
 
 {# ---------------------------------------------------- correos del mes --- #}
 {#- Cuánto de la cuota del plan se ha gastado este mes. La barra es un SVG y no

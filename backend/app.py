@@ -95,6 +95,7 @@ def create_app(overrides: dict | None = None) -> Flask:
     from blueprints.contacts import bp as contacts_bp
     from blueprints.designs import bp as designs_bp
     from blueprints.campaigns import bp as campaigns_bp
+    from blueprints.analytics import bp as analytics_bp
     from blueprints.media import bp as media_bp
     from blueprints.unsubscribe import bp as unsubscribe_bp
     from blueprints.webhooks import bp as webhooks_bp
@@ -103,6 +104,8 @@ def create_app(overrides: dict | None = None) -> Flask:
     app.register_blueprint(designs_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(campaigns_bp)
+    # Bajarse lo que enseña Estadísticas, en CSV y en PDF.
+    app.register_blueprint(analytics_bp)
     # Las imagenes de las plantillas y la baja son lo unico que se sirve sin
     # sesion, porque quien las pide no es el cliente: es el lector de correo de
     # cada persona que recibio la campana, y la persona misma.
