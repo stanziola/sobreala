@@ -31,6 +31,8 @@ landing/
 │   └── site.css         # estilos (sin ningún HEX: usa las variables de brand/colors.css)
 ├── assets/
 │   ├── js/nav.js        # menú móvil, cambio de tema y año del pie
+│   ├── js/carousel.js   # las flechas y el paso automático del carrusel
+│   ├── img/panel/       # GENERADO por shots.py: las capturas de la portada
 │   ├── css/site.css     # GENERADO: colors.css + colors-dark.css + @font-face + src/site.css
 │   ├── fonts/           # GENERADO: .woff2 a partir de brand/fonts/
 │   └── img/             # GENERADO: logo, favicons e iconos desde brand/
@@ -55,8 +57,31 @@ De dónde sale cada cosa:
 | Iconos de redes             | `brand/social/`                 | a mano, ver su README |
 | Logos de métodos de pago    | `brand/payments/`               | a mano, ver su README |
 | Estructura y estilos        | `landing/src/`                  | esos archivos |
+| Capturas del panel          | el panel mismo                  | `python landing/shots.py` |
 
 Después de cambiar cualquiera de ellos, regenerar y commitear también lo generado.
+
+## Las capturas del panel
+
+La portada enseña seis capturas del panel de verdad en un carrusel, no
+ilustraciones: `landing/assets/img/panel/*.webp`. Las hace `landing/shots.py`,
+que siembra una cuenta de demostración («Tu empresa», contactos de ejemplo,
+plantillas, campañas y tres meses de eventos), arranca el panel contra una base
+aparte (`panamails_shots`), lo abre en Chrome sin cabeza, lo pone en oscuro y
+recorta cada pantalla a 16:9.
+
+```
+python landing/shots.py            # rehacer las seis
+python landing/shots.py --check    # decir si falta alguna
+```
+
+**Hay que volver a correrlo cada vez que cambie una de esas seis pantallas**, o
+el sitio enseñará algo que ya no existe. Pide MongoDB corriendo en local, Chrome
+instalado y Pillow.
+
+Qué se captura y qué hace falta para que ninguna salga vacía lo dice la tupla
+`SHOTS` del propio archivo: la dirección, desde dónde recorta y, cuando toca, en
+qué pulsar antes, qué dejar escrito y en qué ancho de ventana.
 
 ## Precios sin duplicar
 

@@ -71,8 +71,11 @@ panamails/
 │   ├── build_site.py       # genera las páginas; único punto de entrada.
 │   │                       # --check avisa si lo publicado quedó viejo
 │   ├── content.py          # todos los textos del sitio, en español
+│   ├── shots.py            # las capturas del panel de la portada; --check
+│   │                       # avisa si falta alguna
 │   ├── src/                # plantillas Jinja2 (base, parciales, páginas) y site.css
-│   ├── assets/             # css, js, fonts, img (fonts, img y css/site.css son generados)
+│   ├── assets/             # css, js, fonts, img (fonts, img, img/panel y
+│   │                       # css/site.css son generados)
 │   ├── index.html          # GENERADO
 │   ├── como-funciona/      # GENERADO
 │   ├── planes/             # GENERADO (precios leídos de docs/pricing.md al construir)
@@ -1841,6 +1844,40 @@ pagar; la segunda estaba avisada.
 
 Sin credenciales configuradas la pantalla se dibuja igual y dice que el pago no
 está disponible, en vez de romperse.
+
+## La portada
+
+**«Lo que estamos construyendo» son seis capturas del panel de verdad**, en un
+carrusel que aprieta: la abierta ocupa su sitio y las otras cinco quedan en
+listones con su nombre de pie. Debajo, el texto de la que esté abierta. Son
+`landing/assets/img/panel/*.webp`, y las hace `landing/shots.py`: siembra una
+cuenta de demostración en una base aparte, arranca el panel contra ella, lo
+abre en Chrome sin cabeza, lo pone en oscuro y recorta cada pantalla a 16:9.
+**Hay que volver a correrlo cuando cambie una de esas seis pantallas**, o la
+portada enseñará algo que ya no existe.
+
+Los datos de la demostración son neutros a propósito: «Tu empresa», nombres de
+pila con `@ejemplo.com` y asuntos corrientes. Ni una cooperativa, ni un colegio,
+ni nada que se lea como un cliente de verdad.
+
+**Lo que abre cada captura son seis botones de radio**, no un guion. Por eso la
+sección funciona entera sin JavaScript y las flechas del teclado la mueven
+solas, que es lo que se consigue gratis con un grupo de radios.
+`assets/js/carousel.js` agrega dos cosas y nada más: los botones de anterior y
+siguiente, que **solo se dibujan si el guion corrió** (como el interruptor de
+`/planes`), y el paso automático cada siete segundos, que se detiene al pasar
+el ratón o al enfocar algo dentro, no corre fuera de la pantalla ni con la
+pestaña escondida, **se apaga del todo en cuanto alguien elige una a mano** y
+no existe con «reducir movimiento» puesto.
+
+**En el teléfono no hay apretujón**: los dos contenedores se vuelven
+transparentes (`display: contents`) y cada captura queda encima de su texto, con
+las seis a la vista. El apretujón necesita ancho para significar algo, y ahí no
+lo hay.
+
+Las reglas del carrusel nombran los seis por su id (`#tour-1` … `#tour-6`), que
+es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otros,
+esas listas de `landing/src/site.css` crecen con ellos.
 
 ## Planes
 

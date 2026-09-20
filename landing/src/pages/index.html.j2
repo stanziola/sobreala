@@ -43,22 +43,49 @@
   </div>
 </section>
 
-<section class="section" aria-labelledby="features-title">
+<section class="section section--deep" aria-labelledby="features-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow">{{ page.features.eyebrow }}</p>
+      <p class="eyebrow eyebrow--light">{{ page.features.eyebrow }}</p>
       <h2 class="section__title" id="features-title">{{ page.features.title }}</h2>
       <p class="section__intro">{{ page.features.intro }}</p>
     </div>
-    <ul class="grid grid--3">
+    {#- Capturas del panel de verdad, hechas con landing/shots.py. Los botones
+        de radio son los que abren cada una, asi que esto funciona entero sin
+        JavaScript y con el teclado; carousel.js solo agrega las flechas y el
+        paso automatico. -#}
+    <div class="tour" data-tour>
       {% for item in page.features['items'] %}
-      <li class="feature-card">
-        <span class="feature-card__icon">{{ feature_icon(item.icon) }}</span>
-        <h3 class="feature-card__title">{{ item.title }}</h3>
-        <p>{{ item.text }}</p>
-      </li>
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-{{ loop.index }}"{{ " checked" if loop.first }}>
       {% endfor %}
-    </ul>
+      <div class="tour__strip">
+        {% for item in page.features['items'] %}
+        <label class="tour__panel" for="tour-{{ loop.index }}">
+          <img class="tour__shot" src="/assets/img/panel/{{ item.shot }}.webp"
+               alt="{{ item.alt }}" width="1400" height="788"
+               decoding="async"{{ ' loading="lazy"' if not loop.first }}>
+          <span class="tour__name">{{ item.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="tour__texts">
+        {% for item in page.features['items'] %}
+        <div class="tour__text">
+          <h3 class="tour__title">{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="tour__nav">
+        <button class="tour__arrow" type="button" data-tour-back
+                aria-label="{{ page.features.back }}">
+          {%- include "partials/icon-caret.svg.j2" -%}</button>
+        <button class="tour__arrow" type="button" data-tour-next
+                aria-label="{{ page.features.next }}">
+          {%- include "partials/icon-caret.svg.j2" -%}</button>
+      </p>
+    </div>
   </div>
 </section>
 
@@ -85,4 +112,8 @@
 
 {% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
 
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/carousel.js" defer></script>
 {% endblock %}

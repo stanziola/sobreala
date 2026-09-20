@@ -236,59 +236,96 @@
   </div>
 </section>
 
-<section class="section" aria-labelledby="features-title">
+<section class="section section--deep" aria-labelledby="features-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow">La plataforma</p>
+      <p class="eyebrow eyebrow--light">La plataforma</p>
       <h2 class="section__title" id="features-title">Lo que estamos construyendo</h2>
       <p class="section__intro">Panamails está en desarrollo. Estas son las capacidades que estamos construyendo y cómo van a funcionar.</p>
+    </div><div class="tour" data-tour>
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-1" checked>
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-2">
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-3">
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-4">
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-5">
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-6">
+      <div class="tour__strip">
+        <label class="tour__panel" for="tour-1">
+          <img class="tour__shot" src="/assets/img/panel/contactos.webp"
+               alt="La lista de contactos del panel, con el correo de cada persona, su nombre, sus columnas propias, su estado y sus etiquetas." width="1400" height="788"
+               decoding="async">
+          <span class="tour__name">Contactos</span>
+        </label>
+        <label class="tour__panel" for="tour-2">
+          <img class="tour__shot" src="/assets/img/panel/lienzo.webp"
+               alt="El editor de plantillas: un texto elegido sobre la hoja, con su barra de fuente, tamaño y color, y el correo armándose al lado." width="1400" height="788"
+               decoding="async" loading=&#34;lazy&#34;>
+          <span class="tour__name">Plantillas</span>
+        </label>
+        <label class="tour__panel" for="tour-3">
+          <img class="tour__shot" src="/assets/img/panel/envios.webp"
+               alt="La pantalla de enviar correos, con el asunto escrito, una etiqueta marcada, la plantilla elegida y la opción de mandarlo ahora o a una fecha y hora." width="1400" height="788"
+               decoding="async" loading=&#34;lazy&#34;>
+          <span class="tour__name">Envíos</span>
+        </label>
+        <label class="tour__panel" for="tour-4">
+          <img class="tour__shot" src="/assets/img/panel/estadisticas.webp"
+               alt="La pantalla de estadísticas: enviados, entregados, rebotes, aperturas y clics, cada cifra comparada con el periodo anterior, y las gráficas de envíos y de aperturas." width="1400" height="788"
+               decoding="async" loading=&#34;lazy&#34;>
+          <span class="tour__name">Estadísticas</span>
+        </label>
+        <label class="tour__panel" for="tour-5">
+          <img class="tour__shot" src="/assets/img/panel/baja.webp"
+               alt="La pantalla que abre quien pulsa el enlace de baja, con el botón de dejar de recibir estos correos." width="1400" height="788"
+               decoding="async" loading=&#34;lazy&#34;>
+          <span class="tour__name">Bajas</span>
+        </label>
+        <label class="tour__panel" for="tour-6">
+          <img class="tour__shot" src="/assets/img/panel/vista.webp"
+               alt="La vista previa del correo antes de mandarlo, con el dato de cada persona marcado y el pie de la baja y la dirección postal." width="1400" height="788"
+               decoding="async" loading=&#34;lazy&#34;>
+          <span class="tour__name">Vista previa</span>
+        </label>
+      </div>
+      <div class="tour__texts">
+        <div class="tour__text">
+          <h3 class="tour__title">Contactos sin duplicados</h3>
+          <p>Cada dirección existe una sola vez en tu cuenta. Si una persona lleva varias etiquetas y la campaña va a más de una, recibe una sola copia y gasta un solo envío. Mandarle otra campaña distinta más adelante es otra cosa, y esa sí le llega.</p>
+        </div>
+        <div class="tour__text">
+          <h3 class="tour__title">Campañas con plantilla o con tu HTML</h3>
+          <p>La armas en el editor, poniendo textos, botones e imágenes donde quieras. Si ya tienes tu propio diseño, lo cargas desde el plan Negocio.</p>
+        </div>
+        <div class="tour__text">
+          <h3 class="tour__title">Envío ahora o programado</h3>
+          <p>Eliges la lista, revisas la vista previa, te mandas una prueba a ti mismo y decides si sale ya o a la hora que elijas.</p>
+        </div>
+        <div class="tour__text">
+          <h3 class="tour__title">Resultados de cada campaña</h3>
+          <p>Entregados, aperturas, clicks, rebotes y bajas, por campaña, con exportación a CSV y PDF.</p>
+        </div>
+        <div class="tour__text">
+          <h3 class="tour__title">Cada persona puede anular su suscripción cuando quiera</h3>
+          <p>Todos los correos llevan el botón para anular la suscripción, en todos los planes. Quien lo usa deja de recibir al momento y tú no tienes que hacer nada.</p>
+        </div>
+        <div class="tour__text">
+          <h3 class="tour__title">Te acompañamos en tu primera campaña</h3>
+          <p>Revisamos tu lista contigo y probamos el envío antes de que salga el primero de verdad, para que no estrenes a ciegas.</p>
+        </div>
+      </div>
+      <p class="tour__nav">
+        <button class="tour__arrow" type="button" data-tour-back
+                aria-label="Ver la anterior"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9.5 12 15.5 18 9.5"/></svg></button>
+        <button class="tour__arrow" type="button" data-tour-next
+                aria-label="Ver la siguiente"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9.5 12 15.5 18 9.5"/></svg></button>
+      </p>
     </div>
-    <ul class="grid grid--3">
-      <li class="feature-card">
-        <span class="feature-card__icon"><svg class="icon icon--feature" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
-     aria-hidden="true" focusable="false">  <path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19"/>
-  <circle cx="10" cy="8" r="3.2"/><path d="M17.5 11.5h3M19 10v3"/></svg></span>
-        <h3 class="feature-card__title">Contactos sin duplicados</h3>
-        <p>Cada dirección existe una sola vez en tu cuenta. Si una persona lleva varias etiquetas y la campaña va a más de una, recibe una sola copia y gasta un solo envío. Mandarle otra campaña distinta más adelante es otra cosa, y esa sí le llega.</p>
-      </li>
-      <li class="feature-card">
-        <span class="feature-card__icon"><svg class="icon icon--feature" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
-     aria-hidden="true" focusable="false">  <rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="m3.5 6.5 8.5 6 8.5-6"/>
-  <path d="M7 16h4"/></svg></span>
-        <h3 class="feature-card__title">Campañas con plantilla o con tu HTML</h3>
-        <p>La armas en el editor, poniendo textos, botones e imágenes donde quieras. Si ya tienes tu propio diseño, lo cargas desde el plan Negocio.</p>
-      </li>
-      <li class="feature-card">
-        <span class="feature-card__icon"><svg class="icon icon--feature" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
-     aria-hidden="true" focusable="false">  <circle cx="12" cy="12.5" r="7.5"/><path d="M12 8.5v4.2l2.8 1.8"/><path d="M9 2.5h6"/></svg></span>
-        <h3 class="feature-card__title">Envío ahora o programado</h3>
-        <p>Eliges la lista, revisas la vista previa, te mandas una prueba a ti mismo y decides si sale ya o a la hora que elijas.</p>
-      </li>
-      <li class="feature-card">
-        <span class="feature-card__icon"><svg class="icon icon--feature" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
-     aria-hidden="true" focusable="false">  <path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 17v-5"/><path d="M13 17V7"/><path d="M18 17v-8"/></svg></span>
-        <h3 class="feature-card__title">Resultados de cada campaña</h3>
-        <p>Entregados, aperturas, clicks, rebotes y bajas, por campaña, con exportación a CSV y PDF.</p>
-      </li>
-      <li class="feature-card">
-        <span class="feature-card__icon"><svg class="icon icon--feature" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
-     aria-hidden="true" focusable="false">  <path d="M12 3.2 5 6v5.5c0 4 2.9 7.5 7 8.8 4.1-1.3 7-4.8 7-8.8V6Z"/><path d="m9.3 11.8 2 2 3.6-3.8"/></svg></span>
-        <h3 class="feature-card__title">Cada persona puede anular su suscripción cuando quiera</h3>
-        <p>Todos los correos llevan el botón para anular la suscripción, en todos los planes. Quien lo usa deja de recibir al momento y tú no tienes que hacer nada.</p>
-      </li>
-      <li class="feature-card">
-        <span class="feature-card__icon"><svg class="icon icon--feature" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
-     aria-hidden="true" focusable="false">  <path d="M5.5 21V4"/><path d="M5.5 5h11l-1.8 3.4L16.5 12h-11Z"/></svg></span>
-        <h3 class="feature-card__title">Te acompañamos en tu primera campaña</h3>
-        <p>Revisamos tu lista contigo y probamos el envío antes de que salga el primero de verdad, para que no estrenes a ciegas.</p>
-      </li>
-    </ul>
   </div>
 </section>
 
@@ -484,5 +521,6 @@
   </div>
 </footer>
 
-<script src="/assets/js/nav.js" defer></script></body>
+<script src="/assets/js/nav.js" defer></script><script src="/assets/js/carousel.js" defer></script>
+</body>
 </html>

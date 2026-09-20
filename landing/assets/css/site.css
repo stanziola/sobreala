@@ -551,6 +551,130 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 }
 .icon--feature { width: 24px; height: 24px; }
 
+/* ------------------------------------------------------------------ tour (home)
+   El carrusel de capturas del panel. Lo que abre cada una son seis botones de
+   radio, así que funciona entero sin JavaScript y las flechas del teclado lo
+   mueven solas; carousel.js solo agrega sus botones y el paso automático.
+   Las reglas nombran los seis por su id: si algún día son otros, estas listas
+   crecen con ellos.
+   En el teléfono no hay apretujón: los dos contenedores se vuelven
+   transparentes (display: contents) y cada captura queda encima de su texto,
+   que es lo único que se lee en esa pantalla. */
+/* La columna con minmax(0, 1fr): sin eso el ancho propio de las capturas
+   (1400 px) manda y la portada se va de lado en el teléfono. */
+.tour { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+/* Sigue enfocable a propósito: es lo que hace que las flechas del teclado
+   cambien de captura sin una línea de guion. */
+.tour__pick { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.tour__strip, .tour__texts { display: contents; }
+.tour__panel:nth-child(1) { order: 1; }
+.tour__panel:nth-child(2) { order: 3; }
+.tour__panel:nth-child(3) { order: 5; }
+.tour__panel:nth-child(4) { order: 7; }
+.tour__panel:nth-child(5) { order: 9; }
+.tour__panel:nth-child(6) { order: 11; }
+.tour__text:nth-child(1) { order: 2; }
+.tour__text:nth-child(2) { order: 4; }
+.tour__text:nth-child(3) { order: 6; }
+.tour__text:nth-child(4) { order: 8; }
+.tour__text:nth-child(5) { order: 10; }
+.tour__text:nth-child(6) { order: 12; }
+.tour__panel {
+  position: relative; display: block; overflow: hidden; cursor: pointer;
+  aspect-ratio: 16 / 9; border-radius: var(--radius);
+  background: var(--color-deep); border: 1px solid rgba(255, 255, 255, .14);
+}
+.tour__shot { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tour__name { display: none; }
+.tour__title { color: var(--color-on-dark); font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.tour__text { max-width: 66ch; color: var(--color-on-dark-soft); }
+.tour__nav { display: none; }
+
+@media (min-width: 760px) {
+  /* La tira ocupa la fila entera, y debajo el texto y las flechas se reparten
+     la siguiente: así los botones no quedan flotando solos más abajo. */
+  .tour { grid-template-columns: minmax(0, 1fr) auto; }
+  .tour__strip {
+    grid-column: 1 / -1;
+    display: flex; gap: 10px; aspect-ratio: 3.2; max-height: 520px;
+  }
+  .tour__texts { grid-column: 1; display: block; min-height: 116px; }
+  /* De la captura de un listón se ve la izquierda, que es donde el panel
+     tiene su menú y sus títulos; el centro de muchas pantallas es hueco. */
+  .tour__shot { object-position: left center; }
+  .tour__panel {
+    flex: 1 1 0; min-width: 0; aspect-ratio: auto;
+    transition: flex-grow 600ms var(--ease);
+  }
+  /* El velo y el nombre de pie: lo que hace legible un listón de 60 px. */
+  .tour__panel::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(8, 12, 18, .9) 28%, rgba(8, 12, 18, .06) 78%);
+    transition: opacity var(--normal) var(--ease);
+  }
+  .tour__name {
+    position: absolute; z-index: 1; inset: 16px 0; display: grid;
+    place-content: end center; writing-mode: vertical-rl;
+    transform: rotate(180deg); overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis;
+    font-size: .82rem; font-weight: 600; letter-spacing: .02em;
+    color: var(--color-on-dark); pointer-events: none;
+    transition: opacity var(--normal) var(--ease);
+  }
+  #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1),
+  #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2),
+  #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3),
+  #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4),
+  #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5),
+  #tour-6:checked ~ .tour__strip .tour__panel:nth-child(6) { flex-grow: 7; }
+  #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1)::after,
+  #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2)::after,
+  #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3)::after,
+  #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4)::after,
+  #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5)::after,
+  #tour-6:checked ~ .tour__strip .tour__panel:nth-child(6)::after,
+  #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1) .tour__name,
+  #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2) .tour__name,
+  #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3) .tour__name,
+  #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4) .tour__name,
+  #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5) .tour__name,
+  #tour-6:checked ~ .tour__strip .tour__panel:nth-child(6) .tour__name { opacity: 0; }
+  #tour-1:focus-visible ~ .tour__strip .tour__panel:nth-child(1),
+  #tour-2:focus-visible ~ .tour__strip .tour__panel:nth-child(2),
+  #tour-3:focus-visible ~ .tour__strip .tour__panel:nth-child(3),
+  #tour-4:focus-visible ~ .tour__strip .tour__panel:nth-child(4),
+  #tour-5:focus-visible ~ .tour__strip .tour__panel:nth-child(5),
+  #tour-6:focus-visible ~ .tour__strip .tour__panel:nth-child(6) {
+    outline: 2px solid var(--color-accent); outline-offset: 3px;
+  }
+  .tour__text { display: none; }
+  #tour-1:checked ~ .tour__texts .tour__text:nth-child(1),
+  #tour-2:checked ~ .tour__texts .tour__text:nth-child(2),
+  #tour-3:checked ~ .tour__texts .tour__text:nth-child(3),
+  #tour-4:checked ~ .tour__texts .tour__text:nth-child(4),
+  #tour-5:checked ~ .tour__texts .tour__text:nth-child(5),
+  #tour-6:checked ~ .tour__texts .tour__text:nth-child(6) { display: block; }
+  /* Las flechas las pone el guion: un botón que no hace nada es peor que no
+     tenerlo, como el interruptor de los planes. */
+  .tour.is-ready .tour__nav {
+    grid-column: 2; align-self: end; display: flex; gap: 10px;
+  }
+  .tour__arrow {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+    background: transparent; color: var(--color-on-dark);
+    border: 1px solid rgba(255, 255, 255, .4);
+    transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  }
+  .tour__arrow:hover { background: rgba(255, 255, 255, .14); border-color: var(--color-on-dark); }
+  .tour__arrow .icon { width: 18px; height: 18px; }
+  [data-tour-back] .icon { transform: rotate(90deg); }
+  [data-tour-next] .icon { transform: rotate(-90deg); }
+}
+@media (min-width: 760px) and (hover: hover) {
+  .tour__panel:hover { flex-grow: 2.2; }
+}
+
 /* ------------------------------------------------------------------ steps (home) */
 .steps { display: grid; gap: 18px; counter-reset: step; }
 @media (min-width: 640px) { .steps { grid-template-columns: repeat(2, 1fr); } }
