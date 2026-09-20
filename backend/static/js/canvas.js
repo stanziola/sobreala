@@ -36,7 +36,9 @@
   var saveForm = document.querySelector("[data-canvas-save]");
   var previewForm = document.querySelector("[data-canvas-preview]");
 
-  var sel = null;          // el índice del elemento elegido, o null
+  var picked = [];         // los índices elegidos, que pueden ser varios
+  var sel = null;          // el único elegido, o null si son varios o ninguno
+  var bench = null;        // lo último copiado, si el portapapeles no deja leer
   var editing = null;      // el elemento de texto que se está escribiendo
   var lastField = null;    // el último campo de la barra que tuvo el cursor
   var dirty = false;
@@ -50,13 +52,62 @@
   function item() { return sel === null ? null : doc.items[sel] || null; }
   function linePx(one) { return Math.round(one.size * (one.line || 1.4)); }
 
+  /* ---------------------------------------------------------- lo elegido */
+
+  /* Todo pasa por aquí: `sel` es lo elegido cuando es uno solo, que es como
+     funciona la barra de propiedades, y `picked` es la lista. */
+  function pick(what) {
+    var list = what === null || what === undefined ? []
+      : (typeof what === "number" ? [what] : what.slice());
+    picked = list.filter(function (i, at) {
+      return doc.items[i] && list.indexOf(i) === at;
+    });
+    sel = picked.length === 1 ? picked[0] : null;
+  }
+
+  function isPicked(i) { return picked.indexOf(i) >= 0; }
+  function chosen() { return picked.map(function (i) { return doc.items[i]; }); }
+
+  /* Un elemento arrastra a su grupo: agrupar es para moverlos juntos. */
+  function tied(i) {
+    var one = doc.items[i];
+    if (!one || !one.g) return [i];
+    var out = [];
+    doc.items.forEach(function (x, k) { if (x.g === one.g) out.push(k); });
+    return out;
+  }
+
+  /* La caja que abarca a varios, para moverlos y alinearlos como uno. */
+  function around(list) {
+    var x = Math.min.apply(null, list.map(function (o) { return o.x; }));
+    var y = Math.min.apply(null, list.map(function (o) { return o.y; }));
+    return { x: x, y: y,
+             w: Math.max.apply(null, list.map(function (o) { return o.x + o.w; })) - x,
+             h: Math.max.apply(null, list.map(function (o) { return o.y + o.h; })) - y };
+  }
+
   function say(text) {
     if (!errorBox) return;
     errorBox.textContent = text || "";
     errorBox.hidden = !text;
   }
 
+  /* Lo que ocupa de verdad: su caja, o la que abarca su giro. La caja que se
+     arrastra no cambia al girar; la huella sí, y es la que decide qué se
+     encima con qué. Es la misma cuenta que hace services/canvas.py. */
+  function bounds(one) {
+    var angle = one.rot || 0;
+    if (!angle) return one;
+    var rad = angle * Math.PI / 180;
+    var cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
+    var w = Math.round(one.w * cos + one.h * sin);
+    var h = Math.round(one.w * sin + one.h * cos);
+    return { x: Math.round(one.x + (one.w - w) / 2),
+             y: Math.round(one.y + (one.h - h) / 2), w: w, h: h };
+  }
+
   function touch(a, b) {
+    a = bounds(a); b = bounds(b);
     return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
   }
 
@@ -78,8 +129,24 @@
 
   function lowest() {
     var bottom = 0;
-    doc.items.forEach(function (one) { bottom = Math.max(bottom, one.y + one.h); });
+    doc.items.forEach(function (one) {
+      var b = bounds(one);
+      bottom = Math.max(bottom, b.y + b.h);
+    });
     return bottom;
+  }
+
+  /* Lo girado ocupa más: se empuja hacia dentro para que quepa en la hoja, que
+     es lo que el servidor exige al guardar. */
+  function fitRot(one) {
+    if (!one || !one.rot) return;
+    var b = bounds(one);
+    if (b.x < 0) one.x -= b.x;
+    if (b.y < 0) one.y -= b.y;
+    b = bounds(one);
+    if (b.x + b.w > W) one.x -= (b.x + b.w - W);
+    if (one.x < 0) one.x = 0;
+    grow();
   }
 
   /* La hoja crece sola cuando algo pasa del borde de abajo. */
@@ -110,7 +177,7 @@
     if (past.length < 2) return;
     future.push(past.pop());
     doc = JSON.parse(past[past.length - 1]);
-    sel = null; editing = null;
+    pick(null); editing = null;
     render(); schedulePreview();
   }
 
@@ -119,7 +186,7 @@
     var next = future.pop();
     past.push(next);
     doc = JSON.parse(next);
-    sel = null; editing = null;
+    pick(null); editing = null;
     render(); schedulePreview();
   }
 
@@ -130,6 +197,8 @@
     el.style.top = one.y + "px";
     el.style.width = one.w + "px";
     el.style.height = one.h + "px";
+    // Gira sobre su centro, como lo hornea el servidor al armar el correo.
+    el.style.transform = one.rot ? "rotate(" + one.rot + "deg)" : "";
     if (one.t === "image") {
       el.style.backgroundImage = "url('/img/" + encodeURIComponent(one.name) + "')";
       el.style.backgroundSize = one.fit === "contain" ? "contain" : "cover";
@@ -137,7 +206,8 @@
     }
     if (one.t === "shape") {
       el.style.backgroundColor = one.bg;
-      el.style.borderRadius = one.radius + "px";
+      // Un círculo es su caja redondeada del todo; un óvalo, si no es cuadrada.
+      el.style.borderRadius = one.shape === "ellipse" ? "50%" : one.radius + "px";
       return;
     }
     el.style.fontFamily = FONTS[one.font] || FONTS.Arial || "Arial, sans-serif";
@@ -180,9 +250,11 @@
       el.className = "cv-item cv-item--" + one.t;
       el.setAttribute("data-item", i);
       if (bad[i]) { el.className += " is-bad"; notes[bad[i]] = true; }
-      if (sel === i) el.className += " is-sel";
+      if (isPicked(i)) el.className += " is-sel";
       if (FRONT[one.t]) el.textContent = one.text;
       paintItem(el, one);
+      // Los tiradores son para cambiar el tamaño de uno: con varios elegidos
+      // no se sabría de cuál.
       if (sel === i) {
         var handles = BACK[one.t] ? CORNERS.concat(SIDES) : CORNERS;
         handles.forEach(function (where) {
@@ -214,15 +286,24 @@
 
   function showProps() {
     var one = item();
-    var kind = one ? one.t : "none";
+    var kind = picked.length > 1 ? "many" : (one ? one.t : "none");
+    if (kind === "many") {
+      var count = props.querySelector("[data-many-count]");
+      if (count) count.textContent = S.many.replace("{n}", picked.length);
+    }
     Array.prototype.forEach.call(props.querySelectorAll("[data-props-for]"), function (row) {
       row.hidden = row.getAttribute("data-props-for").split(" ").indexOf(kind) < 0;
     });
     var page = props.querySelector("[data-page-bg]");
     if (page && page !== document.activeElement) page.value = doc.bg;
-    if (!one) return;
+    if (!one || kind === "many") return;
+    // «data-only» vale para el tipo («button») y para la figura de un
+    // rectángulo («shape-ellipse»): el redondeo es del rectángulo y el aviso
+    // de la imagen es del círculo.
+    var also = kind === "shape" ? "shape-" + (one.shape || "rect") : "";
     Array.prototype.forEach.call(props.querySelectorAll("[data-only]"), function (el) {
-      el.hidden = el.getAttribute("data-only") !== kind;
+      var want = el.getAttribute("data-only");
+      el.hidden = want !== kind && want !== also;
     });
     var row = props.querySelector('[data-props-for~="' + kind + '"]');
     Array.prototype.forEach.call(row.querySelectorAll("[data-prop]"), function (input) {
@@ -264,7 +345,7 @@
     if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
     one.y = freeY(one.h);
     doc.items.push(one);
-    sel = doc.items.length - 1;
+    pick(doc.items.length - 1);
     grow();
     render(); commit();
     var el = stage.querySelector('[data-item="' + sel + '"]');
@@ -283,7 +364,8 @@
               href: "https://", font: "Arial", size: 16, color: "#FFFFFF", bg: "#31A9E8",
               bold: true, italic: false, align: "center", radius: 8 });
     } else if (kind === "shape") {
-      place({ t: "shape", x: 0, w: W, h: 160, bg: "#E0F2FE", radius: 0 });
+      place({ t: "shape", x: 0, w: W, h: 160, bg: "#E0F2FE", radius: 0,
+              shape: "rect", rot: 0 });
     }
   }
 
@@ -297,7 +379,13 @@
 
   fileInput.addEventListener("change", function () {
     var file = fileInput.files && fileInput.files[0];
-    if (!file) return;
+    if (file) sendImage(file, replacing);
+  });
+
+  /* Sube una foto y la pone en la hoja. `replace` cambia la del elemento que
+     diga, y con null entra una nueva. La misma ruta para el botón y para lo
+     que se pega: el servidor la revisa por lo que trae dentro y la achica. */
+  function sendImage(file, replace) {
     say(S.uploading);
     var body = new FormData();
     body.append("csrf_token", saveForm.querySelector("[name=csrf_token]").value);
@@ -308,8 +396,8 @@
         if (answer.error || !answer.name) { say(answer.error || S.uploadFailed); return; }
         say("");
         var r = answer.width / Math.max(answer.height, 1);
-        if (replacing !== null) {
-          var one = doc.items[replacing];
+        if (replace !== null && replace !== undefined && doc.items[replace]) {
+          var one = doc.items[replace];
           one.name = answer.name;
           one.r = Math.round(r * 10000) / 10000;
           // La caja toma la proporción de la foto nueva, con el mismo ancho.
@@ -327,7 +415,7 @@
                 r: Math.round(r * 10000) / 10000, href: "", alt: "" });
       })
       .catch(function () { say(S.uploadFailed); });
-  });
+  }
 
   /* --------------------------------------------------- mover y cambiar tamaño */
 
@@ -381,21 +469,41 @@
     if (!sheet) return;
     var el = e.target.closest(".cv-item");
     if (!el) {
+      // Arrastrar sobre la hoja vacía encierra lo que toque el recuadro.
       if (editing) editing.blur();
-      sel = null;
-      render();
+      var edge = sheet.getBoundingClientRect();
+      drag = { mode: "marquee", sheet: sheet, moved: false,
+               ax: e.clientX - edge.left, ay: e.clientY - edge.top,
+               add: e.shiftKey, was: picked.slice() };
+      if (!e.shiftKey) { pick(null); render(); }
+      e.preventDefault();
       return;
     }
     if (el.isContentEditable) return;
     var i = +el.getAttribute("data-item");
     var handle = e.target.closest("[data-handle]");
-    if (sel !== i) { sel = i; render(); }
+    if (e.shiftKey && !handle) {
+      // Mayús suma y quita, y arrastra al grupo entero con él.
+      var group = tied(i), out = picked.slice();
+      if (isPicked(i)) {
+        out = out.filter(function (k) { return group.indexOf(k) < 0; });
+      } else {
+        out = out.concat(group);
+      }
+      pick(out);
+      render();
+      return;
+    }
+    // Pulsar algo que ya estaba elegido no deshace la selección: es como se
+    // arrastran varios de una vez.
+    if (!isPicked(i)) { pick(tied(i)); render(); }
     // Sin captura del puntero: con ella el doble clic le llegaría a la hoja
     // entera y no al texto. El movimiento se escucha en la ventana.
     // Mover se llama «drag» y no «move»: el tamaño se decide mirando si el
     // modo trae n, s, e u o, y «move» trae una e.
     drag = { mode: handle ? handle.getAttribute("data-handle") : "drag", i: i,
-             x0: e.clientX, y0: e.clientY, start: clone(item()), moved: false };
+             x0: e.clientX, y0: e.clientY, start: clone(doc.items[i]), moved: false,
+             many: picked.slice(), starts: chosen().map(clone) };
     e.preventDefault();
   });
 
@@ -408,10 +516,47 @@
       drag.moved = true;
       return;
     }
+    if (drag.mode === "marquee") {
+      var edge = drag.sheet.getBoundingClientRect();
+      drag.bx = clamp(e.clientX - edge.left, 0, W);
+      drag.by = Math.max(0, e.clientY - edge.top);
+      drag.moved = true;
+      var mark = drag.sheet.querySelector(".cv-marquee");
+      if (!mark) {
+        mark = document.createElement("div");
+        mark.className = "cv-marquee";
+        drag.sheet.appendChild(mark);
+      }
+      mark.style.left = Math.min(drag.ax, drag.bx) + "px";
+      mark.style.top = Math.min(drag.ay, drag.by) + "px";
+      mark.style.width = Math.abs(drag.bx - drag.ax) + "px";
+      mark.style.height = Math.abs(drag.by - drag.ay) + "px";
+      return;
+    }
     var one = doc.items[drag.i], a = drag.start;
     var dx = Math.round(e.clientX - drag.x0), dy = Math.round(e.clientY - drag.y0);
     if (!dx && !dy && !drag.moved) return;
     drag.moved = true;
+
+    // Varios a la vez: todos se mueven lo mismo, y lo que manda es la caja que
+    // los abarca, que es la que no puede salirse de la hoja.
+    if (drag.mode === "drag" && drag.many.length > 1) {
+      var box = around(drag.starts);
+      var mx = clamp(dx, -box.x, W - (box.x + box.w));
+      var my = clamp(dy, -box.y, L.maxHeight - (box.y + box.h));
+      drag.many.forEach(function (k, at) {
+        doc.items[k].x = drag.starts[at].x + mx;
+        doc.items[k].y = drag.starts[at].y + my;
+        var moved = sheet && sheet.querySelector('[data-item="' + k + '"]');
+        if (moved) paintItem(moved, doc.items[k]);
+      });
+      if (box.y + box.h + my > doc.h) {
+        doc.h = box.y + box.h + my;
+        if (sheet) sheet.style.height = doc.h + "px";
+      }
+      if (sheet) guides(sheet, []);
+      return;
+    }
     var mode = drag.mode, x = a.x, y = a.y, w = a.w, h = a.h;
     if (mode === "drag") { x = a.x + dx; y = a.y + dy; }
     else if (one.t === "image" && mode.length === 2) {
@@ -454,8 +599,25 @@
     if (!drag) return;
     var was = drag;
     drag = null;
+    if (was.mode === "marquee") {
+      var mark = was.sheet.querySelector(".cv-marquee");
+      if (mark) mark.remove();
+      if (!was.moved) { pick(was.add ? was.was : null); render(); return; }
+      var area = { x: Math.min(was.ax, was.bx), y: Math.min(was.ay, was.by),
+                   w: Math.abs(was.bx - was.ax), h: Math.abs(was.by - was.ay) };
+      var found = was.add ? was.was.slice() : [];
+      doc.items.forEach(function (one, i) {
+        if (!touch(area, one)) return;
+        // Lo que está agrupado entra entero, como al pulsarlo.
+        tied(i).forEach(function (k) { if (found.indexOf(k) < 0) found.push(k); });
+      });
+      pick(found);
+      render();
+      return;
+    }
     if (was.moved) {
       if (was.mode !== "grip" && was.mode !== "drag") fitText(was.i);
+      chosen().forEach(fitRot);
       render(); commit();
     }
   }
@@ -467,7 +629,7 @@
   stage.addEventListener("dblclick", function (e) {
     var el = e.target.closest(".cv-item--text");
     if (!el) return;
-    sel = +el.getAttribute("data-item");
+    pick(+el.getAttribute("data-item"));
     Array.prototype.forEach.call(el.querySelectorAll(".cv-handle"), function (h) { h.remove(); });
     try { el.contentEditable = "plaintext-only"; } catch (err) { el.contentEditable = "true"; }
     if (el.contentEditable !== "plaintext-only") el.contentEditable = "true";
@@ -562,14 +724,16 @@
     if (!input || !one) return;
     var name = input.getAttribute("data-prop");
     var value = input.type === "checkbox" ? input.checked : input.value;
-    if (name === "size" || name === "radius") {
+    if (name === "size" || name === "radius" || name === "rot") {
       value = parseInt(value, 10);
       if (isNaN(value)) return;
       if (name === "size") value = clamp(value, L.minSize, L.maxSize);
+      if (name === "rot") value = ((value % 360) + 360) % 360;
     }
     if (name === "line") value = parseFloat(value);
     if (name === "bg" || name === "color") value = String(value).toUpperCase();
     one[name] = value;
+    if (name === "rot") fitRot(one);
     if (one.t === "text") fitText(sel);
     var el = stage.querySelector('[data-item="' + sel + '"]');
     if (el && name === "text") el.firstChild ? (el.firstChild.nodeValue = value) : (el.textContent = value);
@@ -581,15 +745,111 @@
 
   props.addEventListener("change", function () { render(); });
 
+  /* --------------------------------------------- lo que vale para varios */
+
+  /* Borrar de atrás hacia delante: si no, cada corte le cambiaría el índice a
+     los siguientes. */
+  function dropPicked() {
+    picked.slice().sort(function (a, b) { return b - a; })
+      .forEach(function (i) { doc.items.splice(i, 1); });
+    pick(null);
+  }
+
+  /* Duplicar lo elegido, un poco más abajo y a la derecha, y dejar la copia
+     elegida. Un grupo copiado sigue siendo un grupo, pero uno nuevo. */
+  function duplicate(list) {
+    var copies = list.map(clone), tie = {};
+    if (copies.length + doc.items.length > L.maxItems) { say(S.maxItems); return; }
+    say("");
+    var out = [];
+    copies.forEach(function (one) {
+      one.x = clamp(one.x + 12, 0, W - one.w);
+      one.y = clamp(one.y + 12, 0, L.maxHeight - one.h);
+      if (one.g) {
+        if (!tie[one.g]) tie[one.g] = freeTie();
+        one.g = tie[one.g];
+      }
+      doc.items.push(one);
+      out.push(doc.items.length - 1);
+    });
+    pick(out);
+    grow();
+    render(); commit();
+  }
+
+  /* Un número de grupo que no esté usado. */
+  function freeTie() {
+    var top = 0;
+    doc.items.forEach(function (one) { if (one.g > top) top = one.g; });
+    return Math.min(top + 1, 999);
+  }
+
+  function alignPicked(what) {
+    var list = chosen();
+    if (list.length < 2) return;
+    var box = around(list);
+    list.forEach(function (one) {
+      if (what === "align-l") one.x = box.x;
+      else if (what === "align-r") one.x = box.x + box.w - one.w;
+      else if (what === "align-cx") one.x = Math.round(box.x + (box.w - one.w) / 2);
+      else if (what === "align-t") one.y = box.y;
+      else if (what === "align-b") one.y = box.y + box.h - one.h;
+      else if (what === "align-cy") one.y = Math.round(box.y + (box.h - one.h) / 2);
+      one.x = clamp(one.x, 0, W - one.w);
+      one.y = clamp(one.y, 0, L.maxHeight - one.h);
+    });
+  }
+
+  /* Repartir: el primero y el último se quedan donde están y los del medio se
+     acomodan con el mismo aire entre ellos. */
+  function spreadPicked(axis) {
+    var list = chosen();
+    if (list.length < 3) return;
+    var pos = axis === "x" ? "x" : "y", size = axis === "x" ? "w" : "h";
+    var order = list.slice().sort(function (a, b) { return a[pos] - b[pos]; });
+    var first = order[0], last = order[order.length - 1];
+    var used = order.reduce(function (sum, one) { return sum + one[size]; }, 0);
+    var gap = ((last[pos] + last[size]) - first[pos] - used) / (order.length - 1);
+    var at = first[pos] + first[size] + gap;
+    order.slice(1, -1).forEach(function (one) {
+      one[pos] = Math.round(at);
+      at += one[size] + gap;
+    });
+  }
+
   props.addEventListener("click", function (e) {
     var b = e.target.closest("[data-action]");
-    var one = item();
-    if (!b || !one) return;
+    if (!b) return;
     var what = b.getAttribute("data-action");
+    if (picked.length > 1) {
+      if (what === "delete") dropPicked();
+      else if (what === "duplicate") { duplicate(chosen()); return; }
+      else if (what === "group") {
+        var tie = freeTie();
+        chosen().forEach(function (one) { one.g = tie; });
+      } else if (what === "ungroup") {
+        chosen().forEach(function (one) { delete one.g; });
+      } else if (what.indexOf("align-") === 0) alignPicked(what);
+      else if (what === "spread-x") spreadPicked("x");
+      else if (what === "spread-y") spreadPicked("y");
+      else return;
+      grow();
+      render(); commit();
+      return;
+    }
+    var one = item();
+    if (!one) return;
     var list = doc.items;
     if (what === "delete") {
       list.splice(sel, 1);
-      sel = null;
+      pick(null);
+    } else if (what === "duplicate") {
+      duplicate([one]);
+      return;
+    } else if (what === "ungroup") {
+      delete one.g;
+    } else if (what === "straight") {
+      one.rot = 0;
     } else if (what === "replace") {
       pickImage(sel);
       return;
@@ -610,7 +870,7 @@
       var to = what === "front" ? backs[at + 1] : backs[at - 1];
       if (to === undefined) return;
       var tmp = list[to]; list[to] = list[sel]; list[sel] = tmp;
-      sel = to;
+      pick(to);
     }
     render(); commit();
   });
@@ -624,20 +884,119 @@
       var k = e.key.toLowerCase();
       if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
       if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); redo(); return; }
+      if (k === "a") { e.preventDefault(); pick(doc.items.map(function (x, i) { return i; })); render(); return; }
+      if (!picked.length) return;
+      if (k === "c" || k === "x") {
+        e.preventDefault();
+        copyPicked();
+        if (k === "x") { dropPicked(); render(); commit(); }
+        return;
+      }
+      if (k === "d") { e.preventDefault(); duplicate(chosen()); return; }
+      return;
     }
-    if (typing || !item()) return;
-    var one = item(), step = e.shiftKey ? 10 : 1;
+    if (typing || !picked.length) return;
+    var step = e.shiftKey ? 10 : 1;
     if (e.key === "Delete" || e.key === "Backspace") {
-      doc.items.splice(sel, 1); sel = null; render(); commit(); e.preventDefault(); return;
+      dropPicked(); render(); commit(); e.preventDefault(); return;
     }
-    if (e.key === "Escape") { sel = null; render(); return; }
+    if (e.key === "Escape") { pick(null); render(); return; }
     var moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
     if (!moves[e.key]) return;
     e.preventDefault();
-    one.x = clamp(one.x + moves[e.key][0], 0, W - one.w);
-    one.y = clamp(one.y + moves[e.key][1], 0, L.maxHeight - one.h);
+    // Lo elegido se mueve junto, y lo que no deja salirse es la caja que los
+    // abarca: si no, el de la orilla se quedaría atrás.
+    var list = chosen(), box = around(list);
+    var mx = clamp(moves[e.key][0], -box.x, W - (box.x + box.w));
+    var my = clamp(moves[e.key][1], -box.y, L.maxHeight - (box.y + box.h));
+    list.forEach(function (one) { one.x += mx; one.y += my; });
+    list.forEach(fitRot);
     grow();
     render(); commitSoon();
+  });
+
+  /* ----------------------------------------------------- copiar y pegar */
+
+  /* Lo copiado viaja como texto nuestro en el portapapeles, así que se pega
+     también en otra plantilla o en otra pestaña. Si el navegador no deja
+     escribirlo, queda en `bench`, que sirve dentro de esta página. */
+  var MARK = "panamails-lienzo";
+
+  function copyPicked() {
+    if (!picked.length) return;
+    bench = { pm: MARK, items: chosen().map(clone) };
+    var text = JSON.stringify(bench);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { say(S.copied); },
+                                                 function () { say(S.copied); });
+        return;
+      }
+    } catch (err) { /* sin portapapeles queda lo de `bench` */ }
+    say(S.copied);
+  }
+
+  /* Pegar lo que sea nuestro: se rehace elemento por elemento y se deja un
+     poco más abajo. El servidor lo revisa igual al guardar. */
+  function pasteDoc(data) {
+    if (!data || data.pm !== MARK || !data.items || !data.items.length) return false;
+    var fine = data.items.filter(function (one) {
+      return one && (one.t === "text" || one.t === "button"
+                     || one.t === "image" || one.t === "shape");
+    });
+    if (!fine.length) return false;
+    say("");
+    duplicate(fine);
+    return true;
+  }
+
+  function readPaste(text) {
+    try { return JSON.parse(text); } catch (err) { return null; }
+  }
+
+  document.addEventListener("paste", function (e) {
+    // Mientras se escribe un texto, pegar es del texto: eso lo atiende el
+    // manejador del lienzo, que mete lo pegado como texto plano.
+    if (editing) return;
+    var target = e.target.closest && e.target.closest("input, textarea, select");
+    if (target) return;
+    var data = e.clipboardData || window.clipboardData;
+    if (!data) return;
+
+    // Una foto pegada llega en `files` o en `items`, según el navegador y de
+    // dónde se copió: se miran los dos.
+    var photos = [];
+    if (data.files && data.files.length) {
+      Array.prototype.forEach.call(data.files, function (f) {
+        if (f && f.type.indexOf("image/") === 0) photos.push(f);
+      });
+    }
+    if (!photos.length && data.items) {
+      Array.prototype.forEach.call(data.items, function (one) {
+        if (one.kind !== "file" || one.type.indexOf("image/") !== 0) return;
+        var f = one.getAsFile();
+        if (f) photos.push(f);
+      });
+    }
+    if (photos.length) {
+      e.preventDefault();
+      // De a una: cada una pasa por la misma revisión que subir un archivo.
+      photos.slice(0, 3).forEach(function (file) { sendImage(file, null); });
+      return;
+    }
+    var text = data.getData ? data.getData("text/plain") : "";
+    if (text && pasteDoc(readPaste(text))) { e.preventDefault(); return; }
+    // Una imagen copiada de una página suele llegar solo como dirección. No se
+    // va a buscar: el servidor no pide imágenes a otros sitios.
+    var html = data.getData ? data.getData("text/html") : "";
+    if ((html && html.indexOf("<img") >= 0) || /^https?:\/\/\S+\.(png|jpe?g|gif|webp)/i.test(text || "")) {
+      e.preventDefault();
+      say(S.pasteUrl);
+      return;
+    }
+    // Si el navegador no dejó escribir en el portapapeles, lo copiado sigue
+    // aquí dentro.
+    if (bench && pasteDoc(bench)) e.preventDefault();
   });
 
   root.addEventListener("click", function (e) {

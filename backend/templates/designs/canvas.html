@@ -57,6 +57,9 @@
   "nameNeeded": t('canvas_name_needed'),
   "leave": t('canvas_leave'),
   "meterOf": t('canvas_meter_of'),
+  "many": t('canvas_many'),
+  "copied": t('canvas_copied'),
+  "pasteUrl": t('canvas_paste_url'),
 } %}
 <div class="editor" data-canvas
      data-upload="{{ url_for('designs.canvas_image') }}"
@@ -75,6 +78,9 @@
     <input class="visually-hidden" type="file" accept="image/*" data-canvas-file
            aria-label="{{ t('canvas_add_image') }}" tabindex="-1">
     <p class="hint">{{ t('canvas_image_hint', mb=image_mb) }}</p>
+    {# No hay forma de saber de quién es una imagen: se dice, y queda escrito
+       quién la subió y cuándo. #}
+    <p class="hint">{{ t('canvas_rights') }}</p>
 
     {% if columns %}
     <p class="field-label">{{ t('designs_columns_title') }}</p>
@@ -98,6 +104,29 @@
         <p class="props__none">{{ t('canvas_props_none') }}</p>
         <label class="props__field props__field--color">{{ t('canvas_page_bg') }}
           <input type="color" data-page-bg></label>
+      </div>
+
+      {# Varios a la vez: lo que se puede hacer con un montón, no con uno.
+         Agrupar es para moverlos juntos y no cambia cómo se corta el correo,
+         así que eso se dice aquí mismo. #}
+      <div class="props__row" data-props-for="many" hidden>
+        <p class="props__none" data-many-count></p>
+        <button class="btn btn--small btn--outline" type="button" data-action="duplicate">{{ t('canvas_duplicate') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+        <span class="props__sep" aria-hidden="true"></span>
+        <button class="btn btn--small btn--outline" type="button" data-action="group">{{ t('canvas_group') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="ungroup">{{ t('canvas_ungroup') }}</button>
+        <span class="props__sep" aria-hidden="true"></span>
+        <p class="field-label">{{ t('canvas_align_many') }}</p>
+        <button class="btn btn--small btn--outline" type="button" data-action="align-l">{{ t('canvas_align_l') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="align-cx">{{ t('canvas_align_cx') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="align-r">{{ t('canvas_align_r') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="align-t">{{ t('canvas_align_t') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="align-cy">{{ t('canvas_align_cy') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="align-b">{{ t('canvas_align_b') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="spread-x">{{ t('canvas_spread_x') }}</button>
+        <button class="btn btn--small btn--outline" type="button" data-action="spread-y">{{ t('canvas_spread_y') }}</button>
+        <p class="props__tip">{{ t('canvas_group_hint') }}</p>
       </div>
 
       <div class="props__row" data-props-for="text button" hidden>
@@ -141,6 +170,9 @@
         <label class="props__field">{{ t('canvas_image_alt') }}
           <input type="text" maxlength="{{ limits.altMax }}" data-prop="alt"
                  placeholder="{{ t('canvas_image_alt_hint') }}"></label>
+        <label class="props__field props__field--small">{{ t('canvas_rot') }}
+          <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
+        <button class="btn btn--small btn--outline" type="button" data-action="straight">{{ t('canvas_rot_zero') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="replace">{{ t('canvas_replace') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
@@ -152,12 +184,21 @@
       <div class="props__row" data-props-for="shape" hidden>
         <label class="props__field props__field--color">{{ t('canvas_shape_bg') }}
           <input type="color" data-prop="bg"></label>
-        <label class="props__field">{{ t('canvas_radius') }}
+        <label class="props__field">{{ t('canvas_shape_kind') }}
+          <select data-prop="shape">
+            <option value="rect">{{ t('canvas_shape_rect') }}</option>
+            <option value="ellipse">{{ t('canvas_shape_ellipse') }}</option>
+          </select></label>
+        <label class="props__field" data-only="shape-rect">{{ t('canvas_radius') }}
           <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
+        <label class="props__field props__field--small">{{ t('canvas_rot') }}
+          <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
+        <button class="btn btn--small btn--outline" type="button" data-action="straight">{{ t('canvas_rot_zero') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="back">{{ t('canvas_back') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+        <p class="props__tip" data-only="shape-ellipse">{{ t('canvas_shape_tip') }}</p>
       </div>
     </div>
 

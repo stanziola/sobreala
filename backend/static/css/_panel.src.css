@@ -758,6 +758,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
                 margin: 0 0 8px; }
 .props__row .props__none { flex: 1 1 100%; }
 .props__tip { flex: 1 1 100%; margin: 0; font-size: .8rem; color: var(--color-ink-soft); }
+/* Separa los grupos de botones de la barra de varios elegidos. */
+.props__sep { width: 1px; align-self: stretch; background: var(--color-border); }
+.props__row .field-label { margin: 0; align-self: center; }
 
 .stage { display: grid; justify-items: start; margin-top: 14px; overflow-x: auto;
          padding: 8px 8px 12px; }
@@ -798,6 +801,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .cv-handle--s { left: calc(50% - 6px); bottom: -7px; cursor: ns-resize; }
 .cv-handle--e { right: -7px; top: calc(50% - 6px); cursor: ew-resize; }
 .cv-handle--w { left: -7px; top: calc(50% - 6px); cursor: ew-resize; }
+/* El recuadro con el que se encierran varios elementos de una vez. */
+.cv-marquee {
+  position: absolute; z-index: 25; pointer-events: none;
+  border: 1px dashed var(--color-accent);
+  background: var(--color-accent-soft); opacity: .45;
+}
 .cv-guide { position: absolute; background: #E0368C; z-index: 30; pointer-events: none; }
 .cv-guide--x { top: 0; bottom: 0; width: 1px; }
 .cv-guide--y { left: 0; right: 0; height: 1px; }

@@ -568,3 +568,119 @@ def test_la_revision_dice_cuanto_pesa_y_que_falta(client, database, outbox):
 def test_estadisticas_ya_no_lleva_a_configuracion(client, database, outbox):
     browser = inside(client)
     assert "Ir a configuración" not in browser.get("/panel").get_data(as_text=True)
+
+
+# ------------------------------------------------ el grupo del editor
+
+def test_el_grupo_se_guarda_y_no_cambia_el_correo():
+    """Agrupar es para mover junto: viaja con la pieza y el correo sale igual.
+
+    Lo que decide las celdas sigue siendo qué cajas se enciman, así que dos
+    cosas agrupadas pero separadas caen en celdas distintas.
+    """
+    suelto = lienzo(texto(20, 20), texto(20, 200))
+    junto = lienzo(texto(20, 20, g=3), texto(20, 200, g=3))
+
+    leido = leer(junto)
+    assert [one.get("g") for one in leido["items"]] == [3, 3]
+    assert tipos(junto) == ["front", "front"]
+    assert canvas.to_html(leido, [None, None]) == canvas.to_html(leer(suelto), [None, None])
+
+
+def test_un_grupo_inventado_no_entra():
+    """El navegador lo escribe cualquiera: lo que no es un número entre 1 y 999
+    se cae, como todo lo demás."""
+    for malo in ("<script>", 0, -2, 1000, None, 1.5e9):
+        leido = leer(lienzo(texto(20, 20, g=malo)))
+        assert "g" not in leido["items"][0], malo
+    assert leer(lienzo(texto(20, 20, g="7")))["items"][0]["g"] == 7
+
+
+# ------------------------------------------- geometria, giro y fuentes
+
+def test_un_circulo_no_es_celda_de_color_y_se_pinta():
+    """Outlook de escritorio ignora border-radius: un circulo dibujado como
+    celda saldria cuadrado, asi que viaja como imagen."""
+    assert tipos(lienzo(rectangulo(0, 0, 200, 200))) == ["color"]
+    assert tipos(lienzo(rectangulo(0, 0, 200, 200, shape="ellipse"))) == ["picture"]
+
+    doc = leer(lienzo(rectangulo(0, 0, 200, 200, shape="ellipse", bg="#0B3B5C")))
+    pintadas = canvas.parts(doc, lambda name: None)
+    assert pintadas[0], "el circulo tiene que traer su imagen"
+    from io import BytesIO
+
+    from PIL import Image
+    with Image.open(BytesIO(pintadas[0])) as hecha:
+        medio = hecha.getpixel((hecha.width // 2, hecha.height // 2))
+        esquina = hecha.getpixel((2, 2))
+    assert medio[2] > 60 and medio[0] < 60, medio       # el centro, pintado
+    assert esquina == (255, 255, 255), esquina          # la esquina, la hoja
+
+
+def test_una_figura_inventada_es_un_rectangulo():
+    leido = leer(lienzo(rectangulo(0, 0, 100, 100, shape="<script>")))
+    assert leido["items"][0]["shape"] == "rect"
+
+
+def test_lo_girado_ocupa_mas_y_eso_es_lo_que_manda():
+    """La caja que se arrastra no cambia; la huella si, y es la que decide."""
+    recta = imagen(100, 100, 200, 100)
+    torcida = imagen(100, 100, 200, 100, rot=90)
+    assert canvas.bounds(leer(lienzo(recta))["items"][0])["w"] == 200
+    girada = canvas.bounds(leer(lienzo(torcida))["items"][0])
+    assert (girada["w"], girada["h"]) == (100, 200)
+    assert girada["x"] == 150 and girada["y"] == 50
+
+    # Dos cosas que no se tocan derechas, se tocan al girar una.
+    quieto = lienzo(imagen(20, 20, 200, 40), texto(20, 80, w=200, h=40))
+    assert tipos(quieto) == ["picture", "front"]
+    movido = lienzo(imagen(20, 20, 200, 40, rot=80), texto(20, 80, w=200, h=40))
+    assert tipos(movido) == ["backdrop"]
+
+
+def test_lo_que_se_sale_al_girar_no_se_guarda():
+    dentro = leer(lienzo(imagen(200, 100, 200, 100), h=300))
+    assert "bounds" not in canvas.problems(dentro, owns=lambda n: True)
+    fuera = leer(lienzo(imagen(200, 20, 200, 100, rot=90), h=300))
+    assert "bounds" in canvas.problems(fuera, owns=lambda n: True)
+    assert leer(lienzo(imagen(20, 20, 100, 100, rot=725)))["items"][0]["rot"] == 5
+
+
+def test_el_texto_no_gira():
+    leido = leer(lienzo(texto(20, 20, rot=45), boton(20, 120, rot=45)))
+    assert all("rot" not in one for one in leido["items"])
+
+
+def test_las_fuentes_nuevas_valen_y_las_de_fuera_no():
+    viejas = ("Arial", "Helvetica", "Verdana", "Tahoma", "Trebuchet MS",
+              "Georgia", "Times New Roman", "Courier New")
+    for nombre in ("Palatino", "Garamond", "Lucida Sans", "Century Gothic"):
+        assert "font" not in canvas.problems(leer(lienzo(texto(20, 20, font=nombre))))
+        pila = canvas.FONTS[nombre]
+        # Quien no la tenga (Android, por ejemplo) cae en una de las de
+        # siempre, no en una cualquiera.
+        assert any(una in pila for una in viejas), pila
+        assert pila.rsplit(",", 1)[-1].strip() in ("serif", "sans-serif", "monospace")
+    assert "font" in canvas.problems(leer(lienzo(texto(20, 20, font="Comic Sans MS"))))
+
+
+def test_lo_girado_se_pinta_girado():
+    """El giro se hornea en la imagen del grupo: ningun lector de correo
+    entiende una transformacion."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    alto = lienzo(rectangulo(200, 100, 200, 60, shape="rect", rot=45, bg="#0B3B5C"), h=400)
+    doc = leer(alto)
+    grupo = canvas.groups(doc)[0]
+    # A 45 grados, una banda de 200x60 ocupa un cuadrado de 184: mas alto que
+    # su caja y un poco mas angosto.
+    assert (grupo["w"], grupo["h"]) == (184, 184)
+    pintada = canvas.parts(doc, lambda name: None)[0]
+    assert pintada
+    with Image.open(BytesIO(pintada)) as hecha:
+        medio = hecha.getpixel((hecha.width // 2, hecha.height // 2))
+        esquina = hecha.getpixel((2, 2))
+    assert medio[2] > 60 and medio[0] < 60, medio    # el centro, pintado
+    assert esquina == (255, 255, 255), esquina       # la esquina, la hoja

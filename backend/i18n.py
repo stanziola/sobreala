@@ -1091,7 +1091,7 @@ TEXTS = {
     "canvas_add_text": "Texto",
     "canvas_add_button": "Botón",
     "canvas_add_image": "Imagen",
-    "canvas_add_shape": "Rectángulo",
+    "canvas_add_shape": "Geometría",
     "canvas_image_hint": "JPG, PNG, GIF o WebP, hasta {mb} MB. Entra debajo de "
                          "lo último, a la mitad del ancho. Los bordes "
                          "transparentes se recortan solos.",
@@ -1100,11 +1100,23 @@ TEXTS = {
     "canvas_marks_need": "Primero haz doble clic en un texto, o pon el cursor "
                          "en el texto del botón.",
     "canvas_keys": "Flechas para mover (con Mayús, de a 10). Suprimir para "
-                   "borrar. Ctrl+Z deshace y Ctrl+Y rehace.",
+                   "borrar. Ctrl+Z deshace y Ctrl+Y rehace. Ctrl+C, Ctrl+V y "
+                   "Ctrl+D para copiar, pegar y duplicar.",
     "canvas_props_none": "Haz clic en algo para cambiarlo. Doble clic en un "
-                         "texto para escribir.",
+                         "texto para escribir. Con Mayús pulsas varios, y "
+                         "arrastrando sobre la hoja los encierras.",
+    "canvas_rights": "Sube solo imágenes de las que tengas derechos: respondes "
+                     "por ellas. También puedes pegar una con Ctrl+V.",
     "canvas_page_bg": "Color de la hoja",
     "canvas_shape_bg": "Color",
+    "canvas_shape_kind": "Figura",
+    "canvas_shape_rect": "Rectángulo",
+    "canvas_shape_ellipse": "Círculo",
+    "canvas_rot": "Giro",
+    "canvas_rot_zero": "Enderezar",
+    "canvas_shape_tip": "El círculo viaja como imagen: el correo no sabe "
+                        "dibujarlo, y eso suma a la parte del correo que es "
+                        "imagen.",
     "canvas_image_href": "Enlace al pulsarla (opcional)",
     "canvas_image_alt": "Descripción",
     "canvas_image_alt_hint": "Lo que se lee si la imagen no carga",
@@ -1143,6 +1155,29 @@ TEXTS = {
     "canvas_uploading": "Subiendo la imagen…",
     "canvas_upload_failed": "No se pudo subir la imagen. Prueba otra vez.",
     "canvas_max_items": "Caben hasta {n} elementos.",
+
+    # Varios elegidos a la vez: moverlos juntos, alinearlos y agruparlos.
+    "canvas_many": "{n} elementos elegidos",
+    "canvas_group": "Agrupar",
+    "canvas_ungroup": "Desagrupar",
+    "canvas_group_hint": "Agrupar es para moverlos juntos. No cambia cómo se "
+                         "arma el correo: eso lo deciden las cajas que se "
+                         "enciman.",
+    # Cortas a propósito: van en fila debajo de «Alinear», y con el nombre
+    # largo la barra se llenaba de botones que no cabían.
+    "canvas_align_many": "Alinear",
+    "canvas_align_l": "Izquierda",
+    "canvas_align_cx": "Centro",
+    "canvas_align_r": "Derecha",
+    "canvas_align_t": "Arriba",
+    "canvas_align_cy": "Medio",
+    "canvas_align_b": "Abajo",
+    "canvas_spread_x": "Repartir ancho",
+    "canvas_spread_y": "Repartir alto",
+    "canvas_duplicate": "Duplicar",
+    "canvas_copied": "Copiado. Pégalo con Ctrl+V, aquí o en otra plantilla.",
+    "canvas_paste_url": "Eso es la dirección de una imagen, no la imagen. "
+                        "Descárgala y súbela con el botón de imagen.",
     "canvas_name_needed": "Ponle un nombre para reconocerla después.",
     "canvas_leave": "Tienes cambios sin guardar.",
     "canvas_preview_wait": "La vista previa aparece aquí en un momento.",

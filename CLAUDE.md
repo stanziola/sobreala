@@ -596,10 +596,33 @@ ninguna otra nombra.
 
 `/plantillas/crear` y `/plantillas/lienzo/<id>`, con `services/canvas.py` y
 `static/js/canvas.js`. **Es una sola hoja de 600 px que crece hacia abajo**:
-texto, botón, imagen y rectángulo se ponen donde se quiera, se mueven, cambian
+texto, botón, imagen y geometría se ponen donde se quiera, se mueven, cambian
 de tamaño y de estilo, y se deshace y rehace. Se guarda **el lienzo en JSON con
 sus coordenadas** (`source: "canvas"`, `{v: 2, h, bg, items}`), no el HTML: el
 correo se arma al enviar.
+
+**Se eligen varios a la vez** con Mayús+clic o arrastrando un recuadro sobre la
+hoja, y entonces se mueven juntos, se alinean, se reparten, se duplican y se
+borran de una vez. **Agrupar** escribe `g` en cada elemento y viaja con la
+pieza, así que tocar uno vuelve a elegir el grupo entero al reabrirla. Es lo
+único de todo esto que **no cambia cómo se arma el correo**: las celdas las
+siguen decidiendo las cajas que se enciman, así que dos cosas agrupadas pero
+separadas caen en celdas distintas. `groups()` y `to_html()` ignoran `g`.
+
+**Se copia y se pega** con Ctrl+C, Ctrl+X, Ctrl+V y Ctrl+D. Lo copiado va al
+portapapeles **como texto nuestro**, así que se pega también en otra plantilla o
+en otra pestaña; si el navegador no deja escribirlo, queda en una variable y
+sirve dentro de esa página. Lo pegado entra por `parse()` como todo lo demás: el
+servidor no se fía de ello más que de lo que escribe el editor.
+
+**Una foto se puede pegar del portapapeles**, y sube por la misma ruta que el
+botón (`/plantillas/lienzo/imagen`): se revisa por lo que trae dentro, se achica
+y cuenta contra el tope de 20. Si el portapapeles solo trae **una dirección
+web**, se pide descargarla y subirla: **el servidor nunca va a buscar una
+imagen a otro sitio**, que sería dejarlo pidiendo cualquier cosa a cualquier
+dirección. De los derechos de autor no hay detección posible: lo que hay es la
+línea que lo dice al subir, los términos §7 y que cada imagen queda en `images`
+con su cuenta y su fecha, que es lo que permite retirarla si alguien reclama.
 
 **Hubo diapositivas y se quitaron** (septiembre de 2026). `canvas.read()`
 convierte lo guardado así: las apila en una hoja, y el color de cada una pasa a
@@ -630,10 +653,29 @@ Gmail y a Outlook en el teléfono:
 | Grupo | Cómo sale |
 |---|---|
 | Un texto o un botón solo | Su celda |
-| Un rectángulo, con o sin texto encima, que llena el grupo | **Una celda de color**, sin imagen |
+| Un rectángulo sin girar, con o sin texto encima, que llena el grupo | **Una celda de color**, sin imagen |
 | Fotos o rectángulos sin nada encima | **Una imagen de verdad (`<img>`)**, fundida al doble |
 | Fotos con texto o botones encima | **Un fondo de esa zona**, con el texto dentro |
 
+- **La geometría son dos figuras: rectángulo y círculo** (un óvalo si la caja
+  no es cuadrada). El rectángulo sale como celda de color cuando llena su
+  grupo; **el círculo no puede**, porque Outlook de escritorio ignora
+  `border-radius` y lo dibujaría cuadrado, así que se pinta en la imagen del
+  grupo. Eso tiene un costo que conviene saber: un círculo viaja como imagen y
+  suma a la mitad de superficie que la revisión permite. Una línea no hace
+  falta: es un rectángulo delgado.
+- **Las fotos y las figuras giran** (`rot`, en grados y hacia la derecha, como
+  en CSS); **el texto y los botones no**, porque girarlos obligaría a
+  convertirlos en imagen y ahí se pierden `*|NOMBRE|*`, la lectura con las
+  imágenes bloqueadas y los 300 caracteres de texto real que pide la revisión.
+  Para el efecto de siempre queda **una figura girada detrás del texto
+  derecho**. El giro se hornea en la imagen del grupo (`_paint()` gira con
+  Pillow al revés que CSS, que cuenta al contrario).
+- **La caja que se arrastra no cambia al girar; la huella sí** (`bounds()`), y
+  es la huella la que decide qué se encima con qué, qué se sale de la hoja y
+  cuánta superficie es imagen. Por eso **girar junta cosas**: lo que toque esa
+  huella cae en el mismo grupo y sale como una sola imagen, que es justo lo que
+  hace que una foto torcida sobre una banda de color salga bien.
 - **Una foto es un `<img>` y no un fondo.** Antes cada foto era el fondo de su
   diapositiva: en Gmail del teléfono el fondo se escalaba por su cuenta y la
   foto salía corrida respecto al texto. Un `<img>` en su celda baja con lo de
@@ -671,9 +713,15 @@ puede evitar.
 mide 600 fijos, y con ellas el teléfono dejaría de achicarlo y saldría cortado.
 
 **El servidor no se fía del JSON**: `parse()` lo rehace con solo lo que conoce y
-`problems()` exige fuentes de la lista (las que existen en todos los correos),
-letra de 14 a 72 px, colores `#RRGGBB`, enlaces `https://` o `mailto:`, cada cosa
-dentro de la hoja, e imágenes de esa cuenta. El texto se guarda como texto y sale
+`problems()` exige fuentes de la lista (`FONTS`: las ocho de siempre más
+Palatino, Garamond, Lucida Sans y Century Gothic, cada una con un respaldo
+dentro de las ocho, porque en Android no están). **No se importan fuentes**:
+Gmail y Outlook ignoran `@font-face`, así que la letra subida se vería en el
+editor y en Apple Mail, y en los demás caería a otra de medidas distintas que
+se sale de su celda; para la letra de la marca queda un titular como imagen con
+su texto alternativo. Además exige letra de 14 a 72 px, colores `#RRGGBB`,
+enlaces `https://` o `mailto:`, **la huella de cada cosa dentro de la hoja** e
+imágenes de esa cuenta. El texto se guarda como texto y sale
 escapado. La vista previa usa el mismo `to_html()` que el envío, con las
 imágenes dentro de la respuesta para no guardar nada por mirar.
 

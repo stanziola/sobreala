@@ -79,9 +79,23 @@ FONTS = {
     "Georgia": "Georgia, 'Times New Roman', serif",
     "Times New Roman": "'Times New Roman', Times, serif",
     "Courier New": "'Courier New', Courier, monospace",
+    # Las cuatro de abajo no están en Android, y por eso cada una cae en una
+    # de las de arriba: quien no la tenga ve una de medidas parecidas, no una
+    # cualquiera. No se importan fuentes: Gmail y Outlook ignoran @font-face,
+    # así que la letra subida se vería aquí y no allá, y el texto se saldría
+    # de su celda.
+    "Palatino": "Palatino, 'Palatino Linotype', 'Book Antiqua', Georgia, serif",
+    "Garamond": "Garamond, 'Apple Garamond', Baskerville, Georgia, serif",
+    "Lucida Sans": "'Lucida Sans Unicode', 'Lucida Grande', Verdana, sans-serif",
+    "Century Gothic": "'Century Gothic', 'URW Gothic', 'Trebuchet MS', sans-serif",
 }
 ALIGNS = ("left", "center", "right")
 FITS = ("cover", "contain")
+# Un rectángulo, o un círculo (un óvalo si la caja no es cuadrada). El
+# rectángulo puede salir como celda de color; el círculo no, porque Outlook de
+# escritorio ignora `border-radius` y lo dibujaría cuadrado, así que se pinta
+# en la imagen del grupo.
+SHAPES = ("rect", "ellipse")
 
 COLOR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 # Un enlace de botón o de imagen: una página segura o un correo. Ni
@@ -120,6 +134,13 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         return None
     one: dict[str, Any] = {"t": kind, "x": _int(raw.get("x")), "y": _int(raw.get("y")),
                            "w": _int(raw.get("w"), 100), "h": _int(raw.get("h"), 40)}
+    # El grupo del editor: lo que se mueve junto. No cambia cómo se arma el
+    # correo, que lo siguen decidiendo las cajas que se enciman, así que
+    # `groups()` y `to_html()` lo ignoran. Se guarda para que sobreviva a
+    # cerrar la pieza.
+    tie = _int(raw.get("g"), 0)
+    if 1 <= tie <= 999:
+        one["g"] = tie
     if kind == "image":
         one["name"] = str(raw.get("name") or "")[:80]
         one["fit"] = raw.get("fit") if raw.get("fit") in FITS else "cover"
@@ -131,10 +152,15 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         one["r"] = round(ratio, 4) if 0.05 <= ratio <= 20 else 0
         one["href"] = str(raw.get("href") or "").strip()[:HREF_MAX + 1]
         one["alt"] = " ".join(_clean(raw.get("alt"), ALT_MAX).split())[:ALT_MAX]
+        # Grados, como en CSS: hacia la derecha. El texto y el botón no giran,
+        # que girarlos sería convertirlos en imagen.
+        one["rot"] = _int(raw.get("rot")) % 360
         return one
     if kind == "shape":
         one["bg"] = _color(raw.get("bg"), "#E0F2FE")
         one["radius"] = min(max(_int(raw.get("radius"), 0), 0), 60)
+        one["shape"] = raw.get("shape") if raw.get("shape") in SHAPES else "rect"
+        one["rot"] = _int(raw.get("rot")) % 360
         return one
     one["text"] = _clean(raw.get("text"), TEXT_MAX if kind == "text" else BUTTON_MAX)
     one["font"] = str(raw.get("font") or "Arial")
@@ -214,8 +240,31 @@ def read(data: Any) -> dict[str, Any] | None:
 
 # ---------------------------------------------------------------- los grupos
 
+def bounds(one: dict[str, Any]) -> dict[str, int]:
+    """Lo que ocupa de verdad: su caja, o la que abarca su giro.
+
+    La caja que se arrastra en el editor (`x/y/w/h`) no cambia al girar: lo que
+    cambia es la huella, y es la huella la que decide qué se encima con qué, qué
+    se sale de la hoja y cuánta superficie es imagen. Un texto o un botón nunca
+    giran, así que devuelven la suya.
+    """
+    angle = one.get("rot") or 0
+    if not angle:
+        return one
+    import math
+
+    rad = math.radians(angle)
+    cos, sin = abs(math.cos(rad)), abs(math.sin(rad))
+    wide = round(one["w"] * cos + one["h"] * sin)
+    tall = round(one["w"] * sin + one["h"] * cos)
+    return {"x": round(one["x"] + (one["w"] - wide) / 2),
+            "y": round(one["y"] + (one["h"] - tall) / 2),
+            "w": wide, "h": tall}
+
+
 def _touch(a: dict[str, Any], b: dict[str, Any]) -> bool:
     """Si dos cajas se enciman. Tocarse por el borde no cuenta."""
+    a, b = bounds(a), bounds(b)
     return (a["x"] < b["x"] + b["w"] and b["x"] < a["x"] + a["w"]
             and a["y"] < b["y"] + b["h"] and b["y"] < a["y"] + a["h"])
 
@@ -232,11 +281,13 @@ def overlaps(doc: dict[str, Any]) -> list[int]:
 
 
 def _box(members: list[dict[str, Any]]) -> dict[str, int]:
-    x = min(one["x"] for one in members)
-    y = min(one["y"] for one in members)
+    """La caja que abarca a todos, contando lo que crece al girar."""
+    boxes = [bounds(one) for one in members]
+    x = min(one["x"] for one in boxes)
+    y = min(one["y"] for one in boxes)
     return {"x": x, "y": y,
-            "w": max(one["x"] + one["w"] for one in members) - x,
-            "h": max(one["y"] + one["h"] for one in members) - y}
+            "w": max(one["x"] + one["w"] for one in boxes) - x,
+            "h": max(one["y"] + one["h"] for one in boxes) - y}
 
 
 def groups(doc: dict[str, Any]) -> list[dict[str, Any]]:
@@ -281,6 +332,8 @@ def groups(doc: dict[str, Any]) -> list[dict[str, Any]]:
         if not backs:
             kind = "front"
         elif (len(backs) == 1 and backs[0]["t"] == "shape"
+              and backs[0].get("shape", "rect") == "rect"
+              and not backs[0].get("rot")
               and _box(backs) == box):
             kind = "color"
         elif fronts:
@@ -328,8 +381,11 @@ def problems(doc: dict[str, Any] | None, *, owns=lambda name: True) -> list[str]
     if len(doc["items"]) > MAX_ITEMS:
         add("too_many_items")
     for one in doc["items"]:
-        if (one["x"] < 0 or one["y"] < 0 or one["w"] < MIN_BOX or one["h"] < MIN_BOX
-                or one["x"] + one["w"] > WIDTH or one["y"] + one["h"] > doc["h"]):
+        # La caja es la que se arrastra; la huella es lo que ocupa girada, y es
+        # la que no puede salirse de la hoja.
+        seat = bounds(one)
+        if (seat["x"] < 0 or seat["y"] < 0 or one["w"] < MIN_BOX or one["h"] < MIN_BOX
+                or seat["x"] + seat["w"] > WIDTH or seat["y"] + seat["h"] > doc["h"]):
             add("bounds")
         if one["t"] == "shape":
             continue
@@ -385,9 +441,17 @@ def _paint(group: dict[str, Any], page: str, load, scale: int):
         spot = ((one["x"] - group["x"]) * scale, (one["y"] - group["y"]) * scale)
         box = (max(one["w"] * scale, 1), max(one["h"] * scale, 1))
         if one["t"] == "shape":
-            ImageDraw.Draw(ground).rounded_rectangle(
-                (spot[0], spot[1], spot[0] + box[0] - 1, spot[1] + box[1] - 1),
-                radius=one["radius"] * scale, fill=one["bg"])
+            # En su propia hoja transparente, para poder girarla. Sin giro se
+            # pega igual: lo que se ve es lo mismo.
+            piece = Image.new("RGBA", box, (0, 0, 0, 0))
+            pen = ImageDraw.Draw(piece)
+            corners = (0, 0, box[0] - 1, box[1] - 1)
+            if one.get("shape") == "ellipse":
+                pen.ellipse(corners, fill=one["bg"])
+            else:
+                pen.rounded_rectangle(corners, radius=one["radius"] * scale,
+                                      fill=one["bg"])
+            _drop(ground, piece, one, spot, box)
             continue
         raw = load(one["name"])
         if not raw:
@@ -400,8 +464,25 @@ def _paint(group: dict[str, Any], page: str, load, scale: int):
                     spot[1] + (box[1] - picture.height) // 2)
         else:
             picture = ImageOps.fit(picture, box, Image.LANCZOS)
-        ground.paste(picture, spot, picture)
+        _drop(ground, picture, one, spot, box)
     return ground
+
+
+def _drop(ground, piece, one: dict[str, Any], spot, box) -> None:
+    """Pegar una pieza en su sitio, girada sobre su centro si lo lleva.
+
+    Se gira al revés que en PIL, que cuenta al contrario que CSS, y se pega
+    centrada en la caja de siempre: lo que crece al girar son las esquinas, que
+    es justo lo que `bounds()` ya le reservó al grupo.
+    """
+    from PIL import Image
+
+    angle = one.get("rot") or 0
+    if angle:
+        middle = (spot[0] + box[0] / 2, spot[1] + box[1] / 2)
+        piece = piece.rotate(-angle, resample=Image.BICUBIC, expand=True)
+        spot = (round(middle[0] - piece.width / 2), round(middle[1] - piece.height / 2))
+    ground.paste(piece, (int(spot[0]), int(spot[1])), piece)
 
 
 def parts(doc: dict[str, Any], load) -> list[bytes | None]:
@@ -774,7 +855,7 @@ def _covered(doc: dict[str, Any], cell: int = 10) -> int:
     color no cuenta. Se mide en casillas de 10 px.
     """
     seen: set[tuple[int, int]] = set()
-    boxes = [one for one in doc["items"] if one["t"] == "image"]
+    boxes = [bounds(one) for one in doc["items"] if one["t"] == "image"]
     boxes += [group for group in groups(doc) if group["kind"] == "picture"]
     for one in boxes:
         for gx in range(max(one["x"], 0) // cell, min(one["x"] + one["w"], WIDTH) // cell):
