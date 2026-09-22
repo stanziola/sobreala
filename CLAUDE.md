@@ -117,6 +117,7 @@ panamails/
     │   │                   # de agua y la dirección postal
     │   ├── imaging.py      # achica y reconoce las imágenes de las piezas
     │   ├── ses.py
+    │   ├── canvas_pdf.py   # la pieza del lienzo, bajada como PDF
     │   ├── ses_events.py   # a dónde va cada aviso de SES: evento, supresión
     │   │                   # o la fila de mail_log
     │   └── payments/
@@ -644,12 +645,27 @@ primer correo** (`designs.upgrade_canvas()`), porque sus imágenes guardadas era
 de otra forma.
 
 **El alto de la hoja lo pone quien la usa, y nada más.** Se escribe en la barra
-de cuando no hay nada elegido o se arrastra el borde de abajo; **insertar,
-mover y cambiar de tamaño ya no la estiran**. Antes crecía sola y agregar un
-texto al final alargaba la página sin haberlo pedido. Lo que se inserta busca
-sitio dentro (debajo de lo último, o el primer hueco libre) y si no hay, no
-entra y se dice. Lo escrito se limita entre lo que hay dentro y los 4,000 px, y
-cuando no cabe se queda en el mínimo **y lo dice**.
+de cuando no hay nada elegido, se arrastra el borde de abajo o se pulsa
+**«Ajustar al contenido»**, que la pega a lo último que haya dentro; **insertar,
+mover y cambiar de tamaño no la estiran**. Antes crecía sola y agregar un
+texto al final alargaba la página sin haberlo pedido. Lo escrito se limita entre
+lo que hay dentro y los 4,000 px, y cuando no cabe se queda en el mínimo **y lo
+dice**.
+
+Ese botón es lo que quita el blanco del final del correo: `to_html()` cierra la
+hoja con una fila de relleno del alto que sobra (`_gap_row`), así que una pieza
+de 600 px con el contenido acabado en 200 mandaba 400 px en blanco justo antes
+del botón de la baja. **El relleno se sigue dibujando**: quien quiera aire al
+final lo tiene, y quien no, lo pega de un clic.
+
+**Lo que se inserta entra arriba de la hoja**, que es donde se está mirando, y
+de ahí se mueve a mano. Si ya hay algo justo ahí, lo siguiente baja 20 px, como
+en un editor de diapositivas, y vuelve arriba al llegar al borde. Lo que no
+quepa **se achica al entrar** en vez de rechazarse, y una foto conserva su
+proporción. Antes buscaba un hueco libre mirando solo franjas horizontales: un
+texto pequeño a media hoja invalidaba toda la banda, así que una figura (160 px)
+o una foto (400) no entraban, y el aviso salía arriba del todo de la página,
+fuera de la vista. Los botones de Geometría e Imagen parecían muertos.
 
 Eso deja un caso en el que el editor y el correo no dicen lo mismo, y conviene
 tenerlo presente: **un texto que ya no cabe se ve cortado en el editor** (con su
@@ -687,8 +703,9 @@ Gmail y a Outlook en el teléfono:
   sobre ella: recortar la caja recortaría también sus tiradores.
 - **Las fotos y las figuras giran** con un tirador encima de la caja, como en un
   editor de diapositivas (arrastrar gira, con Mayús de 15 en 15), o escribiendo
-  los grados (`rot`, hacia la derecha como en CSS); **el texto y los botones
-  no**, porque girarlos obligaría a
+  los grados (`rot`, hacia la derecha como en CSS). El tirador lleva dentro
+  **una flecha que cierra un círculo**: un punto blanco y solo no dice qué hace.
+  **El texto y los botones no giran**, porque girarlos obligaría a
   convertirlos en imagen y ahí se pierden `*|NOMBRE|*`, la lectura con las
   imágenes bloqueadas y los 300 caracteres de texto real que pide la revisión.
   Para el efecto de siempre queda **una figura girada detrás del texto
@@ -713,6 +730,16 @@ Gmail y a Outlook en el teléfono:
   leen el enlace. Dentro de un fondo VML no, que Outlook dibuja mal un VML dentro
   de otro. **La letra del texto se repite en un `<span>`**, porque dentro de un
   fondo VML Outlook ignora la de la celda.
+
+**Los tiradores de lo elegido viven en su propia capa** (`.cv-chrome`), encima
+de la hoja y **fuera del elemento**. Dentro no pueden ir: cada caja tiene su
+z-index, así que es su propio contexto de apilado y sus hijos no se escapan de
+él, y el del giro sale 32 px por encima. Hubo un atajo —subir el elemento
+elegido a la capa de arriba— y se quitó: una figura del fondo saltaba delante de
+todo al tocarla, y el editor dejaba de enseñar el orden con el que sale el
+correo. Por lo mismo, **la hoja tiene aire arriba**: sin él, el tirador del giro
+de algo pegado al borde caía debajo de la barra de propiedades, que es de la
+página y gana siempre.
 
 **Los textos y los botones son texto de verdad**: es lo que evita que el correo
 se lea como una foto (de lo que más va a spam), lo que deja funcionar `*|EDAD|*`
@@ -786,10 +813,46 @@ columnas: en la columna angosta del editor no se leían. Salen de una sola lista
 `i18n.CANVAS_KEYS`.
 
 **La vista previa también es una ventana**, y no la columna de al lado: allí se
-veía dos veces lo mismo y le quitaba ancho al lienzo. **Solo se refresca
-mientras está abierta**, y al abrirla; cerrada no se le pide nada al servidor.
-La barra de peso y la revisión antispam se quedan fuera, a la vista: son las que
-no dejan guardar.
+veía dos veces lo mismo y le quitaba ancho al lienzo. Su botón dice
+**«Previsualización»**, que es lo mismo que dice en las prediseñadas y en el
+editor de HTML: los tres leen la misma cadena. **Solo se refresca mientras está
+abierta**, y al abrirla; cerrada no se le pide nada al servidor. La barra de
+peso y la revisión antispam se quedan fuera, a la vista: son las que no dejan
+guardar.
+
+### Bajarse la pieza: PDF y HTML
+
+**Dos botones al lado de Previsualización**, y los dos bajan lo que se está
+viendo. **Van por POST** (`/plantillas/lienzo/pdf` y `/plantillas/lienzo/html`),
+como la vista previa: así se pueden bajar también en una pieza que todavía no se
+ha guardado. Ninguno pasa por el correo de nadie: las marcas `*|NOMBRE|*` se
+quedan escritas, porque lo que se baja es la plantilla.
+
+**El HTML es el correo armado**, el mismo que enseña la vista previa, con su
+sobre y su pie. **Las fotos viajan dentro del archivo** (`data:`), así que se
+abre en cualquier sitio sin depender de que el panel esté en pie. El enlace de
+la baja va inerte y el propio archivo lo dice: el de verdad se inyecta al
+enviar, uno por destinatario (regla 3).
+
+**El PDF se dibuja desde las coordenadas**, con `services/canvas_pdf.py` y
+`reportlab`, el mismo que ya hace el PDF de Estadísticas. Por eso el texto sale
+como texto y se puede copiar; una página de 600 puntos por el alto de la hoja.
+
+- **El PDF solo lo tiene el lienzo**: es el único que guarda coordenadas. Una
+  pieza de HTML subido pediría un dibujante de HTML, que no hay.
+- **Las fuentes caen a las catorce que trae todo PDF**: Arial, Verdana, Tahoma,
+  Trebuchet, Century Gothic y Lucida a Helvetica; Georgia, Times, Palatino y
+  Garamond a Times; Courier New a Courier. Miden distinto, así que **una línea
+  puede partirse en otro sitio que en el correo**.
+- **El PDF no lleva el pie de la baja ni la dirección postal**, que son del
+  correo y no de la pieza; el HTML sí, porque es el correo armado.
+- Las figuras usan **los mismos puntos** que el correo (`canvas.POLYGONS`), y
+  las fotos honran su recorte y su giro. Una imagen de otra cuenta no se
+  dibuja, como en el correo.
+
+**Una imagen (PNG) no**: el servidor no tiene las fuentes del correo, así que
+habría que pintarla en el navegador y serían tres sitios donde se dibuja lo
+mismo. Para las capturas del sitio público ya está `landing/shots.py`.
 
 **El enlace de un botón nace vacío**, con `https://` como marca de agua y no
 escrito dentro: escrito, quien pegaba una dirección acababa con

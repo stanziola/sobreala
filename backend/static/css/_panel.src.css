@@ -727,10 +727,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   border-bottom: 1px solid var(--color-border);
 }
 /* Un correo mide 600 px: se dibuja entero y se achica, sin que el marco reciba
-   clics (la tarjeta entera no es un enlace, los botones sí). */
+   clics (la tarjeta entera no es un enlace, los botones sí). Centrado desde su
+   propio medio: achicándolo desde la esquina se quedaba pegado a la izquierda
+   en una tarjeta más ancha que los 228 px que mide ya achicado. */
 .card-piece__view iframe {
   width: 600px; height: 700px; border: 0; pointer-events: none;
-  transform: scale(.38); transform-origin: 0 0;
+  position: relative; left: 50%; margin-left: -300px;
+  transform: scale(.38); transform-origin: top center;
 }
 .card-piece__body { display: grid; gap: 6px; padding: 12px 14px 14px; }
 .card-piece__name { overflow-wrap: anywhere; }
@@ -822,8 +825,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .props__sep { width: 1px; align-self: stretch; background: var(--color-border); }
 .props__row .field-label { margin: 0; align-self: center; }
 
-.stage { display: grid; justify-items: start; margin-top: 14px; overflow-x: auto;
-         padding: 8px 8px 12px; }
+/* `safe` y no `center` a secas: con `overflow-x`, en una ventana más angosta
+   que la hoja el centrado normal corta el borde izquierdo.
+   El aire de arriba es el sitio del tirador del giro, que sale 32 px por
+   encima de la caja: sin él, el de un elemento pegado al borde de arriba caía
+   debajo de la barra de propiedades y no se podía agarrar. */
+.stage { display: grid; justify-items: safe center; margin-top: 14px; overflow-x: auto;
+         padding: 36px 8px 12px; }
 
 /* La hoja mide lo que mide en el correo: 600 px de ancho. */
 /* `isolation` encierra las capas de dentro: sin eso, un texto o un botón de
@@ -843,10 +851,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
    tiradores. */
 .cv-fill { position: absolute; inset: 0; }
 .cv-item--text, .cv-item--button { z-index: 10; }
-/* Lo elegido va encima de todo: sus tiradores salen fuera de la caja (el del
-   giro, 30 px por encima) y quedaban debajo de un texto o un botón vecino, sin
-   poder agarrarlos. */
-.cv-item.is-sel { z-index: 40; }
+/* Los tiradores de lo elegido, en su propia capa encima de la hoja y no dentro
+   del elemento: los hijos de un `.cv-item` no pueden escaparse de su z-index, y
+   el del giro sale 30 px por encima de la caja. Subir el elemento elegido los
+   dejaba agarrables, pero una figura de atrás saltaba delante de todo al
+   tocarla. Sin ratón para que un clic en el hueco llegue a lo de debajo. */
+.cv-chrome { position: absolute; z-index: 45; pointer-events: none; }
+.cv-chrome .cv-handle, .cv-chrome .cv-turn { pointer-events: auto; }
 /* Sin overflow escondido: taparía los tiradores de las esquinas. */
 .cv-item--button { text-align: center; white-space: nowrap; }
 .cv-item:hover { outline: 1px dashed var(--color-accent); }
@@ -908,12 +919,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   background: var(--color-accent-soft); opacity: .45;
 }
 /* El tirador de giro, encima de la caja y unido a ella por una rayita, como
-   en un editor de diapositivas. */
+   en un editor de diapositivas. Dentro, la flecha que cierra un círculo: un
+   punto blanco y solo no dice qué hace. */
 .cv-turn {
-  position: absolute; left: calc(50% - 8px); top: -30px;
-  width: 16px; height: 16px; border-radius: 50%; cursor: grab;
+  position: absolute; left: calc(50% - 9px); top: -32px;
+  width: 18px; height: 18px; border-radius: 50%; cursor: grab;
+  display: flex; align-items: center; justify-content: center;
   background: #FFFFFF; border: 2px solid var(--color-accent); z-index: 21;
+  color: var(--color-accent);
 }
+.cv-turn svg { display: block; }
 .cv-turn::before {
   content: ""; position: absolute; left: 50%; top: 100%;
   width: 2px; height: 12px; background: var(--color-accent);

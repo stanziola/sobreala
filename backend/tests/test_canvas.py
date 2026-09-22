@@ -758,3 +758,140 @@ def test_las_figuras_nuevas_se_pintan_y_la_linea_sigue_siendo_color():
             esquina = hecha.getpixel((2, 2))
         assert medio[2] > 60 and medio[0] < 60, (figura, medio)
         assert esquina == (255, 255, 255), (figura, esquina)
+
+
+# ------------------------------------------------------- bajarse la pieza en PDF
+
+def pedir_pdf(browser, doc, nombre="Asamblea anual"):
+    return browser.post("/plantillas/lienzo/pdf", data={
+        "csrf_token": csrf(browser), "nombre": nombre,
+        "lienzo": json.dumps(doc)})
+
+
+def test_el_pdf_sale_del_tamano_de_la_hoja(client, database, outbox):
+    browser = inside(client)
+    respuesta = pedir_pdf(browser, lienzo(texto(40, 40, text="Asamblea"), h=420))
+    assert respuesta.status_code == 200
+    assert respuesta.mimetype == "application/pdf"
+    assert "asamblea-anual.pdf" in respuesta.headers["Content-Disposition"].lower()         or "Asamblea anual.pdf" in respuesta.headers["Content-Disposition"]
+    raw = respuesta.get_data()
+    assert raw.startswith(b"%PDF-")
+    # La página mide los 600 del correo por el alto de la hoja.
+    assert b"/MediaBox [ 0 0 600 420 ]" in raw
+
+
+def test_el_pdf_dibuja_las_seis_figuras_giradas_y_no_se_rompe():
+    from services import canvas_pdf
+
+    for figura in canvas.SHAPES:
+        doc = leer(lienzo(rectangulo(20, 20, 160, 120, shape=figura, rot=40),
+                          texto(220, 40, w=300)))
+        raw = canvas_pdf.to_pdf(doc, lambda name: None)
+        assert raw.startswith(b"%PDF-"), figura
+
+
+def test_el_pdf_lleva_la_foto_y_respeta_el_recorte(client, database, outbox):
+    browser = inside(client)
+    nombre = subir_foto(browser).get_json()["name"]
+    entera = pedir_pdf(browser, lienzo(imagen(0, 0, 600, 200, name=nombre),
+                                       texto(40, 220))).get_data()
+    recortada = pedir_pdf(browser, lienzo(
+        imagen(0, 0, 600, 200, name=nombre, crop=[0.25, 0.25, 0.5, 0.5]),
+        texto(40, 220))).get_data()
+    assert entera.startswith(b"%PDF-") and recortada.startswith(b"%PDF-")
+    # Dos fotos distintas: el recorte no se ignora.
+    assert entera != recortada
+
+
+def test_la_foto_de_otra_cuenta_no_se_dibuja_en_el_pdf(client, database, outbox):
+    ana = inside(client)
+    de_ana = subir_foto(ana).get_json()["name"]
+
+    bea = inside(client, "bea@ejemplo.com")
+    con = pedir_pdf(bea, lienzo(imagen(0, 0, 600, 200, name=de_ana),
+                                texto(40, 220))).get_data()
+    sin = pedir_pdf(bea, lienzo(texto(40, 220))).get_data()
+    # La foto se salta, como en el correo: el PDF no la trae dentro.
+    assert len(con) < len(sin) + 400
+
+
+def test_el_pdf_pide_sesion_y_testigo(client, database, outbox):
+    assert other(client).post("/plantillas/lienzo/pdf", data={
+        "lienzo": json.dumps(lienzo(texto(40, 40)))}).status_code in (302, 403)
+
+    browser = inside(client)
+    assert browser.post("/plantillas/lienzo/pdf", data={
+        "csrf_token": "no", "lienzo": json.dumps(lienzo(texto(40, 40)))
+    }).status_code == 403
+    assert browser.post("/plantillas/lienzo/pdf", data={
+        "csrf_token": csrf(browser), "lienzo": "{no es json"}).status_code == 400
+
+
+def test_la_letra_del_pdf_cae_en_una_de_las_catorce():
+    from services import canvas_pdf
+
+    # Todas las del lienzo tienen a dónde caer, y la negrita cursiva existe.
+    for name in canvas.FONTS:
+        cursiva = canvas_pdf.face_of({"font": name, "bold": True, "italic": True})
+        assert cursiva
+        assert canvas_pdf.face_of({"font": name})
+
+
+def test_el_pdf_parte_las_lineas_al_ancho_de_la_caja():
+    from services import canvas_pdf
+
+    largo = "palabra " * 40
+    lineas = canvas_pdf.wrap(largo, "Helvetica", 16, 200)
+    assert len(lineas) > 1
+    # Los saltos escritos se respetan tal cual.
+    assert canvas_pdf.wrap("uno\n\ndos", "Helvetica", 16, 400) == ["uno", "", "dos"]
+
+
+def pedir_html(browser, doc, nombre="Asamblea anual"):
+    return browser.post("/plantillas/lienzo/html", data={
+        "csrf_token": csrf(browser), "nombre": nombre,
+        "lienzo": json.dumps(doc)})
+
+
+def test_la_pieza_se_baja_tambien_como_html(client, database, outbox):
+    browser = inside(client)
+    respuesta = pedir_html(browser, lienzo(texto(40, 40, text="Asamblea anual")))
+    assert respuesta.status_code == 200
+    assert respuesta.mimetype == "text/html"
+    assert "attachment" in respuesta.headers["Content-Disposition"]
+    assert ".html" in respuesta.headers["Content-Disposition"]
+    salida = respuesta.get_data(as_text=True)
+    assert "Asamblea anual" in salida
+    # Es el correo armado: lleva su sobre y el pie de la baja.
+    assert "<table" in salida and "suscripción" in salida
+
+
+def test_el_html_bajado_lleva_las_fotos_dentro(client, database, outbox):
+    browser = inside(client)
+    nombre = subir_foto(browser).get_json()["name"]
+    salida = pedir_html(browser, lienzo(imagen(0, 0, 600, 200, name=nombre),
+                                        texto(40, 220))).get_data(as_text=True)
+    # Nada que ir a buscar al panel: la foto viaja dentro del archivo, y su
+    # dirección en el panel no aparece por ningún lado.
+    assert "data:image/" in salida
+    assert nombre not in salida
+
+
+def test_el_html_bajado_deja_las_marcas_escritas(client, database, outbox):
+    browser = inside(client)
+    salida = pedir_html(browser, lienzo(
+        texto(40, 40, text="Hola *|NOMBRE|*"))).get_data(as_text=True)
+    # Lo que se baja es la plantilla, no el correo de nadie.
+    assert "*|NOMBRE|*" in salida
+
+
+def test_el_html_pide_sesion_y_testigo(client, database, outbox):
+    assert other(client).post("/plantillas/lienzo/html", data={
+        "lienzo": json.dumps(lienzo(texto(40, 40)))}).status_code in (302, 403)
+
+    browser = inside(client)
+    assert browser.post("/plantillas/lienzo/html", data={
+        "csrf_token": "no", "lienzo": json.dumps(lienzo(texto(40, 40)))
+    }).status_code == 403
+    assert browser.post("/plantillas/lienzo/html", data={
+        "csrf_token": csrf(browser), "lienzo": "{no es json"}).status_code == 400

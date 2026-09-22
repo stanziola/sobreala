@@ -21,6 +21,9 @@ en su lista y se editan con el formulario de siempre.
 
 from __future__ import annotations
 
+import re
+import unicodedata
+
 from bson import ObjectId
 from bson.errors import InvalidId
 from flask import (Blueprint, Response, abort, g, jsonify, redirect,
@@ -37,6 +40,7 @@ from models import design as designs
 from models import image as images
 from services import fields as columns
 from services import canvas, html_check, imaging, plans, render
+from services import canvas_pdf as canvas_pdf_service
 from services.security import csrf_ok
 
 bp = Blueprint("designs", __name__)
@@ -691,6 +695,72 @@ def canvas_preview():
                          [canvas.average(raw, doc["bg"]) if raw else None
                           for raw in made], preview=True)
     return Response(filled_for(db, account, email), mimetype="text/html")
+
+
+@bp.route("/plantillas/lienzo/pdf", methods=["POST"])
+def canvas_pdf():
+    """La pieza en un PDF, para guardarla o imprimirla.
+
+    Por POST y no por un enlace **a propósito**: baja lo que se está viendo,
+    también en una pieza que todavía no se ha guardado. Es el mismo reparto que
+    la vista previa.
+
+    Solo el lienzo tiene PDF: es el único que guarda coordenadas. Una pieza de
+    HTML subido pediría un dibujante de HTML, que no hay.
+    """
+    account = signed_in()
+    if account is None or not csrf_ok(request.form.get("csrf_token")):
+        abort(403)
+    db = get_db()
+    doc = canvas.parse(request.form.get("lienzo", ""))
+    if doc is None:
+        abort(400)
+    name = (request.form.get("nombre") or "").strip()[:80]
+    # Solo las imágenes de esta cuenta: `data_of` pregunta con ella.
+    load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
+    made = canvas_pdf_service.to_pdf(doc, load, title=name)
+    return Response(made, mimetype="application/pdf", headers={
+        "Content-Disposition": f'attachment; filename="{file_name(name, "pdf")}"'})
+
+
+@bp.route("/plantillas/lienzo/html", methods=["POST"])
+def canvas_html():
+    """La pieza en un archivo HTML: el correo armado, tal como lo enseña la
+    vista previa.
+
+    **Las fotos van dentro del archivo**, como en la vista previa, así que lo
+    que se baja se abre en cualquier sitio y no depende de que el panel esté en
+    pie. Las marcas `*|NOMBRE|*` se quedan escritas: lo que se baja es la
+    plantilla, no el correo de nadie en concreto.
+    """
+    account = signed_in()
+    if account is None or not csrf_ok(request.form.get("csrf_token")):
+        abort(403)
+    db = get_db()
+    g.email_preview = True
+    doc = canvas.parse(request.form.get("lienzo", ""))
+    if doc is None:
+        abort(400)
+    name = (request.form.get("nombre") or "").strip()[:80]
+    # Solo las imágenes de esta cuenta: `data_of` pregunta con ella.
+    load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
+    made = canvas.parts(doc, load)
+    email = canvas_email(doc, accounts.plan_of(account),
+                         [canvas.data_url(raw) if raw else None for raw in made],
+                         [canvas.average(raw, doc["bg"]) if raw else None
+                          for raw in made], preview=True)
+    return Response(email, mimetype="text/html", headers={
+        "Content-Disposition": f'attachment; filename="{file_name(name, "html")}"'})
+
+
+# Lo que puede ir en el nombre de un archivo sin romper la cabecera ni el disco
+# de nadie. Lo que no, se cae; sin nada legible queda «plantilla».
+FILE_NAME = re.compile(r"[^A-Za-z0-9 ._-]+")
+
+
+def file_name(name: str, ext: str) -> str:
+    clean = FILE_NAME.sub("", unicodedata.normalize("NFKD", name)).strip()
+    return f"{clean or 'plantilla'}.{ext}"
 
 
 # El ancho al que se guardan las fotos del lienzo: al doble de lo que se ven, para

@@ -25,7 +25,8 @@
   var SNAP = 6;
   var FRONT = { text: true, button: true };
   var BACK = { image: true, shape: true };
-  // Cuánto aire se deja debajo de lo último al agregar algo.
+  // El aire de arriba con el que entra lo que se inserta, y el escalón de la
+  // cascada cuando entran varios seguidos.
   var GAP = 20;
 
   var stage = root.querySelector("[data-stage]");
@@ -156,28 +157,10 @@
     if (one.y < 0) one.y = 0;
   }
 
-  /* La hoja **no crece sola**: su alto solo cambia con el tirador de abajo o
-     con el contador de la barra. Lo que se inserta busca sitio dentro, lo que
-     se arrastra topa con el borde, y un texto que ya no cabe se queda cortado
-     y se avisa. */
-
-  /* Dónde cabe algo de este alto, sin mover la hoja. Debajo de lo último si
-     cabe; si no, el primer hueco libre contando desde arriba. `null` es que no
-     hay sitio. */
-  function roomFor(h) {
-    var bottom = lowest();
-    var y = bottom ? bottom + GAP : 40;
-    if (y + h <= doc.h) return y;
-    for (var top = 0; top + h <= doc.h; top += 10) {
-      var libre = true;
-      doc.items.forEach(function (one) {
-        var b = bounds(one);
-        if (top < b.y + b.h && b.y < top + h) libre = false;
-      });
-      if (libre) return top;
-    }
-    return null;
-  }
+  /* La hoja **no crece sola**: su alto solo cambia con el tirador de abajo,
+     con el contador de la barra o con «Ajustar al contenido». Lo que se
+     inserta entra arriba y se acomoda a mano, lo que se arrastra topa con el
+     borde, y un texto que ya no cabe se queda cortado y se avisa. */
 
   /* ------------------------------------------------------------- historia */
 
@@ -284,6 +267,67 @@
   var CORNERS = ["nw", "ne", "sw", "se"];
   var SIDES = ["n", "s", "e", "w"];
 
+  /* La flecha que cierra un círculo: sin ella el tirador del giro es un punto
+     blanco que no dice qué hace. */
+  var TURN_ICON =
+    '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.6" stroke-linecap="round" ' +
+    'stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 3v4h-4"/></svg>';
+
+  /* Los tiradores de lo elegido, en una capa aparte encima de la hoja.
+
+     Dentro del elemento no pueden ir: cada `.cv-item` tiene z-index propio, así
+     que es su propio contexto de apilado y sus hijos no se escapan de él. El
+     tirador del giro sale 30 px por encima de la caja y quedaba debajo de un
+     texto vecino. Subir el elemento elegido lo resolvía, pero entonces una
+     figura de atrás saltaba delante de todo al tocarla y el editor dejaba de
+     enseñar el orden con el que sale el correo. */
+  function chrome(sheet, one, i) {
+    var layer = document.createElement("div");
+    layer.className = "cv-chrome";
+    layer.setAttribute("data-item", i);
+    layerBox(layer, one);
+    var handles = BACK[one.t] ? CORNERS.concat(SIDES) : CORNERS;
+    handles.forEach(function (where) {
+      var h = document.createElement("span");
+      h.className = "cv-handle cv-handle--" + where;
+      h.setAttribute("data-handle", where);
+      layer.appendChild(h);
+    });
+    // El tirador de giro, encima de la caja y solo en lo que gira: las fotos y
+    // las figuras. Un texto no gira, que sería volverlo imagen.
+    if (BACK[one.t]) {
+      var turn = document.createElement("span");
+      turn.className = "cv-turn";
+      turn.setAttribute("data-turn", "");
+      turn.title = S.rotDrag;
+      turn.innerHTML = TURN_ICON;
+      layer.appendChild(turn);
+    }
+    sheet.appendChild(layer);
+  }
+
+  function layerBox(layer, one) {
+    layer.style.left = one.x + "px";
+    layer.style.top = one.y + "px";
+    layer.style.width = one.w + "px";
+    layer.style.height = one.h + "px";
+    layer.style.transform = one.rot ? "rotate(" + one.rot + "deg)" : "";
+  }
+
+  /* Mientras se arrastra no se vuelve a dibujar la hoja entera: se mueve el
+     elemento y, con él, la capa de sus tiradores, que si no se quedaría
+     clavada donde estaba. Devuelve el elemento, o null si no está dibujado. */
+  function repaint(sheet, one, i) {
+    if (!sheet) return null;
+    var el = sheet.querySelector('.cv-item[data-item="' + i + '"]');
+    if (el) paintItem(el, one);
+    var layer = sheet.querySelector('.cv-chrome[data-item="' + i + '"]');
+    if (layer) layerBox(layer, one);
+    return el;
+  }
+
   function render() {
     // Vaciar el lienzo acorta la página un instante y el navegador salta de
     // posición: el segundo clic de un doble clic caería en otra cosa. Se
@@ -307,28 +351,11 @@
       if (isPicked(i)) el.className += " is-sel";
       if (FRONT[one.t]) el.textContent = one.text;
       paintItem(el, one);
-      // Los tiradores son para cambiar el tamaño de uno: con varios elegidos
-      // no se sabría de cuál.
-      if (sel === i) {
-        var handles = BACK[one.t] ? CORNERS.concat(SIDES) : CORNERS;
-        handles.forEach(function (where) {
-          var h = document.createElement("span");
-          h.className = "cv-handle cv-handle--" + where;
-          h.setAttribute("data-handle", where);
-          el.appendChild(h);
-        });
-        // El tirador de giro, encima de la caja y solo en lo que gira: las
-        // fotos y las figuras. Un texto no gira, que sería volverlo imagen.
-        if (BACK[one.t]) {
-          var turn = document.createElement("span");
-          turn.className = "cv-turn";
-          turn.setAttribute("data-turn", "");
-          turn.title = S.rotDrag;
-          el.appendChild(turn);
-        }
-      }
       sheet.appendChild(el);
     });
+    // Los tiradores son para cambiar el tamaño de uno: con varios elegidos
+    // no se sabría de cuál.
+    if (sel !== null && doc.items[sel]) chrome(sheet, doc.items[sel], sel);
     if (cropping !== null) cropLayer(sheet);
     stage.appendChild(sheet);
 
@@ -401,15 +428,36 @@
 
   /* ------------------------------------------------------------ agregar */
 
+  /* Lo que se inserta entra arriba de la hoja, que es donde se está mirando, y
+     de ahí se mueve a mano. Antes buscaba un hueco libre y, si no lo había, no
+     insertaba nada: una figura pide 160 px y una foto puede pedir 400, así que
+     con la hoja medio llena los botones de Geometría e Imagen parecían muertos.
+     Ahora **siempre entra algo**, y la hoja no cambia de alto por ello. */
+  var dropped = 0;          // cuántas van seguidas, para no apilarlas encima
+
   function place(one) {
     if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
-    var y = roomFor(one.h);
-    if (y === null) { say(S.noRoom); return; }
-    one.y = y;
+    // Lo que no quepa se achica al entrar: crear algo que después no se puede
+    // guardar por salirse de la hoja no le sirve a nadie.
+    var room = Math.max(16, doc.h - 2 * GAP);
+    if (one.h > room) {
+      if (one.t === "image" && one.r) one.w = Math.max(16, Math.round(room * one.r));
+      one.h = room;
+    }
+    if (one.w > W) one.w = W;
+    // En cascada, como en un editor de diapositivas: la siguiente entra un
+    // poco más abajo y a la derecha, y se vuelve arriba al llegar al borde de
+    // abajo. Lo ancho no cuenta para eso: una figura ocupa la hoja entera y
+    // reiniciaría la cascada en cada inserción.
+    var step = dropped * GAP;
+    if (GAP + step + one.h > doc.h) { dropped = 0; step = 0; }
+    dropped += 1;
+    one.x = clamp(one.x + step, 0, W - one.w);
+    one.y = clamp(GAP + step, 0, doc.h - one.h);
     doc.items.push(one);
     pick(doc.items.length - 1);
     render(); commit();
-    var el = stage.querySelector('[data-item="' + sel + '"]');
+    var el = stage.querySelector('.cv-item[data-item="' + sel + '"]');
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
   }
 
@@ -548,7 +596,9 @@
       e.preventDefault();
       return;
     }
-    var el = e.target.closest(".cv-item");
+    // La capa de los tiradores también trae su `data-item`: lo de ella es de
+    // lo elegido, así que de ahí en adelante da igual por dónde se agarró.
+    var el = e.target.closest(".cv-item, .cv-chrome");
     if (!el) {
       // Arrastrar sobre la hoja vacía encierra lo que toque el recuadro.
       if (editing) editing.blur();
@@ -617,8 +667,7 @@
       if (e.shiftKey) degrees = Math.round(degrees / 15) * 15;
       turning.rot = ((degrees % 360) + 360) % 360;
       fitRot(turning);
-      var spun = sheet && sheet.querySelector('[data-item="' + drag.i + '"]');
-      if (spun) paintItem(spun, turning);
+      repaint(sheet, turning, drag.i);
       return;
     }
     if (drag.mode.indexOf("crop-") === 0) {
@@ -679,8 +728,7 @@
       drag.many.forEach(function (k, at) {
         doc.items[k].x = drag.starts[at].x + mx;
         doc.items[k].y = drag.starts[at].y + my;
-        var moved = sheet && sheet.querySelector('[data-item="' + k + '"]');
-        if (moved) paintItem(moved, doc.items[k]);
+        repaint(sheet, doc.items[k], k);
       });
 
       if (sheet) guides(sheet, []);
@@ -716,9 +764,8 @@
     one.h = tall;
     if (one.t === "image" && one.fit) delete one.fit;
 
-    var el = sheet && sheet.querySelector('[data-item="' + drag.i + '"]');
+    var el = repaint(sheet, one, drag.i);
     if (el) {
-      paintItem(el, one);
       var bad = badOnes();
       Array.prototype.forEach.call(sheet.querySelectorAll(".cv-item"), function (other) {
         other.classList.toggle("is-bad", !!bad[+other.getAttribute("data-item")]);
@@ -902,9 +949,8 @@
     one[name] = value;
     if (name === "rot") fitRot(one);
     if (one.t === "text") fitText(sel);
-    var el = stage.querySelector('[data-item="' + sel + '"]');
+    var el = repaint(stage, one, sel);
     if (el && name === "text") el.firstChild ? (el.firstChild.nodeValue = value) : (el.textContent = value);
-    if (el) paintItem(el, one);
     // El enlace de una foto cambia lo que se puede encimar: se repinta.
     if (name === "href" && one.t === "image") render();
     commitSoon();
@@ -999,6 +1045,14 @@
       else if (what === "spread-x") spreadPicked("x");
       else if (what === "spread-y") spreadPicked("y");
       else return;
+      render(); commit();
+      return;
+    }
+    // Pegar la hoja a lo que hay dentro. Va antes de pedir un elegido porque
+    // es de la barra de cuando no hay ninguno, y es lo que quita el blanco que
+    // se veía en el correo entre lo último y el botón de la baja.
+    if (what === "fit") {
+      doc.h = clamp(lowest(), L.minHeight, L.maxHeight);
       render(); commit();
       return;
     }
@@ -1331,6 +1385,23 @@
     var opener = document.querySelector('[data-open-dialog="vista-previa"]');
     if (opener) opener.addEventListener("click", function () { sendPreview(); });
   }
+
+  /* Bajarse la pieza, en PDF o en HTML: lo mismo que la vista previa, con su
+     formulario y sin marco. La respuesta es un archivo que el navegador baja,
+     así que la página se queda donde está. */
+  function downloader(button, form) {
+    var send = document.querySelector(button);
+    var papers = document.querySelector(form);
+    if (!send || !papers) return;
+    send.addEventListener("click", function () {
+      var named = saveForm.querySelector("[name=nombre]");
+      papers.querySelector("[name=lienzo]").value = JSON.stringify(doc);
+      papers.querySelector("[name=nombre]").value = named ? named.value : "";
+      papers.submit();
+    });
+  }
+  downloader("[data-canvas-pdf]", "[data-canvas-pdf-form]");
+  downloader("[data-canvas-html]", "[data-canvas-html-form]");
 
   var previewTimer = null;
   function schedulePreview() {

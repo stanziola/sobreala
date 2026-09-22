@@ -42,6 +42,10 @@
     </button>
     <button class="btn btn--small btn--outline" type="button"
             data-open-dialog="vista-previa">{{ t('designs_preview_button') }}</button>
+    <button class="btn btn--small btn--outline" type="button"
+            data-canvas-pdf>{{ t('canvas_pdf') }}</button>
+    <button class="btn btn--small btn--outline" type="button"
+            data-canvas-html>{{ t('canvas_html') }}</button>
     <button class="btn" type="submit">{{ t('designs_save') }}</button>
   </div>
 </form>
@@ -80,7 +84,6 @@
   "pasteUrl": t('canvas_paste_url'),
   "sheetLeast": t('canvas_sheet_least'),
   "cropHow": t('canvas_crop_how'),
-  "noRoom": t('canvas_no_room'),
   "textCut": t('canvas_text_cut'),
   "rotDrag": t('canvas_rot_drag'),
 } %}
@@ -135,6 +138,10 @@
         <label class="props__field props__field--small">{{ t('canvas_sheet_h') }}
           <input type="number" min="{{ limits.minHeight }}" max="{{ limits.maxHeight }}"
                  step="10" data-sheet-h></label>
+        {#- Pega la hoja a lo que hay dentro: el sobrante de abajo sale en el
+            correo como una franja en blanco antes del botón de la baja. -#}
+        <button class="btn btn--small btn--outline" type="button"
+                data-action="fit">{{ t('canvas_fit_content') }}</button>
       </div>
 
       {# Varios a la vez: lo que se puede hacer con un montón, no con uno.
@@ -269,6 +276,26 @@
   <input type="hidden" name="lienzo" value="">
   <input type="hidden" name="contacto" value="">
   <button type="submit">{{ t('designs_preview_button') }}</button>
+</form>
+
+{# El PDF se pide con este otro, y sin marco: la respuesta es un archivo que el
+   navegador baja, así que la página se queda donde está. Por POST y no por un
+   enlace para que baje lo que se está viendo, también antes de guardar. #}
+<form method="post" action="{{ url_for('designs.canvas_pdf') }}"
+      data-canvas-pdf-form hidden>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="lienzo" value="">
+  <input type="hidden" name="nombre" value="">
+  <button type="submit">{{ t('canvas_pdf') }}</button>
+</form>
+
+{# Y el mismo reparto para el HTML: el correo armado, con las fotos dentro. #}
+<form method="post" action="{{ url_for('designs.canvas_html') }}"
+      data-canvas-html-form hidden>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="lienzo" value="">
+  <input type="hidden" name="nombre" value="">
+  <button type="submit">{{ t('canvas_html') }}</button>
 </form>
 
 {# Los atajos del teclado, en dos columnas y con sitio para leerlos. #}

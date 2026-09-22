@@ -1086,7 +1086,7 @@ TEXTS = {
                             "llega su propio dato.",
     "designs_columns_manage": "Las creas y las borras en Contactos →",
     "designs_preview_title": "Vista previa",
-    "designs_preview_button": "Ver cómo queda",
+    "designs_preview_button": "Previsualización",
     "designs_preview_empty": "Llena la plantilla y pulsa «{boton}» para verla "
                              "aquí.",
     # Las dos van inyectadas al enviar y no dentro de la pieza, así que se
@@ -1186,6 +1186,9 @@ TEXTS = {
     "canvas_sheet_h": "Alto de la hoja",
     "canvas_sheet_least": "La hoja no puede quedar por debajo de lo que tiene "
                           "dentro: se quedó en {px} px.",
+    "canvas_fit_content": "Ajustar al contenido",
+    "canvas_pdf": "Descargar PDF",
+    "canvas_html": "Descargar HTML",
     "canvas_shape_bg": "Color",
     "canvas_shape_kind": "Figura",
     "canvas_shape_rect": "Rectángulo",
@@ -1200,8 +1203,6 @@ TEXTS = {
                         "dibujarla, y eso suma a la parte del correo que es "
                         "imagen. El rectángulo y la línea no.",
     "canvas_rot_drag": "Arrastra para girar (con Mayús, de 15 en 15)",
-    "canvas_no_room": "No cabe en la hoja. Hazla más alta con el contador de "
-                      "arriba o arrastrando el borde de abajo.",
     "canvas_text_cut": "Un texto no cabe en la hoja y se ve cortado aquí. En "
                        "el correo sale entero y empuja lo de abajo: hazla más "
                        "alta o acorta el texto.",

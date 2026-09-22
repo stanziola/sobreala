@@ -49,8 +49,14 @@
   {% for one in mine %}
   <li class="card-piece">
     <div class="card-piece__view">
+      {#- `scrolling="no"`: el correo es más alto que el marco y el navegador le
+          dibujaba su barra, que achicada es una rayita gris al lado. Desde
+          fuera no hay otra manera: el desbordamiento lo decide el documento de
+          dentro, y ese es el correo tal cual (ajeno, si el HTML lo subió el
+          cliente). -#}
       <iframe src="{{ url_for('designs.piece_view', raw=one._id) }}" sandbox
-              loading="lazy" tabindex="-1" title="{{ one.name }}"></iframe>
+              scrolling="no" loading="lazy" tabindex="-1"
+              title="{{ one.name }}"></iframe>
     </div>
     <div class="card-piece__body">
       <p class="card-piece__name"><b>{{ one.name }}</b></p>
