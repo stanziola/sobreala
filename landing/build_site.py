@@ -231,13 +231,12 @@ SOCIAL_ICONS = {
     "whatsapp": BRAND_DIR / "social" / "whatsapp" / "01_Glyph" / "01_Digital RGB" / "03_SVG"
                 / "Digital_Glyph_White_RGB_2026.svg",
 }
-# PayPal va a color, que es como se reconoce una marca, y por eso lleva pastilla
-# blanca detrás en el pie: su azul oscuro sobre el azul del pie no se lee, y sus
-# propias normas piden fondo claro. Yappy se queda en blanco porque su kit solo
-# trae la versión "traslucid": el día que haya una a color, se cambia esta línea.
+# Los dos en blanco, porque la franja del pie es del azul de la marca: el azul
+# oscuro de PayPal encima da 2:1 y sus propias normas piden la versión blanca
+# sobre fondos oscuros. Yappy solo tiene la "traslucid", que también es blanca.
 PAYMENT_LOGOS = {
     "yappy": BRAND_DIR / "payments" / "yappy" / "yappy-traslucid-landscape.svg",
-    "paypal": BRAND_DIR / "payments" / "paypal" / "Horizontal Full Color" / "pp_h_rgb.png",
+    "paypal": BRAND_DIR / "payments" / "paypal" / "Horizontal One Color" / "pp_h_white.png",
 }
 # Raster payment logos are shrunk to this height (4x their 28 px display size).
 PAYMENT_LOGO_PX = 112

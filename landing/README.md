@@ -63,19 +63,22 @@ Después de cambiar cualquiera de ellos, regenerar y commitear también lo gener
 
 ## Las capturas del panel
 
-La portada enseña seis capturas del panel de verdad en un carrusel, no
-ilustraciones: `landing/assets/img/panel/*.webp`. Las hace `landing/shots.py`,
-que siembra una cuenta de demostración («Tu empresa», contactos de ejemplo,
+La portada enseña cinco capturas del panel de verdad en un carrusel, no
+ilustraciones. Van **en los dos temas**, porque la sección sigue al tema como el
+resto de la página: `landing/assets/img/panel/light/*.webp` y `.../dark/*.webp`,
+los mismos cinco nombres en cada carpeta. Las hace `landing/shots.py`, que
+siembra una cuenta de demostración («Tu empresa», contactos de ejemplo,
 plantillas, campañas y tres meses de eventos), arranca el panel contra una base
-aparte (`panamails_shots`), lo abre en Chrome sin cabeza, lo pone en oscuro y
-recorta cada pantalla a 16:9.
+aparte (`panamails_shots`), lo abre en Chrome sin cabeza y recorta cada pantalla
+a 16:9. Cada dirección se abre **una sola vez** y se fotografía en claro y en
+oscuro, así que los dos juegos salen idénticos salvo el color.
 
 ```
-python landing/shots.py            # rehacer las seis
+python landing/shots.py            # rehacer las diez
 python landing/shots.py --check    # decir si falta alguna
 ```
 
-**Hay que volver a correrlo cada vez que cambie una de esas seis pantallas**, o
+**Hay que volver a correrlo cada vez que cambie una de esas cinco pantallas**, o
 el sitio enseñará algo que ya no existe. Pide MongoDB corriendo en local, Chrome
 instalado y Pillow.
 

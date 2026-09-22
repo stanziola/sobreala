@@ -43,12 +43,12 @@
   </div>
 </section>
 
-{#- `section--flip` y no `section--deep`: esta sección se da la vuelta con el
-    tema, así que siempre contrasta con la página. -#}
-<section class="section section--flip" aria-labelledby="features-title">
+{#- Sigue al tema como el resto de la página: hubo una banda que se invertía,
+    y existía solo porque las capturas del panel eran siempre oscuras. Ahora hay
+    un juego por tema, así que no hace falta. -#}
+<section class="section" aria-labelledby="features-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow eyebrow--light">{{ page.features.eyebrow }}</p>
       <h2 class="section__title" id="features-title">{{ page.features.title }}</h2>
       <p class="section__intro">{{ page.features.intro }}</p>
     </div>
@@ -56,7 +56,9 @@
         de radio son los que abren cada una, asi que esto funciona entero sin
         JavaScript y con el teclado; carousel.js solo agrega las flechas y el
         paso automatico. -#}
-    <div class="tour" data-tour>
+    <div class="tour" data-tour
+         data-tour-zoom="{{ page.features.zoom }}"
+         data-tour-close="{{ page.features.close }}">
       {% for item in page.features['items'] %}
       <input class="tour__pick" type="radio" name="tour"
              id="tour-{{ loop.index }}"{{ " checked" if loop.first }}>
@@ -64,12 +66,17 @@
       <div class="tour__strip">
         {% for item in page.features['items'] %}
         <label class="tour__panel" for="tour-{{ loop.index }}">
-          {#- El `loading` va en un bloque y no en una expresión: dentro de una
-              expresión Jinja escapa las comillas y el atributo sale inservible,
-              así que las capturas se bajaban todas de golpe. -#}
-          <img class="tour__shot" src="/assets/img/panel/{{ item.shot }}.webp"
+          {#- Dos juegos de capturas, uno por tema. La que no toca va en
+              `display: none`, y como las diez van `lazy` el navegador no se baja
+              la que no se ve: una sola de las dos cuesta bytes. -#}
+          <img class="tour__shot tour__shot--light"
+               src="/assets/img/panel/light/{{ item.shot }}.webp"
                alt="{{ item.alt }}" width="1400" height="788"
-               decoding="async"{% if not loop.first %} loading="lazy"{% endif %}>
+               decoding="async" loading="lazy">
+          <img class="tour__shot tour__shot--dark"
+               src="/assets/img/panel/dark/{{ item.shot }}.webp"
+               alt="{{ item.alt }}" width="1400" height="788"
+               decoding="async" loading="lazy">
         </label>
         {% endfor %}
       </div>
@@ -93,10 +100,10 @@
   </div>
 </section>
 
-<section class="section section--deep" aria-labelledby="pasos-title">
+<section class="section section--alt" aria-labelledby="pasos-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow eyebrow--light">{{ page.steps.eyebrow }}</p>
+      <p class="eyebrow">{{ page.steps.eyebrow }}</p>
       <h2 class="section__title" id="pasos-title">{{ page.steps.title }}</h2>
     </div>
     <ol class="steps">
@@ -109,7 +116,7 @@
       {% endfor %}
     </ol>
     <p class="section__actions">
-      <a class="btn btn--light btn--lg" href="{{ page.steps.cta.url }}">{{ page.steps.cta.label }}</a>
+      <a class="btn btn--primary btn--lg" href="{{ page.steps.cta.url }}">{{ page.steps.cta.label }}</a>
     </p>
   </div>
 </section>

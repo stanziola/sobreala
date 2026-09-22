@@ -134,11 +134,15 @@ HOME = {
         ],
     },
     "features": {
-        "eyebrow": "Features",
-        "title": "Así se ve por dentro",
+        # Sin etiqueta de arriba, a diferencia de las demás secciones: el
+        # titular ya es la etiqueta.
+        "title": "Features",
         # Las flechas del carrusel de capturas. Solo las dibuja el guion.
         "back": "Ver la anterior",
         "next": "Ver la siguiente",
+        # La ventana de ver una captura en grande, que también dibuja el guion.
+        "zoom": "Captura del panel, en grande",
+        "close": "Cerrar la captura",
         "intro": (
             "Estas son las pantallas con las que trabajas: tus contactos, tus "
             "plantillas, tus envíos y lo que pasó con cada correo."

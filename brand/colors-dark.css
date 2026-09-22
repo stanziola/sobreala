@@ -38,18 +38,9 @@
   /* Bands with no wing on them: the four-steps section, the table head. */
   --color-deep: #232326;
 
-  /* La banda que se da la vuelta: de noche es blanca, y las capturas del panel
-   * (que son oscuras) quedan como pantallas encendidas sobre ella. */
-  --color-flip: #FFFFFF;
-  --color-on-flip: #18181B;       /* 17.7:1 sobre el blanco */
-  --color-on-flip-soft: #52525B;  /* 7.7:1 sobre el blanco */
-  --color-flip-edge: rgba(24, 24, 27, .14);
-  /* La franja de abajo del pie, la de los logos de pago. Un gris medio, y el
-   * mismo en los dos temas: tiene que sostener a la vez un logo blanco y otro
-   * azul oscuro, sin ponerle a ninguno un fondo propio, y este es el punto
-   * donde los dos se leen. Encima va --color-on-accent, que también es oscuro
-   * en los dos temas. */
-  --color-payments: #8C8C93;
+  /* La línea que separa la fila legal del resto del pie. El mismo valor que en
+   * el tema claro: el pie es azul en los dos. */
+  --color-footer-edge: rgba(255, 255, 255, .18);
 
 
   /* Text and surfaces. */

@@ -47,6 +47,11 @@ DB = "panamails_shots"
 EMAIL = "hola@ejemplo.com"
 PASSWORD = "Contrasena-Larga1"
 
+# Dos juegos, uno por tema: la portada enseña el del tema que tenga puesto quien
+# mira, así que la sección puede seguir al tema como el resto de la página. Cada
+# uno va en su carpeta, con los mismos cinco nombres dentro.
+THEMES = ("light", "dark")
+
 # El bloque del carrusel es 16:9. A este ancho una captura se lee nítida en el
 # panel abierto (unos 900 px) sin pasar de 120 KB en webp.
 WIDE, TALL = 1400, 788
@@ -351,12 +356,15 @@ def crop(raw: bytes, top: float, ratio: float) -> bytes:
         return buffer.getvalue()
 
 
-def take(ws, where: str, shot: dict) -> bytes:
-    """Abrir una dirección, ponerla en oscuro y capturar su ventana.
+def take(ws, where: str, shot: dict) -> dict[str, bytes]:
+    """Abrir una dirección una vez y capturar su ventana en los dos temas.
 
     Lo que dice `from` se sube arriba del todo, con un poco de aire, y de ahí
     sale el recorte: así cada captura empieza donde está lo que se quiere
     enseñar y no en el hueco de arriba de la página.
+
+    Se abre una sola vez y se cambia el tema entre foto y foto: así los dos
+    juegos salen idénticos salvo el color, y la vuelta no tarda el doble.
     """
     selector, pick, fill = shot["from"], shot.get("pick"), shot.get("fill")
     if shot.get("guest"):
@@ -369,8 +377,6 @@ def take(ws, where: str, shot: dict) -> bytes:
                 deviceScaleFactor=2)
     ws.js("location.href=%s" % json.dumps(where))
     time.sleep(3.5)
-    ws.js("document.documentElement.dataset.theme='dark'")
-    time.sleep(1.2)
     if pick:
         where_is = json.loads(ws.js(
             "JSON.stringify((function(){var e=document.querySelector(%s);"
@@ -394,15 +400,20 @@ def take(ws, where: str, shot: dict) -> bytes:
         "return Math.max(0, e.getBoundingClientRect().top - 110)})()"
         % json.dumps(selector))
     ratio = ws.js("window.devicePixelRatio || 1")
-    time.sleep(0.8)
-    raw = base64.b64decode(ws.call("Page.captureScreenshot", format="png")["data"])
+    made = {}
+    for theme in THEMES:
+        # Lo mismo que hace el guion de la cabecera del panel antes de pintar.
+        ws.js("document.documentElement.dataset.theme=%s" % json.dumps(theme))
+        time.sleep(1.2)
+        raw = base64.b64decode(ws.call("Page.captureScreenshot", format="png")["data"])
+        made[theme] = crop(raw, float(top or 0), float(ratio))
     if shot.get("width"):
         ws.call("Emulation.clearDeviceMetricsOverride")
-    return crop(raw, float(top or 0), float(ratio))
+    return made
 
 
-def shoot(demo: dict) -> dict[str, bytes]:
-    """Las seis capturas, en orden."""
+def shoot(demo: dict) -> dict[str, dict[str, bytes]]:
+    """Las cinco capturas, en orden, cada una en los dos temas."""
     work = Path(tempfile.mkdtemp(prefix="panamails-shots-"))
     panel = start_panel(work / "panel.log")
     chrome = None
@@ -462,24 +473,26 @@ def shoot(demo: dict) -> dict[str, bytes]:
 def main() -> None:
     check = "--check" in sys.argv
     if check:
-        faltan = [s["name"] for s in SHOTS
-                  if not (OUT / f"{s['name']}.webp").exists()]
+        faltan = [f"{theme}/{s['name']}" for theme in THEMES for s in SHOTS
+                  if not (OUT / theme / f"{s['name']}.webp").exists()]
         if faltan:
             print("Faltan capturas:", ", ".join(faltan))
             print("Correlas con: python landing/shots.py")
             raise SystemExit(1)
-        print("Las capturas del panel estan.")
+        print("Las capturas del panel estan, en los dos temas.")
         return
 
     print("Sembrando la cuenta de demostracion…")
     demo = seed()
     print("Capturando…")
     made = shoot(demo)
-    OUT.mkdir(parents=True, exist_ok=True)
-    for name, data in made.items():
-        target = OUT / f"{name}.webp"
-        target.write_bytes(data)
-        print(f"  {target.relative_to(ROOT)}  {len(data) // 1024} KB")
+    for theme in THEMES:
+        (OUT / theme).mkdir(parents=True, exist_ok=True)
+    for name, themes in made.items():
+        for theme, data in themes.items():
+            target = OUT / theme / f"{name}.webp"
+            target.write_bytes(data)
+            print(f"  {target.relative_to(ROOT)}  {len(data) // 1024} KB")
 
 
 if __name__ == "__main__":

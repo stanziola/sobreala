@@ -1910,14 +1910,21 @@ está disponible, en vez de romperse.
 
 ## La portada
 
-**«Features · Así se ve por dentro» son cinco capturas del panel de verdad**, en
-un carrusel que aprieta: la abierta ocupa su sitio y las otras cuatro quedan en
-listones. Debajo, el texto de la que esté abierta. Son
-`landing/assets/img/panel/*.webp`, y las hace `landing/shots.py`: siembra una
-cuenta de demostración en una base aparte, arranca el panel contra ella, lo
-abre en Chrome sin cabeza, lo pone en oscuro y recorta cada pantalla a 16:9.
-**Hay que volver a correrlo cuando cambie una de esas cinco pantallas**, o la
-portada enseñará algo que ya no existe.
+**«Features» son cinco capturas del panel de verdad**, en un carrusel que
+aprieta: la abierta ocupa su sitio y las otras cuatro quedan en listones.
+Debajo, el texto de la que esté abierta. La sección no lleva etiqueta de arriba,
+a diferencia de las demás: el titular ya es la etiqueta.
+
+**Hay dos juegos de capturas, uno por tema**, en
+`landing/assets/img/panel/light/` y `.../dark/`, con los mismos cinco nombres en
+cada carpeta. Las hace `landing/shots.py`: siembra una cuenta de demostración en
+una base aparte, arranca el panel contra ella, lo abre en Chrome sin cabeza y
+recorta cada pantalla a 16:9. **Cada dirección se abre una sola vez y se
+fotografía en los dos temas**, poniéndole `data-theme` entre foto y foto, que es
+lo mismo que hace el guion de la cabecera del panel: así los dos juegos salen
+idénticos salvo el color y la vuelta no tarda el doble. **Hay que volver a
+correrlo cuando cambie una de esas cinco pantallas**, o la portada enseñará algo
+que ya no existe.
 
 Los datos de la demostración son neutros a propósito: «Tu empresa», nombres de
 pila con `@ejemplo.com` y asuntos corrientes. Ni una cooperativa, ni un colegio,
@@ -1927,26 +1934,51 @@ ni nada que se lea como un cliente de verdad.
 debajo para que se leyeran encima de la captura; el velo tapaba justo lo que la
 sección viene a enseñar. Sin rótulo no hace falta ninguno de los dos.
 
-**La sección se da la vuelta con el tema** (`section--flip`): con el sitio en
-claro es oscura, y con el sitio en oscuro es blanca, así que las capturas
-—que son del panel en oscuro— quedan como pantallas encendidas sobre blanco y
-siempre contrastan con lo de al lado. Sus cuatro colores viven en
-`brand/colors.css` y están invertidos en `brand/colors-dark.css`
-(`--color-flip`, `--color-on-flip`, `--color-on-flip-soft` y
-`--color-flip-edge`), que es lo que deja `site.css` sin un solo hex.
+**La sección sigue al tema, como el resto de la página.** Hubo una banda que se
+invertía —oscura de día y blanca de noche— y estaba ahí por una sola razón: las
+capturas eran siempre del panel en oscuro, así que necesitaban un fondo oscuro
+al lado. Con un juego por tema esa razón desapareció, y con ella las cuatro
+variables `--color-flip*` y las clases `.section--flip` y `.section--deep`, que
+era la otra banda fija de la portada («Cómo funciona»). La portada queda azul ·
+gris · blanco · gris · blanco, y los mismos escalones al revés en oscuro.
+
+**Cada listón trae sus dos capturas y el CSS esconde la que no toca** (un par de
+reglas con `:root[data-theme="dark"]`). El claro es el de por omisión porque
+**sin JavaScript no hay atributo ninguno**: la elección la resuelve el guion de
+la cabecera antes de pintar, leyendo la galleta, el `localStorage` y la
+preferencia del sistema. **Las diez van `loading="lazy"`, también la primera**:
+una escondida con `lazy` no se baja nunca, así que el juego que no se ve no
+cuesta bytes, y una primera ansiosa habría arrastrado a su gemela. Está medido:
+la portada pide cinco capturas, no diez.
 
 **Lo que abre cada captura son cinco botones de radio**, no un guion. Por eso la
 sección funciona entera sin JavaScript y las flechas del teclado la mueven
 solas, que es lo que se consigue gratis con un grupo de radios.
-`assets/js/carousel.js` agrega dos cosas y nada más: los botones de anterior y
-siguiente, que **solo se dibujan si el guion corrió** (como el interruptor de
-`/planes`), y el paso automático cada cuatro segundos. Ese paso **se detiene con
-el ratón encima o con el foco dentro y vuelve a andar al quitarlo**, no corre
-fuera de la pantalla ni con la pestaña escondida, y no existe con «reducir
-movimiento» puesto. **Elegir una a mano no lo apaga**: solo reinicia la cuenta,
-para que la que se acaba de pulsar no se cambie medio segundo después. Lo
-deciden tres interruptores y un solo `sync()`; antes cada uno llamaba a `play()`
-por su cuenta y el ratón podía arrancarlo con la sección fuera de la vista.
+`assets/js/carousel.js` agrega tres cosas y nada más, y ninguna existe sin él
+(como el interruptor de `/planes`): los botones de anterior y siguiente, el paso
+automático cada cuatro segundos y la ventana de ver una captura en grande. Ese
+paso **se detiene con el ratón encima o con el foco dentro y vuelve a andar al
+quitarlo**, no corre fuera de la pantalla, ni con la pestaña escondida, ni con
+una captura abierta en grande, y no existe con «reducir movimiento» puesto.
+**Elegir una a mano no lo apaga**: solo reinicia la cuenta, para que la que se
+acaba de pulsar no se cambie medio segundo después. Lo deciden cuatro
+interruptores y un solo `sync()`; antes cada uno llamaba a `play()` por su
+cuenta y el ratón podía arrancarlo con la sección fuera de la vista.
+
+**Pulsar la captura abierta la enseña en grande**, en un `<dialog>` que escribe
+el guion. Una cerrada de la tira solo se abre, que es la navegación de siempre;
+apilado (el teléfono) no hay abiertas ni cerradas, así que cualquiera se
+agranda, y eso lo decide preguntarle al CSS si la tira está en `display:
+contents` en vez de repetir en el guion el ancho del corte. La imagen se copia
+del `<img>` **que se está viendo**, así que sale en el tema puesto y ya está en
+la caché. Es un `<dialog>` y no un invento propio porque de ahí salen gratis el
+`Escape`, el foco atrapado dentro, el fondo oscurecido y el foco de vuelta al
+botón de radio de esa captura. **La X vive en el relleno del diálogo, o sea
+fuera de la captura**, y ese relleno nunca baja de lo que ella mide; a los lados
+se encoge en el teléfono, donde el sitio es para la captura. Pulsar el borde de
+alrededor también cierra. En el teléfono el zoom no agranda gran cosa (una
+captura apaisada ya ocupa el ancho): lo que da es la captura sola, sin la página
+alrededor.
 
 **En el teléfono no hay apretujón**: los dos contenedores se vuelven
 transparentes (`display: contents`) y cada captura queda encima de su texto, con
@@ -1957,17 +1989,17 @@ Las reglas del carrusel nombran las cinco por su id (`#tour-1` … `#tour-5`), q
 es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otras,
 esas listas de `landing/src/site.css` crecen con ellas.
 
-**Los logos de pago van a color**, que es como se reconoce una marca: lo decide
-`PAYMENT_LOGOS` en `landing/build_site.py`, el único sitio que dice qué variante
-del kit oficial usa el sitio. Para que se lean, **la franja de abajo del pie es
-gris y va de lado a lado**, fuera del `shell`. Ese gris (`--color-payments`) es
-**el mismo en los dos temas** y está elegido para sostener a la vez un logo
-blanco y otro azul oscuro, así que **ningún logo lleva fondo propio**; encima va
-tinta oscura (`--color-on-accent`, que tampoco cambia con el tema). **Yappy
-sigue en blanco**: su kit solo trae la versión «traslucid», y el día que haya
-una a color es cambiar esa línea. Las medidas de cada `<img>` salen del archivo
-generado (`icon_size()`): escritas a ojo, y cuadradas para logos apaisados, el
-pie saltaba mientras cargaba.
+**Los logos de pago van los dos en blanco, sobre el azul del pie.** La fila de
+abajo va de lado a lado, fuera del `shell`, y lo único que la separa del resto
+del pie es una línea fina (`--color-footer-edge`, el mismo valor en los dos
+temas porque el pie es azul en los dos). Hubo una franja gris para que el PayPal
+a color se leyera encima, y se quitó: su azul oscuro sobre el azul del pie da
+2:1, y sus propias normas de marca piden la versión blanca en fondos oscuros.
+Qué variante del kit usa el sitio lo dice `PAYMENT_LOGOS` en
+`landing/build_site.py`, que es el único sitio que lo decide; **ningún logo
+lleva fondo propio**. Las medidas de cada `<img>` salen del archivo generado
+(`icon_size()`): escritas a ojo, y cuadradas para logos apaisados, el pie
+saltaba mientras cargaba.
 
 ## Planes
 

@@ -26,22 +26,10 @@
   /* Dark grey for the bands with no wing on them; white on it reaches 14.9:1. */
   --color-deep: #27272A;
 
-  /* La banda que se da la vuelta con el tema: de día es oscura y de noche es
-   * blanca, así que siempre contrasta con la página. La usa la sección de las
-   * capturas del panel, que son oscuras y necesitan destacar de lo de al lado.
-   * En colors-dark.css estos cuatro valores están invertidos. */
-  --color-flip: #27272A;          /* fondo de la banda */
-  --color-on-flip: #FFFFFF;       /* texto encima; 14.9:1 */
-  --color-on-flip-soft: #E6E6E9;  /* texto secundario encima; 12.6:1 */
-  /* Bordes y velos sobre esa banda. No es un hex a propósito: tiene que dejar
-   * ver el fondo. */
-  --color-flip-edge: rgba(255, 255, 255, .16);
-  /* La franja de abajo del pie, la de los logos de pago. Un gris medio, y el
-   * mismo en los dos temas: tiene que sostener a la vez un logo blanco y otro
-   * azul oscuro, sin ponerle a ninguno un fondo propio, y este es el punto
-   * donde los dos se leen. Encima va --color-on-accent, que también es oscuro
-   * en los dos temas. */
-  --color-payments: #8C8C93;
+  /* La línea que separa la fila legal del resto del pie. El mismo valor en los
+   * dos temas, porque el pie es azul en los dos, y no es un hex a propósito:
+   * tiene que dejar ver ese azul. */
+  --color-footer-edge: rgba(255, 255, 255, .18);
 
 
   /* Text and surfaces. */
@@ -97,18 +85,9 @@
   /* Bands with no wing on them: the four-steps section, the table head. */
   --color-deep: #232326;
 
-  /* La banda que se da la vuelta: de noche es blanca, y las capturas del panel
-   * (que son oscuras) quedan como pantallas encendidas sobre ella. */
-  --color-flip: #FFFFFF;
-  --color-on-flip: #18181B;       /* 17.7:1 sobre el blanco */
-  --color-on-flip-soft: #52525B;  /* 7.7:1 sobre el blanco */
-  --color-flip-edge: rgba(24, 24, 27, .14);
-  /* La franja de abajo del pie, la de los logos de pago. Un gris medio, y el
-   * mismo en los dos temas: tiene que sostener a la vez un logo blanco y otro
-   * azul oscuro, sin ponerle a ninguno un fondo propio, y este es el punto
-   * donde los dos se leen. Encima va --color-on-accent, que también es oscuro
-   * en los dos temas. */
-  --color-payments: #8C8C93;
+  /* La línea que separa la fila legal del resto del pie. El mismo valor que en
+   * el tema claro: el pie es azul en los dos. */
+  --color-footer-edge: rgba(255, 255, 255, .18);
 
 
   /* Text and surfaces. */
@@ -228,12 +207,6 @@ button { font: inherit; color: inherit; }
 .shell--narrow { max-width: var(--shell-narrow); }
 .section { padding-block: var(--section); }
 .section--alt { background: var(--color-surface-alt); }
-.section--deep { background: var(--color-deep); color: var(--color-on-dark); }
-.section--deep .section__title { color: var(--color-on-dark); }
-/* La banda que se da la vuelta con el tema: oscura de día, blanca de noche.
-   Sus cuatro colores viven en brand/colors.css y se invierten en el oscuro. */
-.section--flip { background: var(--color-flip); color: var(--color-on-flip); }
-.section--flip .section__title { color: var(--color-on-flip); }
 .section__head { max-width: 680px; margin-bottom: clamp(28px, 5vw, 48px); }
 .section__title {
   font-size: clamp(1.6rem, 1.15rem + 2vw, 2.4rem);
@@ -241,9 +214,6 @@ button { font: inherit; color: inherit; }
   color: var(--color-ink);
 }
 .section__intro { margin-top: 14px; font-size: 1.08rem; color: var(--color-ink-soft); }
-.section--deep .section__intro { color: var(--color-on-dark-soft); }
-.section--flip .section__intro,
-.section--flip .eyebrow--light { color: var(--color-on-flip-soft); }
 .section__closing {
   max-width: 680px; margin-top: clamp(24px, 4vw, 40px);
   font-size: 1.12rem; font-weight: 500; line-height: 1.55;
@@ -305,9 +275,6 @@ button { font: inherit; color: inherit; }
 
 .btn--outline { background: transparent; color: var(--color-accent-strong); border-color: var(--color-accent-strong); }
 .btn--outline:hover { background: var(--color-accent-strong); color: var(--color-on-dark); transform: translateY(-2px); }
-
-.btn--light { background: var(--color-on-dark); color: var(--color-deep); box-shadow: var(--shadow-sm); }
-.btn--light:hover { background: var(--color-accent-light); transform: translateY(-2px); box-shadow: var(--shadow); }
 
 .btn--ghost { background: transparent; color: var(--color-on-dark); border-color: var(--color-on-dark-soft); }
 .btn--ghost:hover { background: rgba(255, 255, 255, .12); border-color: var(--color-on-dark); }
@@ -595,8 +562,8 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    mueven solas; carousel.js solo agrega sus botones y el paso automático.
    Las reglas nombran los cinco por su id: si algún día son otros, estas listas
    crecen con ellos.
-   Los colores salen de las cuatro variables que se dan la vuelta con el tema
-   (--color-flip y compañía), como la sección que las envuelve.
+   Los colores son los del tema, como el resto de la página: hubo una banda que
+   se invertía, y estaba solo porque las capturas eran siempre oscuras.
    En el teléfono no hay apretujón: los dos contenedores se vuelven
    transparentes (display: contents) y cada captura queda encima de su texto,
    que es lo único que se lee en esa pantalla. */
@@ -620,11 +587,22 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .tour__panel {
   position: relative; display: block; overflow: hidden; cursor: pointer;
   aspect-ratio: 16 / 9; border-radius: var(--radius);
-  background: var(--color-flip-edge); border: 1px solid var(--color-flip-edge);
+  background: var(--color-surface-alt); border: 1px solid var(--color-border);
 }
 .tour__shot { display: block; width: 100%; height: 100%; object-fit: cover; }
-.tour__title { color: var(--color-on-flip); font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
-.tour__text { max-width: 66ch; color: var(--color-on-flip-soft); }
+/* Cada listón trae las dos capturas de esa pantalla, la del panel en claro y la
+   del panel en oscuro, y aquí se esconde la que no toca. El claro es el de por
+   omisión porque sin JavaScript no hay atributo ninguno y la página sale clara.
+   Las dos van `lazy`, así que la escondida no se baja. */
+.tour__shot--dark { display: none; }
+:root[data-theme="dark"] .tour__shot--light { display: none; }
+:root[data-theme="dark"] .tour__shot--dark { display: block; }
+/* Apilado (el teléfono) no hay una abierta y otras cerradas: se ven las cinco,
+   así que cualquiera se puede agrandar. Solo con el guion, que es quien dibuja
+   la ventana. */
+.tour.is-ready .tour__panel { cursor: zoom-in; }
+.tour__title { color: var(--color-ink); font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.tour__text { max-width: 66ch; color: var(--color-ink-soft); }
 .tour__nav { display: none; }
 
 @media (min-width: 760px) {
@@ -643,11 +621,18 @@ a.usermenu__item:hover, button.usermenu__item:hover {
     flex: 1 1 0; min-width: 0; aspect-ratio: auto;
     transition: flex-grow 600ms var(--ease);
   }
+  /* En la tira, pulsar una cerrada la abre; la que ya está abierta se agranda. */
+  .tour.is-ready .tour__panel { cursor: pointer; }
   #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1),
   #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2),
   #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3),
   #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4),
   #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5) { flex-grow: 7; }
+  .tour.is-ready #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1),
+  .tour.is-ready #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2),
+  .tour.is-ready #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3),
+  .tour.is-ready #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4),
+  .tour.is-ready #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5) { cursor: zoom-in; }
   #tour-1:focus-visible ~ .tour__strip .tour__panel:nth-child(1),
   #tour-2:focus-visible ~ .tour__strip .tour__panel:nth-child(2),
   #tour-3:focus-visible ~ .tour__strip .tour__panel:nth-child(3),
@@ -669,11 +654,11 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   .tour__arrow {
     display: inline-flex; align-items: center; justify-content: center;
     width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-    background: transparent; color: var(--color-on-flip);
-    border: 1px solid var(--color-flip-edge);
+    background: transparent; color: var(--color-ink);
+    border: 1px solid var(--color-border);
     transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
   }
-  .tour__arrow:hover { background: var(--color-flip-edge); border-color: var(--color-on-flip); }
+  .tour__arrow:hover { background: var(--color-hover); border-color: var(--color-field); }
   .tour__arrow .icon { width: 18px; height: 18px; }
   [data-tour-back] .icon { transform: rotate(90deg); }
   [data-tour-next] .icon { transform: rotate(-90deg); }
@@ -682,23 +667,66 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   .tour__panel:hover { flex-grow: 2.2; }
 }
 
+/* La ventana de ver una captura en grande. La escribe carousel.js, así que sin
+   el guion no existe, como las flechas. Es un <dialog> y no un invento propio
+   porque de ahí salen gratis el Escape, el foco atrapado dentro, el fondo
+   oscurecido y el foco de vuelta al listón al cerrarla. */
+.tour__zoom {
+  width: min(96vw, 1400px); max-width: none;
+  /* El relleno es lo que deja a la X fuera de la captura, así que arriba nunca
+     baja de lo que ella mide (40 px) más un respiro. A los lados, en el
+     teléfono, el sitio es para la captura: si no, la ventana salía más chica
+     que el listón de detrás. */
+  padding: 52px 12px;
+  border: 0; background: transparent;
+}
+/* Un velo, no un color de la marca: por eso va escrito y no sale de una
+   variable. Lo mismo el realce de la X al pasar por encima. */
+.tour__zoom::backdrop { background: rgba(0, 0, 0, .78); }
+.tour__zoom-shot {
+  display: block; width: 100%; height: auto; max-height: 78vh;
+  object-fit: contain; border-radius: var(--radius);
+  background: var(--color-surface-alt);
+}
+/* La X vive en el relleno del diálogo, o sea fuera de la captura. En una
+   pantalla angosta el relleno se encoge y queda pegada al borde, pero siempre
+   dentro de la vista. Va sobre el velo, así que sus colores son los de encima
+   del azul, que son casi blancos en los dos temas. */
+.tour__zoom-close {
+  position: absolute; top: 0; right: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+  background: transparent; color: var(--color-on-dark);
+  border: 1px solid var(--color-on-dark-soft);
+  transition: background var(--fast) var(--ease);
+}
+.tour__zoom-close:hover { background: rgba(255, 255, 255, .16); }
+.tour__zoom-close .icon { width: 18px; height: 18px; }
+@media (min-width: 760px) {
+  /* De 760 en adelante sobra ancho, así que la ventana respira por los cuatro
+     lados. */
+  .tour__zoom { padding: clamp(46px, 5vw, 56px); }
+}
+
 /* ------------------------------------------------------------------ steps (home) */
 .steps { display: grid; gap: 18px; counter-reset: step; }
 @media (min-width: 640px) { .steps { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 960px) { .steps { grid-template-columns: repeat(4, 1fr); } }
+/* Las mismas tarjetas que .note-card: esta sección dejó de ser una banda oscura
+   y sus blancos translúcidos ya no tenían nada oscuro debajo. */
 .step {
   padding: 24px; border-radius: var(--radius);
-  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .14);
-  transition: background-color var(--normal) var(--ease), transform var(--normal) var(--ease);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  transition: box-shadow var(--normal) var(--ease), transform var(--normal) var(--ease), border-color var(--normal) var(--ease);
 }
-.step:hover { background: rgba(255, 255, 255, .1); transform: translateY(-3px); }
+.step:hover { box-shadow: var(--shadow); border-color: var(--color-accent-soft); transform: translateY(-3px); }
 .step__number {
   display: inline-grid; place-items: center; width: 38px; height: 38px; margin-bottom: 14px;
   border-radius: 50%; background: var(--color-accent); color: var(--color-on-accent);
   font-weight: 800; font-size: 1.05rem;
 }
 .step__title { font-size: 1.12rem; font-weight: 700; margin-bottom: 8px; }
-.step__text { color: var(--color-on-dark-soft); font-size: .97rem; }
+.step__text { color: var(--color-ink-soft); font-size: .97rem; }
 
 /* ------------------------------------------------------------------ flow (cómo funciona) */
 .flow { display: grid; gap: 0; max-width: 820px; }
@@ -1013,17 +1041,17 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
   max-width: 140px; margin-left: 0; padding: 2px 5px; opacity: 1;
 }
 
-/* La franja de abajo, gris y de lado a lado: es lo que despega los logos de
-   pago del azul del pie. El gris es el que deja leer a la vez un logo blanco y
-   otro azul oscuro, así que ninguno necesita fondo propio; encima va tinta
-   oscura, que es lo que se lee sobre ese gris. */
-.site-footer__bottom { margin-top: clamp(28px, 5vw, 44px); background: var(--color-payments); }
+/* La fila de abajo va sobre el mismo azul que el resto del pie, y lo único que
+   la separa es una línea fina de lado a lado, fuera del `shell`. Hubo una
+   franja gris para que un logo azul oscuro se leyera encima; con los dos logos
+   en blanco, como pide la guía de PayPal para fondos oscuros, sobra. */
+.site-footer__bottom { margin-top: clamp(28px, 5vw, 44px); border-top: 1px solid var(--color-footer-edge); }
 .site-footer__legal {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
   padding-block: 16px;
-  font-size: .88rem; color: var(--color-on-accent);
+  font-size: .88rem; color: var(--color-on-dark-soft);
 }
 .payments { display: flex; align-items: center; gap: 12px; }
 .payments__label { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
-/* Sin apagar y sin fondo propio: el gris de la franja es el que los sostiene. */
+/* Sin apagar y sin fondo propio: los dos son blancos sobre el azul del pie. */
 .payments__logo { height: 28px; width: auto; }
