@@ -68,7 +68,6 @@ SHOTS = (
              "var r=document.querySelector('[name=cuando][value=ahora]');"
              "if(r)r.checked=true;})()"},
     {"name": "estadisticas", "url": "/panel?periodo=30d", "from": ".rates"},
-    {"name": "vista", "from": ".editor__frame"},
     # La última, y sin sesión: al enlace de baja lo abre quien recibió el
     # correo, no el cliente, así que arriba no va su menú de cuenta.
     {"name": "baja", "from": ".card", "width": 820, "guest": True},
@@ -444,28 +443,11 @@ def shoot(demo: dict) -> dict[str, bytes]:
         sitios = {
             "lienzo": f"/plantillas/lienzo/{demo['design']}",
             "baja": demo["baja"],
-            "vista": f"/plantillas/lienzo/{demo['design']}",
         }
         made = {}
         for shot in SHOTS:
             name = shot["name"]
             url = f"http://127.0.0.1:{PANEL_PORT}" + (shot.get("url") or sitios[name])
-            if name == "vista":
-                # La vista previa vive en su ventana: se abre y se espera a que
-                # el marco traiga el correo.
-                ws.js("location.href=%s" % json.dumps(url))
-                time.sleep(4)
-                ws.js("document.documentElement.dataset.theme='dark'")
-                ws.js("document.querySelector('[data-open-dialog=vista-previa]').click()")
-                time.sleep(4)
-                top = ws.js(
-                    "(function(){var e=document.querySelector('.drawer__head');"
-                    "return e ? Math.max(0, e.getBoundingClientRect().top - 20) : 0})()")
-                ratio = ws.js("window.devicePixelRatio || 1")
-                raw = base64.b64decode(
-                    ws.call("Page.captureScreenshot", format="png")["data"])
-                made[name] = crop(raw, float(top or 0), float(ratio))
-                continue
             made[name] = take(ws, url, shot)
         return made
     finally:

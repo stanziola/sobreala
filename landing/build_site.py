@@ -231,12 +231,18 @@ SOCIAL_ICONS = {
     "whatsapp": BRAND_DIR / "social" / "whatsapp" / "01_Glyph" / "01_Digital RGB" / "03_SVG"
                 / "Digital_Glyph_White_RGB_2026.svg",
 }
+# PayPal va a color, que es como se reconoce una marca, y por eso lleva pastilla
+# blanca detrás en el pie: su azul oscuro sobre el azul del pie no se lee, y sus
+# propias normas piden fondo claro. Yappy se queda en blanco porque su kit solo
+# trae la versión "traslucid": el día que haya una a color, se cambia esta línea.
 PAYMENT_LOGOS = {
     "yappy": BRAND_DIR / "payments" / "yappy" / "yappy-traslucid-landscape.svg",
-    "paypal": BRAND_DIR / "payments" / "paypal" / "Horizontal One Color" / "pp_h_white.png",
+    "paypal": BRAND_DIR / "payments" / "paypal" / "Horizontal Full Color" / "pp_h_rgb.png",
 }
 # Raster payment logos are shrunk to this height (4x their 28 px display size).
 PAYMENT_LOGO_PX = 112
+# El alto al que se dibujan en el pie.
+PAYMENT_SHOWN_PX = 28
 
 
 def build_fonts() -> list[dict]:
@@ -427,6 +433,26 @@ def copy_icon_set(sources: dict[str, Path], out_dir: Path, url_prefix: str,
     return available
 
 
+def icon_size(url: str, height: int) -> tuple[int, int]:
+    """Las medidas con las que se dibuja un logo, a este alto.
+
+    Van en el `<img>` para que el navegador le guarde el sitio antes de bajarlo:
+    sin eso, la franja del pie salta al cargar. Se sacan del archivo generado,
+    así que cambiar de variante no deja las medidas viejas escritas.
+    """
+    made = LANDING_DIR / url.lstrip("/")
+    if made.suffix.lower() == ".svg":
+        box = re.search(r'viewBox="[\d.\s]*?([\d.]+)\s+([\d.]+)"',
+                        made.read_text(encoding="utf-8"))
+        wide, tall = (float(box.group(1)), float(box.group(2))) if box else (1.0, 1.0)
+    else:
+        from PIL import Image
+
+        with Image.open(made) as opened:
+            wide, tall = opened.size
+    return round(height * wide / max(tall, 1)), height
+
+
 def copy_assets() -> tuple[dict, dict]:
     """Copy logo, favicons, social icons and payment logos. Returns what exists."""
     OUT_IMG.mkdir(parents=True, exist_ok=True)
@@ -546,7 +572,10 @@ def build() -> list[Path]:
         "font_faces": faces,
         "social_icons": social,
         # Ordered as PAYMENT_LOGOS, so the footer keeps a stable order.
-        "payment_logos": [{"name": n, "url": payments[n]} for n in PAYMENT_LOGOS if n in payments],
+        "payment_logos": [
+            {"name": n, "url": payments[n],
+             "size": icon_size(payments[n], PAYMENT_SHOWN_PX)}
+            for n in PAYMENT_LOGOS if n in payments],
         "wing_svg": Markup(read_wing_svg()),  # trusted: our own generated SVG
         "pricing_data": pricing,
     }

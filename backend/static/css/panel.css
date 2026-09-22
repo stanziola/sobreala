@@ -26,6 +26,24 @@
   /* Dark grey for the bands with no wing on them; white on it reaches 14.9:1. */
   --color-deep: #27272A;
 
+  /* La banda que se da la vuelta con el tema: de día es oscura y de noche es
+   * blanca, así que siempre contrasta con la página. La usa la sección de las
+   * capturas del panel, que son oscuras y necesitan destacar de lo de al lado.
+   * En colors-dark.css estos cuatro valores están invertidos. */
+  --color-flip: #27272A;          /* fondo de la banda */
+  --color-on-flip: #FFFFFF;       /* texto encima; 14.9:1 */
+  --color-on-flip-soft: #E6E6E9;  /* texto secundario encima; 12.6:1 */
+  /* Bordes y velos sobre esa banda. No es un hex a propósito: tiene que dejar
+   * ver el fondo. */
+  --color-flip-edge: rgba(255, 255, 255, .16);
+  /* La franja de abajo del pie, la de los logos de pago. Un gris medio, y el
+   * mismo en los dos temas: tiene que sostener a la vez un logo blanco y otro
+   * azul oscuro, sin ponerle a ninguno un fondo propio, y este es el punto
+   * donde los dos se leen. Encima va --color-on-accent, que también es oscuro
+   * en los dos temas. */
+  --color-payments: #8C8C93;
+
+
   /* Text and surfaces. */
   --color-ink: #18181B;           /* body text; 17.7:1 on white */
   --color-ink-soft: #52525B;      /* secondary text; 7.7:1 on white */
@@ -78,6 +96,20 @@
 
   /* Bands with no wing on them: the four-steps section, the table head. */
   --color-deep: #232326;
+
+  /* La banda que se da la vuelta: de noche es blanca, y las capturas del panel
+   * (que son oscuras) quedan como pantallas encendidas sobre ella. */
+  --color-flip: #FFFFFF;
+  --color-on-flip: #18181B;       /* 17.7:1 sobre el blanco */
+  --color-on-flip-soft: #52525B;  /* 7.7:1 sobre el blanco */
+  --color-flip-edge: rgba(24, 24, 27, .14);
+  /* La franja de abajo del pie, la de los logos de pago. Un gris medio, y el
+   * mismo en los dos temas: tiene que sostener a la vez un logo blanco y otro
+   * azul oscuro, sin ponerle a ninguno un fondo propio, y este es el punto
+   * donde los dos se leen. Encima va --color-on-accent, que también es oscuro
+   * en los dos temas. */
+  --color-payments: #8C8C93;
+
 
   /* Text and surfaces. */
   --color-ink: #EDEDEF;           /* body text; 17.6:1 on the page */

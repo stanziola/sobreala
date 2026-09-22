@@ -283,14 +283,22 @@
       </nav>
     </div>
 
-    <div class="site-footer__legal">
+  </div>
+
+  {# La franja de abajo va gris y de lado a lado, fuera del `shell`: es lo que
+     despega los logos de pago del azul del pie. #}
+  <div class="site-footer__bottom">
+    <div class="shell site-footer__legal">
       <p><span>&copy; <span id="year">2026</span> {{ footer.legal_note }}</span></p>
       {% if payment_logos %}
       <p class="payments">
         <span class="payments__label">{{ footer.payments_label }}</span>
+        {# Las medidas salen del archivo generado: escritas a ojo (y cuadradas,
+           cuando los logos son apaisados) el pie saltaba al cargar. #}
         {% for logo in payment_logos %}
-        <img class="payments__logo" src="{{ logo.url }}" alt="{{ logo.name|capitalize }}"
-             width="28" height="28" loading="lazy">
+        <img class="payments__logo"
+             src="{{ logo.url }}" alt="{{ logo.name|capitalize }}"
+             width="{{ logo.size[0] }}" height="{{ logo.size[1] }}" loading="lazy">
         {% endfor %}
       </p>
       {% else %}

@@ -1910,37 +1910,64 @@ está disponible, en vez de romperse.
 
 ## La portada
 
-**«Lo que estamos construyendo» son seis capturas del panel de verdad**, en un
-carrusel que aprieta: la abierta ocupa su sitio y las otras cinco quedan en
-listones con su nombre de pie. Debajo, el texto de la que esté abierta. Son
+**«Features · Así se ve por dentro» son cinco capturas del panel de verdad**, en
+un carrusel que aprieta: la abierta ocupa su sitio y las otras cuatro quedan en
+listones. Debajo, el texto de la que esté abierta. Son
 `landing/assets/img/panel/*.webp`, y las hace `landing/shots.py`: siembra una
 cuenta de demostración en una base aparte, arranca el panel contra ella, lo
 abre en Chrome sin cabeza, lo pone en oscuro y recorta cada pantalla a 16:9.
-**Hay que volver a correrlo cuando cambie una de esas seis pantallas**, o la
+**Hay que volver a correrlo cuando cambie una de esas cinco pantallas**, o la
 portada enseñará algo que ya no existe.
 
 Los datos de la demostración son neutros a propósito: «Tu empresa», nombres de
 pila con `@ejemplo.com` y asuntos corrientes. Ni una cooperativa, ni un colegio,
 ni nada que se lea como un cliente de verdad.
 
-**Lo que abre cada captura son seis botones de radio**, no un guion. Por eso la
+**Los listones no llevan rótulo.** Lo llevaron, de lado y con un velo oscuro
+debajo para que se leyeran encima de la captura; el velo tapaba justo lo que la
+sección viene a enseñar. Sin rótulo no hace falta ninguno de los dos.
+
+**La sección se da la vuelta con el tema** (`section--flip`): con el sitio en
+claro es oscura, y con el sitio en oscuro es blanca, así que las capturas
+—que son del panel en oscuro— quedan como pantallas encendidas sobre blanco y
+siempre contrastan con lo de al lado. Sus cuatro colores viven en
+`brand/colors.css` y están invertidos en `brand/colors-dark.css`
+(`--color-flip`, `--color-on-flip`, `--color-on-flip-soft` y
+`--color-flip-edge`), que es lo que deja `site.css` sin un solo hex.
+
+**Lo que abre cada captura son cinco botones de radio**, no un guion. Por eso la
 sección funciona entera sin JavaScript y las flechas del teclado la mueven
 solas, que es lo que se consigue gratis con un grupo de radios.
 `assets/js/carousel.js` agrega dos cosas y nada más: los botones de anterior y
 siguiente, que **solo se dibujan si el guion corrió** (como el interruptor de
-`/planes`), y el paso automático cada siete segundos, que se detiene al pasar
-el ratón o al enfocar algo dentro, no corre fuera de la pantalla ni con la
-pestaña escondida, **se apaga del todo en cuanto alguien elige una a mano** y
-no existe con «reducir movimiento» puesto.
+`/planes`), y el paso automático cada cuatro segundos. Ese paso **se detiene con
+el ratón encima o con el foco dentro y vuelve a andar al quitarlo**, no corre
+fuera de la pantalla ni con la pestaña escondida, y no existe con «reducir
+movimiento» puesto. **Elegir una a mano no lo apaga**: solo reinicia la cuenta,
+para que la que se acaba de pulsar no se cambie medio segundo después. Lo
+deciden tres interruptores y un solo `sync()`; antes cada uno llamaba a `play()`
+por su cuenta y el ratón podía arrancarlo con la sección fuera de la vista.
 
 **En el teléfono no hay apretujón**: los dos contenedores se vuelven
 transparentes (`display: contents`) y cada captura queda encima de su texto, con
-las seis a la vista. El apretujón necesita ancho para significar algo, y ahí no
+las cinco a la vista. El apretujón necesita ancho para significar algo, y ahí no
 lo hay.
 
-Las reglas del carrusel nombran los seis por su id (`#tour-1` … `#tour-6`), que
-es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otros,
-esas listas de `landing/src/site.css` crecen con ellos.
+Las reglas del carrusel nombran las cinco por su id (`#tour-1` … `#tour-5`), que
+es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otras,
+esas listas de `landing/src/site.css` crecen con ellas.
+
+**Los logos de pago van a color**, que es como se reconoce una marca: lo decide
+`PAYMENT_LOGOS` en `landing/build_site.py`, el único sitio que dice qué variante
+del kit oficial usa el sitio. Para que se lean, **la franja de abajo del pie es
+gris y va de lado a lado**, fuera del `shell`. Ese gris (`--color-payments`) es
+**el mismo en los dos temas** y está elegido para sostener a la vez un logo
+blanco y otro azul oscuro, así que **ningún logo lleva fondo propio**; encima va
+tinta oscura (`--color-on-accent`, que tampoco cambia con el tema). **Yappy
+sigue en blanco**: su kit solo trae la versión «traslucid», y el día que haya
+una a color es cambiar esa línea. Las medidas de cada `<img>` salen del archivo
+generado (`icon_size()`): escritas a ojo, y cuadradas para logos apaisados, el
+pie saltaba mientras cargaba.
 
 ## Planes
 

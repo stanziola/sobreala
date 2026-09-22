@@ -98,15 +98,15 @@ HOME = {
     "hero": {
         "title_lead": "Administra tu base de datos de correos",
         "title_accent": "y envía de manera organizada.",
-        "subtitle": "Envía un correo a toda tu lista con un solo click.",
-        "note": "En construcción. Escríbenos y te avisamos apenas abramos cuentas.",
+        "subtitle": "Envía un correo a todos tus contactos con un solo click.",
+        "note": "Escríbenos y te acompañamos en tu primera campaña.",
     },
     "problem": {
         "eyebrow": "El problema",
         "title": "Las desventajas de enviar sin una herramienta de correo masivo",
         "intro": (
             "Cuando hay que escribirle a cientos de personas a la vez, socios, "
-            "clientes, padres, empleados, el correo de todos los días deja de servir."
+            "clientes, empleados, el correo de todos los días deja de servir."
         ),
         "items": [
             {
@@ -134,20 +134,19 @@ HOME = {
         ],
     },
     "features": {
-        "eyebrow": "La plataforma",
-        "title": "Lo que estamos construyendo",
+        "eyebrow": "Features",
+        "title": "Así se ve por dentro",
         # Las flechas del carrusel de capturas. Solo las dibuja el guion.
         "back": "Ver la anterior",
         "next": "Ver la siguiente",
         "intro": (
-            "Panamails está en desarrollo. Estas son las capacidades que estamos "
-            "construyendo y cómo van a funcionar."
+            "Estas son las pantallas con las que trabajas: tus contactos, tus "
+            "plantillas, tus envíos y lo que pasó con cada correo."
         ),
         "items": [
             {
                 "icon": "contacts",
                 "shot": "contactos",
-                "label": "Contactos",
                 "alt": (
                     "La lista de contactos del panel, con el correo de cada "
                     "persona, su nombre, sus columnas propias, su estado y sus "
@@ -164,7 +163,6 @@ HOME = {
             {
                 "icon": "campaign",
                 "shot": "lienzo",
-                "label": "Plantillas",
                 "alt": (
                     "El editor de plantillas: un texto elegido sobre la hoja, con "
                     "su barra de fuente, tamaño y color, y el correo armándose al "
@@ -180,7 +178,6 @@ HOME = {
             {
                 "icon": "schedule",
                 "shot": "envios",
-                "label": "Envíos",
                 "alt": (
                     "La pantalla de enviar correos, con el asunto escrito, una "
                     "etiqueta marcada, la plantilla elegida y la opción de mandarlo "
@@ -195,7 +192,6 @@ HOME = {
             {
                 "icon": "chart",
                 "shot": "estadisticas",
-                "label": "Estadísticas",
                 "alt": (
                     "La pantalla de estadísticas: enviados, entregados, rebotes, "
                     "aperturas y clics, cada cifra comparada con el periodo "
@@ -210,7 +206,6 @@ HOME = {
             {
                 "icon": "shield",
                 "shot": "baja",
-                "label": "Bajas",
                 "alt": (
                     "La pantalla que abre quien pulsa el enlace de baja, con el "
                     "botón de dejar de recibir estos correos."
@@ -220,21 +215,6 @@ HOME = {
                     "Todos los correos llevan el botón para anular la suscripción, en "
                     "todos los planes. Quien lo usa deja de recibir al momento y tú no "
                     "tienes que hacer nada."
-                ),
-            },
-            {
-                "icon": "flag",
-                "shot": "vista",
-                "label": "Vista previa",
-                "alt": (
-                    "La vista previa del correo antes de mandarlo, con el dato de "
-                    "cada persona marcado y el pie de la baja y la dirección "
-                    "postal."
-                ),
-                "title": "Te acompañamos en tu primera campaña",
-                "text": (
-                    "Revisamos tu lista contigo y probamos el envío antes de que salga "
-                    "el primero de verdad, para que no estrenes a ciegas."
                 ),
             },
         ],
@@ -249,10 +229,11 @@ HOME = {
         "title": "Lo que suelen preguntarnos",
         "items": [
             {
-                "q": "¿Panamails ya está disponible?",
+                "q": "¿Cómo empiezo?",
                 "a": (
-                    "Todavía no. Estamos construyendo la plataforma y abriendo cuentas "
-                    "poco a poco. Si nos escribes, te avisamos apenas puedas entrar."
+                    "Creas tu cuenta, confirmas tu correo, subes tu lista y eliges "
+                    "plan. Antes de tu primer envío revisamos contigo de dónde salió "
+                    "esa lista: es lo que cuida que los correos de todos lleguen."
                 ),
             },
             {
@@ -1254,10 +1235,7 @@ TERMS = {
 # --------------------------------------------------------------------------- footer
 
 FOOTER = {
-    "description": (
-        "Envía campañas de correo a toda tu lista desde un solo panel. "
-        "Actualmente en construcción."
-    ),
+    "description": "Envía campañas de correo a toda tu lista desde un solo panel.",
     "columns": [
         {
             "title": "Producto",

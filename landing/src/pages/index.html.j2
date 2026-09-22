@@ -43,7 +43,9 @@
   </div>
 </section>
 
-<section class="section section--deep" aria-labelledby="features-title">
+{#- `section--flip` y no `section--deep`: esta sección se da la vuelta con el
+    tema, así que siempre contrasta con la página. -#}
+<section class="section section--flip" aria-labelledby="features-title">
   <div class="shell">
     <div class="section__head">
       <p class="eyebrow eyebrow--light">{{ page.features.eyebrow }}</p>
@@ -62,10 +64,12 @@
       <div class="tour__strip">
         {% for item in page.features['items'] %}
         <label class="tour__panel" for="tour-{{ loop.index }}">
+          {#- El `loading` va en un bloque y no en una expresión: dentro de una
+              expresión Jinja escapa las comillas y el atributo sale inservible,
+              así que las capturas se bajaban todas de golpe. -#}
           <img class="tour__shot" src="/assets/img/panel/{{ item.shot }}.webp"
                alt="{{ item.alt }}" width="1400" height="788"
-               decoding="async"{{ ' loading="lazy"' if not loop.first }}>
-          <span class="tour__name">{{ item.label }}</span>
+               decoding="async"{% if not loop.first %} loading="lazy"{% endif %}>
         </label>
         {% endfor %}
       </div>
