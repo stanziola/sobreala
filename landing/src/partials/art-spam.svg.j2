@@ -1,18 +1,17 @@
 {#- Evita problemas de spam: los correos salen del portátil en fila hacia la
     bandeja, que los recibe con su ganchito verde, y uno se desvía y cae a la
-    papelera con su equis roja. Sigue el encuadre de la imagen de referencia,
-    sin las palabras que llevaba («Inbox», «Spam»): la bandeja, la papelera y
-    sus insignias ya lo dicen. Los colores salen de las clases .art-*. -#}
-{%- macro envelope(x, y, turn=0, scale=1, face="art-paper", dim=false) -%}
-<g transform="translate({{ x }} {{ y }}) rotate({{ turn }}) scale({{ scale }})">
-  <rect class="{{ face }} art-s-shade" x="-16" y="-12" width="32" height="24" rx="3.5" stroke-width="1.3"/>
-  {% if dim %}<rect x="-16" y="-12" width="32" height="24" rx="3.5" fill="black" fill-opacity=".1"/>{% endif %}
-  <path class="art-s-shade" d="m-14.5-10 14.5 11 14.5-11" fill="none" stroke-width="1.5" stroke-linejoin="round"/>
-  <path class="art-s-shade" d="m-14 10.5 10-8M14 10.5l-10-8" fill="none" stroke-width="1" opacity=".7"/>
-</g>
-{%- endmacro %}
+    papelera con su equis roja.
+
+    Medida sobre la imagen de referencia: el portátil de tres cuartos (la tapa
+    con su canto, la pantalla con su sobre y la base en perspectiva con el
+    teclado y el panel táctil), siete sobres con su grosor y su estela, la
+    bandeja y la papelera como cajas abiertas (la papelera con la muesca de su
+    frente) y las dos flechas de puntos. Sin las palabras que llevaba («Inbox»,
+    «Spam»): la bandeja, la papelera y sus insignias ya lo dicen. Los colores
+    salen de las clases .art-*. -#}
 <svg class="trouble__draw" viewBox="0 0 480 300" aria-hidden="true" focusable="false">
   <defs>
+    <path id="as-p-1" d="M261.5 198.6L276.2 199.4Q278.4 199.5 280.3 200.6L281.5 201.2Q283.4 202.3 284.3 204.3L285.1 206Q286 208 288 208.9L287.8 208.8Q289.8 209.6 292 209.7L307.9 210.5Q310.1 210.6 312.1 209.7L312.5 209.5Q314.5 208.7 315.6 206.7L316.6 204.9Q317.7 203 319.6 201.9L319.6 201.8Q321.5 200.7 323.7 200.7L351.7 200.4Q353.2 200.4 353.1 201.9L347.8 263.6Q347.3 269.6 341.3 269.5L273 268.6Q267 268.5 266.4 262.5L260.1 200Q260 198.5 261.5 198.6Z"/>
     <clipPath id="as-clip"><rect width="480" height="300" rx="20"/></clipPath>
     <radialGradient id="as-glow" cx="45%" cy="40%" r="70%">
       <stop offset="0" class="art-glow"/>
@@ -22,6 +21,10 @@
       <stop offset="0" stop-color="white" stop-opacity=".45"/>
       <stop offset=".6" stop-color="white" stop-opacity="0"/>
     </linearGradient>
+    <linearGradient id="as-sheen-soft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="white" stop-opacity=".22"/>
+      <stop offset=".55" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
     <linearGradient id="as-shade" x1="0" y1="0" x2="0" y2="1">
       <stop offset=".35" stop-color="black" stop-opacity="0"/>
       <stop offset="1" stop-color="black" stop-opacity=".22"/>
@@ -29,95 +32,176 @@
     <filter id="as-drop" x="-30%" y="-30%" width="160%" height="180%">
       <feDropShadow dx="0" dy="6" stdDeviation="6" class="art-drop"/>
     </filter>
-    <path id="as-bin" d="M258 204h100l-5 72a9 9 0 0 1-9 8h-72a9 9 0 0 1-9-8Z"/>
-    <path id="as-tray" d="M290 100h128v46a8 8 0 0 1-8 8H298a8 8 0 0 1-8-8Z"/>
+    <filter id="as-soft" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" class="art-drop"/>
+    </filter>
+    <filter id="as-blur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <clipPath id="as-c-screen"><path d="M40.5 105.6L135.5 94.5Q137.4 94.3 137.7 96.3L149.7 178.4Q150 180.4 148 180.7L54 194Q52 194.3 51.7 192.3L38.9 107.8Q38.6 105.8 40.5 105.6Z"/></clipPath>
+    <mask id="as-m-lid-side" maskUnits="userSpaceOnUse" x="0" y="0" width="480" height="300"><path d="M32.1 97.1L140.3 84.6Q144.3 84.1 144.8 88.1L158.2 185.4Q158.4 186.8 156.9 187.1L45.4 202.6Q44 202.8 43.7 201.3L28.8 101.5Q28.2 97.5 32.1 97.1Z" fill="white"/><path d="M32.1 97.1L140.3 84.6Q144.3 84.1 144.8 88.1L158.2 185.4Q158.4 186.8 156.9 187.1L45.4 202.6Q44 202.8 43.7 201.3L28.8 101.5Q28.2 97.5 32.1 97.1Z" transform="translate(3.2 0)"/></mask>
+    <mask id="as-m-lid-top" maskUnits="userSpaceOnUse" x="0" y="0" width="480" height="300"><path d="M32.1 97.1L140.3 84.6Q144.3 84.1 144.8 88.1L158.2 185.4Q158.4 186.8 156.9 187.1L45.4 202.6Q44 202.8 43.7 201.3L28.8 101.5Q28.2 97.5 32.1 97.1Z" fill="white"/><path d="M32.1 97.1L140.3 84.6Q144.3 84.1 144.8 88.1L158.2 185.4Q158.4 186.8 156.9 187.1L45.4 202.6Q44 202.8 43.7 201.3L28.8 101.5Q28.2 97.5 32.1 97.1Z" transform="translate(0 1.4)"/></mask>
+    <mask id="as-m-deck-top" maskUnits="userSpaceOnUse" x="0" y="0" width="480" height="300"><path d="M48.5 201.9L156.9 187.1Q158.4 186.8 159.9 187.3L210.2 202.3Q213 203.2 210.1 203.6L98.3 220.8Q96.3 221.1 94.5 220.4L48.4 202.4Q47.5 202 48.5 201.9Z" fill="white"/><path d="M48.5 201.9L156.9 187.1Q158.4 186.8 159.9 187.3L210.2 202.3Q213 203.2 210.1 203.6L98.3 220.8Q96.3 221.1 94.5 220.4L48.4 202.4Q47.5 202 48.5 201.9Z" transform="translate(0 1.4)"/></mask>
+    <mask id="as-m-bin-top" maskUnits="userSpaceOnUse" x="0" y="0" width="480" height="300"><use href="#as-p-1" fill="white"/><use href="#as-p-1" transform="translate(0 2.2)"/></mask>
+    <mask id="as-m-tray-top" maskUnits="userSpaceOnUse" x="0" y="0" width="480" height="300"><path d="M290.5 92.4L409.1 109Q412 109.4 411.7 112.4L407.2 147.9Q406.5 153.8 400.5 153L296.7 138.8Q290.7 137.9 290.3 132L287.8 95Q287.6 92 290.5 92.4Z" fill="white"/><path d="M290.5 92.4L409.1 109Q412 109.4 411.7 112.4L407.2 147.9Q406.5 153.8 400.5 153L296.7 138.8Q290.7 137.9 290.3 132L287.8 95Q287.6 92 290.5 92.4Z" transform="translate(0 2.4)"/></mask>
   </defs>
 
   <g clip-path="url(#as-clip)">
     <rect class="art-stage" width="480" height="300"/>
     <rect width="480" height="300" fill="url(#as-glow)"/>
 
-    {#- el camino que se desvía, por debajo de todo -#}
-    <path class="art-s-dash" d="M166 168C190 145 232 140 262 163" fill="none" stroke-width="3"
-          stroke-dasharray="6 7" stroke-linecap="round"/>
-    <path class="art-s-dash" d="m250 150 12 13-17 3" fill="none" stroke-width="3"
-          stroke-linecap="round" stroke-linejoin="round"/>
+    {#- las sombras en el suelo -#}
+    <ellipse cx="130.6" cy="223.3" rx="85.6" ry="6.3" fill="black" fill-opacity=".12" filter="url(#as-blur)"/>
+    <ellipse cx="354.5" cy="154.8" rx="62.2" ry="5.1" fill="black" fill-opacity=".12" filter="url(#as-blur)"/>
+    <ellipse cx="306.9" cy="271.5" rx="41.9" ry="4.4" fill="black" fill-opacity=".16" filter="url(#as-blur)"/>
 
-    {#- el portátil azul, abierto y de frente. Todo es simétrico a propósito: una
-        tapa de frente con la base en perspectiva hacia un lado no existe en un
-        objeto de verdad, y era lo que lo hacía verse mal. La base se ensancha
-        hacia abajo, que es como se ve desde delante y un poco desde arriba, con
-        sus filas de teclas, el panel táctil y el canto. -#}
-    <g filter="url(#as-drop)">
-      <path class="art-blue-deep" d="M12 202H180V207A4 4 0 0 1 176 211H16A4 4 0 0 1 12 207Z"/>
-      <path class="art-blue art-s-blue" d="M30 172H162L180 202H12Z" stroke-width="5" stroke-linejoin="round"/>
-    </g>
-    <path d="M30 172H162L180 202H12Z" fill="url(#as-sheen)"/>
-    <path class="art-blue-deep" d="M40 176H152L160 192H32Z" opacity=".3"/>
-    {% for y, left, right in [(179.5, 42, 150), (184, 40, 152), (188.5, 38, 154)] %}
-    <line class="art-s-blue-soft" x1="{{ left }}" y1="{{ y }}" x2="{{ right }}" y2="{{ y }}"
-          stroke-width="3" stroke-dasharray="6.4 2.4" opacity=".85"/>
-    {% endfor %}
-    <path class="art-blue-deep" d="M82 195H110L112 200H80Z" opacity=".3"/>
-    <g filter="url(#as-drop)">
-      <rect class="art-blue-deep" x="34" y="84" width="124" height="90" rx="10"/>
-    </g>
-    <rect class="art-blue" x="42" y="92" width="108" height="74" rx="5"/>
-    <rect x="42" y="92" width="108" height="74" rx="5" fill="url(#as-sheen)"/>
-    <g filter="url(#as-drop)">
-      {{ envelope(96, 129, 0, 1.6) }}
+    {#- las dos flechas de puntos: la que sale del portátil y da la vuelta, y la
+        que se desvía hacia el sobre que cae -#}
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path class="art-s-blue" d="M158.2 146.5C173.1 138.9 197.2 131.3 216.8 139.5" stroke-width="3.2" stroke-dasharray="5 4" opacity=".7"/>
+      <path class="art-s-blue" d="M209.2 133.8L218.1 140.2L208.6 144" stroke-width="3.2" opacity=".7"/>
+      <path class="art-s-dash" d="M204.2 146.5C194.7 148.4 190.8 135.7 198.5 130.7C209.9 123 241.6 124.3 254.3 145.9" stroke-width="2.2" stroke-dasharray="4.5 3.5"/>
+      <path class="art-s-dash" d="M246 144L255.5 147.8L253 138.3" stroke-width="2.2"/>
     </g>
 
-    {#- la bandeja, con lo que ya le llegó -#}
-    <path class="art-blue-soft" d="M296 86h116l14 14H282Z"/>
+    {#- el portátil: la base en perspectiva, con su canto, el teclado y el panel
+        táctil; la tapa con su canto oscuro a la izquierda y su borde claro
+        arriba; la pantalla y su sobre -#}
     <g filter="url(#as-drop)">
-      {{ envelope(334, 70, -6, 1.45) }}
-      {{ envelope(388, 84, 4, 1.35) }}
+      <path class="art-blue-deep" d="M48.5 201.9L156.9 187.1Q158.4 186.8 159.9 187.3L210.2 202.3Q213 203.2 212.6 206.1L212.2 209.3Q211.8 212.3 208.8 212.7L98 228.4Q95.1 228.8 92.3 227.7L49.2 211.7Q47.8 211.2 47.8 209.7L47.5 203Q47.5 202 48.5 201.9Z"/>
     </g>
+    <path d="M48.4 202.4L94.5 220.4Q96.3 221.1 96 223.1L95.6 225.8Q95.1 228.8 92.3 227.7L49.2 211.7Q47.8 211.2 47.8 209.7L47.5 203Q47.5 202 48.4 202.4Z" fill="black" fill-opacity=".3"/>
+    <path class="art-blue" d="M48.5 201.9L156.9 187.1Q158.4 186.8 159.9 187.3L210.2 202.3Q213 203.2 210.1 203.6L98.3 220.8Q96.3 221.1 94.5 220.4L48.4 202.4Q47.5 202 48.5 201.9Z"/>
+    <path d="M48.5 201.9L156.9 187.1Q158.4 186.8 159.9 187.3L210.2 202.3Q213 203.2 210.1 203.6L98.3 220.8Q96.3 221.1 94.5 220.4L48.4 202.4Q47.5 202 48.5 201.9Z" fill="white" fill-opacity=".22"/>
+    <path d="M48.5 201.9L156.9 187.1Q158.4 186.8 159.9 187.3L210.2 202.3Q213 203.2 210.1 203.6L98.3 220.8Q96.3 221.1 94.5 220.4L48.4 202.4Q47.5 202 48.5 201.9Z" fill="white" fill-opacity=".4" mask="url(#as-m-deck-top)"/>
+    <path class="art-blue-deep" d="M61.8 201.8L149.1 189.8Q151.1 189.5 153 190.1L174.1 196.6Q176 197.2 174 197.4L84.5 210.5Q82.5 210.8 80.6 210.1L61.7 202.8Q59.8 202.1 61.8 201.8Z" opacity=".35"/>
+    <path class="art-s-blue-soft" d="M69.7 203.6L152.6 192 M75.7 205.8L159 194 M81.6 208.1L165.5 196" fill="none" stroke-width="1.3" stroke-dasharray="4 1.6" opacity=".7"/>
+    <path class="art-blue-deep" d="M122.1 207.6L143.3 204.4Q145.3 204.1 147.2 204.8L157.5 208.2Q159.4 208.9 157.4 209.2L135.8 212.4Q133.8 212.7 132 212.1L122 208.5Q120.1 207.9 122.1 207.6Z" opacity=".25"/>
     <g filter="url(#as-drop)">
-      <use href="#as-tray" class="art-card"/>
+      <path class="art-blue-deep" d="M32.1 97.1L140.3 84.6Q144.3 84.1 144.8 88.1L158.2 185.4Q158.4 186.8 156.9 187.1L45.4 202.6Q44 202.8 43.7 201.3L28.8 101.5Q28.2 97.5 32.1 97.1Z"/>
     </g>
-    <use href="#as-tray" fill="url(#as-shade)" opacity=".45"/>
-    <path class="art-blue" d="M418 100l14-14v46a8 8 0 0 1-3 6l-11 10Z"/>
-    <path d="M418 100l14-14v46a8 8 0 0 1-3 6l-11 10Z" fill="url(#as-sheen)"/>
-    <rect class="art-blue-soft" x="290" y="100" width="128" height="6" rx="3"/>
+    <path d="M32.1 97.1L140.3 84.6Q144.3 84.1 144.8 88.1L158.2 185.4Q158.4 186.8 156.9 187.1L45.4 202.6Q44 202.8 43.7 201.3L28.8 101.5Q28.2 97.5 32.1 97.1Z" fill="black" fill-opacity=".28" mask="url(#as-m-lid-side)"/>
+    <path d="M32.1 97.1L140.3 84.6Q144.3 84.1 144.8 88.1L158.2 185.4Q158.4 186.8 156.9 187.1L45.4 202.6Q44 202.8 43.7 201.3L28.8 101.5Q28.2 97.5 32.1 97.1Z" fill="white" fill-opacity=".35" mask="url(#as-m-lid-top)"/>
+    <path class="art-blue" d="M40.5 105.6L135.5 94.5Q137.4 94.3 137.7 96.3L149.7 178.4Q150 180.4 148 180.7L54 194Q52 194.3 51.7 192.3L38.9 107.8Q38.6 105.8 40.5 105.6Z"/>
+    <path d="M40.5 105.6L135.5 94.5Q137.4 94.3 137.7 96.3L149.7 178.4Q150 180.4 148 180.7L54 194Q52 194.3 51.7 192.3L38.9 107.8Q38.6 105.8 40.5 105.6Z" fill="white" fill-opacity=".28"/>
+    <path d="M40.5 105.6L135.5 94.5Q137.4 94.3 137.7 96.3L149.7 178.4Q150 180.4 148 180.7L54 194Q52 194.3 51.7 192.3L38.9 107.8Q38.6 105.8 40.5 105.6Z" fill="url(#as-sheen-soft)"/>
+    <g clip-path="url(#as-c-screen)">
+      <g filter="url(#as-soft)">
+        <path class="art-paper" d="M67.1 125.5L117 119.7Q119 119.4 119.3 121.4L125.1 164Q125.3 166 123.3 166.2L72.3 172.1Q70.3 172.3 70.1 170.3L65.3 127.8Q65.1 125.8 67.1 125.5Z"/>
+        <path class="art-paper-shade" d="M67.1 125.5L117 119.7Q119 119.4 119.3 121.4L125.1 164Q125.3 166 123.3 166.2L72.3 172.1Q70.3 172.3 70.1 170.3L65.3 127.8Q65.1 125.8 67.1 125.5Z" opacity=".5"/>
+        <path class="art-paper" d="M65.8 126.3L96.8 150.1L118.4 120.1Z"/>
+        <path class="art-s-blue-soft" d="M65.8 126.3L96.8 150.1L118.4 120.1" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+        <path class="art-s-blue-soft" d="M71 171.7L83.9 160.9M124.6 165.5L110.7 157.8" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
+      </g>
+    </g>
 
-    {#- la fila de correos que sale hacia la bandeja -#}
-    <g filter="url(#as-drop)">
-      {{ envelope(158, 118, -16, 1.05) }}
-      {{ envelope(198, 96, -10, 1.1) }}
-      {{ envelope(246, 80, -4, 1.15) }}
-      {{ envelope(292, 74, 2, 1.2) }}
+    {#- las estelas y la fila de sobres hacia la bandeja -#}
+    <path class="art-blue-soft" d="M206.7 96.3L214.4 93.3Q216.2 92.6 216.5 94.6L217.8 103.3Q218.1 105.3 216.2 106L207.9 109Q206.1 109.7 205.9 107.7L205 99Q204.8 97 206.7 96.3Z" opacity=".35"/>
+    <path class="art-blue-soft" d="M261.3 79.5L272 77.2Q273.9 76.7 274 78.7L274.5 87.4Q274.6 89.4 272.6 89.9L261.9 92.7Q260 93.2 259.9 91.2L259.4 81.9Q259.3 79.9 261.3 79.5Z" opacity=".35"/>
+    <path class="art-blue-soft" d="M373.6 54.1L387.4 51.2Q389.4 50.7 390.2 52.6L398.1 70.5Q398.9 72.3 396.9 72.7L379.3 75.8Q377.3 76.1 376.8 74.2L372.1 56.5Q371.6 54.5 373.6 54.1Z" opacity=".35"/>
+    <path class="art-blue-soft" d="M289.6 167.7L291.8 166.5Q293.6 165.5 294 167.5L297.6 183.2Q298 185.2 296.2 186L294.2 186.9Q292.3 187.7 291.9 185.8L288.3 170.7Q287.9 168.7 289.6 167.7Z" opacity=".35"/>
+    <g filter="url(#as-soft)">
+      <path class="art-paper" d="M136.8 117.8L157.2 111.6Q159.1 111 159.4 113L161 127Q161.2 128.9 159.3 129.4L138.9 134.8Q136.9 135.3 136.7 133.3L135.1 120.4Q134.8 118.4 136.8 117.8Z"/>
+      <path class="art-paper-shade" d="M136.8 117.8L157.2 111.6Q159.1 111 159.4 113L161 127Q161.2 128.9 159.3 129.4L138.9 134.8Q136.9 135.3 136.7 133.3L135.1 120.4Q134.8 118.4 136.8 117.8Z" opacity=".5"/>
+      <path class="art-paper" d="M135.7 118.7L148.5 125.8L158.5 111.7Z"/>
+      <path class="art-s-blue-soft" d="M135.7 118.7L148.5 125.8L158.5 111.7" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+      <path class="art-s-blue-soft" d="M137.5 134.6L143 130.2M160.4 128.6L154.5 127.2" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
+      <path class="art-blue" d="M159.3 92.5L164.4 90.3Q165.5 89.9 165.5 91.1L167.1 120.4Q167.2 121.6 166 121.8L160.6 122.8Q159.5 123 159.4 121.8L158.2 94.1Q158.2 92.9 159.3 92.5Z"/>
+      <path d="M159.3 92.5L164.4 90.3Q165.5 89.9 165.5 91.1L167.1 120.4Q167.2 121.6 166 121.8L160.6 122.8Q159.5 123 159.4 121.8L158.2 94.1Q158.2 92.9 159.3 92.5Z" fill="white" fill-opacity=".3"/>
+      <path class="art-paper" d="M167.5 89.6L200.5 85.9Q202.5 85.6 202.6 87.6L205 112.2Q205.2 114.2 203.3 114.5L169.2 121.2Q167.2 121.6 167.1 119.6L165.6 91.9Q165.5 89.9 167.5 89.6Z"/>
+      <path class="art-paper-shade" d="M167.5 89.6L200.5 85.9Q202.5 85.6 202.6 87.6L205 112.2Q205.2 114.2 203.3 114.5L169.2 121.2Q167.2 121.6 167.1 119.6L165.6 91.9Q165.5 89.9 167.5 89.6Z" opacity=".5"/>
+      <path class="art-paper" d="M166.2 90.4L184.5 106.1L201.8 86.3Z"/>
+      <path class="art-s-blue-soft" d="M166.2 90.4L184.5 106.1L201.8 86.3" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+      <path class="art-s-blue-soft" d="M167.8 120.9L176.2 113.5M204.5 113.7L194.5 109.9" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
+      <path class="art-blue" d="M214.1 75.6L220.8 72.4Q221.9 71.9 222 73.1L223 104.9Q223 106.1 221.8 106.3L215.5 107.6Q214.3 107.8 214.3 106.6L213.1 77.3Q213 76.1 214.1 75.6Z"/>
+      <path d="M214.1 75.6L220.8 72.4Q221.9 71.9 222 73.1L223 104.9Q223 106.1 221.8 106.3L215.5 107.6Q214.3 107.8 214.3 106.6L213.1 77.3Q213 76.1 214.1 75.6Z" fill="white" fill-opacity=".3"/>
+      <path class="art-paper" d="M223.9 71.8L255.4 71.3Q257.4 71.2 257.6 73.2L259.4 93.6Q259.5 95.6 257.6 96.1L224.9 105.6Q223 106.1 222.9 104.1L222 73.9Q221.9 71.9 223.9 71.8Z"/>
+      <path class="art-paper-shade" d="M223.9 71.8L255.4 71.3Q257.4 71.2 257.6 73.2L259.4 93.6Q259.5 95.6 257.6 96.1L224.9 105.6Q223 106.1 222.9 104.1L222 73.9Q221.9 71.9 223.9 71.8Z" opacity=".5"/>
+      <path class="art-paper" d="M222.6 72.4L239.5 89.9L256.8 71.8Z"/>
+      <path class="art-s-blue-soft" d="M222.6 72.4L239.5 89.9L256.8 71.8" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+      <path class="art-s-blue-soft" d="M223.6 105.4L231.5 97.7M258.7 95.2L249.1 92.5" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
+      <path class="art-paper" d="M276.4 68.4L306.2 64.2Q308.2 63.9 308.3 65.9L309.5 85.1Q309.6 87.1 307.7 87.5L277.4 93.7Q275.4 94.1 275.3 92.1L274.5 70.7Q274.4 68.7 276.4 68.4Z"/>
+      <path class="art-paper-shade" d="M276.4 68.4L306.2 64.2Q308.2 63.9 308.3 65.9L309.5 85.1Q309.6 87.1 307.7 87.5L277.4 93.7Q275.4 94.1 275.3 92.1L274.5 70.7Q274.4 68.7 276.4 68.4Z" opacity=".5"/>
+      <path class="art-paper" d="M275.2 69.1L291.2 81.4L307.5 64.5Z"/>
+      <path class="art-s-blue-soft" d="M275.2 69.1L291.2 81.4L307.5 64.5" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+      <path class="art-s-blue-soft" d="M276 93.4L283.6 87.4M308.8 86.7L300 84" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
     </g>
+
+    {#- la bandeja: por dentro, los dos sobres que ya llegaron, el costado azul
+        y el frente con su borde de arriba -#}
+    <path class="art-blue-deep" d="M289.5 89.7L305.6 71.4Q307.5 69.1 310.5 69.3L427.6 77.8Q430.6 78 429.1 80.6L413.6 106.8Q412 109.4 409.1 109L290.5 92.4Q287.6 92 289.5 89.7Z"/>
+    <path d="M289.5 89.7L305.6 71.4Q307.5 69.1 310.5 69.3L427.6 77.8Q430.6 78 429.1 80.6L413.6 106.8Q412 109.4 409.1 109L290.5 92.4Q287.6 92 289.5 89.7Z" fill="url(#as-sheen-soft)"/>
+    <g filter="url(#as-soft)">
+      <path class="art-blue" d="M316.2 46.9L316.7 46.6Q317.7 46 317.8 47.2L320 93.9Q320.1 95.1 318.9 95.1L318.3 95.1Q317.1 95.1 317 93.9L315.2 48.8Q315.2 47.6 316.2 46.9Z"/>
+      <path d="M316.2 46.9L316.7 46.6Q317.7 46 317.8 47.2L320 93.9Q320.1 95.1 318.9 95.1L318.3 95.1Q317.1 95.1 317 93.9L315.2 48.8Q315.2 47.6 316.2 46.9Z" fill="white" fill-opacity=".3"/>
+      <path class="art-paper" d="M319.7 45.9L367.2 44.5Q369.2 44.4 369.2 46.4L368.5 78.1Q368.4 80.1 366.4 80.2L322.1 83.1Q320.1 83.2 319.9 81.2L317.8 48Q317.7 46 319.7 45.9Z"/>
+      <path class="art-paper-shade" d="M319.7 45.9L367.2 44.5Q369.2 44.4 369.2 46.4L368.5 78.1Q368.4 80.1 366.4 80.2L322.1 83.1Q320.1 83.2 319.9 81.2L317.8 48Q317.7 46 319.7 45.9Z" opacity=".5"/>
+      <path class="art-paper" d="M318.4 46.5L343.1 65.8L368.5 44.9Z"/>
+      <path class="art-s-blue-soft" d="M318.4 46.5L343.1 65.8L368.5 44.9" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+      <path class="art-s-blue-soft" d="M320.8 82.7L331.9 74.2M367.7 79.6L355.4 72.7" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
+      <path class="art-blue" d="M368 80.2L373.6 78.8Q374.8 78.5 374.8 79.7L374.8 105Q374.8 106.2 373.6 106.5L368.3 107.6Q367.2 107.8 367.2 106.6L366.9 81.7Q366.8 80.5 368 80.2Z"/>
+      <path d="M368 80.2L373.6 78.8Q374.8 78.5 374.8 79.7L374.8 105Q374.8 106.2 373.6 106.5L368.3 107.6Q367.2 107.8 367.2 106.6L366.9 81.7Q366.8 80.5 368 80.2Z" fill="white" fill-opacity=".3"/>
+      <path class="art-paper" d="M376.8 78.2L410.1 74Q412 73.7 412.1 75.7L412.8 99.5Q412.8 101.5 410.8 101.7L376.8 106Q374.8 106.2 374.8 104.2L374.8 80.5Q374.8 78.5 376.8 78.2Z"/>
+      <path class="art-paper-shade" d="M376.8 78.2L410.1 74Q412 73.7 412.1 75.7L412.8 99.5Q412.8 101.5 410.8 101.7L376.8 106Q374.8 106.2 374.8 104.2L374.8 80.5Q374.8 78.5 376.8 78.2Z" opacity=".5"/>
+      <path class="art-paper" d="M375.5 79L393 92.8L411.4 74.3Z"/>
+      <path class="art-s-blue-soft" d="M375.5 79L393 92.8L411.4 74.3" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+      <path class="art-s-blue-soft" d="M375.5 105.6L384.2 99.2M412.1 101L402.5 96.9" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
+    </g>
+    <g filter="url(#as-drop)">
+      <path class="art-blue" d="M413 107.6L427.3 80.4Q428.7 77.7 431.3 79.1L434.9 81Q437.6 82.5 437.6 85.5L438.1 124.4Q438.2 128.4 435.2 131.1L417.1 147Q414.1 149.7 410.6 151.6L408.2 152.9Q406.5 153.8 406.7 151.8L411.8 111.4Q412 109.4 413 107.6Z"/>
+      <path class="art-paper" d="M290.5 92.4L409.1 109Q412 109.4 411.7 112.4L407.2 147.9Q406.5 153.8 400.5 153L296.7 138.8Q290.7 137.9 290.3 132L287.8 95Q287.6 92 290.5 92.4Z"/>
+    </g>
+    <path d="M413 107.6L427.3 80.4Q428.7 77.7 431.3 79.1L434.9 81Q437.6 82.5 437.6 85.5L438.1 124.4Q438.2 128.4 435.2 131.1L417.1 147Q414.1 149.7 410.6 151.6L408.2 152.9Q406.5 153.8 406.7 151.8L411.8 111.4Q412 109.4 413 107.6Z" fill="white" fill-opacity=".28"/>
+    <path class="art-blue-soft" d="M412.7 108.1L428 79Q428.7 77.7 430 78.4L431.8 79.2Q433.1 79.9 432.4 81.2L416.7 109.7Q416 111 414.6 110.4L413.4 110Q412 109.4 412.7 108.1Z"/>
+    <path class="art-paper-shade" d="M290.5 92.4L409.1 109Q412 109.4 411.7 112.4L407.2 147.9Q406.5 153.8 400.5 153L296.7 138.8Q290.7 137.9 290.3 132L287.8 95Q287.6 92 290.5 92.4Z" opacity=".55"/>
+    <path d="M290.5 92.4L409.1 109Q412 109.4 411.7 112.4L407.2 147.9Q406.5 153.8 400.5 153L296.7 138.8Q290.7 137.9 290.3 132L287.8 95Q287.6 92 290.5 92.4Z" fill="url(#as-sheen)"/>
+    <path class="art-paper" d="M290.5 92.4L409.1 109Q412 109.4 411.7 112.4L407.2 147.9Q406.5 153.8 400.5 153L296.7 138.8Q290.7 137.9 290.3 132L287.8 95Q287.6 92 290.5 92.4Z" mask="url(#as-m-tray-top)"/>
 
     {#- el ganchito verde -#}
     <g filter="url(#as-drop)">
-      <circle class="art-green" cx="424" cy="52" r="16"/>
+      <circle class="art-green" cx="404" cy="45.3" r="14.9"/>
     </g>
-    <circle cx="424" cy="52" r="16" fill="url(#as-sheen)"/>
-    <path class="art-s-paper" d="m416 52 6 6 11-12" fill="none" stroke-width="3.6"
-          stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="404" cy="45.3" r="14.9" fill="url(#as-sheen)"/>
+    <circle cx="404" cy="45.3" r="14.1" fill="none" stroke="white" stroke-opacity=".35" stroke-width="1.2"/>
+    <path class="art-s-paper" d="M396.3 45L401.7 50.4L411.2 39.3" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
 
-    {#- el que se pierde, y la papelera -#}
+    {#- la papelera: por dentro, el sobre que entra, y el frente con la muesca
+        por la que entra -#}
+    <path class="art-navy" d="M263.2 193.5L350.6 196.2Q352.6 196.3 352.5 198.3L352 211.1Q351.9 213.1 349.9 213.1L262.6 211.2Q260.6 211.2 260.7 209.2L261.2 195.4Q261.2 193.4 263.2 193.5Z"/>
+    <path d="M263.2 193.5L350.6 196.2Q352.6 196.3 352.5 198.3L352 211.1Q351.9 213.1 349.9 213.1L262.6 211.2Q260.6 211.2 260.7 209.2L261.2 195.4Q261.2 193.4 263.2 193.5Z" fill="black" fill-opacity=".38"/>
+    <path class="art-navy" d="M262.4 193.5L351.4 196.3Q352.6 196.3 352.6 197.5L352.6 197Q352.6 198.2 351.4 198.2L262.4 195.4Q261.2 195.3 261.2 194.1L261.2 194.6Q261.2 193.4 262.4 193.5Z"/>
+    <path d="M262.4 193.5L351.4 196.3Q352.6 196.3 352.6 197.5L352.6 197Q352.6 198.2 351.4 198.2L262.4 195.4Q261.2 195.3 261.2 194.1L261.2 194.6Q261.2 193.4 262.4 193.5Z" fill="white" fill-opacity=".22"/>
+    <path class="art-blue" d="M284.5 193.1L285 192.8Q286 192.2 286.6 193.2L297.4 209.6Q298 210.6 297 211.1L296.6 211.3Q295.5 211.8 294.8 210.8L284.1 194.8Q283.4 193.8 284.5 193.1Z"/>
+    <path d="M284.5 193.1L285 192.8Q286 192.2 286.6 193.2L297.4 209.6Q298 210.6 297 211.1L296.6 211.3Q295.5 211.8 294.8 210.8L284.1 194.8Q283.4 193.8 284.5 193.1Z" fill="white" fill-opacity=".3"/>
+    <path class="art-paper" d="M287.9 191.5L309.5 183.4Q311.4 182.7 312.4 184.4L321.8 200.6Q322.8 202.3 320.9 203L299.9 209.9Q298 210.6 296.9 208.9L287.1 193.9Q286 192.2 287.9 191.5Z"/>
+    <path class="art-paper-shade" d="M287.9 191.5L309.5 183.4Q311.4 182.7 312.4 184.4L321.8 200.6Q322.8 202.3 320.9 203L299.9 209.9Q298 210.6 296.9 208.9L287.1 193.9Q286 192.2 287.9 191.5Z" opacity=".5"/>
+    <path class="art-paper" d="M286.9 192.4L305.6 198.8L311 183.5Z"/>
+    <path class="art-s-blue-soft" d="M286.9 192.4L305.6 198.8L311 183.5" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+    <path class="art-s-blue-soft" d="M298.4 209.8L302 204.3M321.9 202.1L313.8 200.5" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
     <g filter="url(#as-drop)">
-      {{ envelope(280, 172, 26, 1.2, dim=true) }}
+      <use class="art-navy" href="#as-p-1"/>
     </g>
-    <path class="art-navy" d="M262 196h92l4 8H258Z"/>
-    <path d="M262 196h92l4 8H258Z" fill="black" fill-opacity=".3"/>
-    {{ envelope(318, 204, -24, 1.15, dim=true) }}
-    <g filter="url(#as-drop)">
-      <use href="#as-bin" class="art-navy"/>
-    </g>
-    <use href="#as-bin" fill="url(#as-sheen)" opacity=".5"/>
-    <use href="#as-bin" fill="url(#as-shade)"/>
-    <rect class="art-navy" x="256" y="202" width="104" height="5" rx="2.5"/>
-    <rect x="256" y="202" width="104" height="5" rx="2.5" fill="white" fill-opacity=".18"/>
+    <use href="#as-p-1" fill="url(#as-sheen-soft)"/>
+    <use href="#as-p-1" fill="url(#as-shade)" opacity=".6"/>
+    <use href="#as-p-1" fill="white" fill-opacity=".22" mask="url(#as-m-bin-top)"/>
 
     {#- la equis roja -#}
     <g filter="url(#as-drop)">
-      <circle class="art-red" cx="358" cy="190" r="15"/>
+      <circle class="art-red" cx="341.5" cy="186.6" r="14.3"/>
     </g>
-    <circle cx="358" cy="190" r="15" fill="url(#as-sheen)"/>
-    <path class="art-s-paper" d="m352 184 12 12m0-12-12 12" fill="none" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="341.5" cy="186.6" r="14.3" fill="url(#as-sheen)"/>
+    <circle cx="341.5" cy="186.6" r="13.5" fill="none" stroke="white" stroke-opacity=".35" stroke-width="1.2"/>
+    <path class="art-s-paper" d="M336 181.1l10.9 10.9m0 -10.9l-10.9 10.9" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+
+    {#- el que se desvía y cae, con su canto oscuro -#}
+    <g filter="url(#as-soft)">
+      <path class="art-navy" d="M252.6 154.2L258.8 154.7Q260 154.8 260.6 155.8L274.5 176.6Q275.2 177.6 274.1 178L268.7 179.7Q267.6 180.1 267 179.1L252.1 155.1Q251.4 154.1 252.6 154.2Z"/>
+      <path class="art-paper-shade" d="M256 151L270.3 143.3Q271.4 142.7 272.4 143.3L274.8 144.6Q275.8 145.2 274.8 145.9L261 154.1Q260 154.8 259 154.1L255.9 152.2Q254.9 151.6 256 151Z"/>
+      <path class="art-paper" d="M261.7 153.7L274.1 146.3Q275.8 145.2 277.1 146.8L292.3 164.6Q293.6 166.2 291.9 167.2L276.9 176.5Q275.2 177.6 274.1 175.9L261.1 156.4Q260 154.8 261.7 153.7Z"/>
+      <path class="art-paper-shade" d="M261.7 153.7L274.1 146.3Q275.8 145.2 277.1 146.8L292.3 164.6Q293.6 166.2 291.9 167.2L276.9 176.5Q275.2 177.6 274.1 175.9L261.1 156.4Q260 154.8 261.7 153.7Z" opacity=".5"/>
+      <path class="art-paper" d="M260.8 155.1L277.7 163L275.9 146.1Z"/>
+      <path class="art-s-blue-soft" d="M260.8 155.1L277.7 163L275.9 146.1" fill="none" stroke-width="1.1" stroke-linejoin="round" opacity=".6"/>
+      <path class="art-s-blue-soft" d="M275.3 176.7L276.5 169.8M292.7 165.9L285.2 164.5" fill="none" stroke-width=".9" stroke-linecap="round" opacity=".45"/>
+    </g>
   </g>
 </svg>

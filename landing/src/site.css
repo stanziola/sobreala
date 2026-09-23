@@ -532,6 +532,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .art-card { fill: var(--art-card); }
 .art-card-edge { fill: var(--art-card-edge); }
 .art-paper { fill: var(--art-paper); }
+.art-paper-shade { fill: var(--art-paper-shade); }
 .art-line { fill: var(--art-line); }
 .art-ink { fill: var(--art-ink); }
 .art-blue { fill: var(--art-blue); }
@@ -564,6 +565,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .art-s-green { stroke: var(--art-green); }
 .art-s-navy { stroke: var(--art-navy); }
 .art-s-hair { stroke: var(--art-hair); }
+.art-s-skin-shade { stroke: var(--art-skin-shade); }
 /* El resplandor del fondo y la sombra suave de debajo de cada cosa. */
 .art-glow { stop-color: var(--art-glow); }
 .art-drop { flood-color: var(--art-shadow); }

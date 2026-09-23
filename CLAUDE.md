@@ -1941,7 +1941,7 @@ contando en esa medida y quede fuera del lector de pantalla. El precio es un
 hueco bajo el párrafo corto, y es a propósito. En el teléfono la ilustración va
 arriba y la lista debajo.
 
-**Las cuatro ilustraciones son SVG escrito a mano**, en
+**Las cuatro ilustraciones son SVG**, en
 `src/partials/art-{manual,spam,privacy,tracking}.svg.j2`, que la plantilla
 incluye por el nombre que trae cada punto en `art`, y **siguen el encuadre de
 cuatro imágenes de referencia** (renders 3D que se dieron para esto): alguien
@@ -1950,13 +1950,28 @@ a la papelera, el sobre con candado entre seis personas, y el tablero de cifras.
 Hubo una primera versión plana en los colores de la marca y se rehízo: no se
 parecía.
 
-**Las personas van sin rostro**, como un usuario por defecto: una cabeza color
-piel con su pelo, el cuello y los hombros. La de la primera escena tuvo cara,
-tres cuartos, brazos y manos, y nunca dejó de verse rara; ahora es como las seis
-de la privacidad, de frente y detrás del portátil, que le tapa los brazos. **Los
-dos portátiles van de frente y simétricos**: los hubo con la tapa de frente y la
-base en perspectiva hacia un lado, que es una mezcla que no existe en un objeto
-de verdad y era lo que los hacía verse mal.
+**Las dos primeras están medidas sobre su referencia, no dibujadas a ojo**
+(septiembre de 2026). A ojo salían con las proporciones aproximadas y la
+perspectiva mezclada, y cada arreglo las dejaba más simples. Ahora las siluetas
+de lo orgánico (la persona, la taza, las hojas, la silla) salen de separar cada
+parte de la imagen por su color; las costuras del jersey, los mechones, los
+dedos y la oreja son sus rayas finas; y lo geométrico (los dos portátiles, el
+reloj, el tablero, la bandeja, la papelera, cada sobre) sale de esquinas leídas
+sobre una rejilla puesta encima o de rectas ajustadas a sus bordes. **La prueba
+es ponerlas al 50 % encima de la referencia**: coinciden, sin imagen doble. Las
+herramientas que calcan y las imágenes no están en el repositorio; lo que queda
+son los dos SVG, que se editan a mano como los otros dos.
+
+**Las personas van sin rostro**, como un usuario por defecto. La de la primera
+escena está en la pose de su referencia, de tres cuartos y tecleando, con la
+oreja, la sombra de la barbilla en el cuello, el cuello redondo y las costuras
+del jersey, el puño del que sale la mano y los dedos. Hubo una versión de frente
+y detrás del portátil, de cuando la pose dibujada a ojo nunca dejó de verse
+rara. **Los portátiles tienen la perspectiva de su referencia**: en la primera,
+la tapa de espaldas con su canto claro y la base asomando bajo la mano; en la
+segunda, de tres cuartos, con la base en perspectiva, su canto, el teclado y el
+panel táctil. Los hubo de frente y simétricos, que era la manera de no mezclar
+perspectivas a ojo; medidos, ya no hay mezcla.
 **No llevan una sola palabra dentro** (las referencias traían «Inbox», «Spam»
 y cifras) ni el puntero que tenía el tablero.
 
@@ -1969,15 +1984,21 @@ sección, así que no se ve recuadro y los dibujos flotan sobre la página; lo q
 es tarjeta pasa a los grises de las tarjetas del sitio, y el papel baja un poco
 para no deslumbrar. Hubo un azul noche y se quitó, porque teñía toda la escena.
 Las personas no cambian de color. Lo que va dibujado encima del
-papel (las agujas del reloj, el boli) usa `--art-navy` y no `--art-ink`, que de
-noche es claro.
+papel (las agujas del reloj) usa `--art-navy` y no `--art-ink`, que de noche es
+claro; el boli va en los azules.
 
 Van **inline y no como archivo**, porque es lo único que puede leer las
 variables de la página, y se pintan **con clases** (`.art-blue`, `.art-s-dash`…),
-porque un atributo no puede leer una variable. El volumen son dos degradados
-por escena, uno de luz y otro de sombra, **en blanco y negro con
-transparencia**, que valen igual en los dos temas; la sombra suave de debajo es
-un `feDropShadow` cuyo color sale de `--art-shadow` por una clase. **Los `id`
+porque un atributo no puede leer una variable. El volumen son degradados de luz
+y de sombra **en blanco y negro con transparencia**, que valen igual en los dos
+temas; en las dos primeras, además, **bordes nítidos**: cada forma lleva su luz
+arriba y su sombra abajo, recortadas con una máscara de ella misma movida unos
+píxeles (`am-m-*`, `as-m-*`). Hubo luz y sombra calcadas de la referencia y
+difuminadas, y dejaban manchas en la cara y las manos. La sombra suave de debajo
+es un `feDropShadow` cuyo color sale de `--art-shadow` por una clase. **Las
+siluetas largas se definen una vez y se reutilizan con `<use>`** (`am-p-*`,
+`as-p-*`): el jersey salía trece veces entre relleno, luz, sombra, máscaras y
+recortes, y la escena pesaba más del doble. **Los `id`
 llevan el prefijo de su escena** (`am-`, `as-`, `ap-`, `at-`): las cuatro viven
 en la misma página, y un `id` repetido hace que una use el degradado de otra (de
 noche, el resplandor claro de la primera).
