@@ -430,16 +430,13 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    viendo marcado con un ganchito, y al otro su ilustración y su párrafo.
    Lo que abre cada uno son cuatro botones de radio, así que esto funciona
    entero sin JavaScript y las flechas del teclado lo mueven solas; trouble.js
-   solo agrega el paso automático.
+   solo agrega el paso automático, y lleva su propio tiempo.
    Las reglas nombran los cuatro por su id (#pain-1 … #pain-4). El estado del
    punto abierto viaja a sus hijos en variables, así que una sola lista de
    cuatro pinta la tarjeta, el círculo, el número y el ganchito a la vez. */
 .trouble {
   position: relative;
   display: grid; gap: clamp(24px, 4vw, 40px);
-  /* Lo que tarda en pasar al siguiente. trouble.js lee este mismo valor, así
-     que el número vive en un solo sitio. */
-  --trouble-every: 6s;
 }
 /* Sigue enfocable a propósito: es lo que hace que las flechas del teclado
    cambien de punto sin una línea de guion. */
@@ -461,7 +458,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 }
 .trouble__step {
   position: relative; display: flex; gap: 16px; align-items: flex-start;
-  padding: 16px 18px 20px; cursor: pointer;
+  padding: 16px 18px; cursor: pointer;
   border-radius: var(--radius); border: 1px solid var(--edge);
   background: var(--card); box-shadow: var(--shade);
   transition: background var(--normal) var(--ease), border-color var(--normal) var(--ease),
@@ -484,22 +481,6 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .trouble__title { font-size: 1.05rem; font-weight: 700; line-height: 1.3; color: var(--color-ink); }
 .trouble__lead { font-size: .95rem; line-height: 1.5; color: var(--color-ink-soft); }
 
-/* La cuenta atrás hasta el siguiente. Solo existe si el guion corrió: una
-   cuenta que no lleva a ninguna parte es peor que no tenerla, como las flechas
-   del carrusel. */
-.trouble__bar { display: none; }
-.trouble.is-ready .trouble__bar {
-  display: block; position: absolute; left: 18px; right: 18px; bottom: 10px;
-  height: 3px; border-radius: 99px; background: var(--color-border); opacity: var(--tick);
-}
-.trouble.is-ready .trouble__bar::after {
-  content: ""; display: block; height: 100%; border-radius: 99px;
-  background: var(--color-accent); transform: scaleX(0); transform-origin: left;
-}
-@keyframes trouble-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-/* Quien pidió no ver movimiento no ve tampoco una cuenta que no va a correr. */
-@media (prefers-reduced-motion: reduce) { .trouble.is-ready .trouble__bar { display: none; } }
-
 /* Las cuatro ilustraciones comparten una celda y los cuatro párrafos otra, así
    que el bloque mide siempre lo que el más largo y no salta al cambiar. El que
    no toca se esconde con `visibility` y no con `display`: así sigue contando
@@ -516,9 +497,8 @@ a.usermenu__item:hover, button.usermenu__item:hover {
               visibility var(--normal);
 }
 
-/* Las cuatro listas: encender el punto abierto, arrancar su cuenta atrás desde
-   cero (al dejar de estar abierto pierde la regla, así que el siguiente la
-   estrena), enseñar su ilustración con su párrafo, y marcar el foco. */
+/* Las tres listas: encender el punto abierto, enseñar su ilustración con su
+   párrafo, y marcar el foco. */
 #pain-1:checked ~ .trouble__list > li:nth-child(1),
 #pain-2:checked ~ .trouble__list > li:nth-child(2),
 #pain-3:checked ~ .trouble__list > li:nth-child(3),
@@ -526,12 +506,6 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   --card: var(--color-surface); --edge: var(--color-border); --shade: var(--shadow-sm);
   --mark-bg: var(--color-accent); --mark-line: var(--color-accent); --mark-ink: var(--color-on-accent);
   --lift: 1.08; --n: 0; --tick: 1;
-}
-.trouble.is-ready #pain-1:checked ~ .trouble__list > li:nth-child(1) .trouble__bar::after,
-.trouble.is-ready #pain-2:checked ~ .trouble__list > li:nth-child(2) .trouble__bar::after,
-.trouble.is-ready #pain-3:checked ~ .trouble__list > li:nth-child(3) .trouble__bar::after,
-.trouble.is-ready #pain-4:checked ~ .trouble__list > li:nth-child(4) .trouble__bar::after {
-  animation: trouble-fill var(--trouble-every) linear forwards;
 }
 #pain-1:checked ~ .trouble__art .trouble__one:nth-child(1),
 #pain-2:checked ~ .trouble__art .trouble__one:nth-child(2),

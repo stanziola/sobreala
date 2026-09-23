@@ -22,7 +22,8 @@
     <filter id="am-drop" x="-30%" y="-30%" width="160%" height="170%">
       <feDropShadow dx="0" dy="5" stdDeviation="6" class="art-drop"/>
     </filter>
-    <path id="am-sweater" d="M160 262c-3-50 8-92 44-104 16-5 34-7 54-7 19 0 35 3 47 9 24 12 28 52 26 102Z"/>
+    <path id="am-sweater" d="M151 250C149 214 158 184 190 168C206 160 226 155 246 153C258 161 280 161 292 153C308 157 322 167 326 183C330 202 332 230 332 250Z"/>
+    <path id="am-arm" d="M188 170C172 190 164 218 170 240C174 248 182 250 190 250L230 246C236 244 236 233 229 230L197 228C194 212 198 194 207 180Z"/>
     <path id="am-lid" d="M286 172a5 5 0 0 1 5-5l80-4a4 4 0 0 1 4 5l-15 72a5 5 0 0 1-5 4l-79 4a4 4 0 0 1-4-5Z"/>
     <path id="am-mug" d="M130 226h38v32a8 8 0 0 1-8 8h-22a8 8 0 0 1-8-8Z"/>
   </defs>
@@ -89,39 +90,52 @@
       {% endfor %}
     </g>
 
-    {#- él: el cuello, el jersey, la cara y el pelo -#}
-    <path class="art-skin-shade" d="M256 146h20v18c-5 4-15 4-20 0Z"/>
+    {#- él, de tres cuartos y mirando a la pantalla, como en la referencia. Va en
+        este orden porque se tapa así: el cuello, el jersey, la cabeza, el
+        teclado, el brazo y las manos encima del teclado, y la tapa delante. -#}
+    <path class="art-skin-shade" d="M254 134 280 138 282 156C274 162 260 162 252 156Z"/>
     <use href="#am-sweater" class="art-sweater"/>
-    <use href="#am-sweater" fill="url(#am-sheen)" opacity=".45"/>
-    <path class="art-sweater" d="M238 158c9-6 20-8 27-8s17 2 26 8c-8 7-17 9-26 9s-18-2-27-9Z"/>
-    <path class="art-s-hair" d="M240 159c8 5 16 8 25 8s17-3 25-8" fill="none" stroke-width="2" opacity=".35"/>
-    {#- la cabeza baja e inclinada hacia la pantalla, con la barbilla casi en el
-        cuello, como en la referencia -#}
-    <g transform="translate(4 13) rotate(-5 266 112)">
-      <ellipse class="art-skin-shade" cx="241" cy="113" rx="6.5" ry="9.5"/>
-      <path class="art-skin" d="M243 107c0-17 12-28 26-28 16 0 26 12 25 29-1 18-11 33-25 34-14 1-26-12-26-35Z"/>
-      <path class="art-hair" d="M237 114c-5-22 5-43 26-49 13-3 29 0 37 10 7 9 7 21 1 30-4-8-12-11-19-9-6-5-14-6-20-2-6-3-13 0-15 7-4 3-7 8-10 13Z"/>
-      <path class="art-hair" d="M252 72c3-9 12-14 22-12-6 3-10 7-11 12ZM279 64c9-2 17 3 20 10-6-4-13-5-19-3ZM240 88c-2-8 1-15 7-19-2 6-2 12 0 17Z"/>
-      <path class="art-s-hair" d="M256 107l10-2M277 105l10 3" fill="none" stroke-width="2.6" stroke-linecap="round"/>
-      <ellipse class="art-hair" cx="263" cy="117" rx="2.6" ry="3.2"/>
-      <ellipse class="art-hair" cx="283" cy="118" rx="2.6" ry="3.2"/>
-      <path class="art-skin-shade" d="M274 118c3 5 4 9 1 12h-4c2-3 3-7 3-12Z"/>
-      <path class="art-s-hair" d="M265 133c4 1 8 1 11-1" fill="none" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
-    </g>
+    <use href="#am-sweater" fill="url(#am-sheen)" opacity=".35"/>
+    <use href="#am-sweater" fill="url(#am-shade)"/>
+    <path d="M246 153C258 163 280 163 292 153" fill="none" stroke="black" stroke-opacity=".3"
+          stroke-width="3" stroke-linecap="round"/>
+
+    {#- la cabeza: la cara, la oreja, el pelo con sus mechones, y la cara de
+        concentración (cejas fruncidas, ojos hacia abajo) -#}
+    <path class="art-skin" d="M246 96C246 80 262 72 276 74C290 76 298 88 298 102C298 110 300 116 299 122C298 130 292 138 282 142C276 145 268 145 262 144C252 141 245 133 244 124C243 114 245 104 246 96Z"/>
+    <path d="M262 144C252 141 245 133 244 124C250 132 258 137 270 139C268 142 265 144 262 144Z" fill="black" fill-opacity=".08"/>
+    <ellipse class="art-skin-shade" cx="248" cy="119" rx="7.5" ry="10.5"/>
+    <path d="M249 113c-3 3-3 9 0 12" fill="none" stroke="black" stroke-opacity=".15" stroke-width="1.6" stroke-linecap="round"/>
+    <path class="art-hair" d="M238 120C230 104 232 86 240 76C240 64 250 56 260 58C264 50 276 48 284 54C292 50 304 56 304 66C312 70 312 84 306 90C304 96 300 100 296 102C292 94 286 90 280 92C278 86 272 84 266 86C262 90 258 92 254 92C252 98 250 104 251 112C249 114 247 116 244 121Z"/>
+    <path class="art-hair" d="M282 90C290 86 298 90 300 100C296 96 290 94 284 95Z"/>
+    <path d="M256 64C266 56 280 54 292 60C282 60 270 62 260 68ZM294 66C300 66 304 70 305 76C302 73 298 71 294 70Z" fill="white" fill-opacity=".14"/>
+    <path class="art-s-hair" d="M259 104c4-1 9-1 13 1.5M283 105.5c4-2 8-2.5 11-1.5" fill="none" stroke-width="2.8" stroke-linecap="round"/>
+    <ellipse class="art-hair" cx="267" cy="117" rx="2.7" ry="2.3"/>
+    <ellipse class="art-hair" cx="288" cy="117" rx="2.4" ry="2.2"/>
+    <path class="art-skin-shade" d="M294 113C301 118 301 125 294 127C296 123 296 118 294 113Z"/>
+    <path class="art-s-hair" d="M280 134.5c3.5 .6 7 .4 10-.6" fill="none" stroke-width="1.8" stroke-linecap="round" opacity=".5"/>
 
     {#- las rayas de prisa, entre él y el reloj -#}
-    <path class="art-s-blue" d="m308 86 8-7M310 101h11M308 116l8 6" fill="none" stroke-width="3.2"
+    <path class="art-s-blue" d="m318 88 8-7M320 103h11M318 118l8 6" fill="none" stroke-width="3.2"
           stroke-linecap="round"/>
 
-    {#- los brazos y las manos, hacia el teclado -#}
-    <path class="art-sweater" d="M170 190c-10 28 2 52 38 58l10-14c-18-5-26-18-25-36Z"/>
-    <path class="art-sweater" d="M322 200c4 22-4 38-30 44l-8-12c14-4 20-14 18-26Z"/>
-    <path class="art-skin" d="M222 240c4-8 14-10 22-6 4 2 4 7 0 9l-14 5c-5 1-9-3-8-8Z"/>
-    <path class="art-skin" d="M262 238c4-8 14-9 21-5 4 2 4 7 0 9l-13 5c-5 1-9-3-8-9Z"/>
+    {#- el teclado, que se aleja de él hacia la tapa -#}
+    <path class="art-silver" d="M200 240 292 234 298 243 206 250Z"/>
+    <path d="M200 240 292 234 298 243 206 250Z" fill="url(#am-shade)"/>
 
-    {#- el portátil: la tapa mirando hacia aquí, con su logo, y el teclado -#}
-    <path class="art-silver" d="M204 246l170-8 6 8-170 9Z"/>
-    <path d="M204 246l170-8 6 8-170 9Z" fill="url(#am-shade)"/>
+    {#- el brazo con su manga, apoyado en la mesa, y las dos manos en el teclado;
+        la derecha asoma junto a la tapa y su manga queda detrás -#}
+    <path class="art-sweater" d="M284 226C294 222 306 222 312 228V244L290 246Z"/>
+    <use href="#am-arm" class="art-sweater"/>
+    <use href="#am-arm" fill="url(#am-sheen)" opacity=".7"/>
+    <path d="M207 180C198 194 194 212 197 228H229" fill="none" stroke="black" stroke-opacity=".25"
+          stroke-width="2" stroke-linecap="round"/>
+    <path class="art-skin" d="M224 232C232 227 246 227 254 231C259 234 259 240 254 243L238 247C231 248 226 245 225 240Z"/>
+    <path class="art-skin" d="M262 232C270 228 281 228 287 232C291 235 290 240 286 242L270 246C264 247 260 243 260 238Z"/>
+    <path d="M238 247 254 243M270 246l16-4" fill="none" stroke="black" stroke-opacity=".1" stroke-width="2"
+          stroke-linecap="round"/>
+
+    {#- la tapa del portátil, de espaldas a nosotros, con su logo -#}
     <g filter="url(#am-drop)">
       <use href="#am-lid" class="art-silver"/>
     </g>

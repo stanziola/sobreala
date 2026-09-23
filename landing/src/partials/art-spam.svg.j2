@@ -29,7 +29,6 @@
     <filter id="as-drop" x="-30%" y="-30%" width="160%" height="180%">
       <feDropShadow dx="0" dy="6" stdDeviation="6" class="art-drop"/>
     </filter>
-    <path id="as-lid" d="M22 92a8 8 0 0 1 8-8l106-7a8 8 0 0 1 8 8l4 100a6 6 0 0 1-6 6l-112 6a6 6 0 0 1-6-6Z"/>
     <path id="as-bin" d="M258 204h100l-5 72a9 9 0 0 1-9 8h-72a9 9 0 0 1-9-8Z"/>
     <path id="as-tray" d="M290 100h128v46a8 8 0 0 1-8 8H298a8 8 0 0 1-8-8Z"/>
   </defs>
@@ -44,21 +43,33 @@
     <path class="art-s-dash" d="m250 150 12 13-17 3" fill="none" stroke-width="3"
           stroke-linecap="round" stroke-linejoin="round"/>
 
-    {#- el portátil azul, con un correo en pantalla -#}
+    {#- el portátil azul, de tres cuartos como el de la referencia: la base se
+        acerca hacia la derecha, con su hueco de teclado, sus filas de teclas,
+        su panel táctil y su canto; la tapa, un poco más ancha que alta, con el
+        marco intenso y la pantalla más clara. Las esquinas son redondas porque
+        cada pieza lleva un trazo de su mismo color con las juntas redondas. -#}
+    {%- set deck = "M24 199 148 191 224 214 62 226Z" %}
     <g filter="url(#as-drop)">
-      <path class="art-blue-deep" d="M18 196l130-8 72 24-160 10Z"/>
+      <path class="art-blue-deep art-s-blue-deep" d="M62 226 224 214v7L63 233Z" stroke-width="6" stroke-linejoin="round"/>
+      <path class="art-blue art-s-blue" d="{{ deck }}" stroke-width="8" stroke-linejoin="round"/>
     </g>
-    <path class="art-blue" d="M40 199l100-6 50 16-122 7Z"/>
-    <path d="M40 199l100-6 50 16-122 7Z" fill="url(#as-sheen)"/>
-    <path class="art-blue-deep" d="M60 222l160-10v6l-160 10Z"/>
-    <path d="M60 222l160-10v6l-160 10Z" fill="url(#as-shade)"/>
+    <path d="{{ deck }}" fill="url(#as-sheen)"/>
+    <path class="art-blue-deep" d="M44 202 140 196 178 210 60 217Z" opacity=".35"/>
+    {% for i in range(3) %}
+    {%- set f = (i + 0.7) / 3.6 %}
+    <line class="art-s-blue-soft" x1="{{ 48 + 16 * f }}" y1="{{ 202.5 + 15 * f }}" x2="{{ 138 + 37 * f }}"
+          y2="{{ 197 + 13.5 * f }}" stroke-width="3" stroke-dasharray="6.5 2.5" opacity=".8"/>
+    {% endfor %}
+    <line class="art-s-blue-soft" x1="86" y1="215.5" x2="134" y2="212.5" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+    <path class="art-blue-deep" d="M112 220 146 218 150 224 116 226Z" opacity=".3"/>
     <g filter="url(#as-drop)">
-      <use href="#as-lid" class="art-blue-deep"/>
+      <path class="art-blue-deep art-s-blue-deep" d="M30 100 142 92 146 187 34 193Z" stroke-width="12" stroke-linejoin="round"/>
     </g>
-    <path class="art-blue" d="M32 98a5 5 0 0 1 5-5l94-6a5 5 0 0 1 5 5l3 88a4 4 0 0 1-4 4l-98 5a4 4 0 0 1-4-4Z"/>
-    <path d="M32 98a5 5 0 0 1 5-5l94-6a5 5 0 0 1 5 5l3 88a4 4 0 0 1-4 4l-98 5a4 4 0 0 1-4-4Z" fill="url(#as-sheen)"/>
+    <path class="art-blue art-s-blue" d="M40 107 133 100 136 180 43 185Z" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M40 107 133 100 136 180 43 185Z" fill="url(#as-sheen)"/>
+    <path class="art-s-blue-deep" d="M34 197 146 191" fill="none" stroke-width="3" stroke-linecap="round" opacity=".6"/>
     <g filter="url(#as-drop)">
-      {{ envelope(88, 142, -3, 1.9) }}
+      {{ envelope(88, 142, -3, 1.75) }}
     </g>
 
     {#- la bandeja, con lo que ya le llegó -#}

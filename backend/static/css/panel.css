@@ -143,20 +143,23 @@
   --color-on-dark: #F3F7FB;
   --color-on-dark-soft: #E6E6E9;
 
-  /* Las ilustraciones de noche. El fondo azul claro pasa a azul noche, lo que
-   * es tarjeta se oscurece como el panel en oscuro, y el papel baja un poco
-   * para no deslumbrar. Lo de color apenas sube, para leerse sobre ese fondo, y
-   * las personas no cambian: la piel, el pelo pelirrojo y las camisas amarilla
-   * y rosa no se repiten aquí. Lo que va dibujado encima del papel (agujas,
-   * boli) usa --art-navy y no --art-ink, que de noche es claro. */
-  --art-stage: #0F1A2B;
-  --art-glow: #15243A;
-  --art-floor: #16233A;
-  --art-card: #1C2B45;
-  --art-card-edge: #2C4066;
+  /* Las ilustraciones de noche. Su fondo es el mismo de la sección, así que no
+   * se ve recuadro y los dibujos flotan sobre la página; hubo un azul noche y
+   * se quitó, porque teñía de azul toda la escena. Lo que es tarjeta (tablero,
+   * bandeja, disco, fichas) pasa a los grises de las tarjetas del sitio, y el
+   * papel baja un poco para no deslumbrar. Lo de color apenas sube, para
+   * leerse sobre el fondo, y las personas no cambian: la piel, el pelo
+   * pelirrojo y las camisas amarilla y rosa no se repiten aquí. Lo que va
+   * dibujado encima del papel (agujas, boli) usa --art-navy y no --art-ink,
+   * que de noche es claro. */
+  --art-stage: var(--color-surface-alt);
+  --art-glow: var(--color-surface-alt);  /* sin resplandor: de noche es una mancha */
+  --art-floor: var(--color-surface-alt); /* la mesa tampoco: sus esquinas dibujaban media caja */
+  --art-card: var(--color-surface);
+  --art-card-edge: var(--color-border);
   --art-paper: #D9E3F2;
   --art-paper-shade: #9FB1CE;
-  --art-line: #34496E;
+  --art-line: #3C3C44;
   --art-dash: #4D73AB;
   --art-ink: #DCE5F3;
   --art-shadow: rgba(0, 0, 0, .55);

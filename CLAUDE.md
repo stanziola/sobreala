@@ -1920,14 +1920,14 @@ dice todo.
 **Lo que abre cada punto son cuatro botones de radio**, como el carrusel de
 capturas, así que funciona entero sin JavaScript y las flechas del teclado lo
 mueven solas. `assets/js/trouble.js` agrega una sola cosa: pasar al siguiente
-solo, con las mismas cuatro reglas que el carrusel (a la vista, ratón o foco
-dentro, pestaña escondida, movimiento reducido) y un solo `sync()`. **Cuánto
-dura cada punto lo dice el CSS** (`--trouble-every`, seis segundos, que aquí hay
-un párrafo que leer) y el guion lo lee de ahí, así que el número no está escrito
-en dos sitios. La cuenta atrás se dibuja bajo el punto abierto y **solo existe si
-el guion corrió**: una cuenta que no lleva a ninguna parte es peor que no
-tenerla. Al cambiar de punto, el que deja de estar abierto pierde la regla de la
-animación y el nuevo la estrena, así que se reinicia sola.
+solo, **cada quince segundos**, que es lo que tarda en leerse un punto entero
+(unas 50 a 60 palabras); con seis no daba tiempo. Se para con el ratón encima o
+el foco dentro, fuera de la pantalla y con la pestaña escondida, y no existe con
+«reducir movimiento». **Si alguien lo cambia a mano, deja de pasar solo** para el
+resto de la visita, a diferencia de Features, donde se pidió que volviera a
+andar al quitar el ratón: lo detecta el evento `change` de los radios, que solo
+salta cuando los cambia una persona y nunca cuando los marca el guion. **No hay
+cuenta atrás**: hubo una barra bajo el punto abierto y se quitó.
 
 **El estado del punto abierto viaja a sus hijos en variables** (`--card`,
 `--mark-bg`, `--tick`…), de modo que una sola lista de cuatro selectores pinta a
@@ -1955,9 +1955,11 @@ y cifras) ni el puntero que tenía el tablero.
 medidos de esas referencias punto por punto: los azules vivos, el verde, el
 morado, el ámbar, el rojo, el marino, las pieles y los pelos. No son los de la
 marca, y es a propósito. **De noche son otra escena sin tocar el SVG**:
-`colors-dark.css` repite solo lo que cambia (el fondo pasa a azul noche, lo que
-es tarjeta se oscurece como el panel, el papel baja un poco para no
-deslumbrar), y las personas no cambian de color. Lo que va dibujado encima del
+`colors-dark.css` repite solo lo que cambia. El fondo y la mesa son los de la
+sección, así que no se ve recuadro y los dibujos flotan sobre la página; lo que
+es tarjeta pasa a los grises de las tarjetas del sitio, y el papel baja un poco
+para no deslumbrar. Hubo un azul noche y se quitó, porque teñía toda la escena.
+Las personas no cambian de color. Lo que va dibujado encima del
 papel (las agujas del reloj, el boli) usa `--art-navy` y no `--art-ink`, que de
 noche es claro.
 
