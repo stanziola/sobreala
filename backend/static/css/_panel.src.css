@@ -800,6 +800,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   font-weight: 600; text-align: left; cursor: pointer;
 }
 .tool:hover { border-color: var(--color-accent); color: var(--color-accent-strong); }
+/* Geometría: un menú que abre sin guion, con las seis figuras en dos columnas. */
+.geo > summary { list-style: none; }
+.geo > summary::-webkit-details-marker { display: none; }
+.geo[open] > summary { border-color: var(--color-accent); color: var(--color-accent-strong); }
+.geo__list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.geo__one { padding: 7px 8px; font-size: .8rem; }
 
 /* Alto fijo: si creciera o encogiera según lo elegido, la hoja de abajo se
    movería justo mientras se hace clic en ella. */
@@ -866,6 +872,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .cv-item.is-editing { cursor: text; user-select: text; outline: 2px solid var(--color-accent);
                       background: rgba(255, 255, 255, .6); }
 .cv-probe { visibility: hidden; left: 0; top: 0; }
+/* Un texto con viñetas: cada renglón, un bloque con la suya delante y sangría
+   francesa. La columna mide lo mismo que en el correo (`canvas.dot_px()`), y
+   mientras se escribe el texto va plano con la misma sangría, así que se
+   parte igual. */
+.cv-li { position: relative; padding-left: var(--cv-dot, 19px); }
+.cv-li::before { content: "\2022"; position: absolute; left: 0; width: var(--cv-dot, 19px);
+                 text-align: center; }
+.cv-li--blank::before { content: none; }
+.cv-item--list.is-editing { padding-left: var(--cv-dot, 19px); }
+/* Una línea puede medir 1 px: una franja invisible arriba y abajo deja
+   pulsarla sin apuntar al píxel. Gira con ella. */
+.cv-item--line::after { content: ""; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; }
 .cv-handle {
   position: absolute; width: 12px; height: 12px; border-radius: 3px;
   background: #FFFFFF; border: 2px solid var(--color-accent); z-index: 20;
@@ -969,6 +987,29 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .review__ok { margin: 0; font-size: .9rem; font-weight: 600; color: #15803D; }
 .review__title { margin: 0 0 4px; font-size: .9rem; font-weight: 700; color: #B42318; }
 .review__bad ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: .88rem; }
+.review__rules { justify-self: start; margin-top: 0; }
+/* Las imágenes de un HTML cargado: las que no son de la cuenta, en ámbar. */
+.pictures { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--color-border);
+            border-radius: 12px; background: var(--color-surface); }
+.pictures .field-label { margin-top: 0; }
+.pictures__warn { margin: 4px 0 8px; font-size: .88rem; font-weight: 600; color: #B45309; }
+.pictures__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pictures__one { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+                 font-size: .85rem; }
+.pictures__one .btn { margin-top: 0; }
+.pictures__src { flex: 1 1 100%; overflow-wrap: anywhere; color: var(--color-ink-soft); }
+.pictures__one.is-ok .pictures__state { color: #15803D; }
+.pictures__one:not(.is-ok) .pictures__state { color: #B45309; font-weight: 600; }
+/* La ventana de requisitos: cada regla con su marca, en los mismos colores que
+   la revisión de encima del lienzo. */
+.rules__count { margin: 12px 0 0; font-weight: 700; }
+.rules__title { margin: 18px 0 6px; font-size: .95rem; }
+.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: .9rem; }
+.rules__one { display: grid; grid-template-columns: 18px 1fr; gap: 6px; align-items: start; }
+.rules__mark { font-weight: 700; text-align: center; }
+.rules__one.is-ok .rules__mark { color: #15803D; }
+.rules__one.is-bad .rules__mark { color: #D92D20; }
+.rules__one.is-bad { font-weight: 600; }
 
 /* La vista previa: el correo a su tamaño de 600, achicado para caber. */
 .editor__side { position: sticky; top: 18px; }

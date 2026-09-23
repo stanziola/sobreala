@@ -87,6 +87,27 @@ def data_of(db, account_id, name: str) -> bytes | None:
     return bytes(found["data"]) if found else None
 
 
+def adopt(db, account_id, names) -> dict[str, str]:
+    """Copiar a esta cuenta las imágenes ajenas que nombra un HTML cargado.
+
+    Pasa con el HTML bajado de un lienzo que se le pasa a otra cuenta: sus
+    imágenes eran de quien lo bajó, y si esa persona borrara su plantilla, las
+    de la copia se romperían. Van como del sistema (`BACKGROUND`), así que no
+    cuentan contra el tope. Devuelve `{nombre viejo: nombre nuevo}`; las que no
+    existen se quedan fuera.
+    """
+    copies: dict[str, str] = {}
+    for name in names:
+        if not name or owns(db, account_id, name):
+            continue
+        found = by_name(db, name)
+        if found:
+            ext = name.rsplit(".", 1)[-1]
+            copies[name] = save(db, account_id, data=bytes(found["data"]), ext=ext,
+                                mime=found.get("mime", "image/jpeg"), kind=BACKGROUND)
+    return copies
+
+
 def remove(db, account_id, names) -> int:
     """Borrar las de una pieza que se borró. La cuenta va en la consulta."""
     wanted = [one for one in names if one]

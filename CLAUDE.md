@@ -562,8 +562,19 @@ permiso.
 **Cada subida se valida al entrar** con `services/html_check.py`, que lee el
 documento con un parser y no con expresiones regulares —`&lt;script&gt;` es
 texto y `<script>` no—. Fuera: `<script>`, `<iframe>`, `<object>`, `<form>`,
-atributos de evento, CSS o imágenes de otro sitio, y **cualquier pieza de más de
-102 KB**. Lo que se guarda es el archivo entero y tal como llegó.
+atributos de evento, hojas de estilo de otro sitio, imágenes que no van por
+`https://`, y **cualquier pieza de más de 102 KB**. Lo que se guarda es el
+archivo entero y tal como llegó, salvo las imágenes de otra cuenta del panel,
+que se copian a esta (ver «Bajarse la pieza»).
+
+**Las imágenes `https://` de otro sitio sí entran**: es lo que trae un HTML hecho
+con una IA o bajado de internet. Pero dependen de ese sitio, así que el editor
+de HTML las enseña en **«Imágenes de esta plantilla»** (`html_images()`), cada
+una con su estado: de la cuenta, de otro sitio, borrada (sale rota) o dentro del
+archivo (`data:`, que Gmail no muestra). **«Cambiar»** sube una foto por la ruta
+de siempre del lienzo (con su revisión, su achique y el tope de 20) y cambia esa
+dirección en el código; se guarda con Guardar. **El panel no va a buscar la
+imagen de fuera**: la sube quien la tiene.
 
 **Nadie aprueba una pieza a mano.** Lo que puede hacer daño lo rechaza el
 validador al subirla, y eso es mecánico, no un juicio. La mirada de una persona
@@ -693,21 +704,31 @@ Gmail y a Outlook en el teléfono:
 | Fotos o rectángulos sin nada encima | **Una imagen de verdad (`<img>`)**, fundida al doble |
 | Fotos con texto o botones encima | **Un fondo de esa zona**, con el texto dentro |
 
-- **La geometría son seis figuras**: rectángulo, línea divisoria, círculo,
-  triángulo, estrella y flecha. El rectángulo y la línea salen como celda de
-  color cuando llenan su grupo; **las otras cuatro no pueden**, porque Outlook
-  de escritorio ignora `border-radius` y no sabe dibujar un polígono, así que se
-  pintan en la imagen del grupo (`ImageDraw.polygon`) y suman a la mitad de
-  superficie que la revisión permite. **El editor las dibuja con el mismo
-  recorte** (`clip-path` con los mismos puntos), sobre un hijo de la caja y no
-  sobre ella: recortar la caja recortaría también sus tiradores.
+- **La geometría son seis figuras**, en un menú (`<details>`, abre sin guion):
+  rectángulo, línea, círculo, triángulo, estrella y flecha, cada una con su
+  medida al entrar. El rectángulo y la línea salen como celda de color cuando
+  llenan su grupo; **las otras cuatro no pueden**, porque Outlook de escritorio
+  ignora `border-radius` y no sabe dibujar un polígono, así que se pintan en la
+  imagen del grupo (`ImageDraw.polygon`) y suman a la parte de imagen que la
+  revisión permite. **El editor las dibuja con el mismo recorte** (`clip-path`
+  con los mismos puntos), sobre un hijo de la caja y no sobre ella: recortar la
+  caja recortaría también sus tiradores.
+- **La línea es fina de verdad**: su alto es su grosor, de 1 a 12 px
+  (`LINE_MIN`, `LINE_MAX`), y es lo único que puede bajar de los 16 px de
+  `MIN_BOX`. Solo se tira de sus puntas; el grosor se escribe en «Grosor», y
+  horizontal, vertical o diagonal es girarla. Una franja invisible arriba y
+  abajo deja pulsarla aunque mida 1 px. Derecha es una celda de color, con el
+  interlineado fijado a su alto (`_thin()`) para que Outlook no la engorde a un
+  renglón; girada, va en la imagen del grupo. Hasta septiembre de 2026 era «línea
+  divisoria», un rectángulo más que nunca bajaba de 16 px: **una «línea» guardada
+  con más de 12 px se lee como rectángulo**, que es como se dibujaba.
 - **Las fotos y las figuras giran** con un tirador encima de la caja, como en un
   editor de diapositivas (arrastrar gira, con Mayús de 15 en 15), o escribiendo
   los grados (`rot`, hacia la derecha como en CSS). El tirador lleva dentro
   **una flecha que cierra un círculo**: un punto blanco y solo no dice qué hace.
   **El texto y los botones no giran**, porque girarlos obligaría a
   convertirlos en imagen y ahí se pierden `*|NOMBRE|*`, la lectura con las
-  imágenes bloqueadas y los 300 caracteres de texto real que pide la revisión.
+  imágenes bloqueadas y los 200 caracteres de texto real que pide la revisión.
   Para el efecto de siempre queda **una figura girada detrás del texto
   derecho**. El giro se hornea en la imagen del grupo (`_paint()` gira con
   Pillow al revés que CSS, que cuenta al contrario).
@@ -807,6 +828,15 @@ bloqueadas.
 El formato va **por caja de texto entera**: una caja es toda de la misma fuente,
 tamaño y color. Formato por palabra complica que llegue igual a Outlook.
 
+**Un texto puede ir con viñetas** (`list`, que solo se escribe cuando está
+puesto): cada renglón es un punto, y un renglón vacío, un hueco. En el correo es
+una tabla con una columna para la viñeta (`&#8226;`, del ancho de la letra × 1.2,
+`dot_px()`) y otra para el texto, una fila por renglón: `<ul>` Outlook lo dibuja
+con márgenes propios. Va siempre a la izquierda, así que la alineación se
+esconde. En el editor cada renglón es un bloque con su viñeta y sangría
+francesa; mientras se escribe va plano con la misma sangría, así que se parte
+igual. El PDF dibuja lo mismo.
+
 **Los atajos del teclado viven detrás de un botón**, en su propia ventana
 (`<dialog>`, la misma que abre `panel.js` para la bandeja de cargar) y en dos
 columnas: en la columna angosta del editor no se leían. Salen de una sola lista,
@@ -822,17 +852,34 @@ guardar.
 
 ### Bajarse la pieza: PDF y HTML
 
-**Dos botones al lado de Previsualización**, y los dos bajan lo que se está
-viendo. **Van por POST** (`/plantillas/lienzo/pdf` y `/plantillas/lienzo/html`),
-como la vista previa: así se pueden bajar también en una pieza que todavía no se
-ha guardado. Ninguno pasa por el correo de nadie: las marcas `*|NOMBRE|*` se
-quedan escritas, porque lo que se baja es la plantilla.
+**Dos botones al lado de Previsualización.** Ninguno pasa por el correo de
+nadie: las marcas `*|NOMBRE|*` se quedan escritas, porque lo que se baja es la
+plantilla.
 
-**El HTML es el correo armado**, el mismo que enseña la vista previa, con su
-sobre y su pie. **Las fotos viajan dentro del archivo** (`data:`), así que se
-abre en cualquier sitio sin depender de que el panel esté en pie. El enlace de
-la baja va inerte y el propio archivo lo dice: el de verdad se inyecta al
-enviar, uno por destinatario (regla 3).
+**El PDF baja lo que se está viendo**, por POST (`/plantillas/lienzo/pdf`), como
+la vista previa: también de una pieza que todavía no se ha guardado.
+
+**El HTML baja la plantilla guardada, lista para volver a cargarla**
+(`GET /plantillas/lienzo/<id>/html`). Es lo mismo que sale al enviar
+(`sender.Piece`), con las imágenes fundidas **enlazadas** al panel y **sin
+nuestro pie** (`render.email_from_body(bare=True)`): la baja, la dirección y la
+marca de agua se ponen al enviar, y dentro saldrían dos veces. Así pesa lo que
+dice la barra o menos, y entra en «Cargar plantilla personalizada». Hasta
+septiembre de 2026 llevaba las fotos dentro (`data:`) y el pie: una sola foto ya
+pasaba de los 102 KB, y no se podía volver a cargar. Como las imágenes fundidas
+solo existen al guardar, **sin guardar, o con cambios sin guardar, el editor no
+baja nada y lo dice**. Una pieza vieja por diapositivas se rehace antes, como
+antes del primer correo.
+
+**Las imágenes que nombra una plantilla cargada no se borran**: `images_in()` lee
+en su HTML las direcciones `/img/<nombre>` (`imaging.names_in()`), así que borrar
+o volver a guardar el lienzo original no le rompe la copia cargada.
+
+**Y si lo carga otra cuenta, las imágenes se copian a ella**
+(`adopt_images()` al cargar y al guardar un HTML, con `images.adopt()`): las
+de otra cuenta se guardan como del sistema, sin gastar sus veinte, y el HTML
+pasa a nombrar las copias. Sin eso, que quien la bajó borrara su plantilla
+dejaría la de la otra cuenta sin imágenes.
 
 **El PDF se dibuja desde las coordenadas**, con `services/canvas_pdf.py` y
 `reportlab`, el mismo que ya hace el PDF de Estadísticas. Por eso el texto sale
@@ -844,8 +891,8 @@ como texto y se puede copiar; una página de 600 puntos por el alto de la hoja.
   Trebuchet, Century Gothic y Lucida a Helvetica; Georgia, Times, Palatino y
   Garamond a Times; Courier New a Courier. Miden distinto, así que **una línea
   puede partirse en otro sitio que en el correo**.
-- **El PDF no lleva el pie de la baja ni la dirección postal**, que son del
-  correo y no de la pieza; el HTML sí, porque es el correo armado.
+- **Ni el PDF ni el HTML llevan el pie de la baja ni la dirección postal**,
+  que son del correo y no de la pieza.
 - Las figuras usan **los mismos puntos** que el correo (`canvas.POLYGONS`), y
   las fotos honran su recorte y su giro. Una imagen de otra cuenta no se
   dibuja, como en el correo.
@@ -873,8 +920,8 @@ más manda a spam:
 
 | Regla | Límite |
 |---|---|
-| Texto de verdad | Al menos 300 caracteres |
-| Imágenes | Como mucho la mitad de la superficie (encimadas cuentan una vez; un rectángulo de color no cuenta) |
+| Texto de verdad | Al menos 200 caracteres |
+| Imágenes | Como mucho el 60 % de la superficie (encimadas cuentan una vez; un rectángulo de color no cuenta) |
 | Peso del correo armado | Debajo de los 102 KB, donde Gmail lo corta |
 | Enlaces de botones e imágenes | Como mucho 8 |
 | Acortadores (bit.ly y compañía) | Ninguno |
@@ -884,6 +931,19 @@ más manda a spam:
 
 No es una garantía: la bandeja la deciden la reputación del dominio y lo que
 hace cada destinatario, no el correo. Es quitar lo que se sabe que resta.
+
+**El texto y la imagen se aflojaron en septiembre de 2026**: eran 300
+caracteres y la mitad del correo. 200 son un titular y un par de frases, y el
+60 % es la proporción 60/40 de siempre, del lado permisivo; sigue sin pasar el
+correo casi todo imagen, que es lo que de verdad castigan los filtros.
+
+**«Requisitos para guardar»**, un botón junto a la barra, abre una ventana con
+**todas** las reglas que deciden si se guarda, con ✓ o ✕ y sus cifras: las de
+`problems()` (para armar el correo), las de `review()` (para no ir a spam) y el
+nombre. La arma `canvas.checklist()` con lo que ya dijeron las dos, y
+`BUILD_RULES` y `SPAM_RULES` fijan el orden; una prueba comprueba que ninguna
+regla nueva se quede fuera de esa lista. La lista corta de encima del lienzo
+sigue diciendo solo lo que falla.
 
 **La misma revisión corre mientras se trabaja**, en `POST
 /plantillas/lienzo/revisar`, que devuelve la lista y **el peso del correo tal

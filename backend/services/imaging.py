@@ -177,3 +177,19 @@ def url_of(name: str) -> str:
     cambiar de dominio no rompe ninguna pieza guardada.
     """
     return f"{Config.APP_BASE_URL}/img/{name}" if name else ""
+
+
+# Una imagen del panel dentro de un HTML: `/img/` y un nombre de los nuestros.
+# Sin el dominio, para que la lea aunque el panel haya cambiado de dirección.
+IN_HTML = re.compile(r"/img/([A-Za-z0-9_-]{16,64}\.(?:jpg|png|gif))")
+
+
+def names_in(html: str) -> list[str]:
+    """Las imágenes del panel que nombra un HTML cargado.
+
+    Es lo que pasa con el HTML bajado de un lienzo y vuelto a cargar: sus
+    imágenes fundidas van enlazadas, y no se pueden borrar mientras esa plantilla
+    las siga usando. De otra cuenta no borra ni guarda nada: quien borra pregunta
+    siempre con la cuenta.
+    """
+    return sorted(set(IN_HTML.findall(html or "")))

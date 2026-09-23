@@ -151,13 +151,18 @@ def email(key: str, filled: dict[str, str], *, plan: str | None,
 
 
 def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
-                    preview: bool = False, style: str = "", postal: str = "") -> str:
+                    preview: bool = False, style: str = "", postal: str = "",
+                    bare: bool = False) -> str:
     """Un correo a partir de un cuerpo ya armado por nosotros, como el del
     lienzo: el mismo sobre que las prediseñadas, con la baja, la dirección
     postal y la marca de agua por fuera.
 
     `body` tiene que venir ya escapado: aquí va dentro sin tocarlo. `style`
     son reglas CSS nuestras para la cabecera (las del modo oscuro).
+
+    Con `bare` sale **sin el pie**: es el HTML que se baja para volver a
+    cargarlo, y al cargarlo `email_from_html()` le pone el pie al enviar. Con
+    el pie dentro saldría dos veces, y uno con una baja que no hace nada.
     """
     return _env.get_template("_wrap.html").render(
         cuerpo=Markup(body),
@@ -167,6 +172,7 @@ def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
         watermark=plans.has_watermark(plan),
         logo=LOGO_URL,
         postal=postal,
+        sin_pie=bare,
     )
 
 

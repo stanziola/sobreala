@@ -233,6 +233,9 @@ def _text(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
     leading = round(size * (one.get("line") or 1.4))
     sheet.setFont(font, size)
     sheet.setFillColor(color(one["color"]))
+    if one.get("list"):
+        _bullets(sheet, one, left, top, font, size, leading)
+        return
     align = one.get("align", "left")
     for n, line in enumerate(wrap(one["text"], font, size, one["w"])):
         if not line:
@@ -246,3 +249,21 @@ def _text(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
             sheet.drawRightString(left + one["w"], base, line)
         else:
             sheet.drawString(left, base, line)
+
+
+def _bullets(sheet, one: dict[str, Any], left: float, top: float, font: str,
+             size: float, leading: float) -> None:
+    """Un texto con viñetas: la viñeta en la primera línea de cada renglón y el
+    texto con sangría francesa, en la misma columna que en el correo
+    (`canvas.dot_px()`). Un renglón vacío es un hueco."""
+    dot = canvas.dot_px(one)
+    n = 0
+    for paragraph in one["text"].split("\n"):
+        lines = wrap(paragraph, font, size, one["w"] - dot) if paragraph.strip() else [""]
+        for first, line in zip([True] + [False] * len(lines), lines):
+            base = top - n * leading - (leading + size * 0.72) / 2
+            if line:
+                if first:
+                    sheet.drawCentredString(left + dot / 2, base, "•")
+                sheet.drawString(left + dot, base, line)
+            n += 1

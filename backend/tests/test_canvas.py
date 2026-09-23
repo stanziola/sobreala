@@ -23,7 +23,7 @@ from models import design as designs
 from models import image as images
 from services import canvas
 from test_campaigns import catch, make, ready, send_it
-from test_designs import csrf, foto, inside, other
+from test_designs import csrf, foto, inside, other, subir, with_plan
 
 
 def lienzo(*items, h=300, bg="#FFFFFF"):
@@ -847,51 +847,330 @@ def test_el_pdf_parte_las_lineas_al_ancho_de_la_caja():
     assert canvas_pdf.wrap("uno\n\ndos", "Helvetica", 16, 400) == ["uno", "", "dos"]
 
 
-def pedir_html(browser, doc, nombre="Asamblea anual"):
-    return browser.post("/plantillas/lienzo/html", data={
-        "csrf_token": csrf(browser), "nombre": nombre,
-        "lienzo": json.dumps(doc)})
+# ------------------------------------------- el HTML, listo para volver a cargar
+
+def guardada(browser, database, doc):
+    """Guarda el lienzo (con el párrafo que lo deja pasar) y devuelve la pieza."""
+    guardar(browser, doc)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    return designs.for_account(database, cuenta["_id"])[0]
 
 
-def test_la_pieza_se_baja_tambien_como_html(client, database, outbox):
+def pedir_html(browser, pieza):
+    return browser.get(f"/plantillas/lienzo/{pieza['_id']}/html")
+
+
+def test_la_pieza_se_baja_como_html_sin_nuestro_pie(client, database, outbox):
     browser = inside(client)
-    respuesta = pedir_html(browser, lienzo(texto(40, 40, text="Asamblea anual")))
+    pieza = guardada(browser, database, lienzo(texto(40, 40, text="Asamblea anual")))
+    respuesta = pedir_html(browser, pieza)
     assert respuesta.status_code == 200
     assert respuesta.mimetype == "text/html"
     assert "attachment" in respuesta.headers["Content-Disposition"]
-    assert ".html" in respuesta.headers["Content-Disposition"]
+    assert "Asamblea.html" in respuesta.headers["Content-Disposition"]
     salida = respuesta.get_data(as_text=True)
-    assert "Asamblea anual" in salida
-    # Es el correo armado: lleva su sobre y el pie de la baja.
-    assert "<table" in salida and "suscripción" in salida
+    assert "Asamblea anual" in salida and "<table" in salida
+    # Sin la baja, la dirección ni la marca de agua: se ponen al enviar, y
+    # dentro saldrían dos veces.
+    assert "suscripción" not in salida and "Enviado con" not in salida
 
 
-def test_el_html_bajado_lleva_las_fotos_dentro(client, database, outbox):
+def test_el_html_bajado_enlaza_las_fotos_y_pesa_lo_que_la_barra(client, database, outbox):
     browser = inside(client)
     nombre = subir_foto(browser).get_json()["name"]
-    salida = pedir_html(browser, lienzo(imagen(0, 0, 600, 200, name=nombre),
-                                        texto(40, 220))).get_data(as_text=True)
-    # Nada que ir a buscar al panel: la foto viaja dentro del archivo, y su
-    # dirección en el panel no aparece por ningún lado.
-    assert "data:image/" in salida
-    assert nombre not in salida
+    pieza = guardada(browser, database, lienzo(imagen(0, 0, 600, 300, name=nombre),
+                                               texto(40, 320, text="Oferta"), h=400))
+    salida = pedir_html(browser, pieza).get_data(as_text=True)
+    # Enlazadas al panel, como en el correo que sale, y no dentro del archivo:
+    # dentro, una sola foto ya pasaba de los 102 KB.
+    assert "data:image/" not in salida
+    assert f"/img/{pieza['backgrounds'][0]}" in salida
+    # Lo que dice la barra o menos: la barra pesa lo mismo, con el pie.
+    barra = browser.post("/plantillas/lienzo/revisar", data={
+        "csrf_token": csrf(browser, "/plantillas/crear"),
+        "lienzo": json.dumps(pieza["canvas"])}).get_json()["bytes"]
+    assert len(salida.encode("utf-8")) <= barra
+
+
+def test_el_html_bajado_se_vuelve_a_cargar(client, database, outbox, monkeypatch):
+    from config import Config
+    from services import render
+
+    # Como en producción: la carga solo acepta imágenes por https, y el
+    # desarrollo corre en http.
+    monkeypatch.setattr(Config, "APP_BASE_URL", "https://panel.panamails.com")
+    browser = inside(client)
+    with_plan(database, "negocio")
+    nombre = subir_foto(browser).get_json()["name"]
+    pieza = guardada(browser, database, lienzo(imagen(0, 0, 600, 300, name=nombre),
+                                               texto(40, 320, text="Oferta"), h=400))
+    assert subir(browser, pedir_html(browser, pieza).get_data(),
+                 name="Copia cargada").status_code == 302
+
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    cargada = [one for one in designs.for_account(database, cuenta["_id"])
+               if one["source"] == designs.UPLOAD][0]
+    # Al enviarla lleva un solo pie: el que se le pone al enviar.
+    correo = render.email_from_html(cargada["html"], plan="negocio")
+    assert correo.count("Anular la suscripción") == 1
+
+    # Borrar el lienzo no borra la imagen que sigue usando la copia cargada.
+    fondo = pieza["backgrounds"][0]
+    browser.post("/plantillas/borrar", data={"csrf_token": csrf(browser),
+                                             "id": str(pieza["_id"])})
+    assert other(client).get(f"/img/{fondo}").status_code == 200
 
 
 def test_el_html_bajado_deja_las_marcas_escritas(client, database, outbox):
     browser = inside(client)
-    salida = pedir_html(browser, lienzo(
-        texto(40, 40, text="Hola *|NOMBRE|*"))).get_data(as_text=True)
+    pieza = guardada(browser, database, lienzo(texto(40, 40, text="Hola *|NOMBRE|*")))
     # Lo que se baja es la plantilla, no el correo de nadie.
-    assert "*|NOMBRE|*" in salida
+    assert "*|NOMBRE|*" in pedir_html(browser, pieza).get_data(as_text=True)
 
 
-def test_el_html_pide_sesion_y_testigo(client, database, outbox):
-    assert other(client).post("/plantillas/lienzo/html", data={
-        "lienzo": json.dumps(lienzo(texto(40, 40)))}).status_code in (302, 403)
-
+def test_el_html_bajado_de_una_por_diapositivas_se_rehace(client, database, outbox):
     browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    vieja = designs.save_canvas(database, cuenta["_id"], name="Vieja", doc={"slides": [
+        {"h": 300, "bg": "#0B3B5C", "items": [texto(40, 40, text="De antes")]}]},
+        backgrounds=[None])
+    respuesta = browser.get(f"/plantillas/lienzo/{vieja}/html")
+    assert respuesta.status_code == 200 and "De antes" in respuesta.get_data(as_text=True)
+    assert designs.by_id(database, cuenta["_id"], vieja)["canvas"]["v"] == canvas.VERSION
+
+
+def test_el_html_pide_sesion_y_es_de_la_cuenta(client, database, outbox):
+    browser = inside(client)
+    pieza = guardada(browser, database, lienzo(texto(40, 40)))
+    url = f"/plantillas/lienzo/{pieza['_id']}/html"
+    assert other(client).get(url).status_code in (302, 403)
+    assert inside(client, email="beto@ejemplo.com").get(url).status_code == 404
+    assert browser.get(f"/plantillas/lienzo/{ObjectId()}/html").status_code == 404
+    # La ruta de antes, que bajaba lo de pantalla con las fotos dentro, ya no está.
     assert browser.post("/plantillas/lienzo/html", data={
-        "csrf_token": "no", "lienzo": json.dumps(lienzo(texto(40, 40)))
-    }).status_code == 403
-    assert browser.post("/plantillas/lienzo/html", data={
-        "csrf_token": csrf(browser), "lienzo": "{no es json"}).status_code == 400
+        "csrf_token": csrf(browser),
+        "lienzo": json.dumps(lienzo(texto(40, 40)))}).status_code == 404
+
+
+def test_el_editor_baja_el_html_solo_de_la_guardada(client, database, outbox):
+    browser = inside(client)
+    nueva = browser.get("/plantillas/crear").get_data(as_text=True)
+    # Sin guardar, el botón está pero no lleva a ningún archivo.
+    assert "data-canvas-html" in nueva and '/html"' not in nueva
+    pieza = guardada(browser, database, lienzo(texto(40, 40)))
+    abierta = browser.get(f"/plantillas/lienzo/{pieza['_id']}").get_data(as_text=True)
+    assert f'href="/plantillas/lienzo/{pieza["_id"]}/html"' in abierta
+
+
+# ---------------------------------------------------- la lista de requisitos
+
+def requisitos(doc, size=20000):
+    doc = leer(doc)
+    found = canvas.review(doc, size, limit=102 * 1024)
+    return {one["key"]: one for one in canvas.checklist(
+        doc, size, limit=102 * 1024, failed=canvas.problems(doc), found=found)}
+
+
+def test_la_lista_trae_todas_las_reglas_con_sus_cifras():
+    reglas = requisitos(lienzo(texto(20, 20, w=560, h=320, text=PARRAFO), h=400))
+    assert list(reglas) == list(canvas.BUILD_RULES) + list(canvas.SPAM_RULES)
+    assert all(one["ok"] for one in reglas.values())
+    assert reglas["few_text"]["n"] == len(PARRAFO) and reglas["few_text"]["min"] == 200
+    assert reglas["image_heavy"]["pct"] == 0 and reglas["image_heavy"]["max"] == 60
+    assert reglas["too_big"]["kb"] == 20 and reglas["too_big"]["max"] == 102
+    assert reglas["height"]["h"] == 400
+
+
+def test_la_lista_dice_lo_que_falla():
+    reglas = requisitos(lienzo(texto(20, 20, text="Hola"), texto(40, 30, text="Otro"),
+                               boton(20, 200, href="https://bit.ly/x")))
+    assert not reglas["overlap"]["ok"]
+    assert not reglas["few_text"]["ok"]
+    assert not reglas["shortener"]["ok"] and reglas["shortener"]["what"] == "bit.ly"
+    assert reglas["bounds"]["ok"] and reglas["alt"]["ok"]
+
+
+def test_cada_regla_que_no_deja_guardar_esta_en_la_lista():
+    """Una regla nueva en `problems()` o en `review()` tiene que estar en la
+    ventana, o esa diría que todo se cumple con Guardar apagado."""
+    import re
+    from pathlib import Path
+
+    fuente = Path(canvas.__file__).read_text(encoding="utf-8")
+    dichas = set(re.findall(r'add\("([a-z_]+)"\)', fuente)) - {"broken"}
+    dichas |= set(re.findall(r'"key": "([a-z_]+)"', fuente))
+    assert dichas and dichas <= set(canvas.BUILD_RULES) | set(canvas.SPAM_RULES)
+
+
+def test_la_revision_devuelve_la_lista_con_sus_frases(client, database, outbox):
+    browser = inside(client)
+    datos = browser.post("/plantillas/lienzo/revisar", data={
+        "csrf_token": csrf(browser, "/plantillas/crear"), "nombre": "",
+        "lienzo": json.dumps(lienzo(texto(40, 40, text="Hola")))}).get_json()
+    reglas = datos["rules"]
+    assert len(reglas) == 1 + len(canvas.BUILD_RULES) + len(canvas.SPAM_RULES)
+    assert reglas[0] == {"group": "build", "ok": False, "text": "Tiene nombre."}
+    textos = " ".join(one["text"] for one in reglas)
+    assert "Al menos 200 caracteres de texto (tiene 4)." in textos
+    assert "La hoja mide entre 80 y 4,000 px" in textos
+    # `ok` sigue siendo lo de siempre: el nombre no apaga Guardar.
+    assert datos["ok"] is False
+    assert not any("nombre" in one.lower() for one in datos["issues"])
+
+    con_nombre = browser.post("/plantillas/lienzo/revisar", data={
+        "csrf_token": csrf(browser, "/plantillas/crear"), "nombre": "Boletín",
+        "lienzo": json.dumps(lienzo(texto(40, 40, text="Hola")))}).get_json()
+    assert con_nombre["rules"][0]["ok"] is True
+
+
+def test_el_editor_tiene_la_ventana_de_requisitos(client, database, outbox):
+    pantalla = inside(client).get("/plantillas/crear").get_data(as_text=True)
+    assert 'data-open-dialog="requisitos"' in pantalla and 'id="requisitos"' in pantalla
+
+
+# ------------------------------------------------- la revisión, menos estricta
+
+def texto_de(n):
+    """Un texto de exactamente n caracteres, sin mayúsculas ni palabras gancho."""
+    return ("dato " * n)[:n - 1] + "x"
+
+
+def test_doscientos_caracteres_ya_alcanzan():
+    assert "few_text" not in revisar(texto(20, 20, w=560, h=200, text=texto_de(250)))
+    assert "few_text" in revisar(texto(20, 20, w=560, h=200, text=texto_de(150)))
+
+
+def test_hasta_el_sesenta_por_ciento_de_imagen():
+    # El 55 % de foto pasa, que con la mitad no pasaba; el 65 %, no.
+    assert "image_heavy" not in revisar(imagen(0, 0, 600, 550),
+                                        texto(20, 560, w=560, h=300, text=PARRAFO), h=1000)
+    assert "image_heavy" in revisar(imagen(0, 0, 600, 650),
+                                    texto(20, 660, w=560, h=300, text=PARRAFO), h=1000)
+
+
+def test_el_aviso_de_imagen_dice_el_maximo():
+    from i18n import t
+
+    assert "como mucho el 60 %" in t("canvas_spam_image_heavy", pct=70, max=60)
+
+
+# ------------------------------------------------------------ las líneas
+
+def linea(x, y, w, h=2, **extra):
+    return rectangulo(x, y, w, h, shape="line", **extra)
+
+
+def test_una_linea_fina_se_guarda_y_una_gorda_no_es_linea():
+    assert canvas.problems(leer(lienzo(linea(100, 40, 400)))) == []
+    assert canvas.problems(leer(lienzo(linea(100, 40, 400, h=1)))) == []
+    # Grosor 0: no hay línea.
+    assert "line" in canvas.problems(leer(lienzo(linea(100, 40, 400, h=0))))
+    # Una «línea» de antes, alta, se lee como el rectángulo que parecía.
+    assert leer(lienzo(linea(0, 0, 600, h=160)))["items"][0]["shape"] == "rect"
+    # Y un rectángulo sigue sin poder bajar de 16.
+    assert "bounds" in canvas.problems(leer(lienzo(rectangulo(0, 0, 600, 4))))
+
+
+def test_una_linea_derecha_es_una_celda_de_2_px_que_outlook_respeta():
+    assert tipos(lienzo(linea(100, 80, 400), h=200)) == ["color"]
+    doc = leer(lienzo(texto(20, 20, w=560, h=40), linea(100, 80, 400), h=200))
+    html = canvas.to_html(doc, [None, None])
+    assert 'height="2"' in html
+    assert "line-height:2px;mso-line-height-rule:exactly" in html
+
+
+def test_una_linea_girada_va_en_imagen():
+    assert tipos(lienzo(linea(100, 100, 400, rot=45), h=400)) == ["picture"]
+    assert canvas.problems(leer(lienzo(linea(100, 250, 400, rot=90), h=500))) == []
+
+
+def test_el_editor_ofrece_la_linea_en_geometria(client, database, outbox):
+    pantalla = inside(client).get("/plantillas/crear").get_data(as_text=True)
+    assert 'data-shape="line"' in pantalla and ">Línea<" in pantalla
+    assert 'data-prop="h"' in pantalla
+
+
+# ------------------------------------------------------------ las viñetas
+
+def test_las_vinetas_se_guardan_y_salen_una_fila_por_renglon():
+    doc = leer(lienzo(texto(20, 20, w=400, h=120, text="Uno\nDos\n\nTres",
+                            list=True, align="center")))
+    assert doc["items"][0]["list"] is True
+    html = canvas.to_html(doc, [None])
+    assert html.count("&#8226;") == 3
+    for renglon in ("Uno", "Dos", "Tres"):
+        assert f">{renglon}</span>" in html
+    # A la izquierda aunque dijera centro: si no, la viñeta de cada renglón
+    # quedaría en otro sitio.
+    assert 'align="left"' in html
+    # Sin viñetas la clave ni se escribe: los textos de antes se leen igual.
+    assert "list" not in leer(lienzo(texto(20, 20)))["items"][0]
+
+
+def test_las_vinetas_salen_escapadas():
+    doc = leer(lienzo(texto(20, 20, w=400, h=80, text="<b>uno</b>", list=True)))
+    html = canvas.to_html(doc, [None])
+    assert "<b>uno</b>" not in html and "&lt;b&gt;uno&lt;/b&gt;" in html
+
+
+def test_el_pdf_dibuja_las_vinetas():
+    from services import canvas_pdf
+
+    doc = leer(lienzo(texto(20, 20, w=400, h=80, text="Uno\nDos", list=True)))
+    assert canvas_pdf.to_pdf(doc, lambda name: None).startswith(b"%PDF")
+
+
+def test_el_editor_ofrece_las_vinetas(client, database, outbox):
+    pantalla = inside(client).get("/plantillas/crear").get_data(as_text=True)
+    assert 'data-prop="list"' in pantalla and "Viñetas" in pantalla
+
+
+# ------------------------------------- el HTML bajado, cargado por otra cuenta
+
+def test_otra_cuenta_carga_el_html_con_sus_propias_copias(client, database, outbox,
+                                                           monkeypatch):
+    from config import Config
+
+    monkeypatch.setattr(Config, "APP_BASE_URL", "https://panel.panamails.com")
+    ana = inside(client)
+    nombre = subir_foto(ana).get_json()["name"]
+    pieza = guardada(ana, database, lienzo(imagen(0, 0, 600, 300, name=nombre),
+                                           texto(40, 320, text="Oferta"), h=400))
+    fondo = pieza["backgrounds"][0]
+    bajado = pedir_html(ana, pieza).get_data()
+
+    beto = inside(client, email="beto@ejemplo.com")
+    with_plan(database, "negocio", email="beto@ejemplo.com")
+    assert subir(beto, bajado, name="De Ana").status_code == 302
+    de_beto = accounts.by_email(database, "beto@ejemplo.com")
+    cargada = designs.for_account(database, de_beto["_id"])[0]
+    # Nombra una copia suya, no la imagen de Ana.
+    assert fondo not in cargada["html"]
+    [copia] = __import__("services.imaging", fromlist=["x"]).names_in(cargada["html"])
+    assert images.owns(database, de_beto["_id"], copia)
+    # Y no le gasta ninguna de sus veinte.
+    assert images.count(database, de_beto["_id"]) == 0
+
+    # Ana borra su lienzo: la de Ana se va, la copia de Beto se queda.
+    ana.post("/plantillas/borrar", data={"csrf_token": csrf(ana), "id": str(pieza["_id"])})
+    assert other(client).get(f"/img/{fondo}").status_code == 404
+    assert other(client).get(f"/img/{copia}").status_code == 200
+
+
+def test_cargar_un_html_con_imagenes_propias_no_copia_nada(client, database, outbox,
+                                                           monkeypatch):
+    from config import Config
+
+    monkeypatch.setattr(Config, "APP_BASE_URL", "https://panel.panamails.com")
+    ana = inside(client)
+    with_plan(database, "negocio")
+    nombre = subir_foto(ana).get_json()["name"]
+    pieza = guardada(ana, database, lienzo(imagen(0, 0, 600, 300, name=nombre),
+                                           texto(40, 320, text="Oferta"), h=400))
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    antes = database.images.count_documents({"account_id": cuenta["_id"]})
+    subir(ana, pedir_html(ana, pieza).get_data(), name="Copia")
+    assert database.images.count_documents({"account_id": cuenta["_id"]}) == antes
+    cargada = [one for one in designs.for_account(database, cuenta["_id"])
+               if one["source"] == designs.UPLOAD][0]
+    assert pieza["backgrounds"][0] in cargada["html"]

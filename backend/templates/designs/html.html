@@ -6,7 +6,8 @@
 <h1 class="settings__heading">{{ name }}</h1>
 <p class="settings__lead">{{ t('designs_html_lead') }}</p>
 
-{% if fresh %}<p class="notice notice--ok">{{ t('designs_html_fresh') }}</p>{% endif %}
+{% if fresh %}<p class="notice notice--ok">{{ t('designs_html_fresh') }}
+  {%- if pictures|rejectattr('state', 'equalto', 'ok')|list %} {{ t('designs_html_fresh_pictures') }}{% endif %}</p>{% endif %}
 {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
 <div class="compose">
@@ -26,6 +27,31 @@
               autocomplete="off" autocapitalize="off" wrap="off">{{ html }}</textarea>
     <p class="hint">{{ t('designs_html_size', kb=kb, max=max_kb) }}</p>
     {% if errors.html %}<p class="error">{{ errors.html }}</p>{% endif %}
+
+    {#- Las imágenes del HTML y de dónde sale cada una. Las que no son de la
+        cuenta se pueden cambiar por una subida: el panel nunca va a buscar
+        una imagen a otro sitio. Sin JavaScript se ve la lista, sin botones. -#}
+    {% if pictures %}
+    {% set foreign = pictures|rejectattr('state', 'equalto', 'ok')|list %}
+    <div class="pictures" data-pictures data-upload="{{ url_for('designs.canvas_image') }}"
+         data-ok-text="{{ t('designs_picture_ok') }}">
+      <p class="field-label">{{ t('designs_pictures_title') }}</p>
+      {% if foreign %}<p class="pictures__warn" data-pictures-warn>{{ t('designs_pictures_warn_one') if foreign|length == 1 else t('designs_pictures_warn', n=foreign|length) }}</p>{% endif %}
+      <ul class="pictures__list">
+        {% for one in pictures %}
+        <li class="pictures__one is-{{ one.state }}" data-src="{{ one.src }}">
+          <code class="pictures__src" data-picture-shown>{{ one.shown }}</code>
+          <span class="pictures__state" data-picture-state>{{ t('designs_picture_' + one.state) }}</span>
+          <button class="btn btn--small btn--outline" type="button" data-picture-change
+                  hidden>{{ t('designs_picture_change') }}</button>
+        </li>
+        {% endfor %}
+      </ul>
+      <input class="visually-hidden" type="file" accept="image/*" data-picture-file
+             tabindex="-1" aria-label="{{ t('designs_picture_change') }}">
+      <p class="error" data-picture-error hidden></p>
+    </div>
+    {% endif %}
 
     <div class="compose__actions">
       <button class="btn" type="submit" name="accion" value="guardar">{{ t('designs_save') }}</button>

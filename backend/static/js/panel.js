@@ -513,6 +513,60 @@
   refresh();
 })();
 
+/* Las imágenes de un HTML cargado: «Cambiar» sube una foto a la cuenta por la
+   ruta de siempre (que la revisa, la achica y la cuenta contra el tope) y
+   cambia su dirección en el código. El panel no va a buscar la de fuera: la
+   sube quien la tiene. Se guarda con Guardar, como cualquier cambio. */
+(function () {
+  var box = document.querySelector("[data-pictures]");
+  var code = document.getElementById("html");
+  if (!box || !code || !window.fetch || !window.FormData) return;
+  var file = box.querySelector("[data-picture-file]");
+  var error = box.querySelector("[data-picture-error]");
+  var form = code.form;
+  var row = null;
+  Array.prototype.forEach.call(box.querySelectorAll("[data-picture-change]"), function (b) {
+    b.hidden = false;
+  });
+  box.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-picture-change]");
+    if (!b) return;
+    row = b.closest("[data-src]");
+    file.value = "";
+    file.click();
+  });
+  // Dentro del formulario: sin esto, elegir el archivo refrescaría la vista.
+  file.addEventListener("input", function (e) { e.stopPropagation(); });
+  file.addEventListener("change", function (e) {
+    e.stopPropagation();
+    var picked = file.files && file.files[0];
+    if (!picked || !row) return;
+    var body = new FormData();
+    body.append("csrf_token", form.querySelector("[name=csrf_token]").value);
+    body.append("archivo", picked);
+    error.hidden = true;
+    fetch(box.getAttribute("data-upload"), { method: "POST", body: body, credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (answer) {
+        if (!answer.url) throw new Error(answer.error || "");
+        var old = row.getAttribute("data-src");
+        code.value = code.value.split(old).join(answer.url);
+        row.setAttribute("data-src", answer.url);
+        row.className = "pictures__one is-ok";
+        row.querySelector("[data-picture-shown]").textContent = answer.url;
+        row.querySelector("[data-picture-state]").textContent = box.getAttribute("data-ok-text");
+        var warn = box.querySelector("[data-pictures-warn]");
+        if (warn && !box.querySelector(".pictures__one:not(.is-ok)")) warn.hidden = true;
+        // Que la vista previa se entere, como si se hubiera escrito.
+        code.dispatchEvent(new Event("input", { bubbles: true }));
+      })
+      .catch(function (err) {
+        error.textContent = err.message || "";
+        error.hidden = !err.message;
+      });
+  });
+})();
+
 /* Ver la vista previa como en una computadora o como en un teléfono. Es una
    clase en el marco: lo de dentro no se toca, sigue aislado. */
 (function () {

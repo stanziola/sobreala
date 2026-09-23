@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from html.parser import HTMLParser
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -187,7 +188,8 @@ def upload():
                 # mano es la cuenta, una vez, antes de su primera campaña.
                 new_id = designs.save(db, account["_id"],
                                       name=name or archivo.filename,
-                                      html=raw.decode("utf-8"),
+                                      html=adopt_images(db, account["_id"],
+                                                        raw.decode("utf-8")),
                                       uploaded_by=account["_id"])
                 # Directo al editor: lo siguiente que se quiere es verla y
                 # ponerle las columnas.
@@ -270,8 +272,8 @@ def edit_html(raw):
             if problems:
                 errors["html"] = explain(problems)
             else:
-                designs.update_html(db, account["_id"], found["_id"],
-                                    name=name, html=html)
+                designs.update_html(db, account["_id"], found["_id"], name=name,
+                                    html=adopt_images(db, account["_id"], html))
                 return redirect(url_for("designs.index", cambiado=1))
 
     return render_template(
@@ -282,7 +284,8 @@ def edit_html(raw):
         people=contacts.for_preview(db, account["_id"]),
         max_kb=html_check.MAX_BYTES // 1024,
         kb=round(len(html.encode("utf-8")) / 1024, 1),
-        watermark=plans.has_watermark(plan))
+        watermark=plans.has_watermark(plan),
+        pictures=html_images(db, account["_id"], html))
 
 
 # --------------------------------------------------- llenar una prediseñada
@@ -307,16 +310,84 @@ def mine_only(db, account_id, key: str,
     return filled
 
 
+class _Sources(HTMLParser):
+    """Las direcciones de las `<img>` de un HTML, en orden y sin repetir."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.found: list[str] = []
+
+    def handle_starttag(self, tag, attrs) -> None:
+        if tag != "img":
+            return
+        src = (dict(attrs).get("src") or "").strip()
+        if src and src not in self.found:
+            self.found.append(src)
+
+    handle_startendtag = handle_starttag
+
+
+def html_images(db, account_id, html: str) -> list[dict]:
+    """Cada imagen de un HTML cargado y de dónde sale, para avisar.
+
+    `ok` es del panel y de esta cuenta. `gone`, del panel pero ya no existe:
+    sale rota. `outside`, de otro sitio (o de otra cuenta): se ve mientras
+    quien la publica la mantenga, y el panel no va a buscarla. `inside`, dentro
+    del archivo: Gmail no la muestra y pesa.
+    """
+    reader = _Sources()
+    try:
+        reader.feed(html or "")
+        reader.close()
+    except Exception:  # noqa: BLE001 - lo roto ya lo dice html_check
+        return []
+    out = []
+    for src in reader.found:
+        if src.lower().startswith("data:"):
+            state = "inside"
+        else:
+            names = imaging.names_in(src)
+            if not names:
+                state = "outside"
+            elif images.owns(db, account_id, names[0]):
+                state = "ok"
+            elif images.by_name(db, names[0]) is None:
+                state = "gone"
+            else:
+                state = "outside"
+        # Lo que se enseña: una dirección cortada, que un `data:` son megas.
+        shown = "data:…" if state == "inside" else (src if len(src) <= 70 else src[:67] + "…")
+        out.append({"src": src, "shown": shown, "state": state})
+    return out
+
+
+def adopt_images(db, account_id, html: str) -> str:
+    """El HTML con las imágenes ajenas del panel cambiadas por copias propias.
+
+    Un HTML bajado de un lienzo y pasado a otra cuenta nombra imágenes de quien
+    lo bajó: sin copiarlas, borrar aquella plantilla dejaría esta sin imágenes.
+    Se cambia solo `/img/<nombre>`, así el dominio queda como venía.
+    """
+    copies = images.adopt(db, account_id, imaging.names_in(html))
+    for old, new in copies.items():
+        html = html.replace(f"/img/{old}", f"/img/{new}")
+    return html
+
+
 def images_in(found) -> list[str]:
     """Las imágenes que nombra una pieza guardada.
 
     En un lienzo, sus fotos y sus fondos fundidos. En una prediseñada, se le
     pregunta a la plantilla cuáles de sus casillas son imágenes, en vez de
-    adivinarlo mirando el contenido: la plantilla es quien lo sabe.
+    adivinarlo mirando el contenido: la plantilla es quien lo sabe. En una
+    cargada, las del panel que nombra su HTML, que es el caso del HTML bajado
+    de un lienzo y vuelto a cargar.
     """
     if found.get("source") == designs.CANVAS:
         return (canvas.images_of(found.get("canvas"))
                 + [one for one in found.get("backgrounds") or [] if one])
+    if found.get("source") == designs.UPLOAD:
+        return imaging.names_in(found.get("html", ""))
     fields = found.get("fields") or {}
     return [fields[one["name"]]
             for one in render.fields_of(found.get("template", ""))
@@ -569,6 +640,25 @@ def review_texts(found: list[dict]) -> list[str]:
             for one in found]
 
 
+def rule_texts(doc, size: int, problems: list[str], found: list[dict]) -> list[dict]:
+    """La ventana de requisitos: cada regla, si se cumple y su frase con las
+    cifras de ahora. El nombre va primero y se mira aquí, que no es del lienzo:
+    viaja en el formulario, como al guardar."""
+    named = bool(designs.clean_name(request.form.get("nombre", "")))
+    rules = [{"group": "build", "ok": named, "text": t("canvas_rule_name")}]
+    for one in canvas.checklist(doc, size, limit=html_check.MAX_BYTES,
+                                failed=problems, found=found):
+        # Los miles con coma, como se escriben en Panamá: 4,000 px.
+        values = {k: (f"{v:,}" if isinstance(v, int) else v) for k, v in one.items()
+                  if k not in ("key", "group", "ok")}
+        text = t("canvas_rule_" + one["key"], **values)
+        if not one["ok"] and one.get("what"):
+            # Qué palabra o qué acortador: lo que hay que cambiar.
+            text += " " + t("canvas_rule_found", what=one["what"])
+        rules.append({"group": one["group"], "ok": one["ok"], "text": text})
+    return rules
+
+
 def canvas_editor(account, found):
     """El lienzo, el mismo para una nueva y para una guardada.
 
@@ -629,7 +719,8 @@ def canvas_editor(account, found):
         limits={"minSize": canvas.MIN_SIZE, "maxSize": canvas.MAX_SIZE,
                 "minHeight": canvas.MIN_HEIGHT, "maxHeight": canvas.MAX_HEIGHT,
                 "maxItems": canvas.MAX_ITEMS, "altMax": canvas.ALT_MAX,
-                "width": canvas.WIDTH},
+                "width": canvas.WIDTH, "lineMin": canvas.LINE_MIN,
+                "lineMax": canvas.LINE_MAX},
         image_mb=imaging.MAX_UPLOAD // (1024 * 1024),
         watermark=plans.has_watermark(accounts.plan_of(account)))
 
@@ -657,8 +748,9 @@ def edit_canvas(raw):
 
 @bp.route("/plantillas/lienzo/revisar", methods=["POST"])
 def canvas_review():
-    """Cuánto pesa y qué le falta para no ir a spam. Lo pide el editor mientras
-    se trabaja, para la barra y la lista; es la misma revisión que al guardar."""
+    """Cuánto pesa, qué le falta para no ir a spam y cómo va cada requisito. Lo
+    pide el editor mientras se trabaja, para la barra, la lista y la ventana de
+    requisitos; es la misma revisión que al guardar."""
     account = signed_in()
     if account is None or not csrf_ok(request.form.get("csrf_token")):
         abort(403)
@@ -666,13 +758,15 @@ def canvas_review():
     doc = canvas.parse(request.form.get("lienzo", ""))
     if doc is None:
         return jsonify(ok=False, bytes=0, max=html_check.MAX_BYTES,
-                       issues=[canvas_explain(["broken"])])
+                       issues=[canvas_explain(["broken"])], rules=[])
     size = canvas_size(doc, accounts.plan_of(account), sample_grounds(doc))
     problems = canvas_problems(db, account["_id"], doc)
-    issues = ([canvas_explain([one]) for one in problems]
-              + review_texts(canvas.review(doc, size, limit=html_check.MAX_BYTES)))
+    found = canvas.review(doc, size, limit=html_check.MAX_BYTES)
+    issues = [canvas_explain([one]) for one in problems] + review_texts(found)
+    # `ok` sigue siendo lo que apaga Guardar; el nombre no cuenta ahí, que se
+    # pide al pulsarlo con su propio aviso.
     return jsonify(ok=not issues, bytes=size, max=html_check.MAX_BYTES,
-                   issues=issues)
+                   issues=issues, rules=rule_texts(doc, size, problems, found))
 
 
 @bp.route("/plantillas/lienzo/vista", methods=["POST"])
@@ -723,34 +817,44 @@ def canvas_pdf():
         "Content-Disposition": f'attachment; filename="{file_name(name, "pdf")}"'})
 
 
-@bp.route("/plantillas/lienzo/html", methods=["POST"])
-def canvas_html():
-    """La pieza en un archivo HTML: el correo armado, tal como lo enseña la
-    vista previa.
+@bp.route("/plantillas/lienzo/<raw>/html")
+def canvas_html(raw):
+    """La plantilla guardada en un archivo HTML, lista para volver a cargarla.
 
-    **Las fotos van dentro del archivo**, como en la vista previa, así que lo
-    que se baja se abre en cualquier sitio y no depende de que el panel esté en
-    pie. Las marcas `*|NOMBRE|*` se quedan escritas: lo que se baja es la
-    plantilla, no el correo de nadie en concreto.
+    Es lo mismo que sale al enviar (`sender.Piece`): las imágenes fundidas que
+    se guardaron van **enlazadas** al panel, como en el correo, y no dentro del
+    archivo. Así pesa lo que dice la barra, o menos, y entra en «Cargar
+    plantilla personalizada». Cuando las llevaba dentro, una sola foto ya pasaba
+    de los 102 KB.
+
+    **Sin nuestro pie**: la baja, la dirección y la marca de agua se ponen al
+    enviar, y con el pie dentro saldría dos veces. Es de la plantilla guardada y
+    no de lo que haya en pantalla, porque las imágenes fundidas solo existen al
+    guardar; el editor lo dice si hay cambios sin guardar. Las marcas
+    `*|NOMBRE|*` se quedan escritas: lo que se baja es la plantilla.
     """
     account = signed_in()
-    if account is None or not csrf_ok(request.form.get("csrf_token")):
-        abort(403)
+    if account is None:
+        return redirect(url_for("auth.login"))
     db = get_db()
+    design_id = as_id(raw)
+    found = designs.by_id(db, account["_id"], design_id) if design_id else None
+    if found is None or found.get("source") != designs.CANVAS:
+        abort(404)
+    if (found.get("canvas") or {}).get("v") != canvas.VERSION:
+        # Guardada por diapositivas: sus imágenes eran de otra forma. Se
+        # rehacen como antes del primer correo.
+        found = designs.upgrade_canvas(db, account["_id"], found)
+    doc = canvas.read(found.get("canvas")) or canvas.blank()
+    urls = [imaging.url_of(one) if one else None for one in found.get("backgrounds") or []]
+    shades = found.get("shades") or []
     g.email_preview = True
-    doc = canvas.parse(request.form.get("lienzo", ""))
-    if doc is None:
-        abort(400)
-    name = (request.form.get("nombre") or "").strip()[:80]
-    # Solo las imágenes de esta cuenta: `data_of` pregunta con ella.
-    load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
-    made = canvas.parts(doc, load)
-    email = canvas_email(doc, accounts.plan_of(account),
-                         [canvas.data_url(raw) if raw else None for raw in made],
-                         [canvas.average(raw, doc["bg"]) if raw else None
-                          for raw in made], preview=True)
+    email = render.email_from_body(canvas.to_html(doc, urls, shades),
+                                   plan=accounts.plan_of(account),
+                                   style=canvas.dark_css(doc, shades), bare=True)
     return Response(email, mimetype="text/html", headers={
-        "Content-Disposition": f'attachment; filename="{file_name(name, "html")}"'})
+        "Content-Disposition":
+            f'attachment; filename="{file_name(found.get("name", ""), "html")}"'})
 
 
 # Lo que puede ir en el nombre de un archivo sin romper la cabecera ni el disco

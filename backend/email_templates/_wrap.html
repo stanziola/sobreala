@@ -22,6 +22,10 @@
 <body style="margin:0;padding:0;background:#F1F6FC;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 {{ cuerpo }}
 
+{#- Sin pie solo en el HTML que se baja del lienzo: se vuelve a cargar, y al
+    enviarlo el pie se le pone entonces. -#}
+{% if not sin_pie %}
 {% include "_foot.html" %}
+{% endif %}
 </body>
 </html>

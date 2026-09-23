@@ -53,6 +53,9 @@
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   function item() { return sel === null ? null : doc.items[sel] || null; }
   function linePx(one) { return Math.round(one.size * (one.line || 1.4)); }
+  // La columna de la viñeta: la misma cuenta que `canvas.dot_px()` en el correo.
+  function dotPx(one) { return Math.round(one.size * 1.2); }
+  function isLine(one) { return one && one.t === "shape" && one.shape === "line"; }
 
   /* ---------------------------------------------------------- lo elegido */
 
@@ -245,12 +248,30 @@
     el.style.fontStyle = one.italic ? "italic" : "normal";
     if (one.t === "text") {
       el.style.lineHeight = linePx(one) + "px";
-      el.style.textAlign = one.align;
+      // Con viñetas va a la izquierda, como en el correo.
+      el.style.textAlign = one.list ? "left" : one.align;
+      el.style.setProperty("--cv-dot", dotPx(one) + "px");
+      el.classList.toggle("cv-item--list", !!one.list);
     } else {
       el.style.lineHeight = one.h + "px";
       el.style.backgroundColor = one.bg;
       el.style.borderRadius = one.radius + "px";
     }
+  }
+
+  /* Lo escrito dentro de su caja. Con viñetas, cada renglón es un bloque con la
+     suya delante y sangría francesa, de la misma medida que en el correo: así
+     el texto se parte en el mismo sitio en los dos. Un renglón vacío es un
+     hueco del alto de una línea. */
+  function fillText(el, one) {
+    if (one.t !== "text" || !one.list) { el.textContent = one.text; return; }
+    el.textContent = "";
+    (one.text || "").split("\n").forEach(function (line) {
+      var row = document.createElement("div");
+      row.className = line.trim() ? "cv-li" : "cv-li cv-li--blank";
+      row.textContent = line.trim() ? line : " ";
+      el.appendChild(row);
+    });
   }
 
   /* Las figuras que el navegador dibuja recortando su caja. Son las mismas
@@ -288,7 +309,8 @@
     layer.className = "cv-chrome";
     layer.setAttribute("data-item", i);
     layerBox(layer, one);
-    var handles = BACK[one.t] ? CORNERS.concat(SIDES) : CORNERS;
+    // Una línea solo se alarga de sus puntas: su grosor se escribe en la barra.
+    var handles = isLine(one) ? ["e", "w"] : (BACK[one.t] ? CORNERS.concat(SIDES) : CORNERS);
     handles.forEach(function (where) {
       var h = document.createElement("span");
       h.className = "cv-handle cv-handle--" + where;
@@ -345,11 +367,11 @@
     var bad = badOnes(), notes = {};
     doc.items.forEach(function (one, i) {
       var el = document.createElement("div");
-      el.className = "cv-item cv-item--" + one.t;
+      el.className = "cv-item cv-item--" + one.t + (isLine(one) ? " cv-item--line" : "");
       el.setAttribute("data-item", i);
       if (bad[i]) { el.className += " is-bad"; notes[bad[i]] = true; }
       if (isPicked(i)) el.className += " is-sel";
-      if (FRONT[one.t]) el.textContent = one.text;
+      if (FRONT[one.t]) fillText(el, one);
       paintItem(el, one);
       sheet.appendChild(el);
     });
@@ -398,10 +420,15 @@
       var want = el.getAttribute("data-only");
       el.hidden = want !== kind && want !== also;
     });
+    // Con viñetas el texto va a la izquierda: la alineación no haría nada.
+    var alignField = props.querySelector("[data-align-field]");
+    if (alignField && kind === "text") alignField.hidden = !!one.list;
     var row = props.querySelector('[data-props-for~="' + kind + '"]');
     Array.prototype.forEach.call(row.querySelectorAll("[data-prop]"), function (input) {
       var name = input.getAttribute("data-prop");
-      if (!(name in one)) return;
+      // Una casilla sin su clave está apagada: las viñetas solo se escriben
+      // cuando están puestas, y sin esto quedaba marcada la del texto anterior.
+      if (!(name in one) && input.type !== "checkbox") return;
       if (input === document.activeElement) return;
       if (input.type === "checkbox") input.checked = !!one[name];
       else input.value = String(one[name]);
@@ -415,7 +442,7 @@
     if (!one || one.t !== "text") return;
     var probe = document.createElement("div");
     probe.className = "cv-item cv-item--text cv-probe";
-    probe.textContent = one.text || " ";
+    if (one.list) fillText(probe, one); else probe.textContent = one.text || " ";
     paintItem(probe, one);
     probe.style.height = "auto";
     stage.appendChild(probe);
@@ -461,7 +488,18 @@
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
   }
 
-  function add(kind) {
+  /* Cómo entra cada figura del menú de Geometría: el rectángulo a lo ancho,
+     como siempre; la línea fina y gris, centrada; las demás, cuadradas. */
+  var SHAPE_START = {
+    rect: { x: 0, w: W, h: 160 },
+    line: { x: Math.round((W - 400) / 2), w: 400, h: 2, bg: "#CBD5E1" },
+    ellipse: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
+    triangle: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
+    star: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
+    arrow: { x: Math.round((W - 200) / 2), w: 200, h: 120 },
+  };
+
+  function add(kind, figure) {
     say("");
     if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
     if (kind === "image") { pickImage(null); return; }
@@ -475,8 +513,10 @@
               href: "", font: "Arial", size: 16, color: "#FFFFFF", bg: "#31A9E8",
               bold: true, italic: false, align: "center", radius: 8 });
     } else if (kind === "shape") {
-      place({ t: "shape", x: 0, w: W, h: 160, bg: "#E0F2FE", radius: 0,
-              shape: "rect", rot: 0 });
+      var shape = SHAPE_START[figure] ? figure : "rect";
+      var start = SHAPE_START[shape];
+      place({ t: "shape", x: start.x, w: start.w, h: start.h, bg: start.bg || "#E0F2FE",
+              radius: 0, shape: shape, rot: 0 });
     }
   }
 
@@ -749,7 +789,8 @@
       if (mode.indexOf("w") >= 0) { x = a.x + dx; w = a.w - dx; }
       if (mode.indexOf("n") >= 0) { y = a.y + dy; h = a.h - dy; }
     }
-    w = Math.max(16, w); h = Math.max(16, h);
+    // Nada baja de 16 px, salvo el grosor de una línea, que es su alto.
+    w = Math.max(16, w); h = isLine(one) ? a.h : Math.max(16, h);
     var fit = mode === "drag" ? snap(drag.i, x, y, w, h) : { x: x, y: y, lines: [] };
     one.x = clamp(Math.round(fit.x), 0, W - Math.min(w, W));
     one.y = clamp(Math.round(fit.y), 0, doc.h - Math.min(h, doc.h));
@@ -818,6 +859,10 @@
     if (!el) return;
     pick(+el.getAttribute("data-item"));
     Array.prototype.forEach.call(el.querySelectorAll(".cv-handle"), function (h) { h.remove(); });
+    // Con viñetas se escribe en plano, con la misma sangría: los renglones se
+    // parten igual, y las viñetas vuelven al terminar.
+    var writing = doc.items[+el.getAttribute("data-item")];
+    if (writing && writing.list) el.textContent = writing.text;
     try { el.contentEditable = "plaintext-only"; } catch (err) { el.contentEditable = "true"; }
     if (el.contentEditable !== "plaintext-only") el.contentEditable = "true";
     el.classList.add("is-editing");
@@ -938,16 +983,32 @@
     if (!input || !one) return;
     var name = input.getAttribute("data-prop");
     var value = input.type === "checkbox" ? input.checked : input.value;
-    if (name === "size" || name === "radius" || name === "rot") {
+    if (name === "size" || name === "radius" || name === "rot" || name === "h") {
       value = parseInt(value, 10);
       if (isNaN(value)) return;
       if (name === "size") value = clamp(value, L.minSize, L.maxSize);
       if (name === "rot") value = ((value % 360) + 360) % 360;
     }
+    if (name === "h") {
+      // El grosor de una línea, que crece y adelgaza desde su centro.
+      if (!isLine(one)) return;
+      value = clamp(value, L.lineMin, L.lineMax);
+      one.y = clamp(Math.round(one.y + (one.h - value) / 2), 0, Math.max(0, doc.h - value));
+    }
+    if (name === "shape" && value !== one.shape) {
+      // A línea queda fina, y de línea a otra figura recupera cuerpo; las dos
+      // desde el centro de donde estaba.
+      var mid = one.y + one.h / 2;
+      if (value === "line") one.h = 2;
+      else if (one.shape === "line") one.h = 120;
+      one.y = clamp(Math.round(mid - one.h / 2), 0, Math.max(0, doc.h - one.h));
+    }
     if (name === "line") value = parseFloat(value);
     if (name === "bg" || name === "color") value = String(value).toUpperCase();
     one[name] = value;
-    if (name === "rot") fitRot(one);
+    // Las viñetas solo se escriben puestas, como las guarda el servidor.
+    if (name === "list" && !value) delete one.list;
+    if (name === "rot" || name === "h" || name === "shape") fitRot(one);
     if (one.t === "text") fitText(sel);
     var el = repaint(stage, one, sel);
     if (el && name === "text") el.firstChild ? (el.firstChild.nodeValue = value) : (el.textContent = value);
@@ -1302,7 +1363,11 @@
 
   root.addEventListener("click", function (e) {
     var b = e.target.closest("[data-add]");
-    if (b) add(b.getAttribute("data-add"));
+    if (!b) return;
+    add(b.getAttribute("data-add"), b.getAttribute("data-shape"));
+    // El menú de Geometría se cierra al elegir una figura.
+    var geo = b.closest("[data-geo]");
+    if (geo) geo.open = false;
   });
   document.querySelector("[data-undo]").addEventListener("click", undo);
   document.querySelector("[data-redo]").addEventListener("click", redo);
@@ -1336,6 +1401,8 @@
     var body = new FormData();
     body.append("csrf_token", saveForm.querySelector("[name=csrf_token]").value);
     body.append("lienzo", JSON.stringify(doc));
+    // El nombre, para la regla del nombre de la ventana de requisitos.
+    body.append("nombre", saveForm.querySelector("#nombre").value);
     fetch(root.getAttribute("data-review"), { method: "POST", body: body, credentials: "same-origin" })
       .then(function (r) { return r.json(); })
       .then(function (answer) {
@@ -1358,9 +1425,54 @@
         check.querySelector("[data-check-ok]").hidden = !answer.ok;
         saveButton.disabled = checkBlocked;
         saveButton.classList.toggle("btn--off", checkBlocked);
+        fillRules(answer.rules || []);
       })
       .catch(function () { /* sin revisión no se bloquea: el servidor revisa igual */ });
   }
+
+  /* La ventana de requisitos: todas las reglas, cada una con ✓ o ✕ y su frase,
+     en su grupo. Las frases y las cifras las pone el servidor, que es quien
+     decide si se guarda. */
+  var rulesDialog = document.querySelector("[data-rules-dialog]");
+  function fillRules(rules) {
+    if (!rulesDialog || !rules.length) return;
+    var met = 0;
+    ["build", "spam"].forEach(function (group) {
+      var list = rulesDialog.querySelector('[data-rules="' + group + '"]');
+      list.textContent = "";
+      rules.forEach(function (rule) {
+        if (rule.group !== group) return;
+        if (rule.ok) met += 1;
+        var li = document.createElement("li");
+        li.className = "rules__one " + (rule.ok ? "is-ok" : "is-bad");
+        var mark = document.createElement("span");
+        mark.className = "rules__mark";
+        mark.setAttribute("aria-hidden", "true");
+        mark.textContent = rule.ok ? "✓" : "✕";
+        var text = document.createElement("span");
+        // El lector de pantalla no lee la marca: lee «Cumple:» o «No cumple:».
+        var said = document.createElement("span");
+        said.className = "visually-hidden";
+        said.textContent = (rule.ok ? S.ruleYes : S.ruleNo) + " ";
+        text.appendChild(said);
+        text.appendChild(document.createTextNode(rule.text));
+        li.appendChild(mark);
+        li.appendChild(text);
+        list.appendChild(li);
+      });
+    });
+    rulesDialog.querySelector("[data-rules-count]").textContent =
+      S.rulesCount.replace("{ok}", met).replace("{n}", rules.length);
+  }
+  // Al abrirla se pide una revisión al momento, y escribir el nombre también
+  // la pide: es una de las reglas.
+  var rulesOpener = document.querySelector('[data-open-dialog="requisitos"]');
+  if (rulesOpener) rulesOpener.addEventListener("click", runCheck);
+  var nameTimer = null;
+  saveForm.querySelector("#nombre").addEventListener("input", function () {
+    clearTimeout(nameTimer);
+    nameTimer = setTimeout(runCheck, 500);
+  });
 
   /* Con quién se ve: los nombres de las columnas, o los datos de un contacto. */
   var person = document.querySelector("[data-preview-contact]");
@@ -1386,9 +1498,9 @@
     if (opener) opener.addEventListener("click", function () { sendPreview(); });
   }
 
-  /* Bajarse la pieza, en PDF o en HTML: lo mismo que la vista previa, con su
-     formulario y sin marco. La respuesta es un archivo que el navegador baja,
-     así que la página se queda donde está. */
+  /* Bajarse la pieza en PDF: lo mismo que la vista previa, con su formulario y
+     sin marco. La respuesta es un archivo que el navegador baja, así que la
+     página se queda donde está. */
   function downloader(button, form) {
     var send = document.querySelector(button);
     var papers = document.querySelector(form);
@@ -1401,7 +1513,19 @@
     });
   }
   downloader("[data-canvas-pdf]", "[data-canvas-pdf-form]");
-  downloader("[data-canvas-html]", "[data-canvas-html-form]");
+
+  /* El HTML es un enlace a la plantilla guardada, lista para volver a cargarla:
+     sus imágenes fundidas solo existen al guardar. Sin guardar todavía, o con
+     cambios sin guardar, lo de pantalla no está en el archivo, y se dice en vez
+     de bajar otra cosa. */
+  var htmlLink = document.querySelector("[data-canvas-html]");
+  if (htmlLink) {
+    htmlLink.addEventListener("click", function (e) {
+      if (htmlLink.tagName === "A" && !dirty) { say(""); return; }
+      e.preventDefault();
+      say(S.htmlSaveFirst);
+    });
+  }
 
   var previewTimer = null;
   function schedulePreview() {

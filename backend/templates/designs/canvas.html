@@ -44,8 +44,15 @@
             data-open-dialog="vista-previa">{{ t('designs_preview_button') }}</button>
     <button class="btn btn--small btn--outline" type="button"
             data-canvas-pdf>{{ t('canvas_pdf') }}</button>
+    {#- El HTML es el de la plantilla guardada, listo para volver a cargarlo: sin
+        guardar todavía no hay nada que bajar, y el editor lo dice. -#}
+    {% if found %}
+    <a class="btn btn--small btn--outline" href="{{ url_for('designs.canvas_html', raw=found._id) }}"
+       data-canvas-html>{{ t('canvas_html') }}</a>
+    {% else %}
     <button class="btn btn--small btn--outline" type="button"
             data-canvas-html>{{ t('canvas_html') }}</button>
+    {% endif %}
     <button class="btn" type="submit">{{ t('designs_save') }}</button>
   </div>
 </form>
@@ -64,6 +71,9 @@
     <p class="review__title">{{ t('canvas_check_title') }}</p>
     <ul data-check-list></ul>
   </div>
+  {#- Todas las reglas, también las que se cumplen, en su propia ventana. -#}
+  <button class="btn btn--small btn--outline review__rules" type="button"
+          data-open-dialog="requisitos">{{ t('canvas_rules_button') }}</button>
 </div>
 
 {% set strings = {
@@ -86,6 +96,10 @@
   "cropHow": t('canvas_crop_how'),
   "textCut": t('canvas_text_cut'),
   "rotDrag": t('canvas_rot_drag'),
+  "htmlSaveFirst": t('canvas_html_save_first'),
+  "rulesCount": t('canvas_rules_count'),
+  "ruleYes": t('canvas_rule_yes'),
+  "ruleNo": t('canvas_rule_no'),
 } %}
 <div class="editor" data-canvas
      data-upload="{{ url_for('designs.canvas_image') }}"
@@ -99,7 +113,17 @@
       <button class="tool" type="button" data-add="text">{{ t('canvas_add_text') }}</button>
       <button class="tool" type="button" data-add="button">{{ t('canvas_add_button') }}</button>
       <button class="tool" type="button" data-add="image">{{ t('canvas_add_image') }}</button>
-      <button class="tool" type="button" data-add="shape">{{ t('canvas_add_shape') }}</button>
+      {#- Las figuras, en un menú que abre sin JavaScript: cada una entra con su
+          medida, y la línea, fina. -#}
+      <details class="geo" data-geo>
+        <summary class="tool">{{ t('canvas_add_shape') }}</summary>
+        <div class="geo__list">
+          {% for one in ('rect', 'line', 'ellipse', 'triangle', 'star', 'arrow') %}
+          <button class="tool geo__one" type="button" data-add="shape"
+                  data-shape="{{ one }}">{{ t('canvas_shape_' + one) }}</button>
+          {% endfor %}
+        </div>
+      </details>
     </div>
     <input class="visually-hidden" type="file" accept="image/*" data-canvas-file
            aria-label="{{ t('canvas_add_image') }}" tabindex="-1">
@@ -186,7 +210,10 @@
           <input type="color" data-prop="bg"></label>
         <label class="props__check"><input type="checkbox" data-prop="bold"> {{ t('canvas_bold') }}</label>
         <label class="props__check"><input type="checkbox" data-prop="italic"> {{ t('canvas_italic') }}</label>
-        <label class="props__field" data-only="text">{{ t('canvas_align') }}
+        {#- Cada renglón, un punto de la lista. Con viñetas va a la izquierda, así
+            que la alineación se esconde. -#}
+        <label class="props__check" data-only="text"><input type="checkbox" data-prop="list"> {{ t('canvas_list') }}</label>
+        <label class="props__field" data-only="text" data-align-field>{{ t('canvas_align') }}
           <select data-prop="align">
             <option value="left">{{ t('canvas_align_left') }}</option>
             <option value="center">{{ t('canvas_align_center') }}</option>
@@ -233,6 +260,11 @@
           </select></label>
         <label class="props__field" data-only="shape-rect">{{ t('canvas_radius') }}
           <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
+        {#- El grosor de una línea es su alto: de 1 a 12 px. El largo se tira de
+            sus puntas. -#}
+        <label class="props__field props__field--small" data-only="shape-line">{{ t('canvas_line_width') }}
+          <input type="number" min="{{ limits.lineMin }}" max="{{ limits.lineMax }}"
+                 step="1" data-prop="h"></label>
         <label class="props__field props__field--small">{{ t('canvas_rot') }}
           <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
         <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
@@ -289,14 +321,22 @@
   <button type="submit">{{ t('canvas_pdf') }}</button>
 </form>
 
-{# Y el mismo reparto para el HTML: el correo armado, con las fotos dentro. #}
-<form method="post" action="{{ url_for('designs.canvas_html') }}"
-      data-canvas-html-form hidden>
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="lienzo" value="">
-  <input type="hidden" name="nombre" value="">
-  <button type="submit">{{ t('canvas_html') }}</button>
-</form>
+{# Los requisitos para guardar: todas las reglas, con las que se cumplen y las
+   que no. Las llena el editor con cada revisión, la misma que la de la barra. #}
+<dialog class="drawer drawer--wide" id="requisitos" aria-labelledby="requisitos-titulo"
+        data-rules-dialog>
+  <div class="drawer__head">
+    <h2 class="settings__subtitle" id="requisitos-titulo">{{ t('canvas_rules_title') }}</h2>
+    <button class="drawer__close" type="button" data-close-dialog
+            aria-label="{{ t('designs_close') }}">×</button>
+  </div>
+  <p class="hint">{{ t('canvas_rules_lead') }}</p>
+  <p class="rules__count" data-rules-count aria-live="polite">{{ t('canvas_rules_wait') }}</p>
+  <h3 class="rules__title">{{ t('canvas_rules_build') }}</h3>
+  <ul class="rules" data-rules="build"></ul>
+  <h3 class="rules__title">{{ t('canvas_rules_spam') }}</h3>
+  <ul class="rules" data-rules="spam"></ul>
+</dialog>
 
 {# Los atajos del teclado, en dos columnas y con sitio para leerlos. #}
 <dialog class="drawer drawer--wide" id="atajos" aria-labelledby="atajos-titulo">

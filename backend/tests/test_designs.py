@@ -636,3 +636,63 @@ def test_la_vista_de_otra_cuenta_no_se_abre(client, database, outbox):
     assert other(client).get(f"/plantillas/{suya}/vista").status_code == 302
     ajena = inside(client, email="bea@ejemplo.com")
     assert ajena.get(f"/plantillas/{suya}/vista").status_code == 404
+
+
+# ------------------------------------ las imágenes de un HTML cargado
+
+def test_las_imagenes_del_html_se_clasifican(client, database, outbox):
+    from blueprints.designs.routes import html_images
+    from models import image as images
+
+    inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    mia = images.save(database, cuenta["_id"], data=foto(40, 40), ext="jpg",
+                      mime="image/jpeg")
+    borrada = "x" * 22 + ".jpg"
+    html = (f'<html><body><img src="https://panel.panamails.com/img/{mia}">'
+            f'<img src="https://panel.panamails.com/img/{borrada}">'
+            '<img src="https://otro-sitio.com/foto.png">'
+            '<img src="https://otro-sitio.com/foto.png">'
+            '<img src="data:image/png;base64,AAAA"></body></html>')
+    estados = [one["state"] for one in html_images(database, cuenta["_id"], html)]
+    # Sin repetir: la del otro sitio sale una vez.
+    assert estados == ["ok", "gone", "outside", "inside"]
+
+
+def test_la_imagen_de_otra_cuenta_sale_como_de_fuera(client, database, outbox):
+    from blueprints.designs.routes import html_images
+    from models import image as images
+
+    inside(client)
+    inside(client, email="beto@ejemplo.com")
+    beto = accounts.by_email(database, "beto@ejemplo.com")
+    ajena = images.save(database, beto["_id"], data=foto(40, 40), ext="jpg",
+                        mime="image/jpeg")
+    ana = accounts.by_email(database, "ana@ejemplo.com")
+    html = f'<img src="https://panel.panamails.com/img/{ajena}">'
+    assert html_images(database, ana["_id"], html)[0]["state"] == "outside"
+
+
+def test_el_editor_ensena_de_donde_sale_cada_imagen(client, database, outbox):
+    html = (b'<html><body><h1>Hola</h1><img src="https://otro-sitio.com/foto.png">'
+            b'</body></html>')
+    browser, url, _ = abrir_html(client, database, html=html)
+    pantalla = browser.get(url + "?nueva=1").get_data(as_text=True)
+    assert "Imágenes de esta plantilla" in pantalla
+    assert "De otro sitio: se ve mientras ese sitio la publique." in pantalla
+    assert "Una no es de tu cuenta" in pantalla
+    assert "alguna no es de tu cuenta" in pantalla
+    assert "data-picture-change" in pantalla
+
+
+def test_sin_imagenes_no_hay_lista(client, database, outbox):
+    browser, url, _ = abrir_html(client, database,
+                                 html=b"<html><body><h1>Hola</h1></body></html>")
+    assert "Imágenes de esta plantilla" not in browser.get(url).get_data(as_text=True)
+
+
+def test_una_imagen_https_de_otro_sitio_se_puede_cargar(client, database, outbox):
+    browser = inside(client)
+    with_plan(database, "negocio")
+    raw = b'<html><body><img src="https://otro-sitio.com/foto.png"></body></html>'
+    assert subir(browser, raw).status_code == 302

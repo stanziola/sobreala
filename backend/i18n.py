@@ -1038,7 +1038,21 @@ TEXTS = {
                          "una columna y se escribe donde tengas el cursor.",
     "designs_html_fresh": "Se cargó bien. Ya la puedes usar, o cambiarle lo que "
                           "quieras aquí.",
+    "designs_html_fresh_pictures": "Revisa sus imágenes abajo: alguna no es de "
+                                   "tu cuenta.",
     "designs_html_code": "Código HTML",
+    # Las imágenes del HTML y de dónde sale cada una.
+    "designs_pictures_title": "Imágenes de esta plantilla",
+    "designs_pictures_warn": "{n} no son de tu cuenta. Cámbialas por una tuya "
+                             "para que la plantilla no dependa de nadie.",
+    "designs_pictures_warn_one": "Una no es de tu cuenta. Cámbiala por una tuya "
+                                 "para que la plantilla no dependa de nadie.",
+    "designs_picture_ok": "De tu cuenta.",
+    "designs_picture_outside": "De otro sitio: se ve mientras ese sitio la "
+                               "publique.",
+    "designs_picture_gone": "Ya no existe: sale rota.",
+    "designs_picture_inside": "Dentro del archivo: Gmail no la muestra y pesa.",
+    "designs_picture_change": "Cambiar",
     "designs_html_size": "Pesa {kb} KB de {max} KB.",
 
     # --- las prediseñadas ---------------------------------------------------
@@ -1150,9 +1164,11 @@ TEXTS = {
                          "código.",
     "designs_bad_href": "Trae un enlace que ejecuta código en vez de llevar a "
                         "una dirección.",
-    "designs_bad_external": "Trae CSS o imágenes de otro sitio. Un archivo de "
-                            "fuera puede cambiar después de aprobado, así que "
-                            "aprobarlo no significaría nada.",
+    # Las imágenes de otro sitio sí entran si van por https://: lo que no entra
+    # es una hoja de estilos de fuera, ni una imagen por http://.
+    "designs_bad_external": "Trae una hoja de estilos de otro sitio, o una "
+                            "imagen que no va por https://. Un estilo de fuera "
+                            "puede cambiar después sin que nadie lo vea.",
 
     # --- el lienzo de crear ---------------------------------------------------
     "canvas_title_new": "Plantilla nueva",
@@ -1189,10 +1205,16 @@ TEXTS = {
     "canvas_fit_content": "Ajustar al contenido",
     "canvas_pdf": "Descargar PDF",
     "canvas_html": "Descargar HTML",
+    "canvas_html_save_first": "Guárdala antes de bajarla en HTML: el archivo es "
+                              "la plantilla guardada, lista para volver a "
+                              "cargarla.",
     "canvas_shape_bg": "Color",
     "canvas_shape_kind": "Figura",
     "canvas_shape_rect": "Rectángulo",
-    "canvas_shape_line": "Línea divisoria",
+    # «Línea» y no «Línea divisoria»: se gira, así que también es vertical o
+    # diagonal.
+    "canvas_shape_line": "Línea",
+    "canvas_line_width": "Grosor",
     "canvas_shape_ellipse": "Círculo",
     "canvas_shape_triangle": "Triángulo",
     "canvas_shape_star": "Estrella",
@@ -1217,6 +1239,7 @@ TEXTS = {
     "canvas_color": "Color de la letra",
     "canvas_bold": "Negrita",
     "canvas_italic": "Cursiva",
+    "canvas_list": "Viñetas",
     "canvas_align": "Alineación",
     "canvas_align_left": "Izquierda",
     "canvas_align_center": "Centro",
@@ -1311,6 +1334,7 @@ TEXTS = {
                           "o columnas.",
     "canvas_bad_link_overlap": "Una imagen con enlace tiene algo encima. "
                                "Sepáralos o quítale el enlace.",
+    "canvas_bad_line": "El grosor de una línea tiene que ir de 1 a 12 px.",
     "canvas_bad_too_big": "El correo pasa de {kb} KB. Quita algo de "
                           "texto.",
 
@@ -1319,7 +1343,7 @@ TEXTS = {
                             "menos {min}: un correo casi sin texto es de lo que "
                             "más va a spam.",
     "canvas_spam_image_heavy": "Las imágenes ocupan el {pct} % del correo. Que "
-                               "sean como mucho la mitad: el resto, texto.",
+                               "sean como mucho el {max} %: el resto, texto.",
     "canvas_spam_too_big": "Pesa {kb} KB y el máximo es {max} KB. Pasado eso "
                            "Gmail lo corta.",
     "canvas_spam_many_links": "Tiene {n} enlaces entre botones e imágenes. "
@@ -1332,6 +1356,50 @@ TEXTS = {
                             "como mucho.",
     "canvas_spam_trigger": "Dice «{what}», que los filtros de spam castigan. "
                            "Dilo de otra forma.",
+
+    # La ventana de requisitos: todo lo que se mira antes de guardar, con lo que
+    # se cumple y lo que no. Cada frase dice la regla y, si hay cifra, cómo va.
+    "canvas_rules_button": "Requisitos para guardar",
+    "canvas_rules_title": "Requisitos para guardar",
+    "canvas_rules_lead": "Todo lo que se revisa antes de guardar. Se actualiza "
+                         "mientras trabajas.",
+    "canvas_rules_count": "Cumple {ok} de {n}.",
+    "canvas_rules_wait": "Revisando…",
+    "canvas_rules_build": "Para armar el correo",
+    "canvas_rules_spam": "Para no ir a spam",
+    "canvas_rule_yes": "Cumple:",
+    "canvas_rule_no": "No cumple:",
+    "canvas_rule_name": "Tiene nombre.",
+    "canvas_rule_empty": "Tiene al menos un elemento.",
+    "canvas_rule_height": "La hoja mide entre {min} y {max} px (ahora {h} px).",
+    "canvas_rule_too_many_items": "Tiene como mucho {max} elementos (ahora {n}).",
+    "canvas_rule_bounds": "Nada se sale de la hoja.",
+    "canvas_rule_image": "Todas las imágenes son de tu cuenta.",
+    "canvas_rule_alt": "Cada imagen tiene su descripción.",
+    "canvas_rule_href": "Los enlaces empiezan por https:// o mailto:.",
+    "canvas_rule_font": "Las fuentes son de las que funcionan en todos los "
+                        "correos.",
+    "canvas_rule_size": "La letra mide entre {min} y {max} px.",
+    "canvas_rule_text_long": "Cada texto tiene como mucho {max} caracteres.",
+    "canvas_rule_button_text": "Cada botón tiene texto, de hasta {max} "
+                               "caracteres.",
+    "canvas_rule_line": "Las líneas miden de {min} a {max} px de grosor.",
+    "canvas_rule_overlap": "No hay textos ni botones encimados.",
+    "canvas_rule_tangled": "Nada queda en molinillo, rodeándose sin tocarse.",
+    "canvas_rule_link_overlap": "Ninguna imagen con enlace tiene algo encima.",
+    "canvas_rule_few_text": "Al menos {min} caracteres de texto (tiene {n}).",
+    "canvas_rule_image_heavy": "Las imágenes ocupan como mucho el {max} % del "
+                               "correo (ahora el {pct} %).",
+    "canvas_rule_too_big": "Pesa como mucho {max} KB (ahora {kb} KB).",
+    "canvas_rule_many_links": "Como mucho {max} enlaces entre botones e "
+                              "imágenes (tiene {n}).",
+    "canvas_rule_shortener": "Ningún enlace acortado (bit.ly y parecidos).",
+    "canvas_rule_caps": "Menos del {max} % de las letras en mayúscula.",
+    "canvas_rule_shouting": "Sin signos repetidos (!! o ¡¡) ni más de tres "
+                            "exclamaciones.",
+    "canvas_rule_trigger": "Sin palabras que castigan los filtros («gratis», "
+                           "«urgente», «haz clic aquí»…).",
+    "canvas_rule_found": "Tiene «{what}».",
 
     "menu_designs": "Plantillas",
     # --- enviar correos ----------------------------------------------------

@@ -56,6 +56,10 @@ MAX_ITEMS = 60
 MIN_HEIGHT = 80
 MAX_HEIGHT = 4000
 MIN_BOX = 16
+# Una línea es un rectángulo tan bajito como su grosor, y es lo único que puede
+# medir menos que `MIN_BOX` de alto. Horizontal, vertical o diagonal es girarla.
+LINE_MIN = 1
+LINE_MAX = 12
 TEXT_MAX = 2000
 BUTTON_MAX = 60
 HREF_MAX = 500
@@ -91,10 +95,10 @@ FONTS = {
 }
 ALIGNS = ("left", "center", "right")
 FITS = ("cover", "contain")
-# Las figuras. El rectángulo y la línea (que es un rectángulo bajito) pueden
-# salir como **celda de color**, que es lo más liviano que hay en un correo; las
-# demás se pintan en la imagen del grupo, porque Outlook de escritorio ignora
-# `border-radius` y no sabe dibujar un polígono.
+# Las figuras. El rectángulo y la línea (un rectángulo de 1 a 12 px de alto)
+# pueden salir como **celda de color**, que es lo más liviano que hay en un
+# correo; las demás se pintan en la imagen del grupo, porque Outlook de
+# escritorio ignora `border-radius` y no sabe dibujar un polígono.
 SHAPES = ("rect", "line", "ellipse", "triangle", "star", "arrow")
 # Cuáles siguen siendo una celda de color cuando llenan su grupo.
 FLAT = ("rect", "line")
@@ -188,6 +192,11 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         one["bg"] = _color(raw.get("bg"), "#E0F2FE")
         one["radius"] = min(max(_int(raw.get("radius"), 0), 0), 60)
         one["shape"] = raw.get("shape") if raw.get("shape") in SHAPES else "rect"
+        # Antes una «línea» podía medir lo que fuera de alto y se dibujaba igual
+        # que un rectángulo. La que pasa del grosor de una línea se lee como lo
+        # que siempre pareció: así ninguna pieza guardada cambia.
+        if one["shape"] == "line" and one["h"] > LINE_MAX:
+            one["shape"] = "rect"
         one["rot"] = _int(raw.get("rot")) % 360
         return one
     one["text"] = _clean(raw.get("text"), TEXT_MAX if kind == "text" else BUTTON_MAX)
@@ -205,6 +214,10 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         except (TypeError, ValueError):
             line = 1.4
         one["line"] = min(max(round(line, 2), 1.0), 2.5)
+        # Con viñetas, cada renglón es un punto de la lista. Solo se escribe
+        # cuando está puesto, así los textos de siempre se leen igual que antes.
+        if raw.get("list"):
+            one["list"] = True
     else:
         one["href"] = str(raw.get("href") or "").strip()[:HREF_MAX + 1]
         one["bg"] = _color(raw.get("bg"), "#31A9E8")
@@ -412,9 +425,14 @@ def problems(doc: dict[str, Any] | None, *, owns=lambda name: True) -> list[str]
         # La caja es la que se arrastra; la huella es lo que ocupa girada, y es
         # la que no puede salirse de la hoja.
         seat = bounds(one)
-        if (seat["x"] < 0 or seat["y"] < 0 or one["w"] < MIN_BOX or one["h"] < MIN_BOX
+        # A una línea no se le piden los 16 px de alto: su alto es su grosor.
+        thin = one["t"] == "shape" and one.get("shape") == "line"
+        if (seat["x"] < 0 or seat["y"] < 0 or one["w"] < MIN_BOX
+                or (not thin and one["h"] < MIN_BOX)
                 or seat["x"] + seat["w"] > WIDTH or seat["y"] + seat["h"] > doc["h"]):
             add("bounds")
+        if thin and not LINE_MIN <= one["h"] <= LINE_MAX:
+            add("line")
         if one["t"] == "shape":
             continue
         if one["t"] == "image":
@@ -669,7 +687,16 @@ def _gap_cell(width: int, height: int) -> str:
     if width <= 0:
         return ""
     return (f'<td width="{width}" height="{height}" style="width:{width}px;'
-            f'height:{height}px;font-size:0;line-height:0;">&nbsp;</td>')
+            f'height:{height}px;{_thin(height) or "font-size:0;line-height:0;"}">&nbsp;</td>')
+
+
+def _thin(height: int) -> str:
+    """Lo que necesita una celda más baja que un renglón, que solo pasa al lado
+    de una línea: Outlook de escritorio no baja de lo que mide una letra si no
+    se le fija el interlineado al alto exacto."""
+    if height >= MIN_BOX:
+        return ""
+    return f"font-size:1px;line-height:{height}px;mso-line-height-rule:exactly;"
 
 
 def _text(value: str) -> str:
@@ -701,9 +728,45 @@ def _font_style(one: dict[str, Any]) -> str:
             f"color:{one['color']};")
 
 
+def dot_px(one: dict[str, Any]) -> int:
+    """El ancho de la columna de la viñeta. El editor hace la misma cuenta, para
+    que el texto se parta en el mismo sitio en los dos."""
+    return round(one["size"] * 1.2)
+
+
+def _bullets(one: dict[str, Any], style: str) -> str:
+    """Un texto con viñetas: una fila por renglón, la viñeta en su columna y el
+    texto en la otra, con sangría francesa. Una tabla y no `<ul>`, que Outlook
+    de escritorio dibuja con márgenes propios. Un renglón vacío es un hueco."""
+    w, lh, dot = one["w"], line_px(one), dot_px(one)
+    cell = f"{style}line-height:{lh}px;mso-line-height-rule:exactly;"
+    rows = []
+    for line in one["text"].split("\n"):
+        if not line.strip():
+            rows.append(f'<tr><td colspan="2" height="{lh}" style="height:{lh}px;'
+                        f'line-height:{lh}px;font-size:0;">&nbsp;</td></tr>')
+            continue
+        rows.append(f'<tr><td width="{dot}" valign="top" align="center" '
+                    f'class="{ink(one["color"])}" style="width:{dot}px;{cell}'
+                    f'text-align:center;">&#8226;</td>'
+                    f'<td width="{w - dot}" valign="top" class="{ink(one["color"])}" '
+                    f'style="width:{w - dot}px;{cell}word-wrap:break-word;">'
+                    f'<span class="{ink(one["color"])}" style="{style}'
+                    f'line-height:{lh}px;">{escape(line)}</span></td></tr>')
+    return TABLE.format(w=w) + "".join(rows) + "</table>"
+
+
 def _front_cell(one: dict[str, Any], *, inside_vml: bool) -> str:
     w, h = one["w"], one["h"]
     style = _font_style(one)
+    if one["t"] == "text" and one.get("list"):
+        # Con viñetas va siempre a la izquierda: centrada, la viñeta de cada
+        # renglón quedaría en otro sitio.
+        return (f'<td width="{w}" height="{h}" valign="top" align="left" '
+                f'class="{ink(one["color"])}" '
+                f'style="width:{w}px;height:{h}px;{style}'
+                f'line-height:{line_px(one)}px;mso-line-height-rule:exactly;'
+                f'text-align:left;">{_bullets(one, style)}</td>')
     if one["t"] == "text":
         # La letra va en la celda y otra vez en un <span>: dentro de un fondo
         # VML, Outlook de escritorio ignora lo que dice la celda.
@@ -810,7 +873,7 @@ def _group_cell(group: dict[str, Any], url: str | None, shade: str) -> str:
         return (f'<td width="{w}" height="{h}" valign="top" bgcolor="{shape["bg"]}" '
                 f'class="{paint(shape["bg"])}" style="width:{w}px;height:{h}px;'
                 f'background-color:{shape["bg"]};border-radius:{shape["radius"]}px;'
-                f'font-size:0;line-height:0;">{inner}</td>')
+                f'{_thin(h) or "font-size:0;line-height:0;"}">{inner}</td>')
 
     if kind == "picture":
         alt = " ".join(one["alt"] for one in group["backs"]
@@ -898,8 +961,13 @@ def dark_css(doc: dict[str, Any], shades: list[str | None] | None = None) -> str
 # filtros de verdad: un correo que es casi pura imagen es el truco clásico del
 # spam para esconder el texto, los enlaces acortados esconden a dónde llevan, y
 # las mayúsculas y los signos de más son reglas con puntaje en SpamAssassin.
-MIN_TEXT = 300            # caracteres de texto real en todo el correo
-MAX_IMAGE_SHARE = 0.5     # la mitad del correo, como mucho, es imagen
+#
+# El texto y la imagen se aflojaron en septiembre de 2026 (eran 300 caracteres y
+# la mitad del correo): 200 son un titular y un par de frases, y el 60 % de
+# imagen es la proporción 60/40 de siempre, del lado permisivo. Sigue sin pasar
+# lo que de verdad castigan los filtros, que es el correo casi todo imagen.
+MIN_TEXT = 200            # caracteres de texto real en todo el correo
+MAX_IMAGE_SHARE = 0.6     # la parte del correo que puede ser imagen
 MAX_BUTTONS = 8
 MAX_CAPS = 0.3            # de las letras, cuántas pueden ir en mayúscula
 SHORTENERS = ("bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd",
@@ -937,6 +1005,26 @@ def _covered(doc: dict[str, Any], cell: int = 10) -> int:
     return len(seen) * cell * cell
 
 
+def _measure(doc: dict[str, Any]) -> dict[str, Any]:
+    """Lo que se cuenta del correo para saber si parece spam, en un solo sitio:
+    lo usan la revisión que no deja guardar y la lista de requisitos, y así las
+    dos no pueden contar distinto."""
+    front = [one for one in doc["items"] if one["t"] in FRONT]
+    words = " ".join(one.get("text", "") for one in front)
+    plain_text = MARK_RE.sub("", words)
+    alpha = [c for c in plain_text if c.isalpha()]
+    return {
+        "text": plain_text,
+        # Caracteres como los cuenta una persona: con los espacios entre palabras.
+        "letters": len(" ".join(plain_text.split())),
+        "share": _covered(doc) / (WIDTH * doc["h"] or 1),
+        "links": [one["href"] for one in doc["items"]
+                  if one["t"] == "button" or (one["t"] == "image" and one["href"])],
+        "alpha": len(alpha),
+        "caps": sum(c.isupper() for c in alpha) / len(alpha) if alpha else 0.0,
+    }
+
+
 def review(doc: dict[str, Any], size: int, *, limit: int) -> list[dict[str, Any]]:
     """Lo que hace que este correo tenga riesgo de ir a spam. Vacío es que no.
 
@@ -944,25 +1032,20 @@ def review(doc: dict[str, Any], size: int, *, limit: int) -> list[dict[str, Any]
     pesa). La pantalla lo traduce. Con cualquiera, no se guarda.
     """
     found: list[dict[str, Any]] = []
-    front = [one for one in doc["items"] if one["t"] in FRONT]
-    words = " ".join(one.get("text", "") for one in front)
-    plain_text = MARK_RE.sub("", words)
+    seen = _measure(doc)
+    plain_text = seen["text"]
 
-    # Caracteres como los cuenta una persona: con los espacios entre palabras.
-    letters = len(" ".join(plain_text.split()))
-    if letters < MIN_TEXT:
-        found.append({"key": "few_text", "n": letters, "min": MIN_TEXT})
+    if seen["letters"] < MIN_TEXT:
+        found.append({"key": "few_text", "n": seen["letters"], "min": MIN_TEXT})
 
-    area = WIDTH * doc["h"] or 1
-    pictures = _covered(doc)
-    if pictures / area > MAX_IMAGE_SHARE:
-        found.append({"key": "image_heavy", "pct": round(100 * pictures / area)})
+    if seen["share"] > MAX_IMAGE_SHARE:
+        found.append({"key": "image_heavy", "pct": round(100 * seen["share"]),
+                      "max": round(100 * MAX_IMAGE_SHARE)})
 
     if size > limit:
         found.append({"key": "too_big", "kb": round(size / 1024), "max": limit // 1024})
 
-    links = [one["href"] for one in doc["items"]
-             if one["t"] == "button" or (one["t"] == "image" and one["href"])]
+    links = seen["links"]
     if len(links) > MAX_BUTTONS:
         found.append({"key": "many_links", "n": len(links), "max": MAX_BUTTONS})
     for href in links:
@@ -973,8 +1056,7 @@ def review(doc: dict[str, Any], size: int, *, limit: int) -> list[dict[str, Any]
             found.append({"key": "shortener", "what": host})
             break
 
-    alpha = [c for c in plain_text if c.isalpha()]
-    if len(alpha) >= 20 and sum(c.isupper() for c in alpha) / len(alpha) > MAX_CAPS:
+    if seen["alpha"] >= 20 and seen["caps"] > MAX_CAPS:
         found.append({"key": "caps"})
     if "!!" in plain_text or "¡¡" in plain_text or plain_text.count("!") > 3:
         found.append({"key": "shouting"})
@@ -985,6 +1067,57 @@ def review(doc: dict[str, Any], size: int, *, limit: int) -> list[dict[str, Any]
             found.append({"key": "trigger", "what": word})
             break
     return found
+
+
+# ------------------------------------------------------ la lista de requisitos
+
+# Todo lo que decide si un lienzo se guarda, en el orden en que lo enseña la
+# ventana de requisitos: primero si el correo se puede armar (`problems()`) y
+# después si tiene pinta de llegar a la bandeja (`review()`). Una regla nueva
+# en cualquiera de las dos tiene que estar también aquí, o esa ventana diría
+# que todo se cumple mientras Guardar sigue apagado.
+BUILD_RULES = ("empty", "height", "too_many_items", "bounds", "image", "alt", "href",
+               "font", "size", "text_long", "button_text", "line", "overlap",
+               "tangled", "link_overlap")
+SPAM_RULES = ("few_text", "image_heavy", "too_big", "many_links", "shortener",
+              "caps", "shouting", "trigger")
+
+
+def checklist(doc: dict[str, Any], size: int, *, limit: int, failed: list[str],
+              found: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Cada regla con si se cumple y sus cifras, para enseñarlas todas.
+
+    `failed` es lo que dijo `problems()` y `found` lo que dijo `review()`: se
+    reciben hechos para no preguntar dos veces, que `problems()` mira en la base
+    si cada imagen es de la cuenta. El molinillo se pregunta aparte, porque
+    `problems()` no lo dice mientras haya algo encimado.
+    """
+    bad = set(failed)
+    if _tangled(doc):
+        bad.add("tangled")
+    spam = {one["key"]: {k: v for k, v in one.items() if k != "key"} for one in found}
+    seen = _measure(doc)
+    figures: dict[str, dict[str, Any]] = {
+        "height": {"h": doc["h"], "min": MIN_HEIGHT, "max": MAX_HEIGHT},
+        "too_many_items": {"n": len(doc["items"]), "max": MAX_ITEMS},
+        "size": {"min": MIN_SIZE, "max": MAX_SIZE},
+        "text_long": {"max": TEXT_MAX},
+        "button_text": {"max": BUTTON_MAX},
+        "line": {"min": LINE_MIN, "max": LINE_MAX},
+        "few_text": {"n": seen["letters"], "min": MIN_TEXT},
+        "image_heavy": {"pct": round(100 * seen["share"]),
+                        "max": round(100 * MAX_IMAGE_SHARE)},
+        # Redondeado hacia arriba, como la barra de peso que está al lado.
+        "too_big": {"kb": -(-size // 1024), "max": limit // 1024},
+        "many_links": {"n": len(seen["links"]), "max": MAX_BUTTONS},
+        "caps": {"pct": round(100 * seen["caps"]), "max": round(100 * MAX_CAPS)},
+    }
+    out = [{"key": key, "group": "build", "ok": key not in bad, **figures.get(key, {})}
+           for key in BUILD_RULES]
+    out += [{"key": key, "group": "spam", "ok": key not in spam,
+             **spam.get(key, {}), **figures.get(key, {})}
+            for key in SPAM_RULES]
+    return out
 
 
 MARK_RE = re.compile(r"\*\|[A-Z0-9_]+\|\*")
