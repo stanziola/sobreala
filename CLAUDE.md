@@ -1910,6 +1910,52 @@ está disponible, en vez de romperse.
 
 ## La portada
 
+**«¿Sigues enviando correos masivos desde Gmail o Outlook?» son cuatro puntos
+que se recorren**: a un lado la lista, con el que estás viendo marcado con un
+ganchito y los otros tres con su número, y al otro su ilustración y su párrafo.
+Fueron tres tarjetas sueltas en una rejilla, que se leían de un vistazo y no se
+quedaban. La sección no lleva etiqueta de arriba ni entradilla: la pregunta lo
+dice todo.
+
+**Lo que abre cada punto son cuatro botones de radio**, como el carrusel de
+capturas, así que funciona entero sin JavaScript y las flechas del teclado lo
+mueven solas. `assets/js/trouble.js` agrega una sola cosa: pasar al siguiente
+solo, con las mismas cuatro reglas que el carrusel (a la vista, ratón o foco
+dentro, pestaña escondida, movimiento reducido) y un solo `sync()`. **Cuánto
+dura cada punto lo dice el CSS** (`--trouble-every`, seis segundos, que aquí hay
+un párrafo que leer) y el guion lo lee de ahí, así que el número no está escrito
+en dos sitios. La cuenta atrás se dibuja bajo el punto abierto y **solo existe si
+el guion corrió**: una cuenta que no lleva a ninguna parte es peor que no
+tenerla. Al cambiar de punto, el que deja de estar abierto pierde la regla de la
+animación y el nuevo la estrena, así que se reinicia sola.
+
+**El estado del punto abierto viaja a sus hijos en variables** (`--card`,
+`--mark-bg`, `--tick`…), de modo que una sola lista de cuatro selectores pinta a
+la vez la tarjeta, el círculo, el número y el ganchito. Sin eso harían falta una
+lista por declaración.
+
+**Nada salta de alto.** Las cuatro ilustraciones comparten una celda de rejilla
+y los cuatro párrafos otra, así que el bloque mide siempre lo que el más largo;
+el que no toca se esconde con `visibility` y no con `display`, para que siga
+contando en esa medida y quede fuera del lector de pantalla. El precio es un
+hueco bajo el párrafo corto, y es a propósito. En el teléfono la ilustración va
+arriba y la lista debajo.
+
+**Las cuatro ilustraciones son SVG escrito a mano**, en
+`src/partials/art-{manual,spam,privacy,tracking}.svg.j2`, que la plantilla
+incluye por el nombre que trae cada punto en `art`. Van inline y no como archivo
+porque **es lo único que puede leer las variables de color de la página**, que es
+el mismo motivo por el que el ala del logo se inyecta inline; y se pintan con
+enganches de clase (`.art-card`, `.art-key`, `.art-line`…) y no con
+`currentColor`, que solo da un color y una ilustración necesita cinco. **No
+llevan una sola palabra dentro** y **no se inventa ningún color**: el camino
+bueno va en el azul de la marca y el malo en el gris apagado, que son los dos
+con los que ya se dibujan las gráficas del panel. La del tablero copia las
+medidas de las de verdad (`backend/templates/_bars.html` y la rejilla de
+`.rates`): fichas con borde y radio 12, cinco rayas de rejilla, cada barra
+ocupando el 76 % de su hueco con un 12 % de aire a cada lado y sin redondear, y
+la línea base más marcada.
+
 **«Features» son cinco capturas del panel de verdad**, en un carrusel que
 aprieta: la abierta ocupa su sitio y las otras cuatro quedan en listones.
 Debajo, el texto de la que esté abierta. La sección no lleva etiqueta de arriba,

@@ -102,33 +102,69 @@ HOME = {
         "note": "Escríbenos y te acompañamos en tu primera campaña.",
     },
     "problem": {
-        "eyebrow": "El problema",
-        "title": "Las desventajas de enviar sin una herramienta de correo masivo",
-        "intro": (
-            "Cuando hay que escribirle a cientos de personas a la vez, socios, "
-            "clientes, empleados, el correo de todos los días deja de servir."
-        ),
+        # Sin etiqueta de arriba ni entradilla: la pregunta lo dice todo.
+        "title": "¿Sigues enviando correos masivos desde Gmail o Outlook?",
+        # `art` nombra el archivo de la ilustración (partials/art-<art>.svg.j2),
+        # `lead` es la línea que va en el panel y `text` el párrafo que va
+        # debajo de la ilustración.
         "items": [
             {
-                "title": "Enviar desde tu correo de siempre acaba en spam",
+                "art": "manual",
+                "title": "Hacerlo a mano cuesta horas",
+                "lead": (
+                    "Copiar y pegar el mismo mensaje miles de veces no es una "
+                    "solución viable."
+                ),
                 "text": (
-                    "Gmail y Outlook tienen un tope diario, todos los destinatarios "
-                    "se ven entre ellos, y si alguien te marca como spam se lo llevas "
-                    "puesto a tu propia dirección."
+                    "Los envíos manuales consumen tiempo y aumentan las "
+                    "posibilidades de cometer errores: contactos que reciben el "
+                    "correo más de una vez, destinatarios que quedan fuera o "
+                    "mensajes enviados con información incorrecta."
                 ),
             },
             {
-                "title": "No sabes si llegó, ni quién lo abrió",
+                "art": "spam",
+                "title": "Evita problemas de spam",
+                "lead": (
+                    "Enviar correos masivos desde tu cuenta personal puede afectar "
+                    "la entregabilidad."
+                ),
                 "text": (
-                    "Sin eso no hay forma de saber si sirvió de algo, ni de enterarte "
-                    "de que hay direcciones de tu lista que ya no existen."
+                    "Gmail y Outlook tienen límites de envío y sus cuentas "
+                    "convencionales no están diseñadas para campañas masivas. Los "
+                    "envíos frecuentes o de gran volumen pueden aumentar el riesgo "
+                    "de que tus correos terminen en spam o que alcances los límites "
+                    "de tu cuenta."
                 ),
             },
             {
-                "title": "Hacerlo a mano cuesta horas y se cuelan errores",
+                "art": "privacy",
+                "title": "Protege la privacidad de tus contactos",
+                "lead": (
+                    "Tus clientes y colaboradores no deberían quedar expuestos en "
+                    "un correo."
+                ),
                 "text": (
-                    "Tandas de cincuenta, copiar y pegar el mismo mensaje, y alguien "
-                    "que termina recibiéndolo dos veces o ninguna."
+                    "Enviar a múltiples destinatarios desde una cuenta convencional "
+                    "puede revelar las direcciones de tus contactos. Una plataforma "
+                    "especializada permite gestionar tus destinatarios de forma "
+                    "individual, evitando exponer tu lista de contactos "
+                    "innecesariamente."
+                ),
+            },
+            {
+                "art": "tracking",
+                "title": "¿Realmente llegó tu correo?",
+                "lead": (
+                    "Sin una herramienta de seguimiento, no sabes qué pasó después "
+                    "de presionar «Enviar»."
+                ),
+                "text": (
+                    "No puedes saber con certeza qué mensajes fueron entregados, "
+                    "cuáles tuvieron interacción o qué enlaces recibieron clics. "
+                    "Tampoco puedes identificar fácilmente direcciones inactivas o "
+                    "que ya no existen, haciendo más difícil mantener una lista de "
+                    "contactos actualizada."
                 ),
             },
         ],

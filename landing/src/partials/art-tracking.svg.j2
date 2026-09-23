@@ -1,0 +1,61 @@
+{#- ¿Realmente llegó tu correo?: el tablero que sí lo cuenta. Las medidas son
+    las de la pantalla de Estadísticas de verdad (backend/templates/_bars.html y
+    la rejilla de `.rates`): fichas con borde y radio 12, cinco rayas de rejilla,
+    cada barra ocupando el 76 % de su hueco con un 12 % de aire a cada lado y sin
+    redondear, y la línea base más marcada que las demás. Sin un solo rótulo: la
+    cifra de cada ficha es una barra. -#}
+{%- set alto = 62 %}
+{%- set base = 214 %}
+{%- set paso = 23.5 %}
+<svg class="trouble__draw" viewBox="0 0 400 250" aria-hidden="true" focusable="false">
+  <rect class="art-card art-line" x="14" y="16" width="372" height="218" rx="14" stroke-width="2"/>
+
+  {#- la barra lateral -#}
+  <path class="art-soft" d="M14 30a14 14 0 0 1 14-14h30v218H28a14 14 0 0 1-14-14Z"/>
+  {% for top in [46, 78, 110, 142] %}
+  <rect class="{{ 'art-key' if loop.first else 'art-mute' }}" x="28" y="{{ top }}" width="16" height="16" rx="5"/>
+  {% endfor %}
+
+  {#- la cabecera -#}
+  <rect class="art-key" x="74" y="32" width="28" height="28" rx="8"/>
+  <rect class="art-line-card" x="80" y="40" width="16" height="12" rx="2.5" fill="none" stroke-width="2"/>
+  <path class="art-line-card" d="m80.5 40.5 7.5 5.5 7.5-5.5" fill="none" stroke-width="2"/>
+  <rect class="art-mute" x="112" y="38" width="96" height="9" rx="4.5"/>
+  <rect class="art-mute" x="112" y="52" width="62" height="6" rx="3"/>
+  <rect class="art-soft art-line" x="300" y="36" width="68" height="20" rx="10" stroke-width="1.5"/>
+  <circle class="art-key" cx="313" cy="46" r="4"/>
+  <rect class="art-mute" x="323" y="43" width="34" height="6" rx="3"/>
+  <line class="art-line" x1="74" y1="72" x2="368" y2="72" stroke-width="1.5"/>
+
+  {#- las cuatro fichas -#}
+  {% for x in [74, 150, 226, 302] %}
+  <rect class="art-card art-line" x="{{ x }}" y="{{ 86 }}" width="66" height="56" rx="12" stroke-width="1.5"/>
+  <rect class="art-mute" x="{{ x + 11 }}" y="97" width="30" height="5" rx="2.5"/>
+  <rect class="art-ink" x="{{ x + 11 }}" y="108" width="{{ 38 - loop.index0 * 3 }}" height="9" rx="4.5"/>
+  <rect class="art-soft" x="{{ x + 11 }}" y="125" width="34" height="12" rx="6"/>
+  <g transform="translate({{ x + 14 }} 126) scale(.62)">
+    <path class="art-line-key" d="M2.5 11.5 6.5 6.5l3 3 4-5M13.5 8V4.5H10" fill="none"
+          stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <rect class="art-mute" x="{{ x + 28 }}" y="129" width="14" height="5" rx="2.5"/>
+  {% endfor %}
+
+  {#- la gráfica -#}
+  <rect class="art-soft" x="74" y="152" width="188" height="62" rx="10"/>
+  {% for i in range(5) %}
+  <line class="art-line" x1="74" x2="262" y1="{{ 152 + alto * i / 4 }}" y2="{{ 152 + alto * i / 4 }}" stroke-width="1"/>
+  {% endfor %}
+  {% for h in [16, 20, 18, 26, 30, 28, 38, 46] %}
+  <rect class="art-key" x="{{ 74 + loop.index0 * paso + paso * 0.12 }}" y="{{ base - h }}"
+        width="{{ paso * 0.76 }}" height="{{ h }}"/>
+  {% endfor %}
+  <line class="art-edge" x1="74" y1="{{ base }}" x2="262" y2="{{ base }}" stroke-width="1.5"/>
+
+  {#- la ficha que flota, con el puntero encima -#}
+  <rect class="art-card art-line" x="272" y="158" width="96" height="58" rx="12" stroke-width="2"/>
+  <rect class="art-mute" x="286" y="172" width="48" height="6" rx="3"/>
+  <rect class="art-ink" x="286" y="187" width="42" height="10" rx="5"/>
+  <path class="art-line-key" d="m336 196 10-10m0 0h-7m7 0v7" fill="none" stroke-width="2.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="art-ink art-line-card" d="M338 194v29l7-7 5 10 6-3-5-10h9Z" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,32 @@
+{#- Protege la privacidad de tus contactos: el correo bajo llave en el centro y
+    cada persona en su propio círculo, con su propia línea hasta él, sin verse
+    entre ellas. Las siluetas van sin tono de piel a propósito: son cualquiera. -#}
+<svg class="trouble__draw" viewBox="0 0 400 250" aria-hidden="true" focusable="false">
+  {#- una línea por persona, no una que las una entre ellas: es justo lo que no
+      pasa cuando se manda desde una cuenta corriente -#}
+  {% for a, b, c, d in [(79, 80, 117, 94), (61, 147, 111, 139), (114, 197, 131, 182),
+                        (321, 80, 283, 94), (339, 147, 289, 139), (286, 197, 269, 182)] %}
+  <line class="art-line" x1="{{ a }}" y1="{{ b }}" x2="{{ c }}" y2="{{ d }}"
+        stroke-width="2.5" stroke-dasharray="4 6" stroke-linecap="round"/>
+  {% endfor %}
+
+  {#- el disco del centro -#}
+  <circle class="art-card art-line" cx="200" cy="124" r="86" stroke-width="2"/>
+
+  {#- el sobre -#}
+  <rect class="art-card art-line" x="150" y="82" width="100" height="68" rx="9" stroke-width="2.5"/>
+  <path class="art-line" d="m152 86 48 30 48-30" fill="none" stroke-width="2.5"/>
+
+  {#- el candado, colgando del sobre -#}
+  <path class="art-line-key" d="M186 140v-11a14 14 0 0 1 28 0v11" fill="none" stroke-width="6" stroke-linecap="round"/>
+  <rect class="art-key" x="174" y="138" width="52" height="42" rx="9"/>
+  <circle class="art-card" cx="200" cy="154" r="5"/>
+  <rect class="art-card" x="197.5" y="154" width="5" height="12" rx="2.5"/>
+
+  {#- las personas, cada una en su círculo -#}
+  {% for cx, cy in [(52, 70), (32, 152), (92, 214), (348, 70), (368, 152), (308, 214)] %}
+  <circle class="art-card art-line" cx="{{ cx }}" cy="{{ cy }}" r="27" stroke-width="2"/>
+  <circle class="art-quiet" cx="{{ cx }}" cy="{{ cy - 7 }}" r="8.5"/>
+  <rect class="art-quiet" x="{{ cx - 11 }}" y="{{ cy + 5 }}" width="22" height="19" rx="9.5"/>
+  {% endfor %}
+</svg>

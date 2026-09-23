@@ -1,0 +1,49 @@
+{#- Evita problemas de spam: lo que sale del portátil se reparte, y no todo
+    llega a la bandeja. El camino bueno va en azul de marca y el malo en gris
+    apagado, que son los dos colores con los que ya se dibujan las gráficas del
+    panel: aquí tampoco se inventa ninguno. -#}
+<svg class="trouble__draw" viewBox="0 0 400 250" aria-hidden="true" focusable="false">
+  {#- el portátil -#}
+  <path class="art-key" d="M18 160V64a9 9 0 0 1 9-9h104a9 9 0 0 1 9 9v96Z"/>
+  <rect class="art-card" x="28" y="66" width="102" height="84" rx="5"/>
+  <rect class="art-card art-line-key" x="53" y="88" width="52" height="38" rx="5" stroke-width="2.5"/>
+  <path class="art-line-key" d="m55 91 24 18 24-18" fill="none" stroke-width="2.5"/>
+  <rect class="art-key" x="6" y="160" width="146" height="12" rx="6"/>
+
+  {#- los dos caminos -#}
+  <path class="art-line-key" d="M158 120C196 84 244 74 290 84" fill="none" stroke-width="2.5"
+        stroke-dasharray="5 8" stroke-linecap="round"/>
+  <path class="art-line-quiet" d="M224 100c2 32 14 58 34 76" fill="none" stroke-width="2.5"
+        stroke-dasharray="5 8" stroke-linecap="round"/>
+  <circle class="art-quiet" cx="224" cy="100" r="4"/>
+
+  {#- los sobres en camino -#}
+  {% for x, y, turn in [(176, 100, -18), (214, 86, -8), (250, 82, 4)] %}
+  <g transform="translate({{ x }} {{ y }}) rotate({{ turn }})">
+    <rect class="art-card art-line" x="-15" y="-11" width="30" height="22" rx="3" stroke-width="2"/>
+    <path class="art-line" d="m-14-10 14 10 14-10" fill="none" stroke-width="2"/>
+  </g>
+  {% endfor %}
+
+  {#- la bandeja que sí recibe -#}
+  <rect class="art-card art-line" x="296" y="56" width="32" height="24" rx="3" stroke-width="2"/>
+  <path class="art-line" d="m297 57 15 11 15-11" fill="none" stroke-width="2"/>
+  <rect class="art-card art-line" x="310" y="44" width="32" height="24" rx="3" stroke-width="2"/>
+  <path class="art-line" d="m311 45 15 11 15-11" fill="none" stroke-width="2"/>
+  <path class="art-card art-line" d="M284 74h72v34a10 10 0 0 1-10 10h-52a10 10 0 0 1-10-10Z" stroke-width="2"/>
+  <path class="art-key" d="M278 92h84v16a10 10 0 0 1-10 10h-64a10 10 0 0 1-10-10Z"/>
+  <circle class="art-key" cx="368" cy="70" r="15"/>
+  <path class="art-line-card" d="m361 70 5 5 10-11" fill="none" stroke-width="3"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  {#- el sobre que se pierde y la papelera -#}
+  <g transform="translate(266 166) rotate(24)">
+    <rect class="art-card art-line" x="-15" y="-11" width="30" height="22" rx="3" stroke-width="2"/>
+    <path class="art-line" d="m-14-10 14 10 14-10" fill="none" stroke-width="2"/>
+  </g>
+  <path class="art-line-quiet" d="M268 186v-5a5 5 0 0 1 5-5h18a5 5 0 0 1 5 5v5" fill="none" stroke-width="3"/>
+  <rect class="art-quiet" x="240" y="186" width="84" height="13" rx="6.5"/>
+  <path class="art-quiet" d="M246 203h72l-6 36a9 9 0 0 1-9 8h-42a9 9 0 0 1-9-8Z"/>
+  <circle class="art-quiet" cx="334" cy="212" r="15"/>
+  <path class="art-line-card" d="m328 206 12 12m0-12-12 12" fill="none" stroke-width="3" stroke-linecap="round"/>
+</svg>

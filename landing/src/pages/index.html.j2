@@ -28,18 +28,50 @@
 <section class="section section--alt" aria-labelledby="problema-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow">{{ page.problem.eyebrow }}</p>
       <h2 class="section__title" id="problema-title">{{ page.problem.title }}</h2>
-      <p class="section__intro">{{ page.problem.intro }}</p>
     </div>
-    <ul class="grid grid--3">
+    {#- Los cuatro puntos, con el que estás viendo marcado. Lo que abre cada uno
+        son botones de radio, como el carrusel de capturas: así funciona entero
+        sin JavaScript y las flechas del teclado lo mueven solas. trouble.js
+        solo agrega el paso automático. -#}
+    <div class="trouble" data-trouble>
       {% for item in page.problem['items'] %}
-      <li class="note-card">
-        <h3 class="note-card__title">{{ item.title }}</h3>
-        <p>{{ item.text }}</p>
-      </li>
+      <input class="trouble__pick" type="radio" name="trouble"
+             id="pain-{{ loop.index }}"{{ " checked" if loop.first }}>
       {% endfor %}
-    </ul>
+      <ol class="trouble__list">
+        {% for item in page.problem['items'] %}
+        <li>
+          <label class="trouble__step" for="pain-{{ loop.index }}">
+            <span class="trouble__mark" aria-hidden="true">
+              <span class="trouble__n">{{ loop.index }}</span>
+              {%- include "partials/icon-check.svg.j2" -%}
+            </span>
+            <span class="trouble__said">
+              <span class="trouble__title">{{ item.title }}</span>
+              <span class="trouble__lead">{{ item.lead }}</span>
+            </span>
+            <span class="trouble__bar" aria-hidden="true"></span>
+          </label>
+        </li>
+        {% endfor %}
+      </ol>
+      {#- Las cuatro ilustraciones comparten una celda y los cuatro párrafos
+          otra, así que el bloque mide siempre lo que el más largo y no salta al
+          cambiar de punto. -#}
+      <div class="trouble__art">
+        <div class="trouble__frame">
+          {% for item in page.problem['items'] %}
+          <div class="trouble__shot trouble__one">{% include "partials/art-" ~ item.art ~ ".svg.j2" %}</div>
+          {% endfor %}
+        </div>
+        <div class="trouble__notes">
+          {% for item in page.problem['items'] %}
+          <p class="trouble__note trouble__one">{{ item.text }}</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -126,5 +158,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/assets/js/trouble.js" defer></script>
 <script src="/assets/js/carousel.js" defer></script>
 {% endblock %}
