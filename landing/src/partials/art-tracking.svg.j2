@@ -1,61 +1,94 @@
-{#- ¿Realmente llegó tu correo?: el tablero que sí lo cuenta. Las medidas son
-    las de la pantalla de Estadísticas de verdad (backend/templates/_bars.html y
-    la rejilla de `.rates`): fichas con borde y radio 12, cinco rayas de rejilla,
-    cada barra ocupando el 76 % de su hueco con un 12 % de aire a cada lado y sin
-    redondear, y la línea base más marcada que las demás. Sin un solo rótulo: la
-    cifra de cada ficha es una barra. -#}
-{%- set alto = 62 %}
-{%- set base = 214 %}
-{%- set paso = 23.5 %}
-<svg class="trouble__draw" viewBox="0 0 400 250" aria-hidden="true" focusable="false">
-  <rect class="art-card art-line" x="14" y="16" width="372" height="218" rx="14" stroke-width="2"/>
+{#- ¿Realmente llegó tu correo?: el tablero que sí lo cuenta. Sigue el encuadre
+    de la imagen de referencia: inclinado, con su canto de grosor, la barra
+    lateral con sus iconos, el punto verde de «en vivo», las cuatro fichas con
+    su barra de progreso (azul, verde, morada y ámbar), la gráfica y la ficha de
+    la tasa con su flecha verde. Sin el puntero que llevaba, y sin rótulos ni
+    cifras: el texto es una barra. -#}
+{%- set bars = [(14, "art-blue-soft"), (20, "art-blue"), (26, "art-blue-soft"), (22, "art-blue"),
+                (30, "art-blue-soft"), (28, "art-blue"), (36, "art-blue-soft"), (32, "art-blue"),
+                (42, "art-blue"), (46, "art-green"), (36, "art-amber"), (58, "art-purple")] %}
+{%- set tiles = [(97, "art-blue", 46), (182, "art-green", 42), (267, "art-purple", 36), (350, "art-amber", 24)] %}
+<svg class="trouble__draw" viewBox="0 0 480 300" aria-hidden="true" focusable="false">
+  <defs>
+    <clipPath id="at-clip"><rect width="480" height="300" rx="20"/></clipPath>
+    <radialGradient id="at-glow" cx="50%" cy="40%" r="70%">
+      <stop offset="0" class="art-glow"/>
+      <stop offset="1" class="art-glow" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="at-sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="white" stop-opacity=".45"/>
+      <stop offset=".7" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="at-drop" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" class="art-drop"/>
+    </filter>
+    <filter id="at-soft" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3.5" class="art-drop"/>
+    </filter>
+  </defs>
 
-  {#- la barra lateral -#}
-  <path class="art-soft" d="M14 30a14 14 0 0 1 14-14h30v218H28a14 14 0 0 1-14-14Z"/>
-  {% for top in [46, 78, 110, 142] %}
-  <rect class="{{ 'art-key' if loop.first else 'art-mute' }}" x="28" y="{{ top }}" width="16" height="16" rx="5"/>
-  {% endfor %}
+  <g clip-path="url(#at-clip)">
+    <rect class="art-stage" width="480" height="300"/>
+    <rect width="480" height="300" fill="url(#at-glow)"/>
 
-  {#- la cabecera -#}
-  <rect class="art-key" x="74" y="32" width="28" height="28" rx="8"/>
-  <rect class="art-line-card" x="80" y="40" width="16" height="12" rx="2.5" fill="none" stroke-width="2"/>
-  <path class="art-line-card" d="m80.5 40.5 7.5 5.5 7.5-5.5" fill="none" stroke-width="2"/>
-  <rect class="art-mute" x="112" y="38" width="96" height="9" rx="4.5"/>
-  <rect class="art-mute" x="112" y="52" width="62" height="6" rx="3"/>
-  <rect class="art-soft art-line" x="300" y="36" width="68" height="20" rx="10" stroke-width="1.5"/>
-  <circle class="art-key" cx="313" cy="46" r="4"/>
-  <rect class="art-mute" x="323" y="43" width="34" height="6" rx="3"/>
-  <line class="art-line" x1="74" y1="72" x2="368" y2="72" stroke-width="1.5"/>
+    <g transform="translate(240 150) scale(.93) rotate(-3) translate(-240 -150)">
+      {#- el canto de la tarjeta, que le da grosor, y la tarjeta -#}
+      <g filter="url(#at-drop)">
+        <rect class="art-card-edge" x="32" y="28" width="398" height="236" rx="20"/>
+      </g>
+      <rect class="art-card" x="40" y="20" width="398" height="236" rx="20"/>
 
-  {#- las cuatro fichas -#}
-  {% for x in [74, 150, 226, 302] %}
-  <rect class="art-card art-line" x="{{ x }}" y="{{ 86 }}" width="66" height="56" rx="12" stroke-width="1.5"/>
-  <rect class="art-mute" x="{{ x + 11 }}" y="97" width="30" height="5" rx="2.5"/>
-  <rect class="art-ink" x="{{ x + 11 }}" y="108" width="{{ 38 - loop.index0 * 3 }}" height="9" rx="4.5"/>
-  <rect class="art-soft" x="{{ x + 11 }}" y="125" width="34" height="12" rx="6"/>
-  <g transform="translate({{ x + 14 }} 126) scale(.62)">
-    <path class="art-line-key" d="M2.5 11.5 6.5 6.5l3 3 4-5M13.5 8V4.5H10" fill="none"
-          stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      {#- la barra lateral, con sus cuatro iconos -#}
+      <g class="art-s-blue-soft" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M59 70l9-8 9 8v9h-18Z"/>
+        <rect x="59" y="100" width="18" height="13" rx="2.5"/>
+        <path d="m60 102 8 6 8-6"/>
+        <path d="M59 147l5-6 4 3 8-8M59 150h18"/>
+        <rect x="59" y="172" width="18" height="13" rx="2.5"/>
+        <path d="m60 174 8 6 8-6"/>
+      </g>
+      <path class="art-s-edge" d="M88 36v204" fill="none" stroke-width="1.5"/>
+
+      {#- la cabecera: el sobre, el titular y el punto verde de «en vivo» -#}
+      <rect class="art-blue" x="100" y="38" width="26" height="26" rx="8"/>
+      <rect x="100" y="38" width="26" height="26" rx="8" fill="url(#at-sheen)"/>
+      <rect class="art-s-paper" x="106" y="45" width="14" height="11" rx="2" fill="none" stroke-width="1.8"/>
+      <path class="art-s-paper" d="m106.5 46 6.5 5 6.5-5" fill="none" stroke-width="1.8" stroke-linejoin="round"/>
+      <rect class="art-ink" x="136" y="46" width="96" height="9" rx="4.5" opacity=".85"/>
+      <rect class="art-card art-s-edge" x="344" y="38" width="80" height="22" rx="11" stroke-width="1.5"/>
+      <circle class="art-green" cx="357" cy="49" r="4.5"/>
+      <rect class="art-line" x="367" y="46" width="44" height="6" rx="3"/>
+
+      {#- las cuatro fichas, cada una con su barra de color -#}
+      {% for x, color, filled in tiles %}
+      <g filter="url(#at-soft)">
+        <rect class="art-card art-s-edge" x="{{ x }}" y="76" width="74" height="64" rx="12" stroke-width="1.2"/>
+      </g>
+      <rect class="art-line" x="{{ x + 10 }}" y="88" width="30" height="5" rx="2.5"/>
+      <rect class="art-ink" x="{{ x + 10 }}" y="100" width="{{ [42, 40, 36, 26][loop.index0] }}" height="10" rx="5"/>
+      <rect class="art-line" x="{{ x + 10 }}" y="122" width="54" height="8" rx="4"/>
+      <rect class="{{ color }}" x="{{ x + 10 }}" y="122" width="{{ filled }}" height="8" rx="4"/>
+      <rect x="{{ x + 10 }}" y="122" width="{{ filled }}" height="8" rx="4" fill="url(#at-sheen)"/>
+      {% endfor %}
+
+      {#- la gráfica, de azul a verde agua y las últimas en ámbar y morado -#}
+      <g class="art-s-line" stroke-width="1">
+        <path d="M98 172h176M98 190h176M98 208h176"/>
+      </g>
+      {% for h, color in bars %}
+      <rect class="{{ color }}" x="{{ 100 + loop.index0 * 14.5 }}" y="{{ 226 - h }}" width="9" height="{{ h }}" rx="2.5"/>
+      <rect x="{{ 100 + loop.index0 * 14.5 }}" y="{{ 226 - h }}" width="9" height="{{ h }}" rx="2.5" fill="url(#at-sheen)"/>
+      {% endfor %}
+      <path class="art-s-edge" d="M97 227h180" fill="none" stroke-width="1.5"/>
+
+      {#- la ficha de la tasa, con su flecha verde -#}
+      <g filter="url(#at-soft)">
+        <rect class="art-card art-s-edge" x="290" y="158" width="130" height="66" rx="14" stroke-width="1.2"/>
+      </g>
+      <rect class="art-line" x="304" y="174" width="60" height="6" rx="3"/>
+      <rect class="art-ink" x="304" y="190" width="48" height="12" rx="6"/>
+      <path class="art-s-green" d="m362 202 12-12m0 0h-8m8 0v8" fill="none" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
   </g>
-  <rect class="art-mute" x="{{ x + 28 }}" y="129" width="14" height="5" rx="2.5"/>
-  {% endfor %}
-
-  {#- la gráfica -#}
-  <rect class="art-soft" x="74" y="152" width="188" height="62" rx="10"/>
-  {% for i in range(5) %}
-  <line class="art-line" x1="74" x2="262" y1="{{ 152 + alto * i / 4 }}" y2="{{ 152 + alto * i / 4 }}" stroke-width="1"/>
-  {% endfor %}
-  {% for h in [16, 20, 18, 26, 30, 28, 38, 46] %}
-  <rect class="art-key" x="{{ 74 + loop.index0 * paso + paso * 0.12 }}" y="{{ base - h }}"
-        width="{{ paso * 0.76 }}" height="{{ h }}"/>
-  {% endfor %}
-  <line class="art-edge" x1="74" y1="{{ base }}" x2="262" y2="{{ base }}" stroke-width="1.5"/>
-
-  {#- la ficha que flota, con el puntero encima -#}
-  <rect class="art-card art-line" x="272" y="158" width="96" height="58" rx="12" stroke-width="2"/>
-  <rect class="art-mute" x="286" y="172" width="48" height="6" rx="3"/>
-  <rect class="art-ink" x="286" y="187" width="42" height="10" rx="5"/>
-  <path class="art-line-key" d="m336 196 10-10m0 0h-7m7 0v7" fill="none" stroke-width="2.6"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  <path class="art-ink art-line-card" d="M338 194v29l7-7 5 10 6-3-5-10h9Z" stroke-width="2.5" stroke-linejoin="round"/>
 </svg>

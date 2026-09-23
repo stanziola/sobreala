@@ -59,6 +59,37 @@
   --color-on-dark: #F3F7FB;
   --color-on-dark-soft: #E6E6E9;
 
+  /* Las ilustraciones de noche. El fondo azul claro pasa a azul noche, lo que
+   * es tarjeta se oscurece como el panel en oscuro, y el papel baja un poco
+   * para no deslumbrar. Lo de color apenas sube, para leerse sobre ese fondo, y
+   * las personas no cambian: la piel, el pelo pelirrojo y las camisas amarilla
+   * y rosa no se repiten aquí. Lo que va dibujado encima del papel (agujas,
+   * boli) usa --art-navy y no --art-ink, que de noche es claro. */
+  --art-stage: #0F1A2B;
+  --art-glow: #15243A;
+  --art-floor: #16233A;
+  --art-card: #1C2B45;
+  --art-card-edge: #2C4066;
+  --art-paper: #D9E3F2;
+  --art-paper-shade: #9FB1CE;
+  --art-line: #34496E;
+  --art-dash: #4D73AB;
+  --art-ink: #DCE5F3;
+  --art-shadow: rgba(0, 0, 0, .55);
+  --art-blue: #4C95F7;
+  --art-blue-deep: #3A75E0;
+  --art-blue-soft: #5F8FD4;
+  --art-green: #3DD0AB;
+  --art-purple: #AE9BFB;
+  --art-amber: #FDC57F;
+  --art-red: #F2747C;
+  --art-navy: #3A5589;
+  --art-sweater: #2C4A86;
+  --art-silver: #8595B8;
+  --art-hair: #3B3850;
+  --art-leaf: #52BD95;
+  --art-leaf-deep: #3AA083;
+
   /* Black shadows disappear on a dark page, so they are deeper and a soft ring
    * of light does the lifting instead. */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .40);

@@ -59,6 +59,43 @@
    * themes: the accent stays light, so this cannot follow --color-ink. */
   --color-on-accent: #0E1B2A;
 
+  /* ------------------------------------------------------------ ilustraciones
+   * Las cuatro de «El problema», en la portada. Estos colores salen de las
+   * imágenes de referencia que se dieron para ellas, muestreados punto por
+   * punto: por eso no son los de la marca, y es a propósito. Viven aquí y no en
+   * el SVG porque un atributo no puede leer una variable, y así la escena de
+   * noche es solo otra lista de valores en colors-dark.css. build_logo.py no
+   * los lee: read_colors() se queda solo con sus tres claves. */
+  --art-stage: #E1EEFD;        /* el fondo de cada escena */
+  --art-glow: #F4F9FF;         /* el resplandor del centro */
+  --art-floor: #EAF2FE;        /* la mesa */
+  --art-card: #F7FAFF;         /* tablero, bandeja, disco, fichas */
+  --art-card-edge: #C9DAF8;
+  --art-paper: #FFFFFF;        /* sobres, esfera del reloj, libreta */
+  --art-paper-shade: #D6E3F7;
+  --art-line: #CEDCF5;         /* las rayas que hacen de texto */
+  --art-dash: #A9CBF7;         /* las flechas de puntos */
+  --art-ink: #2A3F68;          /* las cifras de las fichas */
+  --art-shadow: rgba(51, 99, 181, .22);
+  --art-blue: #3D8BF5;
+  --art-blue-deep: #2A68D8;
+  --art-blue-soft: #8CBEF9;
+  --art-green: #34C5A0;
+  --art-purple: #A08BFA;
+  --art-amber: #FDC074;
+  --art-red: #EF5F6A;
+  --art-navy: #2F4675;         /* la papelera, las agujas, el boli */
+  --art-sweater: #1F3461;
+  --art-silver: #B9C6E6;       /* el portátil de quien trabaja a mano */
+  --art-skin: #F2AC8E;
+  --art-skin-shade: #DE9677;
+  --art-hair: #2E2C3E;
+  --art-ginger: #CE723D;
+  --art-yellow: #FDBF77;
+  --art-pink: #F997AF;
+  --art-leaf: #4DB38D;
+  --art-leaf-deep: #2F8F75;
+
   /* Elevation. Here rather than in site.css so the dark palette can restate
    * them: a translucent black shadow is invisible on a dark page. */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .08);
@@ -105,6 +142,37 @@
   /* Stays near-white: it is the text on the blue and deep surfaces. */
   --color-on-dark: #F3F7FB;
   --color-on-dark-soft: #E6E6E9;
+
+  /* Las ilustraciones de noche. El fondo azul claro pasa a azul noche, lo que
+   * es tarjeta se oscurece como el panel en oscuro, y el papel baja un poco
+   * para no deslumbrar. Lo de color apenas sube, para leerse sobre ese fondo, y
+   * las personas no cambian: la piel, el pelo pelirrojo y las camisas amarilla
+   * y rosa no se repiten aquí. Lo que va dibujado encima del papel (agujas,
+   * boli) usa --art-navy y no --art-ink, que de noche es claro. */
+  --art-stage: #0F1A2B;
+  --art-glow: #15243A;
+  --art-floor: #16233A;
+  --art-card: #1C2B45;
+  --art-card-edge: #2C4066;
+  --art-paper: #D9E3F2;
+  --art-paper-shade: #9FB1CE;
+  --art-line: #34496E;
+  --art-dash: #4D73AB;
+  --art-ink: #DCE5F3;
+  --art-shadow: rgba(0, 0, 0, .55);
+  --art-blue: #4C95F7;
+  --art-blue-deep: #3A75E0;
+  --art-blue-soft: #5F8FD4;
+  --art-green: #3DD0AB;
+  --art-purple: #AE9BFB;
+  --art-amber: #FDC57F;
+  --art-red: #F2747C;
+  --art-navy: #3A5589;
+  --art-sweater: #2C4A86;
+  --art-silver: #8595B8;
+  --art-hair: #3B3850;
+  --art-leaf: #52BD95;
+  --art-leaf-deep: #3AA083;
 
   /* Black shadows disappear on a dark page, so they are deeper and a soft ring
    * of light does the lifting instead. */
@@ -678,18 +746,51 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 
 /* Los colores de las cuatro ilustraciones. Van en clases y no escritos en el
    SVG porque un atributo no puede leer una variable: es lo mismo que se hace
-   con el ala del logo (.wing-fill). Ninguno es un color nuevo. */
-.art-card { fill: var(--color-surface); }
-.art-soft { fill: var(--color-surface-alt); }
-.art-mute { fill: var(--color-border); }
-.art-ink { fill: var(--color-ink); }
-.art-key { fill: var(--color-accent); }
-.art-quiet { fill: var(--color-ink-soft); }
-.art-line { stroke: var(--color-border); }
-.art-edge { stroke: var(--color-field); }
-.art-line-key { stroke: var(--color-accent); }
-.art-line-quiet { stroke: var(--color-ink-soft); }
-.art-line-card { stroke: var(--color-surface); }
+   con el ala del logo (.wing-fill). La paleta es la de las imágenes de
+   referencia, y vive en brand/colors.css con su versión de noche en
+   colors-dark.css. El volumen no sale de aquí: cada escena lleva sus dos
+   degradados de luz y de sombra, en blanco y negro con transparencia, que valen
+   igual en los dos temas. */
+.art-stage { fill: var(--art-stage); }
+.art-floor { fill: var(--art-floor); }
+.art-card { fill: var(--art-card); }
+.art-card-edge { fill: var(--art-card-edge); }
+.art-paper { fill: var(--art-paper); }
+.art-line { fill: var(--art-line); }
+.art-ink { fill: var(--art-ink); }
+.art-blue { fill: var(--art-blue); }
+.art-blue-deep { fill: var(--art-blue-deep); }
+.art-blue-soft { fill: var(--art-blue-soft); }
+.art-green { fill: var(--art-green); }
+.art-purple { fill: var(--art-purple); }
+.art-amber { fill: var(--art-amber); }
+.art-red { fill: var(--art-red); }
+.art-navy { fill: var(--art-navy); }
+.art-sweater { fill: var(--art-sweater); }
+.art-silver { fill: var(--art-silver); }
+.art-skin { fill: var(--art-skin); }
+.art-skin-shade { fill: var(--art-skin-shade); }
+.art-hair { fill: var(--art-hair); }
+.art-ginger { fill: var(--art-ginger); }
+.art-yellow { fill: var(--art-yellow); }
+.art-pink { fill: var(--art-pink); }
+.art-leaf { fill: var(--art-leaf); }
+.art-leaf-deep { fill: var(--art-leaf-deep); }
+/* Los trazos: contornos, flechas de puntos, marcas y glifos. */
+.art-s-edge { stroke: var(--art-card-edge); }
+.art-s-shade { stroke: var(--art-paper-shade); }
+.art-s-line { stroke: var(--art-line); }
+.art-s-dash { stroke: var(--art-dash); }
+.art-s-paper { stroke: var(--art-paper); }
+.art-s-blue { stroke: var(--art-blue); }
+.art-s-blue-deep { stroke: var(--art-blue-deep); }
+.art-s-blue-soft { stroke: var(--art-blue-soft); }
+.art-s-green { stroke: var(--art-green); }
+.art-s-navy { stroke: var(--art-navy); }
+.art-s-hair { stroke: var(--art-hair); }
+/* El resplandor del fondo y la sombra suave de debajo de cada cosa. */
+.art-glow { stop-color: var(--art-glow); }
+.art-drop { flood-color: var(--art-shadow); }
 
 /* ------------------------------------------------------------------ tour (home)
    El carrusel de capturas del panel. Lo que abre cada una son cinco botones de

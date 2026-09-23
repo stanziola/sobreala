@@ -1,49 +1,116 @@
-{#- Evita problemas de spam: lo que sale del portátil se reparte, y no todo
-    llega a la bandeja. El camino bueno va en azul de marca y el malo en gris
-    apagado, que son los dos colores con los que ya se dibujan las gráficas del
-    panel: aquí tampoco se inventa ninguno. -#}
-<svg class="trouble__draw" viewBox="0 0 400 250" aria-hidden="true" focusable="false">
-  {#- el portátil -#}
-  <path class="art-key" d="M18 160V64a9 9 0 0 1 9-9h104a9 9 0 0 1 9 9v96Z"/>
-  <rect class="art-card" x="28" y="66" width="102" height="84" rx="5"/>
-  <rect class="art-card art-line-key" x="53" y="88" width="52" height="38" rx="5" stroke-width="2.5"/>
-  <path class="art-line-key" d="m55 91 24 18 24-18" fill="none" stroke-width="2.5"/>
-  <rect class="art-key" x="6" y="160" width="146" height="12" rx="6"/>
+{#- Evita problemas de spam: los correos salen del portátil en fila hacia la
+    bandeja, que los recibe con su ganchito verde, y uno se desvía y cae a la
+    papelera con su equis roja. Sigue el encuadre de la imagen de referencia,
+    sin las palabras que llevaba («Inbox», «Spam»): la bandeja, la papelera y
+    sus insignias ya lo dicen. Los colores salen de las clases .art-*. -#}
+{%- macro envelope(x, y, turn=0, scale=1, face="art-paper", dim=false) -%}
+<g transform="translate({{ x }} {{ y }}) rotate({{ turn }}) scale({{ scale }})">
+  <rect class="{{ face }} art-s-shade" x="-16" y="-12" width="32" height="24" rx="3.5" stroke-width="1.3"/>
+  {% if dim %}<rect x="-16" y="-12" width="32" height="24" rx="3.5" fill="black" fill-opacity=".1"/>{% endif %}
+  <path class="art-s-shade" d="m-14.5-10 14.5 11 14.5-11" fill="none" stroke-width="1.5" stroke-linejoin="round"/>
+  <path class="art-s-shade" d="m-14 10.5 10-8M14 10.5l-10-8" fill="none" stroke-width="1" opacity=".7"/>
+</g>
+{%- endmacro %}
+<svg class="trouble__draw" viewBox="0 0 480 300" aria-hidden="true" focusable="false">
+  <defs>
+    <clipPath id="as-clip"><rect width="480" height="300" rx="20"/></clipPath>
+    <radialGradient id="as-glow" cx="45%" cy="40%" r="70%">
+      <stop offset="0" class="art-glow"/>
+      <stop offset="1" class="art-glow" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="as-sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="white" stop-opacity=".45"/>
+      <stop offset=".6" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="as-shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset=".35" stop-color="black" stop-opacity="0"/>
+      <stop offset="1" stop-color="black" stop-opacity=".22"/>
+    </linearGradient>
+    <filter id="as-drop" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" class="art-drop"/>
+    </filter>
+    <path id="as-lid" d="M22 92a8 8 0 0 1 8-8l106-7a8 8 0 0 1 8 8l4 100a6 6 0 0 1-6 6l-112 6a6 6 0 0 1-6-6Z"/>
+    <path id="as-bin" d="M258 204h100l-5 72a9 9 0 0 1-9 8h-72a9 9 0 0 1-9-8Z"/>
+    <path id="as-tray" d="M290 100h128v46a8 8 0 0 1-8 8H298a8 8 0 0 1-8-8Z"/>
+  </defs>
 
-  {#- los dos caminos -#}
-  <path class="art-line-key" d="M158 120C196 84 244 74 290 84" fill="none" stroke-width="2.5"
-        stroke-dasharray="5 8" stroke-linecap="round"/>
-  <path class="art-line-quiet" d="M224 100c2 32 14 58 34 76" fill="none" stroke-width="2.5"
-        stroke-dasharray="5 8" stroke-linecap="round"/>
-  <circle class="art-quiet" cx="224" cy="100" r="4"/>
+  <g clip-path="url(#as-clip)">
+    <rect class="art-stage" width="480" height="300"/>
+    <rect width="480" height="300" fill="url(#as-glow)"/>
 
-  {#- los sobres en camino -#}
-  {% for x, y, turn in [(176, 100, -18), (214, 86, -8), (250, 82, 4)] %}
-  <g transform="translate({{ x }} {{ y }}) rotate({{ turn }})">
-    <rect class="art-card art-line" x="-15" y="-11" width="30" height="22" rx="3" stroke-width="2"/>
-    <path class="art-line" d="m-14-10 14 10 14-10" fill="none" stroke-width="2"/>
+    {#- el camino que se desvía, por debajo de todo -#}
+    <path class="art-s-dash" d="M150 166c30-28 78-34 110-4" fill="none" stroke-width="3"
+          stroke-dasharray="6 7" stroke-linecap="round"/>
+    <path class="art-s-dash" d="m250 150 12 13-17 3" fill="none" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    {#- el portátil azul, con un correo en pantalla -#}
+    <g filter="url(#as-drop)">
+      <path class="art-blue-deep" d="M18 196l130-8 72 24-160 10Z"/>
+    </g>
+    <path class="art-blue" d="M40 199l100-6 50 16-122 7Z"/>
+    <path d="M40 199l100-6 50 16-122 7Z" fill="url(#as-sheen)"/>
+    <path class="art-blue-deep" d="M60 222l160-10v6l-160 10Z"/>
+    <path d="M60 222l160-10v6l-160 10Z" fill="url(#as-shade)"/>
+    <g filter="url(#as-drop)">
+      <use href="#as-lid" class="art-blue-deep"/>
+    </g>
+    <path class="art-blue" d="M32 98a5 5 0 0 1 5-5l94-6a5 5 0 0 1 5 5l3 88a4 4 0 0 1-4 4l-98 5a4 4 0 0 1-4-4Z"/>
+    <path d="M32 98a5 5 0 0 1 5-5l94-6a5 5 0 0 1 5 5l3 88a4 4 0 0 1-4 4l-98 5a4 4 0 0 1-4-4Z" fill="url(#as-sheen)"/>
+    <g filter="url(#as-drop)">
+      {{ envelope(88, 142, -3, 1.9) }}
+    </g>
+
+    {#- la bandeja, con lo que ya le llegó -#}
+    <path class="art-blue-soft" d="M296 86h116l14 14H282Z"/>
+    <g filter="url(#as-drop)">
+      {{ envelope(334, 70, -6, 1.45) }}
+      {{ envelope(388, 84, 4, 1.35) }}
+    </g>
+    <g filter="url(#as-drop)">
+      <use href="#as-tray" class="art-card"/>
+    </g>
+    <use href="#as-tray" fill="url(#as-shade)" opacity=".45"/>
+    <path class="art-blue" d="M418 100l14-14v46a8 8 0 0 1-3 6l-11 10Z"/>
+    <path d="M418 100l14-14v46a8 8 0 0 1-3 6l-11 10Z" fill="url(#as-sheen)"/>
+    <rect class="art-blue-soft" x="290" y="100" width="128" height="6" rx="3"/>
+
+    {#- la fila de correos que sale hacia la bandeja -#}
+    <g filter="url(#as-drop)">
+      {{ envelope(158, 118, -16, 1.05) }}
+      {{ envelope(198, 96, -10, 1.1) }}
+      {{ envelope(246, 80, -4, 1.15) }}
+      {{ envelope(292, 74, 2, 1.2) }}
+    </g>
+
+    {#- el ganchito verde -#}
+    <g filter="url(#as-drop)">
+      <circle class="art-green" cx="424" cy="52" r="16"/>
+    </g>
+    <circle cx="424" cy="52" r="16" fill="url(#as-sheen)"/>
+    <path class="art-s-paper" d="m416 52 6 6 11-12" fill="none" stroke-width="3.6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    {#- el que se pierde, y la papelera -#}
+    <g filter="url(#as-drop)">
+      {{ envelope(280, 172, 26, 1.2, dim=true) }}
+    </g>
+    <path class="art-navy" d="M262 196h92l4 8H258Z"/>
+    <path d="M262 196h92l4 8H258Z" fill="black" fill-opacity=".3"/>
+    {{ envelope(318, 204, -24, 1.15, dim=true) }}
+    <g filter="url(#as-drop)">
+      <use href="#as-bin" class="art-navy"/>
+    </g>
+    <use href="#as-bin" fill="url(#as-sheen)" opacity=".5"/>
+    <use href="#as-bin" fill="url(#as-shade)"/>
+    <rect class="art-navy" x="256" y="202" width="104" height="5" rx="2.5"/>
+    <rect x="256" y="202" width="104" height="5" rx="2.5" fill="white" fill-opacity=".18"/>
+
+    {#- la equis roja -#}
+    <g filter="url(#as-drop)">
+      <circle class="art-red" cx="358" cy="190" r="15"/>
+    </g>
+    <circle cx="358" cy="190" r="15" fill="url(#as-sheen)"/>
+    <path class="art-s-paper" d="m352 184 12 12m0-12-12 12" fill="none" stroke-width="3.6" stroke-linecap="round"/>
   </g>
-  {% endfor %}
-
-  {#- la bandeja que sí recibe -#}
-  <rect class="art-card art-line" x="296" y="56" width="32" height="24" rx="3" stroke-width="2"/>
-  <path class="art-line" d="m297 57 15 11 15-11" fill="none" stroke-width="2"/>
-  <rect class="art-card art-line" x="310" y="44" width="32" height="24" rx="3" stroke-width="2"/>
-  <path class="art-line" d="m311 45 15 11 15-11" fill="none" stroke-width="2"/>
-  <path class="art-card art-line" d="M284 74h72v34a10 10 0 0 1-10 10h-52a10 10 0 0 1-10-10Z" stroke-width="2"/>
-  <path class="art-key" d="M278 92h84v16a10 10 0 0 1-10 10h-64a10 10 0 0 1-10-10Z"/>
-  <circle class="art-key" cx="368" cy="70" r="15"/>
-  <path class="art-line-card" d="m361 70 5 5 10-11" fill="none" stroke-width="3"
-        stroke-linecap="round" stroke-linejoin="round"/>
-
-  {#- el sobre que se pierde y la papelera -#}
-  <g transform="translate(266 166) rotate(24)">
-    <rect class="art-card art-line" x="-15" y="-11" width="30" height="22" rx="3" stroke-width="2"/>
-    <path class="art-line" d="m-14-10 14 10 14-10" fill="none" stroke-width="2"/>
-  </g>
-  <path class="art-line-quiet" d="M268 186v-5a5 5 0 0 1 5-5h18a5 5 0 0 1 5 5v5" fill="none" stroke-width="3"/>
-  <rect class="art-quiet" x="240" y="186" width="84" height="13" rx="6.5"/>
-  <path class="art-quiet" d="M246 203h72l-6 36a9 9 0 0 1-9 8h-42a9 9 0 0 1-9-8Z"/>
-  <circle class="art-quiet" cx="334" cy="212" r="15"/>
-  <path class="art-line-card" d="m328 206 12 12m0-12-12 12" fill="none" stroke-width="3" stroke-linecap="round"/>
 </svg>

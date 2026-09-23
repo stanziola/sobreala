@@ -548,18 +548,51 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 
 /* Los colores de las cuatro ilustraciones. Van en clases y no escritos en el
    SVG porque un atributo no puede leer una variable: es lo mismo que se hace
-   con el ala del logo (.wing-fill). Ninguno es un color nuevo. */
-.art-card { fill: var(--color-surface); }
-.art-soft { fill: var(--color-surface-alt); }
-.art-mute { fill: var(--color-border); }
-.art-ink { fill: var(--color-ink); }
-.art-key { fill: var(--color-accent); }
-.art-quiet { fill: var(--color-ink-soft); }
-.art-line { stroke: var(--color-border); }
-.art-edge { stroke: var(--color-field); }
-.art-line-key { stroke: var(--color-accent); }
-.art-line-quiet { stroke: var(--color-ink-soft); }
-.art-line-card { stroke: var(--color-surface); }
+   con el ala del logo (.wing-fill). La paleta es la de las imágenes de
+   referencia, y vive en brand/colors.css con su versión de noche en
+   colors-dark.css. El volumen no sale de aquí: cada escena lleva sus dos
+   degradados de luz y de sombra, en blanco y negro con transparencia, que valen
+   igual en los dos temas. */
+.art-stage { fill: var(--art-stage); }
+.art-floor { fill: var(--art-floor); }
+.art-card { fill: var(--art-card); }
+.art-card-edge { fill: var(--art-card-edge); }
+.art-paper { fill: var(--art-paper); }
+.art-line { fill: var(--art-line); }
+.art-ink { fill: var(--art-ink); }
+.art-blue { fill: var(--art-blue); }
+.art-blue-deep { fill: var(--art-blue-deep); }
+.art-blue-soft { fill: var(--art-blue-soft); }
+.art-green { fill: var(--art-green); }
+.art-purple { fill: var(--art-purple); }
+.art-amber { fill: var(--art-amber); }
+.art-red { fill: var(--art-red); }
+.art-navy { fill: var(--art-navy); }
+.art-sweater { fill: var(--art-sweater); }
+.art-silver { fill: var(--art-silver); }
+.art-skin { fill: var(--art-skin); }
+.art-skin-shade { fill: var(--art-skin-shade); }
+.art-hair { fill: var(--art-hair); }
+.art-ginger { fill: var(--art-ginger); }
+.art-yellow { fill: var(--art-yellow); }
+.art-pink { fill: var(--art-pink); }
+.art-leaf { fill: var(--art-leaf); }
+.art-leaf-deep { fill: var(--art-leaf-deep); }
+/* Los trazos: contornos, flechas de puntos, marcas y glifos. */
+.art-s-edge { stroke: var(--art-card-edge); }
+.art-s-shade { stroke: var(--art-paper-shade); }
+.art-s-line { stroke: var(--art-line); }
+.art-s-dash { stroke: var(--art-dash); }
+.art-s-paper { stroke: var(--art-paper); }
+.art-s-blue { stroke: var(--art-blue); }
+.art-s-blue-deep { stroke: var(--art-blue-deep); }
+.art-s-blue-soft { stroke: var(--art-blue-soft); }
+.art-s-green { stroke: var(--art-green); }
+.art-s-navy { stroke: var(--art-navy); }
+.art-s-hair { stroke: var(--art-hair); }
+/* El resplandor del fondo y la sombra suave de debajo de cada cosa. */
+.art-glow { stop-color: var(--art-glow); }
+.art-drop { flood-color: var(--art-shadow); }
 
 /* ------------------------------------------------------------------ tour (home)
    El carrusel de capturas del panel. Lo que abre cada una son cinco botones de

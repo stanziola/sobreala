@@ -1943,18 +1943,33 @@ arriba y la lista debajo.
 
 **Las cuatro ilustraciones son SVG escrito a mano**, en
 `src/partials/art-{manual,spam,privacy,tracking}.svg.j2`, que la plantilla
-incluye por el nombre que trae cada punto en `art`. Van inline y no como archivo
-porque **es lo único que puede leer las variables de color de la página**, que es
-el mismo motivo por el que el ala del logo se inyecta inline; y se pintan con
-enganches de clase (`.art-card`, `.art-key`, `.art-line`…) y no con
-`currentColor`, que solo da un color y una ilustración necesita cinco. **No
-llevan una sola palabra dentro** y **no se inventa ningún color**: el camino
-bueno va en el azul de la marca y el malo en el gris apagado, que son los dos
-con los que ya se dibujan las gráficas del panel. La del tablero copia las
-medidas de las de verdad (`backend/templates/_bars.html` y la rejilla de
-`.rates`): fichas con borde y radio 12, cinco rayas de rejilla, cada barra
-ocupando el 76 % de su hueco con un 12 % de aire a cada lado y sin redondear, y
-la línea base más marcada.
+incluye por el nombre que trae cada punto en `art`, y **siguen el encuadre de
+cuatro imágenes de referencia** (renders 3D que se dieron para esto): el chico
+tecleando con el reloj detrás, los sobres que van a la bandeja o a la papelera,
+el sobre con candado entre seis personas, y el tablero de cifras. Hubo una
+primera versión plana en los colores de la marca y se rehízo: no se parecía.
+**No llevan una sola palabra dentro** (las referencias traían «Inbox», «Spam»
+y cifras) ni el puntero que tenía el tablero.
+
+**Tienen su propia paleta**, `--art-*` en `brand/colors.css`, con los colores
+medidos de esas referencias punto por punto: los azules vivos, el verde, el
+morado, el ámbar, el rojo, el marino, las pieles y los pelos. No son los de la
+marca, y es a propósito. **De noche son otra escena sin tocar el SVG**:
+`colors-dark.css` repite solo lo que cambia (el fondo pasa a azul noche, lo que
+es tarjeta se oscurece como el panel, el papel baja un poco para no
+deslumbrar), y las personas no cambian de color. Lo que va dibujado encima del
+papel (las agujas del reloj, el boli) usa `--art-navy` y no `--art-ink`, que de
+noche es claro.
+
+Van **inline y no como archivo**, porque es lo único que puede leer las
+variables de la página, y se pintan **con clases** (`.art-blue`, `.art-s-dash`…),
+porque un atributo no puede leer una variable. El volumen son dos degradados
+por escena, uno de luz y otro de sombra, **en blanco y negro con
+transparencia**, que valen igual en los dos temas; la sombra suave de debajo es
+un `feDropShadow` cuyo color sale de `--art-shadow` por una clase. **Los `id`
+llevan el prefijo de su escena** (`am-`, `as-`, `ap-`, `at-`): las cuatro viven
+en la misma página, y un `id` repetido hace que una use el degradado de otra (de
+noche, el resplandor claro de la primera).
 
 **«Features» son cinco capturas del panel de verdad**, en un carrusel que
 aprieta: la abierta ocupa su sitio y las otras cuatro quedan en listones.

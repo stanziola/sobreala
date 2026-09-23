@@ -59,6 +59,43 @@
    * themes: the accent stays light, so this cannot follow --color-ink. */
   --color-on-accent: #0E1B2A;
 
+  /* ------------------------------------------------------------ ilustraciones
+   * Las cuatro de «El problema», en la portada. Estos colores salen de las
+   * imágenes de referencia que se dieron para ellas, muestreados punto por
+   * punto: por eso no son los de la marca, y es a propósito. Viven aquí y no en
+   * el SVG porque un atributo no puede leer una variable, y así la escena de
+   * noche es solo otra lista de valores en colors-dark.css. build_logo.py no
+   * los lee: read_colors() se queda solo con sus tres claves. */
+  --art-stage: #E1EEFD;        /* el fondo de cada escena */
+  --art-glow: #F4F9FF;         /* el resplandor del centro */
+  --art-floor: #EAF2FE;        /* la mesa */
+  --art-card: #F7FAFF;         /* tablero, bandeja, disco, fichas */
+  --art-card-edge: #C9DAF8;
+  --art-paper: #FFFFFF;        /* sobres, esfera del reloj, libreta */
+  --art-paper-shade: #D6E3F7;
+  --art-line: #CEDCF5;         /* las rayas que hacen de texto */
+  --art-dash: #A9CBF7;         /* las flechas de puntos */
+  --art-ink: #2A3F68;          /* las cifras de las fichas */
+  --art-shadow: rgba(51, 99, 181, .22);
+  --art-blue: #3D8BF5;
+  --art-blue-deep: #2A68D8;
+  --art-blue-soft: #8CBEF9;
+  --art-green: #34C5A0;
+  --art-purple: #A08BFA;
+  --art-amber: #FDC074;
+  --art-red: #EF5F6A;
+  --art-navy: #2F4675;         /* la papelera, las agujas, el boli */
+  --art-sweater: #1F3461;
+  --art-silver: #B9C6E6;       /* el portátil de quien trabaja a mano */
+  --art-skin: #F2AC8E;
+  --art-skin-shade: #DE9677;
+  --art-hair: #2E2C3E;
+  --art-ginger: #CE723D;
+  --art-yellow: #FDBF77;
+  --art-pink: #F997AF;
+  --art-leaf: #4DB38D;
+  --art-leaf-deep: #2F8F75;
+
   /* Elevation. Here rather than in site.css so the dark palette can restate
    * them: a translucent black shadow is invisible on a dark page. */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .08);
@@ -105,6 +142,37 @@
   /* Stays near-white: it is the text on the blue and deep surfaces. */
   --color-on-dark: #F3F7FB;
   --color-on-dark-soft: #E6E6E9;
+
+  /* Las ilustraciones de noche. El fondo azul claro pasa a azul noche, lo que
+   * es tarjeta se oscurece como el panel en oscuro, y el papel baja un poco
+   * para no deslumbrar. Lo de color apenas sube, para leerse sobre ese fondo, y
+   * las personas no cambian: la piel, el pelo pelirrojo y las camisas amarilla
+   * y rosa no se repiten aquí. Lo que va dibujado encima del papel (agujas,
+   * boli) usa --art-navy y no --art-ink, que de noche es claro. */
+  --art-stage: #0F1A2B;
+  --art-glow: #15243A;
+  --art-floor: #16233A;
+  --art-card: #1C2B45;
+  --art-card-edge: #2C4066;
+  --art-paper: #D9E3F2;
+  --art-paper-shade: #9FB1CE;
+  --art-line: #34496E;
+  --art-dash: #4D73AB;
+  --art-ink: #DCE5F3;
+  --art-shadow: rgba(0, 0, 0, .55);
+  --art-blue: #4C95F7;
+  --art-blue-deep: #3A75E0;
+  --art-blue-soft: #5F8FD4;
+  --art-green: #3DD0AB;
+  --art-purple: #AE9BFB;
+  --art-amber: #FDC57F;
+  --art-red: #F2747C;
+  --art-navy: #3A5589;
+  --art-sweater: #2C4A86;
+  --art-silver: #8595B8;
+  --art-hair: #3B3850;
+  --art-leaf: #52BD95;
+  --art-leaf-deep: #3AA083;
 
   /* Black shadows disappear on a dark page, so they are deeper and a soft ring
    * of light does the lifting instead. */
