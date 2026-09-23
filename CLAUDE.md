@@ -1944,10 +1944,19 @@ arriba y la lista debajo.
 **Las cuatro ilustraciones son SVG escrito a mano**, en
 `src/partials/art-{manual,spam,privacy,tracking}.svg.j2`, que la plantilla
 incluye por el nombre que trae cada punto en `art`, y **siguen el encuadre de
-cuatro imágenes de referencia** (renders 3D que se dieron para esto): el chico
-tecleando con el reloj detrás, los sobres que van a la bandeja o a la papelera,
-el sobre con candado entre seis personas, y el tablero de cifras. Hubo una
-primera versión plana en los colores de la marca y se rehízo: no se parecía.
+cuatro imágenes de referencia** (renders 3D que se dieron para esto): alguien
+trabajando en su portátil con el reloj detrás, los sobres que van a la bandeja o
+a la papelera, el sobre con candado entre seis personas, y el tablero de cifras.
+Hubo una primera versión plana en los colores de la marca y se rehízo: no se
+parecía.
+
+**Las personas van sin rostro**, como un usuario por defecto: una cabeza color
+piel con su pelo, el cuello y los hombros. La de la primera escena tuvo cara,
+tres cuartos, brazos y manos, y nunca dejó de verse rara; ahora es como las seis
+de la privacidad, de frente y detrás del portátil, que le tapa los brazos. **Los
+dos portátiles van de frente y simétricos**: los hubo con la tapa de frente y la
+base en perspectiva hacia un lado, que es una mezcla que no existe en un objeto
+de verdad y era lo que los hacía verse mal.
 **No llevan una sola palabra dentro** (las referencias traían «Inbox», «Spam»
 y cifras) ni el puntero que tenía el tablero.
 

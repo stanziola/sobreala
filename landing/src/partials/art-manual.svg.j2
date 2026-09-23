@@ -22,9 +22,8 @@
     <filter id="am-drop" x="-30%" y="-30%" width="160%" height="170%">
       <feDropShadow dx="0" dy="5" stdDeviation="6" class="art-drop"/>
     </filter>
-    <path id="am-sweater" d="M151 250C149 214 158 184 190 168C206 160 226 155 246 153C258 161 280 161 292 153C308 157 322 167 326 183C330 202 332 230 332 250Z"/>
-    <path id="am-arm" d="M188 170C172 190 164 218 170 240C174 248 182 250 190 250L230 246C236 244 236 233 229 230L197 228C194 212 198 194 207 180Z"/>
-    <path id="am-lid" d="M286 172a5 5 0 0 1 5-5l80-4a4 4 0 0 1 4 5l-15 72a5 5 0 0 1-5 4l-79 4a4 4 0 0 1-4-5Z"/>
+    <path id="am-sweater" d="M194 252C194 200 210 164 244 152C254 148 265 146 276 146C287 146 298 148 308 152C342 164 358 200 358 252Z"/>
+    <rect id="am-lid" x="214" y="170" width="124" height="78" rx="10"/>
     <path id="am-mug" d="M130 226h38v32a8 8 0 0 1-8 8h-22a8 8 0 0 1-8-8Z"/>
   </defs>
 
@@ -90,57 +89,34 @@
       {% endfor %}
     </g>
 
-    {#- él, de tres cuartos y mirando a la pantalla, como en la referencia. Va en
-        este orden porque se tapa así: el cuello, el jersey, la cabeza, el
-        teclado, el brazo y las manos encima del teclado, y la tapa delante. -#}
-    <path class="art-skin-shade" d="M254 134 280 138 282 156C274 162 260 162 252 156Z"/>
+    {#- él, sin rostro, como las seis personas de la escena de la privacidad: la
+        cabeza, el pelo corto, el cuello y los hombros del jersey. De frente y
+        detrás del portátil, que le tapa los brazos y las manos: es como se
+        dibuja siempre a alguien trabajando, y no hay perspectiva que torcer. -#}
+    <rect class="art-skin-shade" x="267" y="120" width="18" height="30" rx="7"/>
     <use href="#am-sweater" class="art-sweater"/>
-    <use href="#am-sweater" fill="url(#am-sheen)" opacity=".35"/>
-    <use href="#am-sweater" fill="url(#am-shade)"/>
-    <path d="M246 153C258 163 280 163 292 153" fill="none" stroke="black" stroke-opacity=".3"
+    <use href="#am-sweater" fill="url(#am-sheen)" opacity=".5"/>
+    <path d="M262 146C269 154 283 154 290 146" fill="none" stroke="black" stroke-opacity=".28"
           stroke-width="3" stroke-linecap="round"/>
-
-    {#- la cabeza: la cara, la oreja, el pelo con sus mechones, y la cara de
-        concentración (cejas fruncidas, ojos hacia abajo) -#}
-    <path class="art-skin" d="M246 96C246 80 262 72 276 74C290 76 298 88 298 102C298 110 300 116 299 122C298 130 292 138 282 142C276 145 268 145 262 144C252 141 245 133 244 124C243 114 245 104 246 96Z"/>
-    <path d="M262 144C252 141 245 133 244 124C250 132 258 137 270 139C268 142 265 144 262 144Z" fill="black" fill-opacity=".08"/>
-    <ellipse class="art-skin-shade" cx="248" cy="119" rx="7.5" ry="10.5"/>
-    <path d="M249 113c-3 3-3 9 0 12" fill="none" stroke="black" stroke-opacity=".15" stroke-width="1.6" stroke-linecap="round"/>
-    <path class="art-hair" d="M238 120C230 104 232 86 240 76C240 64 250 56 260 58C264 50 276 48 284 54C292 50 304 56 304 66C312 70 312 84 306 90C304 96 300 100 296 102C292 94 286 90 280 92C278 86 272 84 266 86C262 90 258 92 254 92C252 98 250 104 251 112C249 114 247 116 244 121Z"/>
-    <path class="art-hair" d="M282 90C290 86 298 90 300 100C296 96 290 94 284 95Z"/>
-    <path d="M256 64C266 56 280 54 292 60C282 60 270 62 260 68ZM294 66C300 66 304 70 305 76C302 73 298 71 294 70Z" fill="white" fill-opacity=".14"/>
-    <path class="art-s-hair" d="M259 104c4-1 9-1 13 1.5M283 105.5c4-2 8-2.5 11-1.5" fill="none" stroke-width="2.8" stroke-linecap="round"/>
-    <ellipse class="art-hair" cx="267" cy="117" rx="2.7" ry="2.3"/>
-    <ellipse class="art-hair" cx="288" cy="117" rx="2.4" ry="2.2"/>
-    <path class="art-skin-shade" d="M294 113C301 118 301 125 294 127C296 123 296 118 294 113Z"/>
-    <path class="art-s-hair" d="M280 134.5c3.5 .6 7 .4 10-.6" fill="none" stroke-width="1.8" stroke-linecap="round" opacity=".5"/>
+    <ellipse class="art-skin-shade" cx="252" cy="108" rx="5.5" ry="8.5"/>
+    <ellipse class="art-skin-shade" cx="300" cy="108" rx="5.5" ry="8.5"/>
+    <ellipse class="art-skin" cx="276" cy="104" rx="24" ry="28"/>
+    <path class="art-hair" d="M250 104C243 76 262 59 281 60C299 61 309 76 303 99C300 92 294 87 287 85C281 92 270 95 259 92C255 95 252 99 250 104Z"/>
+    <path d="M259 70C268 62 285 61 295 69C285 68 272 69 262 75Z" fill="white" fill-opacity=".16"/>
 
     {#- las rayas de prisa, entre él y el reloj -#}
     <path class="art-s-blue" d="m318 88 8-7M320 103h11M318 118l8 6" fill="none" stroke-width="3.2"
           stroke-linecap="round"/>
 
-    {#- el teclado, que se aleja de él hacia la tapa -#}
-    <path class="art-silver" d="M200 240 292 234 298 243 206 250Z"/>
-    <path d="M200 240 292 234 298 243 206 250Z" fill="url(#am-shade)"/>
-
-    {#- el brazo con su manga, apoyado en la mesa, y las dos manos en el teclado;
-        la derecha asoma junto a la tapa y su manga queda detrás -#}
-    <path class="art-sweater" d="M284 226C294 222 306 222 312 228V244L290 246Z"/>
-    <use href="#am-arm" class="art-sweater"/>
-    <use href="#am-arm" fill="url(#am-sheen)" opacity=".7"/>
-    <path d="M207 180C198 194 194 212 197 228H229" fill="none" stroke="black" stroke-opacity=".25"
-          stroke-width="2" stroke-linecap="round"/>
-    <path class="art-skin" d="M224 232C232 227 246 227 254 231C259 234 259 240 254 243L238 247C231 248 226 245 225 240Z"/>
-    <path class="art-skin" d="M262 232C270 228 281 228 287 232C291 235 290 240 286 242L270 246C264 247 260 243 260 238Z"/>
-    <path d="M238 247 254 243M270 246l16-4" fill="none" stroke="black" stroke-opacity=".1" stroke-width="2"
-          stroke-linecap="round"/>
-
-    {#- la tapa del portátil, de espaldas a nosotros, con su logo -#}
+    {#- el portátil delante de él, de espaldas a nosotros: la tapa con su logo
+        y, debajo, el canto de la base -#}
+    <path class="art-silver" d="M204 246H348L354 254H198Z"/>
+    <path d="M204 246H348L354 254H198Z" fill="url(#am-shade)"/>
     <g filter="url(#am-drop)">
       <use href="#am-lid" class="art-silver"/>
     </g>
     <use href="#am-lid" fill="url(#am-sheen)"/>
-    <circle cx="327" cy="206" r="8" fill="white" fill-opacity=".45"/>
+    <circle cx="276" cy="209" r="9" fill="white" fill-opacity=".45"/>
 
     {#- la taza, la libreta y el boli -#}
     <path class="art-s-blue" d="M130 234c-12 0-12 20 0 20" fill="none" stroke-width="5"/>
