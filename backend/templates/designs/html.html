@@ -6,8 +6,6 @@
 <h1 class="settings__heading">{{ name }}</h1>
 <p class="settings__lead">{{ t('designs_html_lead') }}</p>
 
-{% if fresh %}<p class="notice notice--ok">{{ t('designs_html_fresh') }}
-  {%- if pictures|rejectattr('state', 'equalto', 'ok')|list %} {{ t('designs_html_fresh_pictures') }}{% endif %}</p>{% endif %}
 {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
 <div class="compose">

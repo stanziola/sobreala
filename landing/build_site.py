@@ -56,7 +56,6 @@ PUBLIC_ROWS = [
     ("Etiquetas", "Etiquetas"),
     ("Columnas propias del contacto", "Columnas de datos"),
     ("Crear plantillas en el editor", "Crear plantillas en el editor"),
-    ("Subir tu propio HTML", "Subir tu propio HTML"),
     ("Correos sin marca de agua", "Correos sin marca de agua"),
     ("Analytics completo", "Estadísticas de cada campaña"),
     ("Exportar CSV y PDF", "Exportar a CSV y PDF"),

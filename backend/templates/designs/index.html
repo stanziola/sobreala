@@ -11,20 +11,11 @@
 {% if copied %}<p class="notice notice--ok">{{ t('designs_copied') }}</p>{% endif %}
 
 <div class="start">
-  {# El lienzo. Es de todos los planes. #}
+  {# El lienzo, y cargar el ZIP de uno. Los dos son de todos los planes. #}
   <a class="btn start__one" href="{{ url_for('designs.create') }}">{{ t('designs_create') }}</a>
-  {% if can_upload %}
   <a class="btn start__one" href="{{ url_for('designs.upload') }}"
      data-open-dialog="cargar">{{ t('designs_upload_button') }}</a>
-  {% else %}
-  {# Apagado y sin enlace: el plan no da. La ruta lo comprueba igual. #}
-  <span class="btn btn--off start__one" aria-disabled="true">{{ t('designs_upload_button') }}</span>
-  {% endif %}
 </div>
-{% if not can_upload %}
-<p class="hint">{{ t('designs_locked', plan=upload_plan) }}
-  <a href="{{ site_url }}/planes/">{{ t('contacts_plans') }}</a></p>
-{% endif %}
 
 <ul class="notes">
   <li>
@@ -99,7 +90,6 @@
 <p class="hint">{{ t('designs_mine_empty') }}</p>
 {% endif %}
 
-{% if can_upload %}
 {# La bandeja de cargar. Sin JavaScript el botón lleva a su propia página,
    con el mismo formulario. #}
 <dialog class="drawer" id="cargar" aria-labelledby="cargar-titulo">
@@ -110,5 +100,4 @@
   </div>
   {% include "designs/_upload_form.html" %}
 </dialog>
-{% endif %}
 {% endblock %}

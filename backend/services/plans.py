@@ -78,7 +78,6 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
     prices: dict[str, list[Decimal | None]] = {}
     tags: list[int | None] = []
     fields: list[int | None] = []
-    uploads: list[bool] = []
     emails: list[int | None] = []
     clean: list[bool] = []
     users: list[int | None] = []
@@ -106,8 +105,6 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             emails = [_count(c) for c in cells[1:]]
         elif cells[0].strip("* ") == "Correos sin marca de agua":
             clean = [c.strip() == "✅" for c in cells[1:]]
-        elif cells[0].strip("* ") == "Subir tu propio HTML":
-            uploads = [c.strip() == "✅" for c in cells[1:]]
         elif cells[0].strip("* ") == "Usuarios" and len(cells) - 1 == len(names):
             users = [_count(c) for c in cells[1:]]
 
@@ -123,7 +120,6 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             YEARLY: prices[YEARLY][index],
             "tags": tags[index] if index < len(tags) else None,
             "fields": fields[index] if index < len(fields) else None,
-            "upload": uploads[index] if index < len(uploads) else False,
             "clean": clean[index] if index < len(clean) else False,
             "emails": emails[index] if index < len(emails) else None,
             "users": users[index] if index < len(users) else None,
@@ -227,25 +223,6 @@ def is_downgrade(current: str | None, wanted: str) -> bool:
     eso suma al final de lo que quedaba.
     """
     return rank(wanted) < rank(current)
-
-
-def can_upload(plan: str | None) -> bool:
-    """Si ese plan puede subir su propio HTML, de docs/pricing.md.
-
-    La fila del documento es la que manda: el Básico ve las prediseñadas y sube
-    ninguna, y eso lo dice la tabla que también lee el sitio público.
-    """
-    found = PLANS.get(plan or "")
-    return bool(found and found["upload"])
-
-
-def first_upload_plan() -> str | None:
-    """El plan más barato que sí puede subir. Es lo que la pantalla ofrece a
-    quien todavía no puede."""
-    for key, plan in PLANS.items():
-        if plan["upload"]:
-            return key
-    return None
 
 
 def amount(plan: str, cycle: str) -> str | None:

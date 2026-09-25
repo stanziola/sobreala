@@ -12,8 +12,9 @@ PyMEs — organizaciones que ya tienen una lista de correos armada por otra raz�
 **Estado.** Están la marca (`brand/`), el sitio público (`landing/`, siete
 páginas estáticas generadas con Jinja2), la cuenta entera —registro, código,
 doble factor, dispositivos, configuración—, **contactos** con su importador y
-sus supresiones, **plantillas** —las cuatro prediseñadas y la validación del
-HTML subido—, el **panel de administración** con la habilitación de envío, el
+sus supresiones, **plantillas** —el lienzo, que se baja y se carga como ZIP,
+y las cargadas en HTML y las prediseñadas que quedaron de antes—, el **panel de
+administración** con la habilitación de envío, el
 **cobro de un plan con PayPal** y el **envío de campañas**, con su enlace de
 baja, y **el aviso de Amazon** que cuenta qué pasó con cada correo después de
 salir. Faltan la pausa automática por rebotes y quejas, y el proceso en segundo
@@ -90,7 +91,7 @@ panamails/
     ├── blueprints/
     │   ├── auth/           # registro, confirmación, login, configuración. HECHO
     │   ├── contacts/       # importación, etiquetas, supresiones. HECHO
-    │   ├── designs/        # plantillas: las prediseñadas y el HTML subido. HECHO
+    │   ├── designs/        # plantillas: el lienzo y las de antes. HECHO
     │   ├── admin/          # aprobar cuentas, ficha de cliente y piezas. HECHO
     │   ├── campaigns/      # crear, programar, enviar por tandas. HECHO
     │   ├── unsubscribe/    # la baja, sin sesión. HECHO
@@ -109,7 +110,7 @@ panamails/
     │   ├── totp.py         # autenticación de múltiples factores
     │   ├── importer.py     # CSV en streaming, upsert por lotes
     │   ├── plans.py        # precios, etiquetas y quién sube HTML, de docs/pricing.md
-    │   ├── html_check.py   # revisa el HTML que sube un cliente
+    │   ├── html_check.py   # revisa el HTML de las piezas cargadas antes
     │   ├── paypal.py       # crear y cobrar la orden, con urllib
     │   ├── sender.py       # arma y entrega cada correo de una campaña
     │   ├── unsubscribe.py  # el enlace de baja, firmado, uno por destinatario
@@ -541,12 +542,13 @@ Las piezas de un cliente. Se llaman «diseños» y no «templates» porque en es
 repositorio `templates/` ya son las plantillas Jinja del panel; para el cliente
 la pantalla dice **Plantillas**, que es su palabra.
 
-**`source` dice de dónde salió cada una**, y hay dos:
+**`source` dice de dónde salió cada una**, y hay tres:
 
 | `source` | Qué guarda | Quién puede |
 |---|---|---|
-| `upload` | El HTML entero, tal como llegó | Negocio en adelante |
-| `builtin` | De qué prediseñada salió y **qué escribió en cada casilla** | Todos |
+| `canvas` | El lienzo en JSON, con sus coordenadas (ver «El lienzo») | Todos |
+| `upload` | El HTML entero, tal como llegó | Ya no se crean: las que hay se editan |
+| `builtin` | De qué prediseñada salió y **qué escribió en cada casilla** | Ya no se crean: las que hay se editan |
 
 De una prediseñada llena **no se guarda el correo armado**. Guardar el resultado
 la dejaría imposible de volver a editar, y además el archivo de la plantilla
@@ -554,22 +556,25 @@ puede mejorar: al reabrirla se arma otra vez con lo que ese archivo diga hoy. Lo
 archivos de las prediseñadas viajan con el repositorio, en `email_templates/`,
 iguales para todos y sin nada que aprobar.
 
-**Subir HTML propio es de Negocio en adelante**, y eso lo dice la fila «Subir tu
-propio HTML» de `docs/pricing.md`, no una lista copiada al backend. El servidor
-lo comprueba además de esconder el formulario: esconder un botón no es un
-permiso.
+**El HTML propio ya no se sube** (septiembre de 2026). Fue de Negocio en
+adelante, con la fila «Subir tu propio HTML» de `docs/pricing.md`, y se quitó de
+todos lados: del panel, de los planes y del sitio. Las plantillas se arman en el
+lienzo, y **lo que se carga es el ZIP de un lienzo** (ver «Bajarse la pieza»),
+que se abre en el editor tal como estaba. Un `.html` suelto, o un ZIP sin
+lienzo, se rechaza en todos los planes. **Las piezas HTML que ya existían se
+quedan**, como las prediseñadas: siguen en su lista, se envían y se editan como
+código con cualquier plan.
 
-**Cada subida se valida al entrar** con `services/html_check.py`, que lee el
-documento con un parser y no con expresiones regulares —`&lt;script&gt;` es
+**Cada vez que se guarda una, se valida** con `services/html_check.py`, que lee
+el documento con un parser y no con expresiones regulares —`&lt;script&gt;` es
 texto y `<script>` no—. Fuera: `<script>`, `<iframe>`, `<object>`, `<form>`,
 atributos de evento, hojas de estilo de otro sitio, imágenes que no van por
 `https://` (las del propio panel entran aunque vayan por http, que es como corre
 en desarrollo), y **cualquier pieza de más de 102 KB**. Lo que se guarda es el
-archivo entero y tal como llegó. **También entra el ZIP que baja el editor**,
-con sus imágenes aparte: ver «Bajarse la pieza».
+archivo entero y tal como llegó.
 
-**Las imágenes `https://` de otro sitio sí entran**: es lo que trae un HTML hecho
-con una IA o bajado de internet. Pero dependen de ese sitio, así que el editor
+**Las imágenes `https://` de otro sitio sí entran**: es lo que traía un HTML
+hecho con una IA o bajado de internet. Pero dependen de ese sitio, así que el editor
 de HTML las enseña en **«Imágenes de esta plantilla»** (`html_images()`), cada
 una con su estado: de la cuenta, de otra cuenta (sale rota el día que esa la
 borre), de otro sitio, borrada (sale rota) o dentro del archivo (`data:`, que
@@ -579,11 +584,11 @@ dirección en el código; se guarda con Guardar. **El panel no va a buscar la
 imagen de fuera**: la sube quien la tiene.
 
 **Nadie aprueba una pieza a mano.** Lo que puede hacer daño lo rechaza el
-validador al subirla, y eso es mecánico, no un juicio. La mirada de una persona
+validador al guardarla, y eso es mecánico, no un juicio. La mirada de una persona
 ocurre una sola vez por cuenta, en la habilitación para enviar, y es sobre la
 cuenta y su lista, no sobre el archivo. Tener las dos serían dos revisiones
-manuales para la misma decisión. `/admin/plantillas` lista lo que han subido los
-clientes, para poder abrir una cuando haga falta; las prediseñadas llenas no
+manuales para la misma decisión. `/admin/plantillas` lista lo que subieron los
+clientes cuando se podía, para poder abrir una cuando haga falta; las prediseñadas llenas no
 salen ahí, porque son nuestras plantillas con el texto de alguien dentro y no hay
 ningún archivo ajeno que mirar.
 
@@ -608,11 +613,11 @@ las tres clases de pieza con lo que ya existía (`html_preview()`,
 cuenta responde 404. Una tabla de nombres obligaba a abrir cada una para
 acordarse de cuál era.
 
-**La pantalla de Plantillas tiene dos caminos arriba**: Crear plantilla (el
-lienzo, de todos los planes) y Cargar plantilla personalizada, que con un plan
-que no lo permite sale apagado —y la ruta lo comprueba igual—. Cargar abre una
-bandeja con el formulario; sin JavaScript el botón lleva a `/plantillas/cargar`,
-que es la misma ruta. Al cargar se va directo al editor. Debajo, dos notas —el
+**La pantalla de Plantillas tiene dos caminos arriba**, los dos de todos los
+planes: Crear plantilla (el lienzo) y **Cargar plantilla (ZIP)**, que carga el
+ZIP de un lienzo. Cargar abre una bandeja con el formulario; sin JavaScript el
+botón lleva a `/plantillas/cargar`, que es la misma ruta. Al cargar se va
+directo al editor del lienzo nuevo. Debajo, dos notas —el
 dato de cada persona, con las columnas de esa cuenta, y el tope de 102 KB— y la
 lista de todas sus piezas, con Editar, Duplicar y Borrar. **Duplicar copia las
 imágenes por nombre**, así que borrar una pieza solo borra las imágenes que
@@ -863,12 +868,19 @@ plantilla.
 **El PDF baja lo que se está viendo**, por POST (`/plantillas/lienzo/pdf`), como
 la vista previa: también de una pieza que todavía no se ha guardado.
 
-**El HTML baja en un ZIP la plantilla guardada, con sus imágenes aparte**
-(`GET /plantillas/lienzo/<id>/html`): el HTML y la carpeta `imagenes/`, que el
-HTML nombra por su ruta (`imagenes/1.jpg`). Es lo que sirve para pasarle una
-plantilla a otra persona: al abrirlo en una computadora se ve entero, y no
-depende del panel ni de la cuenta que lo bajó. El HTML es lo mismo que sale al
-enviar (`sender.Piece`) y va **sin nuestro pie**
+**«Descargar ZIP» baja la plantilla guardada, para pasársela a otra persona**
+(`GET /plantillas/lienzo/<id>/html`). Trae dos cosas:
+
+- **El lienzo**: `lienzo.json`, el lienzo guardado tal cual y con su nombre, y
+  sus fotos originales en `fotos/`, que el lienzo nombra por su ruta
+  (`fotos/1.jpg`): el nombre de verdad es la dirección de la imagen en esta
+  cuenta, y en otra no significa nada. Es lo que se vuelve a cargar y se sigue
+  editando como si nada.
+- **El HTML**, con sus imágenes fundidas en `imagenes/`, que el HTML nombra por
+  su ruta: al abrirlo en una computadora se ve entero, y sirve fuera de
+  Panamails. En el panel ya no se carga.
+
+El HTML es lo mismo que sale al enviar (`sender.Piece`) y va **sin nuestro pie**
 (`render.email_from_body(bare=True)`): la baja, la dirección y la marca de agua
 se ponen al enviar, y dentro saldrían dos veces. Hasta septiembre de 2026
 llevaba las fotos dentro (`data:`) y el pie: una sola foto ya pasaba de los
@@ -878,21 +890,26 @@ solo existen al guardar, **sin guardar, o con cambios sin guardar, el editor no
 baja nada y lo dice**. Una pieza vieja por diapositivas se rehace antes, como
 antes del primer correo.
 
-**Cargar el ZIP sube sus imágenes a la cuenta que lo carga** (`from_pack()`,
-con `imaging.unpack()`): por la misma revisión y el mismo achique que una foto
-del lienzo, **contando contra sus 20**, y solo las que el HTML nombra. El HTML
-pasa a nombrar esas imágenes y después pasa la revisión de siempre; si algo
-falla no queda nada guardado. **Cada cuenta es dueña de las suyas**: si dos usan
-la misma foto, cada una guarda su copia (unos 120 KB), y ninguna depende de la
-otra. El ZIP se lee en memoria y con topes contados en lo que sale y no en lo que
-dice su índice (5 MB por imagen, 20 MB entre todas), porque un ZIP pequeño
-puede inflarse a gigas.
+**Cargar el ZIP crea un lienzo nuevo en la cuenta que lo carga** y abre el
+editor (`canvas_from_pack()`, con `imaging.unpack()`), en **todos los planes y
+sin plan**, porque el lienzo es de todos. Sus fotos entran **a esa cuenta**, por
+la misma revisión y el mismo achique que una foto del lienzo, **contando contra
+sus 20**, y solo las que el lienzo nombra. Después el lienzo pasa **exactamente
+lo que pasa Guardar**, porque del JSON no se fía nada: `canvas_refused()` (las
+reglas para armar el correo y la revisión antispam) y `canvas_fused()` (funde
+las imágenes y mira los 102 KB), que son las mismas dos funciones que usa el
+editor. Si algo falla no queda nada guardado. Queda con el nombre del
+formulario o con el que trae el lienzo. **Cada cuenta es dueña de las suyas**:
+si dos usan la misma foto, cada una guarda su copia (unos 120 KB), y ninguna
+depende de la otra. El ZIP se lee en memoria y con topes contados en lo que
+sale y no en lo que dice su índice (5 MB por foto, 20 MB entre todas y 512 KB el
+lienzo), porque un ZIP pequeño puede inflarse a gigas.
 
-**Entre cuentas ya no se copia nada.** Hubo `adopt_images()`, que al cargar un
+**Entre cuentas nunca se copia nada.** Hubo `adopt_images()`, que al cargar un
 HTML iba a buscar las imágenes de la otra cuenta y las copiaba; si esa ya las
-había borrado, no había qué copiar. Ahora un HTML suelto que nombre imágenes de
-otra cuenta se carga tal cual, y «Imágenes de esta plantilla» las marca como de
-otra cuenta, con su «Cambiar».
+había borrado, no había qué copiar. Una pieza HTML de las de antes que nombre
+imágenes de otra cuenta sigue así, y «Imágenes de esta plantilla» las marca
+como de otra cuenta, con su «Cambiar».
 
 **Las imágenes que nombra una plantilla cargada no se borran**: `images_in()` lee
 en su HTML las direcciones `/img/<nombre>` (`imaging.names_in()`), así que borrar
@@ -903,7 +920,7 @@ otra pieza de la cuenta no le rompe la cargada.
 como texto y se puede copiar; una página de 600 puntos por el alto de la hoja.
 
 - **El PDF solo lo tiene el lienzo**: es el único que guarda coordenadas. Una
-  pieza de HTML subido pediría un dibujante de HTML, que no hay.
+  pieza de HTML de las de antes pediría un dibujante de HTML, que no hay.
 - **Las fuentes caen a las catorce que trae todo PDF**: Arial, Verdana, Tahoma,
   Trebuchet, Century Gothic y Lucida a Helvetica; Georgia, Times, Palatino y
   Garamond a Times; Courier New a Courier. Miden distinto, así que **una línea
@@ -1273,7 +1290,7 @@ tasa de quejas agregada bajo 0.1%.
 ## Flujo de campaña
 
 ```
-1. Elegir plantilla prediseñada  ó  subir HTML propio (Negocio en adelante)
+1. Armar la plantilla en el lienzo  ó  cargar el ZIP de uno
 2. Escribir asunto y contenido
 3. Elegir la lista destinataria
 4. Vista previa + enviar correo de prueba a su propia dirección
@@ -1285,8 +1302,8 @@ pausadas corren en un **proceso en segundo plano**, no dentro del request.
 
 ### HTML subido por el cliente
 
-Hecho, en `/plantillas` y en la colección `designs`. Ver esa sección más arriba:
-qué se rechaza, quién puede subir y quién aprueba la primera.
+Ya no se sube (septiembre de 2026): ver `designs`, más arriba. Las que se
+cargaron antes se siguen editando y enviando.
 
 ### Límites de importación
 

@@ -208,11 +208,11 @@ HOME = {
                     "su barra de fuente, tamaño y color, y el correo armándose al "
                     "lado."
                 ),
-                "title": "Campañas con plantilla o con tu HTML",
+                "title": "Campañas armadas en el editor",
                 "text": (
                     "La armas en el editor, poniendo textos, botones e imágenes "
-                    "donde quieras. Si ya tienes tu propio diseño, lo cargas "
-                    "desde el plan Negocio."
+                    "donde quieras. Si alguien te la prepara en su cuenta, te "
+                    "pasa el archivo y la sigues editando en la tuya."
                 ),
             },
             {
@@ -312,8 +312,8 @@ HOME = {
                 "q": "¿Ustedes me diseñan el correo?",
                 "a": (
                     "No hace falta: la armas tú en el editor, con tu logo, tus "
-                    "colores y tus fotos. Y desde el plan Negocio puedes subir tu "
-                    "propio HTML si ya tienes un diseño."
+                    "colores y tus fotos. Y si alguien te la prepara, te pasa el "
+                    "archivo y la sigues editando tú."
                 ),
             },
         ],
@@ -343,7 +343,7 @@ STEPS = [
         "short": "Eliges una plantilla, escribes el asunto y el contenido, y lo previsualizas antes de enviar.",
         "detail": (
             "La armas en el editor, poniendo textos, botones e imágenes donde "
-            "quieras, o cargas tu propio HTML desde el plan Negocio. La previsualización te muestra el "
+            "quieras. La previsualización te muestra el "
             "correo tal como va a llegar, y puedes enviarte una prueba a tu propia "
             "dirección para verla en tu bandeja antes de que la vea nadie más."
         ),
@@ -569,16 +569,6 @@ PRICING = {
                     "que es como llega igual a Gmail, a Outlook y al "
                     "teléfono. Va en todos los planes, y cada plantilla se "
                     "guarda para usarla las veces que quieras."
-                ),
-            },
-            {
-                "title": "Subir tu propio HTML",
-                "text": (
-                    "Si tu diseñador te hizo un correo, lo subes y sale "
-                    "como él lo hizo. Y ahí, como en los nuestros, escribes tus "
-                    "columnas de datos donde quieras: pones *|CIUDAD|* en "
-                    "medio de una frase y a cada persona le llega la suya. No "
-                    "es un mismo correo idéntico para toda la lista."
                 ),
             },
             {
@@ -1153,8 +1143,6 @@ TERMS = {
         {
             "title": "6. Envíos, límites y pausas automáticas",
             "items": [
-                "El HTML que subas se revisa automáticamente y se rechaza si "
-                "trae guiones, marcos, formularios o recursos externos.",
                 "Tu primera campaña la revisamos contigo antes de que salga, "
                 "una sola vez. Después la cuenta queda habilitada.",
                 "Las primeras 48 horas de una cuenta nueva llevan un tope de "

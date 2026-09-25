@@ -187,11 +187,16 @@ IN_HTML = re.compile(r"/img/([A-Za-z0-9_-]{16,64}\.(?:jpg|png|gif))")
 
 
 # ------------------------------------------------ el ZIP de una plantilla
-# Lo que baja el editor para pasarle una plantilla a otra persona: el HTML y
-# sus imágenes aparte, en la carpeta `imagenes/`, que el HTML nombra por su
-# ruta. Así se ve entero al abrirlo en una computadora, y al cargarlo en otra
-# cuenta las imágenes entran a esa cuenta, sin depender de la que lo bajó.
+# Lo que baja el editor para pasarle una plantilla a otra persona. Trae el
+# lienzo (`lienzo.json`) con sus fotos originales en `fotos/`, que es lo que se
+# vuelve a cargar y se sigue editando; y el HTML con sus imágenes fundidas en
+# `imagenes/`, que es para verlo al abrirlo en una computadora o usarlo fuera de
+# Panamails. Al cargarlo, las fotos entran a la cuenta que lo carga.
+ZIP_CANVAS = "lienzo.json"
+ZIP_PHOTOS = "fotos/"
 ZIP_FOLDER = "imagenes/"
+# Lo que puede pesar el lienzo: sesenta elementos con su texto caben de sobra.
+ZIP_CANVAS_MAX = 512 * 1024
 # Lo que se descomprime entre todas. Un ZIP pequeño puede inflarse a gigas, así
 # que se cuenta lo que sale y no lo que dice su índice.
 ZIP_UNPACKED_MAX = 4 * MAX_UPLOAD
@@ -207,13 +212,15 @@ def is_zip(raw: bytes) -> bool:
     return raw.startswith(b"PK\x03\x04")
 
 
-def unpack(raw: bytes, *, html_max: int, most: int) -> tuple[bytes, dict[str, bytes]]:
-    """El HTML de un ZIP y sus imágenes, `{nombre del archivo: bytes}`.
+def unpack(raw: bytes, *, most: int) -> tuple[bytes, dict[str, bytes]]:
+    """El lienzo de un ZIP y sus fotos, `{ruta dentro del ZIP: bytes}`, como
+    `fotos/1.jpg`, que es como las nombra el lienzo.
 
     Se lee en memoria, sin escribir nada a disco, y cada archivo con su tope: se
     lee hasta un byte más de lo permitido, así que mentir en el índice no sirve.
     Si todo viene dentro de una carpeta (lo que pasa al comprimir una carpeta),
-    se mira dentro de ella.
+    se mira dentro de ella. El HTML y `imagenes/` no se leen: el lienzo los
+    vuelve a hacer.
     """
     try:
         pack = zipfile.ZipFile(BytesIO(raw))
@@ -225,26 +232,26 @@ def unpack(raw: bytes, *, html_max: int, most: int) -> tuple[bytes, dict[str, by
             root = tops.pop() + "/"
         inner = {one.filename[len(root):]: one for one in entries
                  if one.filename.startswith(root)}
-        pages = [name for name in inner
-                 if "/" not in name and name.lower().endswith((".html", ".htm"))]
-        if len(pages) != 1:
-            raise PackError("zip_no_html")
-        pictures = [name for name in inner if name.startswith(ZIP_FOLDER)
-                    and name[len(ZIP_FOLDER):] and "/" not in name[len(ZIP_FOLDER):]]
-        if len(pictures) > most:
+        if ZIP_CANVAS not in inner:
+            raise PackError("zip_no_canvas")
+        photos = [name for name in inner if name.startswith(ZIP_PHOTOS)
+                  and name[len(ZIP_PHOTOS):] and "/" not in name[len(ZIP_PHOTOS):]]
+        if len(photos) > most:
             raise PackError("zip_too_many")
-        with pack.open(inner[pages[0]]) as opened:
-            html = opened.read(html_max + 1)
+        with pack.open(inner[ZIP_CANVAS]) as opened:
+            doc = opened.read(ZIP_CANVAS_MAX + 1)
+        if len(doc) > ZIP_CANVAS_MAX:
+            raise PackError("zip_heavy")
         found: dict[str, bytes] = {}
         total = 0
-        for name in pictures:
+        for name in photos:
             with pack.open(inner[name]) as opened:
                 data = opened.read(MAX_UPLOAD + 1)
             total += len(data)
             if len(data) > MAX_UPLOAD or total > ZIP_UNPACKED_MAX:
                 raise PackError("zip_heavy")
-            found[name[len(ZIP_FOLDER):]] = data
-        return html, found
+            found[name] = data
+        return doc, found
     except PackError:
         raise
     except (zipfile.BadZipFile, zipfile.LargeZipFile, zlib.error, EOFError, OSError,

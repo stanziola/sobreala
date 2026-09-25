@@ -404,7 +404,7 @@ TEXTS = {
     "users_can_contacts_desc": "La lista, importar, etiquetas, columnas y "
                                "supresiones.",
     "users_can_designs": "Crear o editar plantillas",
-    "users_can_designs_desc": "El editor y el HTML propio.",
+    "users_can_designs_desc": "El editor de plantillas.",
     "users_invite": "Invitar",
     "users_save": "Guardar",
     "users_back": "Volver a Seguridad",
@@ -1011,11 +1011,11 @@ TEXTS = {
     # Para el cliente son «plantillas»; en el código son «designs», porque
     # `templates/` en este proyecto ya son las plantillas Jinja del panel.
     "designs_title": "Plantillas",
-    "designs_lead": "Las piezas con las que sale tu correo. Créalas aquí o "
-                    "carga el HTML que ya tienes.",
+    "designs_lead": "Las piezas con las que sale tu correo. Créalas aquí, o "
+                    "carga el ZIP de una que te pasaron.",
     "designs_create": "Crear plantilla",
 
-    "designs_upload_button": "Cargar plantilla personalizada",
+    "designs_upload_button": "Cargar plantilla (ZIP)",
     "designs_note_columns": "Si escribes {mark} en el texto, a cada persona le "
                             "llega lo que tenga en su columna «{what}». Tus "
                             "columnas:",
@@ -1023,9 +1023,9 @@ TEXTS = {
                                  "*|EDAD|* en el texto, a cada persona le "
                                  "llegará su propia edad.",
     "designs_note_columns_link": "Crear columnas en Contactos",
-    "designs_note_size": "El HTML no puede pesar más de {kb} KB: pasado eso "
-                         "Gmail corta el correo, y lo primero que se pierde es "
-                         "el botón para anular la suscripción.",
+    "designs_note_size": "Un correo no puede pesar más de {kb} KB: pasado eso "
+                         "Gmail lo corta, y lo primero que se pierde es el "
+                         "botón para anular la suscripción.",
     "designs_kind_upload": "HTML cargado, {kb} KB",
     # Las diapositivas se quitaron en septiembre de 2026: ahora es una hoja.
     "designs_kind_sheet": "Hecha en el editor",
@@ -1036,10 +1036,6 @@ TEXTS = {
     "designs_html_lead": "Cambia el código a la izquierda y mira a la derecha "
                          "cómo queda. Para poner el dato de cada persona, pulsa "
                          "una columna y se escribe donde tengas el cursor.",
-    "designs_html_fresh": "Se cargó bien. Ya la puedes usar, o cambiarle lo que "
-                          "quieras aquí.",
-    "designs_html_fresh_pictures": "Revisa sus imágenes abajo: alguna no es de "
-                                   "tu cuenta.",
     "designs_html_code": "Código HTML",
     # Las imágenes del HTML y de dónde sale cada una.
     "designs_pictures_title": "Imágenes de esta plantilla",
@@ -1137,30 +1133,35 @@ TEXTS = {
     "designs_mine_title": "Tus plantillas",
     "designs_from": "Plantilla {name}",
     "designs_mine_empty": "Todavía no tienes ninguna.",
-    "designs_upload_title": "Cargar plantilla personalizada",
-    "designs_upload_hint": "Un archivo .html de hasta {kb} KB, o el ZIP que baja "
-                           "el editor, con sus imágenes: entran a tu cuenta. "
-                           "Pasados los {kb} KB Gmail recorta el correo y se "
-                           "pierde el botón para anular la suscripción.",
-    # El ZIP que baja el editor: el HTML y sus imágenes en «imagenes/».
+    "designs_upload_title": "Cargar plantilla",
+    "designs_upload_hint": "El ZIP que baja el editor con «Descargar ZIP», de "
+                           "esta cuenta o de otra. Se abre en el editor tal "
+                           "como estaba, para seguir trabajándola, y sus fotos "
+                           "entran a tu cuenta.",
+    # El ZIP que baja el editor: el lienzo con sus fotos, y el HTML aparte.
+    "designs_only_zip": "Solo se cargan los ZIP que baja el editor. Las "
+                        "plantillas se arman en el editor: el HTML propio ya "
+                        "no se carga.",
     "designs_zip_broken": "No se pudo abrir el ZIP. Vuelve a bajarlo del "
                           "editor.",
-    "designs_zip_no_html": "El ZIP tiene que traer un solo archivo .html.",
-    "designs_zip_too_many": "El ZIP trae más de {n} imágenes.",
-    "designs_zip_heavy": "Las imágenes del ZIP pesan demasiado: cada una "
+    "designs_zip_no_canvas": "Ese ZIP no trae una plantilla del editor. Bájala "
+                             "otra vez con «Descargar ZIP».",
+    "designs_zip_canvas_bad": "La plantilla del ZIP no se pudo leer. Bájala otra "
+                              "vez del editor.",
+    "designs_zip_too_many": "El ZIP trae más de {n} fotos.",
+    "designs_zip_heavy": "Las fotos del ZIP pesan demasiado: cada una "
                          "puede pesar hasta {mb} MB.",
-    "designs_zip_missing": "El HTML nombra {what} y el ZIP no la trae.",
-    "designs_zip_limit": "Trae {n} imágenes y te caben {free} de {limit}. Borra "
+    "designs_zip_missing": "La plantilla nombra {what} y el ZIP no la trae.",
+    "designs_zip_limit": "Trae {n} fotos y te caben {free} de {limit}. Borra "
                          "alguna plantilla que ya no uses.",
     "designs_file": "Archivo",
     "designs_name": "Nombre",
-    "designs_name_hint": "Para reconocerla después. Si lo dejas vacío usamos "
-                         "el nombre del archivo.",
+    "designs_name_hint": "Para reconocerla después. Si lo dejas vacío, se "
+                         "queda con el que traía.",
     "designs_submit": "Cargar",
     "designs_saved": "Listo, ya la puedes usar.",
     "designs_delete": "Eliminar",
     "designs_size": "{kb} KB",
-    "designs_locked": "Cargar tu propio HTML es desde el plan {plan}.",
 
     # Por qué no se pudo guardar. Cada regla está por una razón, y la frase la
     # dice, porque «archivo inválido» no le sirve a nadie para arreglarlo.
@@ -1217,10 +1218,10 @@ TEXTS = {
                           "dentro: se quedó en {px} px.",
     "canvas_fit_content": "Ajustar al contenido",
     "canvas_pdf": "Descargar PDF",
-    "canvas_html": "Descargar HTML (ZIP)",
-    "canvas_html_save_first": "Guárdala antes de bajarla en HTML: el ZIP es la "
-                              "plantilla guardada, con sus imágenes, lista "
-                              "para volver a cargarla.",
+    "canvas_html": "Descargar ZIP",
+    "canvas_html_save_first": "Guárdala antes de bajarla: el ZIP es la "
+                              "plantilla guardada, lista para cargarla en esta "
+                              "cuenta o en otra y seguir trabajándola.",
     "canvas_shape_bg": "Color",
     "canvas_shape_kind": "Figura",
     "canvas_shape_rect": "Rectángulo",
@@ -1697,9 +1698,10 @@ TEXTS = {
     "admin_act_only_decisiones": "Decisiones",
 
     "admin_designs_title": "Plantillas subidas",
-    "admin_designs_lead": "El HTML que ha subido cada cliente. Lo peligroso lo "
-                          "rechaza solo el validador al subirlo; esto es para "
-                          "poder mirarlo cuando haga falta.",
+    "admin_designs_lead": "El HTML que subió cada cliente cuando se podía: ya "
+                          "no se sube. Lo peligroso lo rechaza solo el "
+                          "validador al guardarlo; esto es para poder mirarlo "
+                          "cuando haga falta.",
     "admin_designs_empty": "Ningún cliente ha subido nada todavía.",
     "admin_designs_download": "Ver el archivo",
 

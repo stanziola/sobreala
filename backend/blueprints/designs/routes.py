@@ -1,14 +1,14 @@
-"""Plantillas: las que carga el cliente en HTML, y las prediseñadas de antes.
+"""Plantillas: el lienzo, y las que se cargaron en HTML y las prediseñadas de
+antes.
 
-Dos reglas de CLAUDE.md mandan aquí:
-
-  * **Cargar HTML propio es de Negocio en adelante**, y eso lo dice
-    `docs/pricing.md`, no una lista copiada a este archivo. Con otro plan el
-    botón sale apagado, y la ruta lo comprueba igual.
-  * **Cada HTML se revisa al entrar y cada vez que se guarda**, y esa revisión
-    es automática y es la única que hay sobre el archivo. La mirada de una
-    persona ocurre una vez por cuenta, antes de su primera campaña, y es sobre
-    de dónde salió su lista, no sobre el HTML.
+  * **El HTML propio ya no se carga** (septiembre de 2026): las plantillas se
+    arman en el lienzo, y lo que se carga es el ZIP de un lienzo, que se abre
+    en el editor tal como estaba. Las cargadas antes siguen en su lista y se
+    editan como código.
+  * **Cada HTML se revisa cada vez que se guarda**, y esa revisión es
+    automática y es la única que hay sobre el archivo. La mirada de una persona
+    ocurre una vez por cuenta, antes de su primera campaña, y es sobre de dónde
+    salió su lista, no sobre el HTML.
 
 El HTML de un cliente **se dibuja solo para él, y solo en un marco aislado**:
 sin permiso para ejecutar nada, con origen opaco y con su propia cabecera de
@@ -22,6 +22,7 @@ en su lista y se editan con el formulario de siempre.
 from __future__ import annotations
 
 import io
+import json
 import re
 import unicodedata
 import zipfile
@@ -91,12 +92,6 @@ def label_of(name: str) -> str:
     return TEXTS.get("designs_field_" + name, name)
 
 
-def plan_needed() -> str:
-    """El nombre del plan más barato que sí puede subir HTML."""
-    key = plans.first_upload_plan() or ""
-    return plans.PLANS.get(key, {}).get("name", "")
-
-
 def explain(problems: list[str]) -> str:
     """Los motivos, en la frase que lee el cliente.
 
@@ -127,17 +122,13 @@ def as_id(raw):
 
 
 def shared(db, account, **extra):
-    """Lo que toda la pantalla necesita: qué permite el plan y qué hay guardado."""
-    plan = accounts.plan_of(account)
+    """Lo que toda la pantalla necesita: qué hay guardado."""
     return {
         "account": account,
         # Todas juntas: da igual de dónde salió cada una, se editan, se
         # duplican y se borran desde la misma fila.
         "mine": designs.for_account(db, account["_id"]),
         "named": {one["key"]: one["name"] for one in offered()},
-        "can_upload": plans.can_upload(plan),
-        # A quién ofrecerle el salto cuando su plan todavía no puede.
-        "upload_plan": plan_needed(),
         "max_kb": html_check.MAX_BYTES // 1024,
         # Las columnas propias de la cuenta, para poder escribirlas dentro de
         # una pieza sin tener que acordarse de cómo se llamaban.
@@ -161,19 +152,20 @@ def index():
 
 @bp.route("/plantillas/cargar", methods=["GET", "POST"])
 def upload():
-    """Cargar un HTML. Con JavaScript el formulario sale en una bandeja encima
-    de la lista; sin él, esta es su página. Las dos mandan aquí."""
+    """Cargar el ZIP de un lienzo, bajado del editor de esta cuenta o de otra:
+    queda un lienzo nuevo y se abre en el editor tal como estaba. Es de todos
+    los planes, como el lienzo. Con JavaScript el formulario sale en una
+    bandeja encima de la lista; sin él, esta es su página. Las dos mandan aquí.
+
+    El HTML propio ya no se carga, ni suelto ni en un ZIP sin lienzo.
+    """
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
 
     db = get_db()
     errors: dict[str, str] = {}
-    if not plans.can_upload(accounts.plan_of(account)):
-        # El plan se comprueba en el servidor y no solo apagando el botón:
-        # esconder un botón no es un permiso.
-        errors["form"] = t("designs_locked", plan=plan_needed())
-    elif request.method == "POST":
+    if request.method == "POST":
         archivo = request.files.get("archivo")
         name = designs.clean_name(request.form.get("nombre", ""))
         if not csrf_ok(request.form.get("csrf_token")):
@@ -182,27 +174,16 @@ def upload():
             errors["archivo"] = t("error_required")
         else:
             raw = archivo.read(imaging.MAX_UPLOAD + 1)
-            if imaging.is_zip(raw):
-                html, wrong = from_pack(db, account, raw)
+            if not imaging.is_zip(raw):
+                errors["archivo"] = t("designs_only_zip")
             else:
-                problems = html_check.check(raw)
-                html = None if problems else raw.decode("utf-8")
-                wrong = explain(problems)
-            if html is None:
-                errors["archivo"] = wrong
-            else:
-                # Pasó el validador, así que queda lista. Lo que se revisa a
-                # mano es la cuenta, una vez, antes de su primera campaña.
-                new_id = designs.save(db, account["_id"],
-                                      name=name or archivo.filename,
-                                      html=html, uploaded_by=account["_id"])
-                # Si nombra alguna retirada de la cuenta, vuelve a ser de una
-                # pieza y ya no vence.
-                images.keep(db, account["_id"], imaging.names_in(html))
-                # Directo al editor: lo siguiente que se quiere es verla y
-                # ponerle las columnas.
-                return redirect(url_for("designs.edit_html", raw=new_id,
-                                        nueva=1))
+                new_id, wrong = canvas_from_pack(db, account, raw, name=name,
+                                                 filename=archivo.filename)
+                if new_id is None:
+                    errors["archivo"] = wrong
+                else:
+                    # Directo al editor: se sigue trabajando donde se dejó.
+                    return redirect(url_for("designs.edit_canvas", raw=new_id))
 
     return render_template("designs/upload.html", section="plantillas",
                            **shared(db, account, errors=errors))
@@ -271,10 +252,6 @@ def edit_html(raw):
             errors["form"] = t("error_csrf")
         elif request.form.get("accion") == "vista":
             return html_preview(html, plan)
-        elif not plans.can_upload(plan):
-            # Quien bajó de plan conserva lo que cargó y lo puede seguir
-            # usando, pero cambiar el HTML es cargar HTML.
-            errors["form"] = t("designs_locked", plan=plan_needed())
         else:
             problems = html_check.check(html.encode("utf-8"))
             if problems:
@@ -288,7 +265,6 @@ def edit_html(raw):
     return render_template(
         "designs/html.html", section="plantillas", account=account,
         found=found, html=html, name=name, errors=errors,
-        fresh=bool(request.args.get("nueva")),
         columns=marks_for(account),
         people=contacts.for_preview(db, account["_id"]),
         max_kb=html_check.MAX_BYTES // 1024,
@@ -373,64 +349,64 @@ def html_images(db, account_id, html: str) -> list[dict]:
     return out
 
 
-def in_folder(name: str) -> re.Pattern:
-    """Cómo nombra el HTML una imagen de su carpeta: `imagenes/x.jpg`, con o
-    sin `./` delante."""
-    return re.compile(r"(?:\./)?" + re.escape(imaging.ZIP_FOLDER + name))
+def canvas_from_pack(db, account, raw: bytes, *, name: str,
+                     filename: str) -> tuple[ObjectId | None, str]:
+    """Un lienzo nuevo a partir del ZIP que baja el editor. Devuelve (id, "")
+    o (None, por qué no).
 
-
-# Una imagen de la carpeta nombrada en el HTML, para decir cuál falta.
-FOLDER_REF = re.compile(r"(?:\./)?" + re.escape(imaging.ZIP_FOLDER) + r"([^\"'\s)>]+)")
-
-
-def from_pack(db, account, raw: bytes) -> tuple[str | None, str]:
-    """El HTML de un ZIP bajado del editor, con sus imágenes ya en esta cuenta.
-
-    Devuelve (HTML, "") o (None, por qué no). Las imágenes entran a la cuenta
-    que carga, por la misma revisión y el mismo achique que una foto del lienzo,
-    y cuentan contra sus veinte: así cada cuenta es dueña de las suyas y
-    ninguna depende de otra. Las que el HTML no nombra no se guardan. Si algo
-    falla no se queda nada guardado.
+    Sus fotos entran **a la cuenta que carga**, por la misma revisión y el
+    mismo achique que una foto del lienzo, y cuentan contra sus veinte: así
+    cada cuenta es dueña de las suyas y ninguna depende de otra. Después el
+    lienzo pasa exactamente lo que pasa Guardar (`canvas_refused()` y
+    `canvas_fused()`): del JSON no se fía nada, y si una regla no se cumple no
+    se carga. Si algo falla no queda nada guardado.
     """
     try:
-        page, files = imaging.unpack(raw, html_max=html_check.MAX_BYTES,
-                                     most=images.LIMIT)
+        page, files = imaging.unpack(raw, most=images.LIMIT)
     except imaging.PackError as exc:
         return None, t("designs_" + str(exc), n=images.LIMIT,
                        mb=imaging.MAX_UPLOAD // (1024 * 1024))
     try:
-        html = page.decode("utf-8")
-    except UnicodeDecodeError:
-        return None, explain(["not_utf8"])
+        data = json.loads(page.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        data = None
+    if not isinstance(data, dict) or not isinstance(data.get("items"), list):
+        return None, t("designs_zip_canvas_bad")
 
-    used = [name for name in files if in_folder(name).search(html)]
-    missing = sorted(set(FOLDER_REF.findall(html)) - set(files))
+    photos = [one for one in data["items"]
+              if isinstance(one, dict) and one.get("t") == "image" and one.get("name")]
+    wanted = list(dict.fromkeys(str(one["name"]) for one in photos))
+    missing = [one for one in wanted if one not in files]
     if missing:
-        return None, t("designs_zip_missing", what=imaging.ZIP_FOLDER + missing[0])
+        return None, t("designs_zip_missing", what=missing[0])
     free = images.LIMIT - images.count(db, account["_id"])
-    if len(used) > free:
-        return None, t("designs_zip_limit", n=len(used), free=max(free, 0),
+    if len(wanted) > free:
+        return None, t("designs_zip_limit", n=len(wanted), free=max(free, 0),
                        limit=images.LIMIT)
 
     ready = []
-    for name in used:
+    for one in wanted:
         try:
-            ready.append((name, *imaging.shrink(files[name], width=CANVAS_PHOTO_WIDTH)))
+            ready.append((one, *imaging.shrink(files[one], width=CANVAS_PHOTO_WIDTH)))
         except imaging.ImageError as exc:
-            return None, name + ": " + t(IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
-                                         kb=imaging.STORED_MAX // 1024)
-    saved = []
-    for name, data, ext, mime in ready:
-        new = images.save(db, account["_id"], data=data, ext=ext, mime=mime)
-        saved.append(new)
-        url = imaging.url_of(new)
-        html = in_folder(name).sub(lambda _: url, html)
+            return None, one + ": " + t(IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
+                                        kb=imaging.STORED_MAX // 1024)
+    saved: dict[str, str] = {}
+    for one, content, ext, mime in ready:
+        saved[one] = images.save(db, account["_id"], data=content, ext=ext, mime=mime)
+    for one in photos:
+        one["name"] = saved[str(one["name"])]
 
-    problems = html_check.check(html.encode("utf-8"))
-    if problems:
-        images.remove(db, account["_id"], saved)
-        return None, explain(problems)
-    return html, ""
+    doc = canvas.parse(json.dumps(data))
+    refused = canvas_refused(db, account, doc) if doc else t("designs_zip_canvas_bad")
+    fused = None if refused else canvas_fused(db, account, doc)
+    if fused is None:
+        images.remove(db, account["_id"], list(saved.values()))
+        return None, refused or canvas_explain(["too_big"])
+    grounds, shades = fused
+    title = name or designs.clean_name(str(data.get("name") or "")) or filename
+    return designs.save_canvas(db, account["_id"], name=title, doc=doc,
+                               backgrounds=grounds, shades=shades), ""
 
 
 def images_in(found) -> list[str]:
@@ -654,6 +630,33 @@ def drop_unused(db, account_id, names) -> None:
     images.remove(db, account_id, [one for one in names if one and one not in still])
 
 
+def canvas_refused(db, account, doc) -> str:
+    """Por qué no se puede guardar este lienzo, en la frase del cliente, o
+    vacío si se puede: las reglas para armar el correo y la revisión antispam.
+    Lo mismo al guardarlo en el editor y al cargarlo de un ZIP."""
+    problems = canvas_problems(db, account["_id"], doc)
+    if problems:
+        return canvas_explain(problems)
+    spam = canvas.review(doc, canvas_size(doc, accounts.plan_of(account),
+                                          sample_grounds(doc)),
+                         limit=html_check.MAX_BYTES)
+    return " ".join(review_texts(spam))
+
+
+def canvas_fused(db, account, doc):
+    """Las imágenes fundidas de un lienzo que ya pasó `canvas_refused()`, y sus
+    colores. None si el correo armado pasa de los 102 KB, y entonces no queda
+    ninguna guardada."""
+    load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
+    grounds, shades = canvas.store(db, account["_id"], doc, load)
+    html = canvas.to_html(doc, [imaging.url_of(one) if one else None
+                                for one in grounds], shades)
+    if len(html.encode("utf-8")) > html_check.MAX_BYTES:
+        images.remove(db, account["_id"], grounds)
+        return None
+    return grounds, shades
+
+
 def canvas_problems(db, account_id, doc) -> list[str]:
     return canvas.problems(
         doc, owns=lambda name: (imaging.valid_name(name)
@@ -737,27 +740,19 @@ def canvas_editor(account, found):
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         else:
-            problems = canvas_problems(db, account["_id"], posted)
-            spam = [] if problems or posted is None else canvas.review(
-                posted, canvas_size(posted, accounts.plan_of(account),
-                                    sample_grounds(posted)),
-                limit=html_check.MAX_BYTES)
+            # Solo se guarda lo que arma bien el correo y tiene pocas
+            # probabilidades de ir a spam.
+            refused = canvas_refused(db, account, posted)
             if not name:
                 errors["nombre"] = t("error_required")
-            if problems:
-                errors["form"] = canvas_explain(problems)
-            elif spam:
-                # Solo se guarda lo que tiene pocas probabilidades de ir a spam.
-                errors["form"] = " ".join(review_texts(spam))
+            if refused:
+                errors["form"] = refused
             elif not errors:
-                load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
-                grounds, shades = canvas.store(db, account["_id"], posted, load)
-                html = canvas.to_html(posted, [imaging.url_of(one) if one else None
-                                               for one in grounds], shades)
-                if len(html.encode("utf-8")) > html_check.MAX_BYTES:
-                    images.remove(db, account["_id"], grounds)
+                fused = canvas_fused(db, account, posted)
+                if fused is None:
                     errors["form"] = canvas_explain(["too_big"])
                 else:
+                    grounds, shades = fused
                     if found is None:
                         designs.save_canvas(db, account["_id"], name=name,
                                             doc=posted, backgrounds=grounds,
@@ -878,14 +873,15 @@ def canvas_pdf():
 
 @bp.route("/plantillas/lienzo/<raw>/html")
 def canvas_html(raw):
-    """La plantilla guardada en un ZIP: su HTML y sus imágenes aparte, lista
-    para pasársela a otra persona y volver a cargarla.
+    """La plantilla guardada en un ZIP, para pasársela a otra persona.
 
-    El HTML es lo mismo que sale al enviar (`sender.Piece`), pero sus imágenes
-    fundidas van en la carpeta `imagenes/` del ZIP y el HTML las nombra por su
-    ruta: al abrirlo en una computadora se ve entero, sin depender del panel, y
-    al cargarlo en otra cuenta entran a esa cuenta (`from_pack()`). Dentro del
-    HTML no pueden ir: una sola foto ya pasaba de los 102 KB.
+    Trae el **lienzo** (`lienzo.json`, con su nombre) y sus fotos originales en
+    `fotos/`, que el lienzo nombra por su ruta: es lo que se vuelve a cargar
+    (`canvas_from_pack()`) y se sigue editando como si nada. Y trae el **HTML**,
+    que es lo mismo que sale al enviar (`sender.Piece`), con sus imágenes
+    fundidas en `imagenes/`: al abrirlo en una computadora se ve entero, y
+    sirve fuera de Panamails. Dentro del HTML no pueden ir: una sola foto ya
+    pasaba de los 102 KB.
 
     **Sin nuestro pie**: la baja, la dirección y la marca de agua se ponen al
     enviar, y con el pie dentro saldría dos veces. Es de la plantilla guardada y
@@ -919,9 +915,21 @@ def canvas_html(raw):
                                    plan=accounts.plan_of(account),
                                    style=canvas.dark_css(doc, shades), bare=True)
     name = found.get("name", "")
+    # Las fotos del lienzo, cada una con un nombre corto: el de verdad es la
+    # dirección de la imagen en esta cuenta, y en otra no significa nada.
+    photos: dict[str, str] = {}
+    for one in canvas.images_of(doc):
+        data = images.data_of(db, account["_id"], one)
+        if data and one not in photos:
+            photos[one] = f"{imaging.ZIP_PHOTOS}{len(photos) + 1}.{one.rsplit('.', 1)[-1]}"
+            files.append((photos[one], data))
+    items = [{**one, "name": photos.get(one["name"], one["name"])} if one["t"] == "image"
+             else one for one in doc["items"]]
+    board = {"name": name, **doc, "items": items}
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as pack:
         pack.writestr(file_name(name, "html"), email.encode("utf-8"))
+        pack.writestr(imaging.ZIP_CANVAS, json.dumps(board, ensure_ascii=False, indent=1))
         for path, data in files:
             # Ya van comprimidas: guardarlas tal cual es más rápido e igual de
             # liviano.

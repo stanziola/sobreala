@@ -43,6 +43,17 @@ def test_el_sitio_no_ofrece_corporativo_ni_soporte_ni_diseno():
     assert ">Soporte<" not in planes
 
 
+def test_el_html_propio_ya_no_se_ofrece_en_ningun_lado():
+    """Se quitó en septiembre de 2026: las plantillas se arman en el editor y
+    se pasan como el ZIP de un lienzo."""
+    precios = (ROOT / "docs" / "pricing.md").read_text(encoding="utf-8")
+    assert "Subir tu propio HTML" not in precios
+    for pagina in ("index.html", "planes/index.html", "como-funciona/index.html",
+                   "terminos/index.html"):
+        html = (ROOT / "landing" / pagina).read_text(encoding="utf-8")
+        assert "propio HTML" not in html and "HTML que subas" not in html, pagina
+
+
 # ------------------------------------------------------------ el pie
 
 def test_el_basico_lleva_el_ala_y_los_demas_nada():

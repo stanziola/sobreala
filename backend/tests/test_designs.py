@@ -1,13 +1,13 @@
-"""Plantillas: qué HTML entra, quién puede subirlo y quién lo aprueba.
+"""Plantillas: qué HTML se guarda, que ya no se sube, y quién lo aprueba.
 
 Lo que se fija aquí es lo que no se puede aflojar después. Que una pieza con
 `<script>`, con un atributo de evento o de más de 102 KB no se guarde —pasado
 ese tamaño Gmail recorta el correo y lo que se pierde es el botón de anular la
-suscripción—. Y que subir HTML propio sea de Negocio en adelante, leído de
-`docs/pricing.md` y comprobado en el servidor.
+suscripción—. Y que el HTML propio ya no se cargue en ningún plan: las que se
+cargaron antes se siguen editando.
 
 Nadie aprueba una pieza a mano: lo que puede hacer daño lo rechaza el validador
-al subirla, y la única mirada humana está una vez por cuenta, antes de su
+al guardarla, y la única mirada humana está una vez por cuenta, antes de su
 primera campaña.
 """
 
@@ -72,6 +72,13 @@ def with_plan(database, plan, email="ana@ejemplo.com"):
     accounts.set_plan(database, accounts.by_email(database, email)["_id"], plan)
 
 
+def cargada(database, email="ana@ejemplo.com", *, name="Boletín", html=LIMPIO):
+    """Una pieza HTML de las que se cargaron antes. Ya no se suben, pero las
+    que existen siguen en su lista."""
+    cuenta = accounts.by_email(database, email)
+    return designs.save(database, cuenta["_id"], name=name, html=html.decode("utf-8"))
+
+
 # ------------------------------------------------------- el validador, solo
 
 def test_lo_que_no_puede_entrar_en_un_correo():
@@ -101,77 +108,37 @@ def test_un_script_escrito_como_texto_no_es_un_script():
     assert html_check.check(escapado) == []
 
 
-# ------------------------------------------------------------ quién sube
+# ------------------------------------------------------ el HTML ya no se sube
 
-def test_el_basico_no_sube_html_y_la_pantalla_lo_dice(client, database, outbox):
+def test_el_html_ya_no_se_carga_en_ningun_plan(client, database, outbox):
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    # Primero sin plan, y después cada uno.
+    for plan in (None, "basico", "negocio", "empresa"):
+        if plan:
+            with_plan(database, plan)
+        respuesta = subir(browser, LIMPIO)
+        assert respuesta.status_code == 200
+        assert "el HTML propio ya no se carga" in respuesta.get_data(as_text=True)
+    assert designs.count(database, cuenta["_id"]) == 0
+
+
+def test_cargar_esta_para_todos_y_pide_el_zip(client, database, outbox):
     browser = inside(client)
     with_plan(database, "basico")
-
     pantalla = browser.get("/plantillas").get_data(as_text=True)
-    assert "desde el plan Negocio" in pantalla
-    # El botón está, pero apagado y sin enlace.
-    assert 'href="/plantillas/cargar"' not in pantalla
-
-    subir(browser, LIMPIO)
-    assert designs.count(database, accounts.by_email(database, "ana@ejemplo.com")["_id"]) == 0
-
-
-def test_sin_plan_tampoco(client, database, outbox):
-    browser = inside(client)
-    subir(browser, LIMPIO)
-    cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    assert designs.count(database, cuenta["_id"]) == 0
-
-
-def test_desde_negocio_si(client, database, outbox):
-    browser = inside(client)
-    with_plan(database, "negocio")
-
-    subir(browser, LIMPIO, name="Boletín de socios")
-    cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    guardadas = designs.for_account(database, cuenta["_id"])
-    assert len(guardadas) == 1
-    assert guardadas[0]["name"] == "Boletín de socios"
-    # Y el archivo se guarda entero: es lo que hay que poder volver a mirar.
-    assert "Hola socios" in guardadas[0]["html"]
-
-
-def test_lo_que_no_pasa_la_revision_no_se_guarda(client, database, outbox):
-    browser = inside(client)
-    with_plan(database, "negocio")
-
-    respuesta = subir(browser, b"<html><body><script>alert(1)</script></body></html>")
-    cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    assert designs.count(database, cuenta["_id"]) == 0
-    assert "&lt;script&gt;" in respuesta.get_data(as_text=True)
-
-
-# -------------------------------------------- ninguna espera aprobación
-
-def test_lo_que_pasa_el_validador_queda_listo(client, database, outbox):
-    """Ya no hay una primera pieza en revisión: pasa el validador y se usa."""
-    browser = inside(client)
-    with_plan(database, "negocio")
-    cuenta = accounts.by_email(database, "ana@ejemplo.com")
-
-    respuesta = subir(browser, LIMPIO, name="Primera")
-    # Va directo a su editor, y dice que ya se puede usar.
-    assert "/plantillas/html/" in respuesta.headers["Location"]
-    assert "Ya la puedes usar" in browser.get(
-        respuesta.headers["Location"]).get_data(as_text=True)
-
-    subir(browser, LIMPIO, name="Segunda")
-    assert [d["name"] for d in designs.for_account(database, cuenta["_id"])] ==         ["Segunda", "Primera"]
-    # Y no queda ningún campo de estado que alguien tenga que mover.
-    assert "status" not in designs.for_account(database, cuenta["_id"])[0]
+    # Encendido y con su enlace, sin el aviso del plan que sí subía HTML.
+    assert 'href="/plantillas/cargar"' in pantalla
+    assert "Cargar plantilla (ZIP)" in pantalla
+    assert "desde el plan" not in pantalla
+    assert 'accept=".zip,application/zip"' in pantalla
 
 
 # ----------------------------------------------------- de quién es cada una
 
 def test_la_plantilla_de_otro_no_se_borra(client, database, outbox):
-    ana = inside(client)
-    with_plan(database, "negocio")
-    subir(ana, LIMPIO)
+    inside(client)
+    cargada(database)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     suya = designs.for_account(database, cuenta["_id"])[0]
 
@@ -222,7 +189,7 @@ def test_la_pantalla_tiene_los_dos_caminos_y_no_las_prediseñadas(
 
     pantalla = browser.get("/plantillas").get_data(as_text=True)
     assert "Crear plantilla" in pantalla
-    assert "Cargar plantilla personalizada" in pantalla
+    assert "Cargar plantilla (ZIP)" in pantalla
     assert 'href="/plantillas/cargar"' in pantalla
     assert "Usar esta" not in pantalla
     # Las dos notas: el dato de cada persona y el tamaño máximo. Sin columnas
@@ -480,8 +447,7 @@ def test_hay_un_tope_de_imagenes_por_cuenta(client, database, outbox):
 
 def test_duplicar_deja_una_copia_con_otro_nombre(client, database, outbox):
     browser = inside(client)
-    with_plan(database, "negocio")
-    subir(browser, LIMPIO, name="Boletín")
+    cargada(database, name="Boletín")
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     original = designs.for_account(database, cuenta["_id"])[0]
 
@@ -493,9 +459,8 @@ def test_duplicar_deja_una_copia_con_otro_nombre(client, database, outbox):
 
 
 def test_la_de_otro_no_se_duplica(client, database, outbox):
-    ana = inside(client)
-    with_plan(database, "negocio")
-    subir(ana, LIMPIO)
+    inside(client)
+    cargada(database)
     suya = designs.for_account(
         database, accounts.by_email(database, "ana@ejemplo.com")["_id"])[0]
 
@@ -586,12 +551,17 @@ def test_el_html_de_otro_no_se_abre(client, database, outbox):
     assert bea.get(url).status_code == 404
 
 
-def test_quien_bajo_de_plan_no_cambia_el_html(client, database, outbox):
-    browser, url, pieza = abrir_html(client, database, plan="basico")
-    browser.post(url, data={
-        "csrf_token": csrf(browser, url), "accion": "guardar", "nombre": "x",
-        "html": "<html><body><p>Otra</p></body></html>"})
-    assert "Hola socios" in database.designs.find_one({"_id": pieza})["html"]
+def test_la_cargada_antes_se_edita_con_cualquier_plan(client, database, outbox):
+    """Ya no hay un plan que suba HTML: las que existen se editan con el que
+    se tenga."""
+    for plan, email in ((None, "ana@ejemplo.com"), ("basico", "bea@ejemplo.com")):
+        browser = inside(client, email)
+        if plan:
+            with_plan(database, plan, email=email)
+        url = f"/plantillas/html/{cargada(database, email)}"
+        assert browser.post(url, data={
+            "csrf_token": csrf(browser, url), "accion": "guardar", "nombre": "x",
+            "html": "<html><body><p>Otra</p></body></html>"}).status_code == 302
 
 
 # -------------------------------------------- el modo, entre los dos sitios
@@ -677,11 +647,10 @@ def test_el_editor_ensena_de_donde_sale_cada_imagen(client, database, outbox):
     html = (b'<html><body><h1>Hola</h1><img src="https://otro-sitio.com/foto.png">'
             b'</body></html>')
     browser, url, _ = abrir_html(client, database, html=html)
-    pantalla = browser.get(url + "?nueva=1").get_data(as_text=True)
+    pantalla = browser.get(url).get_data(as_text=True)
     assert "Imágenes de esta plantilla" in pantalla
     assert "De otro sitio: se ve mientras ese sitio la publique." in pantalla
     assert "Una no es de tu cuenta" in pantalla
-    assert "alguna no es de tu cuenta" in pantalla
     assert "data-picture-change" in pantalla
 
 
@@ -691,8 +660,6 @@ def test_sin_imagenes_no_hay_lista(client, database, outbox):
     assert "Imágenes de esta plantilla" not in browser.get(url).get_data(as_text=True)
 
 
-def test_una_imagen_https_de_otro_sitio_se_puede_cargar(client, database, outbox):
-    browser = inside(client)
-    with_plan(database, "negocio")
+def test_una_imagen_https_de_otro_sitio_se_puede_guardar():
     raw = b'<html><body><img src="https://otro-sitio.com/foto.png"></body></html>'
-    assert subir(browser, raw).status_code == 302
+    assert html_check.check(raw) == []

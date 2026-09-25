@@ -85,16 +85,14 @@ def update(admin, database, cliente, *, plan="", ciclo="monthly",
     return admin.post(f"/admin/cuentas/{cliente['_id']}/actualizar", data=data)
 
 
-def upload_piece(navegador, nombre="Boletín"):
-    """Subir una pieza como lo hace la pantalla del cliente."""
-    navegador.get("/plantillas")
-    with navegador.session_transaction() as sess:
-        token = sess["_csrf"]
-    return navegador.post("/plantillas/cargar", data={
-        "csrf_token": token, "nombre": nombre,
-        "archivo": (io.BytesIO(b"<html><body><h1>Hola</h1></body></html>"),
-                    "pieza.html")},
-        content_type="multipart/form-data")
+def upload_piece(database, cliente, nombre="Boletín"):
+    """Una pieza HTML de las que subían los clientes. Ya no se suben, pero las
+    que existen siguen en la lista del administrador."""
+    from models import design as designs
+
+    return designs.save(database, cliente["_id"], name=nombre,
+                        html="<html><body><h1>Hola</h1></body></html>",
+                        uploaded_by=cliente["_id"])
 
 
 def clear_sending(admin, cliente, motivo="hablé con ellos, la lista es suya"):
@@ -536,8 +534,7 @@ def test_la_lista_ensena_de_quien_es_cada_pieza(client, database, outbox):
     """Ya no es una cola: nadie aprueba una pieza a mano."""
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
-    accounts.set_plan(database, cliente["_id"], "negocio")
-    upload_piece(navegador)
+    upload_piece(database, cliente)
 
     lista = admin.get("/admin/plantillas").get_data(as_text=True)
     assert accounts.by_id(database, cliente["_id"])["company_name"] in lista
@@ -554,8 +551,7 @@ def test_el_archivo_no_se_sirve_como_html(client, database, outbox):
 
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
-    accounts.set_plan(database, cliente["_id"], "negocio")
-    upload_piece(navegador)
+    upload_piece(database, cliente)
     subida = designs.for_account(database, cliente["_id"])[0]
 
     respuesta = admin.get(f"/admin/plantillas/{subida['_id']}/archivo")

@@ -18,7 +18,6 @@ reglas de negocio asociadas.
 | Etiquetas | 1 | 2 | 4 |
 | Columnas propias del contacto | 1 | 5 | 10 |
 | Crear plantillas en el editor | ✅ | ✅ | ✅ |
-| Subir tu propio HTML | — | ✅ | ✅ |
 | **Correos sin marca de agua** | — | ✅ | ✅ |
 | Analytics completo | ✅ | ✅ | ✅ |
 | Exportar CSV y PDF | ✅ | ✅ | ✅ |
@@ -172,8 +171,7 @@ prácticamente cero; el límite de contactos del plan ya acota el crecimiento).
 
 Además: procesar el CSV **en streaming** (nunca cargarlo entero en memoria), como
 **trabajo en segundo plano** (no dentro del request), consulta de supresiones en
-lote con `$in` y escritura con `bulkWrite`. El HTML que suban va sanitizado
-(sin `<script>`).
+lote con `$in` y escritura con `bulkWrite`.
 
 ---
 
