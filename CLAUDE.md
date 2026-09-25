@@ -563,15 +563,17 @@ permiso.
 documento con un parser y no con expresiones regulares —`&lt;script&gt;` es
 texto y `<script>` no—. Fuera: `<script>`, `<iframe>`, `<object>`, `<form>`,
 atributos de evento, hojas de estilo de otro sitio, imágenes que no van por
-`https://`, y **cualquier pieza de más de 102 KB**. Lo que se guarda es el
-archivo entero y tal como llegó, salvo las imágenes de otra cuenta del panel,
-que se copian a esta (ver «Bajarse la pieza»).
+`https://` (las del propio panel entran aunque vayan por http, que es como corre
+en desarrollo), y **cualquier pieza de más de 102 KB**. Lo que se guarda es el
+archivo entero y tal como llegó. **También entra el ZIP que baja el editor**,
+con sus imágenes aparte: ver «Bajarse la pieza».
 
 **Las imágenes `https://` de otro sitio sí entran**: es lo que trae un HTML hecho
 con una IA o bajado de internet. Pero dependen de ese sitio, así que el editor
 de HTML las enseña en **«Imágenes de esta plantilla»** (`html_images()`), cada
-una con su estado: de la cuenta, de otro sitio, borrada (sale rota) o dentro del
-archivo (`data:`, que Gmail no muestra). **«Cambiar»** sube una foto por la ruta
+una con su estado: de la cuenta, de otra cuenta (sale rota el día que esa la
+borre), de otro sitio, borrada (sale rota) o dentro del archivo (`data:`, que
+Gmail no muestra). **«Cambiar»** sube una foto por la ruta
 de siempre del lienzo (con su revisión, su achique y el tope de 20) y cambia esa
 dirección en el código; se guarda con Guardar. **El panel no va a buscar la
 imagen de fuera**: la sube quien la tiene.
@@ -859,27 +861,40 @@ plantilla.
 **El PDF baja lo que se está viendo**, por POST (`/plantillas/lienzo/pdf`), como
 la vista previa: también de una pieza que todavía no se ha guardado.
 
-**El HTML baja la plantilla guardada, lista para volver a cargarla**
-(`GET /plantillas/lienzo/<id>/html`). Es lo mismo que sale al enviar
-(`sender.Piece`), con las imágenes fundidas **enlazadas** al panel y **sin
-nuestro pie** (`render.email_from_body(bare=True)`): la baja, la dirección y la
-marca de agua se ponen al enviar, y dentro saldrían dos veces. Así pesa lo que
-dice la barra o menos, y entra en «Cargar plantilla personalizada». Hasta
-septiembre de 2026 llevaba las fotos dentro (`data:`) y el pie: una sola foto ya
-pasaba de los 102 KB, y no se podía volver a cargar. Como las imágenes fundidas
+**El HTML baja en un ZIP la plantilla guardada, con sus imágenes aparte**
+(`GET /plantillas/lienzo/<id>/html`): el HTML y la carpeta `imagenes/`, que el
+HTML nombra por su ruta (`imagenes/1.jpg`). Es lo que sirve para pasarle una
+plantilla a otra persona: al abrirlo en una computadora se ve entero, y no
+depende del panel ni de la cuenta que lo bajó. El HTML es lo mismo que sale al
+enviar (`sender.Piece`) y va **sin nuestro pie**
+(`render.email_from_body(bare=True)`): la baja, la dirección y la marca de agua
+se ponen al enviar, y dentro saldrían dos veces. Hasta septiembre de 2026
+llevaba las fotos dentro (`data:`) y el pie: una sola foto ya pasaba de los
+102 KB, y no se podía volver a cargar. Después las llevó enlazadas al panel de
+quien lo bajó, y se quitó porque la otra cuenta dependía de esa. Como las imágenes fundidas
 solo existen al guardar, **sin guardar, o con cambios sin guardar, el editor no
 baja nada y lo dice**. Una pieza vieja por diapositivas se rehace antes, como
 antes del primer correo.
 
+**Cargar el ZIP sube sus imágenes a la cuenta que lo carga** (`from_pack()`,
+con `imaging.unpack()`): por la misma revisión y el mismo achique que una foto
+del lienzo, **contando contra sus 20**, y solo las que el HTML nombra. El HTML
+pasa a nombrar esas imágenes y después pasa la revisión de siempre; si algo
+falla no queda nada guardado. **Cada cuenta es dueña de las suyas**: si dos usan
+la misma foto, cada una guarda su copia (unos 120 KB), y ninguna depende de la
+otra. El ZIP se lee en memoria y con topes contados en lo que sale y no en lo que
+dice su índice (5 MB por imagen, 20 MB entre todas), porque un ZIP pequeño
+puede inflarse a gigas.
+
+**Entre cuentas ya no se copia nada.** Hubo `adopt_images()`, que al cargar un
+HTML iba a buscar las imágenes de la otra cuenta y las copiaba; si esa ya las
+había borrado, no había qué copiar. Ahora un HTML suelto que nombre imágenes de
+otra cuenta se carga tal cual, y «Imágenes de esta plantilla» las marca como de
+otra cuenta, con su «Cambiar».
+
 **Las imágenes que nombra una plantilla cargada no se borran**: `images_in()` lee
 en su HTML las direcciones `/img/<nombre>` (`imaging.names_in()`), así que borrar
-o volver a guardar el lienzo original no le rompe la copia cargada.
-
-**Y si lo carga otra cuenta, las imágenes se copian a ella**
-(`adopt_images()` al cargar y al guardar un HTML, con `images.adopt()`): las
-de otra cuenta se guardan como del sistema, sin gastar sus veinte, y el HTML
-pasa a nombrar las copias. Sin eso, que quien la bajó borrara su plantilla
-dejaría la de la otra cuenta sin imágenes.
+otra pieza de la cuenta no le rompe la cargada.
 
 **El PDF se dibuja desde las coordenadas**, con `services/canvas_pdf.py` y
 `reportlab`, el mismo que ya hace el PDF de Estadísticas. Por eso el texto sale

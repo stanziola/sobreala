@@ -659,7 +659,7 @@ def test_las_imagenes_del_html_se_clasifican(client, database, outbox):
     assert estados == ["ok", "gone", "outside", "inside"]
 
 
-def test_la_imagen_de_otra_cuenta_sale_como_de_fuera(client, database, outbox):
+def test_la_imagen_de_otra_cuenta_sale_como_de_otra_cuenta(client, database, outbox):
     from blueprints.designs.routes import html_images
     from models import image as images
 
@@ -670,7 +670,7 @@ def test_la_imagen_de_otra_cuenta_sale_como_de_fuera(client, database, outbox):
                         mime="image/jpeg")
     ana = accounts.by_email(database, "ana@ejemplo.com")
     html = f'<img src="https://panel.panamails.com/img/{ajena}">'
-    assert html_images(database, ana["_id"], html)[0]["state"] == "outside"
+    assert html_images(database, ana["_id"], html)[0]["state"] == "other"
 
 
 def test_el_editor_ensena_de_donde_sale_cada_imagen(client, database, outbox):

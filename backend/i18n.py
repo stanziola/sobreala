@@ -1050,6 +1050,8 @@ TEXTS = {
     "designs_picture_ok": "De tu cuenta.",
     "designs_picture_outside": "De otro sitio: se ve mientras ese sitio la "
                                "publique.",
+    "designs_picture_other": "De otra cuenta: sale rota el día que esa cuenta "
+                             "la borre.",
     "designs_picture_gone": "Ya no existe: sale rota.",
     "designs_picture_inside": "Dentro del archivo: Gmail no la muestra y pesa.",
     "designs_picture_change": "Cambiar",
@@ -1136,9 +1138,20 @@ TEXTS = {
     "designs_from": "Plantilla {name}",
     "designs_mine_empty": "Todavía no tienes ninguna.",
     "designs_upload_title": "Cargar plantilla personalizada",
-    "designs_upload_hint": "Un archivo .html de hasta {kb} KB. Pasado ese "
-                           "tamaño Gmail recorta el correo y se pierde el "
-                           "botón para anular la suscripción.",
+    "designs_upload_hint": "Un archivo .html de hasta {kb} KB, o el ZIP que baja "
+                           "el editor, con sus imágenes: entran a tu cuenta. "
+                           "Pasados los {kb} KB Gmail recorta el correo y se "
+                           "pierde el botón para anular la suscripción.",
+    # El ZIP que baja el editor: el HTML y sus imágenes en «imagenes/».
+    "designs_zip_broken": "No se pudo abrir el ZIP. Vuelve a bajarlo del "
+                          "editor.",
+    "designs_zip_no_html": "El ZIP tiene que traer un solo archivo .html.",
+    "designs_zip_too_many": "El ZIP trae más de {n} imágenes.",
+    "designs_zip_heavy": "Las imágenes del ZIP pesan demasiado: cada una "
+                         "puede pesar hasta {mb} MB.",
+    "designs_zip_missing": "El HTML nombra {what} y el ZIP no la trae.",
+    "designs_zip_limit": "Trae {n} imágenes y te caben {free} de {limit}. Borra "
+                         "alguna plantilla que ya no uses.",
     "designs_file": "Archivo",
     "designs_name": "Nombre",
     "designs_name_hint": "Para reconocerla después. Si lo dejas vacío usamos "
@@ -1204,10 +1217,10 @@ TEXTS = {
                           "dentro: se quedó en {px} px.",
     "canvas_fit_content": "Ajustar al contenido",
     "canvas_pdf": "Descargar PDF",
-    "canvas_html": "Descargar HTML",
-    "canvas_html_save_first": "Guárdala antes de bajarla en HTML: el archivo es "
-                              "la plantilla guardada, lista para volver a "
-                              "cargarla.",
+    "canvas_html": "Descargar HTML (ZIP)",
+    "canvas_html_save_first": "Guárdala antes de bajarla en HTML: el ZIP es la "
+                              "plantilla guardada, con sus imágenes, lista "
+                              "para volver a cargarla.",
     "canvas_shape_bg": "Color",
     "canvas_shape_kind": "Figura",
     "canvas_shape_rect": "Rectángulo",

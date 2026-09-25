@@ -860,31 +860,63 @@ def pedir_html(browser, pieza):
     return browser.get(f"/plantillas/lienzo/{pieza['_id']}/html")
 
 
+def abrir_zip(respuesta):
+    """El HTML y las imágenes del ZIP bajado: (html, {ruta: bytes})."""
+    import zipfile
+
+    pack = zipfile.ZipFile(io.BytesIO(respuesta.get_data()))
+    [pagina] = [one for one in pack.namelist() if one.endswith(".html")]
+    return (pack.read(pagina).decode("utf-8"),
+            {one: pack.read(one) for one in pack.namelist() if one != pagina})
+
+
+def html_bajado(browser, pieza):
+    return abrir_zip(pedir_html(browser, pieza))[0]
+
+
+def hacer_zip(html, **fotos):
+    """Un ZIP como el que baja el editor, con lo que se le pase dentro."""
+    import zipfile
+
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w") as pack:
+        pack.writestr("pieza.html", html)
+        for nombre, datos in fotos.items():
+            pack.writestr("imagenes/" + nombre.replace("_", "."), datos)
+    return out.getvalue()
+
+
 def test_la_pieza_se_baja_como_html_sin_nuestro_pie(client, database, outbox):
     browser = inside(client)
     pieza = guardada(browser, database, lienzo(texto(40, 40, text="Asamblea anual")))
     respuesta = pedir_html(browser, pieza)
     assert respuesta.status_code == 200
-    assert respuesta.mimetype == "text/html"
+    assert respuesta.mimetype == "application/zip"
     assert "attachment" in respuesta.headers["Content-Disposition"]
-    assert "Asamblea.html" in respuesta.headers["Content-Disposition"]
-    salida = respuesta.get_data(as_text=True)
+    assert "Asamblea.zip" in respuesta.headers["Content-Disposition"]
+    salida, fotos = abrir_zip(respuesta)
+    # Solo texto: ninguna imagen que llevar.
+    assert fotos == {}
     assert "Asamblea anual" in salida and "<table" in salida
     # Sin la baja, la dirección ni la marca de agua: se ponen al enviar, y
     # dentro saldrían dos veces.
     assert "suscripción" not in salida and "Enviado con" not in salida
 
 
-def test_el_html_bajado_enlaza_las_fotos_y_pesa_lo_que_la_barra(client, database, outbox):
+def test_el_zip_trae_las_fotos_aparte_y_el_html_pesa_lo_que_la_barra(client, database,
+                                                                     outbox):
     browser = inside(client)
     nombre = subir_foto(browser).get_json()["name"]
     pieza = guardada(browser, database, lienzo(imagen(0, 0, 600, 300, name=nombre),
                                                texto(40, 320, text="Oferta"), h=400))
-    salida = pedir_html(browser, pieza).get_data(as_text=True)
-    # Enlazadas al panel, como en el correo que sale, y no dentro del archivo:
-    # dentro, una sola foto ya pasaba de los 102 KB.
-    assert "data:image/" not in salida
-    assert f"/img/{pieza['backgrounds'][0]}" in salida
+    salida, fotos = abrir_zip(pedir_html(browser, pieza))
+    # Aparte, en su carpeta, y el HTML las nombra por ella: ni dentro del
+    # archivo (una sola foto ya pasaba de los 102 KB) ni colgando del panel.
+    assert list(fotos) == ["imagenes/1.jpg"]
+    assert fotos["imagenes/1.jpg"] == images.data_of(
+        database, pieza["account_id"], pieza["backgrounds"][0])
+    assert 'src="imagenes/1.jpg"' in salida
+    assert "data:image/" not in salida and "/img/" not in salida
     # Lo que dice la barra o menos: la barra pesa lo mismo, con el pie.
     barra = browser.post("/plantillas/lienzo/revisar", data={
         "csrf_token": csrf(browser, "/plantillas/crear"),
@@ -892,20 +924,18 @@ def test_el_html_bajado_enlaza_las_fotos_y_pesa_lo_que_la_barra(client, database
     assert len(salida.encode("utf-8")) <= barra
 
 
-def test_el_html_bajado_se_vuelve_a_cargar(client, database, outbox, monkeypatch):
-    from config import Config
+def test_el_zip_bajado_se_vuelve_a_cargar(client, database, outbox):
     from services import render
 
-    # Como en producción: la carga solo acepta imágenes por https, y el
-    # desarrollo corre en http.
-    monkeypatch.setattr(Config, "APP_BASE_URL", "https://panel.panamails.com")
+    # Sin fingir https: las imágenes del propio panel entran también en
+    # desarrollo, que corre en http.
     browser = inside(client)
     with_plan(database, "negocio")
     nombre = subir_foto(browser).get_json()["name"]
     pieza = guardada(browser, database, lienzo(imagen(0, 0, 600, 300, name=nombre),
                                                texto(40, 320, text="Oferta"), h=400))
-    assert subir(browser, pedir_html(browser, pieza).get_data(),
-                 name="Copia cargada").status_code == 302
+    assert subir(browser, pedir_html(browser, pieza).get_data(), name="Copia cargada",
+                 filename="Asamblea.zip").status_code == 302
 
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     cargada = [one for one in designs.for_account(database, cuenta["_id"])
@@ -914,18 +944,21 @@ def test_el_html_bajado_se_vuelve_a_cargar(client, database, outbox, monkeypatch
     correo = render.email_from_html(cargada["html"], plan="negocio")
     assert correo.count("Anular la suscripción") == 1
 
-    # Borrar el lienzo no borra la imagen que sigue usando la copia cargada.
-    fondo = pieza["backgrounds"][0]
+    # La cargada tiene sus propias imágenes: borrar el lienzo no le rompe nada.
+    from services import imaging
+
+    [suya] = imaging.names_in(cargada["html"])
+    assert suya != pieza["backgrounds"][0]
     browser.post("/plantillas/borrar", data={"csrf_token": csrf(browser),
                                              "id": str(pieza["_id"])})
-    assert other(client).get(f"/img/{fondo}").status_code == 200
+    assert other(client).get(f"/img/{suya}").status_code == 200
 
 
 def test_el_html_bajado_deja_las_marcas_escritas(client, database, outbox):
     browser = inside(client)
     pieza = guardada(browser, database, lienzo(texto(40, 40, text="Hola *|NOMBRE|*")))
     # Lo que se baja es la plantilla, no el correo de nadie.
-    assert "*|NOMBRE|*" in pedir_html(browser, pieza).get_data(as_text=True)
+    assert "*|NOMBRE|*" in html_bajado(browser, pieza)
 
 
 def test_el_html_bajado_de_una_por_diapositivas_se_rehace(client, database, outbox):
@@ -935,7 +968,7 @@ def test_el_html_bajado_de_una_por_diapositivas_se_rehace(client, database, outb
         {"h": 300, "bg": "#0B3B5C", "items": [texto(40, 40, text="De antes")]}]},
         backgrounds=[None])
     respuesta = browser.get(f"/plantillas/lienzo/{vieja}/html")
-    assert respuesta.status_code == 200 and "De antes" in respuesta.get_data(as_text=True)
+    assert respuesta.status_code == 200 and "De antes" in abrir_zip(respuesta)[0]
     assert designs.by_id(database, cuenta["_id"], vieja)["canvas"]["v"] == canvas.VERSION
 
 
@@ -1125,13 +1158,11 @@ def test_el_editor_ofrece_las_vinetas(client, database, outbox):
     assert 'data-prop="list"' in pantalla and "Viñetas" in pantalla
 
 
-# ------------------------------------- el HTML bajado, cargado por otra cuenta
+# ------------------------------------- el ZIP bajado, cargado por otra cuenta
 
-def test_otra_cuenta_carga_el_html_con_sus_propias_copias(client, database, outbox,
-                                                           monkeypatch):
-    from config import Config
+def test_otra_cuenta_carga_el_zip_con_sus_propias_imagenes(client, database, outbox):
+    from services import imaging
 
-    monkeypatch.setattr(Config, "APP_BASE_URL", "https://panel.panamails.com")
     ana = inside(client)
     nombre = subir_foto(ana).get_json()["name"]
     pieza = guardada(ana, database, lienzo(imagen(0, 0, 600, 300, name=nombre),
@@ -1141,36 +1172,110 @@ def test_otra_cuenta_carga_el_html_con_sus_propias_copias(client, database, outb
 
     beto = inside(client, email="beto@ejemplo.com")
     with_plan(database, "negocio", email="beto@ejemplo.com")
-    assert subir(beto, bajado, name="De Ana").status_code == 302
+    assert subir(beto, bajado, name="De Ana", filename="De Ana.zip").status_code == 302
     de_beto = accounts.by_email(database, "beto@ejemplo.com")
     cargada = designs.for_account(database, de_beto["_id"])[0]
-    # Nombra una copia suya, no la imagen de Ana.
+    # Nombra una imagen suya, subida del ZIP, y le cuenta contra sus veinte.
     assert fondo not in cargada["html"]
-    [copia] = __import__("services.imaging", fromlist=["x"]).names_in(cargada["html"])
-    assert images.owns(database, de_beto["_id"], copia)
-    # Y no le gasta ninguna de sus veinte.
-    assert images.count(database, de_beto["_id"]) == 0
+    [suya] = imaging.names_in(cargada["html"])
+    assert images.owns(database, de_beto["_id"], suya)
+    assert images.count(database, de_beto["_id"]) == 1
 
-    # Ana borra su lienzo: la de Ana se va, la copia de Beto se queda.
+    # Ana borra su lienzo: la de Ana se va, la de Beto se queda.
     ana.post("/plantillas/borrar", data={"csrf_token": csrf(ana), "id": str(pieza["_id"])})
     assert other(client).get(f"/img/{fondo}").status_code == 404
-    assert other(client).get(f"/img/{copia}").status_code == 200
+    assert other(client).get(f"/img/{suya}").status_code == 200
 
 
-def test_cargar_un_html_con_imagenes_propias_no_copia_nada(client, database, outbox,
-                                                           monkeypatch):
-    from config import Config
+def test_un_html_suelto_con_imagenes_de_otra_cuenta_no_las_copia(client, database, outbox):
+    from blueprints.designs.routes import html_images
+    from services import imaging
 
-    monkeypatch.setattr(Config, "APP_BASE_URL", "https://panel.panamails.com")
     ana = inside(client)
-    with_plan(database, "negocio")
     nombre = subir_foto(ana).get_json()["name"]
-    pieza = guardada(ana, database, lienzo(imagen(0, 0, 600, 300, name=nombre),
-                                           texto(40, 320, text="Oferta"), h=400))
+    ajena = imaging.url_of(nombre)
+    html = (f'<html><body><h1>Hola</h1><img src="{ajena}" alt="x"></body></html>'
+            ).encode("utf-8")
+    beto = inside(client, email="beto@ejemplo.com")
+    with_plan(database, "negocio", email="beto@ejemplo.com")
+    assert subir(beto, html, name="Suelta").status_code == 302
+    de_beto = accounts.by_email(database, "beto@ejemplo.com")
+    cargada = designs.for_account(database, de_beto["_id"])[0]
+    # Tal cual: sin copia, y el editor la marca como de otra cuenta.
+    assert nombre in cargada["html"]
+    assert database.images.count_documents({"account_id": de_beto["_id"]}) == 0
+    assert html_images(database, de_beto["_id"], cargada["html"])[0]["state"] == "other"
+
+
+def cargar_zip(client, database, raw):
+    browser = inside(client)
+    with_plan(database, "negocio")
+    return browser, subir(browser, raw, name="Del ZIP", filename="pieza.zip")
+
+
+PAGINA = '<html><body><h1>Hola</h1><img src="imagenes/1.jpg" alt="x"></body></html>'
+
+
+def test_el_zip_sube_solo_las_imagenes_que_nombra(client, database, outbox):
+    browser, respuesta = cargar_zip(client, database, hacer_zip(
+        PAGINA, **{"1_jpg": foto(800, 600), "2_jpg": foto(800, 600)}))
+    assert respuesta.status_code == 302
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    antes = database.images.count_documents({"account_id": cuenta["_id"]})
-    subir(ana, pedir_html(ana, pieza).get_data(), name="Copia")
-    assert database.images.count_documents({"account_id": cuenta["_id"]}) == antes
-    cargada = [one for one in designs.for_account(database, cuenta["_id"])
-               if one["source"] == designs.UPLOAD][0]
-    assert pieza["backgrounds"][0] in cargada["html"]
+    cargada = designs.for_account(database, cuenta["_id"])[0]
+    assert "imagenes/" not in cargada["html"]
+    # La que el HTML no nombra no se guarda.
+    assert images.count(database, cuenta["_id"]) == 1
+
+
+def test_el_zip_con_una_imagen_que_falta_no_se_carga(client, database, outbox):
+    _, respuesta = cargar_zip(client, database, hacer_zip(PAGINA))
+    pantalla = respuesta.get_data(as_text=True)
+    assert respuesta.status_code == 200 and "imagenes/1.jpg" in pantalla
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    assert designs.for_account(database, cuenta["_id"]) == []
+
+
+def test_el_zip_con_una_imagen_falsa_no_deja_nada_guardado(client, database, outbox):
+    _, respuesta = cargar_zip(client, database, hacer_zip(
+        PAGINA, **{"1_jpg": b"esto no es una foto"}))
+    assert respuesta.status_code == 200
+    assert "1.jpg" in respuesta.get_data(as_text=True)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    assert designs.for_account(database, cuenta["_id"]) == []
+    assert database.images.count_documents({"account_id": cuenta["_id"]}) == 0
+
+
+def test_el_zip_que_no_cabe_en_las_veinte_no_se_carga(client, database, outbox):
+    browser = inside(client)
+    with_plan(database, "negocio")
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    for _ in range(images.LIMIT):
+        images.save(database, cuenta["_id"], data=foto(40, 40), ext="jpg",
+                    mime="image/jpeg")
+    respuesta = subir(browser, hacer_zip(PAGINA, **{"1_jpg": foto(800, 600)}),
+                      filename="pieza.zip")
+    assert respuesta.status_code == 200 and "te caben 0" in respuesta.get_data(as_text=True)
+    assert images.count(database, cuenta["_id"]) == images.LIMIT
+
+
+def test_el_zip_bomba_y_el_roto_se_rechazan(client, database, outbox):
+    import zipfile
+
+    # Diez megas de ceros caben en pocos kilos: se cuenta lo que sale.
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as pack:
+        pack.writestr("pieza.html", PAGINA)
+        pack.writestr("imagenes/1.jpg", b"\0" * (10 * 1024 * 1024))
+    assert len(out.getvalue()) < 100 * 1024
+    browser, respuesta = cargar_zip(client, database, out.getvalue())
+    assert respuesta.status_code == 200 and "pesan demasiado" in respuesta.get_data(as_text=True)
+
+    roto = subir(browser, b"PK\x03\x04 esto no es un zip", filename="roto.zip")
+    assert roto.status_code == 200 and "No se pudo abrir el ZIP" in roto.get_data(as_text=True)
+
+
+def test_el_zip_con_mas_de_veinte_imagenes_se_rechaza(client, database, outbox):
+    muchas = {f"{i}_jpg": b"x" for i in range(images.LIMIT + 1)}
+    _, respuesta = cargar_zip(client, database, hacer_zip(PAGINA, **muchas))
+    assert respuesta.status_code == 200
+    assert f"más de {images.LIMIT} imágenes" in respuesta.get_data(as_text=True)

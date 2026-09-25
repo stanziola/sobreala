@@ -21,8 +21,10 @@ en su lista y se editan con el formulario de siempre.
 
 from __future__ import annotations
 
+import io
 import re
 import unicodedata
+import zipfile
 from html.parser import HTMLParser
 
 from bson import ObjectId
@@ -179,18 +181,21 @@ def upload():
         elif not archivo or not archivo.filename:
             errors["archivo"] = t("error_required")
         else:
-            raw = archivo.read(html_check.MAX_BYTES + 1)
-            problems = html_check.check(raw)
-            if problems:
-                errors["archivo"] = explain(problems)
+            raw = archivo.read(imaging.MAX_UPLOAD + 1)
+            if imaging.is_zip(raw):
+                html, wrong = from_pack(db, account, raw)
+            else:
+                problems = html_check.check(raw)
+                html = None if problems else raw.decode("utf-8")
+                wrong = explain(problems)
+            if html is None:
+                errors["archivo"] = wrong
             else:
                 # Pasó el validador, así que queda lista. Lo que se revisa a
                 # mano es la cuenta, una vez, antes de su primera campaña.
                 new_id = designs.save(db, account["_id"],
                                       name=name or archivo.filename,
-                                      html=adopt_images(db, account["_id"],
-                                                        raw.decode("utf-8")),
-                                      uploaded_by=account["_id"])
+                                      html=html, uploaded_by=account["_id"])
                 # Directo al editor: lo siguiente que se quiere es verla y
                 # ponerle las columnas.
                 return redirect(url_for("designs.edit_html", raw=new_id,
@@ -273,7 +278,7 @@ def edit_html(raw):
                 errors["html"] = explain(problems)
             else:
                 designs.update_html(db, account["_id"], found["_id"], name=name,
-                                    html=adopt_images(db, account["_id"], html))
+                                    html=html)
                 return redirect(url_for("designs.index", cambiado=1))
 
     return render_template(
@@ -331,7 +336,8 @@ def html_images(db, account_id, html: str) -> list[dict]:
     """Cada imagen de un HTML cargado y de dónde sale, para avisar.
 
     `ok` es del panel y de esta cuenta. `gone`, del panel pero ya no existe:
-    sale rota. `outside`, de otro sitio (o de otra cuenta): se ve mientras
+    sale rota. `other`, del panel pero de otra cuenta: no se copia, y sale rota
+    el día que esa cuenta la borre. `outside`, de otro sitio: se ve mientras
     quien la publica la mantenga, y el panel no va a buscarla. `inside`, dentro
     del archivo: Gmail no la muestra y pesa.
     """
@@ -354,24 +360,71 @@ def html_images(db, account_id, html: str) -> list[dict]:
             elif images.by_name(db, names[0]) is None:
                 state = "gone"
             else:
-                state = "outside"
+                state = "other"
         # Lo que se enseña: una dirección cortada, que un `data:` son megas.
         shown = "data:…" if state == "inside" else (src if len(src) <= 70 else src[:67] + "…")
         out.append({"src": src, "shown": shown, "state": state})
     return out
 
 
-def adopt_images(db, account_id, html: str) -> str:
-    """El HTML con las imágenes ajenas del panel cambiadas por copias propias.
+def in_folder(name: str) -> re.Pattern:
+    """Cómo nombra el HTML una imagen de su carpeta: `imagenes/x.jpg`, con o
+    sin `./` delante."""
+    return re.compile(r"(?:\./)?" + re.escape(imaging.ZIP_FOLDER + name))
 
-    Un HTML bajado de un lienzo y pasado a otra cuenta nombra imágenes de quien
-    lo bajó: sin copiarlas, borrar aquella plantilla dejaría esta sin imágenes.
-    Se cambia solo `/img/<nombre>`, así el dominio queda como venía.
+
+# Una imagen de la carpeta nombrada en el HTML, para decir cuál falta.
+FOLDER_REF = re.compile(r"(?:\./)?" + re.escape(imaging.ZIP_FOLDER) + r"([^\"'\s)>]+)")
+
+
+def from_pack(db, account, raw: bytes) -> tuple[str | None, str]:
+    """El HTML de un ZIP bajado del editor, con sus imágenes ya en esta cuenta.
+
+    Devuelve (HTML, "") o (None, por qué no). Las imágenes entran a la cuenta
+    que carga, por la misma revisión y el mismo achique que una foto del lienzo,
+    y cuentan contra sus veinte: así cada cuenta es dueña de las suyas y
+    ninguna depende de otra. Las que el HTML no nombra no se guardan. Si algo
+    falla no se queda nada guardado.
     """
-    copies = images.adopt(db, account_id, imaging.names_in(html))
-    for old, new in copies.items():
-        html = html.replace(f"/img/{old}", f"/img/{new}")
-    return html
+    try:
+        page, files = imaging.unpack(raw, html_max=html_check.MAX_BYTES,
+                                     most=images.LIMIT)
+    except imaging.PackError as exc:
+        return None, t("designs_" + str(exc), n=images.LIMIT,
+                       mb=imaging.MAX_UPLOAD // (1024 * 1024))
+    try:
+        html = page.decode("utf-8")
+    except UnicodeDecodeError:
+        return None, explain(["not_utf8"])
+
+    used = [name for name in files if in_folder(name).search(html)]
+    missing = sorted(set(FOLDER_REF.findall(html)) - set(files))
+    if missing:
+        return None, t("designs_zip_missing", what=imaging.ZIP_FOLDER + missing[0])
+    free = images.LIMIT - images.count(db, account["_id"])
+    if len(used) > free:
+        return None, t("designs_zip_limit", n=len(used), free=max(free, 0),
+                       limit=images.LIMIT)
+
+    ready = []
+    for name in used:
+        try:
+            ready.append((name, *imaging.shrink(files[name], width=CANVAS_PHOTO_WIDTH)))
+        except imaging.ImageError as exc:
+            return None, name + ": " + t(IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
+                                         kb=imaging.STORED_MAX // 1024)
+    saved = []
+    for name, data, ext, mime in ready:
+        new = images.save(db, account["_id"], data=data, ext=ext, mime=mime)
+        saved.append(new)
+        url = imaging.url_of(new)
+        html = in_folder(name).sub(lambda _: url, html)
+
+    problems = html_check.check(html.encode("utf-8"))
+    if problems:
+        images.remove(db, account["_id"], saved)
+        return None, explain(problems)
+    return html, ""
 
 
 def images_in(found) -> list[str]:
@@ -819,13 +872,14 @@ def canvas_pdf():
 
 @bp.route("/plantillas/lienzo/<raw>/html")
 def canvas_html(raw):
-    """La plantilla guardada en un archivo HTML, lista para volver a cargarla.
+    """La plantilla guardada en un ZIP: su HTML y sus imágenes aparte, lista
+    para pasársela a otra persona y volver a cargarla.
 
-    Es lo mismo que sale al enviar (`sender.Piece`): las imágenes fundidas que
-    se guardaron van **enlazadas** al panel, como en el correo, y no dentro del
-    archivo. Así pesa lo que dice la barra, o menos, y entra en «Cargar
-    plantilla personalizada». Cuando las llevaba dentro, una sola foto ya pasaba
-    de los 102 KB.
+    El HTML es lo mismo que sale al enviar (`sender.Piece`), pero sus imágenes
+    fundidas van en la carpeta `imagenes/` del ZIP y el HTML las nombra por su
+    ruta: al abrirlo en una computadora se ve entero, sin depender del panel, y
+    al cargarlo en otra cuenta entran a esa cuenta (`from_pack()`). Dentro del
+    HTML no pueden ir: una sola foto ya pasaba de los 102 KB.
 
     **Sin nuestro pie**: la baja, la dirección y la marca de agua se ponen al
     enviar, y con el pie dentro saldría dos veces. Es de la plantilla guardada y
@@ -846,15 +900,28 @@ def canvas_html(raw):
         # rehacen como antes del primer correo.
         found = designs.upgrade_canvas(db, account["_id"], found)
     doc = canvas.read(found.get("canvas")) or canvas.blank()
-    urls = [imaging.url_of(one) if one else None for one in found.get("backgrounds") or []]
+    urls, files = [], []
+    for i, one in enumerate(found.get("backgrounds") or [], 1):
+        data = images.data_of(db, account["_id"], one) if one else None
+        path = f"{imaging.ZIP_FOLDER}{i}.{one.rsplit('.', 1)[-1]}" if data else None
+        urls.append(path)
+        if data:
+            files.append((path, data))
     shades = found.get("shades") or []
     g.email_preview = True
     email = render.email_from_body(canvas.to_html(doc, urls, shades),
                                    plan=accounts.plan_of(account),
                                    style=canvas.dark_css(doc, shades), bare=True)
-    return Response(email, mimetype="text/html", headers={
-        "Content-Disposition":
-            f'attachment; filename="{file_name(found.get("name", ""), "html")}"'})
+    name = found.get("name", "")
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as pack:
+        pack.writestr(file_name(name, "html"), email.encode("utf-8"))
+        for path, data in files:
+            # Ya van comprimidas: guardarlas tal cual es más rápido e igual de
+            # liviano.
+            pack.writestr(path, data, compress_type=zipfile.ZIP_STORED)
+    return Response(out.getvalue(), mimetype="application/zip", headers={
+        "Content-Disposition": f'attachment; filename="{file_name(name, "zip")}"'})
 
 
 # Lo que puede ir en el nombre de un archivo sin romper la cabecera ni el disco

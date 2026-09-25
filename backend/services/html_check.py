@@ -23,6 +23,8 @@ from __future__ import annotations
 
 from html.parser import HTMLParser
 
+from config import Config
+
 # Pasado esto Gmail recorta. Es un tope duro, no una recomendación.
 MAX_BYTES = 102 * 1024
 
@@ -64,7 +66,10 @@ class Reader(HTMLParser):
                 # pieza quede aprobada.
                 self.problems.append("external:css")
             elif tag == "img" and name == "src" and value:
-                if not value.lower().startswith(SAFE_SCHEMES):
+                # Las del propio panel entran aunque vayan por http, que es
+                # como corre en desarrollo: en producción ya son https.
+                own = value.startswith(f"{Config.APP_BASE_URL}/img/")
+                if not (own or value.lower().startswith(SAFE_SCHEMES)):
                     self.problems.append("external:img")
 
     def handle_startendtag(self, tag: str, attrs) -> None:

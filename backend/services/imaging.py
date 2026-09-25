@@ -22,6 +22,8 @@ from __future__ import annotations
 
 import re
 import warnings
+import zipfile
+import zlib
 from io import BytesIO
 
 from PIL import Image, ImageOps
@@ -182,6 +184,73 @@ def url_of(name: str) -> str:
 # Una imagen del panel dentro de un HTML: `/img/` y un nombre de los nuestros.
 # Sin el dominio, para que la lea aunque el panel haya cambiado de dirección.
 IN_HTML = re.compile(r"/img/([A-Za-z0-9_-]{16,64}\.(?:jpg|png|gif))")
+
+
+# ------------------------------------------------ el ZIP de una plantilla
+# Lo que baja el editor para pasarle una plantilla a otra persona: el HTML y
+# sus imágenes aparte, en la carpeta `imagenes/`, que el HTML nombra por su
+# ruta. Así se ve entero al abrirlo en una computadora, y al cargarlo en otra
+# cuenta las imágenes entran a esa cuenta, sin depender de la que lo bajó.
+ZIP_FOLDER = "imagenes/"
+# Lo que se descomprime entre todas. Un ZIP pequeño puede inflarse a gigas, así
+# que se cuenta lo que sale y no lo que dice su índice.
+ZIP_UNPACKED_MAX = 4 * MAX_UPLOAD
+# Lo que el sistema de otro deja dentro y no es de la plantilla.
+ZIP_SKIP = ("__MACOSX/",)
+
+
+class PackError(RuntimeError):
+    """El ZIP no se puede usar. Quien llama traduce el motivo a una frase."""
+
+
+def is_zip(raw: bytes) -> bool:
+    return raw.startswith(b"PK\x03\x04")
+
+
+def unpack(raw: bytes, *, html_max: int, most: int) -> tuple[bytes, dict[str, bytes]]:
+    """El HTML de un ZIP y sus imágenes, `{nombre del archivo: bytes}`.
+
+    Se lee en memoria, sin escribir nada a disco, y cada archivo con su tope: se
+    lee hasta un byte más de lo permitido, así que mentir en el índice no sirve.
+    Si todo viene dentro de una carpeta (lo que pasa al comprimir una carpeta),
+    se mira dentro de ella.
+    """
+    try:
+        pack = zipfile.ZipFile(BytesIO(raw))
+        entries = [one for one in pack.infolist() if not one.is_dir()
+                   and not one.filename.startswith(ZIP_SKIP)]
+        tops = {one.filename.split("/", 1)[0] for one in entries}
+        root = ""
+        if len(tops) == 1 and all("/" in one.filename for one in entries):
+            root = tops.pop() + "/"
+        inner = {one.filename[len(root):]: one for one in entries
+                 if one.filename.startswith(root)}
+        pages = [name for name in inner
+                 if "/" not in name and name.lower().endswith((".html", ".htm"))]
+        if len(pages) != 1:
+            raise PackError("zip_no_html")
+        pictures = [name for name in inner if name.startswith(ZIP_FOLDER)
+                    and name[len(ZIP_FOLDER):] and "/" not in name[len(ZIP_FOLDER):]]
+        if len(pictures) > most:
+            raise PackError("zip_too_many")
+        with pack.open(inner[pages[0]]) as opened:
+            html = opened.read(html_max + 1)
+        found: dict[str, bytes] = {}
+        total = 0
+        for name in pictures:
+            with pack.open(inner[name]) as opened:
+                data = opened.read(MAX_UPLOAD + 1)
+            total += len(data)
+            if len(data) > MAX_UPLOAD or total > ZIP_UNPACKED_MAX:
+                raise PackError("zip_heavy")
+            found[name[len(ZIP_FOLDER):]] = data
+        return html, found
+    except PackError:
+        raise
+    except (zipfile.BadZipFile, zipfile.LargeZipFile, zlib.error, EOFError, OSError,
+            RuntimeError, NotImplementedError, ValueError) as exc:
+        # Roto, con contraseña o comprimido de una forma que no se lee.
+        raise PackError("zip_broken") from exc
 
 
 def names_in(html: str) -> list[str]:

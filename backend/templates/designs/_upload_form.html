@@ -13,7 +13,7 @@
      pintar, así que el campo se esconde y la etiqueta lo abre. #}
   <p class="field-label" id="archivo-label">{{ t('designs_file') }}</p>
   <div class="filepick">
-    <input id="archivo" name="archivo" type="file" accept=".html,text/html"
+    <input id="archivo" name="archivo" type="file" accept=".html,.zip,text/html,application/zip"
            class="filepick__input" aria-labelledby="archivo-label" required>
     <label class="btn btn--outline btn--small" for="archivo">{{ t('import_file_choose') }}</label>
     <span class="filepick__name" data-file-name>{{ t('import_file_none') }}</span>
