@@ -38,6 +38,7 @@ from models import campaign as campaigns
 from models import contact as contacts
 from models import design as designs
 from models import event as events
+from models import image as images
 from models import suppression as suppressions
 from services import fields as columns
 from services import canvas, imaging, render, unsubscribe
@@ -289,6 +290,14 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         events.record(db, account_id, kind=events.SENT,
                       campaign_id=campaign["_id"],
                       run_id=campaign.get("run_id"), email=one["email"])
+
+    if sent:
+        # Estos correos van a pedir sus imágenes cada vez que alguien los abra:
+        # desde ahora, borrar o volver a guardar la pieza ya no las borra.
+        # Se leen del correo armado, así vale para las tres clases de pieza, y
+        # en cada tanda, porque la pieza puede cambiar a mitad de un envío.
+        images.mark_sent(db, account_id, imaging.names_in(
+            ready.html(plan=accounts.plan_of(account), unsubscribe_url="")))
 
     position += len(people)
     campaigns.advance(db, account_id, campaign["_id"], position=position,

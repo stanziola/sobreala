@@ -720,6 +720,17 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 #pain-4:focus-visible ~ .trouble__list > li:nth-child(4) .trouble__step {
   outline: 2px solid var(--color-accent); outline-offset: 2px;
 }
+/* Con el ratón encima, uno de los otros tres se asoma: la tarjeta sin su
+   sombra y el círculo con el borde de acento, para que se vea que también se
+   abre. Es menos que el abierto, que lleva la sombra, el círculo lleno y el
+   ganchito, y al abierto no le cambia nada: sus reglas nombran su id y ganan.
+   Solo con ratón: en el teléfono no hay hover y se quedaría pegado al tocar. */
+@media (hover: hover) {
+  .trouble__list > li:hover {
+    --card: var(--color-surface); --edge: var(--color-border);
+    --mark-line: var(--color-accent); --mark-ink: var(--color-accent-strong); --lift: 1.05;
+  }
+}
 
 /* Los colores de las cuatro ilustraciones. Van en clases y no escritos en el
    SVG porque un atributo no puede leer una variable: es lo mismo que se hace

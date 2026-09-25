@@ -214,6 +214,11 @@ def ensure_indexes(db: Database | None = None) -> None:
     # quien recibió la campaña, y ese nombre no se puede repetir.
     db.images.create_index([("name", ASCENDING)], unique=True, name="by_name")
     db.images.create_index([("account_id", ASCENDING)], name="by_account")
+    # Una imagen que salió en un envío y que ya no nombra ninguna pieza: se
+    # borra sola doce meses después del último envío (`images.remove()`). Las
+    # que no llevan `expires_at` no vencen nunca.
+    db.images.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
+                           name="ttl_expires_at")
 
 
 def indexes_ready() -> bool:

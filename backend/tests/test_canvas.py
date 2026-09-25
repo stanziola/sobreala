@@ -1279,3 +1279,86 @@ def test_el_zip_con_mas_de_veinte_imagenes_se_rechaza(client, database, outbox):
     _, respuesta = cargar_zip(client, database, hacer_zip(PAGINA, **muchas))
     assert respuesta.status_code == 200
     assert f"más de {images.LIMIT} imágenes" in respuesta.get_data(as_text=True)
+
+
+# ------------------------------- las imágenes de un correo que ya salió se quedan
+
+def enviada(client, database, monkeypatch):
+    """Una cuenta con un lienzo con foto que ya salió en una campaña.
+    Devuelve (navegador, cuenta, pieza, foto, fundida)."""
+    catch(monkeypatch)
+    browser, account, _ = ready(client, database, howmany=1)
+    raw = foto(800, 600)
+    mia = images.save(database, account["_id"], data=raw, ext="jpg", mime="image/jpeg")
+    fundida = images.save(database, account["_id"], data=raw, ext="jpg",
+                          mime="image/jpeg", kind=images.BACKGROUND)
+    pieza = designs.save_canvas(
+        database, account["_id"], name="Oferta",
+        doc=leer(lienzo(imagen(0, 0, 600, 300, name=mia),
+                        texto(40, 320, w=520, text="Oferta del mes"), h=400)),
+        backgrounds=[fundida, None])
+    make(browser, pieza)
+    send_it(browser, database, account["_id"])
+    return browser, account, pieza, mia, fundida
+
+
+def test_la_imagen_que_salio_no_se_borra_con_la_pieza(client, database, outbox,
+                                                     monkeypatch):
+    from datetime import timedelta
+
+    browser, account, pieza, mia, fundida = enviada(client, database, monkeypatch)
+    # Solo se anota lo que nombra el correo: la fundida, no la foto de origen.
+    assert database.images.find_one({"name": fundida}).get("sent_at")
+    assert not database.images.find_one({"name": mia}).get("sent_at")
+
+    browser.post("/plantillas/borrar", data={"csrf_token": csrf(browser),
+                                             "id": str(pieza)})
+    # Los correos que ya llegaron la siguen viendo, doce meses desde el envío.
+    assert other(client).get(f"/img/{fundida}").status_code == 200
+    retirada = database.images.find_one({"name": fundida})
+    assert retirada["expires_at"] - retirada["sent_at"] == timedelta(days=365)
+    # Ya no es de ninguna pieza: no se puede volver a poner ni gasta de las 20.
+    assert not images.owns(database, account["_id"], fundida)
+    # La foto de origen no salió en ningún correo: se borra como siempre.
+    assert other(client).get(f"/img/{mia}").status_code == 404
+    assert images.count(database, account["_id"]) == 0
+
+
+def test_volver_a_guardar_lo_enviado_retira_las_fundidas_viejas(client, database, outbox,
+                                                               monkeypatch):
+    browser, account, pieza, mia, fundida = enviada(client, database, monkeypatch)
+    doc = lienzo(imagen(0, 0, 600, 300, name=mia),
+                 texto(40, 320, w=520, text="Oferta corregida"), h=400)
+    assert guardar(browser, doc, url=f"/plantillas/lienzo/{pieza}").status_code == 302
+
+    nueva = designs.by_id(database, account["_id"], pieza)["backgrounds"][0]
+    assert nueva and nueva != fundida
+    assert images.owns(database, account["_id"], nueva)
+    # La de antes salió en un correo: se queda retirada, no se borra.
+    assert database.images.find_one({"name": fundida}).get("expires_at")
+    assert other(client).get(f"/img/{fundida}").status_code == 200
+
+
+def test_un_html_que_nombra_una_retirada_la_deja_fija(client, database, outbox):
+    from services import imaging
+
+    browser = inside(client)
+    with_plan(database, "negocio")
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    nombre = images.save(database, cuenta["_id"], data=foto(400, 300), ext="jpg",
+                         mime="image/jpeg", kind=images.BACKGROUND)
+    images.mark_sent(database, cuenta["_id"], [nombre])
+    images.remove(database, cuenta["_id"], [nombre])
+    assert not images.owns(database, cuenta["_id"], nombre)
+
+    html = (f'<html><body><h1>Hola</h1><img src="{imaging.url_of(nombre)}" alt="x">'
+            '</body></html>').encode("utf-8")
+    assert subir(browser, html, name="La vuelve a usar").status_code == 302
+    # Vuelve a ser de una pieza: ya no vence.
+    assert "expires_at" not in database.images.find_one({"name": nombre})
+    assert images.owns(database, cuenta["_id"], nombre)
+
+
+def test_las_retiradas_vencen_solas(database):
+    indice = database.images.index_information()["ttl_expires_at"]
+    assert indice["key"] == [("expires_at", 1)] and indice["expireAfterSeconds"] == 0

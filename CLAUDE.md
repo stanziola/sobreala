@@ -802,7 +802,9 @@ imágenes dentro de la respuesta para no guardar nada por mirar.
 imágenes de los grupos no** (`kind: "background"` en `images`, el nombre es de
 cuando eran fondos): las hace el sistema. Se guardan en `backgrounds` y sus
 colores en `shades`, en el orden de `groups()`. Al volver a guardar, las viejas
-se borran si ninguna otra pieza las nombra, que es lo que pasa con una copia.
+se borran si ninguna otra pieza las nombra, que es lo que pasa con una copia,
+**salvo las que ya salieron en un envío**, que se quedan retiradas (ver
+`images`).
 
 **La foto se recorta sin tocar el archivo subido.** «Recortar» abre la foto
 entera con un recuadro encima: lo de dentro es lo que se ve. Se guarda como
@@ -1065,6 +1067,8 @@ acaba de tomar.
 - **Borrar la pieza borra sus imágenes**, y hay un tope de 20 por cuenta. Ese
   tope es también lo que acota lo que puede quedar huérfano: una imagen subida
   y nunca guardada en ninguna pieza no la borra nadie.
+- **Salvo las que ya salieron en un envío**: esas se quedan hasta doce meses
+  después del último envío que las llevó. Ver `images`, abajo.
 
 ### `images`
 Una imagen de una plantilla, ya achicada, con la cuenta de quien la subió y su
@@ -1080,6 +1084,29 @@ que recibió la campaña. Va en su propio blueprint (`blueprints/media/`) y no e
 el de plantillas, que exige sesión y devuelve los administradores a `/admin`. La
 respuesta se puede guardar un año: cambiar una imagen es subir otra, con otro
 nombre, así que lo cacheado no puede quedar viejo.
+
+**Una imagen que salió en un envío no se borra con su pieza.** Un correo que ya
+llegó pide sus imágenes cada vez que alguien lo abre, meses después, y antes se
+quedaba sin ellas en tres casos: al borrar la plantilla, al volver a guardar un
+lienzo (cada guardado funde imágenes nuevas y borraba las de antes, así que
+corregir una coma después de enviar ya las rompía) y al rehacer una por
+diapositivas. Ahora:
+
+- **El envío anota lo que sale.** Cada tanda que manda algo escribe `sent_at`
+  en las imágenes que nombra el correo armado (`images.mark_sent()`, desde
+  `sender.run()`). Se leen del correo y no de la pieza, así valen las tres
+  clases de pieza, y en cada tanda, porque la pieza puede cambiar a mitad.
+- **Borrar pasa a retirar** (`images.remove()`, que es por donde pasan los tres
+  casos): la que tiene `sent_at` no se borra, se le pone `expires_at` a **doce
+  meses del último envío**, como el detalle de `events`, y la borra Mongo sola
+  con su índice TTL. La que nunca salió se borra como siempre, así que guardar
+  sin enviar no deja nada de más: solo se guardan las versiones que salieron.
+- **Una retirada ya no es de nadie**: `owns()` y `count()` no la cuentan, así
+  que no gasta de las 20 ni se puede poner en otra pieza, pero `/img/` la sigue
+  sirviendo, porque la busca por nombre.
+- **Si un HTML cargado la vuelve a nombrar, deja de estar retirada**
+  (`images.keep()` al cargar y al guardar un HTML): si no, esa pieza la
+  perdería el día que venciera.
 
 ### `campaigns`
 **Un documento por campaña, no por envío**: el asunto, la pieza, la lista, la
@@ -2008,6 +2035,12 @@ cuenta atrás**: hubo una barra bajo el punto abierto y se quitó.
 `--mark-bg`, `--tick`…), de modo que una sola lista de cuatro selectores pinta a
 la vez la tarjeta, el círculo, el número y el ganchito. Sin eso harían falta una
 lista por declaración.
+
+**Con el ratón encima, los otros tres se asoman**, para que se vea que también
+se abren: la tarjeta sin su sombra y el círculo con el borde de acento. Es menos
+que el abierto (sombra, círculo lleno y ganchito), y al abierto no le cambia
+nada, porque sus reglas nombran su id y ganan. Va bajo `@media (hover: hover)`:
+en el teléfono no hay hover y se quedaría pegado al tocar.
 
 **Nada salta de alto.** Las cuatro ilustraciones comparten una celda de rejilla
 y los cuatro párrafos otra, así que el bloque mide siempre lo que el más largo;

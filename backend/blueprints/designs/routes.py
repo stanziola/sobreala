@@ -196,6 +196,9 @@ def upload():
                 new_id = designs.save(db, account["_id"],
                                       name=name or archivo.filename,
                                       html=html, uploaded_by=account["_id"])
+                # Si nombra alguna retirada de la cuenta, vuelve a ser de una
+                # pieza y ya no vence.
+                images.keep(db, account["_id"], imaging.names_in(html))
                 # Directo al editor: lo siguiente que se quiere es verla y
                 # ponerle las columnas.
                 return redirect(url_for("designs.edit_html", raw=new_id,
@@ -279,6 +282,7 @@ def edit_html(raw):
             else:
                 designs.update_html(db, account["_id"], found["_id"], name=name,
                                     html=html)
+                images.keep(db, account["_id"], imaging.names_in(html))
                 return redirect(url_for("designs.index", cambiado=1))
 
     return render_template(
@@ -353,12 +357,14 @@ def html_images(db, account_id, html: str) -> list[dict]:
             state = "inside"
         else:
             names = imaging.names_in(src)
+            found = images.by_name(db, names[0]) if names else None
             if not names:
                 state = "outside"
-            elif images.owns(db, account_id, names[0]):
-                state = "ok"
-            elif images.by_name(db, names[0]) is None:
+            elif found is None:
                 state = "gone"
+            elif found["account_id"] == account_id:
+                # También la retirada: guardar este HTML la vuelve a dejar fija.
+                state = "ok"
             else:
                 state = "other"
         # Lo que se enseña: una dirección cortada, que un `data:` son megas.
