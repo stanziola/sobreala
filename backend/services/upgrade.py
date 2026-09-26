@@ -96,6 +96,15 @@ def quote(account: dict[str, Any] | None, plan: str, cycle: str,
         return None
     discount = credit(account, when)
     total = max(Decimal("0.00"), price - discount["amount"]).quantize(CENT)
+    # El desglose que se enseña: el plan y el descuento sin ITBMS, y el ITBMS
+    # aparte, que se suma y da el total. El ITBMS sale del total (es lo que se
+    # cobra), el plan sin él es su precio entre 1.07, y el descuento es lo que
+    # falta para que las filas sumen exacto al centavo.
+    tax = plans.itbms_in(total)
+    if discount["amount"] > 0:
+        net_price = plans.without_itbms(price)
+        net_credit = net_price - (total - tax)
+    else:
+        net_price, net_credit = total - tax, Decimal("0.00")
     return {"price": price.quantize(CENT), "credit": discount, "total": total,
-            # El ITBMS que ya va dentro del total: los precios lo incluyen.
-            "tax": plans.itbms_in(total)}
+            "tax": tax, "net_price": net_price, "net_credit": net_credit}

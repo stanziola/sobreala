@@ -184,6 +184,12 @@ def itbms_in(total) -> Decimal:
     return (total - total / (1 + ITBMS)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
+def without_itbms(amount) -> Decimal:
+    """Un precio con ITBMS, sin él: $55 son $51.40 más su impuesto."""
+    amount = Decimal(str(amount))
+    return (amount / (1 + ITBMS)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
 def tag_limit(plan: str | None) -> int:
     """Cuántas etiquetas caben en ese plan, de docs/pricing.md.
 

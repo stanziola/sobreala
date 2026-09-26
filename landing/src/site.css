@@ -1066,18 +1066,21 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
   max-width: 140px; margin-left: 0; padding: 2px 5px; opacity: 1;
 }
 
-/* La fila de abajo va sobre el mismo azul que el resto del pie, y lo único que
-   la separa es una línea fina de lado a lado, fuera del `shell`. Hubo una
-   franja gris para que un logo azul oscuro se leyera encima, y se quitó. */
-.site-footer__bottom { margin-top: clamp(28px, 5vw, 44px); border-top: 1px solid var(--color-footer-edge); }
+/* La fila de abajo, la de los pagos, va de lado a lado y fuera del `shell`, en
+   el color de la página: blanca de día y casi negra de noche, para que los
+   logos a color descansen sobre ella y no sobre el azul del pie. */
+.site-footer__bottom {
+  margin-top: clamp(28px, 5vw, 44px); border-top: 1px solid var(--color-footer-edge);
+  background: var(--color-page);
+}
 .site-footer__legal {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
   padding-block: 16px;
-  font-size: .88rem; color: var(--color-on-dark-soft);
+  font-size: .88rem; color: var(--color-ink-soft);
 }
 .payments { display: flex; align-items: center; gap: 12px; }
 .payments__label { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
-/* A color, como vienen en su kit, y sin fondo propio (así se decidió):
-   Mastercard se lee bien sobre el azul del pie; PayPal, Visa y Yappy, que son
-   azules, con poco contraste. */
+/* A color, como vienen en su kit, y sin fondo propio: sobre el blanco se leen
+   todos; de noche, sobre el negro, PayPal, Visa y Yappy, que son azules, con
+   poco contraste (así se decidió). */
 .payments__logo { height: 28px; width: auto; }

@@ -1997,17 +1997,25 @@ barra de Estadísticas. Un correo enviado entre crear el intento y pagar no
 cambia el descuento ya calculado.
 
 **`/contratar/<plan>` es un resumen, no una elección.** Llega con el ciclo que
-se eligió en /planes (`?ciclo=anual`) y enseña el plan, el descuento con sus
-correos, el **total a pagar ahora** y, debajo, cuánto de ese total es **ITBMS**
-(«Incluye ITBMS (7%)»: los precios ya lo llevan dentro; la tasa es
-`plans.ITBMS` y la cuenta `plans.itbms_in()`); después, un solo botón «Pagar
-$X», con los métodos de pago encima; el otro ciclo queda a un enlace si también
-se puede. **Cada método lleva sus logos a color y ninguna descripción**:
-PayPal; Visa y Mastercard en la tarjeta; Yappy en el que dice «pronto»
-(`PAY_LOGOS` en las rutas, `_pay_logos.html`, y los archivos los copia
-`build_assets.py` de `brand/payments/` a `static/img/payments/`). De noche van
-sobre una pastilla blanca, porque sobre el gris oscuro los azules no se leen.
-Debajo, una sola frase: «Panamails nunca guarda tus datos de pago.» Del cliente
+se eligió en /planes (`?ciclo=anual`) y enseña un desglose **que suma**: el
+plan y el descuento con sus correos, **sin ITBMS**; la fila «ITBMS (7%)»; y al
+final el **total a pagar ahora**, que es lo que se cobra y lleva el ITBMS
+dentro, como todos los precios. El ITBMS sale del total (`plans.itbms_in()`),
+el plan sin él es su precio entre 1.07 (`plans.without_itbms()`) y el descuento
+es la diferencia, así las filas cuadran al centavo: Negocio, $23.36 + $1.64 =
+$25.00; de Negocio a Empresa con 10,000 correos sin usar, $51.40 − $15.58 +
+$2.51 = $38.33 (`upgrade.quote()`). La tasa es `plans.ITBMS`. Después, un solo
+botón «Pagar $X», con los métodos de pago encima; el otro ciclo queda a un
+enlace si también se puede. **Cada método son sus logos a color, sin título,
+sin descripción y sin fondo propio**: PayPal; Visa y Mastercard en la tarjeta;
+Yappy en el que dice «pronto» (`PAY_LOGOS` en las rutas, `_pay_logos.html`, y
+los archivos los copia `build_assets.py` de `brand/payments/` a
+`static/img/payments/`). El nombre del método va en el texto alternativo de sus
+logos y, escondido, en su «Usar este», para que un lector de pantalla no diga
+tres veces «Usar este» sin decir de qué. De noche descansan sobre la tarjeta
+oscura tal cual: hubo una pastilla blanca y se quitó, sabiendo que PayPal, Visa
+y Yappy, que son azules, ahí se leen poco. Debajo, una sola frase: «Panamails
+nunca guarda tus datos de pago.» Del cliente
 de fuera de Panamá no se sabe el país (el panel no guarda sus datos de
 facturación), así que el desglose dice ITBMS para todos y la factura, que se
 hace a mano, es la que va sin él. Si el ciclo
@@ -2016,12 +2024,14 @@ el que sí.
 
 **Al volver de un pago cobrado se aterriza en su recibo**
 (`/configuracion/pagos/recibo/<id>`, solo del dueño y solo cobrado): el número
-de pago, el plan y el ciclo, el método, la fecha y hora, el descuento si hubo y
-el total pagado, con su ITBMS debajo. El círculo de arriba gira como si
+de pago, el plan y el ciclo, el método, la fecha y hora y, de cifras, **solo el
+total pagado**: ni el ITBMS ni el descuento, que en el resumen va sin ITBMS y
+serían dos cifras distintas para lo mismo. El círculo de arriba gira como si
 cargara, se cierra y dibuja el ganchito, y se queda quieto, **en verde**
 (`--color-success`, más claro de noche); es solo CSS, y con «reducir
 movimiento» sale ya terminado. Recargar la vuelta vuelve a enseñar el mismo recibo, sin cobrar ni
-alargar nada. El comprobante por correo dice también lo cobrado y el descuento. Pagar **no** habilita el envío: eso es la otra puerta, y el
+alargar nada. El comprobante por correo dice lo cobrado y el descuento, este
+con su ITBMS dentro. Pagar **no** habilita el envío: eso es la otra puerta, y el
 comprobante que sale lo dice para que no se descubra al intentar enviar.
 
 Del cobro salen **dos correos**: el comprobante al cliente y un aviso a quien
@@ -2282,14 +2292,16 @@ Las reglas del carrusel nombran las cinco por su id (`#tour-1` … `#tour-5`), q
 es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otras,
 esas listas de `landing/src/site.css` crecen con ellas.
 
-**Los logos de pago van a color, directo sobre el azul del pie**: Yappy,
-PayPal, Visa y Mastercard (septiembre de 2026). Se decidió así sabiendo que
-PayPal, Visa y Yappy, que son azules, tienen poco contraste sobre ese azul (el
-PayPal oscuro da 2:1, y sus normas de marca piden la versión blanca en fondos
-oscuros); hasta entonces iban los dos que había en blanco. La fila de abajo va
-de lado a lado, fuera del `shell`, y lo único que la separa del resto del pie es
-una línea fina (`--color-footer-edge`, el mismo valor en los dos temas porque el
-pie es azul en los dos). Qué variante del kit usa el sitio lo dice
+**Los logos de pago van a color, en una franja del color de la página**: Yappy,
+PayPal, Visa y Mastercard (septiembre de 2026). La fila de abajo del pie, la de
+los pagos, va de lado a lado, fuera del `shell`, y es **blanca de día y casi
+negra de noche** (`--color-page`, con la letra en `--color-ink-soft`); el resto
+del pie sigue azul, y una línea fina las separa (`--color-footer-edge`). Los
+logos fueron un tiempo directo sobre el azul, donde PayPal, Visa y Yappy, que
+son azules, apenas se leían (el PayPal oscuro daba 2:1); sobre el
+blanco se leen todos, y de noche, sobre el negro, esos tres quedan con poco
+contraste, y así se decidió. Antes de eso iban los dos que había, en blanco.
+Qué variante del kit usa el sitio lo dice
 `PAYMENT_LOGOS` en `landing/build_site.py`, con su nombre bien escrito para el
 texto alternativo en `PAYMENT_LABELS`; **ningún logo lleva fondo propio**. **Visa y Mastercard
 traen su margen de respeto dentro del SVG**, y a 28 px de alto el dibujo quedaba

@@ -1,7 +1,6 @@
 {#- Los logos de un método de pago: PayPal, Visa y Mastercard en la tarjeta, y
-    Yappy. Los copia build_assets.py de brand/payments/. El de PayPal y el de
-    Yappy van sin texto alternativo, porque el nombre del método ya lo dice; los
-    de la tarjeta dicen qué tarjetas entran. -#}
+    Yappy. Los copia build_assets.py de brand/payments/. Cada uno lleva su
+    nombre en el texto alternativo: el método ya no tiene título. -#}
 {% if pay_logos.get(name) %}
 <p class="pay-logos">
   {%- for file, label in pay_logos[name] %}

@@ -2101,9 +2101,9 @@ def finish_card():
 # Los logos de cada método de pago en la pantalla de contratar: el archivo que
 # copia build_assets.py y su texto alternativo.
 PAY_LOGOS = {
-    payments.PAYPAL: [("paypal.png", "")],
+    payments.PAYPAL: [("paypal.png", "PayPal")],
     payments.CARD: [("visa.svg", "Visa"), ("mastercard.svg", "Mastercard")],
-    payments.YAPPY: [("yappy.svg", "")],
+    payments.YAPPY: [("yappy.svg", "Yappy")],
 }
 
 
@@ -2132,14 +2132,10 @@ def receipt(raw):
     paid = payments.by_id(get_db(), payment_id, account["_id"])
     if paid is None or paid.get("status") != payments.COMPLETED:
         abort(404)
-    credit = paid.get("credit") or ""
     return render_template(
         "receipt.html", paid=paid, plan_name=plans.PLANS.get(
             paid.get("plan", ""), {}).get("name", paid.get("plan", "")),
         number=str(paid["_id"])[-8:].upper(),
-        credit=credit if credit and credit != "0.00" else "",
-        tax=f"{plans.itbms_in(paid.get('amount') or '0'):.2f}",
-        itbms_rate=itbms_rate(),
         currency=paid.get("currency") or plans.CURRENCY)
 
 

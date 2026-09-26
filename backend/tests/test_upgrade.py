@@ -102,6 +102,8 @@ def test_mejorar_cobra_con_descuento_empieza_hoy_y_deja_recibo(client, database,
     resumen = browser.get("/contratar/empresa").get_data(as_text=True)
     assert "Descuento por los correos sin usar" in resumen
     assert "10,000 de 15,000" in resumen and "Pagar $38.33" in resumen
+    # Sin ITBMS el plan y el descuento, el ITBMS aparte, y suman el total.
+    assert "$51.40" in resumen and "−$15.58" in resumen and "$2.51" in resumen
 
     buy(browser, plan="empresa")
     # Lo que se le pide a PayPal ya lleva el descuento, y queda en el intento.
@@ -120,7 +122,8 @@ def test_mejorar_cobra_con_descuento_empieza_hoy_y_deja_recibo(client, database,
 
     recibo = browser.get(recibo_url).get_data(as_text=True)
     assert "Tu pago se completó" in recibo
-    assert "$38.33" in recibo and "−$16.67" in recibo
+    # De cifras, solo el total.
+    assert "$38.33" in recibo and "Descuento" not in recibo and "ITBMS" not in recibo
     assert "receipt__tick" in recibo and "Empresa" in recibo
     # De otra cuenta no se abre.
     otra = inside(client, email="beto@ejemplo.com")
@@ -173,22 +176,29 @@ def test_el_pago_trae_el_itbms_los_logos_y_la_frase(client, database, outbox, mo
     browser = inside(client)
     confirm(database)
     pantalla = browser.get("/contratar/negocio").get_data(as_text=True)
-    # El ITBMS que ya va dentro de los $25.
-    assert "Incluye ITBMS (7%)" in pantalla and "$1.64" in pantalla
-    # Los logos y ninguna descripción de los métodos.
-    assert "img/payments/paypal.png" in pantalla
+    # El plan sin ITBMS, el ITBMS encima del total, y el total al final:
+    # $23.36 + $1.64 = $25.00.
+    plan = pantalla.index("$23.36")
+    itbms = pantalla.index("ITBMS (7%)")
+    total = pantalla.index("Total a pagar ahora")
+    assert plan < itbms < total and "$1.64" in pantalla and "$25.00" in pantalla
+    # Cada método son sus logos, con su nombre en el texto alternativo, sin
+    # título ni descripción.
+    assert 'alt="PayPal"' in pantalla and 'alt="Visa"' in pantalla
+    assert "Tarjeta de crédito o débito" not in pantalla.split("Usar este")[0]
     assert "Se paga en la página de PayPal" not in pantalla
     assert "Panamails nunca guarda tus datos de pago." in pantalla
     assert "el pago se hace en la página del proveedor" not in pantalla
 
 
-def test_el_recibo_trae_el_itbms(client, database, outbox, monkeypatch):
+def test_el_recibo_solo_trae_el_total(client, database, outbox, monkeypatch):
     fake_paypal(monkeypatch)
     browser = inside(client)
     confirm(database)
     buy(browser, plan="negocio")
     recibo = browser.get(come_back(browser).headers["Location"]).get_data(as_text=True)
-    assert "Incluye ITBMS (7%)" in recibo and "$1.64" in recibo
+    assert "Total pagado" in recibo and "$25.00" in recibo
+    assert "ITBMS" not in recibo and "$1.64" not in recibo
 
 
 def test_el_pie_trae_los_cuatro_logos_a_color():

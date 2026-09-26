@@ -31,19 +31,10 @@
       <dt>{{ t('receipt_when') }}</dt>
       <dd>{{ paid.completed_at|at_moment }}</dd>
     </div>
-    {% if credit %}
-    <div class="summary__row summary__row--credit">
-      <dt>{{ t('receipt_credit') }}</dt>
-      <dd>−${{ credit }}</dd>
-    </div>
-    {% endif %}
+    {#- De cifras, solo el total: el desglose con el ITBMS se vio al pagar. -#}
     <div class="summary__row summary__row--total">
       <dt>{{ t('receipt_total') }}</dt>
       <dd>${{ paid.amount }}</dd>
-    </div>
-    <div class="summary__row summary__row--tax">
-      <dt>{{ t('pay_summary_tax', rate=itbms_rate) }}</dt>
-      <dd>${{ tax }}</dd>
     </div>
   </dl>
 

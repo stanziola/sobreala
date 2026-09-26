@@ -424,8 +424,9 @@ def test_contratar_ensena_con_que_se_puede_pagar_y_con_que_todavia_no(
     pantalla = browser.get("/contratar/basico").get_data(as_text=True)
 
     assert 'value="paypal"' in pantalla
-    assert "Tarjeta de crédito o débito" in pantalla
-    assert "Yappy" in pantalla
+    # Cada método son sus logos: la tarjeta, Visa y Mastercard.
+    assert 'alt="Visa"' in pantalla and 'alt="Mastercard"' in pantalla
+    assert 'alt="Yappy"' in pantalla
     # Y los que no cobran no son un control que se pueda mandar.
     assert 'value="card"' not in pantalla
     assert 'value="yappy"' not in pantalla

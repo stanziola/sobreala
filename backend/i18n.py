@@ -520,7 +520,7 @@ TEXTS = {
     "pay_summary_credit_months": "{unused} de {emails} correos de este mes, y "
                                  "{months} meses que te quedaban",
     "pay_summary_total": "Total a pagar ahora",
-    "pay_summary_tax": "Incluye ITBMS ({rate}%)",
+    "pay_summary_tax": "ITBMS ({rate}%)",
     "pay_summary_switch_yearly": "Prefiero pagar un año: {amount}",
     "pay_summary_switch_monthly": "Prefiero pagar un mes: {amount}",
     "pay_summary_upgrade": "Al mejorar, tu plan nuevo empieza hoy con su mes "
@@ -533,7 +533,6 @@ TEXTS = {
     "receipt_plan": "Plan",
     "receipt_method": "Método de pago",
     "receipt_when": "Fecha y hora",
-    "receipt_credit": "Descuento por correos sin usar",
     "receipt_total": "Total pagado",
     "receipt_button": "Ir a mi cuenta",
     "pay_running": "Ya tienes este plan hasta el {when}. Cuando venza lo "
