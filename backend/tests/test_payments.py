@@ -236,24 +236,33 @@ def test_volver_dos_veces_no_alarga_el_periodo(client, database, outbox,
     assert database.payments.count_documents({"status": payments.COMPLETED}) == 1
 
 
-def test_renovar_el_mismo_plan_suma_al_final(client, database, outbox,
-                                             monkeypatch):
-    """Pagar antes de tiempo no tira los días que quedaban."""
+def test_el_mismo_plan_se_vuelve_a_comprar_cuando_vence(client, database, outbox,
+                                                        monkeypatch):
+    """Vigente no se paga otra vez; vencido sí, y cuenta desde hoy."""
+    from datetime import timedelta
+
     fake_paypal(monkeypatch)
     browser = inside(client)
-    confirm(database)
+    cuenta = confirm(database)
     buy(browser)
     come_back(browser)
-    primero = accounts.by_email(database, "ana@ejemplo.com")["plan_until"]
 
-    # Una segunda compra, con su propia orden.
+    # Vigente: ni la pantalla ofrece pagar ni la ruta crea otro pago.
+    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    assert "Cuando venza lo vuelves a contratar" in pantalla
+    assert 'action="/configuracion/pagos/contratar"' not in pantalla
+    assert buy(browser).headers["Location"].endswith("/contratar/basico")
+    assert database.payments.count_documents({"account_id": cuenta["_id"]}) == 1
+
+    # Vencido: se compra como la primera vez.
+    database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {
+        "plan_until": accounts.now() - timedelta(days=1)}})
     monkeypatch.setattr(paypal, "create",
                         lambda **k: ("ORDEN-2", "https://sandbox.paypal.com/x"))
-    buy(browser)
+    assert buy(browser).headers["Location"].startswith("https://sandbox.paypal.com/")
     come_back(browser, order="ORDEN-2")
-
-    segundo = accounts.by_email(database, "ana@ejemplo.com")["plan_until"]
-    assert segundo > primero
+    nuevo = accounts.by_email(database, "ana@ejemplo.com")["plan_until"]
+    assert nuevo > accounts.now() + timedelta(days=25)
 
 
 # ------------------------------------------------------------- la pantalla
@@ -530,18 +539,17 @@ def test_con_un_plan_no_se_baja_a_uno_menor(client, database, outbox,
     assert database.payments.count_documents({}) == 0
 
 
-def test_renovar_el_mismo_plan_sigue_pudiendo(client, database, outbox,
-                                              monkeypatch):
-    """Comprar el que ya se tiene es renovarlo, y suma al final."""
+def test_el_plan_vigente_no_se_renueva_antes_de_tiempo(client, database, outbox,
+                                                        monkeypatch):
+    """Comprar el que ya se tiene no se deja: se vuelve a comprar al vencer."""
     fake_paypal(monkeypatch)
     browser = inside(client)
     cuenta = confirm(database)
     accounts.set_plan(database, cuenta["_id"], "negocio")
 
-    assert 'action="/configuracion/pagos/contratar"' in \
+    assert 'action="/configuracion/pagos/contratar"' not in \
         browser.get("/contratar/negocio").get_data(as_text=True)
-    assert buy(browser, plan="negocio").headers["Location"].startswith(
-        "https://sandbox.paypal.com/")
+    assert buy(browser, plan="negocio").headers["Location"].endswith("/contratar/negocio")
 
 
 def test_subir_de_plan_sigue_pudiendo(client, database, outbox, monkeypatch):

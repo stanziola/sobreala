@@ -658,6 +658,16 @@ def plan_until(account: dict[str, Any] | None):
     return (account or {}).get("plan_until")
 
 
+def current_plan(account: dict[str, Any] | None) -> str | None:
+    """El plan mientras está vigente: con su fecha pasada ya no cuenta, y se
+    puede volver a contratar. Sin fecha cuenta como vigente, como siempre."""
+    plan = plan_of(account)
+    until = plan_until(account)
+    if plan and until is not None and until <= now():
+        return None
+    return plan
+
+
 def mark_plan_notice(db, account_id, which: str, until) -> None:
     """Dejar escrito **para qué vencimiento** se avisó ya.
 

@@ -511,8 +511,10 @@ TEXTS = {
 
     # --- pagos -------------------------------------------------------------
     "pay_checkout_title": "Contratar {plan}",
-    "pay_renewing": "Ya tienes este plan hasta {when}. Lo que pagues ahora se "
-                    "suma al final, no reemplaza lo que te queda.",
+    "pay_running": "Ya tienes este plan hasta el {when}. Cuando venza lo "
+                   "vuelves a contratar aquí.",
+    "pay_running_undated": "Ya tienes este plan. Cuando venza lo vuelves a "
+                           "contratar aquí.",
     "pay_back_to_plans": "Ver todos los planes",
     "pay_downgrade": "Ya tienes un plan mayor que este. Bajar de plan no se "
                      "hace desde aquí: escríbenos y lo vemos contigo, porque "
@@ -1927,10 +1929,9 @@ TEXTS = {
 
     "mail_plan_expiring_subject": "Tu plan {plan} vence el {until}",
     "mail_plan_expiring_heading": "A tu plan le quedan {days} días",
-    "mail_plan_expiring_body": "Tu plan {plan} vence el {until}. Si lo renuevas "
-                               "antes, los días que te quedan se suman al final "
-                               "y no pierdes ninguno.",
-    "mail_plan_expiring_button": "Renovar mi plan",
+    "mail_plan_expiring_body": "Tu plan {plan} vence el {until}. Cuando venza "
+                               "lo vuelves a contratar desde Planes, y hasta "
+                               "entonces sigue funcionando igual.",
 
     "mail_plan_expired_subject": "Tu plan {plan} venció",
     "mail_plan_expired_heading": "Se venció tu plan {plan}",

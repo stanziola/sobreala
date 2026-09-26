@@ -161,11 +161,9 @@ def expiring(account, *, plan: str, until, days: int) -> bool:
         subject=t("mail_plan_expiring_subject", plan=name,
                   until=on_date(until, clock.for_account(account))),
         heading=t("mail_plan_expiring_heading", days=days),
+        # Sin botón: el mismo plan no se paga antes de que venza.
         paragraphs=[t("mail_plan_expiring_body", plan=name,
                       until=on_date(until, clock.for_account(account)))],
-        button={"href": f"{Config.APP_BASE_URL}"
-                        f"{url_for('auth.checkout', plan=plan)}",
-                "label": t("mail_plan_expiring_button")},
         foot=switch_off_hint())
 
 

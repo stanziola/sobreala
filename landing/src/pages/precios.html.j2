@@ -37,8 +37,8 @@
           data-plan
           data-monthly="{{ plan.monthly_value }}"
           data-yearly-monthly="{{ plan.yearly_monthly }}"
-          data-note-monthly="{{ page.cycle.monthly_note.format(yearly=plan.yearly, off=pricing_data.yearly_off) }}"
-          data-note-yearly="{{ page.cycle.yearly_note.format(yearly=plan.yearly) }}">
+          data-note-monthly="{{ page.cycle.monthly_note.format(total=plan.monthly) }}"
+          data-note-yearly="{{ page.cycle.yearly_note.format(total=plan.yearly) }}">
         {% if plan.get('badge') %}
         <span class="plan__badge">
           <svg class="icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"
@@ -52,7 +52,7 @@
           <span class="plan__amount"><span class="plan__currency">$</span><span data-price>{{ plan.monthly_value }}</span></span>
           <span class="plan__period">{{ page.cycle.per_month }}</span>
         </p>
-        <p class="plan__yearly" data-note>{{ page.cycle.monthly_note.format(yearly=plan.yearly, off=pricing_data.yearly_off) }}</p>
+        <p class="plan__yearly" data-note>{{ page.cycle.monthly_note.format(total=plan.monthly) }}</p>
         <ul class="plan__list">
           {% for h in plan.highlights %}
           <li>
@@ -73,7 +73,6 @@
         <a class="btn {% if plan.featured %}btn--primary{% else %}btn--outline{% endif %} btn--block"
            data-hide-for-admin data-plan-rank="{{ loop.index0 }}"
            data-label-upgrade="{{ plan_buttons.upgrade.format(name=plan.name) }}"
-           data-label-renew="{{ plan_buttons.renew.format(name=plan.name) }}"
            data-label-covered="{{ plan_buttons.covered }}"
            data-buy="{{ panel.base_url }}/contratar/{{ plan.key }}"
            href="{{ panel.base_url }}/contratar/{{ plan.key }}">{{ plan_buttons.start.format(name=plan.name) }}</a>

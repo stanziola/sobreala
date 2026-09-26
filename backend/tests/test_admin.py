@@ -825,3 +825,10 @@ def test_la_migaja_del_sitio_publico_dice_el_rol(client, database, outbox,
     accounts.set_plan(database, cliente["_id"], "negocio")
     navegador.get("/panel")
     assert navegador.get_cookie("pm_in").value == "1:negocio"
+
+    # Vencido ya no va: es cuando se vuelve a comprar desde /planes.
+    from datetime import timedelta
+    database.accounts.update_one({"_id": cliente["_id"]}, {"$set": {
+        "plan_until": accounts.now() - timedelta(days=1)}})
+    navegador.get("/panel")
+    assert navegador.get_cookie("pm_in").value == "1"

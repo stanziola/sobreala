@@ -218,20 +218,22 @@ def test_contratar_manda_el_comprobante_y_avisa_a_quien_administra(
     assert "falta habilitarle" in aviso["text"]
 
 
-def test_renovar_no_dice_lo_mismo_que_contratar(client, database, outbox,
-                                                monkeypatch):
+def test_volver_a_comprar_al_vencer_dice_lo_mismo_que_contratar(
+        client, database, outbox, monkeypatch):
+    """Ya no se renueva antes de tiempo: comprar el mismo plan vencido es
+    contratarlo otra vez."""
     pedido = fake_paypal(monkeypatch)
     browser = inside(client)
-    confirm(database)
+    cuenta = confirm(database)
 
     pay(browser, pedido)
+    database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {
+        "plan_until": accounts.now() - timedelta(days=1)}})
     pay(browser, pedido)
 
     dichos = [one["text"] for one in sent(database, mail_log.PLAN_PAID)]
     assert len(dichos) == 2
-    assert "Ya tienes el plan" in dichos[0]
-    assert "sigue corriendo" in dichos[1]
-    assert "no se pierden" in dichos[1]
+    assert all("Ya tienes el plan" in one for one in dichos)
 
 
 def test_apagar_pagos_y_plan_apaga_el_comprobante(client, database, outbox,
@@ -259,6 +261,9 @@ def test_al_entrar_al_panel_avisa_de_lo_que_esta_por_vencerse(
     browser.get("/panel")
     aviso = only(database, mail_log.PLAN_EXPIRING)
     assert "vence" in aviso["subject"]
+    # Sin botón de renovar: el mismo plan se contrata otra vez al vencer.
+    assert "/contratar/" not in aviso["html"]
+    assert "Renovar" not in aviso["html"]
 
     # Y recargar no manda un segundo correo.
     browser.get("/panel")

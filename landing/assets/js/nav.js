@@ -249,11 +249,11 @@
       function (el) { el.hidden = true; });
   }
 
-  // Con un plan contratado, los de más abajo en la escalera se apagan: bajar de
+  // Con un plan vigente, los de más abajo en la escalera se apagan: bajar de
   // plan no se hace por la web, porque lo que ya se pagó no se devuelve y hay
-  // que ajustarlo hablando. El del plan que se tiene se queda encendido, que es
-  // como se renueva. El servidor lo comprueba igual: esto es un aviso, no una
-  // puerta.
+  // que ajustarlo hablando. El del plan que se tiene también: se vuelve a
+  // comprar cuando vence, no antes. La migaja solo lleva el plan mientras está
+  // vigente. El servidor lo comprueba igual: esto es un aviso, no una puerta.
   if (!admin && plan) {
     var mio = -1;
     Array.prototype.forEach.call(document.querySelectorAll("[data-plan-rank]"),
@@ -266,15 +266,12 @@
       Array.prototype.forEach.call(document.querySelectorAll("[data-plan-rank]"),
         function (b) {
           var suyo = Number(b.getAttribute("data-plan-rank"));
-          if (suyo < mio) {
-            // Por debajo del contratado: no hay nada que ganar ahí.
+          if (suyo <= mio) {
+            // El contratado y los de abajo: no hay nada que ganar ahí.
             b.textContent = b.getAttribute("data-label-covered");
             b.classList.add("btn--off");
             b.setAttribute("aria-disabled", "true");
             b.removeAttribute("href");
-          } else if (suyo === mio) {
-            // El que ya tiene: comprarlo otra vez es renovarlo.
-            b.textContent = b.getAttribute("data-label-renew");
           } else {
             b.textContent = b.getAttribute("data-label-upgrade");
           }

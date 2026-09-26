@@ -1660,8 +1660,8 @@ Además:
 | Correo | Cuándo sale | ¿Se puede apagar? |
 |---|---|---|
 | Contrataste el plan X | Al cobrar PayPal, y al ponerle el plan a mano | Sí, «Pagos y plan» |
-| Renovaste el plan X | Igual, cuando el plan pagado es el que ya corría | Sí, «Pagos y plan» |
-| Tu plan vence en 7 días | Al entrar al panel, si falta una semana o menos | Sí, «Estado de tu plan» |
+| Renovaste el plan X | Igual, cuando el plan pagado es el que ya corría (ya no se puede pagar así) | Sí, «Pagos y plan» |
+| Tu plan vence en 7 días | Al entrar al panel, si falta una semana o menos. Sin botón: se vuelve a contratar al vencer | Sí, «Estado de tu plan» |
 | Tu plan venció | Al entrar al panel, si ya pasó la fecha | Sí, «Estado de tu plan» |
 | Ya puedes enviar | Al habilitar el envío desde la ficha | No |
 | Tu cuenta fue suspendida | Al suspenderla | No |
@@ -1954,9 +1954,15 @@ escrita mal deja a alguien pagando sin recibir nada. Una cuenta activa también,
 porque si no el primer pago sería el último y nadie podría renovar ni cambiar de
 plan. **Un administrador no**: su cuenta no tiene a quién escribirle.
 
-Pagar mueve la cuenta a `active` y escribe `plan` y `plan_until`. Renovar el
-mismo plan antes de tiempo **suma al final de lo que quedaba**; cambiar de plan
-empieza hoy. Pagar **no** habilita el envío: eso es la otra puerta, y el
+Pagar mueve la cuenta a `active` y escribe `plan` y `plan_until`. **El mismo
+plan no se vuelve a pagar mientras está vigente** (septiembre de 2026): se
+compra otra vez cuando vence, y cuenta desde ese día. Lo decide
+`accounts.current_plan()`, que da el plan solo mientras `plan_until` no pasó, y
+lo comprueban `/contratar/<plan>`, que lo dice con la fecha y no ofrece pagar, y
+el POST que crea el pago. Hasta entonces pagar antes de tiempo sumaba al final
+de lo que quedaba; `renews_from()` y el correo de «Renovaste» siguen ahí por si
+un pago llega así, pero ya no hay camino para crearlo. Subir a un plan mayor sí
+se puede, y empieza hoy. Pagar **no** habilita el envío: eso es la otra puerta, y el
 comprobante que sale lo dice para que no se descubra al intentar enviar.
 
 Del cobro salen **dos correos**: el comprobante al cliente y un aviso a quien
@@ -1978,8 +1984,9 @@ cobrado.
 **Las tarjetas de `/planes` tienen su interruptor de mensual y anual**, con
 `landing/assets/js/plans.js`, el único guion que baja una sola página (el bloque
 `scripts` de `src/base.html.j2`). En anual cada tarjeta enseña **el equivalente
-mensual** —el anual entre doce— y debajo lo que se cobra de verdad, y el número
-va de una cifra a otra con un contador propio. Las dos cifras salen de
+mensual** —el anual entre doce— y debajo **«Total a pagar ahora»** con lo que
+se cobra de verdad (el mes en mensual, el año en anual), y el número va de una
+cifra a otra con un contador propio. Las dos cifras salen de
 `docs/pricing.md` como todo lo demás (`monthly_value`, `yearly_value`,
 `yearly_monthly` en `build_site.py`), no escritas en el marcado.
 
@@ -1999,12 +2006,16 @@ clases de la entrada y su `transition-delay` al terminarla**: ese retraso se
 quedaba puesto y la regla de la entrada, más específica, le ganaba al hover de la
 recomendada.
 
-Tres cosas más de ese interruptor:
+Cuatro cosas más de esas tarjetas:
 
 - **La página nace en mensual y con todo dibujado**, así que sin JavaScript se
   leen los tres planes, sus precios y sus botones. **El interruptor sí se
   esconde sin el guion** (`.cycle` nace en `display: none` y `plans.js` le pone
   `is-ready`): un botón que no hace nada es peor que no tenerlo.
+- **Con un plan vigente, el suyo y los de abajo se apagan** y dicen «Ya
+  tienes todas las ventajas» (`nav.js`, leyendo el plan de la migaja `pm_in`,
+  que solo lo lleva mientras está vigente); los de arriba dicen «Mejorar a X».
+  Al vencer, la migaja deja de llevarlo y se vuelven a poder comprar.
 - **El botón de cada plan lleva el ciclo al panel**, con `?ciclo=anual`, y
   `/contratar/<plan>` resalta ese botón. Sin parámetro, o con uno inventado,
   queda el mes, que es lo de siempre. `nav.js` sigue mandando en el texto del

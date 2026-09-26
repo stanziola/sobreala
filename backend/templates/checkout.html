@@ -6,13 +6,12 @@
   <p class="lead">{{ t('pay_prices', month='%.2f'|format(one.monthly),
                        year='%.2f'|format(one.yearly), off=discount) }}</p>
 
-  {% if current == plan and plan_until %}
-  <p class="hint">{{ t('pay_renewing', when=plan_until|ago) }}</p>
-  {% endif %}
-
   {# Se dice qué falta, no un «no puedes» a secas: lo del correo se arregla
      solo abriendo la bandeja. #}
-  {% if downgrade %}
+  {% if running %}
+  <p class="notice">{{ t('pay_running', when=plan_until|on_date) if plan_until
+                       else t('pay_running_undated') }}</p>
+  {% elif downgrade %}
   <p class="notice">{{ t('pay_downgrade') }}</p>
   {% elif not can_buy %}
   <p class="notice">{{ t('pay_suspended') if suspended else t('pay_needs_email') }}</p>

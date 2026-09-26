@@ -14,7 +14,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, at_moment, on_date, t
-from models.account import (is_admin, plan_of,
+from models.account import (current_plan, is_admin,
                             status_of as account_status_of)
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
@@ -184,12 +184,13 @@ def create_app(overrides: dict | None = None) -> Flask:
                 if is_admin(account):
                     wanted = "admin"
                 else:
-                    # «1» a secas, o «1:negocio» con el plan contratado. El plan
-                    # va ahí para que /planes pueda apagar los botones de los
-                    # planes menores: una página estática no lo sabe de otra
-                    # forma. Cuesta lo mismo que costó el rol, y es el mismo
-                    # trato: cualquier script de ese dominio puede leerlo.
-                    plan = plan_of(account)
+                    # «1» a secas, o «1:negocio» con el plan vigente. El plan
+                    # va ahí para que /planes pueda apagar el que ya se tiene
+                    # y los menores: una página estática no lo sabe de otra
+                    # forma. Vencido no va, que es cuando se vuelve a comprar.
+                    # Cuesta lo mismo que costó el rol, y es el mismo trato:
+                    # cualquier script de ese dominio puede leerlo.
+                    plan = current_plan(account)
                     wanted = f"1:{plan}" if plan else "1"
                 # La última zona en la que se vio esta cuenta: es la de los
                 # correos que le llegan sin estar mirando, como un plan que

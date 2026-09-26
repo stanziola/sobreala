@@ -124,7 +124,9 @@ def test_las_tarjetas_traen_los_dos_precios_y_nacen_en_mensual():
                                         ("55", "528", "44")):
         assert f'data-monthly="{mensual}"' in html
         assert f'data-yearly-monthly="{equivalente}"' in html
-        assert f"se cobra ${anual} al año" in html
+        # Lo que se cobra al contratar, en los dos ciclos.
+        assert f"Total a pagar ahora: ${mensual}" in html
+        assert f"Total a pagar ahora: ${anual}" in html
     # Nace con el mensual dibujado: sin el guion, eso es lo que se lee.
     assert '<span data-price>15</span>' in html
     # Y el guion de esta página solo lo baja esta página.

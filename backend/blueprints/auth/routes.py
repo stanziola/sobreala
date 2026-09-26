@@ -1784,9 +1784,10 @@ def checkout(plan: str):
         discount=plans.discount(plan),
         # Bajar de plan no se hace por la web: lo que ya se pagó no se
         # devuelve, así que quitarle sitio a una cuenta a cambio de nada tiene
-        # que pasar por una conversación. Renovar el mismo sí, que es sumarle
-        # tiempo al que ya tiene.
+        # que pasar por una conversación. Y el mismo plan se vuelve a comprar
+        # cuando vence, no antes.
         downgrade=plans.is_downgrade(accounts.plan_of(account), plan),
+        running=accounts.current_plan(account) == plan,
         currency=plans.CURRENCY,
         can_buy=accounts.can_buy(account),
         suspended=accounts.is_suspended(account),
@@ -1866,6 +1867,10 @@ def start_payment():
     # Se comprueba aquí y no solo en la pantalla, porque un formulario se
     # escribe a mano y el botón gris del sitio es solo un aviso.
     if plans.is_downgrade(accounts.plan_of(account), plan):
+        return redirect(url_for("auth.checkout", plan=plan))
+    # El mismo plan todavía vigente no se paga otra vez: se vuelve a contratar
+    # cuando vence.
+    if accounts.current_plan(account) == plan:
         return redirect(url_for("auth.checkout", plan=plan))
 
     # Con qué eligió pagar. Lo que no se pueda usar ahora mismo se lee como

@@ -75,12 +75,12 @@ PANEL = {
 }
 
 # Lo que dicen los botones de /planes cuando ya hay un plan contratado. El
-# sitio es estático y no lo sabe al construirse: los tres textos viajan en el
-# marcado y nav.js elige uno según la migaja que deja el panel.
+# sitio es estático y no lo sabe al construirse: los textos viajan en el
+# marcado y nav.js elige uno según la migaja que deja el panel. El plan que ya
+# se tiene no se renueva antes de que venza: dice lo mismo que los de abajo.
 PLAN_BUTTONS = {
     "start": "Empezar con {name}",
     "upgrade": "Mejorar a {name}",
-    "renew": "Renovar {name}",
     "covered": "Ya tienes todas las ventajas",
 }
 
@@ -494,9 +494,10 @@ PRICING = {
         "yearly": "Anual",
         # La pastilla al lado de Anual: el descuento, que es lo que se mira.
         "save": "-{off}",
-        # Lo que dice la tarjeta debajo del precio, en cada ciclo.
-        "monthly_note": "{yearly} al año, {off} de descuento",
-        "yearly_note": "se cobra {yearly} al año",
+        # Lo que dice la tarjeta debajo del precio, en cada ciclo: lo que se
+        # cobra de verdad al contratar, que es lo que se quiere saber.
+        "monthly_note": "Total a pagar ahora: {total}",
+        "yearly_note": "Total a pagar ahora: {total}",
         "per_month": "/ mes",
     },
     # Con RUC hay que decir si el precio lleva impuesto, y se dice donde se
