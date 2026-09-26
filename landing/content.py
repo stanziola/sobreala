@@ -485,7 +485,6 @@ PRICING = {
             "featured": False,
         },
     },
-    "annual_note": "El plan anual se paga de una vez y sale un {off} más barato.",
     # El interruptor de las tarjetas. Son dos botones de verdad: sin JavaScript
     # la página se queda en mensual, que es como nace, y los precios siguen ahí.
     "cycle": {
@@ -502,13 +501,7 @@ PRICING = {
     },
     # Con RUC hay que decir si el precio lleva impuesto, y se dice donde se
     # mira el precio y no escondido en los términos.
-    "tax_note": ("Los precios son finales e incluyen el ITBMS cuando "
-                 "corresponde. Pagues desde donde pagues, es el mismo precio."),
-    # Para que nadie llegue al botón de pagar y descubra ahí que no puede.
-    "before_note": (
-        "Para contratar creas tu cuenta, confirmas tu correo y ya. Antes de tu "
-        "primera campaña la revisamos contigo, una sola vez."
-    ),
+    "tax_note": "Precios con ITBMS incluido.",
     "table": {
         "eyebrow": "Comparación",
         "title": "Todo lo que incluye cada plan",
