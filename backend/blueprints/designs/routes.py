@@ -26,6 +26,7 @@ import json
 import re
 import unicodedata
 import zipfile
+from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 
 from bson import ObjectId
@@ -260,6 +261,9 @@ def edit_html(raw):
                 designs.update_html(db, account["_id"], found["_id"], name=name,
                                     html=html)
                 images.keep(db, account["_id"], imaging.names_in(html))
+                # Las que el HTML de antes nombraba y este ya no (una foto
+                # cambiada con «Cambiar», por ejemplo).
+                drop_unused(db, account["_id"], images_in(found))
                 return redirect(url_for("designs.index", cambiado=1))
 
     return render_template(
@@ -362,9 +366,9 @@ def canvas_from_pack(db, account, raw: bytes, *, name: str,
     se carga. Si algo falla no queda nada guardado.
     """
     try:
-        page, files = imaging.unpack(raw, most=images.LIMIT)
+        page, files = imaging.unpack(raw, most=photo_limit(account))
     except imaging.PackError as exc:
-        return None, t("designs_" + str(exc), n=images.LIMIT,
+        return None, t("designs_" + str(exc), n=photo_limit(account),
                        mb=imaging.MAX_UPLOAD // (1024 * 1024))
     try:
         data = json.loads(page.decode("utf-8"))
@@ -379,10 +383,10 @@ def canvas_from_pack(db, account, raw: bytes, *, name: str,
     missing = [one for one in wanted if one not in files]
     if missing:
         return None, t("designs_zip_missing", what=missing[0])
-    free = images.LIMIT - images.count(db, account["_id"])
-    if len(wanted) > free:
+    if not photo_room(db, account, len(wanted)):
+        free = photo_limit(account) - images.count(db, account["_id"])
         return None, t("designs_zip_limit", n=len(wanted), free=max(free, 0),
-                       limit=images.LIMIT)
+                       limit=photo_limit(account))
 
     ready = []
     for one in wanted:
@@ -453,8 +457,8 @@ def keep_image(db, account, which: str, current: str,
         errors[which] = t("error_required")
         return current
 
-    if images.count(db, account["_id"]) >= images.LIMIT:
-        errors[which] = t("designs_image_limit", n=images.LIMIT)
+    if not photo_room(db, account):
+        errors[which] = t("designs_image_limit", n=photo_limit(account))
         return current
 
     raw = archivo.read(imaging.MAX_UPLOAD + 1)
@@ -619,6 +623,39 @@ def piece_view(raw):
 
 # --------------------------------------------------------------- el lienzo
 
+# Cuánto espera una foto subida sin guardar en ninguna plantilla antes de que
+# se la pueda recoger: un día, para no quitarle a nadie la que acaba de subir y
+# todavía no guarda.
+ORPHAN_AFTER = timedelta(hours=24)
+
+
+def photo_limit(account) -> int:
+    """Cuántas fotos caben en la cuenta: lo dice su plan (`docs/pricing.md`)."""
+    return plans.image_limit(accounts.plan_of(account))
+
+
+def photo_room(db, account, wanted: int = 1) -> bool:
+    """Si caben `wanted` fotos más. Si no caben, antes de decir que no se
+    recogen las que quedaron fuera de toda plantilla hace más de un día: una
+    foto subida en el editor cuenta desde que se sube, aunque la plantilla no
+    se guarde nunca, y es lo que dejaba el tope lleno después de borrar."""
+    limit = photo_limit(account)
+    if images.count(db, account["_id"]) + wanted <= limit:
+        return True
+    free_orphans(db, account["_id"])
+    return images.count(db, account["_id"]) + wanted <= limit
+
+
+def free_orphans(db, account_id) -> int:
+    """Quitar las fotos que no nombra ninguna plantilla de la cuenta y tienen
+    más de un día. Pasan por `images.remove()`, así que una que salió en un
+    envío se retira y no se borra."""
+    still = {name for one in designs.for_account(db, account_id, limit=0)
+             for name in images_in(one)}
+    stale = images.uploaded_before(db, account_id, datetime.now(timezone.utc) - ORPHAN_AFTER)
+    return images.remove(db, account_id, [one for one in stale if one not in still])
+
+
 def drop_unused(db, account_id, names) -> None:
     """Borrar las imágenes que ya no nombra ninguna pieza de la cuenta.
 
@@ -761,7 +798,9 @@ def canvas_editor(account, found):
                     designs.update_canvas(db, account["_id"], found["_id"],
                                           name=name, doc=posted, backgrounds=grounds,
                                           shades=shades)
-                    drop_unused(db, account["_id"], found.get("backgrounds") or [])
+                    # Lo que la versión de antes nombraba y esta ya no: sus
+                    # imágenes fundidas y las fotos que se quitaron del lienzo.
+                    drop_unused(db, account["_id"], images_in(found))
                     return redirect(url_for("designs.index", cambiado=1))
 
     return render_template(
@@ -965,8 +1004,8 @@ def canvas_image():
     archivo = request.files.get("archivo")
     if not archivo or not archivo.filename:
         return jsonify(error=t("error_required")), 400
-    if images.count(db, account["_id"]) >= images.LIMIT:
-        return jsonify(error=t("designs_image_limit", n=images.LIMIT)), 400
+    if not photo_room(db, account):
+        return jsonify(error=t("designs_image_limit", n=photo_limit(account))), 400
     raw = archivo.read(imaging.MAX_UPLOAD + 1)
     if len(raw) > imaging.MAX_UPLOAD:
         return jsonify(error=t("designs_image_heavy",

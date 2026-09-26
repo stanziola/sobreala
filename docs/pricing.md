@@ -22,6 +22,7 @@ reglas de negocio asociadas.
 | Analytics completo | ✅ | ✅ | ✅ |
 | Exportar CSV y PDF | ✅ | ✅ | ✅ |
 | Usuarios | 1 | 2 | 3 |
+| Imágenes guardadas | 20 | 50 | 100 |
 
 **Los precios son finales e incluyen el ITBMS cuando corresponde.** El mismo
 precio para todos: a un cliente de fuera de Panamá se le factura como

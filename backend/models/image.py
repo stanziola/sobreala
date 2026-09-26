@@ -29,9 +29,9 @@ from typing import Any
 
 from bson.binary import Binary
 
-# Cuántas puede tener guardadas una cuenta. Veinte por unos 150 KB son tres
+# Cuántas puede tener guardadas una cuenta lo dice su plan, en docs/pricing.md
+# (`plans.image_limit()`): 20, 50 o 100. Cien por unos 300 KB son treinta
 # megas por cliente en el peor caso.
-LIMIT = 20
 
 
 def now() -> datetime:
@@ -92,6 +92,14 @@ def count(db, account_id) -> int:
     alguna pieza. Una retirada ya no gasta ninguna de las veinte."""
     return db.images.count_documents({"account_id": account_id,
                                       "kind": {"$ne": BACKGROUND}, **LIVE})
+
+
+def uploaded_before(db, account_id, moment: datetime) -> list[str]:
+    """Las fotos que subió la cuenta antes de `moment` y siguen contando: las
+    candidatas a haber quedado fuera de toda plantilla."""
+    return [one["name"] for one in db.images.find(
+        {"account_id": account_id, "kind": {"$ne": BACKGROUND}, **LIVE,
+         "created_at": {"$lt": moment}}, {"name": 1})]
 
 
 def data_of(db, account_id, name: str) -> bytes | None:

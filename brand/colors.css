@@ -44,6 +44,10 @@
   --color-accent-soft: #EDEDEF;   /* chips, badges, quiet highlights */
   --color-accent-light: #CFEBFA;  /* accents over the brand blue; 4.7:1 */
 
+  /* Lo que salió bien: el ganchito del recibo al completar un pago. Es un
+   * dibujo, no texto, así que pide 3:1 y da 3.3:1 sobre blanco. */
+  --color-success: #16A34A;
+
   /* Dark grey for the bands with no wing on them; white on it reaches 14.9:1. */
   --color-deep: #27272A;
 

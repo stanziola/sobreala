@@ -164,3 +164,44 @@ def test_planes_dice_obtener_y_la_nota_del_prorrateo():
     assert "los correos que no usaste se descuentan" in html
     assert 'data-label-to-yearly="Pasar a anual"' in html
     assert 'data-label-yearly-only="Solo en anual"' in html
+
+
+# ------------------------------------------------ el desglose y los logos
+
+def test_el_pago_trae_el_itbms_los_logos_y_la_frase(client, database, outbox, monkeypatch):
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+    pantalla = browser.get("/contratar/negocio").get_data(as_text=True)
+    # El ITBMS que ya va dentro de los $25.
+    assert "Incluye ITBMS (7%)" in pantalla and "$1.64" in pantalla
+    # Los logos y ninguna descripción de los métodos.
+    assert "img/payments/paypal.png" in pantalla
+    assert "Se paga en la página de PayPal" not in pantalla
+    assert "Panamails nunca guarda tus datos de pago." in pantalla
+    assert "el pago se hace en la página del proveedor" not in pantalla
+
+
+def test_el_recibo_trae_el_itbms(client, database, outbox, monkeypatch):
+    fake_paypal(monkeypatch)
+    browser = inside(client)
+    confirm(database)
+    buy(browser, plan="negocio")
+    recibo = browser.get(come_back(browser).headers["Location"]).get_data(as_text=True)
+    assert "Incluye ITBMS (7%)" in recibo and "$1.64" in recibo
+
+
+def test_el_pie_trae_los_cuatro_logos_a_color():
+    html = (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
+    for nombre, archivo in (("Yappy", "yappy.svg"), ("PayPal", "paypal.png"),
+                            ("Visa", "visa.svg"), ("Mastercard", "mastercard.svg")):
+        assert f'src="/assets/img/payments/{archivo}" alt="{nombre}"' in html
+    # Las copias de Visa y Mastercard van recortadas a su dibujo, en el sitio y
+    # en el panel, con el viewBox de brand/payments/viewbox.json.
+    import json
+
+    recortes = json.loads((ROOT / "brand" / "payments" / "viewbox.json").read_text(encoding="utf-8"))
+    for marca in ("visa", "mastercard"):
+        for copia in (ROOT / "landing" / "assets" / "img" / "payments" / f"{marca}.svg",
+                      ROOT / "backend" / "static" / "img" / "payments" / f"{marca}.svg"):
+            assert f'viewBox="{recortes[marca]}"' in copia.read_text(encoding="utf-8")

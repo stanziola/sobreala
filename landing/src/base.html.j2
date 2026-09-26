@@ -297,7 +297,7 @@
            cuando los logos son apaisados) el pie saltaba al cargar. #}
         {% for logo in payment_logos %}
         <img class="payments__logo"
-             src="{{ logo.url }}" alt="{{ logo.name|capitalize }}"
+             src="{{ logo.url }}" alt="{{ logo.label }}"
              width="{{ logo.size[0] }}" height="{{ logo.size[1] }}" loading="lazy">
         {% endfor %}
       </p>

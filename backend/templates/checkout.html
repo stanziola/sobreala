@@ -37,6 +37,11 @@
       <dt>{{ t('pay_summary_total') }}</dt>
       <dd>${{ '%.2f'|format(quote.total) }}</dd>
     </div>
+    {#- Lo que del total es ITBMS: los precios ya lo incluyen. -#}
+    <div class="summary__row summary__row--tax">
+      <dt>{{ t('pay_summary_tax', rate=itbms_rate) }}</dt>
+      <dd>${{ '%.2f'|format(quote.tax) }}</dd>
+    </div>
   </dl>
   {% if credit.amount > 0 %}<p class="hint">{{ t('pay_summary_upgrade') }}</p>{% endif %}
   {% if other %}
@@ -63,7 +68,7 @@
     <div class="setting">
       <div class="setting__text">
         <p class="setting__title">{{ t('pay_method_' + name) }}</p>
-        <p class="setting__desc">{{ t('pay_method_' + name + '_desc') }}</p>
+        {% include "_pay_logos.html" %}
       </div>
       <div class="setting__action">
         <label class="check">
@@ -82,7 +87,7 @@
     <div class="setting">
       <div class="setting__text">
         <p class="setting__title">{{ t('pay_method_' + name) }}</p>
-        <p class="setting__desc">{{ t('pay_method_' + name + '_desc') }}</p>
+        {% include "_pay_logos.html" %}
       </div>
       <div class="setting__action">
         <span class="tag tag--quiet">{{ t('pay_method_soon') }}</span>

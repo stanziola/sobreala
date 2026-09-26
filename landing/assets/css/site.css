@@ -23,6 +23,10 @@
   --color-accent-soft: #EDEDEF;   /* chips, badges, quiet highlights */
   --color-accent-light: #CFEBFA;  /* accents over the brand blue; 4.7:1 */
 
+  /* Lo que salió bien: el ganchito del recibo al completar un pago. Es un
+   * dibujo, no texto, así que pide 3:1 y da 3.3:1 sobre blanco. */
+  --color-success: #16A34A;
+
   /* Dark grey for the bands with no wing on them; white on it reaches 14.9:1. */
   --color-deep: #27272A;
 
@@ -118,6 +122,10 @@
   --color-accent-strong: #5CBDF0; /* links and hover; 8.8:1 on the page */
   --color-accent-soft: #26262A;   /* chips and quiet highlights */
   --color-accent-light: #CFEBFA;  /* text over the brand blue; 6.5:1 */
+
+  /* El verde de lo que salió bien, más claro para que se lea sobre el gris de
+   * las tarjetas: 7.5:1 sobre #1B1B1E. */
+  --color-success: #22C55E;
 
   /* Bands with no wing on them: the four-steps section, the table head. */
   --color-deep: #232326;
@@ -1269,8 +1277,7 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 
 /* La fila de abajo va sobre el mismo azul que el resto del pie, y lo único que
    la separa es una línea fina de lado a lado, fuera del `shell`. Hubo una
-   franja gris para que un logo azul oscuro se leyera encima; con los dos logos
-   en blanco, como pide la guía de PayPal para fondos oscuros, sobra. */
+   franja gris para que un logo azul oscuro se leyera encima, y se quitó. */
 .site-footer__bottom { margin-top: clamp(28px, 5vw, 44px); border-top: 1px solid var(--color-footer-edge); }
 .site-footer__legal {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
@@ -1279,5 +1286,7 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 }
 .payments { display: flex; align-items: center; gap: 12px; }
 .payments__label { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
-/* Sin apagar y sin fondo propio: los dos son blancos sobre el azul del pie. */
+/* A color, como vienen en su kit, y sin fondo propio (así se decidió):
+   Mastercard se lee bien sobre el azul del pie; PayPal, Visa y Yappy, que son
+   azules, con poco contraste. */
 .payments__logo { height: 28px; width: auto; }

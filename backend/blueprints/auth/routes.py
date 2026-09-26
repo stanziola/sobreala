@@ -1795,6 +1795,8 @@ def checkout(plan: str):
         # El otro ciclo, si también se puede, para cambiar sin volver a /planes.
         other=None if upgrade.refused(account, plan, other) else other,
         other_quote=upgrade.quote(account, plan, other),
+        itbms_rate=itbms_rate(),
+        pay_logos=PAY_LOGOS,
         currency=plans.CURRENCY,
         can_buy=accounts.can_buy(account),
         suspended=accounts.is_suspended(account),
@@ -2096,6 +2098,20 @@ def finish_card():
     return redirect(url_for("auth.receipt", raw=attempt["_id"]))
 
 
+# Los logos de cada método de pago en la pantalla de contratar: el archivo que
+# copia build_assets.py y su texto alternativo.
+PAY_LOGOS = {
+    payments.PAYPAL: [("paypal.png", "")],
+    payments.CARD: [("visa.svg", "Visa"), ("mastercard.svg", "Mastercard")],
+    payments.YAPPY: [("yappy.svg", "")],
+}
+
+
+def itbms_rate() -> str:
+    """La tasa del ITBMS para escribirla: «7»."""
+    return f"{(plans.ITBMS * 100).normalize():f}"
+
+
 @bp.route("/configuracion/pagos/recibo/<raw>")
 def receipt(raw):
     """El recibo de un pago cobrado: a donde se llega al volver de pagar.
@@ -2122,6 +2138,8 @@ def receipt(raw):
             paid.get("plan", ""), {}).get("name", paid.get("plan", "")),
         number=str(paid["_id"])[-8:].upper(),
         credit=credit if credit and credit != "0.00" else "",
+        tax=f"{plans.itbms_in(paid.get('amount') or '0'):.2f}",
+        itbms_rate=itbms_rate(),
         currency=paid.get("currency") or plans.CURRENCY)
 
 

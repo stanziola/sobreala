@@ -1,0 +1,5 @@
+{
+  "_": "El recorte de las copias que sirven el sitio y el panel: el viewBox justo alrededor del dibujo. Los SVG de Visa y Mastercard traen su margen de respeto dentro del archivo, y a 22 o 28 px de alto dejaba el dibujo diminuto. Los kits no se tocan; lo aplican landing/build_site.py y backend/build_assets.py al copiarlos. Medido en Chrome sobre cada archivo, con un pelo de aire.",
+  "visa": "59.5 58.6 159 52",
+  "mastercard": "17.4 17.5 117.5 73"
+}

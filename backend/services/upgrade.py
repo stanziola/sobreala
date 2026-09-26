@@ -96,4 +96,6 @@ def quote(account: dict[str, Any] | None, plan: str, cycle: str,
         return None
     discount = credit(account, when)
     total = max(Decimal("0.00"), price - discount["amount"]).quantize(CENT)
-    return {"price": price.quantize(CENT), "credit": discount, "total": total}
+    return {"price": price.quantize(CENT), "credit": discount, "total": total,
+            # El ITBMS que ya va dentro del total: los precios lo incluyen.
+            "tax": plans.itbms_in(total)}

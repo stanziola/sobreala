@@ -23,6 +23,10 @@
   --color-accent-soft: #EDEDEF;   /* chips, badges, quiet highlights */
   --color-accent-light: #CFEBFA;  /* accents over the brand blue; 4.7:1 */
 
+  /* Lo que salió bien: el ganchito del recibo al completar un pago. Es un
+   * dibujo, no texto, así que pide 3:1 y da 3.3:1 sobre blanco. */
+  --color-success: #16A34A;
+
   /* Dark grey for the bands with no wing on them; white on it reaches 14.9:1. */
   --color-deep: #27272A;
 
@@ -118,6 +122,10 @@
   --color-accent-strong: #5CBDF0; /* links and hover; 8.8:1 on the page */
   --color-accent-soft: #26262A;   /* chips and quiet highlights */
   --color-accent-light: #CFEBFA;  /* text over the brand blue; 6.5:1 */
+
+  /* El verde de lo que salió bien, más claro para que se lea sobre el gris de
+   * las tarjetas: 7.5:1 sobre #1B1B1E. */
+  --color-success: #22C55E;
 
   /* Bands with no wing on them: the four-steps section, the table head. */
   --color-deep: #232326;
@@ -1366,6 +1374,18 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 .summary__row--total { border-bottom: 0; font-weight: 700; color: var(--color-ink); }
 .summary__row--total dd { font-size: 1.2rem; }
 .summary__switch { margin: 6px 0 14px; font-size: .92rem; }
+/* Lo que del total es ITBMS: dato, no cifra a pagar, así que va chico y sin
+   línea encima. */
+.summary__row--tax { padding-top: 0; border-bottom: 0; font-size: .85rem; }
+.summary__row--tax dd { color: var(--color-ink-soft); }
+
+/* Los logos de cada método de pago, a color. De noche van sobre una pastilla
+   blanca: PayPal, Visa y Yappy son azules y sobre el gris oscuro no se leen. */
+.pay-logos { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 0; }
+.pay-logos__one { height: 22px; width: auto; }
+:root[data-theme="dark"] .pay-logos__one {
+  box-sizing: content-box; padding: 3px 6px; border-radius: 5px; background: #FFFFFF;
+}
 .summary__pay, .receipt__go { width: 100%; justify-content: center; margin-top: 18px; }
 
 .receipt { text-align: center; }
@@ -1377,10 +1397,11 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 .receipt__mark { display: flex; justify-content: center; margin-bottom: 10px; }
 .receipt__title { margin-top: 0; }
 /* El círculo gira dos vueltas como si cargara, se cierra, y el ganchito se
-   dibuja; después todo se queda quieto. Con «reducir movimiento» la regla del
-   principio apaga las animaciones y lo de abajo lo deja ya terminado. */
+   dibuja; después todo se queda quieto, en el verde de lo que salió bien. Con
+   «reducir movimiento» la regla del principio apaga las animaciones y lo de
+   abajo lo deja ya terminado. */
 .receipt__ring, .receipt__tick {
-  fill: none; stroke: var(--color-accent); stroke-width: 3.2; stroke-linecap: round;
+  fill: none; stroke: var(--color-success); stroke-width: 3.2; stroke-linecap: round;
   stroke-linejoin: round;
 }
 .receipt__ring {

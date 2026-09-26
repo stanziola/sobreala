@@ -41,6 +41,10 @@
       <dt>{{ t('receipt_total') }}</dt>
       <dd>${{ paid.amount }}</dd>
     </div>
+    <div class="summary__row summary__row--tax">
+      <dt>{{ t('pay_summary_tax', rate=itbms_rate) }}</dt>
+      <dd>${{ tax }}</dd>
+    </div>
   </dl>
 
   <a class="btn receipt__go" href="{{ url_for('auth.settings', section='pagos') }}">{{ t('receipt_button') }}</a>

@@ -20,7 +20,7 @@ from conftest import login, register
 from models import account as accounts
 from models import design as designs
 from models import image as images
-from services import html_check, imaging, render
+from services import html_check, imaging, plans, render
 
 
 PASSWORD = "Contrasena-Larga1"
@@ -434,12 +434,12 @@ def test_hay_un_tope_de_imagenes_por_cuenta(client, database, outbox):
     """Es lo que impide que esto crezca sin control."""
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    for _ in range(images.LIMIT):
+    for _ in range(plans.image_limit(None)):
         images.save(database, cuenta["_id"], data=b"x" * 10, ext="jpg",
                     mime="image/jpeg")
 
     respuesta = poner_imagen(browser, "anuncio", foto())
-    assert images.count(database, cuenta["_id"]) == images.LIMIT
+    assert images.count(database, cuenta["_id"]) == plans.image_limit(None)
     assert "es el máximo" in respuesta.get_data(as_text=True)
 
 

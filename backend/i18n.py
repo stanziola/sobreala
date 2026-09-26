@@ -520,6 +520,7 @@ TEXTS = {
     "pay_summary_credit_months": "{unused} de {emails} correos de este mes, y "
                                  "{months} meses que te quedaban",
     "pay_summary_total": "Total a pagar ahora",
+    "pay_summary_tax": "Incluye ITBMS ({rate}%)",
     "pay_summary_switch_yearly": "Prefiero pagar un año: {amount}",
     "pay_summary_switch_monthly": "Prefiero pagar un mes: {amount}",
     "pay_summary_upgrade": "Al mejorar, tu plan nuevo empieza hoy con su mes "
@@ -554,15 +555,9 @@ TEXTS = {
     "pay_method_use": "Usar este",
     "pay_method_soon": "Pronto",
     "pay_method_paypal": "PayPal",
-    "pay_method_paypal_desc": "Se paga en la página de PayPal, con tu cuenta. "
-                              "Nosotros nunca vemos tus datos.",
     "pay_method_card": "Tarjeta de crédito o débito",
-    "pay_method_card_desc": "Visa y Mastercard, sin necesidad de tener cuenta "
-                            "de PayPal. Se paga en la página de Paguélofácil: "
-                            "nosotros nunca vemos tu tarjeta.",
     "pay_card_ending": "terminada en {last4}",
     "pay_method_yappy": "Yappy",
-    "pay_method_yappy_desc": "Desde tu banco en Panamá, sin tarjeta.",
     "pay_cycle_title": "Por cuánto tiempo",
 
     "pay_monthly": "Pagar un mes",
@@ -598,8 +593,7 @@ TEXTS = {
                        "te cobraron, escríbenos.",
     "pay_error_monto": "El monto cobrado no coincide con el del plan, así que "
                        "no activamos nada. Escríbenos y lo revisamos.",
-    "settings_payments_hint": "Panamails nunca guarda los datos de tu tarjeta: "
-                              "el pago se hace en la página del proveedor.",
+    "settings_payments_hint": "Panamails nunca guarda tus datos de pago.",
 
     # --- estadísticas ------------------------------------------------------
     # La misma pantalla para el cliente y para el administrador; lo único que

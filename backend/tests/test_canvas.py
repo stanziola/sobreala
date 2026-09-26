@@ -21,7 +21,7 @@ from models import account as accounts
 from models import contact as contacts
 from models import design as designs
 from models import image as images
-from services import canvas
+from services import canvas, plans
 from test_campaigns import catch, make, ready, send_it
 from test_designs import csrf, foto, inside, other, subir, with_plan
 
@@ -1270,13 +1270,13 @@ def test_un_zip_sin_lienzo_o_con_uno_roto_no_se_carga(client, database, outbox):
 def test_el_zip_que_no_cabe_en_las_veinte_no_se_carga(client, database, outbox):
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    for _ in range(images.LIMIT):
+    for _ in range(plans.image_limit(None)):
         images.save(database, cuenta["_id"], data=foto(40, 40), ext="jpg",
                     mime="image/jpeg")
     respuesta = subir(browser, hacer_zip(CON_FOTO, {"fotos/1.jpg": foto(800, 600)}),
                       filename="pieza.zip")
     assert respuesta.status_code == 200 and "te caben 0" in respuesta.get_data(as_text=True)
-    assert images.count(database, cuenta["_id"]) == images.LIMIT
+    assert images.count(database, cuenta["_id"]) == plans.image_limit(None)
 
 
 def test_el_zip_bomba_y_el_roto_se_rechazan(client, database, outbox):
@@ -1296,10 +1296,10 @@ def test_el_zip_bomba_y_el_roto_se_rechazan(client, database, outbox):
 
 
 def test_el_zip_con_mas_de_veinte_fotos_se_rechaza(client, database, outbox):
-    muchas = {f"fotos/{i}.jpg": b"x" for i in range(images.LIMIT + 1)}
+    muchas = {f"fotos/{i}.jpg": b"x" for i in range(plans.image_limit(None) + 1)}
     _, respuesta = cargar_zip(client, database, hacer_zip(CON_FOTO, muchas))
     assert respuesta.status_code == 200
-    assert f"más de {images.LIMIT} fotos" in respuesta.get_data(as_text=True)
+    assert f"más de {plans.image_limit(None)} fotos" in respuesta.get_data(as_text=True)
 
 
 # ------------------------------- las imágenes de un correo que ya salió se quedan
@@ -1386,3 +1386,67 @@ def test_un_html_que_nombra_una_retirada_la_deja_fija(client, database, outbox):
 def test_las_retiradas_vencen_solas(database):
     indice = database.images.index_information()["ttl_expires_at"]
     assert indice["key"] == [("expires_at", 1)] and indice["expireAfterSeconds"] == 0
+
+
+# ------------------------------------------- el tope de fotos, y las que se escapan
+
+def llena(database, cuenta, n, *, hace=None):
+    """n fotos de la cuenta que no están en ninguna plantilla."""
+    nombres = [images.save(database, cuenta["_id"], data=foto(40, 40), ext="jpg",
+                           mime="image/jpeg") for _ in range(n)]
+    if hace is not None:
+        database.images.update_many({"name": {"$in": nombres}},
+                                    {"$set": {"created_at": accounts.now() - hace}})
+    return nombres
+
+
+def test_el_tope_de_fotos_lo_dice_el_plan(client, database, outbox):
+    assert [plans.image_limit(p) for p in (None, "basico", "negocio", "empresa")] == \
+        [20, 20, 50, 100]
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    llena(database, cuenta, 20)
+    # Sin plan, como el Básico: la 21 no entra.
+    assert subir_foto(browser).status_code == 400
+    # Con Negocio sí.
+    with_plan(database, "negocio")
+    assert subir_foto(browser).status_code == 200
+
+
+def test_al_llegar_al_tope_se_recogen_las_fotos_sueltas_de_mas_de_un_dia(
+        client, database, outbox):
+    from datetime import timedelta
+
+    browser = inside(client)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    # Recién subidas y sin guardar: no se tocan, y el tope se queda lleno.
+    recientes = llena(database, cuenta, 20)
+    assert subir_foto(browser).status_code == 400
+    assert images.count(database, cuenta["_id"]) == 20
+
+    # Con más de un día y en ninguna plantilla: se recogen y la nueva entra.
+    database.images.update_many({"name": {"$in": recientes}},
+                                {"$set": {"created_at": accounts.now() - timedelta(days=2)}})
+    guardada = guardada_con_foto(browser, database, recientes[0])
+    assert subir_foto(browser).status_code == 200
+    # La que sí está en una plantilla se queda.
+    assert images.owns(database, cuenta["_id"], recientes[0])
+    assert not images.owns(database, cuenta["_id"], recientes[1])
+    assert guardada
+
+
+def guardada_con_foto(browser, database, nombre):
+    guardar(browser, lienzo(imagen(0, 0, 600, 300, name=nombre), h=320))
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    return designs.for_account(database, cuenta["_id"])[0]
+
+
+def test_volver_a_guardar_sin_una_foto_la_borra(client, database, outbox):
+    browser = inside(client)
+    nombre = subir_foto(browser).get_json()["name"]
+    pieza = guardada_con_foto(browser, database, nombre)
+    assert guardar(browser, lienzo(texto(40, 40, text="Sin foto")),
+                   url=f"/plantillas/lienzo/{pieza['_id']}").status_code == 302
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    assert not images.owns(database, cuenta["_id"], nombre)
+    assert other(client).get(f"/img/{nombre}").status_code == 404

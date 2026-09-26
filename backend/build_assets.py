@@ -139,7 +139,65 @@ def build() -> list[Path]:
             shutil.copy2(source, img / name)
             written.append(img / name)
     written.append(email_logo(img))
+    written += payment_logos(img)
     return written
+
+
+# Los logos de los métodos de pago, para la pantalla de contratar. Son los mismos
+# archivos a color que usa el pie del sitio (brand/payments/README.md). Los SVG
+# van tal cual; el PNG de PayPal se recorta a lo que se ve y se achica a este
+# alto, cuatro veces el que se dibuja.
+PAYMENTS = BRAND_DIR / "payments"
+PAYMENT_LOGOS = {
+    "paypal": PAYMENTS / "paypal" / "Horizontal Full Color" / "pp_h_rgb.png",
+    "visa": (PAYMENTS / "visa" / "Visa Brand Mark DIGITAL 2025" / "Visa Brand Mark DIGITAL"
+             / "VBM_digital_2025" / "blue" / "VBM_bluRGB_2025.svg"),
+    "mastercard": PAYMENTS / "mastercard" / "Mastercard Symbol - SVG" / "Artwork" / "ma_symbol.svg",
+    "yappy": PAYMENTS / "yappy" / "yappy-color-landscape.svg",
+}
+PAYMENT_LOGO_HEIGHT = 88
+
+
+def payment_logos(img: Path) -> list[Path]:
+    from PIL import Image
+
+    out_dir = img / "payments"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for name, source in PAYMENT_LOGOS.items():
+        if not source.exists():
+            continue
+        target = out_dir / f"{name}{source.suffix.lower()}"
+        if source.suffix.lower() == ".png":
+            with Image.open(source) as opened:
+                logo = opened.convert("RGBA")
+                box = logo.getchannel("A").getbbox()
+                if box:
+                    logo = logo.crop(box)
+                width = round(logo.width * PAYMENT_LOGO_HEIGHT / logo.height)
+                logo.resize((width, PAYMENT_LOGO_HEIGHT), Image.LANCZOS).save(
+                    target, format="PNG", optimize=True)
+        else:
+            shutil.copy2(source, target)
+        written.append(target)
+    crop_logos(out_dir)
+    return written
+
+
+def crop_logos(out_dir: Path) -> None:
+    """El recorte de brand/payments/viewbox.json en las copias SVG, el mismo
+    que aplica el sitio: Visa y Mastercard traen su margen de respeto dentro del
+    archivo, y a 22 px de alto el dibujo quedaba diminuto. El kit no se toca."""
+    import json
+
+    crops = json.loads((PAYMENTS / "viewbox.json").read_text(encoding="utf-8"))
+    for name, box in crops.items():
+        made = out_dir / f"{name}.svg"
+        if name.startswith("_") or not made.exists():
+            continue
+        text = made.read_text(encoding="utf-8")
+        made.write_text(re.sub(r'viewBox="[^"]*"', f'viewBox="{box}"', text, count=1),
+                        encoding="utf-8", newline="")
 
 
 # El ala que va al pie de las campañas del plan Básico, junto a «Enviado con

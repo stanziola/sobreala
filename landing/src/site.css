@@ -1068,8 +1068,7 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 
 /* La fila de abajo va sobre el mismo azul que el resto del pie, y lo único que
    la separa es una línea fina de lado a lado, fuera del `shell`. Hubo una
-   franja gris para que un logo azul oscuro se leyera encima; con los dos logos
-   en blanco, como pide la guía de PayPal para fondos oscuros, sobra. */
+   franja gris para que un logo azul oscuro se leyera encima, y se quitó. */
 .site-footer__bottom { margin-top: clamp(28px, 5vw, 44px); border-top: 1px solid var(--color-footer-edge); }
 .site-footer__legal {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
@@ -1078,5 +1077,7 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 }
 .payments { display: flex; align-items: center; gap: 12px; }
 .payments__label { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
-/* Sin apagar y sin fondo propio: los dos son blancos sobre el azul del pie. */
+/* A color, como vienen en su kit, y sin fondo propio (así se decidió):
+   Mastercard se lee bien sobre el azul del pie; PayPal, Visa y Yappy, que son
+   azules, con poco contraste. */
 .payments__logo { height: 28px; width: auto; }

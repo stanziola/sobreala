@@ -32,6 +32,8 @@ brand/payments/**/*.ai
 brand/payments/**/*.eps
 brand/payments/**/*.pdf
 brand/payments/**/*.jpg
+# Lo que deja el Finder al comprimir un kit en una Mac: copias «._» sin nada útil.
+__MACOSX/
 
 # Correos guardados en desarrollo: llevan enlaces de confirmación válidos.
 backend/.mail_outbox/

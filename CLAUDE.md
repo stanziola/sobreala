@@ -579,7 +579,7 @@ de HTML las enseña en **«Imágenes de esta plantilla»** (`html_images()`), ca
 una con su estado: de la cuenta, de otra cuenta (sale rota el día que esa la
 borre), de otro sitio, borrada (sale rota) o dentro del archivo (`data:`, que
 Gmail no muestra). **«Cambiar»** sube una foto por la ruta
-de siempre del lienzo (con su revisión, su achique y el tope de 20) y cambia esa
+de siempre del lienzo (con su revisión, su achique y el tope del plan) y cambia esa
 dirección en el código; se guarda con Guardar. **El panel no va a buscar la
 imagen de fuera**: la sube quien la tiene.
 
@@ -648,7 +648,7 @@ servidor no se fía de ello más que de lo que escribe el editor.
 
 **Una foto se puede pegar del portapapeles**, y sube por la misma ruta que el
 botón (`/plantillas/lienzo/imagen`): se revisa por lo que trae dentro, se achica
-y cuenta contra el tope de 20. Si el portapapeles solo trae **una dirección
+y cuenta contra el tope del plan. Si el portapapeles solo trae **una dirección
 web**, se pide descargarla y subirla: **el servidor nunca va a buscar una
 imagen a otro sitio**, que sería dejarlo pidiendo cualquier cosa a cualquier
 dirección. De los derechos de autor no hay detección posible: lo que hay es la
@@ -803,7 +803,7 @@ imágenes de esa cuenta. El texto se guarda como texto y sale
 escapado. La vista previa usa el mismo `to_html()` que el envío, con las
 imágenes dentro de la respuesta para no guardar nada por mirar.
 
-**Las fotos del lienzo se guardan a 1200 px** y cuentan contra el tope de 20; **las
+**Las fotos del lienzo se guardan a 1200 px** y cuentan contra el tope del plan; **las
 imágenes de los grupos no** (`kind: "background"` en `images`, el nombre es de
 cuando eran fondos): las hace el sistema. Se guardan en `backgrounds` y sus
 colores en `shades`, en el orden de `groups()`. Al volver a guardar, las viejas
@@ -894,7 +894,7 @@ antes del primer correo.
 editor (`canvas_from_pack()`, con `imaging.unpack()`), en **todos los planes y
 sin plan**, porque el lienzo es de todos. Sus fotos entran **a esa cuenta**, por
 la misma revisión y el mismo achique que una foto del lienzo, **contando contra
-sus 20**, y solo las que el lienzo nombra. Después el lienzo pasa **exactamente
+su tope**, y solo las que el lienzo nombra. Después el lienzo pasa **exactamente
 lo que pasa Guardar**, porque del JSON no se fía nada: `canvas_refused()` (las
 reglas para armar el correo y la revisión antispam) y `canvas_fused()` (funde
 las imágenes y mira los 102 KB), que son las mismas dos funciones que usa el
@@ -1081,9 +1081,24 @@ acaba de tomar.
   pieza no se rompe si cambia el dominio, y **no hay forma de colar una imagen
   de fuera** escribiendo en el campo escondido del formulario: lo que se acepta
   es un nombre que tiene que existir y ser de esa cuenta.
-- **Borrar la pieza borra sus imágenes**, y hay un tope de 20 por cuenta. Ese
-  tope es también lo que acota lo que puede quedar huérfano: una imagen subida
-  y nunca guardada en ninguna pieza no la borra nadie.
+- **Borrar la pieza borra sus imágenes**, y **volver a guardarla borra las que
+  la versión anterior nombraba y la nueva ya no** (una foto que se quitó del
+  lienzo, una que se cambió con «Cambiar»): `drop_unused()` con
+  `images_in()` de la versión vieja, que mira todas las plantillas de la
+  cuenta, así una copia no pierde las suyas. Antes solo se borraban las
+  fundidas, y las fotos quitadas se quedaban contando.
+- **El tope lo dice el plan**, en la fila «Imágenes guardadas» de
+  `docs/pricing.md` (`plans.image_limit()`): **20 · 50 · 100**, y sin plan lo
+  del Básico. No se publica en /planes. Solo cuentan las fotos que sube el
+  cliente, no las que funde el sistema ni las retiradas.
+- **Las fotos sueltas se recogen al llegar al tope.** Una foto subida en el
+  editor cuenta desde que se sube, aunque la plantilla no se guarde nunca, y
+  eso dejaba el tope lleno después de borrar plantillas. Antes de decir «ya
+  tienes el máximo», `photo_room()` quita las fotos de la cuenta que no nombra
+  ninguna plantilla y tienen **más de un día** (`free_orphans()`, por
+  `images.remove()`, así que una que salió en un envío se retira y no se
+  borra). El día es para no quitarle a nadie la que acaba de subir y todavía
+  no guarda.
 - **Salvo las que ya salieron en un envío**: esas se quedan hasta doce meses
   después del último envío que las llevó. Ver `images`, abajo.
 
@@ -1119,7 +1134,7 @@ diapositivas. Ahora:
   con su índice TTL. La que nunca salió se borra como siempre, así que guardar
   sin enviar no deja nada de más: solo se guardan las versiones que salieron.
 - **Una retirada ya no es de nadie**: `owns()` y `count()` no la cuentan, así
-  que no gasta de las 20 ni se puede poner en otra pieza, pero `/img/` la sigue
+  que no gasta del tope ni se puede poner en otra pieza, pero `/img/` la sigue
   sirviendo, porque la busca por nombre.
 - **Si un HTML cargado la vuelve a nombrar, deja de estar retirada**
   (`images.keep()` al cargar y al guardar un HTML): si no, esa pieza la
@@ -1983,17 +1998,29 @@ cambia el descuento ya calculado.
 
 **`/contratar/<plan>` es un resumen, no una elección.** Llega con el ciclo que
 se eligió en /planes (`?ciclo=anual`) y enseña el plan, el descuento con sus
-correos, el **total a pagar ahora** y un solo botón «Pagar $X», con los métodos
-de pago encima; el otro ciclo queda a un enlace si también se puede. Si el ciclo
+correos, el **total a pagar ahora** y, debajo, cuánto de ese total es **ITBMS**
+(«Incluye ITBMS (7%)»: los precios ya lo llevan dentro; la tasa es
+`plans.ITBMS` y la cuenta `plans.itbms_in()`); después, un solo botón «Pagar
+$X», con los métodos de pago encima; el otro ciclo queda a un enlace si también
+se puede. **Cada método lleva sus logos a color y ninguna descripción**:
+PayPal; Visa y Mastercard en la tarjeta; Yappy en el que dice «pronto»
+(`PAY_LOGOS` en las rutas, `_pay_logos.html`, y los archivos los copia
+`build_assets.py` de `brand/payments/` a `static/img/payments/`). De noche van
+sobre una pastilla blanca, porque sobre el gris oscuro los azules no se leen.
+Debajo, una sola frase: «Panamails nunca guarda tus datos de pago.» Del cliente
+de fuera de Panamá no se sabe el país (el panel no guarda sus datos de
+facturación), así que el desglose dice ITBMS para todos y la factura, que se
+hace a mano, es la que va sin él. Si el ciclo
 pedido no se puede y el otro sí (quien tiene un anual y pulsó un mensual), enseña
 el que sí.
 
 **Al volver de un pago cobrado se aterriza en su recibo**
 (`/configuracion/pagos/recibo/<id>`, solo del dueño y solo cobrado): el número
 de pago, el plan y el ciclo, el método, la fecha y hora, el descuento si hubo y
-el total pagado. El círculo de arriba gira como si cargara, se cierra y dibuja
-el ganchito, y se queda quieto; es solo CSS, y con «reducir movimiento» sale ya
-terminado. Recargar la vuelta vuelve a enseñar el mismo recibo, sin cobrar ni
+el total pagado, con su ITBMS debajo. El círculo de arriba gira como si
+cargara, se cierra y dibuja el ganchito, y se queda quieto, **en verde**
+(`--color-success`, más claro de noche); es solo CSS, y con «reducir
+movimiento» sale ya terminado. Recargar la vuelta vuelve a enseñar el mismo recibo, sin cobrar ni
 alargar nada. El comprobante por correo dice también lo cobrado y el descuento. Pagar **no** habilita el envío: eso es la otra puerta, y el
 comprobante que sale lo dice para que no se descubra al intentar enviar.
 
@@ -2255,15 +2282,19 @@ Las reglas del carrusel nombran las cinco por su id (`#tour-1` … `#tour-5`), q
 es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otras,
 esas listas de `landing/src/site.css` crecen con ellas.
 
-**Los logos de pago van los dos en blanco, sobre el azul del pie.** La fila de
-abajo va de lado a lado, fuera del `shell`, y lo único que la separa del resto
-del pie es una línea fina (`--color-footer-edge`, el mismo valor en los dos
-temas porque el pie es azul en los dos). Hubo una franja gris para que el PayPal
-a color se leyera encima, y se quitó: su azul oscuro sobre el azul del pie da
-2:1, y sus propias normas de marca piden la versión blanca en fondos oscuros.
-Qué variante del kit usa el sitio lo dice `PAYMENT_LOGOS` en
-`landing/build_site.py`, que es el único sitio que lo decide; **ningún logo
-lleva fondo propio**. Las medidas de cada `<img>` salen del archivo generado
+**Los logos de pago van a color, directo sobre el azul del pie**: Yappy,
+PayPal, Visa y Mastercard (septiembre de 2026). Se decidió así sabiendo que
+PayPal, Visa y Yappy, que son azules, tienen poco contraste sobre ese azul (el
+PayPal oscuro da 2:1, y sus normas de marca piden la versión blanca en fondos
+oscuros); hasta entonces iban los dos que había en blanco. La fila de abajo va
+de lado a lado, fuera del `shell`, y lo único que la separa del resto del pie es
+una línea fina (`--color-footer-edge`, el mismo valor en los dos temas porque el
+pie es azul en los dos). Qué variante del kit usa el sitio lo dice
+`PAYMENT_LOGOS` en `landing/build_site.py`, con su nombre bien escrito para el
+texto alternativo en `PAYMENT_LABELS`; **ningún logo lleva fondo propio**. **Visa y Mastercard
+traen su margen de respeto dentro del SVG**, y a 28 px de alto el dibujo quedaba
+diminuto: las copias que sirven el sitio y el panel se recortan con el viewBox
+de `brand/payments/viewbox.json` (el kit no se toca). Las medidas de cada `<img>` salen del archivo generado
 (`icon_size()`): escritas a ojo, y cuadradas para logos apaisados, el pie
 saltaba mientras cargaba.
 

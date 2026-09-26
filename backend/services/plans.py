@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +21,11 @@ PRICING = Path(__file__).resolve().parent.parent.parent / "docs" / "pricing.md"
 
 # Lo que se cobra. Panamá usa el dólar, y PayPal necesita saberlo.
 CURRENCY = "USD"
+
+# El ITBMS de Panamá, que los precios ya llevan dentro («Precios con ITBMS
+# incluido» en /planes). Es lo que el desglose del pago y el recibo dicen que
+# incluye el total.
+ITBMS = Decimal("0.07")
 
 # Lo que dice «Ilimitadas» en la tabla. Un número y no None, para que quien
 # compare no tenga que acordarse de tratar el caso aparte.
@@ -81,6 +86,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
     emails: list[int | None] = []
     clean: list[bool] = []
     users: list[int | None] = []
+    images: list[int | None] = []
 
     for line in text.splitlines():
         if not line.lstrip().startswith("|"):
@@ -107,6 +113,8 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             clean = [c.strip() == "✅" for c in cells[1:]]
         elif cells[0].strip("* ") == "Usuarios" and len(cells) - 1 == len(names):
             users = [_count(c) for c in cells[1:]]
+        elif cells[0].strip("* ") == "Imágenes guardadas" and len(cells) - 1 == len(names):
+            images = [_count(c) for c in cells[1:]]
 
     if not names or MONTHLY not in prices or YEARLY not in prices:
         raise RuntimeError(f"no encontré las filas de precios en {path}")
@@ -123,6 +131,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             "clean": clean[index] if index < len(clean) else False,
             "emails": emails[index] if index < len(emails) else None,
             "users": users[index] if index < len(users) else None,
+            "images": images[index] if index < len(images) else None,
         }
     return plans
 
@@ -154,6 +163,25 @@ def field_limit(plan: str | None) -> int:
     if not found or found.get("fields") is None:
         return FREE_FIELDS
     return found["fields"]
+
+
+def image_limit(plan: str | None) -> int:
+    """Cuántas fotos puede tener guardadas una cuenta con ese plan, de
+    docs/pricing.md. Sin plan, las del plan más barato, como las etiquetas: quien
+    prueba, prueba con lo del Básico. Las imágenes que funde el sistema no
+    cuentan (`images.count()`)."""
+    found = PLANS.get(plan or "")
+    if not found or found.get("images") is None:
+        cheapest = next(iter(PLANS.values()), {})
+        return cheapest.get("images") or 20
+    return found["images"]
+
+
+def itbms_in(total) -> Decimal:
+    """Cuánto de un total es ITBMS, con el impuesto ya dentro del precio: $25
+    llevan $1.64."""
+    total = Decimal(str(total))
+    return (total - total / (1 + ITBMS)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def tag_limit(plan: str | None) -> int:
