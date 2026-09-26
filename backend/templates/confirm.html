@@ -6,10 +6,17 @@
   <p class="lead">{{ t('confirm_lead_one') if minutes == 1
                       else t('confirm_lead', minutes=minutes) }}</p>
 
+  {% if resent %}<p class="notice notice--ok">{{ t('code_resent') }}</p>{% endif %}
+
   {% with submit = 'confirm_submit' %}{% include "_code-form.html" %}{% endwith %}
 
   <p class="hint">{{ t('confirm_hint') }}</p>
-  <p class="foot"><a href="{{ url_for('auth.resend') }}">{{ t('confirm_resend') }}</a>
-    · <a href="{{ url_for('auth.correct_email') }}">{{ t('confirm_wrong_email') }}</a></p>
+  {# Un botón y no un enlace: pedirlo manda un correo, y eso no puede hacerlo
+     una precarga del navegador. No pregunta la dirección: va a la cuenta que
+     este navegador está confirmando. #}
+  <form class="foot" method="post" action="{{ url_for('auth.resend') }}" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="link-button" type="submit">{{ t('confirm_resend') }}</button>
+  </form>
 </div>
 {% endblock %}

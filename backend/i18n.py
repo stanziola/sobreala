@@ -41,8 +41,6 @@ TEXTS = {
 
     # --- registration ------------------------------------------------------
     "register_title": "Crea tu cuenta",
-    "register_lead": "Con tu cuenta puedes preparar tus contactos y armar campañas. "
-                     "Para enviar de verdad hablamos antes contigo.",
     "register_company": "Nombre de tu negocio u organización",
     "register_contact": "Tu nombre",
     "register_email": "Correo electrónico",
@@ -58,8 +56,6 @@ TEXTS = {
     "register_have_account": "¿Ya tienes cuenta?",
     "register_have_account_adding": "¿Esa cuenta ya existe?",
     "register_login_link": "Entra aquí",
-    "register_adding": "Vas a crear otra cuenta. La que tienes abierta sigue "
-                       "abierta, y vas a poder saltar entre las dos.",
 
     # --- confirmation ------------------------------------------------------
     "confirm_title": "Escribe tu código",
@@ -68,25 +64,18 @@ TEXTS = {
     "confirm_lead_one": "Te enviamos un código de 6 dígitos a tu correo. "
                         "Vence en un minuto.",
     "confirm_hint": "Si no lo ves, mira en la carpeta de spam.",
-    "recover_hint": "Si no lo ves, mira en la carpeta de spam. Y si no llega, "
-                    "vuelve a pedirlo revisando que sea el correo de tu cuenta.",
     "confirm_code": "Código de 6 dígitos",
     "confirm_submit": "Confirmar mi correo",
+    # Un botón y no una pantalla: el código sale a la dirección que ya se
+    # escribió, sin preguntarla otra vez. Lo usan confirmar y recuperar.
     "confirm_resend": "Pedir otro código",
+    "code_resent": "Te enviamos un código nuevo.",
+    "code_resend_failed": "No pudimos enviarte el código. Vuelve a intentarlo "
+                          "en unos minutos.",
     "confirm_go_back": "Volver a entrar",
-    "confirm_wrong_email": "¿Escribiste mal tu correo?",
-    "correct_title": "Corrige tu correo",
-    "correct_lead": "Si el código va a una dirección equivocada, cámbiala aquí "
-                    "y te enviamos uno nuevo a la buena.",
-    "correct_submit": "Cambiar y enviar el código",
     "confirm_countdown": "Vence en {time}",
     "confirm_expired": "El código venció. Pide uno nuevo y te lo enviamos al "
                        "momento.",
-
-    # --- resend ------------------------------------------------------------
-    "resend_title": "Pedir otro código",
-    "resend_lead": "Escribe tu correo y te mandamos un código nuevo.",
-    "resend_submit": "Enviar código",
 
     # --- contraseñas -------------------------------------------------------
     # Las mismas cuatro reglas que aplica password_problem() en
@@ -174,14 +163,12 @@ TEXTS = {
                                 "devolverte la cuenta.",
 
     "login_title": "Entra a tu cuenta",
+    "login_adding_title": "Agregar una cuenta",
     "login_switched": "Cerraste tu sesión. Entra con la cuenta que quieras.",
-    "login_adding": "Vas a agregar otra cuenta. La que tienes abierta sigue "
-                    "abierta, y vas a poder saltar entre las dos.",
+    "login_already_open": "Esa cuenta ya está abierta en este navegador.",
 
     # --- las cuentas abiertas a la vez -------------------------------------
     "accounts_title": "Tus cuentas",
-    "accounts_lead": "Las que tienes abiertas en este navegador. Saltar de una "
-                     "a otra no pide contraseña y no cierra ninguna.",
     "accounts_here": "Estás aquí",
     "accounts_use": "Entrar aquí",
     "accounts_drop": "Cerrar esta",
@@ -195,7 +182,7 @@ TEXTS = {
     "login_no_account": "¿Todavía no tienes cuenta?",
     # Estando dentro de una cuenta y agregando otra, «todavía no tienes cuenta»
     # es mentira: la tiene, lo que quiere es otra.
-    "login_no_account_adding": "¿Todavía no existe esa cuenta?",
+    "login_no_account_adding": "¿Te gustaría crear otra cuenta?",
     "login_register_link": "Créala aquí",
 
     # --- devices -----------------------------------------------------------

@@ -287,30 +287,6 @@ def test_the_code_arrives_in_six_pieces_or_in_one(client, database, outbox):
     assert whole.headers["Location"].endswith("/bienvenida")
 
 
-def test_the_countdown_says_the_same_in_every_case(client, database, outbox):
-    """Rule 7, now on the clock.
-
-    The code screen is reached three ways: a fresh registration, one with an
-    address that already exists, and a resend for an address that has no
-    account. Only the first issues a code. If the countdown only ran when there
-    was one, its absence would answer the question rule 7 forbids.
-    """
-    register(client)                       # ana@ejemplo.com exists now
-    register(client)                       # taken: no code issued
-    with_account = page_shape(client.get("/confirmar"))
-
-    stranger = client.application.test_client()
-    stranger.get("/reenviar-confirmacion")
-    with stranger.session_transaction() as sess:
-        csrf = sess["_csrf"]
-    stranger.post("/reenviar-confirmacion",
-                  data={"csrf_token": csrf, "email": "nadie@ejemplo.com"})
-    without_account = page_shape(stranger.get("/confirmar"))
-
-    assert "Vence en" in with_account
-    assert with_account == without_account
-
-
 def test_with_the_time_gone_the_screen_is_drawn_blocked(client, database, outbox):
     register(client)
     with client.session_transaction() as sess:
@@ -336,14 +312,23 @@ def test_the_clock_on_screen_does_not_decide(client, database, outbox):
     assert confirm(client, code).headers["Location"].endswith("/bienvenida")
 
 
+def csrf_of(client):
+    with client.session_transaction() as sess:
+        return sess["_csrf"]
+
+
+def ask_again(client):
+    """«Pedir otro código», como lo pulsa la pantalla: sin ninguna dirección."""
+    client.get("/confirmar")
+    return client.post("/reenviar-confirmacion",
+                       data={"csrf_token": csrf_of(client)})
+
+
 def test_resending_replaces_the_previous_code(client, database, outbox):
     register(client)
     first = code_from_outbox(outbox)
 
-    client.get("/reenviar-confirmacion")
-    with client.session_transaction() as sess:
-        csrf = sess["_csrf"]
-    client.post("/reenviar-confirmacion", data={"csrf_token": csrf, "email": "ana@ejemplo.com"})
+    ask_again(client)
     second = code_from_outbox(outbox)
 
     assert first != second
@@ -352,15 +337,81 @@ def test_resending_replaces_the_previous_code(client, database, outbox):
     assert confirm(client, second).headers["Location"].endswith("/bienvenida")
 
 
-def test_resend_answers_the_same_for_an_unknown_address(client, database, outbox):
-    client.get("/reenviar-confirmacion")
-    with client.session_transaction() as sess:
-        csrf = sess["_csrf"]
-    response = client.post("/reenviar-confirmacion",
-                           data={"csrf_token": csrf, "email": "nadie@ejemplo.com"})
-    assert response.status_code == 302
-    assert response.headers["Location"].endswith("/confirmar")
+def test_otro_codigo_no_pregunta_la_direccion(client, database, outbox):
+    """Va a la que se escribió al registrarse, y la vuelta lo dice."""
+    register(client)
+    pantalla = client.get("/confirmar").get_data(as_text=True)
+    # Un botón que manda el formulario, sin ningún campo de correo.
+    assert 'action="/reenviar-confirmacion"' in pantalla
+    assert 'type="email"' not in pantalla
+
+    answer = ask_again(client)
+    assert answer.headers["Location"].endswith("/confirmar?reenvio=ok")
+    assert "Te enviamos un código nuevo" in client.get(
+        answer.headers["Location"]).get_data(as_text=True)
+    assert len(list(outbox.glob("*.txt"))) == 2
+    # El código se manda a esa misma dirección, con el parámetro puesto: un
+    # código mal escrito no vuelve a decir que salió otro.
+    wrong = client.post("/confirmar?reenvio=ok", data={
+        "csrf_token": csrf_of(client), "code": list(WRONG)})
+    assert "Te enviamos un código nuevo" not in wrong.get_data(as_text=True)
+
+
+def test_sin_nada_que_confirmar_no_manda_nada(client, database, outbox):
+    """Un navegador que no registró nada no tiene a quién mandarle el código:
+    se entra con la contraseña, y dentro el aviso del panel lo ofrece."""
+    answer = ask_again(client)
+    assert answer.headers["Location"].endswith("/entrar")
     assert list(outbox.glob("*.txt")) == []
+
+
+def test_pedirlo_por_get_no_manda_nada(client, database, outbox):
+    """Manda un correo, así que una precarga del navegador no puede pedirlo."""
+    register(client)
+    answer = client.get("/reenviar-confirmacion")
+    assert answer.headers["Location"].endswith("/confirmar")
+    assert len(list(outbox.glob("*.txt"))) == 1
+
+
+def test_pasado_el_limite_lo_dice(client, database, outbox):
+    """Aquí no hay nada que esconder: la cuenta es la de este navegador."""
+    from blueprints.auth.routes import RESEND_PER_EMAIL
+
+    register(client)
+    for _ in range(RESEND_PER_EMAIL[0]):
+        ask_again(client)
+    answer = ask_again(client)
+
+    assert answer.headers["Location"].endswith("/confirmar?reenvio=espera")
+    assert "Demasiados intentos" in client.get(
+        answer.headers["Location"]).get_data(as_text=True)
+    assert len(list(outbox.glob("*.txt"))) == 1 + RESEND_PER_EMAIL[0]
+
+
+def test_si_no_sale_lo_dice(client, database, outbox, monkeypatch):
+    from services import mailer
+
+    register(client)
+
+    def broken(**kwargs):
+        raise RuntimeError("SES no contesta")
+
+    monkeypatch.setattr(mailer, "send", broken)
+    answer = ask_again(client)
+
+    assert answer.headers["Location"].endswith("/confirmar?reenvio=fallo")
+    pantalla = client.get(answer.headers["Location"]).get_data(as_text=True)
+    assert "No pudimos enviarte el código" in pantalla
+    assert "Te enviamos un código nuevo" not in pantalla
+
+
+def test_ya_no_se_ofrece_corregir_el_correo(client, database, outbox):
+    """Quien lo escribió mal se registra otra vez con el bueno; la cuenta a
+    medias se borra sola a las 24 horas."""
+    register(client)
+    pantalla = client.get("/confirmar").get_data(as_text=True)
+    assert "Escribiste mal" not in pantalla
+    assert client.get("/confirmar/corregir").status_code == 404
 
 
 # ------------------------------------------------------------------------ login
@@ -404,14 +455,17 @@ def test_unknown_address_answers_like_a_wrong_password(client, database):
 
 
 def test_panel_warns_until_the_address_is_confirmed(client, database, outbox):
+    """El botón del aviso pide el código para la cuenta abierta, sin
+    preguntar la dirección."""
     register(client)
     login(client)
-    assert "confirmas tu correo" in client.get("/panel").get_data(as_text=True)
+    panel = client.get("/panel").get_data(as_text=True)
+    assert "confirmas tu correo" in panel
+    assert 'action="/reenviar-confirmacion"' in panel
 
-    client.get("/reenviar-confirmacion")
-    with client.session_transaction() as sess:
-        csrf = sess["_csrf"]
-    client.post("/reenviar-confirmacion", data={"csrf_token": csrf, "email": "ana@ejemplo.com"})
+    answer = client.post("/reenviar-confirmacion",
+                         data={"csrf_token": csrf_of(client)})
+    assert answer.headers["Location"].endswith("/confirmar?reenvio=ok")
     confirm(client, code_from_outbox(outbox))
     assert "confirmas tu correo" not in client.get("/panel").get_data(as_text=True)
 

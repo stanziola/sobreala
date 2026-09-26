@@ -21,7 +21,7 @@
     {% include "designs/_columns.html" %}
 
     <label for="html">{{ t('designs_html_code') }}</label>
-    <textarea id="html" name="html" class="code" rows="26" spellcheck="false"
+    <textarea id="html" name="html" class="compose__code" rows="26" spellcheck="false"
               autocomplete="off" autocapitalize="off" wrap="off">{{ html }}</textarea>
     <p class="hint">{{ t('designs_html_size', kb=kb, max=max_kb) }}</p>
     {% if errors.html %}<p class="error">{{ errors.html }}</p>{% endif %}

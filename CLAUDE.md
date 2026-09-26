@@ -309,6 +309,23 @@ medias: una dirección escrita mal no queda ocupada para siempre, y nadie puede
 reservar el correo de un tercero registrándolo y no confirmando nunca. El
 intento sigue en `auth_events`, que no tiene TTL.
 
+**«Pedir otro código» no pregunta la dirección** (septiembre de 2026). Es un
+botón, un POST que no puede mandar una precarga, y vuelve a la pantalla del
+código con «Te enviamos un código nuevo.».
+
+- **Al confirmar el registro** (`/reenviar-confirmacion`), el código va a la
+  cuenta que este navegador está confirmando (`PENDING_KEY`). Si no hay ninguna,
+  va a la cuenta abierta si no está confirmada: es el botón del aviso del panel.
+  Nadie escribe ninguna dirección, así que la regla 7 no está en juego, y la
+  vuelta dice también si se pasó del límite o si el correo no salió.
+- **Al recuperar la contraseña**, va a la que se escribió la primera vez, que
+  guarda la sesión (`RESET_EMAIL`). Pasa por los mismos límites y contesta igual
+  exista o no la cuenta, que es la regla 7 de siempre.
+- **Si la dirección se escribió mal**, se vuelve atrás y se escribe la buena.
+  Hubo una pantalla de corregirla antes de confirmar (`/confirmar/corregir`) y
+  se quitó: quien se registró con una dirección equivocada se registra otra vez
+  con la buena, y la cuenta a medias se borra sola.
+
 **La cuota del mes vive en `sent_counts`**, una clave por mes y un contador
 dentro. Un contador por mes y no uno solo que haya que poner a cero: el mes que
 viene empieza en cero porque es otra clave, sin que nadie pase a barrer, y lo del
@@ -325,9 +342,7 @@ de las dos. Al terminar se avisa a la **dirección vieja**, y ese aviso no tiene
 interruptor ni lleva enlaces dentro: quien lo recibe ya no controla esa cuenta, y
 es lo único que le queda para reclamar.
 
-Corregir el correo (`/confirmar/corregir`) es otra cosa y es de antes: sirve
-mientras la cuenta no está confirmada, cuando todavía no hay nada que proteger.
-Y si una cuenta sin confirmar cambia su correo por aquí, **queda confirmada**:
+Si una cuenta sin confirmar cambia su correo por aquí, **queda confirmada**:
 el código acaba de probar exactamente lo que probaría confirmar, y pedir dos
 veces la misma prueba no protege de nada.
 
@@ -396,6 +411,19 @@ sin tocar los demás. TTL sobre `expires_at`.
 correo**, con un enlace de un solo uso para cerrar esa sesión sin necesidad de
 recordar la contraseña. Solo al entrar, no al confirmar el registro ni al
 recuperar la clave, que ya avisan por su cuenta.
+
+**La IP de ese aviso y la de Seguridad son el mismo dato**: la de la sesión
+cuando se abrió, que Cloudflare le pasa al panel (`client_ip()`). Si no
+coinciden, son dos ingresos distintos, y el proveedor de internet puede cambiar
+la IP entre uno y otro. Cada fila de Seguridad es una sesión y no un aparato,
+así que dos filas con la misma IP son dos sesiones de la misma computadora.
+
+**Los formularios que abren una sesión se mandan una sola vez** (`data-once`,
+en `panel.js`): entrar, el código de los dos pasos, registrarse y las seis
+casillas. Un doble clic mientras el servidor contestaba abría dos sesiones; el
+navegador se quedaba con la galleta de una y la otra seguía viva sin dueño, como
+otra fila en Seguridad. En el código, la segunda vuelta decía que ya se había
+usado.
 
 ### `contacts`
 **Un solo documento por dirección de correo por cuenta.** Índice único sobre
@@ -1359,10 +1387,9 @@ mismo momento. Antes un cliente caía en Estadísticas y un administrador en
 `/admin`, que son dos pantallas concretas, y la diferencia se notaba justo al
 saltar entre cuentas abiertas —una te dejaba en un sitio y la otra en otro—. Lo
 decide `landing()` en `blueprints/auth/routes.py`, y como devuelve una dirección
-de otro dominio, es lo que obliga a nombrar el sitio en `form-action`.
-
-Volver **desde dentro** del panel es otra cosa y tiene su propia función,
-`inside()`: de una pantalla del panel se vuelve a otra del panel, no al sitio.
+de otro dominio, es lo que obliga a nombrar el sitio en `form-action`. **El
+«Volver» de la lista de cuentas lleva ahí también**: llevaba a las Estadísticas
+de la cuenta en uso.
 
 **Lo primero que ve una cuenta nueva es `/bienvenida`, no el panel.** Confirmar
 el registro aterriza ahí: el nombre de la persona, que su cuenta está lista, y
@@ -1560,14 +1587,22 @@ viaja en una galleta y porque nadie necesita más.
 Tres cosas que sostienen esto:
 
 - **Agregar una cuenta pasa por la pantalla de entrar completa**, con su
-  contraseña y su segundo paso: `/entrar?agregar=1`. Aquí no se abre ninguna
-  puerta que no estuviera ya abierta. La marca de «vengo a agregar» vive en la
-  sesión y no en la dirección, porque el segundo paso pasa por otra pantalla.
+  contraseña y su segundo paso: `/entrar?agregar=1`, que se titula «Agregar una
+  cuenta». Aquí no se abre ninguna puerta que no estuviera ya abierta. La marca
+  de «vengo a agregar» vive en la sesión y no en la dirección, porque el segundo
+  paso pasa por otra pantalla.
+- **Una cuenta que ya está abierta no se agrega otra vez**: sale «Esa cuenta ya
+  está abierta en este navegador.», antes de mirar la contraseña, y no se abre
+  nada. Antes abría otra sesión y cerraba la vieja.
+- **Agregar una cuenta que nunca entró desde este navegador manda el aviso de
+  dispositivo nuevo**, aunque el navegador tenga otra abierta. Para esa cuenta
+  es un navegador nuevo, y sin el aviso cualquiera que abriera primero una
+  cuenta suya podría entrar a otra sin que su dueño se enterara.
 - **Y se puede crear una cuenta nueva sin cerrar la abierta**, por el mismo
-  camino: el pie de esa pantalla lleva a `/registro?agregar=1`, que se dibuja en
-  vez de devolver a la portada, y al confirmar el código la cuenta nueva se suma
-  a las abiertas. Ahí el pie tampoco dice «¿todavía no tienes cuenta?», que
-  estando dentro de una es mentira.
+  camino: el pie de esa pantalla («¿Te gustaría crear otra cuenta?») lleva a
+  `/registro?agregar=1`, que se dibuja en vez de devolver a la portada, y al
+  confirmar el código la cuenta nueva se suma a las abiertas. Ninguna de las dos
+  pantallas lleva un recuadro que lo explique.
 - **«Olvidé la contraseña» mientras se agrega una cuenta es de la que se está
   agregando**, no de la que ya está abierta. La pantalla de recuperar, estando
   dentro, no pregunta la dirección porque ya la sabe; con la marca de agregar
@@ -1589,6 +1624,13 @@ pantalla de dispositivos de su dueño.
 
 Cerrar las sesiones de los **otros** dispositivos no se pregunta al salir: vive
 en Configuración → Seguridad, que es su sitio.
+
+**Cerrar «Este dispositivo» en Seguridad sale solo de esa cuenta**
+(`forget_active()`, como «Cerrar esta» en la lista), y si quedan otras abiertas
+lleva a elegir entre ellas. Antes vaciaba la galleta entera: las otras cuentas
+se quedaban vivas sin su testigo y salían en su Seguridad como otro dispositivo
+con la misma IP. Por lo mismo, `forget_active()` conserva la duración de la
+galleta de las que quedan.
 
 ## Panel de administración
 

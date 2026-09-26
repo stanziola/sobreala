@@ -422,6 +422,49 @@ def test_la_pantalla_lista_las_dos_y_dice_en_cual_estas(client, database, outbox
     assert "una@ejemplo.com" in pantalla
     assert "dos@ejemplo.com" in pantalla
     assert "Estás aquí" in pantalla
+    # Sin la frase de arriba, que explicaba lo que la lista ya enseña.
+    assert "Saltar de una" not in pantalla
+
+
+def test_volver_lleva_a_la_portada(client, database, outbox):
+    """Llevaba a las Estadísticas de la cuenta en uso. La portada es donde se
+    aterriza al entrar y al saltar de cuenta."""
+    from config import Config
+
+    browser, _, _ = two_accounts(client, database)
+
+    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    assert f'<a href="{Config.PUBLIC_SITE_URL}">Volver</a>' in pantalla
+
+
+def test_una_cuenta_ya_abierta_no_se_agrega_otra_vez(client, database, outbox):
+    """Abría otra sesión y cerraba la de antes. Ahora lo dice y no abre nada."""
+    from models import session as sessions
+
+    browser, una, dos = two_accounts(client, database)
+    antes = sessions.for_account(database, una)[0]["_id"]
+    avisos = database.mail_log.count_documents({"purpose": mail_log.NEW_LOGIN})
+
+    respuesta = add_account(browser, "una@ejemplo.com")
+
+    assert respuesta.status_code == 200
+    assert "Esa cuenta ya está abierta en este navegador" in respuesta.get_data(
+        as_text=True)
+    # La misma sesión de antes, la misma cuenta en uso, y ningún aviso.
+    assert [s["_id"] for s in sessions.for_account(database, una)] == [antes]
+    assert quien(browser, database) == dos
+    assert database.mail_log.count_documents(
+        {"purpose": mail_log.NEW_LOGIN}) == avisos
+
+
+def test_la_ya_abierta_se_dice_aunque_la_contrasena_este_mal(client, database,
+                                                             outbox):
+    """Se comprueba antes de la contraseña: no hay nada que abrir."""
+    browser, _, _ = two_accounts(client, database)
+
+    respuesta = add_account(browser, "una@ejemplo.com", password="otra-cosa")
+
+    assert "Esa cuenta ya está abierta" in respuesta.get_data(as_text=True)
 
 
 def test_la_pantalla_no_dibuja_ningun_testigo(client, database, outbox):
@@ -446,6 +489,27 @@ def test_cerrar_una_deja_la_otra(client, database, outbox):
     assert abiertas(browser, database) == [dos]
     assert sessions.for_account(database, una) == []
     assert len(sessions.for_account(database, dos)) == 1
+
+
+def test_cerrar_este_dispositivo_deja_las_otras(client, database, outbox):
+    """Cerrar «Este dispositivo» en Seguridad vaciaba la galleta entera: las
+    otras cuentas del navegador quedaban vivas y sin testigo, y salían en su
+    Seguridad como otro dispositivo con la misma IP."""
+    from models import session as sessions
+
+    browser, una, dos = two_accounts(client, database)
+    este = sessions.for_account(database, dos)[0]["_id"]
+
+    respuesta = browser.post("/dispositivos/cerrar", data={
+        "csrf_token": csrf(browser, "/configuracion/seguridad"),
+        "session_id": str(este)})
+
+    assert respuesta.headers["Location"].endswith("/cambiar-cuenta")
+    assert sessions.for_account(database, dos) == []
+    # La otra sigue abierta, viva y en la galleta, que sigue durando lo mismo.
+    assert abiertas(browser, database) == [una]
+    with browser.session_transaction() as sess:
+        assert sess.permanent
 
 
 def test_cerrar_sesion_las_cierra_todas(client, database, outbox):
@@ -616,9 +680,12 @@ def test_la_pantalla_de_agregar_ofrece_crear_una(client, database, outbox):
 
     pantalla = browser.get("/entrar?agregar=1").get_data(as_text=True)
 
-    assert "no existe esa cuenta" in pantalla
+    assert "<h1>Agregar una cuenta</h1>" in pantalla
+    assert "¿Te gustaría crear otra cuenta?" in pantalla
     assert "no tienes cuenta" not in pantalla
     assert "/registro?agregar=1" in pantalla
+    # Sin el recuadro que lo explicaba.
+    assert "Vas a agregar otra cuenta" not in pantalla
 
 
 def test_se_crea_otra_cuenta_y_la_primera_sigue_abierta(client, database, outbox):
@@ -628,10 +695,12 @@ def test_se_crea_otra_cuenta_y_la_primera_sigue_abierta(client, database, outbox
     browser = other(client)
     login(browser, email="una@ejemplo.com")
 
-    # El formulario se dibuja en vez de devolver a la portada.
+    # El formulario se dibuja en vez de devolver a la portada, sin las dos
+    # frases que tenía encima.
     formulario = browser.get("/registro?agregar=1")
     assert formulario.status_code == 200
-    assert "Vas a crear otra cuenta" in formulario.get_data(as_text=True)
+    assert "Vas a crear otra cuenta" not in formulario.get_data(as_text=True)
+    assert "Con tu cuenta puedes" not in formulario.get_data(as_text=True)
 
     register_another(browser, "dos@ejemplo.com")
     confirm(browser, code_from_outbox(outbox))
@@ -654,3 +723,18 @@ def test_el_registro_sin_la_marca_sigue_devolviendo(client, database, outbox):
 
     assert respuesta.status_code == 302
     assert respuesta.headers["Location"] == Config.PUBLIC_SITE_URL
+
+
+def test_otro_codigo_al_crear_otra_va_a_la_nueva(client, database, outbox):
+    """Estando dentro de una, el código de la que se está creando no va a la
+    abierta: va a la que se escribió en el registro."""
+    register(client, email="una@ejemplo.com")
+    browser = other(client)
+    login(browser, email="una@ejemplo.com")
+    register_another(browser, "dos@ejemplo.com")
+
+    browser.post("/reenviar-confirmacion",
+                 data={"csrf_token": csrf(browser, "/confirmar")})
+
+    ultimo = list(database.mail_log.find({"purpose": mail_log.CONFIRM}))[-1]
+    assert ultimo["to"] == "dos@ejemplo.com"

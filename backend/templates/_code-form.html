@@ -15,7 +15,9 @@
   <span data-countdown-done{% if not expired %} hidden{% endif %}>{{ t('confirm_expired') }}</span>
 </p>
 
-<form method="post" novalidate data-code-form>
+{# data-once: el script la manda sola al llenar la última casilla, y un Enter
+   encima la mandaba dos veces; la segunda contestaba que el código ya se usó. #}
+<form method="post" novalidate data-code-form data-once>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <label for="code-1">{{ t('confirm_code') }}</label>

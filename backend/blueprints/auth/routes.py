@@ -2,10 +2,10 @@
 
 Four rules run through the whole file:
 
-  * The screen never reveals whether an address has an account. Registering and
-    resending answer identically either way; the owner of an existing address is
-    told by email instead. This is what shapes the confirmation screen: every
-    wrong code gets the same answer, whether or not a code was ever issued.
+  * The screen never reveals whether an address has an account. Signing in and
+    recovering answer identically either way. This is what shapes the code
+    screens: every wrong code gets the same answer, whether or not a code was
+    ever issued.
   * A confirmation code is only ever compared as a hash, and it is spent once.
   * If the email cannot be sent, a registration is undone. An account that
     exists but can never be confirmed is worse than no account at all.
@@ -89,6 +89,10 @@ RESET_KEY = "reset_account_id"
 RESET_ATTEMPTS = "reset_attempts"
 RESET_DEADLINE = "reset_expires_at"
 RESET_VERIFIED = "reset_verified_for"
+# La dirección escrita al pedir el código, exista o no, para que «Pedir otro
+# código» no la pregunte otra vez. Es lo que escribió quien mira, así que
+# guardarla no le cuenta nada que no supiera.
+RESET_EMAIL = "reset_email"
 # Between the password and the second step there is a moment where the password
 # was right and the session is not open yet. That waiting room lives here.
 PENDING_2FA = "pending_two_factor"
@@ -170,9 +174,14 @@ def forget_active() -> None:
     """
     dead = session.get(SESSION_KEY)
     others = [raw for raw in open_tokens() if raw != dead]
+    # Vaciar la sesión le quita también su duración: sin guardarla, la galleta
+    # de las que quedan moriría al cerrar el navegador y sus sesiones seguirían
+    # vivas sin testigo.
+    permanent = session.permanent
     session.clear()
     if others:
         session[OPEN_KEY] = others
+        session.permanent = permanent
 
 
 def current_session():
@@ -268,7 +277,8 @@ def bar_account():
 
 
 def landing(account: dict | None) -> str:
-    """A dónde va alguien que acaba de entrar o que salta de cuenta.
+    """A dónde va alguien que acaba de entrar, que salta de cuenta o que vuelve
+    de la lista de sus cuentas.
 
     **Al sitio público, sea quien sea.** Es la portada: desde ahí se elige a
     dónde ir con el menú de siempre, que para una cuenta de administrador
@@ -278,9 +288,8 @@ def landing(account: dict | None) -> str:
     con varias cuentas abiertas, donde saltar a una te dejaba en un sitio y
     saltar a otra en otro.
 
-    No se confunda con `inside()`, que es a dónde se vuelve **desde dentro** del
-    panel, ni con `not_for_admins()`, que es la puerta que devuelve a `/admin` a
-    quien abre una pantalla de cliente que su cuenta no tiene.
+    No se confunda con `not_for_admins()`, que es la puerta que devuelve a
+    `/admin` a quien abre una pantalla de cliente que su cuenta no tiene.
 
     Devuelve una dirección entera y no una ruta, porque el sitio está en otro
     dominio. Eso obliga a una cosa más, en `app.py`: la cabecera `form-action`
@@ -319,18 +328,6 @@ def after_sign_in(account: dict | None) -> str:
     if wanted and wanted in plans.PLANS and not accounts.is_admin(account):
         return url_for("auth.checkout", plan=wanted)
     return landing(account)
-
-
-def inside(account: dict | None) -> str:
-    """La pantalla de dentro que le toca a esta cuenta.
-
-    No es lo mismo que `landing()`: aquella es a dónde se aterriza al entrar, y
-    esta es a dónde se vuelve desde una pantalla del panel, que tiene que ser
-    otra del panel y no el sitio público.
-    """
-    if accounts.is_admin(account):
-        return url_for("admin.home")
-    return url_for("auth.panel")
 
 
 def member_may_enter(db, account: dict | None) -> bool:
@@ -844,6 +841,12 @@ def confirm():
     """
     errors: dict[str, str] = {}
     account_id = as_object_id(session.get(PENDING_KEY))
+    # La vuelta de «Pedir otro código», que dice cómo le fue. Solo al dibujar
+    # la pantalla: el formulario del código se manda a esta misma dirección, con
+    # el parámetro puesto, y un código mal escrito no es un reenvío.
+    resent = request.method == "GET" and request.args.get("reenvio") == "ok"
+    if request.method == "GET" and request.args.get("reenvio") in RESEND_ERRORS:
+        errors["form"] = t(RESEND_ERRORS[request.args["reenvio"]])
 
     if request.method == "POST":
         db = get_db()
@@ -905,137 +908,79 @@ def confirm():
             log_auth(db, events.CONFIRM, events.CONFIRM_OUTCOMES[reason],
                      account_id=account_id)
 
-    return render_template("confirm.html", errors=errors,
+    return render_template("confirm.html", errors=errors, resent=resent,
                            minutes=Config.CONFIRMATION_CODE_MINUTES,
                            left=seconds_left())
 
 
-@bp.route("/confirmar/corregir", methods=["GET", "POST"])
-def correct_email():
-    """Fix the address of an account that has not been confirmed yet.
+# Cómo le fue a «Pedir otro código» cuando no salió, en el parámetro con el que
+# vuelve a la pantalla del código.
+RESEND_ERRORS = {"espera": "error_too_many", "fallo": "code_resend_failed",
+                 "vencido": "error_csrf"}
 
-    Typing the address wrong used to be a dead end: the account exists under the
-    address with the mistake, so asking for another code with the right one
-    finds nothing and says nothing —rule 7 forbids it— and the code goes on
-    arriving at a mailbox that is not yours.
 
-    Only for the account this browser is waiting on, and only while it is
-    unconfirmed. Changing the address of a finished account is another matter
-    and deserves its own screen.
+def waiting_account(db) -> dict | None:
+    """La cuenta a la que va «Pedir otro código» en la confirmación.
+
+    La que este navegador acaba de registrar y está confirmando, que es la de
+    `PENDING_KEY`. Si no hay ninguna, la cuenta abierta, que es la del aviso
+    del panel a quien entró sin haber confirmado su correo.
     """
-    db = get_db()
-    account_id = as_object_id(session.get(PENDING_KEY))
-    account = accounts.by_id(db, account_id) if account_id else None
-    if account is None or accounts.is_confirmed(account):
-        return redirect(url_for("auth.confirm"))
-
-    errors: dict[str, str] = {}
-    email_value = account["email"]
-
-    if request.method == "POST":
-        email_value = request.form.get("email", "").strip()
-
-        if not csrf_ok(request.form.get("csrf_token")):
-            errors["form"] = t("error_csrf")
-            log_auth(db, events.CORRECT_EMAIL, events.CSRF_FAILED,
-                     account_id=account_id)
-        elif not rate_limit(db, f"correct:ip:{client_ip()}", *REGISTER_PER_IP):
-            errors["form"] = t("error_too_many")
-            log_auth(db, events.CORRECT_EMAIL, events.RATE_LIMITED,
-                     account_id=account_id)
-        else:
-            email = clean_email(email_value) if email_value else None
-            if not email:
-                errors["email"] = t("error_email_invalid")
-                log_auth(db, events.CORRECT_EMAIL, events.INVALID,
-                         email=email_value, account_id=account_id)
-            elif accounts.by_email(db, email) and \
-                    accounts.normalize_email(email) != account["email_normalized"]:
-                errors["email"] = t("error_email_taken")
-                log_auth(db, events.CORRECT_EMAIL, events.TAKEN, email=email,
-                         account_id=account_id)
-            elif not rate_limit(db, f"register:mail:{accounts.normalize_email(email)}",
-                                *REGISTER_PER_EMAIL):
-                # This screen sends mail to an address typed by hand, exactly
-                # like the registration form, so it shares its budget: nobody
-                # gets to fill a stranger's inbox by correcting the address over
-                # and over.
-                log_auth(db, events.CORRECT_EMAIL, events.RATE_LIMITED,
-                         email=email, account_id=account_id)
-                await_code(account_id)
-                return redirect(url_for("auth.confirm"))
-            elif not accounts.change_email(db, account_id, email):
-                errors["email"] = t("error_email_taken")
-                log_auth(db, events.CORRECT_EMAIL, events.TAKEN, email=email,
-                         account_id=account_id)
-            else:
-                # issue() throws the old code away, so the one that went to the
-                # wrong address stops working at this moment.
-                account = accounts.by_id(db, account_id)
-                deliver(db, send_confirmation, account, kind=events.CORRECT_EMAIL)
-                log_auth(db, events.CORRECT_EMAIL, events.OK, email=email,
-                         account_id=account_id)
-                await_code(account_id)
-                return redirect(url_for("auth.confirm"))
-
-    return render_template("correct-email.html", errors=errors, email=email_value)
+    pending = as_object_id(session.get(PENDING_KEY))
+    if pending:
+        return accounts.by_id(db, pending)
+    return current_account()
 
 
 @bp.route("/reenviar-confirmacion", methods=["GET", "POST"])
 def resend():
-    errors: dict[str, str] = {}
-    email_value = ""
+    """Otro código para la cuenta que se está confirmando, sin preguntar a dónde.
 
-    if request.method == "POST":
-        db = get_db()
-        email_value = request.form.get("email", "").strip()
+    Antes se escribía la dirección otra vez, y la pantalla contestaba igual
+    existiera o no la cuenta, que es la regla 7. Aquí no se escribe ninguna: el
+    código va a la que este navegador registró, o a la que tiene abierta, así
+    que no hay nada que esconder y la vuelta puede decir cómo le fue.
 
-        if not csrf_ok(request.form.get("csrf_token")):
-            errors["form"] = t("error_csrf")
-            log_auth(db, events.RESEND, events.CSRF_FAILED, email=email_value)
-        elif not rate_limit(db, f"resend:ip:{client_ip()}", *RESEND_PER_IP):
-            errors["form"] = t("error_too_many")
-            log_auth(db, events.RESEND, events.RATE_LIMITED, email=email_value)
-        else:
-            email = clean_email(email_value) if email_value else None
-            if not email:
-                errors["email"] = t("error_email_invalid")
-                log_auth(db, events.RESEND, events.INVALID, email=email_value)
-            else:
-                # Silently skipped when over budget: the answer must not depend
-                # on whether this address exists or how often it was asked for.
-                if not rate_limit(db, f"resend:mail:{accounts.normalize_email(email)}",
-                                  *RESEND_PER_EMAIL):
-                    log_auth(db, events.RESEND, events.RATE_LIMITED, email=email)
-                    await_code()
-                else:
-                    existing = accounts.by_email(db, email)
-                    if existing is None:
-                        log_auth(db, events.RESEND, events.NO_ACCOUNT, email=email)
-                        # Whatever the session was waiting for, it is not this
-                        # address. Dropping the pointer changes nothing on
-                        # screen —the three cases look the same— and stops the
-                        # session from holding an account nobody asked about.
-                        session.pop(PENDING_KEY, None)
-                        await_code()
-                    elif accounts.is_confirmed(existing):
-                        log_auth(db, events.RESEND, events.ALREADY_CONFIRMED,
-                                 email=email, account_id=existing["_id"])
-                        session.pop(PENDING_KEY, None)
-                        await_code()
-                    else:
-                        # A failure here is not shown: for an address with no
-                        # account nothing is sent either, so an error message
-                        # would be the difference between the two cases. It goes
-                        # to mail_log, where it belongs.
-                        deliver(db, send_confirmation, existing,
-                                kind=events.RESEND)
-                        log_auth(db, events.RESEND, events.SENT, email=email,
-                                 account_id=existing["_id"])
-                        await_code(existing["_id"])
-                return redirect(url_for("auth.confirm"))
+    Es un POST porque manda un correo, y un GET lo mandaría una precarga del
+    navegador. El GET solo vuelve a la pantalla del código.
+    """
+    if request.method == "GET":
+        return redirect(url_for("auth.confirm"))
 
-    return render_template("resend.html", errors=errors, email=email_value)
+    db = get_db()
+    account = waiting_account(db)
+    account_id = account["_id"] if account else None
+    email = account["email"] if account else ""
+
+    if not csrf_ok(request.form.get("csrf_token")):
+        log_auth(db, events.RESEND, events.CSRF_FAILED, email=email,
+                 account_id=account_id)
+        return redirect(url_for("auth.confirm", reenvio="vencido"))
+    if account is None:
+        # Nada que confirmar en este navegador: se entra con la contraseña, y
+        # dentro el aviso del panel vuelve a ofrecer el código.
+        log_auth(db, events.RESEND, events.NO_ACCOUNT)
+        return redirect(url_for("auth.login"))
+    if accounts.is_confirmed(account):
+        log_auth(db, events.RESEND, events.ALREADY_CONFIRMED, email=email,
+                 account_id=account_id)
+        session.pop(PENDING_KEY, None)
+        return redirect(url_for("auth.login"))
+    if not (rate_limit(db, f"resend:ip:{client_ip()}", *RESEND_PER_IP)
+            and rate_limit(db, f"resend:mail:{accounts.normalize_email(email)}",
+                           *RESEND_PER_EMAIL)):
+        log_auth(db, events.RESEND, events.RATE_LIMITED, email=email,
+                 account_id=account_id)
+        return redirect(url_for("auth.confirm", reenvio="espera"))
+
+    if not deliver(db, send_confirmation, account, kind=events.RESEND):
+        # deliver() ya dejó el fallo en auth_events y en mail_log.
+        return redirect(url_for("auth.confirm", reenvio="fallo"))
+    log_auth(db, events.RESEND, events.SENT, email=email, account_id=account_id)
+    # Desde el panel no había ninguna pendiente: desde aquí la hay, y es la que
+    # compara la pantalla del código.
+    await_code(account_id)
+    return redirect(url_for("auth.confirm", reenvio="ok"))
 
 
 # ---------------------------------------------------------------------- login
@@ -1080,6 +1025,18 @@ def login():
             log_auth(db, events.LOGIN, events.RATE_LIMITED, email=email_value)
         else:
             account = accounts.by_email(db, email_value) if email_value else None
+            if adding and account and any(
+                    one["account"]["_id"] == account["_id"]
+                    for one in open_accounts()):
+                # Agregar una cuenta que ya está abierta aquí abría otra sesión
+                # y cerraba la de antes. Se dice antes de mirar la contraseña,
+                # y no revela nada: esas cuentas ya salen en /cambiar-cuenta.
+                # No va a auth_events: no se comprobó nada, y la actividad del
+                # administrador lo pintaría como una entrada.
+                errors["form"] = t("login_already_open")
+                return render_template("login.html", errors=errors,
+                                       email=email_value, remember=remember,
+                                       adding=adding)
             # Called even when there is no account, so a wrong address and a
             # wrong password take a similar amount of time.
             if verify_password(password, account and account.get("password_hash")):
@@ -1095,7 +1052,8 @@ def login():
                     log_auth(db, events.LOGIN, events.SUSPENDED,
                              email=email_value, account_id=account["_id"])
                     return render_template("login.html", errors=errors,
-                                           email=email_value, remember=remember)
+                                           email=email_value, remember=remember,
+                                           adding=adding)
                 remember = bool(request.form.get("remember"))
                 # The password was right, and with two-step on that is not
                 # enough: nothing is opened until the code from the app is
@@ -1300,10 +1258,11 @@ def switch_account():
     mine = open_accounts()
     if not mine:
         return redirect(url_for("auth.login"))
-    here = next((one for one in mine if one["active"]), None)
+    # Volver lleva a la portada, que es donde se aterriza al entrar y al
+    # saltar de cuenta, y no a las Estadísticas de la cuenta en uso.
     return render_template(
         "accounts.html", accounts=mine, max_accounts=MAX_ACCOUNTS,
-        back=inside(here["account"]) if here else url_for("auth.login"))
+        back=landing(current_account()))
 
 
 def close_session() -> bool:
@@ -1367,7 +1326,11 @@ def recover():
     if request.method == "POST":
         db = get_db()
         if not known:
-            email_value = request.form.get("email", "").strip()
+            # «Pedir otro código» no trae el campo: vale la que se escribió la
+            # primera vez. Pasa por todo lo de abajo igual que ella, límites y
+            # regla 7 incluidos.
+            email_value = request.form.get(
+                "email", session.get(RESET_EMAIL, "")).strip()
 
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
@@ -1381,6 +1344,7 @@ def recover():
                 errors["email"] = t("error_email_invalid")
                 log_auth(db, events.RECOVER, events.INVALID, email=email_value)
             else:
+                session[RESET_EMAIL] = email
                 if not rate_limit(db, f"recover:mail:{accounts.normalize_email(email)}",
                                   *RECOVER_PER_EMAIL):
                     # Silently over budget, so the answer cannot depend on how
@@ -1399,7 +1363,11 @@ def recover():
                         log_auth(db, events.RECOVER, events.SENT, email=email,
                                  account_id=existing["_id"])
                         await_reset(existing["_id"])
-                return redirect(url_for("auth.recover_code"))
+                # La vuelta de «Pedir otro código» lo dice, exista o no la
+                # cuenta: la pantalla del código ya dice que se envió en los dos
+                # casos.
+                again = {"reenvio": "ok"} if request.form.get("otro") else {}
+                return redirect(url_for("auth.recover_code", **again))
 
     return render_template("recover.html", errors=errors, email=email_value,
                            known=known)
@@ -1410,6 +1378,9 @@ def recover_code():
     """The same six boxes as the confirmation, for the recovery code."""
     errors: dict[str, str] = {}
     account_id = as_object_id(session.get(RESET_KEY))
+    # Solo al dibujarla, como en la confirmación: el código se manda a esta
+    # misma dirección, con el parámetro puesto.
+    resent = request.method == "GET" and request.args.get("reenvio") == "ok"
 
     if request.method == "POST":
         db = get_db()
@@ -1452,7 +1423,7 @@ def recover_code():
             log_auth(db, events.RECOVER, events.CONFIRM_OUTCOMES[reason],
                      account_id=account_id)
 
-    return render_template("recover-code.html", errors=errors,
+    return render_template("recover-code.html", errors=errors, resent=resent,
                            minutes=Config.CONFIRMATION_CODE_MINUTES,
                            left=seconds_left(RESET_DEADLINE))
 
@@ -1742,9 +1713,14 @@ def close_device():
         if target and sessions.revoke(db, account["_id"], target):
             log_auth(db, events.SESSION_CLOSED, events.OK,
                      email=account["email"], account_id=account["_id"])
-        # Closing the one in use is signing out, so the cookie goes with it.
+        # Cerrar la que está en uso es salir de esta cuenta, y solo de esta.
+        # Antes se vaciaba la galleta entera, y las otras cuentas abiertas en el
+        # navegador se quedaban vivas sin su testigo: filas de más en su
+        # Seguridad, con la misma IP. Si queda alguna, se elige entre ellas.
         if here and target == here["_id"]:
-            session.clear()
+            forget_active()
+            if open_tokens():
+                return redirect(url_for("auth.switch_account"))
             return redirect(url_for("auth.login"))
     return redirect(url_for("auth.settings", section="seguridad"))
 

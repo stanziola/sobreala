@@ -287,6 +287,38 @@
   });
 })();
 
+/* Los formularios que no se pueden mandar dos veces (data-once): los que abren
+   una sesión, crean una cuenta o piden un código. Un doble clic mientras el
+   servidor contestaba abría dos sesiones, y la que se quedaba sin galleta
+   seguía viva en Seguridad como otro dispositivo; en el código, la segunda
+   vuelta decía que ya se había usado. Sin JavaScript se mandan como siempre. */
+(function () {
+  "use strict";
+
+  var forms = document.querySelectorAll("form[data-once]");
+  if (!forms.length) return;
+
+  Array.prototype.forEach.call(forms, function (form) {
+    form.addEventListener("submit", function (e) {
+      if (e.defaultPrevented) return;
+      if (form.hasAttribute("data-sent")) {
+        e.preventDefault();
+        return;
+      }
+      form.setAttribute("data-sent", "");
+    });
+  });
+
+  // Volver con «atrás» saca la página de la memoria del navegador tal como
+  // quedó, ya mandada: sin esto el formulario dejaría de responder.
+  window.addEventListener("pageshow", function (e) {
+    if (!e.persisted) return;
+    Array.prototype.forEach.call(forms, function (form) {
+      form.removeAttribute("data-sent");
+    });
+  });
+})();
+
 /* El nombre del archivo elegido, al lado del botón. El control del navegador
    queda escondido, así que sin esto no habría forma de comprobar que se eligió
    el que se quería. Sin JavaScript el botón sigue abriendo el selector. */

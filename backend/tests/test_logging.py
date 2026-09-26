@@ -252,25 +252,25 @@ def test_logout_is_recorded_with_the_account_id(client, database, outbox):
 
 
 def test_the_three_resend_outcomes(client, database, outbox):
-    def ask(email):
-        client.get("/reenviar-confirmacion")
+    """«Pedir otro código» ya no pregunta la dirección: va a la cuenta que
+    este navegador está confirmando, y el registro dice qué pasó con ella."""
+    def ask():
+        client.get("/confirmar")
         with client.session_transaction() as sess:
             csrf = sess["_csrf"]
-        return client.post("/reenviar-confirmacion",
-                           data={"csrf_token": csrf, "email": email})
+        return client.post("/reenviar-confirmacion", data={"csrf_token": csrf})
 
-    unknown = ask("nadie@ejemplo.com")
+    nothing = ask()                          # nada pendiente todavía
     register(client)
-    pending = ask("ana@ejemplo.com")
+    pending = ask()
     confirm(client, code_from_outbox(outbox))
-    confirmed = ask("ana@ejemplo.com")
+    confirmed = ask()                        # la abierta, ya confirmada
 
     assert outcomes(database, events.RESEND) == [events.NO_ACCOUNT, events.SENT,
                                                  events.ALREADY_CONFIRMED]
-    # All three answer identically, whatever the log says.
-    assert {r.status_code for r in (unknown, pending, confirmed)} == {302}
-    assert all(r.headers["Location"].endswith("/confirmar")
-               for r in (unknown, pending, confirmed))
+    assert pending.headers["Location"].endswith("/confirmar?reenvio=ok")
+    assert nothing.headers["Location"].endswith("/entrar")
+    assert confirmed.headers["Location"].endswith("/entrar")
 
 
 def test_the_log_separates_what_the_confirmation_screen_merges(client, database,

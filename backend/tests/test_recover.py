@@ -121,6 +121,54 @@ def test_it_answers_the_same_for_an_address_with_no_account(client, database,
                 if "recuperar" in p.read_text(encoding="utf-8").lower()]) == 1
 
 
+# ------------------------------------------------------ pedir otro código
+
+def ask_again(client):
+    """«Pedir otro código» en la pantalla del código: sin ninguna dirección."""
+    client.get("/recuperar/codigo")
+    with client.session_transaction() as sess:
+        csrf = sess["_csrf"]
+    return client.post("/recuperar", data={"csrf_token": csrf, "otro": "1"})
+
+
+def test_otro_codigo_no_pregunta_la_direccion(client, database, outbox):
+    """Sale a la que se escribió la primera vez, y el nuevo es el que vale."""
+    register(client)
+    stranger = other(client)
+    ask(stranger, "ana@ejemplo.com")
+    first = code_from_outbox(outbox)
+
+    pantalla = stranger.get("/recuperar/codigo").get_data(as_text=True)
+    assert 'action="/recuperar"' in pantalla and 'name="email"' not in pantalla
+
+    answer = ask_again(stranger)
+    assert answer.headers["Location"].endswith("/recuperar/codigo?reenvio=ok")
+    assert "Te enviamos un código nuevo" in stranger.get(
+        answer.headers["Location"]).get_data(as_text=True)
+    second = code_from_outbox(outbox)
+    assert second != first
+    ultimo = list(database.mail_log.find({"purpose": mail_log.RECOVER}))[-1]
+    assert ultimo["to"] == "ana@ejemplo.com"
+    assert type_code(stranger, second).headers["Location"].endswith(
+        "/recuperar/nueva")
+
+
+def test_otro_codigo_contesta_igual_sin_cuenta(client, database, outbox):
+    """La regla 7 sigue: pedir otro para una dirección sin cuenta se ve igual
+    y no manda nada."""
+    register(client)
+    real, unknown = other(client), other(client)
+    ask(real, "ana@ejemplo.com")
+    ask(unknown, "nadie@ejemplo.com")
+
+    one, two = ask_again(real), ask_again(unknown)
+
+    assert one.headers["Location"] == two.headers["Location"]
+    assert page_shape(real.get(one.headers["Location"])) == page_shape(
+        unknown.get(two.headers["Location"]))
+    assert database.mail_log.count_documents({"to": "nadie@ejemplo.com"}) == 0
+
+
 def test_without_a_code_nothing_advances(client, database, outbox):
     register(client)
     unknown = other(client)

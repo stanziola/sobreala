@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% block title %}{{ t('login_title') }}{% endblock %}
+{% block title %}{{ t('login_adding_title') if adding else t('login_title') }}{% endblock %}
 {% block content %}
 <div class="card card--narrow">
-  <h1>{{ t('login_title') }}</h1>
+  <h1>{{ t('login_adding_title') if adding else t('login_title') }}</h1>
 
-  {% if adding %}<p class="notice">{{ t('login_adding') }}</p>{% endif %}
   {% if switched %}<p class="notice notice--ok">{{ t('login_switched') }}</p>{% endif %}
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
-  <form method="post" novalidate>
+  {# data-once: un doble clic abría dos sesiones, y la que se quedaba sin
+     galleta seguía viva en Seguridad como otro dispositivo. #}
+  <form method="post" novalidate data-once>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <label for="email">{{ t('login_email') }}</label>

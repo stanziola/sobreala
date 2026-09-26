@@ -889,6 +889,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   border: 1px solid var(--color-accent);
 }
 .foot { margin-top: 20px; font-size: .95rem; color: var(--color-ink-soft); }
+/* Un botón que se lee como enlace. «Pedir otro código» manda un correo, así
+   que es un POST y no un enlace, pero en la pantalla se ve como antes. */
+.link-button {
+  padding: 0; border: 0; background: none;
+  font: inherit; color: var(--color-accent-strong);
+  text-decoration: underline; cursor: pointer;
+}
 
 /* --------------------------------------------------------------- plantillas
    Los dos caminos arriba, las notas, y la lista. */
@@ -972,8 +979,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .drawer__close:hover { background: var(--color-surface-alt); }
 
 /* El código de una pieza: se lee en monoespaciada y no se parte en renglones,
-   que en HTML cambiaría lo que se ve al editarlo. */
-.code {
+   que en HTML cambiaría lo que se ve al editarlo. Con su propia clase: se llamó
+   .code, que es también la de las seis casillas del código, y esta regla les
+   daba 420 px de alto. */
+.compose__code {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
   font-size: .85rem; line-height: 1.5; white-space: pre; overflow: auto;
   tab-size: 2; min-height: 420px;

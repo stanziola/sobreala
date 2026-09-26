@@ -3,12 +3,12 @@
 {% block content %}
 <div class="card">
   <h1>{{ t('register_title') }}</h1>
-  <p class="lead">{{ t('register_lead') }}</p>
 
-  {% if adding %}<p class="notice">{{ t('register_adding') }}</p>{% endif %}
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
-  <form method="post" novalidate>
+  {# Una sola vez: con un doble clic, la segunda respuesta decía que el correo
+     ya tenía cuenta, justo la que acababa de crear la primera. #}
+  <form method="post" novalidate data-once>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <label for="company_name">{{ t('register_company') }}</label>

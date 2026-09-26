@@ -11,7 +11,11 @@
 {% if not confirmed %}
 <div class="notice">
   <p>{{ t('panel_unconfirmed') }}</p>
-  <a class="btn btn--small" href="{{ url_for('auth.resend') }}">{{ t('panel_unconfirmed_action') }}</a>
+  {# Sale a la dirección de esta cuenta, sin preguntarla. #}
+  <form method="post" action="{{ url_for('auth.resend') }}" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn--small" type="submit">{{ t('panel_unconfirmed_action') }}</button>
+  </form>
 </div>
 {% endif %}
 

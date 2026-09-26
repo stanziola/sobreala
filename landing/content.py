@@ -200,8 +200,7 @@ HOME = {
                 "text": (
                     "Cada dirección existe una sola vez en tu cuenta. Si una persona "
                     "lleva varias etiquetas y la campaña va a más de una, recibe una "
-                    "sola copia y gasta un solo envío. Mandarle otra campaña distinta "
-                    "más adelante es otra cosa, y esa sí le llega."
+                    "sola copia y gasta un solo envío."
                 ),
             },
             {
@@ -212,11 +211,12 @@ HOME = {
                     "su barra de fuente, tamaño y color, y el correo armándose al "
                     "lado."
                 ),
-                "title": "Campañas armadas en el editor",
+                "title": "Campañas creadas en el editor",
                 "text": (
-                    "La armas en el editor, poniendo textos, botones e imágenes "
-                    "donde quieras. Si alguien te la prepara en su cuenta, te "
-                    "pasa el archivo y la sigues editando en la tuya."
+                    "Diseña tus campañas directamente desde el editor, colocando "
+                    "textos, botones e imágenes donde quieras. Además, puedes "
+                    "importar una campaña creada por otra persona y continuar "
+                    "editándola desde tu propia cuenta."
                 ),
             },
             {
@@ -227,10 +227,11 @@ HOME = {
                     "etiqueta marcada, la plantilla elegida y la opción de mandarlo "
                     "ahora o a una fecha y hora."
                 ),
-                "title": "Envío ahora o programado",
+                "title": "Envío inmediato o programado",
                 "text": (
-                    "Eliges la lista, revisas la vista previa, te mandas una prueba a "
-                    "ti mismo y decides si sale ya o a la hora que elijas."
+                    "Selecciona tu lista, revisa la vista previa y envíate una prueba "
+                    "antes de enviar. Luego, elige si quieres que tu campaña salga de "
+                    "inmediato o en la fecha y hora que prefieras."
                 ),
             },
             {
@@ -387,7 +388,7 @@ HOW = {
     ),
     "hero": {
         "eyebrow": "Cómo funciona",
-        "title": "De tu lista al correo de tus clientes",
+        "title": "De tu base de datos al correo de tus clientes",
         "subtitle": (
             "Así vas a usar Panamails, paso a paso. Sin instalar nada y sin pelear con "
             "configuraciones técnicas."

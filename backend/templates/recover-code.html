@@ -6,9 +6,17 @@
   <p class="lead">{{ t('confirm_lead_one') if minutes == 1
                       else t('confirm_lead', minutes=minutes) }}</p>
 
+  {% if resent %}<p class="notice notice--ok">{{ t('code_resent') }}</p>{% endif %}
+
   {% with submit = 'recover_code_submit' %}{% include "_code-form.html" %}{% endwith %}
 
-  <p class="hint">{{ t('recover_hint') }}</p>
-  <p class="foot"><a href="{{ url_for('auth.recover') }}">{{ t('confirm_resend') }}</a></p>
+  <p class="hint">{{ t('confirm_hint') }}</p>
+  {# Otro código a la dirección que ya se escribió, sin preguntarla: la
+     recuerda la sesión. «otro» es lo que hace que la vuelta lo diga. #}
+  <form class="foot" method="post" action="{{ url_for('auth.recover') }}" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="otro" value="1">
+    <button class="link-button" type="submit">{{ t('confirm_resend') }}</button>
+  </form>
 </div>
 {% endblock %}
