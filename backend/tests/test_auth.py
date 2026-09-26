@@ -30,6 +30,12 @@ def ask_recovery(client, email):
 
 # ------------------------------------------------------------------ registration
 
+def test_el_pie_del_registro_lleva_a_iniciar_sesion(client, database):
+    pie = client.get("/registro").get_data(as_text=True).split('class="foot"')[1]
+    assert "¿Ya tienes una cuenta?" in pie
+    assert '<a href="/entrar">Iniciar sesión</a>' in pie
+
+
 def test_register_creates_account_and_sends_a_code(client, database, outbox):
     response = register(client)
     assert response.status_code == 302

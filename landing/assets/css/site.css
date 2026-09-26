@@ -843,9 +843,11 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   /* La tira ocupa la fila entera, y debajo el texto y las flechas se reparten
      la siguiente: así los botones no quedan flotando solos más abajo. */
   .tour { grid-template-columns: minmax(0, 1fr) auto; }
+  /* Sin tope de alto: la abierta sale de esta proporción, y un tope la dejaría
+     más ancha que la captura. */
   .tour__strip {
     grid-column: 1 / -1;
-    display: flex; gap: 10px; aspect-ratio: 3.2; max-height: 520px;
+    display: flex; gap: 10px; aspect-ratio: 3.2;
   }
   .tour__texts { grid-column: 1; display: block; min-height: 116px; }
   /* De la captura de un listón se ve la izquierda, que es donde el panel
@@ -853,15 +855,23 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   .tour__shot { object-position: left center; }
   .tour__panel {
     flex: 1 1 0; min-width: 0; aspect-ratio: auto;
-    transition: flex-grow 600ms var(--ease);
+    transition: flex-grow 600ms var(--ease), flex-basis 600ms var(--ease);
   }
   /* En la tira, pulsar una cerrada la abre; la que ya está abierta se agranda. */
   .tour.is-ready .tour__panel { cursor: pointer; }
+  /* La abierta mide lo mismo que la captura (1400 × 788): el alto de la tira,
+     que es su ancho entre 3.2, por la proporción de la imagen. Las cerradas se
+     reparten lo que sobra. Así se ve entera y todas se dibujan a la misma
+     escala, la del alto: abrir una solo destapa más de ella. Crecía a 7 contra
+     1 y quedaba más ancha que la captura, así que «cover» le cortaba arriba y
+     abajo y la agrandaba al terminar de abrirse. */
   #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1),
   #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2),
   #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3),
   #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4),
-  #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5) { flex-grow: 7; }
+  #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5) {
+    flex-grow: 0; flex-basis: calc(100% * 1400 / 788 / 3.2);
+  }
   .tour.is-ready #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1),
   .tour.is-ready #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2),
   .tour.is-ready #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3),
@@ -897,6 +907,8 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   [data-tour-back] .icon { transform: rotate(90deg); }
   [data-tour-next] .icon { transform: rotate(-90deg); }
 }
+/* La cerrada que se mira crece a costa de las otras cerradas: la abierta tiene
+   su ancho, y no se encoge. */
 @media (min-width: 760px) and (hover: hover) {
   .tour__panel:hover { flex-grow: 2.2; }
 }

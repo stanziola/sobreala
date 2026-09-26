@@ -2260,6 +2260,19 @@ aprieta: la abierta ocupa su sitio y las otras cuatro quedan en listones.
 Debajo, el texto de la que esté abierta. La sección no lleva etiqueta de arriba,
 a diferencia de las demás: el titular ya es la etiqueta.
 
+**La abierta mide lo mismo que la captura** (1400 × 788).
+- **Cómo:** su ancho es el alto de la tira (su ancho entre 3.2) por la
+  proporción de la imagen, y las cerradas se reparten lo que sobra.
+- **Qué se consigue:** la abierta se ve entera, y todas las capturas se dibujan
+  a la misma escala, la del alto, así que abrir una solo destapa más de ella.
+- **Por qué cambió:** antes crecía a 7 contra 1 y quedaba más ancha que la
+  captura. `object-fit: cover` le cortaba arriba y abajo y la agrandaba al
+  terminar de abrirse, y se veía como un pequeño zoom.
+- **El ratón sobre una cerrada** la agranda a costa de las otras cerradas,
+  nunca de la abierta.
+- **Si cambia el tamaño de las capturas o la proporción de la tira**, cambia esa
+  cuenta, que está en `landing/src/site.css`.
+
 **Hay dos juegos de capturas, uno por tema**, en
 `landing/assets/img/panel/light/` y `.../dark/`, con los mismos cinco nombres en
 cada carpeta. Las hace `landing/shots.py`: siembra una cuenta de demostración en

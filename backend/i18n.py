@@ -53,9 +53,9 @@ TEXTS = {
     "register_legal_terms": "términos y condiciones",
     "register_legal_join": "y la",
     "register_legal_privacy": "política de privacidad",
-    "register_have_account": "¿Ya tienes cuenta?",
-    "register_have_account_adding": "¿Esa cuenta ya existe?",
-    "register_login_link": "Entra aquí",
+    # El mismo pie al registrarse y al crear otra cuenta desde una abierta.
+    "register_have_account": "¿Ya tienes una cuenta?",
+    "register_login_link": "Iniciar sesión",
 
     # --- confirmation ------------------------------------------------------
     "confirm_title": "Escribe tu código",
