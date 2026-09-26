@@ -1954,15 +1954,47 @@ escrita mal deja a alguien pagando sin recibir nada. Una cuenta activa también,
 porque si no el primer pago sería el último y nadie podría renovar ni cambiar de
 plan. **Un administrador no**: su cuenta no tiene a quién escribirle.
 
-Pagar mueve la cuenta a `active` y escribe `plan` y `plan_until`. **El mismo
-plan no se vuelve a pagar mientras está vigente** (septiembre de 2026): se
-compra otra vez cuando vence, y cuenta desde ese día. Lo decide
+Pagar mueve la cuenta a `active` y escribe `plan`, `plan_until` y `plan_cycle`
+(mensual o anual; lo de antes se lee como mensual). **El mismo plan no se vuelve
+a pagar mientras está vigente** (septiembre de 2026): se compra otra vez cuando
+vence, y cuenta desde ese día. Lo decide
 `accounts.current_plan()`, que da el plan solo mientras `plan_until` no pasó, y
 lo comprueban `/contratar/<plan>`, que lo dice con la fecha y no ofrece pagar, y
 el POST que crea el pago. Hasta entonces pagar antes de tiempo sumaba al final
 de lo que quedaba; `renews_from()` y el correo de «Renovaste» siguen ahí por si
 un pago llega así, pero ya no hay camino para crearlo. Subir a un plan mayor sí
-se puede, y empieza hoy. Pagar **no** habilita el envío: eso es la otra puerta, y el
+se puede, y empieza hoy.
+
+**Mejorar de plan lleva prorrateo** (`services/upgrade.py`, y la regla en
+`docs/pricing.md`). Con un plan vigente **solo se mejora**, que es lo que hace
+que el crédito nunca sobre: de un mensual, a uno mayor en cualquier ciclo o al
+mismo en anual; de un anual, solo a uno mayor en anual (`upgrade.refused()`).
+**El descuento son los correos sin usar** al precio al que se pagaron
+(`upgrade.credit()`): en un mensual, el mes × lo que queda de su cuota; en un
+anual, los meses enteros que faltan después de este más lo que queda de la
+cuota de este mes, a un doceavo del año. Lo calcula `start_payment()` al crear
+el intento y lo guarda en él (`price`, `credit`, `amount`, `upgrade`), y **la
+vuelta de PayPal y la de tarjeta comparan contra ese `amount`**, no contra el
+precio de lista. Al cobrar, la mejora empieza hoy y **el mes empieza de nuevo**:
+`activate_plan(fresh_month=True)` guarda en `quota_base` cuánto iba enviado
+este mes, y `used_this_month()` lo resta, tanto para la cuota como para la
+barra de Estadísticas. Un correo enviado entre crear el intento y pagar no
+cambia el descuento ya calculado.
+
+**`/contratar/<plan>` es un resumen, no una elección.** Llega con el ciclo que
+se eligió en /planes (`?ciclo=anual`) y enseña el plan, el descuento con sus
+correos, el **total a pagar ahora** y un solo botón «Pagar $X», con los métodos
+de pago encima; el otro ciclo queda a un enlace si también se puede. Si el ciclo
+pedido no se puede y el otro sí (quien tiene un anual y pulsó un mensual), enseña
+el que sí.
+
+**Al volver de un pago cobrado se aterriza en su recibo**
+(`/configuracion/pagos/recibo/<id>`, solo del dueño y solo cobrado): el número
+de pago, el plan y el ciclo, el método, la fecha y hora, el descuento si hubo y
+el total pagado. El círculo de arriba gira como si cargara, se cierra y dibuja
+el ganchito, y se queda quieto; es solo CSS, y con «reducir movimiento» sale ya
+terminado. Recargar la vuelta vuelve a enseñar el mismo recibo, sin cobrar ni
+alargar nada. El comprobante por correo dice también lo cobrado y el descuento. Pagar **no** habilita el envío: eso es la otra puerta, y el
 comprobante que sale lo dice para que no se descubra al intentar enviar.
 
 Del cobro salen **dos correos**: el comprobante al cliente y un aviso a quien
@@ -2012,10 +2044,15 @@ Cuatro cosas más de esas tarjetas:
   leen los tres planes, sus precios y sus botones. **El interruptor sí se
   esconde sin el guion** (`.cycle` nace en `display: none` y `plans.js` le pone
   `is-ready`): un botón que no hace nada es peor que no tenerlo.
-- **Con un plan vigente, el suyo y los de abajo se apagan** y dicen «Ya
-  tienes todas las ventajas» (`nav.js`, leyendo el plan de la migaja `pm_in`,
-  que solo lo lleva mientras está vigente); los de arriba dicen «Mejorar a X».
-  Al vencer, la migaja deja de llevarlo y se vuelven a poder comprar.
+- **El botón de cada plan dice «Obtener Plan X»**, y **con un plan vigente
+  siguen la regla de mejorar** según el interruptor (`nav.js`, leyendo la migaja
+  `pm_in`, que lleva el plan y su ciclo, `1:negocio:monthly`, solo mientras está
+  vigente; `plans.js` avisa con el evento `pm:cycle` cada vez que cambia el
+  ciclo): los de abajo y el propio dicen «Ya tienes todas las ventajas»,
+  apagados; el propio en anual, si se tiene mensual, «Pasar a anual»; los de
+  arriba, «Mejorar a X», salvo en mensual para quien tiene un anual, que dicen
+  «Solo en anual», apagados. Debajo de las tarjetas, con el ITBMS, una nota dice
+  que al mejorar se descuentan los correos sin usar y el mes empieza de nuevo.
 - **El botón de cada plan lleva el ciclo al panel**, con `?ciclo=anual`, y
   `/contratar/<plan>` resalta ese botón. Sin parámetro, o con uno inventado,
   queda el mes, que es lo de siempre. `nav.js` sigue mandando en el texto del

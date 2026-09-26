@@ -218,7 +218,8 @@ def quota(whose: dict[str, Any]) -> dict[str, Any] | None:
     allowed = plans.emails_a_month(accounts.plan_of(whose))
     if not allowed:
         return None
-    used = accounts.sent_this_month(whose)
+    # Lo que cuenta contra la cuota: tras mejorar de plan, el mes empieza de nuevo.
+    used = accounts.used_this_month(whose)
     pct = min(100, round(used * 100 / allowed))
     return {"used": f"{used:,}", "allowed": f"{allowed:,}",
             "pct": pct, "level": ("full" if used >= allowed

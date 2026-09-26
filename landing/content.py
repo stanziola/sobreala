@@ -77,11 +77,15 @@ PANEL = {
 # Lo que dicen los botones de /planes cuando ya hay un plan contratado. El
 # sitio es estático y no lo sabe al construirse: los textos viajan en el
 # marcado y nav.js elige uno según la migaja que deja el panel. El plan que ya
-# se tiene no se renueva antes de que venza: dice lo mismo que los de abajo.
+# se tiene no se renueva antes de que venza: dice lo mismo que los de abajo,
+# salvo en anual para quien lo tiene mensual, que es pasarlo a anual. Quien
+# tiene un anual solo mejora a otro anual.
 PLAN_BUTTONS = {
-    "start": "Empezar con {name}",
+    "start": "Obtener Plan {name}",
     "upgrade": "Mejorar a {name}",
+    "to_yearly": "Pasar a anual",
     "covered": "Ya tienes todas las ventajas",
+    "yearly_only": "Solo en anual",
 }
 
 CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}
@@ -502,6 +506,9 @@ PRICING = {
     # Con RUC hay que decir si el precio lleva impuesto, y se dice donde se
     # mira el precio y no escondido en los términos.
     "tax_note": "Precios con ITBMS incluido.",
+    # El prorrateo al mejorar: lo que no se usó se descuenta.
+    "upgrade_note": ("Al mejorar tu plan, los correos que no usaste se descuentan "
+                     "del precio nuevo y tu mes empieza de nuevo."),
     "table": {
         "eyebrow": "Comparación",
         "title": "Todo lo que incluye cada plan",

@@ -113,7 +113,7 @@ def test_aprobada_y_consultada_activa_el_plan(client, database, outbox, monkeypa
 
     respuesta = back_from_card(browser, intento["_id"])
 
-    assert "hecho=1" in respuesta.headers["Location"]
+    assert "/configuracion/pagos/recibo/" in respuesta.headers["Location"]
     assert pedido["found"] == ["OPER-1"]
     pagado = database.payments.find_one({})
     assert pagado["status"] == payments.COMPLETED
@@ -198,7 +198,7 @@ def test_la_vuelta_y_el_aviso_dan_un_solo_periodo(client, database, outbox,
 
     # Y después vuelve: no se alarga nada.
     respuesta = back_from_card(browser, intento["_id"])
-    assert "hecho=1" in respuesta.headers["Location"]
+    assert "/configuracion/pagos/recibo/" in respuesta.headers["Location"]
     assert accounts.plan_until(accounts.by_id(database, cuenta["_id"])) == hasta
     assert database.payments.count_documents({"status": payments.COMPLETED}) == 1
 

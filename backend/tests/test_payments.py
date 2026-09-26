@@ -208,7 +208,7 @@ def test_pagar_deja_la_cuenta_activa_con_su_plan(client, database, outbox,
     buy(browser)
 
     respuesta = come_back(browser)
-    assert "hecho=1" in respuesta.headers["Location"]
+    assert "/configuracion/pagos/recibo/" in respuesta.headers["Location"]
 
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert cuenta["status"] == accounts.ACTIVE
@@ -231,7 +231,7 @@ def test_volver_dos_veces_no_alarga_el_periodo(client, database, outbox,
     vencia = accounts.by_email(database, "ana@ejemplo.com")["plan_until"]
     respuesta = come_back(browser)
 
-    assert "hecho=1" in respuesta.headers["Location"]
+    assert "/configuracion/pagos/recibo/" in respuesta.headers["Location"]
     assert accounts.by_email(database, "ana@ejemplo.com")["plan_until"] == vencia
     assert database.payments.count_documents({"status": payments.COMPLETED}) == 1
 
@@ -247,10 +247,11 @@ def test_el_mismo_plan_se_vuelve_a_comprar_cuando_vence(client, database, outbox
     buy(browser)
     come_back(browser)
 
-    # Vigente: ni la pantalla ofrece pagar ni la ruta crea otro pago.
+    # Vigente: el mismo mes no se paga otra vez (la pantalla ofrece pasarlo a
+    # anual, que sí es mejorar) y la ruta no crea otro pago.
     pantalla = browser.get("/contratar/basico").get_data(as_text=True)
-    assert "Cuando venza lo vuelves a contratar" in pantalla
-    assert 'action="/configuracion/pagos/contratar"' not in pantalla
+    assert 'name="cycle" value="monthly"' not in pantalla
+    assert 'name="cycle" value="yearly"' in pantalla
     assert buy(browser).headers["Location"].endswith("/contratar/basico")
     assert database.payments.count_documents({"account_id": cuenta["_id"]}) == 1
 
@@ -402,12 +403,14 @@ def test_contratar_ensena_el_plan_y_sus_dos_ciclos(client, database, outbox,
     confirm(database)
 
     pantalla = browser.get("/contratar/basico").get_data(as_text=True)
-    assert "Contratar Básico" in pantalla
-    assert plans.amount("basico", "monthly") in pantalla
-    assert plans.amount("basico", "yearly") in pantalla
-    # Un solo formulario con los dos ciclos: el que se pulse dice cuál va.
+    assert "Obtener Plan Básico" in pantalla
+    # El resumen del ciclo que se eligió, con su total y un solo botón de pagar,
+    # y el otro ciclo a un enlace.
+    assert "Total a pagar ahora" in pantalla
+    assert f"Pagar ${plans.amount('basico', 'monthly')}" in pantalla
+    assert f"Prefiero pagar un año: ${plans.amount('basico', 'yearly')}" in pantalla
     assert pantalla.count('action="/configuracion/pagos/contratar"') == 1
-    assert pantalla.count('name="cycle"') == 2
+    assert pantalla.count('name="cycle"') == 1
 
 
 def test_contratar_ensena_con_que_se_puede_pagar_y_con_que_todavia_no(
@@ -547,9 +550,15 @@ def test_el_plan_vigente_no_se_renueva_antes_de_tiempo(client, database, outbox,
     cuenta = confirm(database)
     accounts.set_plan(database, cuenta["_id"], "negocio")
 
-    assert 'action="/configuracion/pagos/contratar"' not in \
-        browser.get("/contratar/negocio").get_data(as_text=True)
+    pantalla = browser.get("/contratar/negocio").get_data(as_text=True)
+    assert 'name="cycle" value="monthly"' not in pantalla
     assert buy(browser, plan="negocio").headers["Location"].endswith("/contratar/negocio")
+
+    # Con un anual, ni siquiera el paso a anual: ya lo tiene.
+    database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {"plan_cycle": "yearly"}})
+    pantalla = browser.get("/contratar/negocio?ciclo=anual").get_data(as_text=True)
+    assert "Cuando venza lo vuelves a contratar" in pantalla
+    assert 'action="/configuracion/pagos/contratar"' not in pantalla
 
 
 def test_subir_de_plan_sigue_pudiendo(client, database, outbox, monkeypatch):

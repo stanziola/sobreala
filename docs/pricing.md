@@ -46,6 +46,21 @@ nuevo debe respetarla: permite 5 campañas mensuales a la lista completa.
   el cobro recurrente va solo por PayPal y a los clientes de Yappy se les envía
   un enlace de pago antes de cada vencimiento.
 
+### Mejorar de plan (prorrateo)
+
+- Con un plan vigente **solo se mejora**: de un mensual, a uno mayor (mensual o
+  anual) o al mismo en anual; de un anual, solo a uno mayor en anual. Bajar de
+  plan, o volver a pagar el mismo ciclo del que se tiene, no se hace por la web:
+  el mismo plan se vuelve a comprar cuando vence.
+- **Los correos sin usar se descuentan** del precio nuevo: en un mensual, el
+  precio del mes × lo que queda de su cuota; en un anual, los meses enteros que
+  faltan más lo que queda de la cuota de este mes, al precio del año entre doce.
+  Negocio sin usar nada → Empresa mensual: $55 − $25 = $30.
+- El plan nuevo **empieza el día de la mejora**, con su cuota entera: lo
+  enviado antes ya no cuenta.
+- Con esas reglas el descuento nunca pasa del precio nuevo, así que nunca queda
+  crédito sobrante que devolver.
+
 ### Acumulación de correos
 
 - Los correos no usados **pasan al mes siguiente y vencen ahí**. No se acumulan

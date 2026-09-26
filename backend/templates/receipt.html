@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ t('receipt_title') }}{% endblock %}
+{% block content %}
+{#- El recibo de un pago cobrado, a donde se llega al volver de pagar. El
+    círculo gira como si cargara, se cierra y dibuja el ganchito, y se queda
+    quieto; con «reducir movimiento» sale ya terminado. Todo en CSS. -#}
+<div class="card card--narrow receipt" aria-live="polite">
+  <div class="receipt__mark" aria-hidden="true">
+    <svg viewBox="0 0 52 52" width="64" height="64" focusable="false">
+      <circle class="receipt__ring" cx="26" cy="26" r="23"/>
+      <path class="receipt__tick" d="M16 27.5l6.5 6.5L37 19.5"/>
+    </svg>
+  </div>
+  <h1 class="receipt__title">{{ t('receipt_title') }}</h1>
+
+  <dl class="summary receipt__rows">
+    <div class="summary__row">
+      <dt>{{ t('receipt_number') }}</dt>
+      <dd>{{ number }}</dd>
+    </div>
+    <div class="summary__row">
+      <dt>{{ t('receipt_plan') }}</dt>
+      <dd>{{ plan_name }}, {{ t('pay_summary_cycle_' + (paid.cycle or 'monthly')) }}</dd>
+    </div>
+    <div class="summary__row">
+      <dt>{{ t('receipt_method') }}</dt>
+      <dd>{{ t('pay_method_' + (paid.method or 'paypal')) }}
+        {%- if paid.card_last4 %} {{ t('pay_card_ending', last4=paid.card_last4) }}{% endif %}</dd>
+    </div>
+    <div class="summary__row">
+      <dt>{{ t('receipt_when') }}</dt>
+      <dd>{{ paid.completed_at|at_moment }}</dd>
+    </div>
+    {% if credit %}
+    <div class="summary__row summary__row--credit">
+      <dt>{{ t('receipt_credit') }}</dt>
+      <dd>−${{ credit }}</dd>
+    </div>
+    {% endif %}
+    <div class="summary__row summary__row--total">
+      <dt>{{ t('receipt_total') }}</dt>
+      <dd>${{ paid.amount }}</dd>
+    </div>
+  </dl>
+
+  <a class="btn receipt__go" href="{{ url_for('auth.settings', section='pagos') }}">{{ t('receipt_button') }}</a>
+</div>
+{% endblock %}

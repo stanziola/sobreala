@@ -165,11 +165,11 @@ def test_el_ciclo_elegido_en_el_sitio_llega_al_panel(client, database, outbox,
     confirm(database)
 
     def resaltado(url):
-        """Cuál de los dos botones va sin `btn--outline`, que es el pintado."""
+        """El ciclo del resumen: el que se eligió en /planes, y es el que se
+        manda al pagar."""
         pantalla = browser.get(url).get_data(as_text=True)
         return [one for one in ("monthly", "yearly")
-                if f'class="btn"\n              type="submit" name="cycle" value="{one}"'
-                in pantalla]
+                if f'name="cycle" value="{one}"' in pantalla]
 
     assert resaltado("/contratar/basico?ciclo=anual") == ["yearly"]
     assert resaltado("/contratar/basico") == ["monthly"]

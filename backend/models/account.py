@@ -642,20 +642,37 @@ def set_plan(db, account_id, plan: str | None) -> str | None:
     return before.get("plan")
 
 
-def activate_plan(db, account_id, plan: str, until) -> None:
-    """Dejar la cuenta pagada: su plan, activa, y hasta cuándo.
+def activate_plan(db, account_id, plan: str, until, cycle: str | None = None,
+                  fresh_month: bool = False) -> None:
+    """Dejar la cuenta pagada: su plan, activa, hasta cuándo y en qué ciclo.
 
     Es el único sitio que escribe `active`: estar activa es el efecto de un
     pago cobrado, no una decisión que alguien tome a mano.
+
+    `fresh_month` es para una mejora: el mes empieza de nuevo, así que lo que
+    ya se envió este mes deja de contar contra la cuota nueva. Se guarda cuánto
+    iba (`quota_base`) y `used_this_month()` lo resta.
     """
-    db.accounts.update_one({"_id": account_id}, {"$set": {
-        "plan": plan, "status": ACTIVE, "plan_until": until,
-        "updated_at": now(),
-    }})
+    changes: dict[str, Any] = {"plan": plan, "status": ACTIVE, "plan_until": until,
+                               "updated_at": now()}
+    if cycle:
+        changes["plan_cycle"] = cycle
+    if fresh_month:
+        found = by_id(db, account_id)
+        changes["quota_base"] = {"month": quota_month(),
+                                 "sent": sent_this_month(found)}
+    db.accounts.update_one({"_id": account_id}, {"$set": changes})
 
 
 def plan_until(account: dict[str, Any] | None):
     return (account or {}).get("plan_until")
+
+
+def plan_cycle(account: dict[str, Any] | None) -> str:
+    """En qué ciclo se pagó el plan: «monthly» o «yearly». Lo de antes de que
+    se anotara se lee como mensual, que era lo que casi todos pagaban."""
+    cycle = (account or {}).get("plan_cycle")
+    return cycle if cycle in ("monthly", "yearly") else "monthly"
 
 
 def current_plan(account: dict[str, Any] | None) -> str | None:
@@ -852,6 +869,17 @@ def sent_this_month(account: dict[str, Any] | None,
     return int(counts.get(quota_month(when), 0))
 
 
+def used_this_month(account: dict[str, Any] | None,
+                    when: datetime | None = None) -> int:
+    """Los correos de este mes que cuentan contra la cuota: los enviados, menos
+    los que iban cuando se mejoró de plan si fue este mismo mes."""
+    sent = sent_this_month(account, when)
+    base = (account or {}).get("quota_base") or {}
+    if base.get("month") == quota_month(when):
+        sent -= int(base.get("sent", 0))
+    return max(0, sent)
+
+
 def quota_left(account: dict[str, Any] | None,
                when: datetime | None = None) -> int:
     """Cuántos correos puede mandar todavía este mes.
@@ -863,7 +891,7 @@ def quota_left(account: dict[str, Any] | None,
     allowed = plans.emails_a_month(plan_of(account))
     if not allowed:
         return 0
-    return max(0, allowed - sent_this_month(account, when))
+    return max(0, allowed - used_this_month(account, when))
 
 
 def add_sent(db, account_id, many: int, when: datetime | None = None) -> None:

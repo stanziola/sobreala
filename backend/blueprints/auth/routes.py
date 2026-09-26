@@ -44,6 +44,7 @@ from services import paypal
 from services import plans
 from services import stats
 from services import totp
+from services import upgrade
 from services.security import (csrf_ok, hash_password, now as security_now,
                                password_problem, rate_limit, verify_password)
 
@@ -1752,14 +1753,16 @@ def close_device():
 
 @bp.route("/contratar/<plan>")
 def checkout(plan: str):
-    """La pantalla de un plan: lo que cuesta y el botón de pagarlo.
+    """El resumen de lo que se va a pagar: el plan en el ciclo que se eligió en
+    /planes, el descuento por los correos sin usar si es una mejora, el total, y
+    con qué pagar.
 
     Es a donde llevan los botones de /planes. El sitio público es estático y
     vive en otro dominio, así que no puede iniciar un cobro por su cuenta: eso
     es un formulario con testigo y tiene que salir de aquí.
 
-    No cobra nada. El botón hace POST a `start_payment()`, que es y sigue siendo
-    el único que habla con PayPal.
+    No cobra nada. El botón hace POST a `start_payment()`, que vuelve a hacer
+    todas las cuentas y es el único que habla con quien cobra.
     """
     account = current_account()
     if account is None:
@@ -1774,20 +1777,24 @@ def checkout(plan: str):
     if not plans.buyable(plan):
         return redirect(url_for("auth.settings", section="pagos", error="plan"))
 
-    # Quien llegó desde /planes con el interruptor en anual encuentra ese botón
-    # resaltado. Es un adorno de la pantalla: lo que cobra es el botón que se
-    # pulse, y un valor inventado se lee como mensual.
-    wanted = "yearly" if request.args.get("ciclo") == "anual" else "monthly"
+    # El ciclo con que se llegó desde /planes; un valor inventado se lee como
+    # mensual. Si ese no se puede y el otro sí (quien tiene un anual y pulsó
+    # un mensual), se enseña el que sí.
+    wanted = plans.YEARLY if request.args.get("ciclo") == "anual" else plans.MONTHLY
+    other = plans.MONTHLY if wanted == plans.YEARLY else plans.YEARLY
+    why = upgrade.refused(account, plan, wanted)
+    if why and not upgrade.refused(account, plan, other):
+        wanted, other, why = other, wanted, ""
     return render_template(
         "checkout.html", plan=plan, one=plans.PLANS[plan], cycle=wanted,
-        # Lo que se ahorra con el año, leído del documento de precios.
-        discount=plans.discount(plan),
-        # Bajar de plan no se hace por la web: lo que ya se pagó no se
-        # devuelve, así que quitarle sitio a una cuenta a cambio de nada tiene
-        # que pasar por una conversación. Y el mismo plan se vuelve a comprar
-        # cuando vence, no antes.
-        downgrade=plans.is_downgrade(accounts.plan_of(account), plan),
-        running=accounts.current_plan(account) == plan,
+        # Por qué no se puede comprar: bajar de plan (lo que ya se pagó no se
+        # devuelve, y eso se habla), repetir el que se tiene (se vuelve a
+        # comprar cuando vence) o un mensual teniendo un anual.
+        why=why,
+        quote=upgrade.quote(account, plan, wanted),
+        # El otro ciclo, si también se puede, para cambiar sin volver a /planes.
+        other=None if upgrade.refused(account, plan, other) else other,
+        other_quote=upgrade.quote(account, plan, other),
         currency=plans.CURRENCY,
         can_buy=accounts.can_buy(account),
         suspended=accounts.is_suspended(account),
@@ -1865,13 +1872,15 @@ def start_payment():
     if amount is None:
         return redirect(url_for("auth.settings", section="pagos", error="plan"))
     # Se comprueba aquí y no solo en la pantalla, porque un formulario se
-    # escribe a mano y el botón gris del sitio es solo un aviso.
-    if plans.is_downgrade(accounts.plan_of(account), plan):
+    # escribe a mano y el botón gris del sitio es solo un aviso: con un plan
+    # vigente solo se mejora (`upgrade.refused()`).
+    if upgrade.refused(account, plan, cycle):
         return redirect(url_for("auth.checkout", plan=plan))
-    # El mismo plan todavía vigente no se paga otra vez: se vuelve a contratar
-    # cuando vence.
-    if accounts.current_plan(account) == plan:
-        return redirect(url_for("auth.checkout", plan=plan))
+    # El total con el descuento por los correos sin usar, calculado aquí y
+    # guardado en el intento: es lo que se compara al cobrar.
+    quote = upgrade.quote(account, plan, cycle)
+    amount = f"{quote['total']:.2f}"
+    upgrading = accounts.current_plan(account) is not None
 
     # Con qué eligió pagar. Lo que no se pueda usar ahora mismo se lee como
     # PayPal: el formulario se puede escribir a mano, y Yappy (o la tarjeta sin
@@ -1885,7 +1894,9 @@ def start_payment():
 
     attempt = payments.start(db, account["_id"], plan=plan, cycle=cycle,
                              amount=amount, currency=plans.CURRENCY,
-                             method=method)
+                             method=method, price=f"{quote['price']:.2f}",
+                             credit=f"{quote['credit']['amount']:.2f}",
+                             upgrade=upgrading)
     if method == payments.CARD:
         try:
             code, checkout_url = paguelofacil.create_link(
@@ -1938,7 +1949,9 @@ def finish_payment():
     if attempt is None:
         return redirect(f"{back}?error=orden")
     # Recargar esta página entra por aquí otra vez. El intento ya está cobrado,
-    # así que no se cobra ni se alarga nada: solo se dice que ya está.
+    # así que no se cobra ni se alarga nada: se vuelve a enseñar su recibo.
+    if attempt["status"] == payments.COMPLETED:
+        return redirect(url_for("auth.receipt", raw=attempt["_id"]))
     if attempt["status"] != payments.CREATED:
         return redirect(f"{back}?hecho=1")
 
@@ -1948,7 +1961,9 @@ def finish_payment():
         payments.fail(db, attempt["_id"], str(exc))
         return redirect(f"{back}?error=paypal")
 
-    esperado = plans.amount(attempt["plan"], attempt["cycle"])
+    # Lo que se pidió cobrar, guardado en el intento: en una mejora ya lleva el
+    # descuento. Los de antes no lo guardaban distinto del precio de lista.
+    esperado = attempt.get("amount") or plans.amount(attempt["plan"], attempt["cycle"])
     if result["status"] != "COMPLETED":
         payments.fail(db, attempt["_id"], f"estado {result['status']}")
         return redirect(f"{back}?error=cobro")
@@ -1963,7 +1978,7 @@ def finish_payment():
         return redirect(f"{back}?error=monto")
 
     settle(db, account, attempt, payer_email=result.get("payer", ""))
-    return redirect(f"{back}?hecho=1")
+    return redirect(url_for("auth.receipt", raw=attempt["_id"]))
 
 
 def settle(db, account, attempt, *, payer_email: str = "", last4: str = "",
@@ -1981,22 +1996,27 @@ def settle(db, account, attempt, *, payer_email: str = "", last4: str = "",
                              last4=last4, order_id=order_id):
         return False
 
-    # Renovar es pagar el mismo plan que todavía corre; cambiarlo o volver
-    # después de que venciera es contratar. Se mira antes de activar, que es
+    # Una mejora (se pagó teniendo un plan vigente) empieza hoy y con el mes
+    # de nuevo: su descuento ya fue por lo que quedaba del plan de antes.
+    # Renovar, pagar el mismo plan que todavía corre, ya no tiene camino, pero
+    # si un pago llegara así suma al final. Se mira antes de activar, que es
     # cuando la cuenta todavía dice lo que decía.
+    fresh = bool(attempt.get("upgrade"))
     running = accounts.plan_until(account)
-    renewed = (accounts.plan_of(account) == attempt["plan"]
+    renewed = (not fresh and accounts.plan_of(account) == attempt["plan"]
                and running is not None and running > accounts.now())
     until = payments.until(
         attempt["cycle"],
-        since=accounts.renews_from(account, attempt["plan"]))
-    accounts.activate_plan(db, account["_id"], attempt["plan"], until)
+        since=accounts.now() if fresh else accounts.renews_from(account, attempt["plan"]))
+    accounts.activate_plan(db, account["_id"], attempt["plan"], until,
+                           cycle=attempt["cycle"], fresh_month=fresh)
     log_auth(db, events.PAYMENT, events.OK, email=account["email"],
              account_id=account["_id"])
 
     # Los dos correos van después de todo lo que decide algo: si el correo no
     # sale, el pago sigue cobrado y el plan activo.
-    notices.paid(account, plan=attempt["plan"], until=until, renewed=renewed)
+    notices.paid(account, plan=attempt["plan"], until=until, renewed=renewed,
+                 charged=attempt.get("amount", ""), credit=attempt.get("credit", ""))
     notices.payment_to_admins(db, account, plan=attempt["plan"])
     return True
 
@@ -2018,7 +2038,8 @@ def card_verdict(attempt, oper: str) -> tuple[str, dict | None]:
         return "cobro", found
     if str(attempt["_id"]) not in found["description"]:
         return "orden", found
-    if found["amount"] != plans.amount(attempt["plan"], attempt["cycle"]):
+    wanted = attempt.get("amount") or plans.amount(attempt["plan"], attempt["cycle"])
+    if found["amount"] != wanted:
         return "monto", found
     return "", found
 
@@ -2046,6 +2067,8 @@ def finish_card():
     attempt = payments.by_id(db, attempt_id, account["_id"])
     if attempt is None or attempt.get("method") != payments.CARD:
         return redirect(f"{back}?error=orden")
+    if attempt["status"] == payments.COMPLETED:
+        return redirect(url_for("auth.receipt", raw=attempt["_id"]))
     if attempt["status"] != payments.CREATED:
         return redirect(f"{back}?hecho=1")
 
@@ -2070,7 +2093,36 @@ def finish_card():
 
     settle(db, account, attempt, payer_email=found["email"],
            last4=found["last4"], order_id=oper)
-    return redirect(f"{back}?hecho=1")
+    return redirect(url_for("auth.receipt", raw=attempt["_id"]))
+
+
+@bp.route("/configuracion/pagos/recibo/<raw>")
+def receipt(raw):
+    """El recibo de un pago cobrado: a donde se llega al volver de pagar.
+
+    Solo el de esta cuenta, y solo cobrado: un intento a medias no tiene
+    recibo. Lo abre el dueño, que es quien compra.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    try:
+        payment_id = ObjectId(raw)
+    except (InvalidId, TypeError):
+        abort(404)
+    paid = payments.by_id(get_db(), payment_id, account["_id"])
+    if paid is None or paid.get("status") != payments.COMPLETED:
+        abort(404)
+    credit = paid.get("credit") or ""
+    return render_template(
+        "receipt.html", paid=paid, plan_name=plans.PLANS.get(
+            paid.get("plan", ""), {}).get("name", paid.get("plan", "")),
+        number=str(paid["_id"])[-8:].upper(),
+        credit=credit if credit and credit != "0.00" else "",
+        currency=paid.get("currency") or plans.CURRENCY)
 
 
 # ------------------------------------------------------ los usuarios de la cuenta

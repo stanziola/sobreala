@@ -72,8 +72,11 @@
             docs/pricing.md, que va de menor a mayor. -#}
         <a class="btn {% if plan.featured %}btn--primary{% else %}btn--outline{% endif %} btn--block"
            data-hide-for-admin data-plan-rank="{{ loop.index0 }}"
+           data-label-start="{{ plan_buttons.start.format(name=plan.name) }}"
            data-label-upgrade="{{ plan_buttons.upgrade.format(name=plan.name) }}"
+           data-label-to-yearly="{{ plan_buttons.to_yearly }}"
            data-label-covered="{{ plan_buttons.covered }}"
+           data-label-yearly-only="{{ plan_buttons.yearly_only }}"
            data-buy="{{ panel.base_url }}/contratar/{{ plan.key }}"
            href="{{ panel.base_url }}/contratar/{{ plan.key }}">{{ plan_buttons.start.format(name=plan.name) }}</a>
       </li>
@@ -82,6 +85,7 @@
     {#- Con RUC hay que decir si el precio lleva impuesto, y va junto al
         precio: en los términos lo leería una de cada cien personas. -#}
     <p class="plans__note">{{ page.tax_note }}</p>
+    <p class="plans__note">{{ page.upgrade_note }}</p>
   </div>
 </section>
 

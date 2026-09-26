@@ -43,11 +43,25 @@ PROVIDERS = {PAYPAL: "paypal", CARD: "paguelofacil"}
 
 
 def start(db, account_id, *, plan: str, cycle: str, amount: str,
-          currency: str, method: str = PAYPAL) -> Any:
+          currency: str, method: str = PAYPAL, price: str = "",
+          credit: str = "", upgrade: bool = False) -> Any:
     """Anotar el intento. Devuelve su id, que viaja a quien cobra como
-    referencia."""
+    referencia.
+
+    `amount` es lo que se cobra; en una mejora es `price` menos `credit`, el
+    descuento por los correos sin usar, calculado aquí en el servidor. Al volver
+    se compara lo cobrado contra `amount`, no contra el precio de lista.
+    """
     method = method if method in METHODS else PAYPAL
+    extra: dict[str, Any] = {}
+    if price:
+        extra["price"] = price
+    if credit:
+        extra["credit"] = credit
+    if upgrade:
+        extra["upgrade"] = True
     return db.payments.insert_one({
+        **extra,
         "account_id": account_id,
         "provider": PROVIDERS[method],
         # Con qué eligió pagar. Lo de antes no lo tiene y se lee como PayPal,

@@ -89,11 +89,13 @@ def switch_off_hint() -> str:
 
 # ------------------------------------------------------------------ el plan
 
-def paid(account, *, plan: str, until, renewed: bool) -> bool:
+def paid(account, *, plan: str, until, renewed: bool, charged: str = "",
+         credit: str = "") -> bool:
     """El comprobante de que su plan quedó activo.
 
     Renovar y contratar no dicen lo mismo: al renovar lo importante es que los
-    días que quedaban no se pierden, y al contratar, que ya tiene el plan.
+    días que quedaban no se pierden, y al contratar, que ya tiene el plan. Dice
+    lo que se cobró, y en una mejora, el descuento por los correos sin usar.
     """
     if not accounts.wants(account, accounts.BILLING):
         return False
@@ -102,6 +104,10 @@ def paid(account, *, plan: str, until, renewed: bool) -> bool:
     which = "renewed" if renewed else "started"
     paragraphs = [t(f"mail_plan_{which}_body", plan=name),
                   t("mail_plan_until", until=on_date(until, clock.for_account(account)))]
+    if charged:
+        paragraphs.append(
+            t("mail_plan_charged_credit", amount=charged, credit=credit)
+            if credit and credit != "0.00" else t("mail_plan_charged", amount=charged))
     note = None
     if not accounts.can_send(account):
         # Lo que nadie adivina: pagar no habilita el envío, eso es la otra

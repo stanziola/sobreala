@@ -824,7 +824,7 @@ def test_la_migaja_del_sitio_publico_dice_el_rol(client, database, outbox,
     # Con plan lleva también cuál, para que /planes pueda apagar los menores.
     accounts.set_plan(database, cliente["_id"], "negocio")
     navegador.get("/panel")
-    assert navegador.get_cookie("pm_in").value == "1:negocio"
+    assert navegador.get_cookie("pm_in").value == "1:negocio:monthly"
 
     # Vencido ya no va: es cuando se vuelve a comprar desde /planes.
     from datetime import timedelta

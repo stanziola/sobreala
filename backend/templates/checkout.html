@@ -3,31 +3,61 @@
 {% block content %}
 <div class="card card--narrow">
   <h1>{{ t('pay_checkout_title', plan=one.name) }}</h1>
-  <p class="lead">{{ t('pay_prices', month='%.2f'|format(one.monthly),
-                       year='%.2f'|format(one.yearly), off=discount) }}</p>
+
+  {# Lo que no se puede comprar lo dice y no ofrece pagar: bajar de plan, el
+     mismo que ya se tiene, o un mensual teniendo un anual. #}
+  {% if why == 'same' %}
+  <p class="notice">{{ t('pay_running', when=plan_until|on_date) if plan_until
+                       else t('pay_running_undated') }}</p>
+  {% elif why == 'downgrade' %}
+  <p class="notice">{{ t('pay_downgrade') }}</p>
+  {% elif why == 'yearly_only' %}
+  <p class="notice">{{ t('pay_yearly_only') }}</p>
+  {% else %}
+  {#- El resumen: el plan en el ciclo que se eligió en /planes, el descuento
+      por los correos sin usar si es una mejora, y el total. Lo vuelve a
+      calcular start_payment(), que es quien guarda lo que se va a cobrar. -#}
+  {% set credit = quote.credit %}
+  <dl class="summary">
+    <div class="summary__row">
+      <dt>{{ t('pay_summary_plan', plan=one.name, cycle=t('pay_summary_cycle_' + cycle)) }}</dt>
+      <dd>${{ '%.2f'|format(quote.price) }}</dd>
+    </div>
+    {% if credit.amount > 0 %}
+    <div class="summary__row summary__row--credit">
+      <dt>{{ t('pay_summary_credit') }}
+        <span class="summary__why">{{ t('pay_summary_credit_months', unused='{:,}'.format(credit.unused),
+            emails='{:,}'.format(credit.emails), months=credit.months) if credit.months
+            else t('pay_summary_credit_detail', unused='{:,}'.format(credit.unused),
+            emails='{:,}'.format(credit.emails)) }}</span></dt>
+      <dd>−${{ '%.2f'|format(credit.amount) }}</dd>
+    </div>
+    {% endif %}
+    <div class="summary__row summary__row--total">
+      <dt>{{ t('pay_summary_total') }}</dt>
+      <dd>${{ '%.2f'|format(quote.total) }}</dd>
+    </div>
+  </dl>
+  {% if credit.amount > 0 %}<p class="hint">{{ t('pay_summary_upgrade') }}</p>{% endif %}
+  {% if other %}
+  <p class="summary__switch"><a href="{{ url_for('auth.checkout', plan=plan,
+      ciclo='anual' if other == 'yearly' else 'mensual') }}">{{ t('pay_summary_switch_' + other,
+      amount='$%.2f'|format(other_quote.total)) }}</a></p>
+  {% endif %}
 
   {# Se dice qué falta, no un «no puedes» a secas: lo del correo se arregla
      solo abriendo la bandeja. #}
-  {% if running %}
-  <p class="notice">{{ t('pay_running', when=plan_until|on_date) if plan_until
-                       else t('pay_running_undated') }}</p>
-  {% elif downgrade %}
-  <p class="notice">{{ t('pay_downgrade') }}</p>
-  {% elif not can_buy %}
+  {% if not can_buy %}
   <p class="notice">{{ t('pay_suspended') if suspended else t('pay_needs_email') }}</p>
   {% elif not methods %}
   <p class="notice">{{ t('pay_not_ready') }}</p>
   {% else %}
-  {# Un solo formulario: primero con qué se paga y después por cuánto tiempo,
-     que son las dos preguntas y en ese orden. El ciclo viaja en el botón que
-     se pulse, así que no hace falta un tercer control para elegirlo.
-
-     El cobro lo arranca start_payment(), que compara el monto contra lo que
-     dice el documento de precios antes de activar nada. #}
   <form method="post" action="{{ url_for('auth.start_payment') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="plan" value="{{ plan }}">
+    <input type="hidden" name="cycle" value="{{ cycle }}">
 
+    {% if methods|length > 1 or soon %}
     <p class="field-label">{{ t('pay_method_title') }}</p>
     {% for name in methods %}
     <div class="setting">
@@ -59,19 +89,14 @@
       </div>
     </div>
     {% endfor %}
+    {% else %}
+    <input type="hidden" name="metodo" value="{{ methods[0] }}">
+    {% endif %}
 
-    <p class="field-label">{{ t('pay_cycle_title') }}</p>
-    <div class="row">
-      {#- El resaltado es el ciclo con el que se llegó desde /planes, o el mes.
-          Los dos botones cobran igual: lo que decide es cuál se pulsa. -#}
-      {% for one_cycle in ['monthly', 'yearly'] %}
-      <button class="btn{% if one_cycle != cycle %} btn--outline{% endif %}"
-              type="submit" name="cycle" value="{{ one_cycle }}">
-        {{ t('pay_' + one_cycle) }} · {{ currency }}
-        {{ '%.2f'|format(one.yearly if one_cycle == 'yearly' else one.monthly) }}</button>
-      {% endfor %}
-    </div>
+    <button class="btn summary__pay" type="submit">{{ t('pay_button',
+        amount='$%.2f'|format(quote.total)) }}</button>
   </form>
+  {% endif %}
   {% endif %}
 
   <p class="hint">{{ t('settings_payments_hint') }}</p>

@@ -510,7 +510,31 @@ TEXTS = {
     "settings_soon_tag": "Próximamente",
 
     # --- pagos -------------------------------------------------------------
-    "pay_checkout_title": "Contratar {plan}",
+    "pay_checkout_title": "Obtener Plan {plan}",
+    # El resumen de lo que se va a pagar.
+    "pay_summary_plan": "Plan {plan}, {cycle}",
+    "pay_summary_cycle_monthly": "un mes",
+    "pay_summary_cycle_yearly": "un año",
+    "pay_summary_credit": "Descuento por los correos sin usar",
+    "pay_summary_credit_detail": "{unused} de {emails} correos de este mes",
+    "pay_summary_credit_months": "{unused} de {emails} correos de este mes, y "
+                                 "{months} meses que te quedaban",
+    "pay_summary_total": "Total a pagar ahora",
+    "pay_summary_switch_yearly": "Prefiero pagar un año: {amount}",
+    "pay_summary_switch_monthly": "Prefiero pagar un mes: {amount}",
+    "pay_summary_upgrade": "Al mejorar, tu plan nuevo empieza hoy con su mes "
+                           "completo, y los correos que no usaste se descuentan.",
+    "pay_button": "Pagar {amount}",
+    "pay_yearly_only": "Tienes un plan anual: se mejora a otro plan anual.",
+    # El recibo, al volver de un pago cobrado.
+    "receipt_title": "Tu pago se completó",
+    "receipt_number": "Número de pago",
+    "receipt_plan": "Plan",
+    "receipt_method": "Método de pago",
+    "receipt_when": "Fecha y hora",
+    "receipt_credit": "Descuento por correos sin usar",
+    "receipt_total": "Total pagado",
+    "receipt_button": "Ir a mi cuenta",
     "pay_running": "Ya tienes este plan hasta el {when}. Cuando venza lo "
                    "vuelves a contratar aquí.",
     "pay_running_undated": "Ya tienes este plan. Cuando venza lo vuelves a "
@@ -1911,6 +1935,9 @@ TEXTS = {
     "mail_plan_button": "Ir a mi panel",
     "mail_plan_until": "Corre hasta el {until}. Te avisamos una semana antes de "
                        "que se venza.",
+    "mail_plan_charged": "Pagaste ${amount}.",
+    "mail_plan_charged_credit": "Pagaste ${amount}, con ${credit} de descuento por "
+                                "los correos que no usaste de tu plan anterior.",
     "mail_plan_note_title": "Antes de tu primer envío",
     "mail_plan_note_text": "Miramos una sola vez de dónde salió tu lista y te "
                            "habilitamos el envío. Te avisamos por correo en "

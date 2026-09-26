@@ -76,6 +76,8 @@
     });
     // El descuento es del año: con el mes puesto se queda apagado.
     if (save) save.classList.toggle("is-on", yearly);
+    // nav.js decide qué dice cada botón según el plan que se tiene y el ciclo.
+    document.dispatchEvent(new CustomEvent("pm:cycle", { detail: { yearly: yearly } }));
   }
 
   options.forEach(function (one) {
