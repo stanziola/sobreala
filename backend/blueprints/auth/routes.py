@@ -16,6 +16,7 @@ Four rules run through the whole file:
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
 from ipaddress import ip_address
 
@@ -317,16 +318,36 @@ def remember_plan(raw: str | None) -> None:
         session[WANTED_PLAN] = raw
 
 
+# La plantilla de muestra de la portada que se pulsó sin sesión. Como el plan,
+# se guarda su nombre y nunca una dirección; el nombre solo puede ser esto, y
+# `designs.sample()` comprueba además que exista su ZIP.
+WANTED_SAMPLE = "wanted_sample"
+SAMPLE_NAME = re.compile(r"[a-z0-9-]{1,40}")
+
+
+def remember_sample(raw: str | None) -> None:
+    """Anotar la muestra que se quería abrir. Como `remember_plan()`, solo
+    escribe."""
+    if raw and SAMPLE_NAME.fullmatch(raw):
+        session[WANTED_SAMPLE] = raw
+
+
 def after_sign_in(account: dict | None) -> str:
     """A dónde va quien acaba de abrir sesión.
 
     Si llegó desde el botón de un plan, sigue a contratarlo en vez de aterrizar
-    en su panel y tener que buscarlo otra vez. Un administrador nunca: su cuenta
-    no compra.
+    en su panel y tener que buscarlo otra vez; si llegó desde una plantilla de
+    la portada, sigue a su lienzo. Un administrador nunca: su cuenta no compra
+    ni tiene plantillas.
     """
     wanted = session.pop(WANTED_PLAN, None)
-    if wanted and wanted in plans.PLANS and not accounts.is_admin(account):
+    sample = session.pop(WANTED_SAMPLE, None)
+    if accounts.is_admin(account):
+        return landing(account)
+    if wanted and wanted in plans.PLANS:
         return url_for("auth.checkout", plan=wanted)
+    if sample and SAMPLE_NAME.fullmatch(sample):
+        return url_for("designs.sample", slug=sample)
     return landing(account)
 
 
@@ -443,6 +464,7 @@ def sign_in(account: dict, *, remember: bool = True, keep: bool = False) -> None
     dejando una sola, que es lo que esta función siempre hizo.
     """
     wanted = session.get(WANTED_PLAN)
+    sample = session.get(WANTED_SAMPLE)
 
     # Se lee antes de vaciar la sesión, porque después ya no habría lista.
     everything = open_accounts()
@@ -472,6 +494,8 @@ def sign_in(account: dict, *, remember: bool = True, keep: bool = False) -> None
 
     if wanted:
         session[WANTED_PLAN] = wanted
+    if sample:
+        session[WANTED_SAMPLE] = sample
     token = sessions.start(
         db, account["_id"], ip=client_ip(),
         user_agent=request.headers.get("User-Agent", ""), remember=remember)
@@ -998,6 +1022,7 @@ def login():
     # anota al dibujar la pantalla, para que sobreviva al segundo paso.
     if request.method == "GET":
         remember_plan(request.args.get("plan"))
+        remember_sample(request.args.get("muestra"))
         # La marca vive en la sesión porque el segundo paso pasa por otra
         # dirección y perdería el parámetro. Y se borra al abrir esta pantalla
         # sin él, para que una marca vieja no deje abierta una cuenta de más.

@@ -591,6 +591,7 @@ def build() -> list[Path]:
         "cta_secondary": content.CTA_SECONDARY,
         "footer": content.FOOTER,
         "steps": content.STEPS,
+        "samples": content.SAMPLES,
         "font_faces": faces,
         "social_icons": social,
         # Ordered as PAYMENT_LOGOS, so the footer keeps a stable order.

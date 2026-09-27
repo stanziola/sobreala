@@ -124,6 +124,8 @@ panamails/
     │   └── payments/
     ├── email_templates/    # plantillas prediseñadas del producto, una por
     │                       # archivo, con sus campos declarados arriba
+    ├── sample_templates/   # los ZIP de lienzo de la tira de la portada, uno
+    │                       # por plantilla de SAMPLES (landing/content.py)
     ├── templates/          # Jinja: panel del cliente y admin
     ├── static/
     └── tests/
@@ -932,6 +934,23 @@ si dos usan la misma foto, cada una guarda su copia (unos 120 KB), y ninguna
 depende de la otra. El ZIP se lee en memoria y con topes contados en lo que
 sale y no en lo que dice su índice (5 MB por foto, 20 MB entre todas y 512 KB el
 lienzo), porque un ZIP pequeño puede inflarse a gigas.
+
+**Las plantillas de muestra de la portada son ZIP de lienzo en el código**
+(`backend/sample_templates/<slug>.zip`), iguales para todos.
+- **Por qué en el código y no subidas desde administración:** el sitio es
+  estático, y lo que enseña tiene que existir al construirlo.
+- **Qué pasa al pulsar una:** `GET /plantillas/muestra/<slug>` la carga con el
+  mismo `canvas_from_pack()` de «Cargar plantilla», con la misma revisión y sus
+  fotos contando contra el tope, y abre su lienzo.
+  - Cada pulsación es otra copia.
+  - Un nombre que no sea un ZIP de la carpeta da 404.
+  - A una precarga del navegador no se le crea nada.
+- **Sin sesión**, lleva a entrar recordando el nombre (`WANTED_SAMPLE`, como el
+  plan) y sigue hasta ella.
+- **Agregar una** es dejar su ZIP en la carpeta y su fila en `SAMPLES`. Una
+  prueba comprueba que las dos listas coinciden.
+- **Hoy son ocho de relleno:** un rectángulo de color, su nombre y un texto de
+  ejemplo, sin fotos.
 
 **Entre cuentas nunca se copia nada.** Hubo `adopt_images()`, que al cargar un
 HTML iba a buscar las imágenes de la otra cuenta y las copiaba; si esa ya las
@@ -2254,6 +2273,23 @@ recortes, y la escena pesaba más del doble. **Los `id`
 llevan el prefijo de su escena** (`am-`, `as-`, `ap-`, `at-`): las cuatro viven
 en la misma página, y un `id` repetido hace que una use el degradado de otra (de
 noche, el resplandor claro de la primera).
+
+**«Cómo funciona», en la portada, es una tira de plantillas que corre sola**
+(septiembre de 2026). Lleva el título «¿Aún no sabes por dónde empezar?», las
+plantillas de `SAMPLES` y el botón «Ver tutorial», que va a /como-funciona,
+donde irán los videos. Ahí siguen los cuatro pasos, que salieron de la portada.
+- **Es solo CSS**, sin guion:
+  - la lista va dos veces seguidas y la tira se desplaza la mitad, así que el
+    salto no se ve;
+  - la copia va escondida del lector de pantalla y del tabulador.
+- **Se para con el ratón encima o con el foco dentro**, para poder pulsar una.
+- **Con «reducir movimiento» queda quieta** y se recorre de lado.
+- **No agranda nada al pasar el ratón**, por lo mismo que Features.
+- **Se tomó de un componente de React con Tailwind**, que el sitio no usa: el
+  efecto se hizo con el CSS de siempre.
+- **Cada tarjeta es, por ahora, su color**, hasta que cada plantilla tenga su
+  miniatura.
+- **Pulsarla abre su lienzo en el panel** (ver `designs`).
 
 **«Features» son cinco capturas del panel de verdad**, en un carrusel que
 aprieta: la abierta ocupa su sitio y las otras cuatro quedan en listones.

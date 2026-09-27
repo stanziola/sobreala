@@ -136,16 +136,31 @@
     <div class="section__head">
       <p class="eyebrow">{{ page.steps.eyebrow }}</p>
       <h2 class="section__title" id="pasos-title">{{ page.steps.title }}</h2>
+      <p class="section__intro">{{ page.steps.intro }}</p>
     </div>
-    <ol class="steps">
-      {% for step in steps %}
-      <li class="step">
-        <span class="step__number" aria-hidden="true">{{ step.number }}</span>
-        <h3 class="step__title">{{ step.title }}</h3>
-        <p class="step__text">{{ step.short }}</p>
-      </li>
+  </div>
+  {#- La tira corre de lado a lado, fuera del shell. Va dos veces seguidas para
+      que el bucle no se note: la segunda, escondida del lector de pantalla y
+      del tabulador, así cada plantilla se recorre una sola vez. Solo CSS. -#}
+  <div class="samples">
+    <div class="samples__track">
+      {% for copy in (0, 1) %}
+      <ul class="samples__list"{% if copy %} aria-hidden="true"{% endif %}>
+        {% for one in samples %}
+        <li>
+          <a class="sample" href="{{ panel.base_url }}/plantillas/muestra/{{ one.slug }}"
+             style="--sample: {{ one.color }}"
+             aria-label="{{ page.steps.open | replace('{name}', one.name) }}"
+             {%- if copy %} tabindex="-1"{% endif %}>
+            <span class="sample__name">{{ one.name }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
       {% endfor %}
-    </ol>
+    </div>
+  </div>
+  <div class="shell">
     <p class="section__actions">
       <a class="btn btn--primary btn--lg" href="{{ page.steps.cta.url }}">{{ page.steps.cta.label }}</a>
     </p>

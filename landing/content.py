@@ -264,10 +264,15 @@ HOME = {
             },
         ],
     },
+    # La tira de plantillas de muestra, donde estaban los cuatro pasos: los
+    # pasos siguen enteros en /como-funciona, que es a donde lleva el botón.
     "steps": {
         "eyebrow": "Cómo funciona",
-        "title": "Cuatro pasos, de la lista al resultado",
-        "cta": {"label": "Ver cómo funciona en detalle", "url": "/como-funciona/"},
+        "title": "¿Aún no sabes por dónde empezar?",
+        "intro": "Prueba nuestras plantillas personalizadas.",
+        # Lo que dice cada tarjeta a un lector de pantalla, con su nombre.
+        "open": "Abrir la plantilla {name} en el editor",
+        "cta": {"label": "Ver tutorial", "url": "/como-funciona/"},
     },
     "faq": {
         "eyebrow": "Preguntas frecuentes",
@@ -325,8 +330,23 @@ HOME = {
     },
 }
 
-# The four steps are shared by the home page and the "cómo funciona" page, so the
-# wording never diverges. The detail page adds its own extra paragraph per step.
+# The sample templates of the home page strip. Each slug is a ZIP in
+# backend/sample_templates/ (a test checks both lists match), and clicking one
+# opens it in the editor. The colour fills the card until each one has its
+# picture.
+SAMPLES = [
+    {"slug": "aviso", "name": "Aviso", "color": "#3166A7"},
+    {"slug": "oferta", "name": "Oferta", "color": "#C2410C"},
+    {"slug": "boletin", "name": "Boletín", "color": "#0F766E"},
+    {"slug": "convocatoria", "name": "Convocatoria", "color": "#6D28D9"},
+    {"slug": "recordatorio-de-pago", "name": "Recordatorio de pago", "color": "#B45309"},
+    {"slug": "evento", "name": "Evento", "color": "#BE185D"},
+    {"slug": "bienvenida", "name": "Bienvenida", "color": "#15803D"},
+    {"slug": "cumpleanos", "name": "Cumpleaños", "color": "#1D4ED8"},
+]
+
+# The four steps live on the "cómo funciona" page. The detail page adds its own
+# extra paragraph per step.
 STEPS = [
     {
         "number": "1",

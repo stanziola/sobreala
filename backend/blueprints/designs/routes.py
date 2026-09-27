@@ -28,6 +28,7 @@ import unicodedata
 import zipfile
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
+from pathlib import Path
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -35,7 +36,8 @@ from flask import (Blueprint, Response, abort, g, jsonify, redirect,
                    render_template, request, url_for)
 from markupsafe import escape
 
-from blueprints.auth.routes import (current_account, current_workspace, needs,
+from blueprints.auth.routes import (SAMPLE_NAME, current_account,
+                                    current_workspace, is_prefetch, needs,
                                     not_for_admins)
 from db import get_db
 from i18n import CANVAS_KEYS, TEXTS, t
@@ -59,6 +61,10 @@ def keep_out():
     nueva heredaría la puerta sin que nadie se acuerde de ponérsela.
     """
     account = current_account()
+    # Sin sesión, una muestra va a entrar ella misma, recordando cuál era:
+    # la puerta de aquí la mandaría a Seguridad y se perdería.
+    if account is None and request.endpoint == "designs.sample":
+        return None
     return not_for_admins(account) or needs(account, accounts.DESIGNS)
 
 
@@ -188,6 +194,53 @@ def upload():
 
     return render_template("designs/upload.html", section="plantillas",
                            **shared(db, account, errors=errors))
+
+
+# ------------------------------------------------ las plantillas de muestra
+
+# Los ZIP de lienzo de la tira de la portada, uno por plantilla, con el nombre
+# que usa el sitio (`SAMPLES` en landing/content.py). Van con el código, iguales
+# para todos: el sitio es estático y lo que enseña tiene que existir al
+# construirlo. Agregar una es dejar su ZIP aquí y su fila allá.
+SAMPLES_DIR = Path(__file__).resolve().parents[2] / "sample_templates"
+
+
+def sample_file(slug: str) -> Path | None:
+    """El ZIP de esa muestra, o None. El nombre se comprueba antes de tocar el
+    disco: viene de la dirección y no puede salir de la carpeta."""
+    if not SAMPLE_NAME.fullmatch(slug or ""):
+        return None
+    path = SAMPLES_DIR / f"{slug}.zip"
+    return path if path.is_file() else None
+
+
+@bp.route("/plantillas/muestra/<slug>")
+def sample(slug):
+    """Pulsar una plantilla de la portada: queda como plantilla de la cuenta y
+    se abre su lienzo. Es lo mismo que cargar su ZIP, así que pasa por la misma
+    revisión y sus fotos cuentan contra el tope de la cuenta. Cada vez que se
+    pulsa queda otra copia, como al cargar el mismo ZIP dos veces.
+
+    Es un GET porque llega desde un enlace del sitio público, que está en otro
+    dominio. A una precarga del navegador no se le crea nada.
+    """
+    path = sample_file(slug)
+    if path is None:
+        abort(404)
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login", muestra=slug))
+    if is_prefetch():
+        return Response(status=204)
+
+    db = get_db()
+    new_id, wrong = canvas_from_pack(db, account, path.read_bytes(), name="",
+                                     filename=slug)
+    if new_id is None:
+        # Lo que no se deja cargar se dice donde se cargan los ZIP.
+        return render_template("designs/upload.html", section="plantillas",
+                               **shared(db, account, errors={"archivo": wrong}))
+    return redirect(url_for("designs.edit_canvas", raw=new_id))
 
 
 # --------------------------------------------------------- editar un HTML
