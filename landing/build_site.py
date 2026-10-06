@@ -25,6 +25,7 @@ used elsewhere in the project).
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import sys
@@ -438,6 +439,32 @@ def copy_icon_set(sources: dict[str, Path], out_dir: Path, url_prefix: str,
     return available
 
 
+# Where each tutorial step's dot goes, written by tutorials.py.
+TUTORIAL_DATA = LANDING_DIR / "tutorials.json"
+
+
+def tutorial_tours() -> list[dict]:
+    """The tutorials of /como-funciona: the words from content.py and, for each
+    step, its screenshot and its dot from tutorials.json.
+
+    A step without its words stops the build: a tutorial that silently skipped
+    one would leave its reader pressing a dot nobody explained.
+    """
+    spots = json.loads(TUTORIAL_DATA.read_text(encoding="utf-8"))
+    tours = []
+    for tour in content.TUTORIALS["tours"]:
+        steps = []
+        for one in spots[tour["id"]]:
+            words = tour["steps"].get(one["id"])
+            if words is None:
+                raise SystemExit(f"Falta el texto del paso {tour['id']}/{one['id']} "
+                                 "en content.py (TUTORIALS).")
+            steps.append({**words, "id": one["id"], "image": one["image"],
+                          "spot": one["spot"]})
+        tours.append({**tour, "steps": steps})
+    return tours
+
+
 def icon_size(url: str, height: int) -> tuple[int, int]:
     """Las medidas con las que se dibuja un logo, a este alto.
 
@@ -590,7 +617,8 @@ def build() -> list[Path]:
         "plan_buttons": content.PLAN_BUTTONS,
         "cta_secondary": content.CTA_SECONDARY,
         "footer": content.FOOTER,
-        "steps": content.STEPS,
+        "tutorials": content.TUTORIALS,
+        "tutorial_tours": tutorial_tours(),
         "samples": content.SAMPLES,
         "font_faces": faces,
         "social_icons": social,

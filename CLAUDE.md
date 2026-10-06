@@ -74,6 +74,8 @@ panamails/
 │   ├── content.py          # todos los textos del sitio, en español
 │   ├── shots.py            # las capturas del panel de la portada; --check
 │   │                       # avisa si falta alguna
+│   ├── tutorials.py        # las capturas de los tutoriales y tutorials.json
+│   │                       # (GENERADO); --check avisa si falta alguna
 │   ├── src/                # plantillas Jinja2 (base, parciales, páginas) y site.css
 │   ├── assets/             # css, js, fonts, img (fonts, img, img/panel y
 │   │                       # css/site.css son generados)
@@ -2277,7 +2279,7 @@ noche, el resplandor claro de la primera).
 **«Cómo funciona», en la portada, es una tira de plantillas que corre sola**
 (septiembre de 2026). Lleva el título «¿Aún no sabes por dónde empezar?», las
 plantillas de `SAMPLES` y el botón «Ver tutorial», que va a /como-funciona,
-donde irán los videos. Ahí siguen los cuatro pasos, que salieron de la portada.
+donde están los tutoriales (ver «Los tutoriales», más abajo).
 - **Es solo CSS**, sin guion:
   - la lista va dos veces seguidas y la tira se desplaza la mitad, así que el
     salto no se ve;
@@ -2290,6 +2292,39 @@ donde irán los videos. Ahí siguen los cuatro pasos, que salieron de la portada
 - **Cada tarjeta es, por ahora, su color**, hasta que cada plantilla tenga su
   miniatura.
 - **Pulsarla abre su lienzo en el panel** (ver `designs`).
+
+**Los tutoriales de /como-funciona son capturas del panel que se recorren
+pulsando** (octubre de 2026), como Arcade: Contactos, Plantillas, Enviar correos,
+Estadísticas y Configuración, en pestañas. Sustituyeron a los cuatro pasos. Cada
+paso es la pantalla de verdad, en el tema puesto, con un anillo que late sobre
+lo que hay que pulsar y un globo que dice qué hacer y para qué; pulsar el anillo
+(o Enter con él enfocado) enseña lo que sale después de ese clic. Pulsar fuera
+no avanza: el anillo late otra vez.
+- **Por qué capturas y no una réplica en HTML:** una réplica se desfasa en
+  silencio el día que cambia el panel; las capturas se rehacen con un comando.
+- **Las hace `landing/tutorials.py`**, que reutiliza la demostración de
+  `shots.py` y le agrega lo suyo (plan Empresa, sin campañas programadas, el
+  último envío con contactos de verdad). Recorre el panel en Chrome a 1280 × 800
+  haciendo cada clic de verdad, y escribe las capturas en
+  `assets/img/tutorial/{light,dark}/` y dónde cae cada anillo, en porcentajes,
+  en `landing/tutorials.json`. **Las dos cosas son GENERADAS. Hay que volver a
+  correrlo cuando cambie una pantalla que sale en un recorrido**; `--check`
+  avisa si falta alguna. Le pone a la demostración credenciales de PayPal de
+  mentira para que Facturación diga «Disponible».
+- **Los textos viven en `content.TUTORIALS`**, por recorrido y por paso, y los
+  pasos en `tutorials.TOURS`. `build_site.py` se niega a construir si a un paso
+  le falta su texto, y `backend/tests/test_tutorials.py` lo comprueba en los dos
+  sentidos.
+- **Sin JavaScript se lee entero**: cada recorrido con todos sus pasos, uno
+  debajo del otro, con su anillo y su globo. `assets/js/tutorial.js` lo vuelve
+  reproductor: un paso a la vez, Atrás y Empezar de nuevo, la tarjeta de «Listo»
+  al final, y la pestaña en la dirección (`#plantillas`), así se puede mandar el
+  enlace de un tutorial.
+- **El globo va junto al anillo** de 900 px en adelante, del lado que tenga
+  sitio, y la página se mueve lo justo para que los dos queden bajo la barra
+  fija. **En el teléfono va debajo, y la captura se agranda al doble** y se
+  corre hasta dejar el anillo en medio: entera no se leía nada.
+- **Con «reducir movimiento»** no late ni se funde.
 
 **«Features» son cinco capturas del panel de verdad**, en un carrusel que
 aprieta: la abierta ocupa su sitio y las otras cuatro quedan en listones.

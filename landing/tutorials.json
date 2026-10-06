@@ -1,0 +1,417 @@
+{
+ "contactos": [
+  {
+   "id": "menu",
+   "image": "contactos-1",
+   "spot": [
+    86.91,
+    1.75,
+    10.9,
+    5.29
+   ]
+  },
+  {
+   "id": "entrar",
+   "image": "contactos-2",
+   "spot": [
+    80.39,
+    20.25,
+    16.72,
+    5.54
+   ]
+  },
+  {
+   "id": "etiquetas",
+   "image": "contactos-3",
+   "spot": [
+    1.25,
+    34.84,
+    14.84,
+    5.79
+   ]
+  },
+  {
+   "id": "nueva",
+   "image": "contactos-4",
+   "spot": [
+    20.39,
+    87.35,
+    6.98,
+    6.2
+   ]
+  },
+  {
+   "id": "importar",
+   "image": "contactos-5",
+   "spot": [
+    1.25,
+    28.3,
+    14.84,
+    5.79
+   ]
+  },
+  {
+   "id": "archivo",
+   "image": "contactos-6",
+   "spot": [
+    20.39,
+    40.62,
+    10.22,
+    5.13
+   ]
+  },
+  {
+   "id": "columnas",
+   "image": "contactos-7",
+   "spot": [
+    58.75,
+    61.7,
+    37.58,
+    5.75
+   ]
+  },
+  {
+   "id": "origen",
+   "image": "contactos-8",
+   "spot": [
+    21.88,
+    47.13,
+    43.75,
+    5.75
+   ]
+  },
+  {
+   "id": "subir",
+   "image": "contactos-9",
+   "spot": [
+    20.39,
+    70.25,
+    9.12,
+    6.2
+   ]
+  },
+  {
+   "id": "resultado",
+   "image": "contactos-10",
+   "spot": null
+  }
+ ],
+ "plantillas": [
+  {
+   "id": "menu",
+   "image": "plantillas-1",
+   "spot": [
+    86.91,
+    1.75,
+    10.9,
+    5.29
+   ]
+  },
+  {
+   "id": "entrar",
+   "image": "plantillas-2",
+   "spot": [
+    80.39,
+    25.79,
+    16.72,
+    5.54
+   ]
+  },
+  {
+   "id": "crear",
+   "image": "plantillas-3",
+   "spot": [
+    1.25,
+    30.3,
+    48.2,
+    7.86
+   ]
+  },
+  {
+   "id": "texto",
+   "image": "plantillas-4",
+   "spot": [
+    1.25,
+    77.73,
+    13.28,
+    5.95
+   ]
+  },
+  {
+   "id": "escribir",
+   "image": "plantillas-5",
+   "spot": [
+    37.19,
+    47.87,
+    40.62,
+    4.25
+   ]
+  },
+  {
+   "id": "armada",
+   "image": "plantillas-6",
+   "spot": [
+    37.19,
+    47.24,
+    40.62,
+    5.5
+   ]
+  },
+  {
+   "id": "vista",
+   "image": "plantillas-7",
+   "spot": [
+    54.92,
+    36.13,
+    11.74,
+    6.2
+   ]
+  },
+  {
+   "id": "cerrar",
+   "image": "plantillas-8",
+   "spot": [
+    95.31,
+    2.75,
+    2.81,
+    4.5
+   ]
+  },
+  {
+   "id": "guardar",
+   "image": "plantillas-9",
+   "spot": [
+    90.09,
+    36.13,
+    8.66,
+    6.2
+   ]
+  },
+  {
+   "id": "listo",
+   "image": "plantillas-10",
+   "spot": null
+  }
+ ],
+ "envios": [
+  {
+   "id": "menu",
+   "image": "envios-1",
+   "spot": [
+    86.91,
+    1.75,
+    10.9,
+    5.29
+   ]
+  },
+  {
+   "id": "entrar",
+   "image": "envios-2",
+   "spot": [
+    80.39,
+    14.71,
+    16.72,
+    5.54
+   ]
+  },
+  {
+   "id": "asunto",
+   "image": "envios-3",
+   "spot": [
+    1.25,
+    40.82,
+    43.75,
+    6.2
+   ]
+  },
+  {
+   "id": "etiquetas",
+   "image": "envios-4",
+   "spot": [
+    1.25,
+    57.28,
+    16.33,
+    5.19
+   ]
+  },
+  {
+   "id": "plantilla",
+   "image": "envios-5",
+   "spot": [
+    1.25,
+    71.99,
+    43.75,
+    5.75
+   ]
+  },
+  {
+   "id": "cuando",
+   "image": "envios-6",
+   "spot": [
+    1.25,
+    85.98,
+    1.02,
+    1.62
+   ]
+  },
+  {
+   "id": "guardar",
+   "image": "envios-7",
+   "spot": [
+    1.25,
+    46.9,
+    16.19,
+    6.2
+   ]
+  },
+  {
+   "id": "mandar",
+   "image": "envios-8",
+   "spot": [
+    50.36,
+    47.54,
+    5.74,
+    4.88
+   ]
+  },
+  {
+   "id": "pregunta",
+   "image": "envios-9",
+   "spot": null
+  }
+ ],
+ "estadisticas": [
+  {
+   "id": "periodo",
+   "image": "estadisticas-1",
+   "spot": [
+    1.25,
+    28.05,
+    30.34,
+    5.75
+   ]
+  },
+  {
+   "id": "cifras",
+   "image": "estadisticas-2",
+   "spot": [
+    1.25,
+    53.91,
+    97.5,
+    13.72
+   ]
+  },
+  {
+   "id": "grafica",
+   "image": "estadisticas-3",
+   "spot": [
+    1.25,
+    32.97,
+    97.5,
+    34.12
+   ]
+  },
+  {
+   "id": "bajar",
+   "image": "estadisticas-4",
+   "spot": [
+    1.25,
+    37.3,
+    7.98,
+    5.13
+   ]
+  },
+  {
+   "id": "mejores",
+   "image": "estadisticas-5",
+   "spot": [
+    1.25,
+    48.81,
+    12.92,
+    2.38
+   ]
+  },
+  {
+   "id": "detalles",
+   "image": "estadisticas-6",
+   "spot": null
+  }
+ ],
+ "configuracion": [
+  {
+   "id": "menu",
+   "image": "configuracion-1",
+   "spot": [
+    86.91,
+    1.75,
+    10.9,
+    5.29
+   ]
+  },
+  {
+   "id": "entrar",
+   "image": "configuracion-2",
+   "spot": [
+    80.39,
+    31.33,
+    16.72,
+    5.54
+   ]
+  },
+  {
+   "id": "direccion",
+   "image": "configuracion-3",
+   "spot": [
+    71.55,
+    57.57,
+    24.78,
+    6.2
+   ]
+  },
+  {
+   "id": "seguridad",
+   "image": "configuracion-4",
+   "spot": [
+    1.25,
+    28.3,
+    14.84,
+    5.79
+   ]
+  },
+  {
+   "id": "dos_pasos",
+   "image": "configuracion-5",
+   "spot": [
+    89.81,
+    43.69,
+    6.52,
+    5.13
+   ]
+  },
+  {
+   "id": "usuarios",
+   "image": "configuracion-6",
+   "spot": [
+    86.39,
+    69.76,
+    9.94,
+    4.88
+   ]
+  },
+  {
+   "id": "facturacion",
+   "image": "configuracion-7",
+   "spot": [
+    1.25,
+    41.38,
+    14.84,
+    5.79
+   ]
+  },
+  {
+   "id": "plan",
+   "image": "configuracion-8",
+   "spot": null
+  }
+ ]
+}

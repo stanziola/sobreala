@@ -10,23 +10,91 @@
   </div>
 </section>
 
-<section class="section" aria-labelledby="pasos-title">
+{#- Los tutoriales: el panel de verdad, paso a paso. Cada paso es su captura
+    (las dos del tema, como en Features), un anillo sobre lo que hay que pulsar
+    y lo que hay que hacer. Sin JavaScript se leen como una lista: todos los
+    pasos, uno debajo del otro. tutorial.js los vuelve un reproductor: un paso a
+    la vez, y pulsar el anillo pasa al siguiente. Las capturas y los anillos los
+    hace landing/tutorials.py; los textos están en content.py. -#}
+{% set tut = tutorials %}
+<section class="section" id="tutoriales" aria-labelledby="tutoriales-title">
   <div class="shell">
-    <h2 class="visually-hidden" id="pasos-title">Los cuatro pasos</h2>
-    <ol class="flow">
-      {% for step in steps %}
-      <li class="flow__item">
-        <div class="flow__marker" aria-hidden="true">
-          <span class="flow__number">{{ step.number }}</span>
-        </div>
-        <div class="flow__body">
-          <h3 class="flow__title">{{ step.title }}</h3>
-          <p class="flow__lead">{{ step.short }}</p>
-          <p class="flow__text">{{ step.detail }}</p>
-        </div>
-      </li>
+    <div class="section__head">
+      <p class="eyebrow">{{ tut.eyebrow }}</p>
+      <h2 class="section__title" id="tutoriales-title">{{ tut.title }}</h2>
+      <p class="section__intro">{{ tut.intro }}</p>
+    </div>
+
+    <div class="tutorial" data-tutorial>
+      <nav class="tutorial__tabs" aria-label="{{ tut.eyebrow }}">
+        {% for tour in tutorial_tours %}
+        <a class="tutorial__tab" href="#{{ tour.id }}" data-tab="{{ tour.id }}">{{ tour.name }}</a>
+        {% endfor %}
+      </nav>
+      {# Lo que se anuncia al cambiar de paso, para un lector de pantalla. #}
+      <p class="visually-hidden" data-tutorial-status aria-live="polite"></p>
+
+      {% for tour in tutorial_tours %}
+      {% set total = tour.steps|length %}
+      <article class="guide" id="{{ tour.id }}" data-guide="{{ tour.id }}">
+        <header class="guide__head">
+          <h3 class="guide__name">{{ tour.name }}</h3>
+          <p class="guide__lead">{{ tour.lead }}</p>
+        </header>
+        <ol class="guide__steps">
+          {% for step in tour.steps %}
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen>
+              {#- La captura y su anillo van juntos: en el teléfono el marco se
+                  agranda y se corre hasta el anillo, y los dos se mueven a la vez. -#}
+              <div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              {% for theme in ("light", "dark") %}
+              <img class="guide-step__shot guide-step__shot--{{ theme }}"
+                   src="/assets/img/tutorial/{{ theme }}/{{ step.image }}.webp"
+                   alt="{{ tut.screen | replace('{what}', step.do) }}"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              {% endfor %}
+              {% if step.spot %}
+              <span class="guide-step__ring" data-spot
+                    style="--x: {{ step.spot[0] }}; --y: {{ step.spot[1] }}; --w: {{ step.spot[2] }}; --h: {{ step.spot[3] }}"
+                    data-label="{{ tut.press | replace('{what}', step.do) }}"></span>
+              {% endif %}
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">{{ tut.step | replace('{n}', loop.index|string) | replace('{total}', total|string) }}</p>
+                <p class="guide-step__do">{{ step.do }}</p>
+                <p class="guide-step__why">{{ step.why }}</p>
+                {% if not step.spot %}
+                <button class="btn btn--primary guide-step__finish" type="button"
+                        data-finish hidden>{{ tut.finish }}</button>
+                {% endif %}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+          <li class="guide-done" data-done>
+            <p class="guide-done__title">{{ tut.done_title }}</p>
+            <p class="guide-done__text">{{ tour.done }}</p>
+            <p class="guide-done__actions">
+              <button class="btn btn--outline" type="button" data-again hidden>{{ tut.again }}</button>
+              {% if not loop.last %}
+              {% set coming = tutorial_tours[loop.index] %}
+              <a class="btn btn--primary" href="#{{ coming.id }}" data-goto="{{ coming.id }}">{{ tut.next | replace('{name}', coming.name) }}</a>
+              {% else %}
+              <a class="btn btn--primary" href="{{ tut.signup.url }}">{{ tut.signup.label }}</a>
+              {% endif %}
+            </p>
+          </li>
+        </ol>
+      </article>
       {% endfor %}
-    </ol>
+
+      {# Solo con el guion: sin él no hay un paso a la vez que mover. #}
+      <div class="tutorial__controls" data-controls hidden>
+        <button class="btn btn--outline" type="button" data-back>{{ tut.back }}</button>
+        <button class="btn btn--outline" type="button" data-restart>{{ tut.restart }}</button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -71,4 +139,8 @@
   </div>
 </section>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/tutorial.js" defer></script>
 {% endblock %}

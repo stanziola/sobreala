@@ -345,66 +345,317 @@ SAMPLES = [
     {"slug": "cumpleanos", "name": "Cumpleaños", "color": "#1D4ED8"},
 ]
 
-# The four steps live on the "cómo funciona" page. The detail page adds its own
-# extra paragraph per step.
-STEPS = [
-    {
-        "number": "1",
-        "title": "Sube tus contactos",
-        "short": "Importas tu lista desde un archivo CSV y la organizas con etiquetas.",
-        "detail": (
-            "Subes el archivo que ya tienes, en CSV, y Panamails lo procesa. Los "
-            "correos repetidos se unifican solos: una dirección existe una sola vez en "
-            "tu cuenta, aunque venga repetida en el archivo. Al terminar te decimos "
-            "cuántos entraron y cuántos estaban dados de baja de envíos anteriores. "
-            "No manejas listas separadas: es una sola lista y la organizas con "
-            "etiquetas, así un mismo contacto puede ser empleado y junta directiva "
-            "sin contar dos veces."
-        ),
-    },
-    {
-        "number": "2",
-        "title": "Arma tu mensaje",
-        "short": "Eliges una plantilla, escribes el asunto y el contenido, y lo previsualizas antes de enviar.",
-        "detail": (
-            "La armas en el editor, poniendo textos, botones e imágenes donde "
-            "quieras. La previsualización te muestra el "
-            "correo tal como va a llegar, y puedes enviarte una prueba a tu propia "
-            "dirección para verla en tu bandeja antes de que la vea nadie más."
-        ),
-    },
-    {
-        "number": "3",
-        "title": "Envía o programa",
-        "short": "Seleccionas a quién le llega y decides si sale ahora o a la hora que elijas.",
-        "detail": (
-            "Eliges las etiquetas que reciben la campaña y confirmas. Puedes enviar en "
-            "el momento o dejarla programada para el día y la hora exactos que te "
-            "convengan. El enlace de baja se agrega a cada correo en el envío, único "
-            "para cada destinatario, y quien se dio de baja o rebotó antes se salta "
-            "automáticamente, sin gastar tu cuota."
-        ),
-    },
-    {
-        "number": "4",
-        "title": "Mira qué pasó",
-        "short": "Ves entregados, aperturas, clicks, rebotes y bajas de cada campaña.",
-        "detail": (
-            "Cada campaña deja su registro: cuántos correos se entregaron, cuántas "
-            "personas abrieron, cuántas hicieron click, cuántos rebotaron y cuántas se "
-            "dieron de baja. Puedes exportarlo a CSV o PDF para presentarlo en una "
-            "junta directiva o guardarlo como respaldo."
-        ),
-    },
-]
+# The tutorials of the "cómo funciona" page: one per section of the panel. The
+# screenshots and where each dot goes are made by landing/tutorials.py; the
+# words live here. Each step says what to press ("do") and what for ("why"),
+# and a test checks that every step of tutorials.py has its words here.
+TUTORIALS = {
+    "eyebrow": "Tutoriales",
+    "title": "Aprende a usar el panel, pulsando",
+    "intro": (
+        "Estas son las pantallas de verdad. Pulsa el punto que late y avanzas, como "
+        "si estuvieras dentro de tu cuenta."
+    ),
+    # Lo que dice el reproductor.
+    "step": "Paso {n} de {total}",
+    "back": "Atrás",
+    "restart": "Empezar de nuevo",
+    "press": "Pulsar: {what}",
+    "finish": "Terminar",
+    "done_title": "¡Listo!",
+    "again": "Repetir",
+    "next": "Siguiente tutorial: {name}",
+    "signup": {"label": "Crear mi cuenta", "url": "https://panel.panamails.com/registro"},
+    "screen": "Pantalla del panel: {what}",
+    "tours": [
+        {
+            "id": "contactos",
+            "name": "Contactos",
+            "lead": "Crea una etiqueta e importa tu lista desde un archivo CSV.",
+            "done": (
+                "Tu lista ya está dentro, con su etiqueta y su origen. Si una dirección "
+                "venía repetida, quedó una sola vez."
+            ),
+            "steps": {
+                "menu": {
+                    "do": "Abre el menú con el nombre de tu empresa",
+                    "why": "Desde ahí llegas a todo el panel.",
+                },
+                "entrar": {
+                    "do": "Entra a Contactos",
+                    "why": "Es tu lista: quién recibe tus correos.",
+                },
+                "etiquetas": {
+                    "do": "Abre Etiquetas",
+                    "why": (
+                        "Las etiquetas son tus grupos: clientes, socios, boletín. Se "
+                        "crean primero y después se eligen."
+                    ),
+                },
+                "nueva": {
+                    "do": "Escribe el nombre y pulsa Crear",
+                    "why": "Aquí la llamamos «Socios».",
+                },
+                "importar": {
+                    "do": "Ve a Importar",
+                    "why": (
+                        "La etiqueta ya quedó creada. Ahora sube la lista que ya "
+                        "tienes, en un archivo CSV."
+                    ),
+                },
+                "archivo": {
+                    "do": "Elige tu archivo",
+                    "why": (
+                        "Un CSV con una columna de correos. Si trae nombres, también "
+                        "los leemos."
+                    ),
+                },
+                "columnas": {
+                    "do": "Di dónde va cada columna",
+                    "why": (
+                        "El correo y el nombre se reconocen solos. Las demás las eliges "
+                        "tú, o las dejas fuera."
+                    ),
+                },
+                "origen": {
+                    "do": "Cuéntanos de dónde salió la lista",
+                    "why": (
+                        "Lo guardamos con cada contacto: es lo que se enseña si alguien "
+                        "reclama. Marca también su etiqueta."
+                    ),
+                },
+                "subir": {
+                    "do": "Pulsa Importar",
+                    "why": "En unos segundos te decimos qué pasó con tu archivo.",
+                },
+                "resultado": {
+                    "do": "Esto pasó con tu archivo",
+                    "why": (
+                        "Cuántas filas se leyeron, cuántos contactos son nuevos y "
+                        "cuántos ya estaban."
+                    ),
+                },
+            },
+        },
+        {
+            "id": "plantillas",
+            "name": "Plantillas",
+            "lead": "Arma tu correo en el editor, míralo y guárdalo.",
+            "done": (
+                "Tu plantilla está guardada y lista para enviar. También puedes cargar "
+                "una que alguien te pasó, con «Cargar plantilla (ZIP)»."
+            ),
+            "steps": {
+                "menu": {
+                    "do": "Abre el menú con el nombre de tu empresa",
+                    "why": "Las plantillas están ahí, debajo de Contactos.",
+                },
+                "entrar": {
+                    "do": "Entra a Plantillas",
+                    "why": "Son los correos que armas para mandar.",
+                },
+                "crear": {
+                    "do": "Pulsa Crear plantilla",
+                    "why": "Se abre el editor con una hoja en blanco.",
+                },
+                "texto": {
+                    "do": "Agrega un texto",
+                    "why": (
+                        "Con estos botones pones textos, botones, imágenes y figuras "
+                        "en la hoja."
+                    ),
+                },
+                "escribir": {
+                    "do": "Doble clic para escribir",
+                    "why": (
+                        "Arrástralo a donde quieras. Arriba cambias su letra, su tamaño "
+                        "y su color."
+                    ),
+                },
+                "armada": {
+                    "do": "Así se ve una ya armada: pulsa el título",
+                    "why": "Al pulsar algo, la barra de arriba enseña lo que puedes cambiarle.",
+                },
+                "vista": {
+                    "do": "Pulsa Previsualización",
+                    "why": "Ves el correo tal como va a llegar, también en el teléfono.",
+                },
+                "cerrar": {
+                    "do": "Ciérrala cuando termines de mirar",
+                    "why": (
+                        "El botón para anular la suscripción se agrega solo, en todos "
+                        "los correos."
+                    ),
+                },
+                "guardar": {
+                    "do": "Pulsa Guardar",
+                    "why": (
+                        "Se puede guardar cuando la revisión de arriba está en verde: "
+                        "es lo que evita que tu correo vaya a spam."
+                    ),
+                },
+                "listo": {
+                    "do": "Tu plantilla quedó guardada",
+                    "why": "Aparece en tu lista, lista para usarla en un envío.",
+                },
+            },
+        },
+        {
+            "id": "envios",
+            "name": "Enviar correos",
+            "lead": "Arma una campaña, elige a quién le llega y mándala.",
+            "done": (
+                "Al confirmar, sale. Después, en «Campañas enviadas», cada envío tiene su "
+                "Detalles con lo que pasó con cada persona."
+            ),
+            "steps": {
+                "menu": {
+                    "do": "Abre el menú con el nombre de tu empresa",
+                    "why": "Enviar correos está justo debajo de Estadísticas.",
+                },
+                "entrar": {
+                    "do": "Entra a Enviar correos",
+                    "why": "Aquí armas cada campaña.",
+                },
+                "asunto": {
+                    "do": "Escribe el asunto",
+                    "why": "Es lo primero que se lee, y muchas veces lo único. Corto y concreto.",
+                },
+                "etiquetas": {
+                    "do": "Marca a quién le llega",
+                    "why": (
+                        "Puedes marcar varias etiquetas: quien lleve más de una recibe un "
+                        "solo correo. Sin marcar ninguna, le llega a toda tu lista."
+                    ),
+                },
+                "plantilla": {
+                    "do": "Elige la plantilla",
+                    "why": "Una de las que guardaste en Plantillas.",
+                },
+                "cuando": {
+                    "do": "Elige cuándo sale",
+                    "why": "Ahora mismo, o en la fecha y hora que prefieras.",
+                },
+                "guardar": {
+                    "do": "Pulsa Guardar la campaña",
+                    "why": "Queda guardada: la puedes mandar hoy y volver a usarla después.",
+                },
+                "mandar": {
+                    "do": "Pulsa Enviar",
+                    "why": "Antes de salir, el panel te pregunta.",
+                },
+                "pregunta": {
+                    "do": "Revisa y confirma",
+                    "why": (
+                        "Te dice el asunto, a cuántos contactos va y cuántos correos te "
+                        "quedan. Un correo que salió no se puede recoger."
+                    ),
+                },
+            },
+        },
+        {
+            "id": "estadisticas",
+            "name": "Estadísticas",
+            "lead": "Mira cómo le fue a cada envío y bájalo en CSV o PDF.",
+            "done": (
+                "Cada envío deja su registro: entregados, aperturas, clics, rebotes y "
+                "bajas, persona por persona."
+            ),
+            "steps": {
+                "periodo": {
+                    "do": "Elige el periodo",
+                    "why": "De la última hora a los últimos 90 días. Aquí, 30 días.",
+                },
+                "cifras": {
+                    "do": "Así le fue a tus correos",
+                    "why": (
+                        "Cada cifra se compara con el periodo anterior: en verde si "
+                        "mejoró y en rojo si empeoró."
+                    ),
+                },
+                "grafica": {
+                    "do": "Pasa el ratón por la gráfica",
+                    "why": "Cada barra dice cuántos salieron ese día y cuántos rebotaron.",
+                },
+                "bajar": {
+                    "do": "Bájalo en CSV o en PDF",
+                    "why": "Lo mismo que ves, para guardarlo o llevarlo a una reunión.",
+                },
+                "mejores": {
+                    "do": "Abre uno de tus mejores envíos",
+                    "why": "Están ordenados por aperturas. Pulsa uno para ver a quién le llegó.",
+                },
+                "detalles": {
+                    "do": "Esto pasó con cada persona",
+                    "why": (
+                        "Si le llegó, cuándo lo abrió y cuándo pulsó. Puedes buscar y "
+                        "filtrar por etiqueta."
+                    ),
+                },
+            },
+        },
+        {
+            "id": "configuracion",
+            "name": "Configuración",
+            "lead": "Tu dirección postal, tu seguridad, tu equipo y tu plan.",
+            "done": (
+                "Eso es todo lo que hay que dejar listo. Cuando quieras, contrata tu plan "
+                "desde la página de planes."
+            ),
+            "steps": {
+                "menu": {
+                    "do": "Abre el menú con el nombre de tu empresa",
+                    "why": "Configuración está al final.",
+                },
+                "entrar": {
+                    "do": "Entra a Configuración",
+                    "why": "Tu cuenta, tu seguridad, tus avisos y tu facturación.",
+                },
+                "direccion": {
+                    "do": "Escribe tu dirección postal",
+                    "why": (
+                        "Sale al pie de tus correos, porque la ley la pide. Sin ella no "
+                        "se envía. Un apartado postal sirve."
+                    ),
+                },
+                "seguridad": {
+                    "do": "Abre Seguridad",
+                    "why": "Tu contraseña, tus dispositivos y tu equipo.",
+                },
+                "dos_pasos": {
+                    "do": "Activa la autenticación de múltiples factores",
+                    "why": (
+                        "Además de tu contraseña, un código de una app en tu teléfono. "
+                        "Recomendado."
+                    ),
+                },
+                "usuarios": {
+                    "do": "Dale entrada a tu equipo",
+                    "why": (
+                        "Cada persona con su correo y su contraseña. Tú decides lo que "
+                        "puede hacer."
+                    ),
+                },
+                "facturacion": {
+                    "do": "Abre Facturación",
+                    "why": "Tu plan, hasta cuándo va y lo que has pagado.",
+                },
+                "plan": {
+                    "do": "Aquí está tu plan",
+                    "why": "Con su fecha, los métodos de pago y el historial de compras.",
+                },
+            },
+        },
+    ],
+}
 
 # --------------------------------------------------------------------------- how it works
 
 HOW = {
     "meta_title": "Cómo funciona · Panamails",
     "meta_description": (
-        "De tu lista de contactos al correo de tus clientes: los cuatro pasos para "
-        "enviar una campaña con Panamails, explicados sin tecnicismos."
+        "Tutoriales del panel de Panamails: contactos, plantillas, envíos, "
+        "estadísticas y configuración, paso a paso y pulsando."
     ),
     "hero": {
         "eyebrow": "Cómo funciona",
