@@ -23,7 +23,7 @@ PRICING = Path(__file__).resolve().parent.parent.parent / "docs" / "pricing.md"
 CURRENCY = "USD"
 
 # El ITBMS de Panamá, que los precios ya llevan dentro («Precios con ITBMS
-# incluido» en /planes). Es lo que el desglose del pago y el recibo dicen que
+# incluido» en /pricing). Es lo que el desglose del pago y el recibo dicen que
 # incluye el total.
 ITBMS = Decimal("0.07")
 

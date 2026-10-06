@@ -47,7 +47,7 @@
     if (themeLabel) themeLabel.textContent = theme === "dark" ? MODE.light : MODE.dark;
   }
 
-  // Written on the parent domain so sobreala.com and panel.sobreala.com read
+  // Written on the parent domain so sobreala.com and app.sobreala.com read
   // the same choice. Anywhere else (a local run) it stays on the host, which is
   // shared anyway: cookies ignore ports.
   function rememberTheme(theme) {

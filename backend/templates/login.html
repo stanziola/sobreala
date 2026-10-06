@@ -41,7 +41,7 @@
   {# El enlace se lleva la marca: sin ella, la pantalla de registro devolvería
      a la portada a quien ya tiene sesión abierta. #}
   <p class="foot">{{ t('login_no_account_adding') if adding else t('login_no_account') }}
-    <a href="{{ url_for('auth.register', agregar=1) if adding
+    <a href="{{ url_for('auth.register', add=1) if adding
                 else url_for('auth.register') }}">{{ t('login_register_link') }}</a></p>
 </div>
 {% endblock %}

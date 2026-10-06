@@ -29,23 +29,23 @@ def other(client):
 
 def prove(client, password=PASSWORD):
     """Paso uno: la contraseña, que es lo único que hay en esa pantalla."""
-    page = client.get("/cuenta/dos-pasos").get_data(as_text=True)
+    page = client.get("/account/two-factor").get_data(as_text=True)
     assert 'class="qr"' not in page           # todavía no se enseña ningún QR
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/cuenta/dos-pasos",
+    return client.post("/account/two-factor",
                        data={"csrf_token": csrf, "password": password})
 
 
 def turn_on(client, database):
     """Enable two-step the way the screen does, and return (secret, codes)."""
     prove(client)
-    page = client.get("/cuenta/dos-pasos/activar").get_data(as_text=True)
+    page = client.get("/account/two-factor/enable").get_data(as_text=True)
     assert 'class="qr"' in page               # the QR was drawn on the page
     with client.session_transaction() as sess:
         secret = sess["two_factor_setup"]
         csrf = sess["_csrf"]
-    answer = client.post("/cuenta/dos-pasos/activar", data={
+    answer = client.post("/account/two-factor/enable", data={
         "csrf_token": csrf, "code": list(pyotp.TOTP(secret).now()),
     })
     codes = re.findall(r"[A-Z2-9]{4}-[A-Z2-9]{4}", answer.get_data(as_text=True))
@@ -54,23 +54,23 @@ def turn_on(client, database):
 
 def manage(client, action, password=PASSWORD):
     """Paso dos de administrarla: la contraseña, para la acción ya elegida."""
-    client.get(f"/cuenta/dos-pasos?accion={action}")
+    client.get(f"/account/two-factor?action={action}")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/cuenta/dos-pasos", data={
+    return client.post("/account/two-factor", data={
         "csrf_token": csrf, "action": action, "password": password})
 
 
 def sign_in(client, password=PASSWORD):
-    client.get("/entrar")
+    client.get("/login")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/entrar", data={
+    return client.post("/login", data={
         "csrf_token": csrf, "email": "ana@ejemplo.com", "password": password})
 
 
 def second_step(client, code=None, recovery=None):
-    client.get("/entrar/codigo")
+    client.get("/login/code")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
     data = {"csrf_token": csrf}
@@ -78,7 +78,7 @@ def second_step(client, code=None, recovery=None):
         data["code"] = list(code)
     if recovery:
         data["recovery"] = recovery
-    return client.post("/entrar/codigo", data=data)
+    return client.post("/login/code", data=data)
 
 
 # ------------------------------------------------------------- turning it on
@@ -94,9 +94,9 @@ def test_the_qr_screen_does_not_open_without_the_password(client, database, outb
     inside = other(client)
     login(inside)
 
-    answer = inside.get("/cuenta/dos-pasos/activar")
+    answer = inside.get("/account/two-factor/enable")
     assert answer.status_code == 302
-    assert "vencido" in answer.headers["Location"]
+    assert "expired" in answer.headers["Location"]
     with inside.session_transaction() as sess:
         assert "two_factor_setup" not in sess
 
@@ -108,7 +108,7 @@ def test_the_wrong_password_shows_no_qr(client, database, outbox):
 
     answer = prove(inside, password="otra-cosa")
     assert 'class="qr"' not in answer.get_data(as_text=True)
-    assert inside.get("/cuenta/dos-pasos/activar").status_code == 302
+    assert inside.get("/account/two-factor/enable").status_code == 302
 
 
 def test_the_proof_expires(client, database, outbox, monkeypatch):
@@ -119,11 +119,11 @@ def test_the_proof_expires(client, database, outbox, monkeypatch):
     inside = other(client)
     login(inside)
     prove(inside)
-    assert inside.get("/cuenta/dos-pasos/activar").status_code == 200
+    assert inside.get("/account/two-factor/enable").status_code == 200
 
     later = routes.security_now() + timedelta(minutes=routes.TWO_FACTOR_MINUTES + 1)
     monkeypatch.setattr(routes, "security_now", lambda: later)
-    assert inside.get("/cuenta/dos-pasos/activar").status_code == 302
+    assert inside.get("/account/two-factor/enable").status_code == 302
 
 
 def test_enabling_needs_the_password_and_a_working_code(client, database, outbox):
@@ -132,13 +132,13 @@ def test_enabling_needs_the_password_and_a_working_code(client, database, outbox
     login(inside)
 
     prove(inside)
-    inside.get("/cuenta/dos-pasos/activar")
+    inside.get("/account/two-factor/enable")
     with inside.session_transaction() as sess:
         csrf = sess["_csrf"]
 
     # Con un código que no cuadra no se enciende: nadie se queda fuera de su
     # cuenta por haber escaneado mal.
-    inside.post("/cuenta/dos-pasos/activar", data={
+    inside.post("/account/two-factor/enable", data={
         "csrf_token": csrf, "code": list("000000")})
     assert not accounts.two_factor_on(accounts.by_email(database, "ana@ejemplo.com"))
 
@@ -169,9 +169,9 @@ def test_the_password_alone_opens_nothing(client, database, outbox):
     phone = other(client)
     answer = sign_in(phone)
 
-    assert answer.headers["Location"].endswith("/entrar/codigo")
+    assert answer.headers["Location"].endswith("/login/code")
     # Nothing is open while the second screen is up.
-    assert phone.get("/panel").status_code == 302
+    assert phone.get("/dashboard").status_code == 302
     assert database.sessions.count_documents({"account_id":
         accounts.by_email(database, "ana@ejemplo.com")["_id"],
         "revoked_at": None}) == 1          # only the browser that enabled it
@@ -187,7 +187,7 @@ def test_a_good_code_gets_in(client, database, outbox):
     sign_in(phone)
     assert second_step(phone, code=pyotp.TOTP(secret).now()
                        ).headers["Location"] == Config.PUBLIC_SITE_URL
-    assert phone.get("/panel").status_code == 200
+    assert phone.get("/dashboard").status_code == 200
 
 
 def test_the_same_code_does_not_work_twice(client, database, outbox):
@@ -205,7 +205,7 @@ def test_the_same_code_does_not_work_twice(client, database, outbox):
     thief = other(client)
     sign_in(thief)
     assert second_step(thief, code=code).status_code == 200      # refused
-    assert thief.get("/panel").status_code == 302
+    assert thief.get("/dashboard").status_code == 302
 
 
 def test_an_old_code_is_refused(client, database, outbox):
@@ -218,7 +218,7 @@ def test_an_old_code_is_refused(client, database, outbox):
     phone = other(client)
     sign_in(phone)
     assert second_step(phone, code=old).status_code == 200
-    assert phone.get("/panel").status_code == 302
+    assert phone.get("/dashboard").status_code == 302
 
 
 def test_a_recovery_code_gets_in_once(client, database, outbox):
@@ -230,7 +230,7 @@ def test_a_recovery_code_gets_in_once(client, database, outbox):
     phone = other(client)
     sign_in(phone)
     assert second_step(phone, recovery=codes[0]).status_code == 302
-    assert phone.get("/panel").status_code == 200
+    assert phone.get("/dashboard").status_code == 200
 
     left = accounts.by_email(database, "ana@ejemplo.com")["two_factor"]["recovery"]
     assert len(left) == totp.RECOVERY_CODES - 1
@@ -258,7 +258,7 @@ def test_a_recovery_code_is_forgiving_about_how_it_is_typed(client, database,
     sign_in(phone)
     escrito_a_mano = codes[0].replace("-", "").lower()
     assert second_step(phone, recovery=escrito_a_mano).status_code == 302
-    assert phone.get("/panel").status_code == 200
+    assert phone.get("/dashboard").status_code == 200
 
 
 def test_regenerating_invalidates_the_old_codes(client, database, outbox):
@@ -296,11 +296,11 @@ def test_signing_in_always_asks_for_the_code(client, database, outbox):
     second_step(phone, code=pyotp.TOTP(secret).now())
 
     # El mismo navegador, otra vez: vuelve a pedirlo.
-    phone.get("/panel")
+    phone.get("/dashboard")
     with phone.session_transaction() as sess:
         csrf = sess["_csrf"]
-    phone.post("/salir", data={"csrf_token": csrf})
-    assert sign_in(phone).headers["Location"].endswith("/entrar/codigo")
+    phone.post("/logout", data={"csrf_token": csrf})
+    assert sign_in(phone).headers["Location"].endswith("/login/code")
 
 
 def test_turning_it_off_leaves_the_account_on_the_password(client, database, outbox):
@@ -334,10 +334,10 @@ def test_an_action_that_is_not_in_the_form_does_nothing(client, database, outbox
     login(inside)
     turn_on(inside, database)
 
-    inside.get("/cuenta/dos-pasos?accion=disable")
+    inside.get("/account/two-factor?action=disable")
     with inside.session_transaction() as sess:
         csrf = sess["_csrf"]
-    inside.post("/cuenta/dos-pasos", data={"csrf_token": csrf, "password": PASSWORD})
+    inside.post("/account/two-factor", data={"csrf_token": csrf, "password": PASSWORD})
 
     assert accounts.two_factor_on(accounts.by_email(database, "ana@ejemplo.com"))
 

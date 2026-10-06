@@ -34,7 +34,7 @@ bp = Blueprint("analytics", __name__)
 
 
 def _screen():
-    """La misma pantalla que /panel, o la respuesta que dice que no.
+    """La misma pantalla que /dashboard, o la respuesta que dice que no.
 
     Devuelve `(cuenta, datos)` o `(None, respuesta)`: las dos rutas hacen la
     misma comprobación y sería fácil que una se quedara sin ella.
@@ -48,9 +48,9 @@ def _screen():
     company = current_workspace()
     return company, stats.screen(
         get_db(), company,
-        period=request.args.get("periodo", ""),
-        tag=request.args.get("etiqueta", ""),
-        campaign=request.args.get("campana", ""))
+        period=request.args.get("period", ""),
+        tag=request.args.get("tag", ""),
+        campaign=request.args.get("campaign", ""))
 
 
 def _change(one) -> str:
@@ -125,7 +125,7 @@ def _campaign_name(data) -> str:
     return ""
 
 
-@bp.route("/panel/exportar.csv")
+@bp.route("/dashboard/export.csv")
 def as_csv():
     company, data = _screen()
     if company is None:
@@ -150,7 +150,7 @@ def as_csv():
                              f'attachment; filename="{name}"'})
 
 
-@bp.route("/panel/exportar.pdf")
+@bp.route("/dashboard/export.pdf")
 def as_pdf():
     company, data = _screen()
     if company is None:

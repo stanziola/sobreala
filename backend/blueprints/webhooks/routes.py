@@ -146,7 +146,7 @@ def paguelofacil(secret: str):
         return "", 200
 
     why, checked = card_verdict(attempt, oper)
-    if why == "tarjeta":
+    if why == "card":
         # No se pudo preguntar: que lo reintenten.
         return "", 500
     if why:

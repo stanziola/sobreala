@@ -400,7 +400,7 @@ def home_for(account: dict | None) -> str:
     for permission, where in HOMES:
         if accounts.can(account, permission):
             return url_for(where)
-    return url_for("auth.settings", section="seguridad")
+    return url_for("auth.settings", section="security")
 
 
 def needs(account: dict | None, permission: str):
@@ -425,7 +425,7 @@ def owner_only(account: dict | None):
     usuarios son de la empresa. Un usuario tiene su Seguridad, y nada más.
     """
     if accounts.is_member(account):
-        return redirect(url_for("auth.settings", section="seguridad"))
+        return redirect(url_for("auth.settings", section="security"))
     return None
 
 
@@ -756,13 +756,13 @@ def deliver(db, send, account: dict, *, kind: str) -> bool:
 
 # ------------------------------------------------------------------- register
 
-@bp.route("/registro", methods=["GET", "POST"])
+@bp.route("/signup", methods=["GET", "POST"])
 def register():
     # Con «agregar» la pantalla se dibuja aunque ya haya una sesión: es crear
     # **otra** cuenta sin cerrar la que está abierta, el mismo camino que ya
     # tiene entrar. Sin la marca, quien ya está dentro no tiene nada que hacer
     # aquí y vuelve a la portada, como siempre.
-    adding = bool(request.args.get("agregar"))
+    adding = bool(request.args.get("add"))
     if current_session() and not adding:
         return redirect(landing(current_account()))
     if request.method == "GET":
@@ -855,7 +855,7 @@ def register():
 
 # -------------------------------------------------------------------- confirm
 
-@bp.route("/confirmar", methods=["GET", "POST"])
+@bp.route("/confirm", methods=["GET", "POST"])
 def confirm():
     """Ask for the six digit code and check it.
 
@@ -868,9 +868,9 @@ def confirm():
     # La vuelta de «Pedir otro código», que dice cómo le fue. Solo al dibujar
     # la pantalla: el formulario del código se manda a esta misma dirección, con
     # el parámetro puesto, y un código mal escrito no es un reenvío.
-    resent = request.method == "GET" and request.args.get("reenvio") == "ok"
-    if request.method == "GET" and request.args.get("reenvio") in RESEND_ERRORS:
-        errors["form"] = t(RESEND_ERRORS[request.args["reenvio"]])
+    resent = request.method == "GET" and request.args.get("resent") == "ok"
+    if request.method == "GET" and request.args.get("resent") in RESEND_ERRORS:
+        errors["form"] = t(RESEND_ERRORS[request.args["resent"]])
 
     if request.method == "POST":
         db = get_db()
@@ -939,8 +939,8 @@ def confirm():
 
 # Cómo le fue a «Pedir otro código» cuando no salió, en el parámetro con el que
 # vuelve a la pantalla del código.
-RESEND_ERRORS = {"espera": "error_too_many", "fallo": "code_resend_failed",
-                 "vencido": "error_csrf"}
+RESEND_ERRORS = {"wait": "error_too_many", "failed": "code_resend_failed",
+                 "expired": "error_csrf"}
 
 
 def waiting_account(db) -> dict | None:
@@ -956,7 +956,7 @@ def waiting_account(db) -> dict | None:
     return current_account()
 
 
-@bp.route("/reenviar-confirmacion", methods=["GET", "POST"])
+@bp.route("/resend-confirmation", methods=["GET", "POST"])
 def resend():
     """Otro código para la cuenta que se está confirmando, sin preguntar a dónde.
 
@@ -979,7 +979,7 @@ def resend():
     if not csrf_ok(request.form.get("csrf_token")):
         log_auth(db, events.RESEND, events.CSRF_FAILED, email=email,
                  account_id=account_id)
-        return redirect(url_for("auth.confirm", reenvio="vencido"))
+        return redirect(url_for("auth.confirm", resent="expired"))
     if account is None:
         # Nada que confirmar en este navegador: se entra con la contraseña, y
         # dentro el aviso del panel vuelve a ofrecer el código.
@@ -995,26 +995,26 @@ def resend():
                            *RESEND_PER_EMAIL)):
         log_auth(db, events.RESEND, events.RATE_LIMITED, email=email,
                  account_id=account_id)
-        return redirect(url_for("auth.confirm", reenvio="espera"))
+        return redirect(url_for("auth.confirm", resent="wait"))
 
     if not deliver(db, send_confirmation, account, kind=events.RESEND):
         # deliver() ya dejó el fallo en auth_events y en mail_log.
-        return redirect(url_for("auth.confirm", reenvio="fallo"))
+        return redirect(url_for("auth.confirm", resent="failed"))
     log_auth(db, events.RESEND, events.SENT, email=email, account_id=account_id)
     # Desde el panel no había ninguna pendiente: desde aquí la hay, y es la que
     # compara la pantalla del código.
     await_code(account_id)
-    return redirect(url_for("auth.confirm", reenvio="ok"))
+    return redirect(url_for("auth.confirm", resent="ok"))
 
 
 # ---------------------------------------------------------------------- login
 
-@bp.route("/entrar", methods=["GET", "POST"])
+@bp.route("/login", methods=["GET", "POST"])
 def login():
     # Con «agregar» la pantalla se dibuja aunque ya haya una sesión abierta: es
     # la única forma de sumar una segunda cuenta, y pasa por aquí entera —con su
     # contraseña y su segundo paso— como cualquier otra.
-    adding = bool(request.args.get("agregar"))
+    adding = bool(request.args.get("add"))
     if current_session() and not adding:
         return redirect(landing(current_account()))
 
@@ -1022,7 +1022,7 @@ def login():
     # anota al dibujar la pantalla, para que sobreviva al segundo paso.
     if request.method == "GET":
         remember_plan(request.args.get("plan"))
-        remember_sample(request.args.get("muestra"))
+        remember_sample(request.args.get("sample"))
         # La marca vive en la sesión porque el segundo paso pasa por otra
         # dirección y perdería el parámetro. Y se borra al abrir esta pantalla
         # sin él, para que una marca vieja no deje abierta una cuenta de más.
@@ -1055,7 +1055,7 @@ def login():
                     for one in open_accounts()):
                 # Agregar una cuenta que ya está abierta aquí abría otra sesión
                 # y cerraba la de antes. Se dice antes de mirar la contraseña,
-                # y no revela nada: esas cuentas ya salen en /cambiar-cuenta.
+                # y no revela nada: esas cuentas ya salen en /switch-account.
                 # No va a auth_events: no se comprobó nada, y la actividad del
                 # administrador lo pintaría como una entrada.
                 errors["form"] = t("login_already_open")
@@ -1124,11 +1124,11 @@ def login():
                            remember=remember, adding=adding,
                            # Solo cuando no hay nada que corregir: un error de
                            # contraseña importa más que de dónde se venía.
-                           switched=bool(request.args.get("cambiar"))
+                           switched=bool(request.args.get("change"))
                            and not errors)
 
 
-@bp.route("/entrar/codigo", methods=["GET", "POST"])
+@bp.route("/login/code", methods=["GET", "POST"])
 def login_code():
     """The second step: the code from the app, or one of the recovery codes.
 
@@ -1209,7 +1209,7 @@ def is_prefetch() -> bool:
                for name, value in PREFETCH_HEADERS)
 
 
-@bp.route("/salir", methods=["GET", "POST"])
+@bp.route("/logout", methods=["GET", "POST"])
 def logout():
     """Close this device's session, by either method.
 
@@ -1238,7 +1238,7 @@ def logout():
     return redirect(url_for("auth.login"))
 
 
-@bp.route("/cambiar-cuenta", methods=["GET", "POST"])
+@bp.route("/switch-account", methods=["GET", "POST"])
 def switch_account():
     """Las cuentas que este navegador tiene abiertas, para saltar entre ellas.
 
@@ -1259,13 +1259,13 @@ def switch_account():
             return redirect(url_for("auth.switch_account"))
         # Se elige por el identificador de la cuenta y nunca por el testigo: un
         # testigo dibujado en la página sería la sesión escrita en el HTML.
-        wanted = as_object_id(request.form.get("cuenta"))
+        wanted = as_object_id(request.form.get("account"))
         chosen = next((one for one in open_accounts()
                        if one["account"]["_id"] == wanted), None)
         if chosen is None:
             return redirect(url_for("auth.switch_account"))
 
-        if request.form.get("accion") == "quitar":
+        if request.form.get("action") == "quitar":
             sessions.revoke(db, chosen["doc"]["account_id"],
                             chosen["doc"]["_id"])
             log_auth(db, events.LOGOUT, events.OK,
@@ -1321,7 +1321,7 @@ def close_session() -> bool:
 
 # -------------------------------------------------------------- recover
 
-@bp.route("/recuperar", methods=["GET", "POST"])
+@bp.route("/recover", methods=["GET", "POST"])
 def recover():
     """Ask for the address a code should go to.
 
@@ -1341,7 +1341,7 @@ def recover():
     no hace falta.
     """
     account = current_account()
-    # La marca la pone /entrar?agregar=1 y vive hasta que se abre la sesión
+    # La marca la pone /login?add=1 y vive hasta que se abre la sesión
     # nueva, así que sigue puesta al pasar por aquí.
     adding = bool(session.get(ADDING))
     known = account is not None and not adding
@@ -1391,21 +1391,21 @@ def recover():
                 # La vuelta de «Pedir otro código» lo dice, exista o no la
                 # cuenta: la pantalla del código ya dice que se envió en los dos
                 # casos.
-                again = {"reenvio": "ok"} if request.form.get("otro") else {}
+                again = {"resent": "ok"} if request.form.get("otro") else {}
                 return redirect(url_for("auth.recover_code", **again))
 
     return render_template("recover.html", errors=errors, email=email_value,
                            known=known)
 
 
-@bp.route("/recuperar/codigo", methods=["GET", "POST"])
+@bp.route("/recover/code", methods=["GET", "POST"])
 def recover_code():
     """The same six boxes as the confirmation, for the recovery code."""
     errors: dict[str, str] = {}
     account_id = as_object_id(session.get(RESET_KEY))
     # Solo al dibujarla, como en la confirmación: el código se manda a esta
     # misma dirección, con el parámetro puesto.
-    resent = request.method == "GET" and request.args.get("reenvio") == "ok"
+    resent = request.method == "GET" and request.args.get("resent") == "ok"
 
     if request.method == "POST":
         db = get_db()
@@ -1453,7 +1453,7 @@ def recover_code():
                            left=seconds_left(RESET_DEADLINE))
 
 
-@bp.route("/recuperar/nueva", methods=["GET", "POST"])
+@bp.route("/recover/new", methods=["GET", "POST"])
 def recover_new():
     """The new password, once the code proved who is asking."""
     account_id = as_object_id(session.get(RESET_VERIFIED))
@@ -1499,14 +1499,14 @@ def recover_new():
                 sign_in(account, keep=bool(session.pop(ADDING, False)))
                 deliver(db, send_password_changed, account,
                         kind=events.PASSWORD_CHANGE)
-                return redirect(url_for("auth.panel", cambiada=1))
+                return redirect(url_for("auth.panel", updated=1))
 
     return render_template("recover-new.html", errors=errors)
 
 
 # ---------------------------------------------------------------------- panel
 
-@bp.route("/bienvenida")
+@bp.route("/welcome")
 def welcome():
     """Lo primero que ve quien acaba de crear su cuenta.
 
@@ -1532,11 +1532,11 @@ def welcome():
     return render_template("welcome.html", account=account)
 
 
-@bp.route("/panel")
+@bp.route("/dashboard")
 def panel():
     """Las estadísticas de la cuenta: sus cifras y las gráficas de sus envíos.
 
-    La dirección sigue siendo /panel aunque la pantalla se llame Estadísticas:
+    La dirección sigue siendo /dashboard aunque la pantalla se llame Estadísticas:
     cambiarla rompería los enlaces guardados y el correo de bienvenida a cambio
     de nada.
 
@@ -1561,22 +1561,22 @@ def panel():
     return render_template(
         "stats.html", account=company, pick=None,
         **stats.screen(db, company,
-                       period=request.args.get("periodo", ""),
-                       tag=request.args.get("etiqueta", ""),
-                       campaign=request.args.get("campana", "")))
+                       period=request.args.get("period", ""),
+                       tag=request.args.get("tag", ""),
+                       campaign=request.args.get("campaign", "")))
 
 
 # --------------------------------------------------------------- settings
 
 # The four sections, in the order the sidebar lists them.
-MEMBER_SECTIONS = ("seguridad",)
-SECTIONS = ("cuenta", "seguridad", "notificaciones", "pagos")
+MEMBER_SECTIONS = ("security",)
+SECTIONS = ("account", "security", "notifications", "billing")
 
 # Del administrador dos. Cuenta y Pagos no significan nada en una cuenta que no
 # compra. Seguridad sí: es la cuenta que puede aprobar y suspender a todas las
 # demás. Y Notificaciones también, pero con otra lista: la suya es de lo que
 # hacen los clientes, no de lo que pasa en su cuenta.
-ADMIN_SECTIONS = ("seguridad", "notificaciones")
+ADMIN_SECTIONS = ("security", "notifications")
 
 
 def sections_for(account: dict | None) -> tuple[str, ...]:
@@ -1593,9 +1593,9 @@ def sections_for(account: dict | None) -> tuple[str, ...]:
     return SECTIONS
 
 
-@bp.route("/configuracion", methods=["GET", "POST"])
-@bp.route("/configuracion/<section>", methods=["GET", "POST"])
-def settings(section: str = "cuenta"):
+@bp.route("/settings", methods=["GET", "POST"])
+@bp.route("/settings/<section>", methods=["GET", "POST"])
+def settings(section: str = "account"):
     """The account's own settings: one view, one template, its sections.
 
     They differ in what they draw, not in what they need — each one wants the
@@ -1616,19 +1616,19 @@ def settings(section: str = "cuenta"):
 
     db = get_db()
     postal_error = ""
-    if request.method == "POST" and section == "cuenta":
+    if request.method == "POST" and section == "account":
         # La dirección postal, lo único que se escribe en Cuenta.
         if not csrf_ok(request.form.get("csrf_token")):
-            return redirect(url_for("auth.settings", section="cuenta"))
-        address = accounts.clean_postal(request.form.get("direccion", ""))
+            return redirect(url_for("auth.settings", section="account"))
+        address = accounts.clean_postal(request.form.get("address", ""))
         if address is not None:
             accounts.set_postal(db, account["_id"], address)
-            return redirect(url_for("auth.settings", section="cuenta",
-                                    direccion=1) + "#direccion")
+            return redirect(url_for("auth.settings", section="account",
+                                    address=1) + "#address")
         postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
                          max=accounts.POSTAL_MAX)
     elif request.method == "POST":
-        if section != "notificaciones":
+        if section != "notifications":
             return redirect(url_for("auth.settings", section=section))
         if csrf_ok(request.form.get("csrf_token")):
             # Only the names models/account.py knows are read. A field naming a
@@ -1644,8 +1644,8 @@ def settings(section: str = "cuenta"):
         else:
             log_auth(db, events.SETTINGS, events.CSRF_FAILED,
                      email=account["email"], account_id=account["_id"])
-        return redirect(url_for("auth.settings", section="notificaciones",
-                                guardado=1))
+        return redirect(url_for("auth.settings", section="notifications",
+                                saved=1))
 
     here = current_session()
     paid = payments.for_account(db, account["_id"], only_paid=True, limit=100)
@@ -1668,7 +1668,7 @@ def settings(section: str = "cuenta"):
         devices=sessions.for_account(db, account["_id"]),
         here=here["_id"] if here else None,
         describe=sessions.describe,
-        postal=(request.form.get("direccion", "") if postal_error
+        postal=(request.form.get("address", "") if postal_error
                 else accounts.postal_of(account)),
         postal_error=postal_error,
         postal_max=accounts.POSTAL_MAX,
@@ -1682,7 +1682,7 @@ def settings(section: str = "cuenta"):
 
 # ---------------------------------------------------------------- devices
 
-@bp.route("/sesion/cerrar/<token>", methods=["GET", "POST"])
+@bp.route("/session/close/<token>", methods=["GET", "POST"])
 def close_from_email(token: str):
     """Close a session from the link in the notice, with no password.
 
@@ -1710,7 +1710,7 @@ def close_from_email(token: str):
     return render_template("close-session.html", state="ready")
 
 
-@bp.route("/dispositivos/cerrar", methods=["POST"])
+@bp.route("/devices/close", methods=["POST"])
 def close_device():
     """Close one session, or every one but this.
 
@@ -1725,7 +1725,7 @@ def close_device():
     if not csrf_ok(request.form.get("csrf_token")):
         log_auth(db, events.SESSION_CLOSED, events.CSRF_FAILED,
                  email=account["email"], account_id=account["_id"])
-        return redirect(url_for("auth.settings", section="seguridad"))
+        return redirect(url_for("auth.settings", section="security"))
 
     here = current_session()
     wanted = request.form.get("session_id", "")
@@ -1747,18 +1747,18 @@ def close_device():
             if open_tokens():
                 return redirect(url_for("auth.switch_account"))
             return redirect(url_for("auth.login"))
-    return redirect(url_for("auth.settings", section="seguridad"))
+    return redirect(url_for("auth.settings", section="security"))
 
 
 # ------------------------------------------------------------------- pagos
 
-@bp.route("/contratar/<plan>")
+@bp.route("/checkout/<plan>")
 def checkout(plan: str):
     """El resumen de lo que se va a pagar: el plan en el ciclo que se eligió en
-    /planes, el descuento por los correos sin usar si es una mejora, el total, y
+    /pricing, el descuento por los correos sin usar si es una mejora, el total, y
     con qué pagar.
 
-    Es a donde llevan los botones de /planes. El sitio público es estático y
+    Es a donde llevan los botones de /pricing. El sitio público es estático y
     vive en otro dominio, así que no puede iniciar un cobro por su cuenta: eso
     es un formulario con testigo y tiene que salir de aquí.
 
@@ -1776,12 +1776,12 @@ def checkout(plan: str):
 
     # Un plan que no está en docs/pricing.md no se compra.
     if not plans.buyable(plan):
-        return redirect(url_for("auth.settings", section="pagos", error="plan"))
+        return redirect(url_for("auth.settings", section="billing", error="plan"))
 
-    # El ciclo con que se llegó desde /planes; un valor inventado se lee como
+    # El ciclo con que se llegó desde /pricing; un valor inventado se lee como
     # mensual. Si ese no se puede y el otro sí (quien tiene un anual y pulsó
     # un mensual), se enseña el que sí.
-    wanted = plans.YEARLY if request.args.get("ciclo") == "anual" else plans.MONTHLY
+    wanted = plans.YEARLY if request.args.get("cycle") == "yearly" else plans.MONTHLY
     other = plans.MONTHLY if wanted == plans.YEARLY else plans.YEARLY
     why = upgrade.refused(account, plan, wanted)
     if why and not upgrade.refused(account, plan, other):
@@ -1793,7 +1793,7 @@ def checkout(plan: str):
         # comprar cuando vence) o un mensual teniendo un anual.
         why=why,
         quote=upgrade.quote(account, plan, wanted),
-        # El otro ciclo, si también se puede, para cambiar sin volver a /planes.
+        # El otro ciclo, si también se puede, para cambiar sin volver a /pricing.
         other=None if upgrade.refused(account, plan, other) else other,
         other_quote=upgrade.quote(account, plan, other),
         itbms_rate=itbms_rate(),
@@ -1810,7 +1810,7 @@ def checkout(plan: str):
         plan_until=accounts.plan_until(account))
 
 
-@bp.route("/configuracion/pagos/factura/<raw>")
+@bp.route("/settings/billing/invoice/<raw>")
 def invoice_file(raw):
     """Bajar la factura de un pago. Solo la cuenta dueña, y siempre como archivo:
     un PDF no se abre dentro de una página del panel."""
@@ -1841,7 +1841,7 @@ def ready_methods() -> list[str]:
     return [one for one in payments.METHODS if ready.get(one)]
 
 
-@bp.route("/configuracion/pagos/contratar", methods=["POST"])
+@bp.route("/settings/billing/checkout", methods=["POST"])
 def start_payment():
     """Crear la orden en PayPal, o el enlace de pago de Paguélofácil si es con
     tarjeta, y mandar al cliente a pagarla.
@@ -1860,7 +1860,7 @@ def start_payment():
         return answer
 
     db = get_db()
-    back = url_for("auth.settings", section="pagos")
+    back = url_for("auth.settings", section="billing")
     plan = request.form.get("plan", "")
     cycle = request.form.get("cycle", "")
 
@@ -1869,11 +1869,11 @@ def start_payment():
     # Correo confirmado y cuenta no suspendida, nada más. Se comprueba aquí y
     # no solo en la pantalla, porque un formulario se escribe a mano.
     if not accounts.can_buy(account):
-        return redirect(url_for("auth.settings", section="pagos", error="estado"))
+        return redirect(url_for("auth.settings", section="billing", error="status"))
     # Un plan que no está en docs/pricing.md no se compra.
     amount = plans.amount(plan, cycle) if plans.buyable(plan) else None
     if amount is None:
-        return redirect(url_for("auth.settings", section="pagos", error="plan"))
+        return redirect(url_for("auth.settings", section="billing", error="plan"))
     # Se comprueba aquí y no solo en la pantalla, porque un formulario se
     # escribe a mano y el botón gris del sitio es solo un aviso: con un plan
     # vigente solo se mejora (`upgrade.refused()`).
@@ -1893,7 +1893,7 @@ def start_payment():
     if method not in ready:
         method = payments.PAYPAL
     if method not in ready:
-        return redirect(url_for("auth.settings", section="pagos", error="paypal"))
+        return redirect(url_for("auth.settings", section="billing", error="paypal"))
 
     attempt = payments.start(db, account["_id"], plan=plan, cycle=cycle,
                              amount=amount, currency=plans.CURRENCY,
@@ -1909,7 +1909,7 @@ def start_payment():
                 return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_card')}")
         except paguelofacil.PagueloFacilError as exc:
             payments.fail(db, attempt, str(exc))
-            return redirect(url_for("auth.settings", section="pagos", error="tarjeta"))
+            return redirect(url_for("auth.settings", section="billing", error="card"))
         payments.attach_link(db, attempt, code)
         log_auth(db, events.PAYMENT, events.CREATED, email=account["email"],
                  account_id=account["_id"])
@@ -1921,10 +1921,10 @@ def start_payment():
             description=f"Sobreala {plans.PLANS[plan]['name']}",
             reference=str(attempt),
             return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_payment')}",
-            cancel_url=f"{Config.APP_BASE_URL}{back}?error=cancelado")
+            cancel_url=f"{Config.APP_BASE_URL}{back}?error=cancelled")
     except paypal.PayPalError as exc:
         payments.fail(db, attempt, str(exc))
-        return redirect(url_for("auth.settings", section="pagos", error="paypal"))
+        return redirect(url_for("auth.settings", section="billing", error="paypal"))
 
     payments.attach_order(db, attempt, order_id)
     log_auth(db, events.PAYMENT, events.CREATED, email=account["email"],
@@ -1932,7 +1932,7 @@ def start_payment():
     return redirect(approve)
 
 
-@bp.route("/configuracion/pagos/volver")
+@bp.route("/settings/billing/return")
 def finish_payment():
     """La vuelta de PayPal: cobrar de verdad y, solo entonces, activar.
 
@@ -1946,17 +1946,17 @@ def finish_payment():
         return redirect(url_for("auth.login"))
 
     db = get_db()
-    back = url_for("auth.settings", section="pagos")
+    back = url_for("auth.settings", section="billing")
     order_id = request.args.get("token", "")[:64]
     attempt = payments.by_order(db, account["_id"], order_id) if order_id else None
     if attempt is None:
-        return redirect(f"{back}?error=orden")
+        return redirect(f"{back}?error=order")
     # Recargar esta página entra por aquí otra vez. El intento ya está cobrado,
     # así que no se cobra ni se alarga nada: se vuelve a enseñar su recibo.
     if attempt["status"] == payments.COMPLETED:
         return redirect(url_for("auth.receipt", raw=attempt["_id"]))
     if attempt["status"] != payments.CREATED:
-        return redirect(f"{back}?hecho=1")
+        return redirect(f"{back}?done=1")
 
     try:
         result = paypal.capture(order_id)
@@ -1969,7 +1969,7 @@ def finish_payment():
     esperado = attempt.get("amount") or plans.amount(attempt["plan"], attempt["cycle"])
     if result["status"] != "COMPLETED":
         payments.fail(db, attempt["_id"], f"estado {result['status']}")
-        return redirect(f"{back}?error=cobro")
+        return redirect(f"{back}?error=capture")
     if result["amount"] != esperado or result["currency"] != attempt["currency"]:
         # Cobró algo distinto de lo que vale el plan: no se activa nada y queda
         # escrito, que es lo que hace falta para reclamarlo.
@@ -1978,7 +1978,7 @@ def finish_payment():
                       f"esperaba {esperado} {attempt['currency']}")
         log_auth(db, events.PAYMENT, events.INVALID, email=account["email"],
                  account_id=account["_id"])
-        return redirect(f"{back}?error=monto")
+        return redirect(f"{back}?error=amount")
 
     settle(db, account, attempt, payer_email=result.get("payer", ""))
     return redirect(url_for("auth.receipt", raw=attempt["_id"]))
@@ -2036,18 +2036,18 @@ def card_verdict(attempt, oper: str) -> tuple[str, dict | None]:
     try:
         found = paguelofacil.find(oper)
     except paguelofacil.PagueloFacilError:
-        return "tarjeta", None
+        return "card", None
     if not paguelofacil.paid(found):
-        return "cobro", found
+        return "capture", found
     if str(attempt["_id"]) not in found["description"]:
-        return "orden", found
+        return "order", found
     wanted = attempt.get("amount") or plans.amount(attempt["plan"], attempt["cycle"])
     if found["amount"] != wanted:
-        return "monto", found
+        return "amount", found
     return "", found
 
 
-@bp.route("/configuracion/pagos/tarjeta/volver", methods=["GET", "POST"])
+@bp.route("/settings/billing/card/return", methods=["GET", "POST"])
 def finish_card():
     """La vuelta de Paguélofácil después de pagar con tarjeta.
 
@@ -2061,35 +2061,35 @@ def finish_card():
         return redirect(url_for("auth.login"))
 
     db = get_db()
-    back = url_for("auth.settings", section="pagos")
+    back = url_for("auth.settings", section="billing")
     values = request.values
     try:
         attempt_id = ObjectId(values.get("PARM_1", ""))
     except (InvalidId, TypeError):
-        return redirect(f"{back}?error=orden")
+        return redirect(f"{back}?error=order")
     attempt = payments.by_id(db, attempt_id, account["_id"])
     if attempt is None or attempt.get("method") != payments.CARD:
-        return redirect(f"{back}?error=orden")
+        return redirect(f"{back}?error=order")
     if attempt["status"] == payments.COMPLETED:
         return redirect(url_for("auth.receipt", raw=attempt["_id"]))
     if attempt["status"] != payments.CREATED:
-        return redirect(f"{back}?hecho=1")
+        return redirect(f"{back}?done=1")
 
     oper = values.get("Oper", "")[:64]
     if not oper:
         # Volvió sin operación: canceló o se le venció el enlace. El intento se
         # queda como está, por si el aviso automático cuenta otra cosa.
-        return redirect(f"{back}?error=cancelado")
+        return redirect(f"{back}?error=cancelled")
 
     why, found = card_verdict(attempt, oper)
-    if why == "tarjeta":
-        return redirect(f"{back}?error=tarjeta")
+    if why == "card":
+        return redirect(f"{back}?error=card")
     if why:
         payments.fail(db, attempt["_id"],
                       f"{why}: {found['status'] if found else '-'} "
                       f"{found['operation'] if found else ''} "
                       f"{found['amount'] if found else ''}")
-        if why == "monto":
+        if why == "amount":
             log_auth(db, events.PAYMENT, events.INVALID, email=account["email"],
                      account_id=account["_id"])
         return redirect(f"{back}?error={why}")
@@ -2113,7 +2113,7 @@ def itbms_rate() -> str:
     return f"{(plans.ITBMS * 100).normalize():f}"
 
 
-@bp.route("/configuracion/pagos/recibo/<raw>")
+@bp.route("/settings/billing/receipt/<raw>")
 def receipt(raw):
     """El recibo de un pago cobrado: a donde se llega al volver de pagar.
 
@@ -2172,8 +2172,8 @@ def users_screen(db, owner):
     }
 
 
-@bp.route("/configuracion/usuarios/nuevo", methods=["GET", "POST"])
-@bp.route("/configuracion/usuarios/<raw>", methods=["GET", "POST"])
+@bp.route("/settings/users/new", methods=["GET", "POST"])
+@bp.route("/settings/users/<raw>", methods=["GET", "POST"])
 def user_form(raw: str = ""):
     """Crear un usuario o cambiarle los permisos.
 
@@ -2200,19 +2200,19 @@ def user_form(raw: str = ""):
     form = request.form
     if request.method == "POST":
         name = form.get("nombre", "").strip()[:80]
-        email = clean_email(form.get("correo", ""))
+        email = clean_email(form.get("email", ""))
         wanted = accounts.clean_permissions(form.getlist("permiso"))
         if not csrf_ok(form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         elif member is not None:
             accounts.set_permissions(db, owner["_id"], member["_id"], wanted)
-            return redirect(url_for("auth.settings", section="seguridad",
-                                    usuario="guardado") + "#usuarios")
+            return redirect(url_for("auth.settings", section="security",
+                                    user="saved") + "#users")
         else:
             if not name:
                 errors["nombre"] = t("error_required")
             if email is None:
-                errors["correo"] = t("error_email")
+                errors["email"] = t("error_email")
             # El sitio se mira aquí y no solo en la pantalla: el formulario se
             # escribe a mano, y una cuenta llena podría seguir invitando.
             elif accounts.seats_left(db, owner) <= 0:
@@ -2224,13 +2224,13 @@ def user_form(raw: str = ""):
                     # Esa dirección ya tiene cuenta en Sobreala. No se dice de
                     # quién es, pero sí que no se puede usar: quien invita tiene
                     # que poder arreglarlo.
-                    errors["correo"] = t("users_email_taken")
+                    errors["email"] = t("users_email_taken")
                 else:
                     send_invite(db, owner, made)
                     log_auth(db, events.SETTINGS, events.OK,
                              email=made["email"], account_id=made["_id"])
-                    return redirect(url_for("auth.settings", section="seguridad",
-                                            usuario="invitado") + "#usuarios")
+                    return redirect(url_for("auth.settings", section="security",
+                                            user="invited") + "#users")
 
     return render_template(
         "users.html", account=owner, member=member, errors=errors, form=form,
@@ -2238,7 +2238,7 @@ def user_form(raw: str = ""):
         **users_screen(db, owner))
 
 
-@bp.route("/configuracion/usuarios/<raw>/estado", methods=["POST"])
+@bp.route("/settings/users/<raw>/status", methods=["POST"])
 def user_state(raw):
     """Desactivar, activar, reenviar la invitación o borrar a un usuario.
 
@@ -2253,7 +2253,7 @@ def user_state(raw):
         return answer
 
     db = get_db()
-    back = url_for("auth.settings", section="seguridad") + "#usuarios"
+    back = url_for("auth.settings", section="security") + "#users"
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(back)
     member_id = as_object_id(raw)
@@ -2261,7 +2261,7 @@ def user_state(raw):
     if member is None:
         return redirect(back)
 
-    what = request.form.get("accion", "")
+    what = request.form.get("action", "")
     if what == "borrar":
         sessions.revoke_others(db, member["_id"])
         accounts.remove_member(db, owner["_id"], member["_id"])
@@ -2275,7 +2275,7 @@ def user_state(raw):
     return redirect(back)
 
 
-@bp.route("/invitacion/<token>", methods=["GET", "POST"])
+@bp.route("/invitation/<token>", methods=["GET", "POST"])
 def accept_invite(token):
     """Aceptar la invitación: poner la contraseña y entrar.
 
@@ -2329,11 +2329,11 @@ def await_email_change() -> None:
         minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
 
 
-@bp.route("/cuenta/correo", methods=["GET", "POST"])
+@bp.route("/account/email", methods=["GET", "POST"])
 def change_email():
     """Mover la cuenta a otra dirección: la contraseña, y después el código.
 
-    Corregir el correo (`/confirmar/corregir`) es otra cosa y es de antes: sirve
+    Corregir el correo (`/confirm/corregir`) es otra cosa y es de antes: sirve
     mientras la cuenta no está confirmada y nadie ha probado nada todavía. Esta
     pantalla es la de después, y por eso pide las dos pruebas:
 
@@ -2411,7 +2411,7 @@ def change_email():
                            email=email_value, account=account)
 
 
-@bp.route("/cuenta/correo/codigo", methods=["GET", "POST"])
+@bp.route("/account/email/code", methods=["GET", "POST"])
 def change_email_code():
     """El código que llegó a la dirección nueva.
 
@@ -2463,14 +2463,14 @@ def change_email_code():
                     notices.email_changed(account, old=old, new=waiting)
                     log_auth(db, events.EMAIL_CHANGE, events.OK, email=waiting,
                              account_id=account["_id"])
-                    return redirect(url_for("auth.settings", section="cuenta",
-                                            correo=1))
+                    return redirect(url_for("auth.settings", section="account",
+                                            email=1))
                 # Se la llevó otra cuenta entre que se pidió el código y se
                 # escribió. El índice único es quien lo dice.
                 accounts.cancel_email_change(db, account["_id"])
                 log_auth(db, events.EMAIL_CHANGE, events.TAKEN, email=waiting,
                          account_id=account["_id"])
-                return redirect(url_for("auth.change_email", tomada=1))
+                return redirect(url_for("auth.change_email", taken=1))
 
             if reason == tokens.USED:
                 errors["form"] = t("error_code_used")
@@ -2494,7 +2494,7 @@ def change_email_code():
 TWO_FACTOR_ACTIONS = ("regenerate", "disable")
 
 
-@bp.route("/cuenta/dos-pasos", methods=["GET", "POST"])
+@bp.route("/account/two-factor", methods=["GET", "POST"])
 def two_factor():
     """La primera pantalla, que es siempre la de la contraseña.
 
@@ -2517,7 +2517,7 @@ def two_factor():
     # Qué se está confirmando. Viaja en la dirección para dibujar la pantalla y
     # en el formulario para hacerla: lo que decide es el POST.
     action = (request.form.get("action") if request.method == "POST"
-              else request.args.get("accion", "")) or ""
+              else request.args.get("action", "")) or ""
     if action not in TWO_FACTOR_ACTIONS:
         action = ""
 
@@ -2552,7 +2552,7 @@ def two_factor():
             # A notice that fails to go out cannot undo a change already made.
             deliver(db, lambda d, a: send_two_factor_changed(d, a, on=False),
                     account, kind=events.TWO_FACTOR)
-            return redirect(url_for("auth.settings", section="seguridad",
+            return redirect(url_for("auth.settings", section="security",
                                     dospasos="off"))
 
         elif action == "regenerate":
@@ -2570,7 +2570,7 @@ def two_factor():
         recovery_left=len((account.get("two_factor") or {}).get("recovery", [])))
 
 
-@bp.route("/cuenta/dos-pasos/activar", methods=["GET", "POST"])
+@bp.route("/account/two-factor/enable", methods=["GET", "POST"])
 def two_factor_scan():
     """La segunda pantalla: el QR y el código que prueba que la app lo tiene.
 
@@ -2583,7 +2583,7 @@ def two_factor_scan():
     if accounts.two_factor_on(account):
         return redirect(url_for("auth.two_factor"))
     if not password_proved():
-        return redirect(url_for("auth.two_factor", vencido=1))
+        return redirect(url_for("auth.two_factor", expired=1))
 
     db = get_db()
     errors: dict[str, str] = {}
@@ -2625,7 +2625,7 @@ def two_factor_scan():
         qr=Markup(totp.qr_svg(secret, account["email"])))
 
 
-@bp.route("/cambiar-contrasena", methods=["GET", "POST"])
+@bp.route("/change-password", methods=["GET", "POST"])
 def change_password():
     account = current_account()
     if account is None:
@@ -2675,7 +2675,7 @@ def change_password():
                 # A failed notice cannot undo a password that already changed.
                 deliver(db, send_password_changed, account,
                         kind=events.PASSWORD_CHANGE)
-                return redirect(url_for("auth.settings", section="seguridad",
-                                        cambiada=1))
+                return redirect(url_for("auth.settings", section="security",
+                                        updated=1))
 
     return render_template("password.html", errors=errors)

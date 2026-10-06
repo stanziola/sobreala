@@ -40,7 +40,7 @@ def inside(client, email="ana@ejemplo.com"):
     return browser
 
 
-def csrf(client, url="/plantillas"):
+def csrf(client, url="/templates"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
@@ -62,7 +62,7 @@ def foto(ancho=1600, alto=1200, formato="JPEG"):
 
 
 def subir(client, raw, *, name="", filename="pieza.html"):
-    return client.post("/plantillas/cargar", data={
+    return client.post("/templates/upload", data={
         "csrf_token": csrf(client), "nombre": name,
         "archivo": (io.BytesIO(raw), filename)},
         content_type="multipart/form-data")
@@ -126,9 +126,9 @@ def test_el_html_ya_no_se_carga_en_ningun_plan(client, database, outbox):
 def test_cargar_esta_para_todos_y_pide_el_zip(client, database, outbox):
     browser = inside(client)
     with_plan(database, "basico")
-    pantalla = browser.get("/plantillas").get_data(as_text=True)
+    pantalla = browser.get("/templates").get_data(as_text=True)
     # Encendido y con su enlace, sin el aviso del plan que sí subía HTML.
-    assert 'href="/plantillas/cargar"' in pantalla
+    assert 'href="/templates/upload"' in pantalla
     assert "Cargar plantilla (ZIP)" in pantalla
     assert "desde el plan" not in pantalla
     assert 'accept=".zip,application/zip"' in pantalla
@@ -143,14 +143,14 @@ def test_la_plantilla_de_otro_no_se_borra(client, database, outbox):
     suya = designs.for_account(database, cuenta["_id"])[0]
 
     bea = inside(client, "bea@ejemplo.com")
-    bea.post("/plantillas/borrar", data={
+    bea.post("/templates/delete", data={
         "csrf_token": csrf(bea), "id": str(suya["_id"])})
 
     assert designs.count(database, cuenta["_id"]) == 1
 
 
 def test_plantillas_pide_sesion(client, database):
-    assert client.get("/plantillas").status_code == 302
+    assert client.get("/templates").status_code == 302
 
 
 # ------------------------------------------------- las prediseñadas del producto
@@ -172,8 +172,8 @@ def pieza_de_antes(client, key, email="ana@ejemplo.com", **campos):
 
 def llenar(client, key, data, *, accion="guardar", email="ana@ejemplo.com"):
     """Editar una de antes, con el formulario de siempre."""
-    url = f"/plantillas/pieza/{pieza_de_antes(client, key, email)}"
-    body = {"csrf_token": csrf(client, url), "accion": accion}
+    url = f"/templates/piece/{pieza_de_antes(client, key, email)}"
+    body = {"csrf_token": csrf(client, url), "action": accion}
     body.update(data)
     return client.post(url, data=body)
 
@@ -187,10 +187,10 @@ def test_la_pantalla_tiene_los_dos_caminos_y_no_las_prediseñadas(
     browser = inside(client)
     with_plan(database, "negocio")
 
-    pantalla = browser.get("/plantillas").get_data(as_text=True)
+    pantalla = browser.get("/templates").get_data(as_text=True)
     assert "Crear plantilla" in pantalla
     assert "Cargar plantilla (ZIP)" in pantalla
-    assert 'href="/plantillas/cargar"' in pantalla
+    assert 'href="/templates/upload"' in pantalla
     assert "Usar esta" not in pantalla
     # Las dos notas: el dato de cada persona y el tamaño máximo. Sin columnas
     # propias quedan el nombre y el correo, que trae todo contacto.
@@ -204,14 +204,14 @@ def test_la_nota_usa_las_columnas_de_la_cuenta(client, database, outbox):
     database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {
         "contact_fields": [{"key": "CIUDAD", "label": "Ciudad", "type": "text"}]}})
 
-    pantalla = browser.get("/plantillas").get_data(as_text=True)
+    pantalla = browser.get("/templates").get_data(as_text=True)
     assert "*|CIUDAD|*" in pantalla
     assert "*|EDAD|*" not in pantalla
 
 
 def test_ya_no_se_empieza_una_prediseñada(client, database, outbox):
     browser = inside(client)
-    assert browser.get("/plantillas/nueva/aviso").status_code == 404
+    assert browser.get("/templates/new/aviso").status_code == 404
 
 
 def test_cada_plantilla_se_arma_con_sus_campos():
@@ -265,7 +265,7 @@ def test_lo_escrito_vuelve_al_reabrirla(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     guardada = designs.for_account(database, cuenta["_id"])[0]
 
-    pantalla = browser.get(f"/plantillas/pieza/{guardada['_id']}").get_data(as_text=True)
+    pantalla = browser.get(f"/templates/piece/{guardada['_id']}").get_data(as_text=True)
     assert "Corte de agua" in pantalla
     assert "El martes desde las 8." in pantalla
 
@@ -287,26 +287,26 @@ def test_la_pieza_de_otro_no_se_abre(client, database, outbox):
     suya = designs.for_account(database, cuenta["_id"])[0]
 
     bea = inside(client, "bea@ejemplo.com")
-    assert bea.get(f"/plantillas/pieza/{suya['_id']}").status_code == 404
+    assert bea.get(f"/templates/piece/{suya['_id']}").status_code == 404
 
 
 def test_una_plantilla_que_no_existe_no_se_abre(client, database, outbox):
     browser = inside(client)
     assert browser.get(
-        f"/plantillas/pieza/{pieza_de_antes(browser, 'inventada')}").status_code == 404
+        f"/templates/piece/{pieza_de_antes(browser, 'inventada')}").status_code == 404
     # Y el sobre no es una plantilla.
     assert browser.get(
-        f"/plantillas/pieza/{pieza_de_antes(browser, '_wrap')}").status_code == 404
+        f"/templates/piece/{pieza_de_antes(browser, '_wrap')}").status_code == 404
 
 
 # ---------------------------------------------------------------- las imágenes
 
 def poner_imagen(client, key, raw, *, campo="imagen", filename="foto.jpg"):
     """Elegir un archivo y pulsar «Subir imagen», como en la pantalla."""
-    url = f"/plantillas/pieza/{pieza_de_antes(client, key)}"
+    url = f"/templates/piece/{pieza_de_antes(client, key)}"
     return client.post(url, data={
         "csrf_token": csrf(client, url),
-        "accion": f"imagen:{campo}",
+        "action": f"imagen:{campo}",
         "archivo_" + campo: (io.BytesIO(raw), filename)},
         content_type="multipart/form-data")
 
@@ -398,7 +398,7 @@ def test_borrar_la_pieza_borra_sus_imagenes(client, database, outbox):
                     if d["fields"].get("imagen"))
     assert guardada["fields"]["imagen"] == nombre
 
-    browser.post("/plantillas/borrar", data={
+    browser.post("/templates/delete", data={
         "csrf_token": csrf(browser), "id": str(guardada["_id"])})
     assert images.count(database, cuenta["_id"]) == 0
     assert other(client).get(f"/img/{nombre}").status_code == 404
@@ -451,7 +451,7 @@ def test_duplicar_deja_una_copia_con_otro_nombre(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     original = designs.for_account(database, cuenta["_id"])[0]
 
-    browser.post("/plantillas/duplicar", data={
+    browser.post("/templates/duplicate", data={
         "csrf_token": csrf(browser), "id": str(original["_id"])})
 
     nombres = sorted(d["name"] for d in designs.for_account(database, cuenta["_id"]))
@@ -465,7 +465,7 @@ def test_la_de_otro_no_se_duplica(client, database, outbox):
         database, accounts.by_email(database, "ana@ejemplo.com")["_id"])[0]
 
     bea = inside(client, "bea@ejemplo.com")
-    bea.post("/plantillas/duplicar", data={
+    bea.post("/templates/duplicate", data={
         "csrf_token": csrf(bea), "id": str(suya["_id"])})
     de_bea = accounts.by_email(database, "bea@ejemplo.com")
     assert designs.count(database, de_bea["_id"]) == 0
@@ -482,7 +482,7 @@ def test_borrar_la_copia_no_le_quita_la_imagen_a_la_original(client, database, o
                                            "imagen": nombre})
     copia = designs.duplicate(database, cuenta["_id"], original, name="Copia")
 
-    browser.post("/plantillas/borrar", data={
+    browser.post("/templates/delete", data={
         "csrf_token": csrf(browser), "id": str(copia)})
 
     assert images.count(database, cuenta["_id"]) == 1
@@ -497,7 +497,7 @@ def abrir_html(client, database, *, plan="negocio", html=LIMPIO):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     pieza = designs.save(database, cuenta["_id"], name="Boletín",
                          html=html.decode("utf-8"))
-    return browser, f"/plantillas/html/{pieza}", pieza
+    return browser, f"/templates/html/{pieza}", pieza
 
 
 def test_el_html_se_edita_y_se_guarda(client, database, outbox):
@@ -507,7 +507,7 @@ def test_el_html_se_edita_y_se_guarda(client, database, outbox):
 
     nuevo = "<html><body><h1>Hola *|NOMBRE|*</h1></body></html>"
     respuesta = browser.post(url, data={
-        "csrf_token": csrf(browser, url), "accion": "guardar",
+        "csrf_token": csrf(browser, url), "action": "guardar",
         "nombre": "Boletín de junio", "html": nuevo})
     assert respuesta.status_code == 302
 
@@ -520,7 +520,7 @@ def test_el_html_se_edita_y_se_guarda(client, database, outbox):
 def test_al_guardar_pasa_otra_vez_por_el_validador(client, database, outbox):
     browser, url, pieza = abrir_html(client, database)
     respuesta = browser.post(url, data={
-        "csrf_token": csrf(browser, url), "accion": "guardar", "nombre": "x",
+        "csrf_token": csrf(browser, url), "action": "guardar", "nombre": "x",
         "html": "<html><body><script>alert(1)</script></body></html>"})
 
     assert "Hola socios" in database.designs.find_one({"_id": pieza})["html"]
@@ -531,7 +531,7 @@ def test_la_vista_previa_va_con_cabecera_de_correo_y_sin_scripts(
         client, database, outbox):
     browser, url, _ = abrir_html(client, database)
     respuesta = browser.post(url, data={
-        "csrf_token": csrf(browser, url), "accion": "vista", "nombre": "x",
+        "csrf_token": csrf(browser, url), "action": "vista", "nombre": "x",
         "html": "<html><body><p>Hola *|NOMBRE|*</p></body></html>"})
 
     assert "default-src 'none'" in respuesta.headers["Content-Security-Policy"]
@@ -539,7 +539,7 @@ def test_la_vista_previa_va_con_cabecera_de_correo_y_sin_scripts(
     assert "Anular la suscripción" in salida
     # Lo que no pasaría el validador tampoco se dibuja: sale por qué.
     mala = browser.post(url, data={
-        "csrf_token": csrf(browser, url), "accion": "vista", "nombre": "x",
+        "csrf_token": csrf(browser, url), "action": "vista", "nombre": "x",
         "html": "<html><body><script>alert(1)</script></body></html>"})
     assert "<script>" not in mala.get_data(as_text=True)
     assert "ningún lector de correo" in mala.get_data(as_text=True)
@@ -558,9 +558,9 @@ def test_la_cargada_antes_se_edita_con_cualquier_plan(client, database, outbox):
         browser = inside(client, email)
         if plan:
             with_plan(database, plan, email=email)
-        url = f"/plantillas/html/{cargada(database, email)}"
+        url = f"/templates/html/{cargada(database, email)}"
         assert browser.post(url, data={
-            "csrf_token": csrf(browser, url), "accion": "guardar", "nombre": "x",
+            "csrf_token": csrf(browser, url), "action": "guardar", "nombre": "x",
             "html": "<html><body><p>Otra</p></body></html>"}).status_code == 302
 
 
@@ -569,7 +569,7 @@ def test_la_cargada_antes_se_edita_con_cualquier_plan(client, database, outbox):
 def test_el_panel_lee_el_modo_de_la_galleta_compartida(client, database, outbox):
     """El sitio y el panel son dos orígenes: la preferencia viaja en una
     galleta del dominio padre, y el guion de la cabecera la mira primero."""
-    pantalla = client.get("/entrar").get_data(as_text=True)
+    pantalla = client.get("/login").get_data(as_text=True)
     assert "sa_theme=" in pantalla
 
 
@@ -583,16 +583,16 @@ def test_la_tarjeta_ensena_el_correo_de_la_pieza(client, database, outbox):
 
     subida = designs.save(database, cuenta["_id"], name="La mía",
                          html="<html><body><p>Hola socia</p></body></html>")
-    vista = browser.get(f"/plantillas/{subida}/vista")
+    vista = browser.get(f"/templates/{subida}/preview")
     assert vista.status_code == 200
     assert "Hola socia" in vista.get_data(as_text=True)
     # Con la cabecera de un correo, no con la del panel.
     assert "unsafe-inline" in vista.headers["Content-Security-Policy"]
 
     # Y la pantalla las trae en tarjetas, con su marco.
-    pantalla = browser.get("/plantillas").get_data(as_text=True)
+    pantalla = browser.get("/templates").get_data(as_text=True)
     assert "card-piece" in pantalla
-    assert f"/plantillas/{subida}/vista" in pantalla
+    assert f"/templates/{subida}/preview" in pantalla
     assert "sandbox" in pantalla
 
 
@@ -603,9 +603,9 @@ def test_la_vista_de_otra_cuenta_no_se_abre(client, database, outbox):
                        html="<html><body><p>Hola</p></body></html>")
 
     # Sin sesión, a entrar; con la sesión de otra cuenta, no existe.
-    assert other(client).get(f"/plantillas/{suya}/vista").status_code == 302
+    assert other(client).get(f"/templates/{suya}/preview").status_code == 302
     ajena = inside(client, email="bea@ejemplo.com")
-    assert ajena.get(f"/plantillas/{suya}/vista").status_code == 404
+    assert ajena.get(f"/templates/{suya}/preview").status_code == 404
 
 
 # ------------------------------------ las imágenes de un HTML cargado
@@ -619,8 +619,8 @@ def test_las_imagenes_del_html_se_clasifican(client, database, outbox):
     mia = images.save(database, cuenta["_id"], data=foto(40, 40), ext="jpg",
                       mime="image/jpeg")
     borrada = "x" * 22 + ".jpg"
-    html = (f'<html><body><img src="https://panel.sobreala.com/img/{mia}">'
-            f'<img src="https://panel.sobreala.com/img/{borrada}">'
+    html = (f'<html><body><img src="https://app.sobreala.com/img/{mia}">'
+            f'<img src="https://app.sobreala.com/img/{borrada}">'
             '<img src="https://otro-sitio.com/foto.png">'
             '<img src="https://otro-sitio.com/foto.png">'
             '<img src="data:image/png;base64,AAAA"></body></html>')
@@ -639,7 +639,7 @@ def test_la_imagen_de_otra_cuenta_sale_como_de_otra_cuenta(client, database, out
     ajena = images.save(database, beto["_id"], data=foto(40, 40), ext="jpg",
                         mime="image/jpeg")
     ana = accounts.by_email(database, "ana@ejemplo.com")
-    html = f'<img src="https://panel.sobreala.com/img/{ajena}">'
+    html = f'<img src="https://app.sobreala.com/img/{ajena}">'
     assert html_images(database, ana["_id"], html)[0]["state"] == "other"
 
 

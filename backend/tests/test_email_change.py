@@ -32,7 +32,7 @@ def inside(client, email="ana@ejemplo.com"):
     return browser
 
 
-def csrf(client, url="/cuenta/correo"):
+def csrf(client, url="/account/email"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
@@ -40,14 +40,14 @@ def csrf(client, url="/cuenta/correo"):
 
 def ask(browser, email=NUEVA, password=PASSWORD):
     """Pedir el cambio: la dirección nueva y la contraseña."""
-    return browser.post("/cuenta/correo", data={
+    return browser.post("/account/email", data={
         "csrf_token": csrf(browser), "email": email, "password": password})
 
 
 def type_code(browser, code):
-    token = csrf(browser, "/cuenta/correo/codigo")
+    token = csrf(browser, "/account/email/code")
     digits = list(str(code)) if len(str(code)) == 6 else [str(code)]
-    return browser.post("/cuenta/correo/codigo", data={
+    return browser.post("/account/email/code", data={
         "csrf_token": token, "code": digits})
 
 
@@ -104,7 +104,7 @@ def test_el_codigo_va_a_la_nueva_y_el_aviso_a_la_vieja(client, database, outbox)
     assert NUEVA in aviso[0]["text"]
     # La alarma no lleva ninguna puerta dentro: quien la recibe ya no controla
     # esa cuenta.
-    assert "/entrar" not in aviso[0]["html"]
+    assert "/login" not in aviso[0]["html"]
 
 
 def test_despues_se_entra_con_la_nueva_y_no_con_la_vieja(client, database, outbox):
@@ -177,7 +177,7 @@ def test_el_codigo_no_sirve_dos_veces(client, database, outbox):
     otra_vez = type_code(browser, codigo)
 
     assert otra_vez.status_code == 302
-    assert otra_vez.headers["Location"].endswith("/cuenta/correo")
+    assert otra_vez.headers["Location"].endswith("/account/email")
 
 
 def test_cinco_intentos_y_se_acabo(client, database, outbox):
@@ -196,25 +196,25 @@ def test_cinco_intentos_y_se_acabo(client, database, outbox):
 # ------------------------------------------------------------ las puertas
 
 def test_sin_sesion_manda_a_entrar(client, database):
-    assert client.get("/cuenta/correo").status_code == 302
-    assert client.get("/cuenta/correo/codigo").status_code == 302
+    assert client.get("/account/email").status_code == 302
+    assert client.get("/account/email/code").status_code == 302
 
 
 def test_la_pantalla_del_codigo_sin_nada_pendiente_vuelve(client, database, outbox):
     browser = inside(client)
 
-    respuesta = browser.get("/cuenta/correo/codigo")
+    respuesta = browser.get("/account/email/code")
 
     assert respuesta.status_code == 302
-    assert respuesta.headers["Location"].endswith("/cuenta/correo")
+    assert respuesta.headers["Location"].endswith("/account/email")
 
 
 def test_la_pantalla_de_cuenta_ofrece_cambiarlo(client, database, outbox):
     browser = inside(client)
 
-    pantalla = browser.get("/configuracion").get_data(as_text=True)
+    pantalla = browser.get("/settings").get_data(as_text=True)
 
-    assert "/cuenta/correo" in pantalla
+    assert "/account/email" in pantalla
     # La nota de que se avisa a la dirección vieja ya no va en la pantalla;
     # el aviso sale igual.
     assert "le avisamos a la dirección anterior" not in pantalla.lower()

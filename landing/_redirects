@@ -1,4 +1,0 @@
-# Cloudflare Pages lee este archivo. La pagina se llamaba /precios/ y
-# pasa a llamarse /planes/: un enlace viejo, compartido o guardado, tiene
-# que seguir llegando en vez de morir en un 404.
-/precios/*  /planes/  301

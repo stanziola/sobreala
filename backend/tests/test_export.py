@@ -39,7 +39,7 @@ def test_el_csv_trae_lo_mismo_que_la_pantalla(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     sembrar(database, cuenta)
 
-    respuesta = browser.get("/panel/exportar.csv?periodo=7d")
+    respuesta = browser.get("/dashboard/export.csv?period=7d")
     assert respuesta.status_code == 200
     assert respuesta.mimetype == "text/csv"
     assert "estadisticas-" in respuesta.headers["Content-Disposition"]
@@ -62,7 +62,7 @@ def test_el_pdf_sale_y_es_un_pdf(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     sembrar(database, cuenta)
 
-    respuesta = browser.get("/panel/exportar.pdf?periodo=7d")
+    respuesta = browser.get("/dashboard/export.pdf?period=7d")
     assert respuesta.status_code == 200
     assert respuesta.mimetype == "application/pdf"
     datos = respuesta.get_data()
@@ -76,7 +76,7 @@ def test_los_filtros_de_la_direccion_valen_tambien_al_bajar(client, database, ou
     sembrar(database, cuenta)
     accounts.add_tag(database, cuenta["_id"], "Socios")
 
-    hoja = browser.get("/panel/exportar.csv?periodo=7d&etiqueta=Socios").get_data(as_text=True)
+    hoja = browser.get("/dashboard/export.csv?period=7d&tag=Socios").get_data(as_text=True)
     assert "Socios" in hoja
     # Con un filtro puesto las bajas no se cuentan, como en la pantalla.
     assert "Bajas;" not in hoja
@@ -84,12 +84,12 @@ def test_los_filtros_de_la_direccion_valen_tambien_al_bajar(client, database, ou
 
 def test_sin_sesion_y_de_otra_cuenta_no_se_baja_nada(client, database, outbox):
     de_fuera = client.application.test_client()
-    assert de_fuera.get("/panel/exportar.csv").status_code == 302
-    assert de_fuera.get("/panel/exportar.pdf").status_code == 302
+    assert de_fuera.get("/dashboard/export.csv").status_code == 302
+    assert de_fuera.get("/dashboard/export.pdf").status_code == 302
 
     # Un administrador no tiene cifras propias que bajar: se le devuelve a
     # /admin, como en cualquier pantalla de cliente.
     jefe, _ = make_admin(client, database)
-    respuesta = jefe.get("/panel/exportar.csv?cuenta=" + str(ObjectId()))
+    respuesta = jefe.get("/dashboard/export.csv?account=" + str(ObjectId()))
     assert respuesta.status_code == 302
     assert "/admin" in respuesta.headers["Location"]

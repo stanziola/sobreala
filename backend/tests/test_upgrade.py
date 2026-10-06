@@ -99,7 +99,7 @@ def test_mejorar_cobra_con_descuento_empieza_hoy_y_deja_recibo(client, database,
     confirm(database)
     ana = con_negocio(database)
 
-    resumen = browser.get("/contratar/empresa").get_data(as_text=True)
+    resumen = browser.get("/checkout/empresa").get_data(as_text=True)
     assert "Descuento por los correos sin usar" in resumen
     assert "10,000 de 15,000" in resumen and "Pagar $38.33" in resumen
     # Sin ITBMS el plan y el descuento, el ITBMS aparte, y suman el total.
@@ -113,7 +113,7 @@ def test_mejorar_cobra_con_descuento_empieza_hoy_y_deja_recibo(client, database,
 
     respuesta = come_back(browser)
     recibo_url = respuesta.headers["Location"]
-    assert "/configuracion/pagos/recibo/" in recibo_url
+    assert "/settings/billing/receipt/" in recibo_url
     ahora = accounts.by_id(database, ana["_id"])
     assert ahora["plan"] == "empresa" and ahora["plan_cycle"] == "monthly"
     # Empieza hoy, y el mes de nuevo: lo enviado antes no cuenta.
@@ -139,7 +139,7 @@ def test_un_cobro_sin_el_descuento_no_activa_nada(client, database, outbox, monk
     ana = con_negocio(database)
     buy(browser, plan="empresa")
 
-    assert "error=monto" in come_back(browser).headers["Location"]
+    assert "error=amount" in come_back(browser).headers["Location"]
     assert accounts.by_id(database, ana["_id"])["plan"] == "negocio"
 
 
@@ -152,17 +152,17 @@ def test_con_un_anual_solo_se_mejora_en_anual(client, database, outbox, monkeypa
                            accounts.now() + timedelta(days=200), cycle="yearly")
 
     # Pulsó el mensual: el resumen enseña el anual, que es el que se puede.
-    resumen = browser.get("/contratar/negocio").get_data(as_text=True)
+    resumen = browser.get("/checkout/negocio").get_data(as_text=True)
     assert 'name="cycle" value="yearly"' in resumen
     assert 'name="cycle" value="monthly"' not in resumen
     assert "Prefiero pagar un mes" not in resumen
     # Y a mano tampoco.
-    assert buy(browser, plan="negocio").headers["Location"].endswith("/contratar/negocio")
+    assert buy(browser, plan="negocio").headers["Location"].endswith("/checkout/negocio")
     assert database.payments.count_documents({}) == 0
 
 
 def test_planes_dice_obtener_y_la_nota_del_prorrateo():
-    html = (ROOT / "landing" / "planes" / "index.html").read_text(encoding="utf-8")
+    html = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
     assert "Obtener Plan Negocio" in html and "Empezar con" not in html
     assert "los correos que no usaste se descuentan" in html
     assert 'data-label-to-yearly="Pasar a anual"' in html
@@ -175,7 +175,7 @@ def test_el_pago_trae_el_itbms_los_logos_y_la_frase(client, database, outbox, mo
     fake_paypal(monkeypatch)
     browser = inside(client)
     confirm(database)
-    pantalla = browser.get("/contratar/negocio").get_data(as_text=True)
+    pantalla = browser.get("/checkout/negocio").get_data(as_text=True)
     # El plan sin ITBMS, el ITBMS encima del total, y el total al final:
     # $23.36 + $1.64 = $25.00.
     plan = pantalla.index("$23.36")

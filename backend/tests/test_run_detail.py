@@ -66,10 +66,10 @@ def test_el_detalle_dice_que_paso_con_cada_uno(client, database, outbox, monkeyp
     events.record(database, kind=events.CLICK, email="socio0@ejemplo.com", **uno)
     events.record(database, kind=events.BOUNCE, email="socio1@ejemplo.com", **uno)
 
-    indice = browser.get("/envios").get_data(as_text=True)
-    assert f'href="/envios/enviados/{run["_id"]}"' in indice and "Detalles" in indice
+    indice = browser.get("/campaigns").get_data(as_text=True)
+    assert f'href="/campaigns/sent/{run["_id"]}"' in indice and "Detalles" in indice
 
-    pantalla = browser.get(f"/envios/enviados/{run['_id']}").get_data(as_text=True)
+    pantalla = browser.get(f"/campaigns/sent/{run['_id']}").get_data(as_text=True)
     assert "Asamblea anual" in pantalla
     assert "3 personas" in pantalla
     assert "Socio 0" in pantalla and "Entregado" in pantalla
@@ -87,9 +87,9 @@ def test_filtrar_por_etiqueta_y_buscar(client, database, outbox, monkeypatch):
     database.contacts.update_one({"account_id": account["_id"],
                                   "email_normalized": "socio2@ejemplo.com"},
                                  {"$set": {"tags": []}})
-    base = f"/envios/enviados/{run['_id']}"
+    base = f"/campaigns/sent/{run['_id']}"
 
-    socios = browser.get(base + "?etiqueta=Socios").get_data(as_text=True)
+    socios = browser.get(base + "?tag=Socios").get_data(as_text=True)
     assert "2 personas" in socios and "socio2@ejemplo.com" not in socios
 
     por_nombre = browser.get(base + "?q=socio 1").get_data(as_text=True)
@@ -110,7 +110,7 @@ def test_filtrar_por_lo_que_paso(client, database, outbox, monkeypatch):
     # Entregado y después lo marcó como spam: cuenta como spam, no como entregado.
     events.record(database, kind=events.DELIVERED, email="socio2@ejemplo.com", **uno)
     events.record(database, kind=events.COMPLAINT, email="socio2@ejemplo.com", **uno)
-    base = f"/envios/enviados/{run['_id']}?estado="
+    base = f"/campaigns/sent/{run['_id']}?status="
 
     def quienes(estado):
         pantalla = browser.get(base + estado).get_data(as_text=True)
@@ -132,7 +132,7 @@ def test_quien_ya_no_esta_en_contactos_sale_con_su_correo(client, database, outb
                                                           monkeypatch):
     browser, account, run = enviado(client, database, monkeypatch, howmany=1)
     database.contacts.delete_many({"account_id": account["_id"]})
-    pantalla = browser.get(f"/envios/enviados/{run['_id']}").get_data(as_text=True)
+    pantalla = browser.get(f"/campaigns/sent/{run['_id']}").get_data(as_text=True)
     assert "socio0@ejemplo.com" in pantalla
     assert "Ya no está en tus contactos" in pantalla
 
@@ -142,10 +142,10 @@ def test_de_a_cincuenta_por_pagina(client, database, outbox, monkeypatch):
     for n in range(60):
         events.record(database, account["_id"], kind=events.SENT, run_id=run["_id"],
                       email=f"extra{n:02d}@coop.com")
-    primera = browser.get(f"/envios/enviados/{run['_id']}").get_data(as_text=True)
+    primera = browser.get(f"/campaigns/sent/{run['_id']}").get_data(as_text=True)
     assert "61 personas" in primera and "Página 1 de 2" in primera
     assert "Siguiente" in primera
-    segunda = browser.get(f"/envios/enviados/{run['_id']}?pagina=2").get_data(as_text=True)
+    segunda = browser.get(f"/campaigns/sent/{run['_id']}?page=2").get_data(as_text=True)
     assert "Página 2 de 2" in segunda and "Anterior" in segunda
     assert "socio0@ejemplo.com" in segunda
 
@@ -153,8 +153,8 @@ def test_de_a_cincuenta_por_pagina(client, database, outbox, monkeypatch):
 def test_el_envio_de_otra_cuenta_no_se_abre(client, database, outbox, monkeypatch):
     _, _, run = enviado(client, database, monkeypatch)
     otra = inside(client, "bea@ejemplo.com")
-    assert otra.get(f"/envios/enviados/{run['_id']}").status_code == 404
-    assert otra.get("/envios/enviados/no-es-un-id").status_code == 404
+    assert otra.get(f"/campaigns/sent/{run['_id']}").status_code == 404
+    assert otra.get("/campaigns/sent/no-es-un-id").status_code == 404
 
 
 # ------------------------------------------------------------ los textos
@@ -162,7 +162,7 @@ def test_el_envio_de_otra_cuenta_no_se_abre(client, database, outbox, monkeypatc
 def test_el_formulario_dice_etiquetas_y_plantilla(client, database, outbox):
     browser, account, _ = ready(client, database)
     accounts.add_field(database, account["_id"], label="Edad", kind="number")
-    pantalla = browser.get("/envios").get_data(as_text=True)
+    pantalla = browser.get("/campaigns").get_data(as_text=True)
     assert "Elige a quién le escribes y qué plantilla." in pantalla
     assert ">Etiquetas<" in pantalla and ">Plantilla<" in pantalla
     assert "A quién" not in pantalla and "Con qué plantilla" not in pantalla

@@ -9,7 +9,7 @@
          placeholder="{{ t('admin_search') }}" autocomplete="off">
 
   <label class="visually-hidden" for="estado">{{ t('admin_all_states') }}</label>
-  <select id="estado" name="estado">
+  <select id="estado" name="status">
     <option value="">{{ t('admin_all_states') }}</option>
     {% for name in statuses %}
     <option value="{{ name }}"{% if name == status %} selected{% endif %}>
@@ -66,12 +66,12 @@
 <div class="row">
   {% if skip > 0 %}
   <a class="btn btn--small btn--outline"
-     href="{{ url_for('admin.accounts_list', q=search, estado=status, desde=skip - per_page) }}">
+     href="{{ url_for('admin.accounts_list', q=search, status=status, since=skip - per_page) }}">
     {{ t('contacts_newer') }}</a>
   {% endif %}
   {% if skip + per_page < total %}
   <a class="btn btn--small btn--outline"
-     href="{{ url_for('admin.accounts_list', q=search, estado=status, desde=skip + per_page) }}">
+     href="{{ url_for('admin.accounts_list', q=search, status=status, since=skip + per_page) }}">
     {{ t('contacts_older') }}</a>
   {% endif %}
 </div>

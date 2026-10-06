@@ -25,7 +25,7 @@
          placeholder="{{ t('run_search') }}" autocomplete="off">
 
   <label class="visually-hidden" for="etiqueta">{{ t('run_tag') }}</label>
-  <select id="etiqueta" name="etiqueta">
+  <select id="etiqueta" name="tag">
     <option value="">{{ t('run_all_tags') }}</option>
     {% for name in tags %}
     <option value="{{ name }}"{% if name == tag %} selected{% endif %}>{{ name }}</option>
@@ -33,7 +33,7 @@
   </select>
 
   <label class="visually-hidden" for="estado">{{ t('run_outcome') }}</label>
-  <select id="estado" name="estado">
+  <select id="estado" name="status">
     <option value="">{{ t('run_outcome_all') }}</option>
     {% for name in outcomes %}
     <option value="{{ name }}"{% if name == outcome %} selected{% endif %}>{{ t('run_outcome_' + name) }}</option>
@@ -89,12 +89,12 @@
   <span class="hint">{{ t('run_page', page=page, pages=pages) }}</span>
   {% if page > 1 %}
   <a class="btn btn--small btn--outline"
-     href="{{ url_for('campaigns.run_detail', raw=run._id, q=search, etiqueta=tag, estado=outcome, pagina=page - 1) }}">
+     href="{{ url_for('campaigns.run_detail', raw=run._id, q=search, tag=tag, status=outcome, page=page - 1) }}">
     {{ t('run_prev') }}</a>
   {% endif %}
   {% if page < pages %}
   <a class="btn btn--small btn--outline"
-     href="{{ url_for('campaigns.run_detail', raw=run._id, q=search, etiqueta=tag, estado=outcome, pagina=page + 1) }}">
+     href="{{ url_for('campaigns.run_detail', raw=run._id, q=search, tag=tag, status=outcome, page=page + 1) }}">
     {{ t('run_next') }}</a>
   {% endif %}
 </div>

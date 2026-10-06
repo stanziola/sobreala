@@ -29,7 +29,7 @@ def other(client):
     return client.application.test_client()
 
 
-def csrf(client, url="/envios"):
+def csrf(client, url="/campaigns"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
@@ -85,12 +85,12 @@ def make(browser, piece, *, subject="Aviso", tag="", when="ahora", fecha=""):
             "pieza": str(piece), "lista": tag, "cuando": when}
     if fecha:
         data["fecha"] = fecha
-    return browser.post("/envios", data=data)
+    return browser.post("/campaigns", data=data)
 
 
 def send_it(browser, database, account_id):
     one = campaigns.for_account(database, account_id)[0]
-    return browser.post(f"/envios/{one['_id']}/mandar",
+    return browser.post(f"/campaigns/{one['_id']}/send",
                         data={"csrf_token": csrf(browser)}), one
 
 
@@ -105,13 +105,13 @@ def test_se_arma_se_edita_y_se_borra(client, database, outbox):
     assert suya["subject"] == "Asamblea"
     assert suya["status"] == campaigns.SCHEDULED
 
-    browser.post(f"/envios/{suya['_id']}", data={
+    browser.post(f"/campaigns/{suya['_id']}", data={
         "csrf_token": csrf(browser), "asunto": "Asamblea corregida",
         "pieza": str(piece), "lista": "", "cuando": "fecha", "fecha": pronto})
     assert campaigns.by_id(database, account["_id"],
                            suya["_id"])["subject"] == "Asamblea corregida"
 
-    browser.post(f"/envios/{suya['_id']}/borrar",
+    browser.post(f"/campaigns/{suya['_id']}/delete",
                  data={"csrf_token": csrf(browser)})
     assert campaigns.count(database, account["_id"]) == 0
 
@@ -139,10 +139,10 @@ def test_la_que_esta_saliendo_no_se_toca(client, database, outbox, monkeypatch):
     assert mitad["status"] == campaigns.SENDING
     assert not campaigns.editable(mitad)
 
-    browser.post(f"/envios/{suya['_id']}", data={
+    browser.post(f"/campaigns/{suya['_id']}", data={
         "csrf_token": csrf(browser), "asunto": "Otro asunto",
         "pieza": str(piece), "lista": "", "cuando": "ahora"})
-    browser.post(f"/envios/{suya['_id']}/borrar",
+    browser.post(f"/campaigns/{suya['_id']}/delete",
                  data={"csrf_token": csrf(browser)})
 
     sigue = campaigns.by_id(database, account["_id"], suya["_id"])
@@ -162,13 +162,13 @@ def test_la_que_ya_salio_se_corrige_y_se_borra_sin_perder_lo_enviado(
     assert despues["status"] == campaigns.SENT
     assert campaigns.editable(despues)
 
-    browser.post(f"/envios/{suya['_id']}", data={
+    browser.post(f"/campaigns/{suya['_id']}", data={
         "csrf_token": csrf(browser), "asunto": "Aviso corregido",
         "pieza": str(piece), "lista": "", "cuando": "ahora"})
     assert campaigns.by_id(database, account["_id"],
                            suya["_id"])["subject"] == "Aviso corregido"
 
-    browser.post(f"/envios/{suya['_id']}/borrar",
+    browser.post(f"/campaigns/{suya['_id']}/delete",
                  data={"csrf_token": csrf(browser)})
     assert campaigns.count(database, account["_id"]) == 0
     # Lo que salió, salió: sigue escrito y con el asunto que llevaba.
@@ -239,9 +239,9 @@ def test_la_tanda_tiene_tope_y_retoma_donde_iba(client, database, outbox,
     assert mitad["status"] == campaigns.SENDING
     assert mitad["position"] == 2
 
-    browser.post(f"/envios/{suya['_id']}/mandar",
+    browser.post(f"/campaigns/{suya['_id']}/send",
                  data={"csrf_token": csrf(browser)})
-    browser.post(f"/envios/{suya['_id']}/mandar",
+    browser.post(f"/campaigns/{suya['_id']}/send",
                  data={"csrf_token": csrf(browser)})
 
     final = campaigns.by_id(database, account["_id"], suya["_id"])
@@ -300,7 +300,7 @@ def test_la_pantalla_pregunta_antes_y_no_manda_nada(client, database, outbox,
     make(browser, piece)
     suya = campaigns.for_account(database, account["_id"])[0]
 
-    pantalla = browser.get(f"/envios/{suya['_id']}/mandar").get_data(as_text=True)
+    pantalla = browser.get(f"/campaigns/{suya['_id']}/send").get_data(as_text=True)
 
     assert "¿Seguro que quieres enviarla?" in pantalla
     assert "2 contactos" in pantalla
@@ -317,7 +317,7 @@ def test_la_pantalla_avisa_de_que_le_llega_otra_vez_a_todos(
     send_it(browser, database, account["_id"])
     suya = campaigns.for_account(database, account["_id"])[0]
 
-    pantalla = browser.get(f"/envios/{suya['_id']}/mandar").get_data(as_text=True)
+    pantalla = browser.get(f"/campaigns/{suya['_id']}/send").get_data(as_text=True)
 
     assert "también a quienes ya la recibieron" in pantalla
 
@@ -343,7 +343,7 @@ def test_sin_plan_no_sale_nada(client, database, outbox, monkeypatch):
     send_it(browser, database, account["_id"])
 
     assert salidos == []
-    assert "hace falta un plan" in browser.get("/envios").get_data(as_text=True)
+    assert "hace falta un plan" in browser.get("/campaigns").get_data(as_text=True)
 
 
 def test_sin_habilitacion_no_sale_nada(client, database, outbox, monkeypatch):
@@ -354,7 +354,7 @@ def test_sin_habilitacion_no_sale_nada(client, database, outbox, monkeypatch):
     send_it(browser, database, account["_id"])
 
     assert salidos == []
-    assert "habilitemos el envío" in browser.get("/envios").get_data(as_text=True)
+    assert "habilitemos el envío" in browser.get("/campaigns").get_data(as_text=True)
 
 
 def test_solo_le_llega_a_la_lista_elegida(client, database, outbox, monkeypatch):
@@ -459,11 +459,11 @@ def test_abrir_el_enlace_no_da_de_baja_pero_el_boton_si(client, database,
     token = unsubscribe.sign(quien["_id"])
 
     fuera = other(client)
-    abierto = fuera.get(f"/baja/{token}")
+    abierto = fuera.get(f"/unsubscribe/{token}")
     assert abierto.status_code == 200
     assert not suppressions.has(database, account["_id"], quien["email"])
 
-    fuera.post(f"/baja/{token}")
+    fuera.post(f"/unsubscribe/{token}")
     assert suppressions.has(database, account["_id"], quien["email"])
 
 
@@ -472,8 +472,8 @@ def test_un_testigo_inventado_no_da_de_baja_a_nadie(client, database, outbox):
     quien = contacts.page(database, account["_id"])[0][0]
 
     fuera = other(client)
-    assert fuera.get(f"/baja/{quien['_id']}.0000000000000000").status_code == 404
-    assert fuera.post(f"/baja/{quien['_id']}.0000000000000000").status_code == 404
+    assert fuera.get(f"/unsubscribe/{quien['_id']}.0000000000000000").status_code == 404
+    assert fuera.post(f"/unsubscribe/{quien['_id']}.0000000000000000").status_code == 404
     assert not suppressions.has(database, account["_id"], quien["email"])
 
 
@@ -481,7 +481,7 @@ def test_la_baja_no_se_puede_levantar_desde_el_panel(client, database, outbox):
     """Motivo `unsubscribe`: solo vuelve quien se vuelva a suscribir."""
     browser, account, _ = ready(client, database, howmany=1)
     quien = contacts.page(database, account["_id"])[0][0]
-    other(client).post(f"/baja/{unsubscribe.sign(quien['_id'])}")
+    other(client).post(f"/unsubscribe/{unsubscribe.sign(quien['_id'])}")
 
     assert suppressions.lift(database, account["_id"], quien["email"]) is False
 
@@ -493,7 +493,7 @@ def test_la_pantalla_no_es_para_administradores(client, database, outbox):
 
     admin, _ = make_admin(client, database)
 
-    respuesta = admin.get("/envios")
+    respuesta = admin.get("/campaigns")
 
     assert respuesta.status_code == 302
     assert respuesta.headers["Location"].endswith("/admin/")
@@ -504,14 +504,14 @@ def test_la_fila_esta_en_los_dos_menus(client, database, outbox):
 
     browser, _, _ = ready(client, database)
 
-    panel = browser.get("/panel").get_data(as_text=True)
+    panel = browser.get("/dashboard").get_data(as_text=True)
     assert "Enviar correos" in panel
-    assert "/envios" in panel
+    assert "/campaigns" in panel
 
     raiz = Path(__file__).resolve().parent.parent.parent
     sitio = (raiz / "landing" / "index.html").read_text(encoding="utf-8")
     assert "Enviar correos" in sitio
-    assert "/envios" in sitio
+    assert "/campaigns" in sitio
 
 
 # --------------------------------------------------------- la rama de SES

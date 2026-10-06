@@ -5,7 +5,7 @@
 {% block content %}
 {# Recuperar la contraseña deja a la persona aquí, ya dentro; cambiarla desde
    configuración la deja en su sección. Las dos pantallas dan el mismo aviso. #}
-{% if request.args.get('cambiada') %}
+{% if request.args.get('updated') %}
 <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
 {% endif %}
 {% if not confirmed %}

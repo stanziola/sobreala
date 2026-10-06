@@ -7,10 +7,10 @@
 <p class="hint">{{ t('blocked_how') }}</p>
 <p class="hint">{{ t('blocked_bounces_soon') }}</p>
 
-{% if request.args.get('guardado') %}
+{% if request.args.get('saved') %}
 <p class="notice notice--ok">{{ t('blocked_saved') }}</p>
 {% endif %}
-{% if request.args.get('error') == 'correo' %}
+{% if request.args.get('error') == 'email' %}
 <p class="notice">{{ t('error_contact_email') }}</p>
 {% endif %}
 

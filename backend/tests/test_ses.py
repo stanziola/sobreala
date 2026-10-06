@@ -141,7 +141,7 @@ def test_with_credentials_it_starts(monkeypatch):
 
 def test_the_health_page_says_which_backend_is_live(client, database, monkeypatch):
     monkeypatch.setattr(Config, "MAIL_BACKEND", "ses")
-    payload = client.get("/salud").get_json()
+    payload = client.get("/health").get_json()
 
     assert payload["mail"] == "ses"
     # And never anything that could be a credential.

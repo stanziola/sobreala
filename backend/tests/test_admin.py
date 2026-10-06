@@ -27,7 +27,7 @@ def other(client):
     return client.application.test_client()
 
 
-def csrf(client, url="/panel"):
+def csrf(client, url="/dashboard"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
@@ -35,14 +35,14 @@ def csrf(client, url="/panel"):
 
 def turn_on_two_step(browser):
     # Dos pasos: primero la contraseña, después el QR.
-    browser.get("/cuenta/dos-pasos")
+    browser.get("/account/two-factor")
     with browser.session_transaction() as sess:
         token = sess["_csrf"]
-    browser.post("/cuenta/dos-pasos", data={"csrf_token": token, "password": PASSWORD})
-    browser.get("/cuenta/dos-pasos/activar")
+    browser.post("/account/two-factor", data={"csrf_token": token, "password": PASSWORD})
+    browser.get("/account/two-factor/enable")
     with browser.session_transaction() as sess:
         secret, token = sess["two_factor_setup"], sess["_csrf"]
-    browser.post("/cuenta/dos-pasos/activar", data={
+    browser.post("/account/two-factor/enable", data={
         "csrf_token": token, "code": list(pyotp.TOTP(secret).now())})
 
 
@@ -77,12 +77,12 @@ def update(admin, database, cliente, *, plan="", ciclo="monthly",
     ahora = accounts.by_id(database, cliente["_id"])
     if suspendida is None:
         suspendida = accounts.is_suspended(ahora)
-    data = {"csrf_token": csrf(admin, "/admin/"), "ciclo": ciclo,
+    data = {"csrf_token": csrf(admin, "/admin/"), "cycle": ciclo,
             "plan": (ahora.get("plan", "") or "") if plan == "" else (plan or ""),
-            "motivo": motivo}
+            "reason": motivo}
     if suspendida:
         data["suspendida"] = "1"
-    return admin.post(f"/admin/cuentas/{cliente['_id']}/actualizar", data=data)
+    return admin.post(f"/admin/accounts/{cliente['_id']}/update", data=data)
 
 
 def upload_piece(database, cliente, nombre="Boletín"):
@@ -97,11 +97,11 @@ def upload_piece(database, cliente, nombre="Boletín"):
 
 def clear_sending(admin, cliente, motivo="hablé con ellos, la lista es suya"):
     """Habilitar el envío, que es la única aprobación que queda."""
-    return admin.post(f"/admin/cuentas/{cliente['_id']}/habilitar-envio", data={
-        "csrf_token": csrf(admin, "/admin/"), "motivo": motivo})
+    return admin.post(f"/admin/accounts/{cliente['_id']}/enable-sending", data={
+        "csrf_token": csrf(admin, "/admin/"), "reason": motivo})
 
 
-RUTAS = ("/admin/", "/admin/cuentas")
+RUTAS = ("/admin/", "/admin/accounts")
 
 
 # ----------------------------------------------------------------- la puerta
@@ -116,7 +116,7 @@ def test_sin_rol_la_administracion_no_existe(client, database, outbox):
 
 def test_sin_rol_el_menu_no_ensena_la_fila(client, database, outbox):
     browser, _ = make_client_account(client, database, "sola@ejemplo.com")
-    assert "Administración" not in browser.get("/panel").get_data(as_text=True)
+    assert "Administración" not in browser.get("/dashboard").get_data(as_text=True)
 
 
 def test_sin_sesion_lleva_a_entrar(client, database):
@@ -132,7 +132,7 @@ def test_con_rol_pero_sin_doble_factor_pide_activarlo(client, database, outbox):
 
     respuesta = browser.get("/admin/")
     assert respuesta.status_code == 302
-    assert "dos-pasos" in respuesta.headers["Location"]
+    assert "two-factor" in respuesta.headers["Location"]
 
 
 def test_con_rol_y_doble_factor_entra(client, database, outbox):
@@ -172,7 +172,7 @@ def test_sin_motivo_no_se_cambia_nada(client, database, outbox):
 
     assert accounts.by_id(database, cliente["_id"])["status"] == accounts.REGISTERED
     assert decisions.for_account(database, cliente["_id"]) == []
-    assert "falta=motivo" in respuesta.headers["Location"]
+    assert "missing=reason" in respuesta.headers["Location"]
 
 
 def test_un_plan_inventado_no_se_aplica(client, database, outbox):
@@ -196,13 +196,13 @@ def test_una_cuenta_suspendida_no_puede_entrar(client, database, outbox):
            motivo="rebotes por encima del 3%")
 
     # La sesión que ya tenía abierta se cierra con ella.
-    assert navegador.get("/panel").status_code == 302
+    assert navegador.get("/dashboard").status_code == 302
 
     de_nuevo = other(client)
     respuesta = login(de_nuevo, email="socia@ejemplo.com")
     assert respuesta.status_code == 200
     assert "suspendida" in respuesta.get_data(as_text=True)
-    assert de_nuevo.get("/panel").status_code == 302
+    assert de_nuevo.get("/dashboard").status_code == 302
 
 
 def test_al_levantar_la_suspension_vuelve_a_entrar(client, database, outbox):
@@ -214,7 +214,7 @@ def test_al_levantar_la_suspension_vuelve_a_entrar(client, database, outbox):
 
     navegador = other(client)
     assert login(navegador, email="socia@ejemplo.com").status_code == 302
-    assert navegador.get("/panel").status_code == 200
+    assert navegador.get("/dashboard").status_code == 200
     assert len(decisions.for_account(database, cliente["_id"])) == 2
 
 
@@ -237,7 +237,7 @@ def test_cambiar_el_plan_cambia_el_limite_de_contactos(client, database, outbox)
     assert despues["status"] == accounts.ACTIVE
     assert accounts.plan_until(despues) is not None
     # Y la pantalla del cliente lo dice sin que nadie la toque.
-    assert "de 1000 contactos" in navegador.get("/contactos").get_data(as_text=True)
+    assert "de 1000 contactos" in navegador.get("/contacts").get_data(as_text=True)
 
 
 # ------------------------------------------------------------------ la ficha
@@ -248,22 +248,22 @@ def test_la_ficha_ensena_cifras_y_no_direcciones(client, database, outbox):
     navegador, cliente = make_client_account(client, database)
 
     # La etiqueta se crea antes de poder elegirla.
-    navegador.get("/contactos/etiquetas")
+    navegador.get("/contacts/tags")
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
-    navegador.post("/contactos/etiquetas/nueva",
-                   data={"csrf_token": token, "etiqueta": "socios"})
+    navegador.post("/contacts/tags/new",
+                   data={"csrf_token": token, "tag": "socios"})
 
-    navegador.get("/contactos/importar")
+    navegador.get("/contacts/import")
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
-    navegador.post("/contactos/importar", data={
+    navegador.post("/contacts/import", data={
         "csrf_token": token, "source": contacts.MEMBERS, "tags": ["socios"],
         "note": "", "archivo": (io.BytesIO(b"correo\nana@coop.com\nbea@coop.com\n"),
                                 "socios.csv"),
     }, content_type="multipart/form-data")
 
-    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    ficha = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
 
     # La cifra sí, el origen que declaró también, las direcciones no.
     assert "2 / 500" in ficha
@@ -275,8 +275,8 @@ def test_la_ficha_ensena_cifras_y_no_direcciones(client, database, outbox):
 
 def test_una_cuenta_que_no_existe_da_404(client, database, outbox):
     admin, _ = make_admin(client, database)
-    assert admin.get("/admin/cuentas/000000000000000000000000").status_code == 404
-    assert admin.get("/admin/cuentas/no-es-un-id").status_code == 404
+    assert admin.get("/admin/accounts/000000000000000000000000").status_code == 404
+    assert admin.get("/admin/accounts/no-es-un-id").status_code == 404
 
 
 # ------------------------------------------------------------------ el rol
@@ -315,7 +315,7 @@ def test_la_tabla_filtra_por_estado(client, database, outbox):
     _, dos = make_client_account(client, database, "dos@ejemplo.com")
     accounts.set_status(database, dos["_id"], accounts.ACTIVE)
 
-    activas = admin.get("/admin/cuentas?estado=active").get_data(as_text=True)
+    activas = admin.get("/admin/accounts?status=active").get_data(as_text=True)
     assert "dos@ejemplo.com" in activas
     assert "una@ejemplo.com" not in activas
 
@@ -360,17 +360,17 @@ def test_la_actividad_trae_entradas_importaciones_pagos_y_decisiones(
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
 
-    navegador.get("/contactos/importar")
+    navegador.get("/contacts/import")
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
-    navegador.post("/contactos/importar", data={
+    navegador.post("/contacts/import", data={
         "csrf_token": token, "source": "members", "note": "",
         "archivo": (io.BytesIO(b"correo\nana@coop.com\n"), "socios.csv")},
         content_type="multipart/form-data")
 
     clear_sending(admin, cliente, motivo="hablé con la junta")
 
-    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    ficha = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
     assert "Actividad" in ficha
     assert "Entró a la cuenta" in ficha          # de auth_events
     assert "socios.csv" in ficha                 # de imports
@@ -415,7 +415,7 @@ def test_la_actividad_ensena_las_campanas_y_no_a_quien_salieron(
     _, cliente = make_client_account(client, database)
     enviada(database, cliente)
 
-    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    ficha = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
     assert "Asamblea de marzo" in ficha
     assert "2 salieron" in ficha
     assert "ana@coop.com" not in ficha
@@ -428,7 +428,7 @@ def test_una_campana_mandada_dos_veces_son_dos_lineas(client, database, outbox):
     enviada(database, cliente, subject="Boletín", cuantas=2)
 
     ficha = admin.get(
-        f"/admin/cuentas/{cliente['_id']}?actividad=correos").get_data(as_text=True)
+        f"/admin/accounts/{cliente['_id']}?activity=emails").get_data(as_text=True)
     assert ficha.count("Envió «Boletín»") == 2
 
 
@@ -439,19 +439,19 @@ def test_el_filtro_de_actividad_deja_solo_lo_que_se_pide(
     cobrado(database, cliente)
     enviada(database, cliente)
 
-    entera = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    entera = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
     assert "Entró a la cuenta" in entera
     assert "Pagó el plan Negocio" in entera
     assert "Asamblea de marzo" in entera
 
     pagos = admin.get(
-        f"/admin/cuentas/{cliente['_id']}?actividad=pagos").get_data(as_text=True)
+        f"/admin/accounts/{cliente['_id']}?activity=payments").get_data(as_text=True)
     assert "Pagó el plan Negocio" in pagos
     assert "Entró a la cuenta" not in pagos
     assert "Asamblea de marzo" not in pagos
 
     correos = admin.get(
-        f"/admin/cuentas/{cliente['_id']}?actividad=correos").get_data(as_text=True)
+        f"/admin/accounts/{cliente['_id']}?activity=emails").get_data(as_text=True)
     assert "Asamblea de marzo" in correos
     assert "Pagó el plan Negocio" not in correos
 
@@ -465,7 +465,7 @@ def test_un_tipo_de_actividad_inventado_se_mira_como_todo(
     cobrado(database, cliente)
 
     ficha = admin.get(
-        f"/admin/cuentas/{cliente['_id']}?actividad=inventado").get_data(as_text=True)
+        f"/admin/accounts/{cliente['_id']}?activity=inventado").get_data(as_text=True)
     assert "Entró a la cuenta" in ficha
     assert "Pagó el plan Negocio" in ficha
 
@@ -474,16 +474,16 @@ def test_la_actividad_no_ensena_las_direcciones_de_sus_contactos(
         client, database, outbox):
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
-    navegador.get("/contactos/importar")
+    navegador.get("/contacts/import")
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
-    navegador.post("/contactos/importar", data={
+    navegador.post("/contacts/import", data={
         "csrf_token": token, "source": "members", "note": "",
         "archivo": (io.BytesIO(b"correo\nbea@coop.com\ncarlos@coop.com\n"),
                     "lista.csv")},
         content_type="multipart/form-data")
 
-    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    ficha = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
     assert "bea@coop.com" not in ficha
     assert "carlos@coop.com" not in ficha
 
@@ -494,7 +494,7 @@ def test_lo_decidido_se_lee_en_la_ficha_de_la_cuenta(client, database, outbox):
     _, cliente = make_client_account(client, database)
     clear_sending(admin, cliente, motivo="revisé su lista")
 
-    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}").get_data(as_text=True)
+    ficha = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
     assert "Actividad" in ficha
     assert "revisé su lista" in ficha
 
@@ -511,10 +511,10 @@ def test_todos_aterrizan_en_el_sitio(client, database, outbox):
     from config import Config
 
     admin, _ = make_admin(client, database)
-    assert admin.get("/entrar").headers["Location"] == Config.PUBLIC_SITE_URL
+    assert admin.get("/login").headers["Location"] == Config.PUBLIC_SITE_URL
 
     navegador, _ = make_client_account(client, database)
-    assert navegador.get("/entrar").headers["Location"] == Config.PUBLIC_SITE_URL
+    assert navegador.get("/login").headers["Location"] == Config.PUBLIC_SITE_URL
 
 
 def test_aterrizar_en_el_sitio_no_le_abre_las_pantallas_de_cliente(
@@ -522,7 +522,7 @@ def test_aterrizar_en_el_sitio_no_le_abre_las_pantallas_de_cliente(
     """Aterrizar es una cosa y la puerta es otra: su cuenta sigue sin panel."""
     admin, _ = make_admin(client, database)
 
-    respuesta = admin.get("/panel")
+    respuesta = admin.get("/dashboard")
 
     assert respuesta.status_code == 302
     assert respuesta.headers["Location"].endswith("/admin/")
@@ -536,7 +536,7 @@ def test_la_lista_ensena_de_quien_es_cada_pieza(client, database, outbox):
     navegador, cliente = make_client_account(client, database)
     upload_piece(database, cliente)
 
-    lista = admin.get("/admin/plantillas").get_data(as_text=True)
+    lista = admin.get("/admin/templates").get_data(as_text=True)
     assert accounts.by_id(database, cliente["_id"])["company_name"] in lista
     assert "Boletín" in lista
     # Y no hay nada que pulsar para aprobarla o rechazarla.
@@ -554,7 +554,7 @@ def test_el_archivo_no_se_sirve_como_html(client, database, outbox):
     upload_piece(database, cliente)
     subida = designs.for_account(database, cliente["_id"])[0]
 
-    respuesta = admin.get(f"/admin/plantillas/{subida['_id']}/archivo")
+    respuesta = admin.get(f"/admin/templates/{subida['_id']}/file")
     assert respuesta.mimetype == "text/plain"
     assert "attachment" in respuesta.headers["Content-Disposition"]
 
@@ -562,7 +562,7 @@ def test_el_archivo_no_se_sirve_como_html(client, database, outbox):
 def test_la_cola_no_existe_para_quien_no_es_administrador(client, database,
                                                           outbox):
     navegador, _ = make_client_account(client, database)
-    assert navegador.get("/admin/plantillas").status_code == 404
+    assert navegador.get("/admin/templates").status_code == 404
 
 
 # ------------------------------------ el administrador solo administra
@@ -573,8 +573,8 @@ def test_las_pantallas_de_cliente_lo_devuelven_a_administracion(client,
     """Una cuenta de administrador no tiene contactos ni plantillas."""
     admin, _ = make_admin(client, database)
 
-    for url in ("/panel", "/contactos", "/contactos/importar",
-                "/contactos/etiquetas", "/plantillas"):
+    for url in ("/dashboard", "/contacts", "/contacts/import",
+                "/contacts/tags", "/templates"):
         respuesta = admin.get(url)
         assert respuesta.status_code == 302, url
         assert respuesta.headers["Location"].endswith("/admin/"), url
@@ -603,7 +603,7 @@ def test_estadisticas_no_lleva_menu_de_secciones(client, database, outbox):
     suelta = admin.get("/admin/").get_data(as_text=True)
     assert "settings__tab" not in suelta
 
-    con_pestanas = admin.get("/admin/cuentas").get_data(as_text=True)
+    con_pestanas = admin.get("/admin/accounts").get_data(as_text=True)
     pestanas = re.findall(r'class="settings__tab[^"]*"[^>]*>\s*([^<]+)',
                           con_pestanas)
     assert [p.strip() for p in pestanas] == ["Cuentas", "Plantillas subidas",
@@ -624,7 +624,7 @@ def test_su_menu_lleva_estadisticas_encima_de_administracion(client, database,
 
     destinos = dict((texto, href) for href, texto in filas)
     assert destinos["Estadísticas"].endswith("/admin/")
-    assert destinos["Administración"].endswith("/admin/cuentas")
+    assert destinos["Administración"].endswith("/admin/accounts")
 
 
 def test_su_configuracion_es_seguridad_y_notificaciones(client, database, outbox):
@@ -632,27 +632,27 @@ def test_su_configuracion_es_seguridad_y_notificaciones(client, database, outbox
     compra. Seguridad sí, y Notificaciones con su propia lista."""
     admin, _ = make_admin(client, database)
 
-    respuesta = admin.get("/configuracion")
-    assert respuesta.headers["Location"].endswith("/configuracion/seguridad")
+    respuesta = admin.get("/settings")
+    assert respuesta.headers["Location"].endswith("/settings/security")
 
-    pantalla = admin.get("/configuracion/seguridad").get_data(as_text=True)
+    pantalla = admin.get("/settings/security").get_data(as_text=True)
     assert "Contraseña" in pantalla
     assert "Facturación" not in pantalla
 
-    avisos = admin.get("/configuracion/notificaciones").get_data(as_text=True)
+    avisos = admin.get("/settings/notifications").get_data(as_text=True)
     assert 'name="admin_signup"' in avisos
     # Y ninguno de los de un cliente, que no recibiría nunca.
     assert 'name="campaigns"' not in avisos
 
     # Y la de pagos no se abre escribiéndola a mano.
-    assert admin.get("/configuracion/pagos").headers["Location"].endswith(
-        "/configuracion/seguridad")
+    assert admin.get("/settings/billing").headers["Location"].endswith(
+        "/settings/security")
 
 
 def test_un_administrador_no_contrata_un_plan(client, database, outbox):
     admin, jefe = make_admin(client, database)
 
-    admin.post("/configuracion/pagos/contratar", data={
+    admin.post("/settings/billing/checkout", data={
         "csrf_token": csrf(admin, "/admin/"), "plan": "basico",
         "cycle": "monthly"})
 
@@ -664,15 +664,15 @@ def test_un_cliente_sigue_llegando_a_todo(client, database, outbox):
     """La que importa: el riesgo del cambio es cortarle algo a quien sí lo usa."""
     navegador, _ = make_client_account(client, database)
 
-    for url in ("/panel", "/contactos", "/plantillas"):
+    for url in ("/dashboard", "/contacts", "/templates"):
         assert navegador.get(url).status_code == 200, url
 
-    menu = navegador.get("/panel").get_data(as_text=True)
+    menu = navegador.get("/dashboard").get_data(as_text=True)
     assert ">Contactos<" in menu
     assert ">Plantillas<" in menu
     assert "Administración" not in menu
 
-    pagos = navegador.get("/configuracion/pagos").get_data(as_text=True)
+    pagos = navegador.get("/settings/billing").get_data(as_text=True)
     assert "Facturación" in pagos
 
 
@@ -713,7 +713,7 @@ def test_habilitar_sin_motivo_no_habilita(client, database, outbox):
 
     respuesta = clear_sending(admin, cliente, motivo="   ")
 
-    assert "falta=motivo" in respuesta.headers["Location"]
+    assert "missing=reason" in respuesta.headers["Location"]
     assert accounts.can_send(accounts.by_id(database, cliente["_id"])) is False
 
 
@@ -722,7 +722,7 @@ def test_el_filtro_trae_a_quien_pago_y_no_puede_enviar(client, database, outbox)
     admin, _ = make_admin(client, database)
     _, cliente = make_client_account(client, database)
     correo = cliente["email"]
-    cola = "/admin/cuentas?estado=sin-habilitar"
+    cola = "/admin/accounts?status=pending"
 
     # Sin plan no está esperando nada: todavía no va a enviar.
     assert correo not in admin.get(cola).get_data(as_text=True)
@@ -741,7 +741,7 @@ def test_la_lista_de_cuentas_no_trae_administradores(client, database, outbox):
     admin, jefe = make_admin(client, database)
     _, cliente = make_client_account(client, database)
 
-    lista = admin.get("/admin/cuentas").get_data(as_text=True)
+    lista = admin.get("/admin/accounts").get_data(as_text=True)
     assert cliente["email"] in lista
     assert jefe["email"] not in lista
 
@@ -760,29 +760,29 @@ def test_un_estado_viejo_no_rompe_la_pantalla(client, database, outbox):
     database.accounts.update_one({"_id": cliente["_id"]},
                                  {"$set": {"status": "approved"}})
 
-    tabla = admin.get("/admin/cuentas")
+    tabla = admin.get("/admin/accounts")
     assert tabla.status_code == 200
     assert "Registrada" in tabla.get_data(as_text=True)
 
-    ficha = admin.get(f"/admin/cuentas/{cliente['_id']}")
+    ficha = admin.get(f"/admin/accounts/{cliente['_id']}")
     assert ficha.status_code == 200
     assert "Registrada" in ficha.get_data(as_text=True)
 
     # Y la del propio cliente, que enseña su estado en Configuración.
     navegador = other(client)
     login(navegador, email="socia@ejemplo.com")
-    suya = navegador.get("/configuracion/cuenta")
+    suya = navegador.get("/settings/account")
     assert suya.status_code == 200
     assert "Registrada" in suya.get_data(as_text=True)
 
 
-# ------------------------- el administrador tampoco contrata desde /planes
+# ------------------------- el administrador tampoco contrata desde /pricing
 
 def test_un_administrador_que_abre_contratar_vuelve_a_administracion(
         client, database, outbox):
     admin, _ = make_admin(client, database)
 
-    respuesta = admin.get("/contratar/basico")
+    respuesta = admin.get("/checkout/basico")
 
     assert respuesta.status_code == 302
     assert respuesta.headers["Location"].endswith("/admin/")
@@ -793,7 +793,7 @@ def test_un_administrador_no_ve_la_bienvenida(client, database, outbox):
     """Es una pantalla de cliente, y su cuenta no tiene plan que elegir."""
     admin, _ = make_admin(client, database)
 
-    respuesta = admin.get("/bienvenida")
+    respuesta = admin.get("/welcome")
 
     assert respuesta.status_code == 302
     assert respuesta.headers["Location"].endswith("/admin/")
@@ -818,17 +818,17 @@ def test_la_migaja_del_sitio_publico_dice_el_rol(client, database, outbox,
     admin.get("/admin/")
     assert admin.get_cookie("sa_in").value == "admin"
 
-    navegador.get("/panel")
+    navegador.get("/dashboard")
     assert navegador.get_cookie("sa_in").value == "1"
 
-    # Con plan lleva también cuál, para que /planes pueda apagar los menores.
+    # Con plan lleva también cuál, para que /pricing pueda apagar los menores.
     accounts.set_plan(database, cliente["_id"], "negocio")
-    navegador.get("/panel")
+    navegador.get("/dashboard")
     assert navegador.get_cookie("sa_in").value == "1:negocio:monthly"
 
-    # Vencido ya no va: es cuando se vuelve a comprar desde /planes.
+    # Vencido ya no va: es cuando se vuelve a comprar desde /pricing.
     from datetime import timedelta
     database.accounts.update_one({"_id": cliente["_id"]}, {"$set": {
         "plan_until": accounts.now() - timedelta(days=1)}})
-    navegador.get("/panel")
+    navegador.get("/dashboard")
     assert navegador.get_cookie("sa_in").value == "1"

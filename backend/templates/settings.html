@@ -33,10 +33,10 @@
      cuatro y un administrador solo Seguridad. Los slugs son las direcciones; el
      español de al lado sale de i18n, como en todas partes. #}
   {% set label_of = {
-    'cuenta': 'settings_section_account',
-    'seguridad': 'settings_section_security',
-    'notificaciones': 'settings_section_notifications',
-    'pagos': 'settings_section_payments'} %}
+    'account': 'settings_section_account',
+    'security': 'settings_section_security',
+    'notifications': 'settings_section_notifications',
+    'billing': 'settings_section_payments'} %}
 
   <nav class="settings__nav" aria-label="{{ t('settings_title') }}">
     {% for slug in sections %}
@@ -49,7 +49,7 @@
   <div class="settings__pane">
 
     {# ------------------------------------------------------------ cuenta #}
-    {% if section == 'cuenta' %}
+    {% if section == 'account' %}
     <h2 class="settings__title">{{ t('settings_section_account') }}</h2>
     <hr class="settings__rule">
 
@@ -61,7 +61,7 @@
     <span class="setting__value">{{ account.company_name }}</span>
     {% endcall %}
 
-    {% if request.args.get('correo') %}
+    {% if request.args.get('email') %}
     <p class="notice notice--ok">{{ t('settings_account_email_done') }}</p>
     {% endif %}
 
@@ -72,17 +72,17 @@
        href="{{ url_for('auth.change_email') }}">{{ t('settings_account_email_change') }}</a>
     {% endcall %}
 
-    {% if request.args.get('direccion') %}
+    {% if request.args.get('address') %}
     <p class="notice notice--ok">{{ t('settings_postal_done') }}</p>
     {% endif %}
 
     {# La dirección física de la empresa: va al pie de sus campañas, porque la
        ley la pide y es la de quien anuncia. Sin ella no se puede enviar. #}
-    {% call row(t('settings_postal'), t('settings_postal_hint'), id='direccion') %}
+    {% call row(t('settings_postal'), t('settings_postal_hint'), id='address') %}
     <form class="setting__form" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="visually-hidden" for="direccion-campo">{{ t('settings_postal') }}</label>
-      <input id="direccion-campo" name="direccion" type="text" maxlength="{{ postal_max }}"
+      <input id="direccion-campo" name="address" type="text" maxlength="{{ postal_max }}"
              value="{{ postal }}" autocomplete="street-address"
              placeholder="{{ t('settings_postal_placeholder') }}">
       <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
@@ -103,17 +103,17 @@
     <span class="setting__value">{{ plan }}</span>
     {% else %}
     <span class="setting__value setting__value--muted">{{ t('settings_account_no_plan') }}</span>
-    <a class="btn btn--small btn--outline" href="{{ site_url }}/planes/">{{ t('settings_account_plans') }}</a>
+    <a class="btn btn--small btn--outline" href="{{ site_url }}/pricing/">{{ t('settings_account_plans') }}</a>
     {% endif %}
     <a class="btn btn--small btn--outline"
-       href="{{ url_for('auth.settings', section='pagos') }}">{{ t('settings_account_to_billing') }}</a>
+       href="{{ url_for('auth.settings', section='billing') }}">{{ t('settings_account_to_billing') }}</a>
     {% endcall %}
 
     {# --------------------------------------------------------- seguridad #}
-    {% elif section == 'seguridad' %}
+    {% elif section == 'security' %}
     <h2 class="settings__title">{{ t('settings_section_security') }}</h2>
 
-    {% if request.args.get('cambiada') %}
+    {% if request.args.get('updated') %}
     <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
     {% endif %}
     {% if request.args.get('dospasos') == 'off' %}
@@ -136,12 +136,12 @@
        esta pantalla para su contraseña, su segundo factor y sus dispositivos,
        y nada más. ----- #}
     {% if not is_member %}
-    <h3 class="settings__subtitle" id="usuarios">{{ t('users_title') }}</h3>
+    <h3 class="settings__subtitle" id="users">{{ t('users_title') }}</h3>
     <p class="settings__lead">{{ t('users_lead') }}</p>
 
-    {% if request.args.get('usuario') == 'invitado' %}
+    {% if request.args.get('user') == 'invited' %}
     <p class="notice notice--ok">{{ t('users_invited_ok') }}</p>
-    {% elif request.args.get('usuario') == 'guardado' %}
+    {% elif request.args.get('user') == 'saved' %}
     <p class="notice notice--ok">{{ t('users_saved_ok') }}</p>
     {% endif %}
 
@@ -150,7 +150,7 @@
     {% if seats_left %}
     <a class="btn btn--small" href="{{ url_for('auth.user_form') }}">{{ t('users_new') }}</a>
     {% else %}
-    <a class="btn btn--small btn--outline" href="{{ site_url }}/planes/">{{ t('users_more_seats') }}</a>
+    <a class="btn btn--small btn--outline" href="{{ site_url }}/pricing/">{{ t('users_more_seats') }}</a>
     {% endif %}
     {% endcall %}
 
@@ -180,17 +180,17 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           {% if not one.password_hash and one.status != 'disabled' %}
           <button class="btn btn--small btn--outline" type="submit"
-                  name="accion" value="reenviar">{{ t('users_resend') }}</button>
+                  name="action" value="reenviar">{{ t('users_resend') }}</button>
           {% endif %}
           {% if one.status == 'disabled' %}
           <button class="btn btn--small btn--outline" type="submit"
-                  name="accion" value="activar">{{ t('users_enable') }}</button>
+                  name="action" value="activar">{{ t('users_enable') }}</button>
           {% else %}
           <button class="btn btn--small btn--outline" type="submit"
-                  name="accion" value="desactivar">{{ t('users_disable') }}</button>
+                  name="action" value="desactivar">{{ t('users_disable') }}</button>
           {% endif %}
           <button class="btn btn--small btn--danger" type="submit"
-                  name="accion" value="borrar">{{ t('users_delete') }}</button>
+                  name="action" value="borrar">{{ t('users_delete') }}</button>
         </form>
       </div>
     </div>
@@ -238,10 +238,10 @@
     {% endif %}
 
     {# ---------------------------------------------------- notificaciones #}
-    {% elif section == 'notificaciones' %}
+    {% elif section == 'notifications' %}
     <h2 class="settings__title">{{ t('settings_section_notifications') }}</h2>
 
-    {% if request.args.get('guardado') %}
+    {% if request.args.get('saved') %}
     <p class="notice notice--ok">{{ t('settings_notifications_saved') }}</p>
     {% endif %}
 
@@ -258,7 +258,7 @@
     {% endcall %}
     {% endfor %}
 
-    <form method="post" action="{{ url_for('auth.settings', section='notificaciones') }}">
+    <form method="post" action="{{ url_for('auth.settings', section='notifications') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       {# La lista de quien administra es otra: habla de lo que hacen los
@@ -290,16 +290,16 @@
     </form>
 
     {# ------------------------------------------------------------- pagos #}
-    {% elif section == 'pagos' %}
+    {% elif section == 'billing' %}
     <h2 class="settings__title">{{ t('settings_section_payments') }}</h2>
 
-    {% if request.args.get('hecho') %}
+    {% if request.args.get('done') %}
     <p class="notice notice--ok">{{ t('pay_done') }}</p>
     {% endif %}
     {% if request.args.get('error') %}
     <p class="notice">{{ t('pay_error_' + request.args.get('error'), n=0)
                           if request.args.get('error') in
-                          ['estado','plan','paypal','tarjeta','cancelado','orden','cobro','monto']
+                          ['status','plan','paypal','card','cancelled','order','capture','amount']
                           else t('pay_error_paypal') }}</p>
     {% endif %}
 

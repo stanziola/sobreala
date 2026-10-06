@@ -33,7 +33,7 @@ def inside(client, email="ana@ejemplo.com"):
     return browser
 
 
-def csrf(client, url="/contactos"):
+def csrf(client, url="/contacts"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
@@ -41,8 +41,8 @@ def csrf(client, url="/contactos"):
 
 def make_tag(client, name):
     """Crear una etiqueta como lo hace la pantalla. Existen antes de usarse."""
-    return client.post("/contactos/etiquetas/nueva", data={
-        "csrf_token": csrf(client, "/contactos/etiquetas"), "etiqueta": name})
+    return client.post("/contacts/tags/new", data={
+        "csrf_token": csrf(client, "/contacts/tags"), "tag": name})
 
 
 def with_plan(database, plan="empresa", email="ana@ejemplo.com"):
@@ -57,23 +57,23 @@ def with_plan(database, plan="empresa", email="ana@ejemplo.com"):
 
 def export(client, query=""):
     """Exportar como lo hace la pantalla: se confirma y ahí baja el archivo."""
-    client.get("/contactos/exportar" + query)
-    data = {"csrf_token": csrf(client, "/contactos/exportar" + query)}
+    client.get("/contacts/export" + query)
+    data = {"csrf_token": csrf(client, "/contacts/export" + query)}
     for pair in query.lstrip("?").split("&"):
         if "=" in pair:
             key, value = pair.split("=", 1)
             data[key] = value
-    return client.post("/contactos/exportar", data=data)
+    return client.post("/contacts/export", data=data)
 
 
 def upload(client, text, *, source="members", tags=(), filename="lista.csv"):
     """Subir un archivo. Las etiquetas van marcadas, como casillas."""
-    token = csrf(client, "/contactos/importar")
+    token = csrf(client, "/contacts/import")
     data = {"csrf_token": token, "source": source, "note": "",
             "archivo": (io.BytesIO(text.encode("utf-8")), filename)}
     if tags:
         data["tags"] = list(tags)
-    return client.post("/contactos/importar", data=data,
+    return client.post("/contacts/import", data=data,
                        content_type="multipart/form-data")
 
 
@@ -215,8 +215,8 @@ def test_un_archivo_enorme_se_rechaza_sin_leerlo(client, database, outbox):
 
     browser = inside(client)
     grande = "a" * (Config.IMPORT_MAX_BYTES + 200 * 1024)
-    token = csrf(browser, "/contactos/importar")
-    respuesta = browser.post("/contactos/importar", data={
+    token = csrf(browser, "/contacts/import")
+    respuesta = browser.post("/contacts/import", data={
         "csrf_token": token, "source": "members", "note": "",
         "archivo": (io.BytesIO(grande.encode("ascii")), "enorme.csv"),
     }, content_type="multipart/form-data")
@@ -271,8 +271,8 @@ def test_un_suprimido_se_guarda_marcado_y_sigue_marcado(client, database, outbox
     assert contacts.by_email(database, cuenta["_id"], "bea@coop.com") is not None
     assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
     # Y se mira en Supresiones, no mezclado con los que sí pueden recibir.
-    assert "bea@coop.com" not in browser.get("/contactos").get_data(as_text=True)
-    anulados = browser.get("/contactos/supresiones").get_data(as_text=True)
+    assert "bea@coop.com" not in browser.get("/contacts").get_data(as_text=True)
+    anulados = browser.get("/contacts/suppressions").get_data(as_text=True)
     assert "bea@coop.com" in anulados
 
 
@@ -284,7 +284,7 @@ def test_borrar_un_contacto_no_levanta_su_supresion(client, database, outbox):
     suppressions.add(database, cuenta["_id"], "bea@coop.com",
                      reason=suppressions.UNSUBSCRIBE)
 
-    browser.post("/contactos/borrar", data={
+    browser.post("/contacts/delete", data={
         "csrf_token": csrf(browser), "email": "bea@coop.com"})
     assert contacts.by_email(database, cuenta["_id"], "bea@coop.com") is None
     assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
@@ -302,8 +302,8 @@ def test_solo_se_quita_lo_que_se_puso_a_mano(client, database, outbox):
                      reason=suppressions.MANUAL)
 
     for direccion in ("queja@coop.com", "mia@coop.com"):
-        browser.post("/contactos/supresiones/quitar", data={
-            "csrf_token": csrf(browser, "/contactos/supresiones"),
+        browser.post("/contacts/suppressions/remove", data={
+            "csrf_token": csrf(browser, "/contacts/suppressions"),
             "email": direccion})
 
     # Un rebote o una queja son un hecho de la dirección, no una preferencia.
@@ -313,8 +313,8 @@ def test_solo_se_quita_lo_que_se_puso_a_mano(client, database, outbox):
 
 def test_suprimir_a_mano_desde_la_pantalla(client, database, outbox):
     browser = inside(client)
-    browser.post("/contactos/supresiones/anadir", data={
-        "csrf_token": csrf(browser, "/contactos/supresiones"),
+    browser.post("/contacts/suppressions/add", data={
+        "csrf_token": csrf(browser, "/contacts/suppressions"),
         "email": "quiensea@coop.com"})
 
     assert suppressions.has(database, account_of(database)["_id"],
@@ -332,10 +332,10 @@ def test_una_cuenta_no_ve_ni_toca_los_contactos_de_otra(client, database, outbox
     ajena = account_of(database, "otra@ejemplo.com")
 
     assert contacts.count(database, ajena["_id"]) == 0
-    assert "ana@coop.com" not in otra.get("/contactos").get_data(as_text=True)
+    assert "ana@coop.com" not in otra.get("/contacts").get_data(as_text=True)
 
     # Y borrando por dirección tampoco alcanza los de la otra cuenta.
-    otra.post("/contactos/borrar", data={
+    otra.post("/contacts/delete", data={
         "csrf_token": csrf(otra), "email": "ana@coop.com"})
     assert contacts.by_email(database, mia["_id"], "ana@coop.com") is not None
 
@@ -360,8 +360,8 @@ def test_quitar_una_etiqueta_deja_los_contactos(client, database, outbox):
     upload(browser, LISTA, tags=["socios"])
     cuenta = account_of(database)
 
-    browser.post("/contactos/etiquetas/borrar", data={
-        "csrf_token": csrf(browser, "/contactos/etiquetas"), "etiqueta": "socios"})
+    browser.post("/contacts/tags/delete", data={
+        "csrf_token": csrf(browser, "/contacts/tags"), "tag": "socios"})
 
     # Los contactos se quedan; la etiqueta sale del registro y de ellos.
     assert contacts.count(database, cuenta["_id"]) == 3
@@ -376,7 +376,7 @@ def test_filtrar_por_etiqueta(client, database, outbox):
     upload(browser, "correo\nana@coop.com\n", tags=["junta"])
     upload(browser, "correo\nbea@coop.com\n", tags=["socios"])
 
-    pantalla = browser.get("/contactos?etiqueta=junta").get_data(as_text=True)
+    pantalla = browser.get("/contacts?tag=junta").get_data(as_text=True)
     assert "ana@coop.com" in pantalla
     assert "bea@coop.com" not in pantalla
 
@@ -392,7 +392,7 @@ def test_una_etiqueta_recien_creada_ya_se_puede_elegir(client, database, outbox)
 
     assert accounts.tags_of(account_of(database)) == ["junta"]
     # En el filtro de la lista y en las dos pantallas que asignan.
-    for url in ("/contactos", "/contactos/nuevo", "/contactos/importar"):
+    for url in ("/contacts", "/contacts/new", "/contacts/import"):
         assert "junta" in browser.get(url).get_data(as_text=True), url
 
 
@@ -438,8 +438,8 @@ def test_las_etiquetas_que_ya_estaban_pasan_al_registro(client, database, outbox
 def test_se_guarda_por_donde_entro_cada_contacto(client, database, outbox):
     browser = inside(client)
     upload(browser, "correo\nana@coop.com\n")
-    browser.post("/contactos/nuevo", data={
-        "csrf_token": csrf(browser, "/contactos/nuevo"),
+    browser.post("/contacts/new", data={
+        "csrf_token": csrf(browser, "/contacts/new"),
         "email": "bea@coop.com", "source": "customers"})
 
     cuenta = account_of(database)
@@ -450,7 +450,7 @@ def test_se_guarda_por_donde_entro_cada_contacto(client, database, outbox):
 
     # El dato se guarda, pero ya no ocupa una columna de la tabla: con las
     # columnas propias metidas ahí, el ancho es lo que escasea.
-    pantalla = browser.get("/contactos").get_data(as_text=True)
+    pantalla = browser.get("/contacts").get_data(as_text=True)
     assert "Cómo entró" not in pantalla
 
 
@@ -462,7 +462,7 @@ def test_la_lista_deja_fuera_a_los_anulados(client, database, outbox):
     cuenta = account_of(database)
     suppressions.add(database, cuenta["_id"], "bea@coop.com")
 
-    pantalla = browser.get("/contactos").get_data(as_text=True)
+    pantalla = browser.get("/contacts").get_data(as_text=True)
 
     assert "Activo" in pantalla
     assert "ana@coop.com" in pantalla
@@ -482,8 +482,8 @@ def test_editar_cambia_lo_editable_y_deja_la_historia(client, database, outbox):
     cuenta = account_of(database)
     antes = contacts.by_email(database, cuenta["_id"], "ana@coop.com")
 
-    browser.post(f"/contactos/editar/{antes['_id']}", data={
-        "csrf_token": csrf(browser, f"/contactos/editar/{antes['_id']}"),
+    browser.post(f"/contacts/edit/{antes['_id']}", data={
+        "csrf_token": csrf(browser, f"/contacts/edit/{antes['_id']}"),
         "email": "ana.nueva@coop.com", "name": "Ana María", "tags": ["junta"]})
 
     despues = contacts.by_email(database, cuenta["_id"], "ana.nueva@coop.com")
@@ -501,8 +501,8 @@ def test_editar_a_una_direccion_que_ya_esta_no_cambia_nada(client, database, out
     cuenta = account_of(database)
     ana = contacts.by_email(database, cuenta["_id"], "ana@coop.com")
 
-    respuesta = browser.post(f"/contactos/editar/{ana['_id']}", data={
-        "csrf_token": csrf(browser, f"/contactos/editar/{ana['_id']}"),
+    respuesta = browser.post(f"/contacts/edit/{ana['_id']}", data={
+        "csrf_token": csrf(browser, f"/contacts/edit/{ana['_id']}"),
         "email": "bea@coop.com", "name": "Ana"})
 
     assert "otro contacto con esa dirección" in respuesta.get_data(as_text=True)
@@ -517,7 +517,7 @@ def test_no_se_puede_editar_el_contacto_de_otra_cuenta(client, database, outbox)
     ana = contacts.by_email(database, mia["_id"], "ana@coop.com")
 
     otra = inside(other(client), email="otra@ejemplo.com")
-    assert otra.get(f"/contactos/editar/{ana['_id']}").status_code == 404
+    assert otra.get(f"/contacts/edit/{ana['_id']}").status_code == 404
 
 
 # --------------------------------------------------------------- anulados
@@ -549,7 +549,7 @@ def test_eliminar_los_anulados_deja_las_supresiones(client, database, outbox):
     cuenta = account_of(database)
     suppressions.add(database, cuenta["_id"], "bea@coop.com")
 
-    browser.post("/contactos/anulados/eliminar",
+    browser.post("/contacts/suppressed/delete",
                  data={"csrf_token": csrf(browser)})
 
     assert contacts.by_email(database, cuenta["_id"], "bea@coop.com") is None
@@ -559,7 +559,7 @@ def test_eliminar_los_anulados_deja_las_supresiones(client, database, outbox):
     # Y si vuelve en una importación, vuelve marcada: sigue sin salir en la
     # lista y sigue en Supresiones.
     upload(browser, LISTA)
-    assert "bea@coop.com" not in browser.get("/contactos").get_data(as_text=True)
+    assert "bea@coop.com" not in browser.get("/contacts").get_data(as_text=True)
     assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
 
 
@@ -568,12 +568,12 @@ def test_agregar_a_mano_una_anulada_lo_avisa(client, database, outbox):
     cuenta = account_of(database)
     suppressions.add(database, cuenta["_id"], "nueva@coop.com")
 
-    respuesta = browser.post("/contactos/nuevo", data={
-        "csrf_token": csrf(browser, "/contactos/nuevo"),
+    respuesta = browser.post("/contacts/new", data={
+        "csrf_token": csrf(browser, "/contacts/new"),
         "email": "nueva@coop.com", "source": "members"})
 
-    assert "anulado=1" in respuesta.headers["Location"]
-    assert "está anulada" in browser.get("/contactos?anulado=1").get_data(as_text=True)
+    assert "suppressed=1" in respuesta.headers["Location"]
+    assert "está anulada" in browser.get("/contacts?suppressed=1").get_data(as_text=True)
 
 
 # --------------------------------------------------------------- exportar
@@ -585,7 +585,7 @@ def test_exportar_trae_lo_que_ensena_la_tabla(client, database, outbox):
     cuenta = account_of(database)
     suppressions.add(database, cuenta["_id"], "bea@coop.com")
 
-    aviso = browser.get("/contactos/exportar").get_data(as_text=True)
+    aviso = browser.get("/contacts/export").get_data(as_text=True)
     assert "Van a salir 3 contactos" in aviso
 
     respuesta = export(browser)
@@ -605,14 +605,14 @@ def test_exportar_respeta_el_filtro(client, database, outbox):
     upload(browser, "correo\nana@coop.com\n", tags=["junta"])
     upload(browser, "correo\nbea@coop.com\n")
 
-    texto = export(browser, "?etiqueta=junta").get_data(as_text=True)
+    texto = export(browser, "?tag=junta").get_data(as_text=True)
     assert "ana@coop.com" in texto
     assert "bea@coop.com" not in texto
 
 
 def test_contactos_pide_sesion(client, database):
-    for url in ("/contactos", "/contactos/nuevo", "/contactos/importar",
-                "/contactos/etiquetas", "/contactos/supresiones"):
+    for url in ("/contacts", "/contacts/new", "/contacts/import",
+                "/contacts/tags", "/contacts/suppressions"):
         assert client.get(url).status_code == 302
 
 
@@ -621,8 +621,8 @@ def test_agregar_uno_a_mano(client, database, outbox):
     with_plan(database)
     make_tag(browser, "junta")
     make_tag(browser, "socios")
-    browser.post("/contactos/nuevo", data={
-        "csrf_token": csrf(browser, "/contactos/nuevo"), "email": "nuevo@coop.com",
+    browser.post("/contacts/new", data={
+        "csrf_token": csrf(browser, "/contacts/new"), "email": "nuevo@coop.com",
         "name": "Nuevo", "tags": ["junta", "socios"], "source": "customers"})
 
     guardado = contacts.by_email(database, account_of(database)["_id"],
@@ -637,13 +637,13 @@ def test_el_buscador_no_deja_pasar_una_expresion_regular(client, database, outbo
     browser = inside(client)
     upload(browser, LISTA)
 
-    pantalla = browser.get("/contactos?q=.*").get_data(as_text=True)
+    pantalla = browser.get("/contacts?q=.*").get_data(as_text=True)
     assert "ana@coop.com" not in pantalla
 
 
 def test_el_limite_se_ve_en_pantalla(client, database, outbox):
     browser = inside(client)
-    assert "de 500 contactos" in browser.get("/contactos").get_data(as_text=True)
+    assert "de 500 contactos" in browser.get("/contacts").get_data(as_text=True)
 
 
 # ---------------------------------------------------------- las columnas
@@ -675,7 +675,7 @@ def test_sin_plan_cabe_una_sola_etiqueta(client, database, outbox):
     make_tag(browser, "junta")
 
     assert accounts.tags_of(account_of(database)) == ["socios"]
-    pantalla = browser.get("/contactos/etiquetas").get_data(as_text=True)
+    pantalla = browser.get("/contacts/tags").get_data(as_text=True)
     assert "1 de 1 etiquetas" in pantalla
 
 
@@ -707,7 +707,7 @@ def test_exportar_sin_confirmar_no_descarga_nada(client, database, outbox):
     browser = inside(client)
     upload(browser, LISTA)
 
-    respuesta = browser.get("/contactos/exportar")
+    respuesta = browser.get("/contacts/export")
     assert respuesta.status_code == 200
     assert "Content-Disposition" not in respuesta.headers
     texto = respuesta.get_data(as_text=True)
@@ -721,11 +721,11 @@ def test_la_confirmacion_dice_con_que_filtro(client, database, outbox):
     upload(browser, "correo\nana@coop.com\n", tags=["junta"])
     upload(browser, "correo\nbea@coop.com\n")
 
-    texto = browser.get("/contactos/exportar?etiqueta=junta").get_data(as_text=True)
+    texto = browser.get("/contacts/export?tag=junta").get_data(as_text=True)
     assert "Va a salir 1 contacto" in texto
     assert "Etiqueta: junta" in texto
 
-    todos = browser.get("/contactos/exportar").get_data(as_text=True)
+    todos = browser.get("/contacts/export").get_data(as_text=True)
     assert "Van a salir 2 contactos" in todos
     assert "Sin filtro" in todos
 
@@ -735,5 +735,5 @@ def test_exportar_sin_el_testigo_no_descarga(client, database, outbox):
     browser = inside(client)
     upload(browser, LISTA)
 
-    respuesta = browser.post("/contactos/exportar", data={"csrf_token": "no"})
+    respuesta = browser.post("/contacts/export", data={"csrf_token": "no"})
     assert "Content-Disposition" not in respuesta.headers

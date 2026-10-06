@@ -257,7 +257,7 @@ def test_correos_del_sistema_encuentra_por_direccion_sin_ensenar_el_cuerpo(
                     text="El código secreto es 123456")
     mail_log.mark(database, "0100sys", outcome=mail_log.DELIVERED)
 
-    pantalla = admin.get("/admin/correos?q=Joseph@UTP.ac.pa").get_data(as_text=True)
+    pantalla = admin.get("/admin/emails?q=Joseph@UTP.ac.pa").get_data(as_text=True)
 
     assert "Tu código" in pantalla
     assert "Entregado" in pantalla

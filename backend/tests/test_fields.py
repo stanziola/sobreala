@@ -36,32 +36,32 @@ def inside(client, database, email="ana@ejemplo.com", plan="negocio"):
     return browser, accounts.by_id(database, cuenta["_id"])
 
 
-def csrf(client, url="/contactos/columnas"):
+def csrf(client, url="/contacts/columns"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
 
 
 def crear(browser, nombre, tipo="text"):
-    return browser.post("/contactos/columnas/nueva", data={
-        "csrf_token": csrf(browser, "/contactos/columnas/nueva"),
-        "nombre": nombre, "tipo": tipo})
+    return browser.post("/contacts/columns/new", data={
+        "csrf_token": csrf(browser, "/contacts/columns/new"),
+        "nombre": nombre, "type": tipo})
 
 
 def guardar_contacto(browser, email, **columnas):
     """Agregar uno a mano, como lo manda la pantalla."""
-    data = {"csrf_token": csrf(browser, "/contactos/nuevo"),
+    data = {"csrf_token": csrf(browser, "/contacts/new"),
             "email": email, "source": "members"}
     data.update({f"col-{key}": value for key, value in columnas.items()})
-    return browser.post("/contactos/nuevo", data=data)
+    return browser.post("/contacts/new", data=data)
 
 
 def subir(browser, texto, **extra):
-    data = {"csrf_token": csrf(browser, "/contactos/importar"),
+    data = {"csrf_token": csrf(browser, "/contacts/import"),
             "source": "members", "note": "",
             "archivo": (io.BytesIO(texto.encode("utf-8")), "socios.csv")}
     data.update(extra)
-    return browser.post("/contactos/importar", data=data,
+    return browser.post("/contacts/import", data=data,
                         content_type="multipart/form-data")
 
 
@@ -168,7 +168,7 @@ def test_borrar_la_columna_borra_lo_que_tenian_escrito(client, database,
                     consent=contacts.consent_of(contacts.MEMBERS),
                     values={"CIUDAD": "Santiago"})
 
-    browser.post("/contactos/columnas/borrar", data={
+    browser.post("/contacts/columns/delete", data={
         "csrf_token": csrf(browser), "columna": "CIUDAD"})
 
     fresca = accounts.by_id(database, cuenta["_id"])
@@ -298,9 +298,9 @@ def test_cambiar_el_tipo_no_pisa_los_valores_que_no_encajan(client, database,
     crear(browser, "Ciudad")
     guardar_contacto(browser, "ana@coop.com", CIUDAD="Santiago")
 
-    respuesta = browser.post("/contactos/columnas/tipo", data={
-        "csrf_token": csrf(browser, "/contactos/columnas"),
-        "columna": "CIUDAD", "tipo": "number"}, follow_redirects=True)
+    respuesta = browser.post("/contacts/columns/type", data={
+        "csrf_token": csrf(browser, "/contacts/columns"),
+        "columna": "CIUDAD", "type": "number"}, follow_redirects=True)
 
     fresca = accounts.by_id(database, cuenta["_id"])
     assert accounts.fields_of(fresca)[0]["type"] == "text"
@@ -312,9 +312,9 @@ def test_el_tipo_se_cambia_cuando_todo_encaja(client, database, outbox):
     crear(browser, "Monto")
     guardar_contacto(browser, "ana@coop.com", MONTO="300")
 
-    browser.post("/contactos/columnas/tipo", data={
-        "csrf_token": csrf(browser, "/contactos/columnas"),
-        "columna": "MONTO", "tipo": "number"})
+    browser.post("/contacts/columns/type", data={
+        "csrf_token": csrf(browser, "/contacts/columns"),
+        "columna": "MONTO", "type": "number"})
 
     fresca = accounts.by_id(database, cuenta["_id"])
     assert accounts.fields_of(fresca)[0]["type"] == "number"
@@ -355,15 +355,15 @@ def test_cada_uno_recibe_lo_suyo_y_el_incompleto_no_recibe(
         database, cuenta["_id"], name="Aviso", template="aviso",
         filled={"titulo": "Asamblea en *|CIUDAD|*", "texto": "El martes"})
 
-    browser.post("/envios", data={
-        "csrf_token": csrf(browser, "/envios"), "asunto": "Hola *|CIUDAD|*",
+    browser.post("/campaigns", data={
+        "csrf_token": csrf(browser, "/campaigns"), "asunto": "Hola *|CIUDAD|*",
         "pieza": str(pieza), "lista": "", "cuando": "ahora"})
     una = database.campaigns.find_one({"account_id": cuenta["_id"]})
     # Y la pantalla que pregunta cuenta lo mismo que va a salir.
-    pregunta = browser.get(f"/envios/{una['_id']}/mandar").get_data(as_text=True)
+    pregunta = browser.get(f"/campaigns/{una['_id']}/send").get_data(as_text=True)
     assert "Un contacto" in pregunta
-    browser.post(f"/envios/{una['_id']}/mandar",
-                 data={"csrf_token": csrf(browser, "/envios")})
+    browser.post(f"/campaigns/{una['_id']}/send",
+                 data={"csrf_token": csrf(browser, "/campaigns")})
 
     assert [one["To"] for one in salidos] == ["socio0@ejemplo.com"]
     assert salidos[0]["Subject"] == "Hola Santiago"

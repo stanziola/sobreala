@@ -148,7 +148,7 @@
       <ul class="samples__list"{% if copy %} aria-hidden="true"{% endif %}>
         {% for one in samples %}
         <li>
-          <a class="sample" href="{{ panel.base_url }}/plantillas/muestra/{{ one.slug }}"
+          <a class="sample" href="{{ panel.base_url }}/templates/sample/{{ one.slug }}"
              style="--sample: {{ one.color }}"
              aria-label="{{ page.steps.open | replace('{name}', one.name) }}"
              {%- if copy %} tabindex="-1"{% endif %}>

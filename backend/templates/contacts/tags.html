@@ -9,10 +9,10 @@
   {% else %}{{ t('tags_counter', n=tags|length, limit=tag_limit) }}{% endif %}
 </p>
 
-{% if request.args.get('guardado') %}
+{% if request.args.get('saved') %}
 <p class="notice notice--ok">{{ t('tags_saved') }}</p>
 {% endif %}
-{% if request.args.get('error') == 'etiqueta' %}
+{% if request.args.get('error') == 'tag' %}
 <p class="notice">{{ t('error_tag') }}</p>
 {% endif %}
 
@@ -35,7 +35,7 @@
         <td>
           <form method="post" action="{{ url_for('contacts.drop_tag') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="etiqueta" value="{{ name }}">
+            <input type="hidden" name="tag" value="{{ name }}">
             <button class="btn btn--small btn--outline" type="submit">{{ t('tags_delete') }}</button>
           </form>
         </td>
@@ -54,7 +54,7 @@
 <form method="post" action="{{ url_for('contacts.add_tag') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label for="etiqueta">{{ t('tags_name') }}</label>
-  <input id="etiqueta" name="etiqueta" type="text" autocomplete="off"
+  <input id="etiqueta" name="tag" type="text" autocomplete="off"
          maxlength="40" required>
   <p class="hint">
     {% if tags_free %}{{ t('tags_room_free') }}
@@ -64,6 +64,6 @@
 </form>
 {% else %}
 <p class="hint">{{ t('tags_full') }}
-  <a href="{{ site_url }}/planes/">{{ t('tags_plans') }}</a></p>
+  <a href="{{ site_url }}/pricing/">{{ t('tags_plans') }}</a></p>
 {% endif %}
 {% endblock %}

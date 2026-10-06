@@ -35,7 +35,7 @@ def inside(client, email="ana@ejemplo.com"):
     return browser
 
 
-def csrf(client, url="/configuracion/pagos"):
+def csrf(client, url="/settings/billing"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
@@ -76,9 +76,9 @@ def fake_paypal(monkeypatch):
 
 def pay(client, pedido, plan="basico", cycle="monthly"):
     """Contratar y volver, como vuelve el navegador desde PayPal."""
-    client.post("/configuracion/pagos/contratar", data={
+    client.post("/settings/billing/checkout", data={
         "csrf_token": csrf(client), "plan": plan, "cycle": cycle})
-    return client.get(f"/configuracion/pagos/volver?token={pedido['order']}")
+    return client.get(f"/settings/billing/return?token={pedido['order']}")
 
 
 def sent(database, purpose) -> list[dict]:
@@ -174,8 +174,8 @@ def test_un_plan_vencido_tambien_se_le_avisa_a_quien_administra(
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() - timedelta(days=2))
 
-    browser.get("/panel")
-    browser.get("/panel")
+    browser.get("/dashboard")
+    browser.get("/dashboard")
 
     aviso = only(database, mail_log.ADMIN_PLAN_END)
     assert aviso["to"] == "jefe@ejemplo.com"
@@ -192,7 +192,7 @@ def test_apagar_el_aviso_de_vencimiento_no_apaga_el_del_cliente(
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() - timedelta(days=2))
 
-    browser.get("/panel")
+    browser.get("/dashboard")
 
     assert sent(database, mail_log.ADMIN_PLAN_END) == []
     only(database, mail_log.PLAN_EXPIRED)
@@ -258,15 +258,15 @@ def test_al_entrar_al_panel_avisa_de_lo_que_esta_por_vencerse(
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() + timedelta(days=3))
 
-    browser.get("/panel")
+    browser.get("/dashboard")
     aviso = only(database, mail_log.PLAN_EXPIRING)
     assert "vence" in aviso["subject"]
     # Sin botón de renovar: el mismo plan se contrata otra vez al vencer.
-    assert "/contratar/" not in aviso["html"]
+    assert "/checkout/" not in aviso["html"]
     assert "Renovar" not in aviso["html"]
 
     # Y recargar no manda un segundo correo.
-    browser.get("/panel")
+    browser.get("/dashboard")
     assert len(sent(database, mail_log.PLAN_EXPIRING)) == 1
 
 
@@ -276,18 +276,18 @@ def test_renovar_devuelve_el_aviso_para_el_ciclo_siguiente(client, database,
     browser = inside(client)
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() + timedelta(days=3))
-    browser.get("/panel")
+    browser.get("/dashboard")
 
     # Renovó: la fecha se corre un año y ya no hay nada que avisar.
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() + timedelta(days=365))
-    browser.get("/panel")
+    browser.get("/dashboard")
     assert len(sent(database, mail_log.PLAN_EXPIRING)) == 1
 
     # Un año después, el aviso vuelve a salir sin haber limpiado nada.
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() + timedelta(days=2))
-    browser.get("/panel")
+    browser.get("/dashboard")
     assert len(sent(database, mail_log.PLAN_EXPIRING)) == 2
 
 
@@ -296,8 +296,8 @@ def test_un_plan_vencido_avisa_una_sola_vez(client, database, outbox):
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() - timedelta(days=2))
 
-    browser.get("/panel")
-    browser.get("/panel")
+    browser.get("/dashboard")
+    browser.get("/dashboard")
 
     aviso = only(database, mail_log.PLAN_EXPIRED)
     assert "venció" in aviso["subject"]
@@ -312,7 +312,7 @@ def test_un_plan_vencido_hace_meses_no_avisa_de_nada(client, database, outbox):
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() - timedelta(days=200))
 
-    browser.get("/panel")
+    browser.get("/dashboard")
 
     assert sent(database, mail_log.PLAN_EXPIRED) == []
 
@@ -323,7 +323,7 @@ def test_apagar_el_estado_del_plan_apaga_solo_eso(client, database, outbox):
     with_plan(database, "ana@ejemplo.com", "negocio",
               accounts.now() - timedelta(days=2))
 
-    browser.get("/panel")
+    browser.get("/dashboard")
 
     assert sent(database, mail_log.PLAN_EXPIRED) == []
 
@@ -396,7 +396,7 @@ def test_ninguno_lleva_baja_ni_marca_de_agua(client, database, outbox,
     pay(browser, pedido)
     with_plan(database, "ana@ejemplo.com", "basico",
               accounts.now() - timedelta(days=1))
-    browser.get("/panel")
+    browser.get("/dashboard")
 
     mirados = 0
     for purpose in (mail_log.PLAN_PAID, mail_log.PLAN_EXPIRED,

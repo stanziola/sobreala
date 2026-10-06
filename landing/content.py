@@ -41,15 +41,15 @@ CONTACT = {
 
 NAV = [
     {"label": "Inicio", "url": "/"},
-    {"label": "Cómo funciona", "url": "/como-funciona/"},
-    {"label": "Planes", "url": "/planes/"},
-    {"label": "Nosotros", "url": "/nosotros/"},
+    {"label": "Cómo funciona", "url": "/how-it-works/"},
+    {"label": "Planes", "url": "/pricing/"},
+    {"label": "Nosotros", "url": "/about/"},
 ]
 
 # The panel is a different service on a different host: Railway, not Cloudflare
 # Pages. These two buttons are the only way in from the public site.
 PANEL = {
-    "base_url": "https://panel.sobreala.com",
+    "base_url": "https://app.sobreala.com",
     "login_label": "Ingresar",
     "register_label": "Registrarse",
     # Se enseña en lugar de los dos anteriores cuando el panel dejó su migaja.
@@ -74,7 +74,7 @@ PANEL = {
     "language_soon": "Inglés (pronto)",
 }
 
-# Lo que dicen los botones de /planes cuando ya hay un plan contratado. El
+# Lo que dicen los botones de /pricing cuando ya hay un plan contratado. El
 # sitio es estático y no lo sabe al construirse: los textos viajan en el
 # marcado y nav.js elige uno según la migaja que deja el panel. El plan que ya
 # se tiene no se renueva antes de que venza: dice lo mismo que los de abajo,
@@ -89,7 +89,7 @@ PLAN_BUTTONS = {
 }
 
 CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}
-CTA_SECONDARY = {"label": "Ver los planes", "url": "/planes/"}
+CTA_SECONDARY = {"label": "Ver los planes", "url": "/pricing/"}
 
 # --------------------------------------------------------------------------- home
 
@@ -265,14 +265,14 @@ HOME = {
         ],
     },
     # La tira de plantillas de muestra, donde estaban los cuatro pasos: los
-    # pasos siguen enteros en /como-funciona, que es a donde lleva el botón.
+    # pasos siguen enteros en /how-it-works, que es a donde lleva el botón.
     "steps": {
         "eyebrow": "Cómo funciona",
         "title": "¿Aún no sabes por dónde empezar?",
         "intro": "Prueba nuestras plantillas personalizadas.",
         # Lo que dice cada tarjeta a un lector de pantalla, con su nombre.
         "open": "Abrir la plantilla {name} en el editor",
-        "cta": {"label": "Ver tutorial", "url": "/como-funciona/"},
+        "cta": {"label": "Ver tutorial", "url": "/how-it-works/"},
     },
     "faq": {
         "eyebrow": "Preguntas frecuentes",
@@ -365,11 +365,11 @@ TUTORIALS = {
     "done_title": "¡Listo!",
     "again": "Repetir",
     "next": "Siguiente tutorial: {name}",
-    "signup": {"label": "Crear mi cuenta", "url": "https://panel.sobreala.com/registro"},
+    "signup": {"label": "Crear mi cuenta", "url": "https://app.sobreala.com/signup"},
     "screen": "Pantalla del panel: {what}",
     "tours": [
         {
-            "id": "contactos",
+            "id": "contacts",
             "name": "Contactos",
             "lead": "Crea una etiqueta e importa tu lista desde un archivo CSV.",
             "done": (
@@ -438,7 +438,7 @@ TUTORIALS = {
             },
         },
         {
-            "id": "plantillas",
+            "id": "templates",
             "name": "Plantillas",
             "lead": "Arma tu correo en el editor, míralo y guárdalo.",
             "done": (
@@ -501,7 +501,7 @@ TUTORIALS = {
             },
         },
         {
-            "id": "envios",
+            "id": "campaigns",
             "name": "Enviar correos",
             "lead": "Arma una campaña, elige a quién le llega y mándala.",
             "done": (
@@ -554,7 +554,7 @@ TUTORIALS = {
             },
         },
         {
-            "id": "estadisticas",
+            "id": "stats",
             "name": "Estadísticas",
             "lead": "Mira cómo le fue a cada envío y bájalo en CSV o PDF.",
             "done": (
@@ -595,7 +595,7 @@ TUTORIALS = {
             },
         },
         {
-            "id": "configuracion",
+            "id": "settings",
             "name": "Configuración",
             "lead": "Tu dirección postal, tu seguridad, tu equipo y tu plan.",
             "done": (
@@ -1541,22 +1541,22 @@ FOOTER = {
         {
             "title": "Producto",
             "links": [
-                {"label": "Cómo funciona", "url": "/como-funciona/"},
-                {"label": "Planes", "url": "/planes/"},
+                {"label": "Cómo funciona", "url": "/how-it-works/"},
+                {"label": "Planes", "url": "/pricing/"},
             ],
         },
         {
             "title": "Empresa",
             "links": [
-                {"label": "Nosotros", "url": "/nosotros/"},
-                {"label": "Contacto", "url": "/contacto/"},
+                {"label": "Nosotros", "url": "/about/"},
+                {"label": "Contacto", "url": "/contact/"},
             ],
         },
         {
             "title": "Legal",
             "links": [
-                {"label": "Política de privacidad", "url": "/privacidad/"},
-                {"label": "Términos y condiciones", "url": "/terminos/"},
+                {"label": "Política de privacidad", "url": "/privacy/"},
+                {"label": "Términos y condiciones", "url": "/terms/"},
             ],
         },
     ],

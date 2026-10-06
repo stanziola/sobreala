@@ -29,10 +29,10 @@ def other(client):
 
 
 def sign_in(client, agent, email="ana@ejemplo.com", password="Contrasena-Larga1"):
-    client.get("/entrar", headers={"User-Agent": agent})
+    client.get("/login", headers={"User-Agent": agent})
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/entrar", headers={"User-Agent": agent}, data={
+    return client.post("/login", headers={"User-Agent": agent}, data={
         "csrf_token": csrf, "email": email, "password": password})
 
 
@@ -50,7 +50,7 @@ def link_from(body):
     """
     from config import Config
 
-    found = re.findall(r"https?://[^\s]*/sesion/cerrar/[^\s]+", body)
+    found = re.findall(r"https?://[^\s]*/session/close/[^\s]+", body)
     assert found, "the notice carries no link to close the session"
     return found[0].replace(Config.APP_BASE_URL, "")
 
@@ -102,7 +102,7 @@ def test_a_failed_notice_does_not_keep_anyone_out(client, database, outbox,
 
     phone = other(client)
     assert sign_in(phone, PHONE).status_code == 302
-    assert phone.get("/panel").status_code == 200
+    assert phone.get("/dashboard").status_code == 200
 
 
 # ------------------------------------------------------------------- the link
@@ -122,12 +122,12 @@ def test_the_link_does_not_close_anything_until_it_is_pressed(client, database,
 
     reader = other(client)
     assert reader.get(link).status_code == 200
-    assert phone.get("/panel").status_code == 200      # still inside
+    assert phone.get("/dashboard").status_code == 200      # still inside
 
     with reader.session_transaction() as sess:
         csrf = sess["_csrf"]
     assert reader.post(link, data={"csrf_token": csrf}).status_code == 200
-    assert phone.get("/panel").status_code == 302      # now it is out
+    assert phone.get("/dashboard").status_code == 302      # now it is out
 
 
 def test_it_closes_that_session_and_no_other(client, database, outbox):
@@ -144,8 +144,8 @@ def test_it_closes_that_session_and_no_other(client, database, outbox):
         csrf = sess["_csrf"]
     reader.post(link, data={"csrf_token": csrf})
 
-    assert phone.get("/panel").status_code == 302
-    assert laptop.get("/panel").status_code == 200
+    assert phone.get("/dashboard").status_code == 302
+    assert laptop.get("/dashboard").status_code == 200
 
 
 def test_the_link_works_once(client, database, outbox):
@@ -212,10 +212,10 @@ def test_a_password_cannot_be_used_twice(client, database, outbox):
     login(inside)
 
     def change(current, fresh):
-        inside.get("/cambiar-contrasena")
+        inside.get("/change-password")
         with inside.session_transaction() as sess:
             csrf = sess["_csrf"]
-        return inside.post("/cambiar-contrasena", data={
+        return inside.post("/change-password", data={
             "csrf_token": csrf, "current": current,
             "password": fresh, "repeat": fresh})
 
@@ -234,22 +234,22 @@ def test_a_password_cannot_be_used_twice(client, database, outbox):
 def test_the_history_also_applies_to_recovering(client, database, outbox):
     register(client)
     stranger = other(client)
-    stranger.get("/recuperar")
+    stranger.get("/recover")
     with stranger.session_transaction() as sess:
         csrf = sess["_csrf"]
-    stranger.post("/recuperar", data={"csrf_token": csrf,
+    stranger.post("/recover", data={"csrf_token": csrf,
                                       "email": "ana@ejemplo.com"})
     code = code_from_outbox(outbox)
-    stranger.get("/recuperar/codigo")
+    stranger.get("/recover/code")
     with stranger.session_transaction() as sess:
         csrf = sess["_csrf"]
-    stranger.post("/recuperar/codigo",
+    stranger.post("/recover/code",
                   data={"csrf_token": csrf, "code": list(code)})
 
-    stranger.get("/recuperar/nueva")
+    stranger.get("/recover/new")
     with stranger.session_transaction() as sess:
         csrf = sess["_csrf"]
-    refused = stranger.post("/recuperar/nueva", data={
+    refused = stranger.post("/recover/new", data={
         "csrf_token": csrf, "password": "Contrasena-Larga1",
         "repeat": "Contrasena-Larga1"})
 
@@ -260,10 +260,10 @@ def test_the_stored_history_is_hashes_and_not_passwords(client, database, outbox
     register(client)
     inside = other(client)
     login(inside)
-    inside.get("/cambiar-contrasena")
+    inside.get("/change-password")
     with inside.session_transaction() as sess:
         csrf = sess["_csrf"]
-    inside.post("/cambiar-contrasena", data={
+    inside.post("/change-password", data={
         "csrf_token": csrf, "current": "Contrasena-Larga1",
         "password": "Contrasena-Dos2!", "repeat": "Contrasena-Dos2!"})
 

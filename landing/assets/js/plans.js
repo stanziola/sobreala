@@ -1,4 +1,4 @@
-/* Las tarjetas de /planes: mensual o anual, el precio que cambia, la entrada y
+/* Las tarjetas de /pricing: mensual o anual, el precio que cambia, la entrada y
    el confeti. Sin dependencias, como nav.js.
 
    La página nace en mensual y con todo dibujado, así que sin este archivo se
@@ -66,7 +66,7 @@
       // nav.js sigue mandando en su texto; esto solo le toca la dirección.
       var buy = card.querySelector("[data-buy]");
       if (buy) {
-        buy.setAttribute("href", buy.getAttribute("data-buy") + (yearly ? "?ciclo=anual" : ""));
+        buy.setAttribute("href", buy.getAttribute("data-buy") + (yearly ? "?cycle=yearly" : ""));
       }
     });
     options.forEach(function (one) {

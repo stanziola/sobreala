@@ -23,10 +23,10 @@
   <p class="hint">{{ t('fields_name_hint') }}</p>
 
   <label for="tipo">{{ t('fields_type') }}</label>
-  <select id="tipo" name="tipo">
+  <select id="tipo" name="type">
     {% for kind in types %}
     <option value="{{ kind }}"
-            {%- if request.form.get('tipo') == kind %} selected{% endif %}>
+            {%- if request.form.get('type') == kind %} selected{% endif %}>
       {{ t('fields_type_' + kind) }}</option>
     {% endfor %}
   </select>
@@ -40,7 +40,7 @@
 </form>
 {% else %}
 <p class="notice">{{ t('fields_full') }}
-  <a href="{{ site_url }}/planes/">{{ t('fields_plans') }}</a></p>
+  <a href="{{ site_url }}/pricing/">{{ t('fields_plans') }}</a></p>
 {% endif %}
 
 <p class="foot">

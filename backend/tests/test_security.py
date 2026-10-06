@@ -35,11 +35,11 @@ def test_an_operator_cannot_be_smuggled_into_the_login_query(client, database):
     register(client)
 
     for payload in INJECTIONS:
-        data = {"csrf_token": csrf(client, "/entrar"), **payload}
-        response = client.post("/entrar", data=data)
+        data = {"csrf_token": csrf(client, "/login"), **payload}
+        response = client.post("/login", data=data)
         # No redirect: nothing got in. A successful sign-in would answer 302.
         assert response.status_code == 200, payload
-        assert client.get("/panel").status_code == 302, payload
+        assert client.get("/dashboard").status_code == 302, payload
 
 
 def test_an_operator_is_stored_as_text_not_as_a_query(client, database):
@@ -51,14 +51,14 @@ def test_an_operator_is_stored_as_text_not_as_a_query(client, database):
     started accepting JSON bodies, this test is what would notice.
     """
     data = {
-        "csrf_token": csrf(client, "/registro"),
+        "csrf_token": csrf(client, "/signup"),
         "company_name": '{"$ne": null}',
         "contact_name": "Ana",
         "email": "ana@ejemplo.com",
         "phone": '{"$gt": ""}',
         "password": "Contrasena-Larga1",
     }
-    client.post("/registro", data=data)
+    client.post("/signup", data=data)
 
     account = accounts.by_email(database, "ana@ejemplo.com")
     assert isinstance(account["company_name"], str)
@@ -68,8 +68,8 @@ def test_an_operator_is_stored_as_text_not_as_a_query(client, database):
 
 def test_a_forged_address_header_cannot_write_whatever_it_likes(client, database):
     """CF-Connecting-IP arrives from outside, so it is checked before use."""
-    client.post("/entrar", headers={"CF-Connecting-IP": "no soy una ip"},
-                data={"csrf_token": csrf(client, "/entrar"),
+    client.post("/login", headers={"CF-Connecting-IP": "no soy una ip"},
+                data={"csrf_token": csrf(client, "/login"),
                       "email": "ana@ejemplo.com", "password": "loquesea"})
 
     keys = [d["key"] for d in database.rate_limits.find({})]
@@ -80,8 +80,8 @@ def test_a_forged_address_header_cannot_write_whatever_it_likes(client, database
 
 def test_what_the_visitor_types_comes_back_escaped(client, database):
     payload = '"><script>alert(1)</script>'
-    response = client.post("/registro", data={
-        "csrf_token": csrf(client, "/registro"),
+    response = client.post("/signup", data={
+        "csrf_token": csrf(client, "/signup"),
         "company_name": payload, "contact_name": "", "email": "ana@ejemplo.com",
         "password": "Contrasena-Larga1",
     })
@@ -93,7 +93,7 @@ def test_what_the_visitor_types_comes_back_escaped(client, database):
 
 
 def test_every_page_carries_its_security_headers(client, database):
-    response = client.get("/entrar")
+    response = client.get("/login")
     headers = response.headers
 
     assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]
@@ -110,9 +110,9 @@ def test_the_inline_script_is_the_only_one_allowed(client, database):
     A script injected into the page cannot know the nonce, which is what makes
     the policy worth having.
     """
-    body = client.get("/entrar").get_data(as_text=True)
-    first = client.get("/entrar").headers["Content-Security-Policy"]
-    second = client.get("/entrar").headers["Content-Security-Policy"]
+    body = client.get("/login").get_data(as_text=True)
+    first = client.get("/login").headers["Content-Security-Policy"]
+    second = client.get("/login").headers["Content-Security-Policy"]
 
     assert 'nonce="' in body
     assert first != second  # a fresh nonce on every response
@@ -140,7 +140,7 @@ def test_the_rules_on_screen_are_the_rules_the_server_applies(client, database):
     """
     import re
 
-    body = client.get("/registro").get_data(as_text=True)
+    body = client.get("/signup").get_data(as_text=True)
     drawn = re.findall(r'data-rule="([a-z]+)"', body)
     assert drawn == ["length", "upper", "digit", "symbol"]
 
@@ -160,8 +160,8 @@ def test_the_rules_on_screen_are_the_rules_the_server_applies(client, database):
 def test_a_weak_password_never_creates_an_account(client, database):
     for weak in ("contrasena-larga", "CONTRASENA-LARGA", "Contrasenalarga",
                  "Corta1!"):
-        response = client.post("/registro", data={
-            "csrf_token": csrf(client, "/registro"),
+        response = client.post("/signup", data={
+            "csrf_token": csrf(client, "/signup"),
             "company_name": "Coop", "contact_name": "Ana",
             "email": "ana@ejemplo.com", "password": weak,
         })
@@ -171,8 +171,8 @@ def test_a_weak_password_never_creates_an_account(client, database):
 
 def test_the_form_says_which_rule_was_missed(client, database):
     def refusal(password):
-        response = client.post("/registro", data={
-            "csrf_token": csrf(client, "/registro"),
+        response = client.post("/signup", data={
+            "csrf_token": csrf(client, "/signup"),
             "company_name": "Coop", "contact_name": "Ana",
             "email": "ana@ejemplo.com", "password": password,
         })

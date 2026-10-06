@@ -77,8 +77,8 @@
            data-label-to-yearly="{{ plan_buttons.to_yearly }}"
            data-label-covered="{{ plan_buttons.covered }}"
            data-label-yearly-only="{{ plan_buttons.yearly_only }}"
-           data-buy="{{ panel.base_url }}/contratar/{{ plan.key }}"
-           href="{{ panel.base_url }}/contratar/{{ plan.key }}">{{ plan_buttons.start.format(name=plan.name) }}</a>
+           data-buy="{{ panel.base_url }}/checkout/{{ plan.key }}"
+           href="{{ panel.base_url }}/checkout/{{ plan.key }}">{{ plan_buttons.start.format(name=plan.name) }}</a>
       </li>
       {% endfor %}
     </ul>

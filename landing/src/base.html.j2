@@ -52,7 +52,7 @@
 </head>
 <body>
 
-<a class="skip-link" href="#contenido">Saltar al contenido</a>
+<a class="skip-link" href="#content">Saltar al contenido</a>
 
 <header class="site-header" id="site-header">
   <div class="shell site-header__inner">
@@ -92,9 +92,9 @@
           is the crumb the panel leaves on the parent domain. See nav.js. -#}
       <div class="site-nav__account" data-account>
         <a class="btn btn--account btn--account-in" data-account-in
-           href="{{ panel.base_url }}/entrar">{{ panel.login_label }}</a>
+           href="{{ panel.base_url }}/login">{{ panel.login_label }}</a>
         <a class="btn btn--account btn--account-up" data-account-up
-           href="{{ panel.base_url }}/registro">{{ panel.register_label }}</a>
+           href="{{ panel.base_url }}/signup">{{ panel.register_label }}</a>
       </div>
 
       {#- El mismo control con dos caras: tres líneas antes de entrar, el
@@ -126,26 +126,26 @@
             <span>{{ panel.panel_label }}</span></a>
 
           <a class="usermenu__item" data-admin-only hidden
-             href="{{ panel.base_url }}/admin/cuentas">
+             href="{{ panel.base_url }}/admin/accounts">
             <span class="usermenu__icons">{% include "partials/icon-shield.svg.j2" %}</span>
             <span>{{ panel.admin_label }}</span></a>
 
           {#- El panel va primero porque es a lo que se dedica la empresa: lo
               demás son ajustes de la cuenta, y se buscan cuando hace falta. -#}
           <a class="usermenu__item" data-client-only hidden
-             href="{{ panel.base_url }}/panel">
+             href="{{ panel.base_url }}/dashboard">
             <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
             <span>{{ panel.panel_label }}</span></a>
 
           {#- Debajo de Estadísticas y solo para clientes, igual que en el
               panel: una cuenta de administrador no tiene a quién escribirle. -#}
           <a class="usermenu__item" data-client-only hidden
-             href="{{ panel.base_url }}/envios">
+             href="{{ panel.base_url }}/campaigns">
             <span class="usermenu__icons">{% include "partials/icon-send.svg.j2" %}</span>
             <span>{{ panel.send_label }}</span></a>
 
           <a class="usermenu__item" data-client-only hidden
-             href="{{ panel.base_url }}/contactos">
+             href="{{ panel.base_url }}/contacts">
             <span class="usermenu__icons">{% include "partials/icon-people.svg.j2" %}</span>
             <span>{{ panel.contacts_label }}</span></a>
 
@@ -153,12 +153,12 @@
               El mismo orden que el menú del panel, que tiene que decir lo
               mismo que este. -#}
           <a class="usermenu__item" data-client-only hidden
-             href="{{ panel.base_url }}/plantillas">
+             href="{{ panel.base_url }}/templates">
             <span class="usermenu__icons">{% include "partials/icon-mail.svg.j2" %}</span>
             <span>{{ panel.designs_label }}</span></a>
 
           <a class="usermenu__item" data-account-only hidden
-             href="{{ panel.base_url }}/configuracion">
+             href="{{ panel.base_url }}/settings">
             <span class="usermenu__icons">{% include "partials/icon-gear.svg.j2" %}</span>
             <span>{{ panel.settings_label }}</span></a>
 
@@ -197,12 +197,12 @@
               con varias cuentas. Enlaces y no formularios, los dos: este sitio
               está en otro dominio y no lleva ningún testigo del panel. -#}
           <a class="usermenu__item usermenu__group" data-account-only hidden
-             href="{{ panel.base_url }}/cambiar-cuenta">
+             href="{{ panel.base_url }}/switch-account">
             <span class="usermenu__icons">{% include "partials/icon-user.svg.j2" %}</span>
             <span>{{ panel.switch_label }}</span></a>
 
           <a class="usermenu__item" data-account-only hidden
-             href="{{ panel.base_url }}/salir">
+             href="{{ panel.base_url }}/logout">
             <span class="usermenu__icons">{% include "partials/icon-exit.svg.j2" %}</span>
             <span>{{ panel.logout_label }}</span></a>
         </div>
@@ -213,7 +213,7 @@
 
 <span class="visually-hidden" role="status" id="theme-status"></span>
 
-<main id="contenido">
+<main id="content">
 {% block main %}{% endblock %}
 </main>
 

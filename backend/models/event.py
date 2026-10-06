@@ -43,7 +43,7 @@ RUN_KINDS = (DELIVERED, BOUNCE, OPEN, CLICK, COMPLAINT)
 # Panamá y no a las 19:00, que es la medianoche de UTC.
 PERIODS = {
     "1h": {"step": timedelta(minutes=5), "count": 12, "unit": "minute"},
-    "hoy": {"step": timedelta(hours=1), "count": None, "unit": "midnight"},
+    "today": {"step": timedelta(hours=1), "count": None, "unit": "midnight"},
     "24h": {"step": timedelta(hours=1), "count": 24, "unit": "hour"},
     "7d": {"step": timedelta(days=1), "count": 7, "unit": "day"},
     "30d": {"step": timedelta(days=1), "count": 30, "unit": "day"},

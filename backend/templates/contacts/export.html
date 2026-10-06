@@ -23,11 +23,11 @@
   <form method="post" action="{{ url_for('contacts.export') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="q" value="{{ search }}">
-    <input type="hidden" name="etiqueta" value="{{ tag }}">
+    <input type="hidden" name="tag" value="{{ tag }}">
     <button class="btn" type="submit"{% if going == 0 %} disabled{% endif %}>
       {{ t('contacts_export_confirm') }}</button>
   </form>
   <a class="btn btn--outline"
-     href="{{ url_for('contacts.index', q=search, etiqueta=tag) }}">{{ t('contacts_export_back') }}</a>
+     href="{{ url_for('contacts.index', q=search, tag=tag) }}">{{ t('contacts_export_back') }}</a>
 </div>
 {% endblock %}

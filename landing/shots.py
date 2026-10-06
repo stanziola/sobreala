@@ -63,16 +63,16 @@ WIDE, TALL = 1400, 788
 # formulario en blanco, un lienzo sin nada elegido o una tarjeta sola en medio
 # de una pantalla enorme enseñan el producto apagado.
 SHOTS = (
-    {"name": "contactos", "url": "/contactos", "from": ".table-wrap"},
+    {"name": "contactos", "url": "/contacts", "from": ".table-wrap"},
     {"name": "lienzo", "from": ".editor", "pick": ".cv-item--text"},
-    {"name": "envios", "url": "/envios", "from": ".compose",
+    {"name": "envios", "url": "/campaigns", "from": ".compose",
      "fill": "(function(){var f=document.getElementById('asunto');"
              "f.value='Boletín de septiembre';"
              "var t=document.querySelectorAll('[name=lista]');"
              "if(t[1])t[1].checked=true;"
              "var r=document.querySelector('[name=cuando][value=ahora]');"
              "if(r)r.checked=true;})()"},
-    {"name": "estadisticas", "url": "/panel?periodo=30d", "from": ".rates"},
+    {"name": "estadisticas", "url": "/dashboard?period=30d", "from": ".rates"},
     # La última, y sin sesión: al enlace de baja lo abre quien recibió el
     # correo, no el cliente, así que arriba no va su menú de cuenta.
     {"name": "baja", "from": ".card", "width": 820, "guest": True},
@@ -300,7 +300,7 @@ def seed():
     from services import unsubscribe
 
     quien = contacts.by_email(db, who, "ana@ejemplo.com")
-    baja = f"/baja/{unsubscribe.sign(quien['_id'])}"
+    baja = f"/unsubscribe/{unsubscribe.sign(quien['_id'])}"
     return {"design": str(diseno), "baja": baja}
 
 
@@ -418,13 +418,13 @@ def shoot(demo: dict) -> dict[str, dict[str, bytes]]:
     panel = start_panel(work / "panel.log")
     chrome = None
     try:
-        wait_for(f"http://127.0.0.1:{PANEL_PORT}/entrar")
+        wait_for(f"http://127.0.0.1:{PANEL_PORT}/login")
         chrome = subprocess.Popen(
             [CHROME, "--headless=new", "--disable-gpu",
              f"--remote-debugging-port={PORT}", f"--user-data-dir={work / 'chrome'}",
              "--no-first-run", "--hide-scrollbars",
              "--force-device-scale-factor=2", "--window-size=1500,1000",
-             f"http://127.0.0.1:{PANEL_PORT}/entrar"],
+             f"http://127.0.0.1:{PANEL_PORT}/login"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         ws = None
         for _ in range(60):
@@ -452,7 +452,7 @@ def shoot(demo: dict) -> dict[str, dict[str, bytes]]:
         time.sleep(3)
 
         sitios = {
-            "lienzo": f"/plantillas/lienzo/{demo['design']}",
+            "lienzo": f"/templates/canvas/{demo['design']}",
             "baja": demo["baja"],
         }
         made = {}

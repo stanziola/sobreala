@@ -27,15 +27,15 @@
         {% else %}
         <form method="post">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="cuenta" value="{{ one.account._id }}">
+          <input type="hidden" name="account" value="{{ one.account._id }}">
           <button class="btn btn--small" type="submit">{{ t('accounts_use') }}</button>
         </form>
         {% endif %}
 
         <form method="post">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="cuenta" value="{{ one.account._id }}">
-          <input type="hidden" name="accion" value="quitar">
+          <input type="hidden" name="account" value="{{ one.account._id }}">
+          <input type="hidden" name="action" value="quitar">
           <button class="btn btn--small btn--outline" type="submit">{{ t('accounts_drop') }}</button>
         </form>
       </span>
@@ -47,7 +47,7 @@
   {# Agregar pasa por la pantalla de entrar entera: aquí no se abre ninguna
      puerta que no estuviera ya abierta. #}
   <p class="switcher__add">
-    <a class="btn btn--outline" href="{{ url_for('auth.login', agregar=1) }}">{{ t('accounts_add') }}</a>
+    <a class="btn btn--outline" href="{{ url_for('auth.login', add=1) }}">{{ t('accounts_add') }}</a>
   </p>
   {% else %}
   <p class="hint">{{ t('accounts_full', n=max_accounts) }}</p>

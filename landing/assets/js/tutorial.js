@@ -1,4 +1,4 @@
-/* Los tutoriales de /como-funciona. Sin dependencias, como carousel.js.
+/* Los tutoriales de /how-it-works. Sin dependencias, como carousel.js.
 
    Sin este archivo la sección se lee entera: cada recorrido con todos sus pasos,
    uno debajo del otro. Con él es un reproductor: un recorrido a la vez, un paso

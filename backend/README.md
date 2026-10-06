@@ -24,11 +24,11 @@ Queda en `http://127.0.0.1:5000/`.
 
 | Ruta | Qué hace |
 |---|---|
-| `/registro` | Crear cuenta y recibir el código de confirmación |
-| `/confirmar` | Escribir el código de 6 dígitos; vale una sola vez y entra a la cuenta |
-| `/reenviar-confirmacion` | Pide otro código |
-| `/entrar` · `/salir` | Sesión |
-| `/panel` | Panel vacío, con aviso si el correo no está confirmado |
+| `/signup` | Crear cuenta y recibir el código de confirmación |
+| `/confirm` | Escribir el código de 6 dígitos; vale una sola vez y entra a la cuenta |
+| `/resend-confirmation` | Pide otro código |
+| `/login` · `/logout` | Sesión |
+| `/dashboard` | Panel vacío, con aviso si el correo no está confirmado |
 
 ## Correo
 
@@ -107,7 +107,7 @@ Falta:
 3. En Railway: `MAIL_BACKEND=ses`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
    `AWS_REGION=us-east-2` y `SYSTEM_FROM_EMAIL=notifications@sobreala.com`.
 
-`curl https://panel.sobreala.com/salud` responde con `"mail": "ses"` cuando el
+`curl https://app.sobreala.com/health` responde con `"mail": "ses"` cuando el
 despliegue tomó las variables. Si falta una credencial, la aplicación **no
 arranca** y lo dice en el registro de Railway: es preferible a descubrirlo con
 el primer cliente que intente registrarse.
@@ -116,10 +116,10 @@ Falta todavía el webhook de SNS para rebotes y quejas (blueprint `webhooks/`),
 que es lo que llenará `suppressions` sin intervención. Para unos pocos correos
 transaccionales se revisa a mano en `mail_log`; para campañas es obligatorio.
 
-## Comprobar que está vivo: `/salud`
+## Comprobar que está vivo: `/health`
 
 ```
-curl https://panel.sobreala.com/salud
+curl https://app.sobreala.com/health
 ```
 
 Devuelve JSON y se lee desde fuera, sin entrar a ningún panel:
@@ -150,7 +150,7 @@ arrancar a propósito**: antes sí lo hacía, y una base momentáneamente inacce
 mataba todos los procesos al importar, lo que la plataforma reportaba como un 502
 pelado sin nada legible. Ahora se crean de forma perezosa, en la primera petición
 que lo consiga. El índice único del correo es lo que impide cuentas duplicadas,
-así que no puede faltar en silencio: por eso `/salud` lo informa.
+así que no puede faltar en silencio: por eso `/health` lo informa.
 
 ## Base de datos
 
@@ -201,7 +201,7 @@ Tres cosas que conviene no perder de vista:
   plataforma deba ignorar su propio tráfico. Es lo que hace visible un ataque de
   fuerza bruta contra una cuenta concreta.
 - **No sirven para diagnosticar una base caída.** Viven en el mismo Mongo, así
-  que si Atlas no responde no se escribe nada. Para eso están `/salud` y los
+  que si Atlas no responde no se escribe nada. Para eso están `/health` y los
   registros de Railway.
 
 ## Decisiones que conviene no deshacer
@@ -240,11 +240,16 @@ certificado necesita que el servicio ya exista.
    `Procfile`. Ese archivo tiene que listar los paquetes uno por uno: una línea
    `-r backend/requirements.txt` la entiende pip pero no Railpack, y el
    despliegue falla con «could not determine how to build the app».
-2. Pegar las variables de abajo en su panel. `APP_BASE_URL` se deja para el
-   paso 5.
+   **El `Procfile` no lleva comentarios**: Railway lee cada línea con dos
+   puntos como un servicio aparte, y uno de ellos acabó creado y caído. En
+   local no se usa, porque gunicorn no corre en Windows: ahí se arranca con
+   `python backend/wsgi.py`.
+2. Pegar las variables de abajo en su panel, **`APP_BASE_URL` incluida**: en
+   producción el panel no arranca si apunta a `127.0.0.1` (`Config.check()`),
+   y puede ir puesta aunque el dominio todavía no exista.
 3. En **Atlas**, permitir la conexión desde cualquier origen. Los servidores de
    Railway no tienen dirección fija; la base queda protegida por sus credenciales.
-4. En **Railway**, agregar el dominio `panel.sobreala.com`. Te dará un destino.
+4. En **Railway**, agregar el dominio `app.sobreala.com`. Te dará un destino.
 5. En **Cloudflare**, crear un `CNAME` de `panel` hacia ese destino, **en gris,
    sin el proxy naranja**, para que Railway pueda emitir el certificado.
    **Con el proxy encendido antes de que el certificado exista, Cloudflare no
@@ -253,11 +258,6 @@ certificado necesita que el servicio ya exista.
    entonces el modo SSL tiene que ser **Full (strict)**: con «Flexible»,
    Cloudflare habla HTTP con el origen y la galleta de sesión, que va marcada
    como segura, no deja iniciar sesión.
-6. Poner `APP_BASE_URL=https://panel.sobreala.com` y volver a desplegar.
-
-**El paso 6 es el que más se olvida.** El código de confirmación no lleva
-enlace, pero el aviso de «ya tienes una cuenta» sí, y sin este paso apunta a
-`127.0.0.1`.
 
 ### Variables para el panel de Railway
 
@@ -268,7 +268,7 @@ FLASK_ENV=production
 SECRET_KEY=            (una NUEVA, distinta a la de tu computadora)
 MONGODB_URI=           (la de Atlas)
 MONGODB_DB=sobreala_app
-APP_BASE_URL=https://panel.sobreala.com
+APP_BASE_URL=https://app.sobreala.com
 PUBLIC_SITE_URL=https://sobreala.com
 CONFIRMATION_CODE_MINUTES=30
 MAIL_BACKEND=file      (hasta que SES esté verificado; después ses)

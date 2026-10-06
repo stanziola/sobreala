@@ -22,7 +22,7 @@ def other(client):
     return client.application.test_client()
 
 
-def csrf(client, url="/configuracion"):
+def csrf(client, url="/settings"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
@@ -34,22 +34,22 @@ def save(client, **wanted):
     An unchecked switch sends nothing at all, which is what a browser does, so
     the test has to leave those keys out rather than send them as false.
     """
-    token = csrf(client, "/configuracion/notificaciones")
+    token = csrf(client, "/settings/notifications")
     data = {"csrf_token": token}
     data.update({name: "on" for name, on in wanted.items() if on})
-    return client.post("/configuracion/notificaciones", data=data)
+    return client.post("/settings/notifications", data=data)
 
 
 def turn_on_two_step(client):
     # Dos pasos: primero la contraseña, después el QR.
-    client.get("/cuenta/dos-pasos")
+    client.get("/account/two-factor")
     with client.session_transaction() as sess:
         token = sess["_csrf"]
-    client.post("/cuenta/dos-pasos", data={"csrf_token": token, "password": PASSWORD})
-    client.get("/cuenta/dos-pasos/activar")
+    client.post("/account/two-factor", data={"csrf_token": token, "password": PASSWORD})
+    client.get("/account/two-factor/enable")
     with client.session_transaction() as sess:
         secret, token = sess["two_factor_setup"], sess["_csrf"]
-    client.post("/cuenta/dos-pasos/activar", data={
+    client.post("/account/two-factor/enable", data={
         "csrf_token": token, "code": list(pyotp.TOTP(secret).now())})
     return secret
 
@@ -70,8 +70,8 @@ def test_turning_two_step_on_and_off_is_announced(client, database, outbox):
     assert bodies(outbox, "ya pide un segundo paso")
     assert database.mail_log.count_documents({"purpose": mail_log.TWO_FACTOR}) == 1
 
-    inside.post("/cuenta/dos-pasos", data={
-        "csrf_token": csrf(inside, "/cuenta/dos-pasos"),
+    inside.post("/account/two-factor", data={
+        "csrf_token": csrf(inside, "/account/two-factor"),
         "action": "disable", "password": PASSWORD})
     assert bodies(outbox, "dejó de pedir el segundo paso")
     assert database.mail_log.count_documents({"purpose": mail_log.TWO_FACTOR}) == 2
@@ -123,10 +123,10 @@ def test_the_new_device_notice_goes_out_when_nothing_was_chosen(client, database
                                                                 outbox):
     register(client)
     phone = other(client)
-    phone.get("/entrar", headers={"User-Agent": PHONE})
+    phone.get("/login", headers={"User-Agent": PHONE})
     with phone.session_transaction() as sess:
         token = sess["_csrf"]
-    phone.post("/entrar", headers={"User-Agent": PHONE}, data={
+    phone.post("/login", headers={"User-Agent": PHONE}, data={
         "csrf_token": token, "email": "ana@ejemplo.com", "password": PASSWORD})
 
     assert bodies(outbox, "dispositivo nuevo")
@@ -147,21 +147,21 @@ def test_turning_the_new_device_notice_off_stops_it(client, database, outbox):
     before = len(bodies(outbox, "dispositivo nuevo"))
 
     phone = other(client)
-    phone.get("/entrar", headers={"User-Agent": PHONE})
+    phone.get("/login", headers={"User-Agent": PHONE})
     with phone.session_transaction() as sess:
         token = sess["_csrf"]
-    phone.post("/entrar", headers={"User-Agent": PHONE}, data={
+    phone.post("/login", headers={"User-Agent": PHONE}, data={
         "csrf_token": token, "email": "ana@ejemplo.com", "password": PASSWORD})
 
     assert len(bodies(outbox, "dispositivo nuevo")) == before
-    assert phone.get("/panel").status_code == 200      # it still got in
+    assert phone.get("/dashboard").status_code == 200      # it still got in
 
 
 def test_a_stale_form_saves_nothing(client, database, outbox):
     register(client)
     inside = other(client)
     login(inside)
-    inside.post("/configuracion/notificaciones",
+    inside.post("/settings/notifications",
                 data={"csrf_token": "de-ayer", "billing": "on"})
 
     assert "notifications" not in accounts.by_email(database, "ana@ejemplo.com")
@@ -170,21 +170,21 @@ def test_a_stale_form_saves_nothing(client, database, outbox):
 # ------------------------------------------------------------- the screen
 
 def test_settings_need_a_session(client, database):
-    assert client.get("/configuracion").status_code == 302
-    assert client.get("/configuracion/seguridad").status_code == 302
+    assert client.get("/settings").status_code == 302
+    assert client.get("/settings/security").status_code == 302
 
 
 def test_an_invented_section_lands_on_the_first_one(client, database, outbox):
     register(client)
     inside = other(client)
     login(inside)
-    answer = inside.get("/configuracion/inventada")
+    answer = inside.get("/settings/inventada")
 
     assert answer.status_code == 302
     # A la primera suya, nombrada: para un cliente es Cuenta y para un
     # administrador Seguridad, así que la dirección lo dice en vez de depender
     # de cuál sea el valor por omisión de la vista.
-    assert answer.headers["Location"].endswith("/configuracion/cuenta")
+    assert answer.headers["Location"].endswith("/settings/account")
 
 
 def test_each_section_draws_its_own(client, database, outbox):
@@ -192,16 +192,16 @@ def test_each_section_draws_its_own(client, database, outbox):
     inside = other(client)
     login(inside)
 
-    account = inside.get("/configuracion").get_data(as_text=True)
+    account = inside.get("/settings").get_data(as_text=True)
     assert "Cooperativa Ejemplo" in account
     assert "ana@ejemplo.com" in account
 
-    security = inside.get("/configuracion/seguridad").get_data(as_text=True)
-    assert "/cambiar-contrasena" in security
-    assert "/cuenta/dos-pasos" in security
+    security = inside.get("/settings/security").get_data(as_text=True)
+    assert "/change-password" in security
+    assert "/account/two-factor" in security
     assert "Tus dispositivos" in security
 
-    notices = inside.get("/configuracion/notificaciones").get_data(as_text=True)
+    notices = inside.get("/settings/notifications").get_data(as_text=True)
     # Los de seguridad: encendidos y bloqueados, sin frase que lo diga.
     assert "switch--locked" in notices
     assert "Siempre activo" not in notices
@@ -209,7 +209,7 @@ def test_each_section_draws_its_own(client, database, outbox):
     # The fixed ones are listed, and none of them is a field that could be sent.
     assert 'name="password_changed"' not in notices
 
-    payments = inside.get("/configuracion/pagos").get_data(as_text=True)
+    payments = inside.get("/settings/billing").get_data(as_text=True)
     assert "PayPal" in payments and "Yappy" in payments
     assert "Próximamente" in payments
 
@@ -230,7 +230,7 @@ def test_el_administrador_tiene_notificaciones_y_son_las_suyas(
     cliente no se le dibujan: no recibiría ninguno de esos correos."""
     inside, _ = admin_inside(client, database)
 
-    pantalla = inside.get("/configuracion/notificaciones").get_data(as_text=True)
+    pantalla = inside.get("/settings/notifications").get_data(as_text=True)
 
     assert 'name="admin_payment"' in pantalla
     assert 'name="admin_signup"' in pantalla
@@ -244,8 +244,8 @@ def test_el_administrador_tiene_notificaciones_y_son_las_suyas(
 def test_el_administrador_guarda_solo_sus_avisos(client, database, outbox):
     inside, cuenta = admin_inside(client, database)
 
-    token = csrf(inside, "/configuracion/notificaciones")
-    inside.post("/configuracion/notificaciones", data={
+    token = csrf(inside, "/settings/notifications")
+    inside.post("/settings/notifications", data={
         "csrf_token": token, "admin_payment": "on",
         # Uno que no es suyo: se descarta en vez de guardarse.
         "campaigns": "on"})
@@ -261,7 +261,7 @@ def test_an_account_with_no_plan_says_so(client, database, outbox):
     inside = other(client)
     login(inside)
 
-    assert "Sin plan contratado" in inside.get("/configuracion").get_data(as_text=True)
+    assert "Sin plan contratado" in inside.get("/settings").get_data(as_text=True)
 
 
 def test_the_panel_no_longer_holds_the_settings(client, database, outbox):
@@ -269,10 +269,10 @@ def test_the_panel_no_longer_holds_the_settings(client, database, outbox):
     register(client)
     inside = other(client)
     login(inside)
-    panel = inside.get("/panel").get_data(as_text=True)
+    panel = inside.get("/dashboard").get_data(as_text=True)
 
     assert "Tus dispositivos" not in panel
-    assert "/configuracion" in panel
+    assert "/settings" in panel
 
 
 # --------------------------------------------------------------- signing out
@@ -288,10 +288,10 @@ def test_the_sign_out_link_signs_out(client, database, outbox):
     inside = other(client)
     login(inside)
 
-    salida = inside.get("/salir")
+    salida = inside.get("/logout")
     assert salida.status_code == 302
-    assert salida.headers["Location"].endswith("/entrar")
-    assert inside.get("/panel").status_code == 302
+    assert salida.headers["Location"].endswith("/login")
+    assert inside.get("/dashboard").status_code == 302
 
 
 def test_a_prefetched_sign_out_closes_nothing(client, database, outbox):
@@ -303,9 +303,9 @@ def test_a_prefetched_sign_out_closes_nothing(client, database, outbox):
         inside = other(client)
         login(inside, email=f"{cabecera.lower()}@ejemplo.com")
 
-        adelantada = inside.get("/salir", headers={cabecera: "prefetch"})
+        adelantada = inside.get("/logout", headers={cabecera: "prefetch"})
         assert adelantada.status_code == 200, cabecera
-        assert inside.get("/panel").status_code == 200, cabecera
+        assert inside.get("/dashboard").status_code == 200, cabecera
 
 
 def test_signing_out_kills_the_session_document(client, database, outbox):
@@ -319,7 +319,7 @@ def test_signing_out_kills_the_session_document(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert len(sessions.for_account(database, cuenta["_id"])) == 1
 
-    inside.get("/salir")
+    inside.get("/logout")
     assert sessions.for_account(database, cuenta["_id"]) == []
 
 
@@ -329,12 +329,12 @@ def test_the_sign_out_form_still_needs_its_token(client, database, outbox):
     inside = other(client)
     login(inside)
 
-    inside.post("/salir", data={"csrf_token": "no-es"})
-    assert inside.get("/panel").status_code == 200
+    inside.post("/logout", data={"csrf_token": "no-es"})
+    assert inside.get("/dashboard").status_code == 200
 
 
 def test_the_sign_out_page_needs_a_session(client, database):
-    assert client.get("/salir").status_code == 302
+    assert client.get("/logout").status_code == 302
 
 
 # --------------------------------------- varias cuentas abiertas a la vez
@@ -360,20 +360,20 @@ def abiertas(browser, database):
 
 def add_account(browser, email, password=PASSWORD):
     """Agregar una cuenta desde la pantalla de entrar, como lo hace la pantalla."""
-    browser.get("/entrar?agregar=1")
+    browser.get("/login?add=1")
     with browser.session_transaction() as sess:
         token = sess["_csrf"]
-    return browser.post("/entrar?agregar=1", data={
+    return browser.post("/login?add=1", data={
         "csrf_token": token, "email": email, "password": password,
         "remember": "1"})
 
 
 def switch_to(browser, account_id, accion=""):
-    data = {"csrf_token": csrf(browser, "/cambiar-cuenta"),
-            "cuenta": str(account_id)}
+    data = {"csrf_token": csrf(browser, "/switch-account"),
+            "account": str(account_id)}
     if accion:
-        data["accion"] = accion
-    return browser.post("/cambiar-cuenta", data=data)
+        data["action"] = accion
+    return browser.post("/switch-account", data=data)
 
 
 def two_accounts(client, database):
@@ -401,7 +401,7 @@ def test_dos_cuentas_abiertas_y_se_salta_sin_contrasena(client, database, outbox
     assert salto.status_code == 302
     assert quien(browser, database) == una
     assert set(abiertas(browser, database)) == {una, dos}
-    assert browser.get("/panel").status_code == 200
+    assert browser.get("/dashboard").status_code == 200
 
 
 def test_las_dos_son_sesiones_de_verdad(client, database, outbox):
@@ -418,7 +418,7 @@ def test_las_dos_son_sesiones_de_verdad(client, database, outbox):
 def test_la_pantalla_lista_las_dos_y_dice_en_cual_estas(client, database, outbox):
     browser, una, dos = two_accounts(client, database)
 
-    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    pantalla = browser.get("/switch-account").get_data(as_text=True)
     assert "una@ejemplo.com" in pantalla
     assert "dos@ejemplo.com" in pantalla
     assert "Estás aquí" in pantalla
@@ -433,7 +433,7 @@ def test_volver_lleva_a_la_portada(client, database, outbox):
 
     browser, _, _ = two_accounts(client, database)
 
-    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    pantalla = browser.get("/switch-account").get_data(as_text=True)
     assert f'<a href="{Config.PUBLIC_SITE_URL}">Volver</a>' in pantalla
 
 
@@ -471,7 +471,7 @@ def test_la_pantalla_no_dibuja_ningun_testigo(client, database, outbox):
     """Un testigo en el HTML sería la sesión escrita en la página."""
     browser, _, _ = two_accounts(client, database)
 
-    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    pantalla = browser.get("/switch-account").get_data(as_text=True)
     with browser.session_transaction() as sess:
         testigos = list(sess.get("sids") or [])
     assert testigos
@@ -500,11 +500,11 @@ def test_cerrar_este_dispositivo_deja_las_otras(client, database, outbox):
     browser, una, dos = two_accounts(client, database)
     este = sessions.for_account(database, dos)[0]["_id"]
 
-    respuesta = browser.post("/dispositivos/cerrar", data={
-        "csrf_token": csrf(browser, "/configuracion/seguridad"),
+    respuesta = browser.post("/devices/close", data={
+        "csrf_token": csrf(browser, "/settings/security"),
         "session_id": str(este)})
 
-    assert respuesta.headers["Location"].endswith("/cambiar-cuenta")
+    assert respuesta.headers["Location"].endswith("/switch-account")
     assert sessions.for_account(database, dos) == []
     # La otra sigue abierta, viva y en la galleta, que sigue durando lo mismo.
     assert abiertas(browser, database) == [una]
@@ -519,11 +519,11 @@ def test_cerrar_sesion_las_cierra_todas(client, database, outbox):
 
     browser, una, dos = two_accounts(client, database)
 
-    browser.post("/salir", data={"csrf_token": csrf(browser)})
+    browser.post("/logout", data={"csrf_token": csrf(browser)})
 
     assert sessions.for_account(database, una) == []
     assert sessions.for_account(database, dos) == []
-    assert browser.get("/panel").status_code == 302
+    assert browser.get("/dashboard").status_code == 302
 
 
 def test_entrar_de_cero_cierra_lo_que_el_navegador_tuviera(client, database, outbox):
@@ -539,7 +539,7 @@ def test_entrar_de_cero_cierra_lo_que_el_navegador_tuviera(client, database, out
 
     browser, una, dos = two_accounts(client, database)
     sessions.revoke_others(database, dos)
-    assert browser.get("/panel").status_code == 302
+    assert browser.get("/dashboard").status_code == 302
 
     login(browser, email="una@ejemplo.com")
 
@@ -553,7 +553,7 @@ def test_una_cerrada_desde_otro_dispositivo_desaparece(client, database, outbox)
     browser, una, dos = two_accounts(client, database)
     sessions.revoke_others(database, una)  # como «cerrar las otras» en Seguridad
 
-    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    pantalla = browser.get("/switch-account").get_data(as_text=True)
     assert "una@ejemplo.com" not in pantalla
     assert abiertas(browser, database) == [dos]
 
@@ -562,7 +562,7 @@ def test_una_suspendida_desaparece(client, database, outbox):
     browser, una, dos = two_accounts(client, database)
     accounts.set_status(database, una, accounts.SUSPENDED)
 
-    pantalla = browser.get("/cambiar-cuenta").get_data(as_text=True)
+    pantalla = browser.get("/switch-account").get_data(as_text=True)
     assert "una@ejemplo.com" not in pantalla
     # Y la lista queda limpia, no solo sin dibujar.
     assert abiertas(browser, database) == [dos]
@@ -604,10 +604,10 @@ def test_agregar_con_dos_pasos_pide_el_codigo(client, database, outbox):
     browser = other(client)
     login(browser, email="una@ejemplo.com")
     respuesta = add_account(browser, "dos@ejemplo.com")
-    assert respuesta.headers["Location"].endswith("/entrar/codigo")
+    assert respuesta.headers["Location"].endswith("/login/code")
 
-    browser.post("/entrar/codigo", data={
-        "csrf_token": csrf(browser, "/entrar/codigo"),
+    browser.post("/login/code", data={
+        "csrf_token": csrf(browser, "/login/code"),
         "code": list(pyotp.TOTP(secreto).now())})
 
     una = accounts.by_email(database, "una@ejemplo.com")["_id"]
@@ -619,8 +619,8 @@ def test_agregar_con_dos_pasos_pide_el_codigo(client, database, outbox):
 def test_saltar_necesita_su_testigo(client, database, outbox):
     browser, una, dos = two_accounts(client, database)
 
-    browser.post("/cambiar-cuenta", data={"csrf_token": "no-es",
-                                          "cuenta": str(una)})
+    browser.post("/switch-account", data={"csrf_token": "no-es",
+                                          "account": str(una)})
 
     assert quien(browser, database) == dos
 
@@ -637,7 +637,7 @@ def test_no_se_puede_saltar_a_una_cuenta_que_no_esta_abierta(client, database, o
 
 
 def test_sin_ninguna_abierta_lleva_a_entrar(client, database):
-    assert client.get("/cambiar-cuenta").status_code == 302
+    assert client.get("/switch-account").status_code == 302
 
 
 def test_both_menus_offer_the_switch(client, database, outbox):
@@ -649,24 +649,24 @@ def test_both_menus_offer_the_switch(client, database, outbox):
     inside = other(client)
     login(inside)
 
-    panel = inside.get("/panel").get_data(as_text=True)
+    panel = inside.get("/dashboard").get_data(as_text=True)
     assert "Cambiar de cuenta" in panel
-    assert "/cambiar-cuenta" in panel
+    assert "/switch-account" in panel
 
     raiz = Path(__file__).resolve().parent.parent.parent
     sitio = (raiz / "landing" / "index.html").read_text(encoding="utf-8")
     assert "Cambiar de cuenta" in sitio
-    assert "/cambiar-cuenta" in sitio
+    assert "/switch-account" in sitio
 
 
 # ------------------------------------ crear otra cuenta sin cerrar la abierta
 
 def register_another(browser, email, company="Otra Cooperativa"):
     """Registrar desde dentro de otra cuenta, como lo hace la pantalla."""
-    browser.get("/registro?agregar=1")
+    browser.get("/signup?add=1")
     with browser.session_transaction() as sess:
         token = sess["_csrf"]
-    return browser.post("/registro?agregar=1", data={
+    return browser.post("/signup?add=1", data={
         "csrf_token": token, "company_name": company, "contact_name": "Bea",
         "email": email, "phone": "60000000", "password": PASSWORD})
 
@@ -678,12 +678,12 @@ def test_la_pantalla_de_agregar_ofrece_crear_una(client, database, outbox):
     browser = other(client)
     login(browser, email="una@ejemplo.com")
 
-    pantalla = browser.get("/entrar?agregar=1").get_data(as_text=True)
+    pantalla = browser.get("/login?add=1").get_data(as_text=True)
 
     assert "<h1>Agregar una cuenta</h1>" in pantalla
     assert "¿Te gustaría crear otra cuenta?" in pantalla
     assert "no tienes cuenta" not in pantalla
-    assert "/registro?agregar=1" in pantalla
+    assert "/signup?add=1" in pantalla
     # Sin el recuadro que lo explicaba.
     assert "Vas a agregar otra cuenta" not in pantalla
 
@@ -697,14 +697,14 @@ def test_se_crea_otra_cuenta_y_la_primera_sigue_abierta(client, database, outbox
 
     # El formulario se dibuja en vez de devolver a la portada, sin las dos
     # frases que tenía encima.
-    formulario = browser.get("/registro?agregar=1")
+    formulario = browser.get("/signup?add=1")
     assert formulario.status_code == 200
     assert "Vas a crear otra cuenta" not in formulario.get_data(as_text=True)
     assert "Con tu cuenta puedes" not in formulario.get_data(as_text=True)
     # El pie es el del registro de siempre, y entrar sigue siendo agregar.
     pie = formulario.get_data(as_text=True).split('class="foot"')[1]
     assert "¿Ya tienes una cuenta?" in pie and "Esa cuenta ya existe" not in pie
-    assert '<a href="/entrar?agregar=1">Iniciar sesión</a>' in pie
+    assert '<a href="/login?add=1">Iniciar sesión</a>' in pie
 
     register_another(browser, "dos@ejemplo.com")
     confirm(browser, code_from_outbox(outbox))
@@ -716,14 +716,14 @@ def test_se_crea_otra_cuenta_y_la_primera_sigue_abierta(client, database, outbox
 
 
 def test_el_registro_sin_la_marca_sigue_devolviendo(client, database, outbox):
-    """Quien ya está dentro y abre /registro sin más no tiene nada que hacer ahí."""
+    """Quien ya está dentro y abre /signup sin más no tiene nada que hacer ahí."""
     from config import Config
 
     register(client, email="una@ejemplo.com")
     browser = other(client)
     login(browser, email="una@ejemplo.com")
 
-    respuesta = browser.get("/registro")
+    respuesta = browser.get("/signup")
 
     assert respuesta.status_code == 302
     assert respuesta.headers["Location"] == Config.PUBLIC_SITE_URL
@@ -737,15 +737,15 @@ def test_otro_codigo_al_crear_otra_va_a_la_nueva(client, database, outbox):
     login(browser, email="una@ejemplo.com")
     register_another(browser, "dos@ejemplo.com")
 
-    browser.post("/reenviar-confirmacion",
-                 data={"csrf_token": csrf(browser, "/confirmar")})
+    browser.post("/resend-confirmation",
+                 data={"csrf_token": csrf(browser, "/confirm")})
 
     ultimo = list(database.mail_log.find({"purpose": mail_log.CONFIRM}))[-1]
     assert ultimo["to"] == "dos@ejemplo.com"
 
 
 def test_el_correo_ya_registrado_lleva_a_entrar_agregando(client, database, outbox):
-    """El enlace del aviso llevaba a /entrar, que con una sesión abierta
+    """El enlace del aviso llevaba a /login, que con una sesión abierta
     devuelve a la portada."""
     register(client, email="una@ejemplo.com")
     register(client, email="dos@ejemplo.com")
@@ -755,4 +755,4 @@ def test_el_correo_ya_registrado_lleva_a_entrar_agregando(client, database, outb
     pantalla = register_another(browser, "dos@ejemplo.com").get_data(as_text=True)
 
     aviso = pantalla.split('<p class="error">')[1].split("</p>")[0]
-    assert '<a href="/entrar?agregar=1">Iniciar sesión</a>' in aviso
+    assert '<a href="/login?add=1">Iniciar sesión</a>' in aviso

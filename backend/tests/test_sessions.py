@@ -40,20 +40,20 @@ def otro(client):
 
 def cambiar(client, current="Contrasena-Larga1", nueva="Contrasena-Nueva2!",
             repetir=None):
-    client.get("/cambiar-contrasena")
+    client.get("/change-password")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/cambiar-contrasena", data={
+    return client.post("/change-password", data={
         "csrf_token": csrf, "current": current, "password": nueva,
         "repeat": nueva if repetir is None else repetir,
     })
 
 
 def cerrar(client, session_id):
-    client.get("/panel")
+    client.get("/dashboard")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/dispositivos/cerrar",
+    return client.post("/devices/close",
                        data={"csrf_token": csrf, "session_id": session_id})
 
 
@@ -67,22 +67,22 @@ def test_two_devices_can_be_signed_in_at_once(client, database, outbox):
     login(computadora)
 
     assert database.sessions.count_documents({"revoked_at": None}) == 2
-    assert telefono.get("/panel").status_code == 200
-    assert computadora.get("/panel").status_code == 200
+    assert telefono.get("/dashboard").status_code == 200
+    assert computadora.get("/dashboard").status_code == 200
 
 
 def test_the_settings_screen_lists_the_devices(client, database, outbox):
     register(client)
     navegador = otro(client)
-    navegador.get("/entrar")
+    navegador.get("/login")
     with navegador.session_transaction() as sess:
         csrf = sess["_csrf"]
-    navegador.post("/entrar", data={
+    navegador.post("/login", data={
         "csrf_token": csrf, "email": "ana@ejemplo.com",
         "password": "Contrasena-Larga1", "remember": "1",
     }, headers={"User-Agent": "Mozilla/5.0 (iPhone) AppleWebKit Safari/605.1"})
 
-    body = navegador.get("/configuracion/seguridad").get_data(as_text=True)
+    body = navegador.get("/settings/security").get_data(as_text=True)
     assert "Tus dispositivos" in body
     assert "Safari en iPhone" in body
     assert "Este dispositivo" in body
@@ -99,8 +99,8 @@ def test_closing_one_device_leaves_the_other_inside(client, database, outbox):
     cerrar(computadora, del_telefono["_id"])
 
     # El teléfono queda fuera y su cookie deja de servir; la computadora sigue.
-    assert telefono.get("/panel").status_code == 302
-    assert computadora.get("/panel").status_code == 200
+    assert telefono.get("/dashboard").status_code == 302
+    assert computadora.get("/dashboard").status_code == 200
     assert database.sessions.count_documents({"revoked_at": None}) == 1
 
 
@@ -112,9 +112,9 @@ def test_closing_the_others_leaves_only_this_one(client, database, outbox):
 
     cerrar(tres, "otras")
 
-    assert tres.get("/panel").status_code == 200
-    assert uno.get("/panel").status_code == 302
-    assert dos.get("/panel").status_code == 302
+    assert tres.get("/dashboard").status_code == 200
+    assert uno.get("/dashboard").status_code == 302
+    assert dos.get("/dashboard").status_code == 302
     vivas = sessions.for_account(database,
                                  accounts.by_email(database, "ana@ejemplo.com")["_id"])
     assert len(vivas) == 1
@@ -126,8 +126,8 @@ def test_closing_the_device_in_use_is_signing_out(client, database, outbox):
     login(navegador)
 
     respuesta = cerrar(navegador, sessions.find(database, sid(navegador))["_id"])
-    assert respuesta.headers["Location"].endswith("/entrar")
-    assert navegador.get("/panel").status_code == 302
+    assert respuesta.headers["Location"].endswith("/login")
+    assert navegador.get("/dashboard").status_code == 302
 
 
 def test_a_session_id_from_another_account_closes_nothing(client, database, outbox):
@@ -141,7 +141,7 @@ def test_a_session_id_from_another_account_closes_nothing(client, database, outb
     cerrar(beto, sessions.find(database, sid(ajena))["_id"])
 
     # Beto no puede cerrar lo que no es suyo: el update va acotado a su cuenta.
-    assert ajena.get("/panel").status_code == 200
+    assert ajena.get("/dashboard").status_code == 200
 
 
 # ------------------------------------------------------------- the cookie
@@ -161,10 +161,10 @@ def test_without_the_checkbox_the_cookie_dies_with_the_browser(client, database,
                                                                outbox):
     register(client)
     navegador = otro(client)
-    navegador.get("/entrar")
+    navegador.get("/login")
     with navegador.session_transaction() as sess:
         csrf = sess["_csrf"]
-    respuesta = navegador.post("/entrar", data={
+    respuesta = navegador.post("/login", data={
         "csrf_token": csrf, "email": "ana@ejemplo.com",
         "password": "Contrasena-Larga1",
     })
@@ -182,10 +182,10 @@ def test_without_the_checkbox_the_cookie_dies_with_the_browser(client, database,
 def test_with_the_checkbox_it_lasts_thirty_days(client, database, outbox):
     register(client)
     navegador = otro(client)
-    navegador.get("/entrar")
+    navegador.get("/login")
     with navegador.session_transaction() as sess:
         csrf = sess["_csrf"]
-    respuesta = navegador.post("/entrar", data={
+    respuesta = navegador.post("/login", data={
         "csrf_token": csrf, "email": "ana@ejemplo.com",
         "password": "Contrasena-Larga1", "remember": "1",
     })
@@ -202,7 +202,7 @@ def test_an_expired_session_does_not_get_in(client, database, outbox):
     login(navegador)
     database.sessions.update_one({}, {"$set": {"expires_at": now() - timedelta(minutes=1)}})
 
-    assert navegador.get("/panel").status_code == 302
+    assert navegador.get("/dashboard").status_code == 302
     # Y la cookie inservible se limpia, para no volver a preguntarle a Mongo.
     assert sid(navegador) == ""
 
@@ -213,10 +213,10 @@ def test_signing_out_closes_the_session_for_good(client, database, outbox):
     login(navegador)
     guardado = sid(navegador)
 
-    navegador.get("/panel")
+    navegador.get("/dashboard")
     with navegador.session_transaction() as sess:
         csrf = sess["_csrf"]
-    navegador.post("/salir", data={"csrf_token": csrf})
+    navegador.post("/logout", data={"csrf_token": csrf})
 
     # Quien hubiera copiado la cookie tampoco entra: la sesión está revocada.
     assert sessions.find(database, guardado) is None
@@ -260,8 +260,8 @@ def test_changing_it_closes_the_other_devices_and_keeps_this_one(client, databas
     respuesta = cambiar(computadora)
     assert respuesta.status_code == 302
 
-    assert computadora.get("/panel").status_code == 200   # la que la cambió
-    assert telefono.get("/panel").status_code == 302      # el resto, fuera
+    assert computadora.get("/dashboard").status_code == 200   # la que la cambió
+    assert telefono.get("/dashboard").status_code == 302      # el resto, fuera
     assert login(otro(client), password="Contrasena-Nueva2!").status_code == 302
     assert login(otro(client)).status_code == 200         # la vieja ya no vale
 

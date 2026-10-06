@@ -35,7 +35,7 @@ HINT_COOKIE = "sa_in"
 def hint_domain() -> str | None:
     """The parent domain both deploys hang off, or None when there is none.
 
-    The panel lives at panel.sobreala.com and the site at sobreala.com, so the
+    The panel lives at app.sobreala.com and the site at sobreala.com, so the
     crumb goes on .sobreala.com to be readable from both. Running locally there
     is nothing to share —cookies ignore ports— and the domain is left out,
     because a browser refuses one that does not match the host.
@@ -185,7 +185,7 @@ def create_app(overrides: dict | None = None) -> Flask:
                     wanted = "admin"
                 else:
                     # «1» a secas, o «1:negocio» con el plan vigente. El plan
-                    # va ahí para que /planes pueda apagar el que ya se tiene
+                    # va ahí para que /pricing pueda apagar el que ya se tiene
                     # y los menores: una página estática no lo sabe de otra
                     # forma. Vencido no va, que es cuando se vuelve a comprar.
                     # Cuesta lo mismo que costó el rol, y es el mismo trato:
@@ -318,7 +318,7 @@ def create_app(overrides: dict | None = None) -> Flask:
         app.logger.exception("error no manejado en %s", request.path)
         return error_page("error_unknown_title", "error_unknown_lead"), 500
 
-    @app.get("/salud")
+    @app.get("/health")
     def salud():
         """Is the application up, does the database answer, are the indexes in.
 

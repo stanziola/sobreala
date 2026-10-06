@@ -51,7 +51,7 @@ PER_PAGE = 100
 # El valor que toma el filtro de estado cuando lo que se quiere ver es la cola
 # de habilitación. No es un estado de la cuenta, así que no puede estar en
 # STATUSES; es una vista más de la misma lista.
-PENDING_FILTER = "sin-habilitar"
+PENDING_FILTER = "pending"
 
 
 def only_admins(view):
@@ -100,14 +100,14 @@ SHOWN = (events.LOGIN, events.LOGOUT, events.REGISTER, events.CONFIRM,
 
 
 # Las cinco fuentes de la línea de tiempo. La clave es lo que viaja en la
-# dirección —en español, como el resto de los filtros— y el valor es el tipo
+# dirección —en inglés, como el resto de los filtros— y el valor es el tipo
 # que dibuja la plantilla.
 KINDS = {
-    "entradas": "auth",
-    "pagos": "payment",
-    "correos": "campaign",
-    "contactos": "import",
-    "decisiones": "decision",
+    "logins": "auth",
+    "payments": "payment",
+    "emails": "campaign",
+    "imports": "import",
+    "decisions": "decision",
 }
 
 # Cuántas líneas se enseñan.
@@ -172,7 +172,7 @@ def activity(db, client, *, only: str = "") -> list[dict]:
 def home(account):
     """Lo mismo que ve un cliente en su pantalla, de la cuenta que elijas.
 
-    Es la misma plantilla y el mismo `services/stats.py` que usa `/panel`: la
+    Es la misma plantilla y el mismo `services/stats.py` que usa `/dashboard`: la
     gracia de esta pantalla es enseñar lo que ve él, y dos copias acabarían
     enseñando cosas distintas.
 
@@ -187,19 +187,19 @@ def home(account):
     if not clients:
         return render_template("admin/no-clients.html", admin=account)
 
-    wanted = as_id(request.args.get("cuenta"))
+    wanted = as_id(request.args.get("account"))
     whose = next((one for one in clients if one["_id"] == wanted), clients[0])
     return render_template(
         "admin/stats.html", admin=account, account=account, pick=clients,
         **stats.screen(db, whose,
-                       period=request.args.get("periodo", ""),
-                       tag=request.args.get("etiqueta", ""),
-                       campaign=request.args.get("campana", "")))
+                       period=request.args.get("period", ""),
+                       tag=request.args.get("tag", ""),
+                       campaign=request.args.get("campaign", "")))
 
 
 # ---------------------------------------------------------------- las cuentas
 
-@bp.route("/correos")
+@bp.route("/emails")
 @only_admins
 def system_mail(account):
     """Los correos del sistema que se le mandaron a una dirección, y qué dijo
@@ -216,20 +216,20 @@ def system_mail(account):
         rows=mail_log.for_address(get_db(), wanted) if wanted else [])
 
 
-@bp.route("/cuentas")
+@bp.route("/accounts")
 @only_admins
 def accounts_list(account):
     db = get_db()
-    status = request.args.get("estado", "").strip()
+    status = request.args.get("status", "").strip()
     text = request.args.get("q", "").strip()[:120]
     try:
-        skip = max(0, int(request.args.get("desde", "0")))
+        skip = max(0, int(request.args.get("since", "0")))
     except ValueError:
         skip = 0
 
     # La cola de habilitación es un filtro más y no una pantalla aparte: sigue
     # siendo la lista de lo que pide acción, pero vive donde están todas.
-    pending = request.args.get("estado") == PENDING_FILTER
+    pending = request.args.get("status") == PENDING_FILTER
     rows, total = accounts.search(db, status=status, text=text, pending=pending,
                                   limit=PER_PAGE, skip=skip)
     return render_template("admin/accounts.html", section="cuentas",
@@ -240,7 +240,7 @@ def accounts_list(account):
                            pending_filter=PENDING_FILTER)
 
 
-@bp.route("/cuentas/<raw>")
+@bp.route("/accounts/<raw>")
 @only_admins
 def account_page(account, raw):
     db = get_db()
@@ -248,7 +248,7 @@ def account_page(account, raw):
     # Un tipo que no existe se mira como si no se hubiera pedido nada: la
     # dirección la escribe cualquiera, y una página vacía por una letra de más
     # parecería que la cuenta no ha hecho nada.
-    shown = request.args.get("actividad", "")
+    shown = request.args.get("activity", "")
     shown = shown if shown in KINDS else ""
     return render_template(
         "admin/account.html", section="cuentas", admin=account, client=client,
@@ -273,7 +273,7 @@ def account_page(account, raw):
         invoice_mb=invoices.MAX_BYTES // (1024 * 1024))
 
 
-@bp.route("/cuentas/<raw>/actualizar", methods=["POST"])
+@bp.route("/accounts/<raw>/update", methods=["POST"])
 @only_admins
 def update(account, raw):
     """El plan y la suspensión en un solo envío, con el motivo escrito.
@@ -299,9 +299,9 @@ def update(account, raw):
         return redirect(url_for("admin.account_page", raw=raw))
 
     plan = request.form.get("plan", "") or None
-    cycle = request.form.get("ciclo", plans.MONTHLY)
+    cycle = request.form.get("cycle", plans.MONTHLY)
     suspend = bool(request.form.get("suspendida"))
-    reason = request.form.get("motivo", "").strip()
+    reason = request.form.get("reason", "").strip()
 
     # Un plan que no existe no cambia nada y tampoco deja una decisión escrita:
     # anotar «pasó a xyz» sería mentir el registro.
@@ -315,7 +315,7 @@ def update(account, raw):
     if not new_plan and suspend == was_suspended:
         return redirect(url_for("admin.account_page", raw=raw))
     if not reason:
-        return redirect(url_for("admin.account_page", raw=raw, falta="motivo"))
+        return redirect(url_for("admin.account_page", raw=raw, missing="reason"))
 
     if new_plan:
         before = client.get("plan") or None
@@ -358,10 +358,10 @@ def update(account, raw):
         if suspend:
             sessions.revoke_others(db, client["_id"])
 
-    return redirect(url_for("admin.account_page", raw=raw, hecho=1))
+    return redirect(url_for("admin.account_page", raw=raw, done=1))
 
 
-@bp.route("/cuentas/<raw>/habilitar-envio", methods=["POST"])
+@bp.route("/accounts/<raw>/enable-sending", methods=["POST"])
 @only_admins
 def clear_sending(account, raw):
     """Habilitar a una cuenta para que salga su primera campaña.
@@ -377,9 +377,9 @@ def clear_sending(account, raw):
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(url_for("admin.account_page", raw=raw))
 
-    reason = request.form.get("motivo", "").strip()
+    reason = request.form.get("reason", "").strip()
     if not reason:
-        return redirect(url_for("admin.account_page", raw=raw, falta="motivo"))
+        return redirect(url_for("admin.account_page", raw=raw, missing="reason"))
 
     if accounts.clear_sending(db, client["_id"], account["_id"]):
         # Es la única espera que se le pide a un cliente, así que enterarse de
@@ -388,10 +388,10 @@ def clear_sending(account, raw):
         decisions.record(db, kind=decisions.SENDING, admin_id=account["_id"],
                          account_id=client["_id"], before=None, after="cleared",
                          reason=reason)
-    return redirect(url_for("admin.account_page", raw=raw, hecho=1))
+    return redirect(url_for("admin.account_page", raw=raw, done=1))
 
 
-@bp.route("/cuentas/<raw>/factura", methods=["POST"])
+@bp.route("/accounts/<raw>/invoice", methods=["POST"])
 @only_admins
 def upload_invoice(account, raw):
     """Subir el PDF de la factura de un pago cobrado de esa cuenta.
@@ -404,7 +404,7 @@ def upload_invoice(account, raw):
         abort(404)
     db = get_db()
     client = wanted(raw)
-    back = url_for("admin.account_page", raw=raw) + "#facturas"
+    back = url_for("admin.account_page", raw=raw) + "#invoices"
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(back)
     try:
@@ -420,7 +420,7 @@ def upload_invoice(account, raw):
     raw_pdf = archivo.read(invoices.MAX_BYTES + 1) if archivo else b""
     if not raw_pdf or len(raw_pdf) > invoices.MAX_BYTES or not invoices.is_pdf(raw_pdf):
         return redirect(url_for("admin.account_page", raw=raw,
-                                factura="mala") + "#facturas")
+                                invoice="bad") + "#invoices")
 
     first = invoices.save(db, client["_id"], payment_id, data=raw_pdf,
                           uploaded_by=account["_id"])
@@ -431,12 +431,12 @@ def upload_invoice(account, raw):
                               else "admin_invoice_reason_again"))
     if first:
         notices.invoice_ready(client, paid_at=paid.get("completed_at"))
-    return redirect(url_for("admin.account_page", raw=raw, factura="ok") + "#facturas")
+    return redirect(url_for("admin.account_page", raw=raw, invoice="ok") + "#invoices")
 
 
 # ---------------------------------------------------- las plantillas subidas
 
-@bp.route("/plantillas")
+@bp.route("/templates")
 @only_admins
 def designs_queue(account):
     """El HTML que han subido los clientes.
@@ -453,7 +453,7 @@ def designs_queue(account):
         named=accounts.names_of(db, [row["account_id"] for row in rows]))
 
 
-@bp.route("/plantillas/<raw>/archivo")
+@bp.route("/templates/<raw>/file")
 @only_admins
 def design_file(account, raw):
     """Bajar el HTML tal como lo subió el cliente, para poder mirarlo.

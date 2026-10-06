@@ -1,4 +1,4 @@
-"""Los tutoriales de /como-funciona: el panel de verdad, paso a paso.
+"""Los tutoriales de /how-it-works: el panel de verdad, paso a paso.
 
 Cada tutorial es un recorrido por el panel. De cada paso sale una captura de la
 ventana, en los dos temas, y la caja de lo que hay que pulsar para seguir, en
@@ -57,7 +57,7 @@ def menu_row(href: str) -> str:
 MENU = "summary.menu__button"
 # Donde empiezan los recorridos: Estadísticas con el mes a la vista, que con
 # las últimas 24 horas salen ceros.
-HOME = "/panel?periodo=30d"
+HOME = "/dashboard?period=30d"
 
 # Los recorridos. De cada paso:
 #   id      su nombre, que es la clave de su texto en content.py
@@ -69,14 +69,14 @@ HOME = "/panel?periodo=30d"
 #           CSV), "none" (nada cambia en pantalla: el globo explica y se sigue)
 #           o un guion propio
 TOURS: tuple[tuple[str, list[dict]], ...] = (
-    ("contactos", [
+    ("contacts", [
         {"id": "menu", "go": HOME, "target": MENU},
-        {"id": "entrar", "target": menu_row("/contactos")},
-        {"id": "etiquetas", "target": 'a.settings__tab[href="/contactos/etiquetas"]'},
+        {"id": "entrar", "target": menu_row("/contacts")},
+        {"id": "etiquetas", "target": 'a.settings__tab[href="/contacts/tags"]'},
         {"id": "nueva",
          "prep": "document.getElementById('etiqueta').value='Socios'",
          "target": "#etiqueta ~ button[type=submit]"},
-        {"id": "importar", "target": 'a.settings__tab[href="/contactos/importar"]'},
+        {"id": "importar", "target": 'a.settings__tab[href="/contacts/import"]'},
         {"id": "archivo", "target": 'label[for="archivo"]', "act": "file"},
         {"id": "columnas", "target": "[data-map-rows] select",
          "act": "(function(){var s=document.querySelector('[data-map-rows] select');"
@@ -90,13 +90,13 @@ TOURS: tuple[tuple[str, list[dict]], ...] = (
         {"id": "subir", "target": 'form[enctype] > button[type="submit"]'},
         {"id": "resultado", "focus": ".notice"},
     ]),
-    ("plantillas", [
+    ("templates", [
         {"id": "menu", "go": HOME, "target": MENU},
-        {"id": "entrar", "target": menu_row("/plantillas")},
-        {"id": "crear", "target": 'a[href="/plantillas/crear"]'},
+        {"id": "entrar", "target": menu_row("/templates")},
+        {"id": "crear", "target": 'a[href="/templates/create"]'},
         {"id": "texto", "target": 'button[data-add="text"]'},
         {"id": "escribir", "target": ".cv-item--text", "act": "none"},
-        {"id": "armada", "go": "/plantillas/lienzo/{design}",
+        {"id": "armada", "go": "/templates/canvas/{design}",
          "target": ".cv-item--text"},
         {"id": "vista", "target": 'button[data-open-dialog="vista-previa"]',
          "wait": 3},
@@ -105,9 +105,9 @@ TOURS: tuple[tuple[str, list[dict]], ...] = (
          "wait": 3.5},
         {"id": "listo"},
     ]),
-    ("envios", [
+    ("campaigns", [
         {"id": "menu", "go": HOME, "target": MENU},
-        {"id": "entrar", "target": menu_row("/envios")},
+        {"id": "entrar", "target": menu_row("/campaigns")},
         {"id": "asunto", "target": "#asunto",
          "act": "document.getElementById('asunto').value='Boletín de octubre'"},
         {"id": "etiquetas", "target": 'label:has(> input[name="lista"])'},
@@ -116,11 +116,11 @@ TOURS: tuple[tuple[str, list[dict]], ...] = (
                 "s.selectedIndex=1;})()"},
         {"id": "cuando", "target": 'input[name="cuando"][value="ahora"]'},
         {"id": "guardar", "target": 'form:has(#asunto) button[type="submit"]'},
-        {"id": "mandar", "target": 'a[href$="/mandar"]'},
+        {"id": "mandar", "target": 'a[href$="/send"]'},
         {"id": "pregunta"},
     ]),
-    ("estadisticas", [
-        {"id": "periodo", "go": "/panel", "target": "#periodo",
+    ("stats", [
+        {"id": "periodo", "go": "/dashboard", "target": "#periodo",
          "act": "(function(){var s=document.getElementById('periodo');"
                 "s.value='30d';s.form.submit();})()"},
         {"id": "cifras", "target": ".rates", "act": "none"},
@@ -128,18 +128,18 @@ TOURS: tuple[tuple[str, list[dict]], ...] = (
          "target": ".chart", "act": "none"},
         {"id": "bajar", "target": 'a[href*="/analytics/"], a[href*="csv"]',
          "act": "none"},
-        {"id": "mejores", "target": 'a[href*="/envios/enviados/"]'},
+        {"id": "mejores", "target": 'a[href*="/campaigns/sent/"]'},
         {"id": "detalles"},
     ]),
-    ("configuracion", [
+    ("settings", [
         {"id": "menu", "go": HOME, "target": MENU},
-        {"id": "entrar", "target": menu_row("/configuracion")},
+        {"id": "entrar", "target": menu_row("/settings")},
         {"id": "direccion", "target": "#direccion-campo", "act": "none"},
-        {"id": "seguridad", "target": 'a.settings__tab[href="/configuracion/seguridad"]'},
-        {"id": "dos_pasos", "target": 'a[href="/cuenta/dos-pasos"]', "act": "none"},
-        {"id": "usuarios", "target": 'a[href="/configuracion/usuarios/nuevo"]',
+        {"id": "seguridad", "target": 'a.settings__tab[href="/settings/security"]'},
+        {"id": "dos_pasos", "target": 'a[href="/account/two-factor"]', "act": "none"},
+        {"id": "usuarios", "target": 'a[href="/settings/users/new"]',
          "act": "none"},
-        {"id": "facturacion", "target": 'a.settings__tab[href="/configuracion/pagos"]'},
+        {"id": "facturacion", "target": 'a.settings__tab[href="/settings/billing"]'},
         {"id": "plan"},
     ]),
 )
@@ -308,13 +308,13 @@ def shoot(demo: dict) -> tuple[dict, dict]:
     panel = shots.start_panel(work / "panel.log")
     chrome = None
     try:
-        shots.wait_for(f"http://127.0.0.1:{PANEL_PORT}/entrar")
+        shots.wait_for(f"http://127.0.0.1:{PANEL_PORT}/login")
         chrome = subprocess.Popen(
             [CHROME, "--headless=new", "--disable-gpu",
              f"--remote-debugging-port={PORT}", f"--user-data-dir={work / 'chrome'}",
              "--no-first-run", "--hide-scrollbars", "--force-device-scale-factor=2",
              f"--window-size={VIEW_W},{VIEW_H}",
-             f"http://127.0.0.1:{PANEL_PORT}/entrar"],
+             f"http://127.0.0.1:{PANEL_PORT}/login"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         ws = None
         for _ in range(60):

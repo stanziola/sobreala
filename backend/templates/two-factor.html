@@ -8,7 +8,7 @@
   {% if request.args.get('admin') %}
   <p class="notice">{{ t('admin_two_step_needed') }}</p>
   {% endif %}
-  {% if request.args.get('vencido') %}
+  {% if request.args.get('expired') %}
   <p class="notice">{{ t('two_step_expired') }}</p>
   {% endif %}
 
@@ -51,7 +51,7 @@
     </div>
     <div class="setting__action">
       <a class="btn btn--small btn--outline"
-         href="{{ url_for('auth.two_factor', accion=name) }}">{{ t('two_step_choose') }}</a>
+         href="{{ url_for('auth.two_factor', action=name) }}">{{ t('two_step_choose') }}</a>
     </div>
   </div>
   {% endfor %}
@@ -79,7 +79,7 @@
   <p class="foot"><a href="{{ url_for('auth.two_factor') }}">{{ t('two_step_back') }}</a></p>
   {% endif %}
 
-  <p class="foot"><a href="{{ url_for('auth.settings', section='seguridad') }}">
+  <p class="foot"><a href="{{ url_for('auth.settings', section='security') }}">
     {{ t('two_step_to_settings') }}</a></p>
 </div>
 {% endblock %}

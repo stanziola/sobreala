@@ -3,10 +3,10 @@
 <h2 class="settings__title">{{ client.company_name }}</h2>
 <p class="settings__lead">{{ t('admin_account_lead') }}</p>
 
-{% if request.args.get('hecho') %}
+{% if request.args.get('done') %}
 <p class="notice notice--ok">{{ t('admin_done') }}</p>
 {% endif %}
-{% if request.args.get('falta') == 'motivo' %}
+{% if request.args.get('missing') == 'reason' %}
 <p class="notice">{{ t('admin_need_reason') }}</p>
 {% endif %}
 
@@ -80,7 +80,7 @@
 <form method="post" action="{{ url_for('admin.clear_sending', raw=client._id) }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label for="motivo-envio">{{ t('admin_reason') }}</label>
-  <input id="motivo-envio" name="motivo" type="text" maxlength="300" required
+  <input id="motivo-envio" name="reason" type="text" maxlength="300" required
          autocomplete="off">
   <button class="btn" type="submit">{{ t('admin_sending_clear') }}</button>
 </form>
@@ -106,7 +106,7 @@
   </select>
 
   <label for="ciclo">{{ t('admin_cycle') }}</label>
-  <select id="ciclo" name="ciclo">
+  <select id="ciclo" name="cycle">
     {% for name in cycles %}
     <option value="{{ name }}">{{ t('pay_cycle_' + name) }}</option>
     {% endfor %}
@@ -120,7 +120,7 @@
   <p class="hint">{{ t('admin_suspend_hint') }}</p>
 
   <label for="motivo">{{ t('admin_reason') }}</label>
-  <input id="motivo" name="motivo" type="text" maxlength="300" required
+  <input id="motivo" name="reason" type="text" maxlength="300" required
          autocomplete="off">
   <p class="hint">{{ t('admin_reason_hint') }}</p>
   <button class="btn" type="submit">{{ t('admin_apply') }}</button>
@@ -140,10 +140,10 @@
 {# Los pagos cobrados, y la factura de cada uno. Las facturas se emiten a
    mano: aquí se sube el PDF y el cliente lo baja desde Facturación. #}
 {% if invoices_shown %}
-<h3 class="settings__subtitle" id="facturas">{{ t('admin_invoices_title') }}</h3>
-{% if request.args.get('factura') == 'ok' %}
+<h3 class="settings__subtitle" id="invoices">{{ t('admin_invoices_title') }}</h3>
+{% if request.args.get('invoice') == 'ok' %}
 <p class="notice notice--ok">{{ t('admin_invoice_done') }}</p>
-{% elif request.args.get('factura') == 'mala' %}
+{% elif request.args.get('invoice') == 'bad' %}
 <p class="notice">{{ t('admin_invoice_bad', mb=invoice_mb) }}</p>
 {% endif %}
 {% if paid %}
@@ -239,7 +239,7 @@
 <form class="filters" method="get"
       action="{{ url_for('admin.account_page', raw=client._id) }}#actividad">
   <label class="visually-hidden" for="tipo">{{ t('admin_act_filter') }}</label>
-  <select id="tipo" name="actividad">
+  <select id="tipo" name="activity">
     <option value="">{{ t('admin_act_all') }}</option>
     {% for name in activity_kinds %}
     <option value="{{ name }}"{% if name == activity_only %} selected{% endif %}>

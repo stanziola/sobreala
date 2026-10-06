@@ -245,7 +245,7 @@ def ensure_indexes_once() -> bool:
 
 
 def health() -> dict:
-    """Whether the database answers, for the /salud route.
+    """Whether the database answers, for the /health route.
 
     `ping` is the cheapest command there is, so this stays safe to call often.
     """

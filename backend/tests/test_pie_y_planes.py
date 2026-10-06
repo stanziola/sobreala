@@ -33,13 +33,13 @@ def test_el_sitio_no_ofrece_corporativo_ni_soporte_ni_diseno():
     assert "| Soporte |" not in precios
     assert "Diseño personalizado de tu correo" not in precios
 
-    for pagina in ("planes", "como-funciona", "nosotros", "terminos"):
+    for pagina in ("pricing", "how-it-works", "about", "terms"):
         html = (ROOT / "landing" / pagina / "index.html").read_text(encoding="utf-8")
         assert "Corporativo" not in html, pagina
         assert "Plantillas personalizadas" not in html, pagina
         assert "diseñamos la pieza" not in html.lower(), pagina
         assert "diseño de las piezas de correo" not in html.lower(), pagina
-    planes = (ROOT / "landing" / "planes" / "index.html").read_text(encoding="utf-8")
+    planes = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
     assert ">Soporte<" not in planes
 
 
@@ -48,8 +48,8 @@ def test_el_html_propio_ya_no_se_ofrece_en_ningun_lado():
     se pasan como el ZIP de un lienzo."""
     precios = (ROOT / "docs" / "pricing.md").read_text(encoding="utf-8")
     assert "Subir tu propio HTML" not in precios
-    for pagina in ("index.html", "planes/index.html", "como-funciona/index.html",
-                   "terminos/index.html"):
+    for pagina in ("index.html", "pricing/index.html", "how-it-works/index.html",
+                   "terms/index.html"):
         html = (ROOT / "landing" / pagina).read_text(encoding="utf-8")
         assert "propio HTML" not in html and "HTML que subas" not in html, pagina
 
@@ -76,16 +76,16 @@ def test_la_direccion_se_guarda_y_sale_en_el_correo(client, database, outbox,
     salidos = catch(monkeypatch)
     browser, account, piece = ready(client, database, postal="", howmany=1)
     assert "postal" in sender.blocked(account)
-    assert "Falta la dirección postal" in browser.get("/envios").get_data(as_text=True)
+    assert "Falta la dirección postal" in browser.get("/campaigns").get_data(as_text=True)
 
-    respuesta = browser.post("/configuracion/cuenta", data={
-        "csrf_token": csrf(browser, "/configuracion/cuenta"),
-        "direccion": "  Apartado 0816-00001,   Santiago, Veraguas "})
+    respuesta = browser.post("/settings/account", data={
+        "csrf_token": csrf(browser, "/settings/account"),
+        "address": "  Apartado 0816-00001,   Santiago, Veraguas "})
     assert respuesta.status_code == 302
     cuenta = accounts.by_id(database, account["_id"])
     assert accounts.postal_of(cuenta) == "Apartado 0816-00001, Santiago, Veraguas"
     assert "postal" not in sender.blocked(cuenta)
-    assert "Apartado 0816-00001" in browser.get("/configuracion/cuenta").get_data(as_text=True)
+    assert "Apartado 0816-00001" in browser.get("/settings/account").get_data(as_text=True)
 
     make(browser, piece)
     send_it(browser, database, account["_id"])
@@ -97,9 +97,9 @@ def test_una_direccion_vacia_o_larga_no_se_guarda(client, database, outbox):
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     for mala in ("", "corta", "x" * 201):
-        pantalla = browser.post("/configuracion/cuenta", data={
-            "csrf_token": csrf(browser, "/configuracion/cuenta"),
-            "direccion": mala}).get_data(as_text=True)
+        pantalla = browser.post("/settings/account", data={
+            "csrf_token": csrf(browser, "/settings/account"),
+            "address": mala}).get_data(as_text=True)
         assert "entre 10 y 200 caracteres" in pantalla
     assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == ""
 
@@ -107,7 +107,7 @@ def test_una_direccion_vacia_o_larga_no_se_guarda(client, database, outbox):
 def test_sin_testigo_no_se_guarda(client, database, outbox):
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    browser.post("/configuracion/cuenta", data={"direccion": "Calle 50, Panamá"})
+    browser.post("/settings/account", data={"address": "Calle 50, Panamá"})
     assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == ""
 
 
@@ -116,7 +116,7 @@ def test_sin_testigo_no_se_guarda(client, database, outbox):
 def test_las_tarjetas_traen_los_dos_precios_y_nacen_en_mensual():
     """El interruptor no inventa cifras: las dos salen de docs/pricing.md, y la
     página sirve igual sin JavaScript, en mensual."""
-    html = (ROOT / "landing" / "planes" / "index.html").read_text(encoding="utf-8")
+    html = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
 
     assert 'data-cycle-set="monthly"' in html and 'data-cycle-set="yearly"' in html
     # El anual entre doce, que es lo que se enseña al elegir año.
@@ -150,7 +150,7 @@ def test_el_equivalente_mensual_y_el_descuento_salen_del_documento():
         assert one["yearly_value"] == one["monthly_value"] * 12 * 80 // 100
     assert precios["yearly_off"] == "20%"
 
-    html = (ROOT / "landing" / "planes" / "index.html").read_text(encoding="utf-8")
+    html = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
     assert '<span class="cycle__save">-20%</span>' in html
     # Y el panel lo saca del mismo documento, para la pantalla de contratar.
     assert plans.discount("basico") == 20
@@ -165,13 +165,13 @@ def test_el_ciclo_elegido_en_el_sitio_llega_al_panel(client, database, outbox,
     confirm(database)
 
     def resaltado(url):
-        """El ciclo del resumen: el que se eligió en /planes, y es el que se
+        """El ciclo del resumen: el que se eligió en /pricing, y es el que se
         manda al pagar."""
         pantalla = browser.get(url).get_data(as_text=True)
         return [one for one in ("monthly", "yearly")
                 if f'name="cycle" value="{one}"' in pantalla]
 
-    assert resaltado("/contratar/basico?ciclo=anual") == ["yearly"]
-    assert resaltado("/contratar/basico") == ["monthly"]
+    assert resaltado("/checkout/basico?cycle=yearly") == ["yearly"]
+    assert resaltado("/checkout/basico") == ["monthly"]
     # Un valor inventado se lee como mensual, que es lo de siempre.
-    assert resaltado("/contratar/basico?ciclo=cualquiera") == ["monthly"]
+    assert resaltado("/checkout/basico?cycle=cualquiera") == ["monthly"]

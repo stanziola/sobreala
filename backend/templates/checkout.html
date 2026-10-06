@@ -14,7 +14,7 @@
   {% elif why == 'yearly_only' %}
   <p class="notice">{{ t('pay_yearly_only') }}</p>
   {% else %}
-  {#- El resumen: el plan en el ciclo que se eligió en /planes y el descuento
+  {#- El resumen: el plan en el ciclo que se eligió en /pricing y el descuento
       por los correos sin usar si es una mejora, los dos sin ITBMS; el ITBMS,
       que se suma; y el total al final. Suman exacto (`upgrade.quote()`). Lo
       vuelve a calcular start_payment(), que es quien guarda lo que se cobra. -#}
@@ -46,7 +46,7 @@
   {% if credit.amount > 0 %}<p class="hint">{{ t('pay_summary_upgrade') }}</p>{% endif %}
   {% if other %}
   <p class="summary__switch"><a href="{{ url_for('auth.checkout', plan=plan,
-      ciclo='anual' if other == 'yearly' else 'mensual') }}">{{ t('pay_summary_switch_' + other,
+      cycle='yearly' if other == 'yearly' else 'monthly') }}">{{ t('pay_summary_switch_' + other,
       amount='$%.2f'|format(other_quote.total)) }}</a></p>
   {% endif %}
 
@@ -108,8 +108,8 @@
 
   <p class="hint">{{ t('settings_payments_hint') }}</p>
   <p class="foot">
-    <a href="{{ site_url }}/planes/">{{ t('pay_back_to_plans') }}</a> ·
-    <a href="{{ url_for('auth.settings', section='pagos') }}">{{ t('menu_settings') }}</a>
+    <a href="{{ site_url }}/pricing/">{{ t('pay_back_to_plans') }}</a> ·
+    <a href="{{ url_for('auth.settings', section='billing') }}">{{ t('menu_settings') }}</a>
   </p>
 </div>
 {% endblock %}

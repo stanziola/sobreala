@@ -565,19 +565,19 @@ TEXTS = {
                      "Escríbenos y lo revisamos.",
     "pay_not_ready": "El pago en línea todavía no está disponible. "
                      "Escríbenos y lo resolvemos por otra vía.",
-    "pay_error_estado": "Tu cuenta todavía no puede contratar un plan. Confirma tu correo, o escríbenos si está suspendida.",
+    "pay_error_status": "Tu cuenta todavía no puede contratar un plan. Confirma tu correo, o escríbenos si está suspendida.",
     "pay_error_plan": "Ese plan no se contrata por aquí.",
     "pay_error_paypal": "No pudimos hablar con PayPal en este momento. "
                         "Vuelve a intentarlo en unos minutos.",
-    "pay_error_tarjeta": "No pudimos hablar con Paguélofácil en este momento. "
+    "pay_error_card": "No pudimos hablar con Paguélofácil en este momento. "
                          "Si ya pagaste, en unos minutos se activa solo; si "
                          "no, vuelve a intentarlo.",
-    "pay_error_cancelado": "Cancelaste el pago. No se cobró nada.",
-    "pay_error_orden": "No encontramos ese pago. Si te cobraron, escríbenos "
+    "pay_error_cancelled": "Cancelaste el pago. No se cobró nada.",
+    "pay_error_order": "No encontramos ese pago. Si te cobraron, escríbenos "
                        "con la fecha y lo revisamos.",
-    "pay_error_cobro": "El pago no se confirmó, así que no activamos nada. Si "
+    "pay_error_capture": "El pago no se confirmó, así que no activamos nada. Si "
                        "te cobraron, escríbenos.",
-    "pay_error_monto": "El monto cobrado no coincide con el del plan, así que "
+    "pay_error_amount": "El monto cobrado no coincide con el del plan, así que "
                        "no activamos nada. Escríbenos y lo revisamos.",
     "settings_payments_hint": "Sobreala nunca guarda tus datos de pago.",
 
@@ -604,7 +604,7 @@ TEXTS = {
     "stats_pick_hint": "Ves lo mismo que ve esa empresa en su pantalla.",
     "stats_period": "Periodo",
     "stats_period_1h": "Última hora",
-    "stats_period_hoy": "Hoy",
+    "stats_period_today": "Hoy",
     "stats_period_24h": "Últimas 24 horas",
     "stats_period_7d": "Últimos 7 días",
     "stats_period_30d": "Últimos 30 días",
@@ -625,7 +625,7 @@ TEXTS = {
                          "comparar y no sale pastilla.",
     # Contra qué compara cada periodo: el mismo tramo, justo antes.
     "stats_before_1h": "la hora anterior",
-    "stats_before_hoy": "ayer hasta esta misma hora",
+    "stats_before_today": "ayer hasta esta misma hora",
     "stats_before_24h": "las 24 horas anteriores",
     "stats_before_7d": "los 7 días anteriores",
     "stats_before_30d": "los 30 días anteriores",
@@ -1697,11 +1697,11 @@ TEXTS = {
     # que viaja en la dirección, en español como el resto de los filtros.
     "admin_act_filter": "Tipo de actividad",
     "admin_act_all": "Toda la actividad",
-    "admin_act_only_entradas": "Entradas",
-    "admin_act_only_pagos": "Transacciones",
-    "admin_act_only_correos": "Correos",
-    "admin_act_only_contactos": "Contactos",
-    "admin_act_only_decisiones": "Decisiones",
+    "admin_act_only_logins": "Entradas",
+    "admin_act_only_payments": "Transacciones",
+    "admin_act_only_emails": "Correos",
+    "admin_act_only_imports": "Contactos",
+    "admin_act_only_decisions": "Decisiones",
 
     "admin_designs_title": "Plantillas subidas",
     "admin_designs_lead": "El HTML que subió cada cliente cuando se podía: ya "

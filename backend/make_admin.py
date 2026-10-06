@@ -58,7 +58,7 @@ def main(argv=None) -> int:
     cuenta = accounts.by_email(db, args.email)
     if cuenta is None:
         print(f"No existe ninguna cuenta con {args.email}.")
-        print("Regístrala primero desde /registro y confirma el correo.")
+        print("Regístrala primero desde /signup y confirma el correo.")
         return 1
 
     # Un administrador que no confirmó su dirección no puede recuperar su

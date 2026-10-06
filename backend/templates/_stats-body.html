@@ -1,6 +1,6 @@
 {#- El cuerpo de la pantalla de estadísticas, que miran los dos.
 
-    El cliente la abre en /panel y el administrador en /admin/, y son dos
+    El cliente la abre en /dashboard y el administrador en /admin/, y son dos
     plantillas distintas porque cada una vive dentro de su propia barra: la
     del panel y la de administración con sus pestañas. Lo que enseñan es
     esto, una sola vez, para que no puedan separarse. -#}
@@ -10,7 +10,7 @@
 <form class="filters" method="get">
   {% if pick %}
   <label class="visually-hidden" for="cuenta">{{ t('stats_pick') }}</label>
-  <select id="cuenta" name="cuenta">
+  <select id="cuenta" name="account">
     {% for one in pick %}
     <option value="{{ one._id }}"{% if one._id == whose._id %} selected{% endif %}>
       {{ one.company_name }}</option>
@@ -19,7 +19,7 @@
   {% endif %}
 
   <label class="visually-hidden" for="periodo">{{ t('stats_period') }}</label>
-  <select id="periodo" name="periodo">
+  <select id="periodo" name="period">
     {% for name in periods %}
     <option value="{{ name }}"{% if name == period %} selected{% endif %}>
       {{ t('stats_period_' + name) }}</option>
@@ -27,7 +27,7 @@
   </select>
 
   <label class="visually-hidden" for="etiqueta">{{ t('stats_tag') }}</label>
-  <select id="etiqueta" name="etiqueta">
+  <select id="etiqueta" name="tag">
     <option value="">{{ t('stats_all_tags') }}</option>
     {% for name in tags %}
     <option value="{{ name }}"{% if name == tag %} selected{% endif %}>{{ name }}</option>
@@ -35,7 +35,7 @@
   </select>
 
   <label class="visually-hidden" for="campana">{{ t('stats_campaign') }}</label>
-  <select id="campana" name="campana">
+  <select id="campana" name="campaign">
     <option value="">{{ t('stats_all_campaigns') }}</option>
     {% for one in campaigns %}
     <option value="{{ one._id }}"{% if one._id == campaign %} selected{% endif %}>{{ one.subject }}</option>
@@ -50,8 +50,8 @@
     decisión. -#}
 {% if not pick %}
 <p class="filters__export">
-  <a class="btn btn--small btn--outline" href="{{ url_for('analytics.as_csv', periodo=period, etiqueta=tag, campana=campaign) }}">{{ t('export_csv') }}</a>
-  <a class="btn btn--small btn--outline" href="{{ url_for('analytics.as_pdf', periodo=period, etiqueta=tag, campana=campaign) }}">{{ t('export_pdf') }}</a>
+  <a class="btn btn--small btn--outline" href="{{ url_for('analytics.as_csv', period=period, tag=tag, campaign=campaign) }}">{{ t('export_csv') }}</a>
+  <a class="btn btn--small btn--outline" href="{{ url_for('analytics.as_pdf', period=period, tag=tag, campaign=campaign) }}">{{ t('export_pdf') }}</a>
 </p>
 {% endif %}
 
@@ -217,5 +217,5 @@
 </div>
 {% else %}
 <p class="hint">{{ t('stats_quota_none') }}
-  {% if not pick %}<a href="{{ site_url }}/planes/">{{ t('stats_quota_plans') }}</a>{% endif %}</p>
+  {% if not pick %}<a href="{{ site_url }}/pricing/">{{ t('stats_quota_plans') }}</a>{% endif %}</p>
 {% endif %}

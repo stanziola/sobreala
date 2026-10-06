@@ -1,7 +1,7 @@
 """Enviar correos: a quién, con qué pieza, y cuándo.
 
-La pantalla que junta lo que ya había suelto —las listas de `/contactos` y las
-piezas de `/plantillas`— y lo manda. Es la única del panel desde la que sale
+La pantalla que junta lo que ya había suelto —las listas de `/contacts` y las
+piezas de `/templates`— y lo manda. Es la única del panel desde la que sale
 correo a un contacto de un cliente.
 
 **Un administrador no la ve ni entra**: su cuenta no tiene contactos a los que
@@ -150,7 +150,7 @@ def shared(db, account, **extra):
     }
 
 
-@bp.route("/envios", methods=["GET", "POST"])
+@bp.route("/campaigns", methods=["GET", "POST"])
 def index():
     account = signed_in()
     if account is None:
@@ -165,14 +165,14 @@ def index():
             return answer
         errors = save(db, account, None)
         if not errors:
-            return redirect(url_for("campaigns.index", guardado=1))
+            return redirect(url_for("campaigns.index", saved=1))
 
     return render_template(
         "campaigns/index.html", section="envios",
         **shared(db, account, errors=errors, form=request.form,
-                 saved=bool(request.args.get("guardado")),
-                 done=request.args.get("hecho", ""),
-                 removed=bool(request.args.get("borrado"))))
+                 saved=bool(request.args.get("saved")),
+                 done=request.args.get("done", ""),
+                 removed=bool(request.args.get("deleted"))))
 
 
 def save(db, account, campaign) -> dict[str, str]:
@@ -210,7 +210,7 @@ def save(db, account, campaign) -> dict[str, str]:
     return {}
 
 
-@bp.route("/envios/<raw>", methods=["GET", "POST"])
+@bp.route("/campaigns/<raw>", methods=["GET", "POST"])
 def edit(raw):
     """Cambiar una campaña que todavía no ha empezado a salir."""
     account = signed_in()
@@ -224,7 +224,7 @@ def edit(raw):
     if found is None:
         return redirect(url_for("campaigns.index"))
     if not campaigns.editable(found):
-        return redirect(url_for("campaigns.index", hecho="tarde"))
+        return redirect(url_for("campaigns.index", done="late"))
 
     errors: dict[str, str] = {}
     if request.method == "POST":
@@ -233,7 +233,7 @@ def edit(raw):
             return answer
         errors = save(db, account, found)
         if not errors:
-            return redirect(url_for("campaigns.index", guardado=1))
+            return redirect(url_for("campaigns.index", saved=1))
 
     return render_template(
         "campaigns/edit.html", section="envios",
@@ -247,7 +247,7 @@ def edit(raw):
 PER_PAGE = 50
 
 
-@bp.route("/envios/enviados/<raw>")
+@bp.route("/campaigns/sent/<raw>")
 def run_detail(raw):
     """A quién le salió un envío y qué pasó con cada uno: si le llegó, si lo
     abrió, si pulsó. Una fila por persona, con la primera vez de cada cosa.
@@ -268,13 +268,13 @@ def run_detail(raw):
         abort(404)
 
     known = accounts.tags_of(account)
-    tag = request.args.get("etiqueta", "")
+    tag = request.args.get("tag", "")
     tag = tag if tag in known else ""
     search = " ".join(request.args.get("q", "").split())[:100]
-    outcome = request.args.get("estado", "")
+    outcome = request.args.get("status", "")
     outcome = outcome if outcome in events.OUTCOMES else ""
     try:
-        page = max(1, int(request.args.get("pagina", "1")))
+        page = max(1, int(request.args.get("page", "1")))
     except ValueError:
         page = 1
 
@@ -298,7 +298,7 @@ def run_detail(raw):
         everyone=t("send_all_contacts"))
 
 
-@bp.route("/envios/<raw>/borrar", methods=["POST"])
+@bp.route("/campaigns/<raw>/delete", methods=["POST"])
 def remove(raw):
     account = signed_in()
     if account is None:
@@ -311,10 +311,10 @@ def remove(raw):
         campaign_id = as_id(raw)
         if campaign_id:
             campaigns.remove(get_db(), account["_id"], campaign_id)
-    return redirect(url_for("campaigns.index", borrado=1))
+    return redirect(url_for("campaigns.index", deleted=1))
 
 
-@bp.route("/envios/<raw>/mandar", methods=["GET", "POST"])
+@bp.route("/campaigns/<raw>/send", methods=["GET", "POST"])
 def send(raw):
     """Preguntar primero, y después mandar una tanda de esta campaña.
 
@@ -362,11 +362,11 @@ def send(raw):
     if found["status"] == campaigns.SENT:
         if not campaigns.restart(db, account["_id"], found["_id"],
                                  when=accounts.now()):
-            return redirect(url_for("campaigns.index", hecho="tarde"))
+            return redirect(url_for("campaigns.index", done="late"))
         found = campaigns.by_id(db, account["_id"], found["_id"])
 
     result = sender.run(db, account, found)
     if result["blocked"]:
-        return redirect(url_for("campaigns.index", hecho="falta"))
+        return redirect(url_for("campaigns.index", done="blocked"))
     return redirect(url_for("campaigns.index",
-                            hecho="parte" if result["left"] else "todo"))
+                            done="partial" if result["left"] else "all"))

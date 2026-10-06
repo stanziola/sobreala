@@ -43,15 +43,15 @@ def make_admin(client, database, email="jefe@ejemplo.com"):
         {"$set": {"email_confirmed_at": cuenta["created_at"]}})
     accounts.set_role(database, cuenta["_id"], accounts.ADMIN)
 
-    browser.get("/cuenta/dos-pasos")
+    browser.get("/account/two-factor")
     with browser.session_transaction() as sess:
         token = sess["_csrf"]
-    browser.post("/cuenta/dos-pasos", data={"csrf_token": token,
+    browser.post("/account/two-factor", data={"csrf_token": token,
                                             "password": PASSWORD})
-    browser.get("/cuenta/dos-pasos/activar")
+    browser.get("/account/two-factor/enable")
     with browser.session_transaction() as sess:
         secret, token = sess["two_factor_setup"], sess["_csrf"]
-    browser.post("/cuenta/dos-pasos/activar", data={
+    browser.post("/account/two-factor/enable", data={
         "csrf_token": token, "code": list(pyotp.TOTP(secret).now())})
     return browser, accounts.by_email(database, email)
 
@@ -62,7 +62,7 @@ def test_sin_envios_la_grafica_se_dibuja_y_lo_dice(client, database, outbox):
     """Un cuadro vacío que se explica dice más que un hueco."""
     browser = inside(client)
 
-    pantalla = browser.get("/panel")
+    pantalla = browser.get("/dashboard")
     assert pantalla.status_code == 200
     texto = pantalla.get_data(as_text=True)
     assert "Todavía no se ha realizado ninguna acción" in texto
@@ -134,13 +134,13 @@ def test_la_grafica_cuenta_personas_como_como_le_fue(client, database, outbox):
 def test_la_barra_de_correos_del_mes(client, database, outbox):
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    sin_plan = browser.get("/panel").get_data(as_text=True)
+    sin_plan = browser.get("/dashboard").get_data(as_text=True)
     assert "Sin plan contratado: no hay correos incluidos." in sin_plan
 
     accounts.activate_plan(database, cuenta["_id"], "negocio",
                            events.now() + timedelta(days=30))
     accounts.add_sent(database, cuenta["_id"], 12600)
-    pantalla = browser.get("/panel").get_data(as_text=True)
+    pantalla = browser.get("/dashboard").get_data(as_text=True)
     assert "12,600 de 15,000 correos" in pantalla
     # Sin fecha de renovación: todavía no hay renovación automática.
     assert "se renuevan" not in pantalla
@@ -182,7 +182,7 @@ def test_una_etiqueta_ajena_no_filtra_por_nada(client, database, outbox):
     assert stats.screen(database, cuenta, tag="socios")["tag"] == "socios"
     assert stats.screen(database, cuenta, tag="de-otra")["tag"] == ""
 
-    pantalla = browser.get("/panel?etiqueta=socios&periodo=7d")
+    pantalla = browser.get("/dashboard?tag=socios&period=7d")
     assert pantalla.status_code == 200
     assert "Últimos 7 días" in pantalla.get_data(as_text=True)
 
@@ -192,8 +192,8 @@ def test_una_etiqueta_ajena_no_filtra_por_nada(client, database, outbox):
 def test_el_cliente_no_ve_el_selector_de_cuentas(client, database, outbox):
     browser = inside(client)
 
-    texto = browser.get("/panel").get_data(as_text=True)
-    assert 'name="cuenta"' not in texto
+    texto = browser.get("/dashboard").get_data(as_text=True)
+    assert 'name="account"' not in texto
     assert "Hola, Ana" in texto
 
 
@@ -205,11 +205,11 @@ def test_el_administrador_elige_de_quien_son(client, database, outbox):
     pantalla = admin.get("/admin/")
     assert pantalla.status_code == 200
     texto = pantalla.get_data(as_text=True)
-    assert 'name="cuenta"' in texto
+    assert 'name="account"' in texto
     assert otra["company_name"] in texto
 
     # Una cuenta que no existe no enseña la de nadie más: cae en la primera.
-    inventada = admin.get("/admin/?cuenta=000000000000000000000000")
+    inventada = admin.get("/admin/?account=000000000000000000000000")
     assert inventada.status_code == 200
     assert otra["company_name"] in inventada.get_data(as_text=True)
 
@@ -230,10 +230,10 @@ def test_el_tramo_anterior_va_pegado_y_mide_lo_mismo():
     assert antes[1] == ahora[0], "el de antes termina donde empieza el de ahora"
     assert antes[1] - antes[0] == timedelta(days=7)
     # «Hoy» se compara con ayer hasta la misma hora, no con un dia entero.
-    hoy = events.window("hoy")
-    ayer = events.window("hoy", back=1)
+    hoy = events.window("today")
+    ayer = events.window("today", back=1)
     assert ayer[1] == hoy[0]
-    assert ayer[1] - ayer[0] == events.slots("hoy")[-1] + timedelta(hours=1) - hoy[0]
+    assert ayer[1] - ayer[0] == events.slots("today")[-1] + timedelta(hours=1) - hoy[0]
 
 
 def test_la_pastilla_dice_cuanto_cambio_y_si_eso_es_mejor(client, database, outbox):
@@ -286,7 +286,7 @@ def test_sin_nada_antes_no_hay_con_que_comparar(client, database, outbox):
         events.people(database, cuenta["_id"], period="7d"),
         events.people(database, cuenta["_id"], period="7d", back=1))
     assert all(one["change"] is None for one in filas)
-    pantalla = browser.get("/panel?periodo=7d").get_data(as_text=True)
+    pantalla = browser.get("/dashboard?period=7d").get_data(as_text=True)
     assert "trend" not in pantalla
     assert "comparan con los 7 días anteriores" in pantalla
 
@@ -308,10 +308,10 @@ def test_la_nota_nombra_el_periodo_que_esta_puesto(client, database, outbox):
     """Decia «los 7 dias» siempre, y se leia como si solo comparara eso."""
     browser = inside(client)
     for periodo, frase in (("24h", "las 24 horas anteriores"),
-                           ("hoy", "ayer hasta esta misma hora"),
+                           ("today", "ayer hasta esta misma hora"),
                            ("1h", "la hora anterior"),
                            ("90d", "los 90 días anteriores")):
-        pantalla = browser.get(f"/panel?periodo={periodo}").get_data(as_text=True)
+        pantalla = browser.get(f"/dashboard?period={periodo}").get_data(as_text=True)
         assert f"comparan con {frase}" in pantalla, periodo
 
 
@@ -361,7 +361,7 @@ def test_las_bajas_se_cuentan_y_con_un_filtro_no_se_ensenan(client, database, ou
     assert con_filtro["leaves_off"] is True
     assert all(one["key"] != "leave" for one in con_filtro["rates"])
     assert t("stats_leaves_off")[:30] in browser.get(
-        "/panel?periodo=7d&etiqueta=Socios").get_data(as_text=True)
+        "/dashboard?period=7d&tag=Socios").get_data(as_text=True)
 
 
 def test_las_mejores_campanas_van_de_mas_abierta_a_menos(client, database, outbox):

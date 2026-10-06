@@ -185,7 +185,7 @@ aplicación aparte: comparte modelos y servicios con el resto.
   `filter-branch` y borrar el `reflog`.
 - **Lo que existe en los dos sitios se cambia en los dos.** La barra de arriba,
   su menú y todo lo que se repita entre `sobreala.com` (`landing/src/`) y
-  `panel.sobreala.com` (`backend/templates/`) son **dos plantillas distintas
+  `app.sobreala.com` (`backend/templates/`) son **dos plantillas distintas
   que tienen que decir lo mismo**. Al tocar una, se abre la otra en el mismo
   cambio y se comprueban las dos en el navegador, con sesión y sin ella. Ya
   mordió dos veces: la fila de Plantillas se puso solo en el panel, y salir
@@ -217,7 +217,7 @@ puede hacer daño. Ver «La habilitación para enviar», más abajo.
 es el único sitio que escribe `active`, y lo llaman tanto la vuelta de PayPal
 como el plan que el administrador pone a mano para quien pagó por Yappy o por
 transferencia. Lo que el administrador sí decide es **suspender y levantar la
-suspensión**, desde `/admin/cuentas/<id>` y con un motivo que queda escrito en
+suspensión**, desde `/admin/accounts/<id>` y con un motivo que queda escrito en
 `admin_events`. `suspended` no es decorativo: una cuenta suspendida no abre
 sesión, y al suspenderla se le cierran las que tuviera abiertas.
 
@@ -317,7 +317,7 @@ intento sigue en `auth_events`, que no tiene TTL.
 botón, un POST que no puede mandar una precarga, y vuelve a la pantalla del
 código con «Te enviamos un código nuevo.».
 
-- **Al confirmar el registro** (`/reenviar-confirmacion`), el código va a la
+- **Al confirmar el registro** (`/resend-confirmation`), el código va a la
   cuenta que este navegador está confirmando (`PENDING_KEY`). Si no hay ninguna,
   va a la cuenta abierta si no está confirmada: es el botón del aviso del panel.
   Nadie escribe ninguna dirección, así que la regla 7 no está en juego, y la
@@ -326,7 +326,7 @@ código con «Te enviamos un código nuevo.».
   guarda la sesión (`RESET_EMAIL`). Pasa por los mismos límites y contesta igual
   exista o no la cuenta, que es la regla 7 de siempre.
 - **Si la dirección se escribió mal**, se vuelve atrás y se escribe la buena.
-  Hubo una pantalla de corregirla antes de confirmar (`/confirmar/corregir`) y
+  Hubo una pantalla de corregirla antes de confirmar (`/confirm/corregir`) y
   se quitó: quien se registró con una dirección equivocada se registra otra vez
   con la buena, y la cuenta a medias se borra sola.
 
@@ -445,7 +445,7 @@ consecuencia que conviene tener presente: con una sola etiqueta no se puede
 segmentar, así que el Básico tampoco; si algún día estorba, es cambiar una fila
 del documento.
 
-**Las etiquetas se crean antes de usarse**, en `/contactos/etiquetas`, y viven
+**Las etiquetas se crean antes de usarse**, en `/contacts/tags`, y viven
 en `contact_tags` del documento de la cuenta. Los formularios de agregar e
 importar solo enseñan casillas con las que existen, y el servidor descarta lo
 que llegue y no esté en ese registro. Dos razones: escribirlas en cada
@@ -483,7 +483,7 @@ envío**: la lista sí los enseña, porque para completarlos hay que verlos.
 
 **Se crean desde la lista de contactos**, que es donde se está cuando hace falta
 guardar un dato más, y con el plan lleno ese botón sale apagado —y la ruta lo
-comprueba igual—. `/contactos/columnas` es para lo que ya existe: **cambiar el
+comprueba igual—. `/contacts/columns` es para lo que ya existe: **cambiar el
 tipo**, que no se deja si algún valor no encaja en el nuevo, y borrar. El nombre
 no se cambia: es lo que las piezas ya tienen escrito dentro. Borrar una borra lo
 que los contactos tenían escrito en ella; los contactos se quedan.
@@ -502,7 +502,7 @@ colección y se consulta en lote con `$in`; así las dos no pueden separarse, y 
 contacto borrado y vuelto a importar reaparece suprimido. La columna «Estado» de
 la lista sale de esa consulta, no de un campo guardado.
 
-**Exportar pregunta antes.** El GET de `/contactos/exportar` no descarga nada:
+**Exportar pregunta antes.** El GET de `/contacts/export` no descarga nada:
 dice cuántos van a salir y con qué filtro, y el POST es el que escribe el
 archivo. El filtro viaja en campos escondidos, así que lo que baja es lo que esa
 pantalla acaba de decir y no lo que quedó en la dirección de otra.
@@ -619,13 +619,13 @@ imagen de fuera**: la sube quien la tiene.
 validador al guardarla, y eso es mecánico, no un juicio. La mirada de una persona
 ocurre una sola vez por cuenta, en la habilitación para enviar, y es sobre la
 cuenta y su lista, no sobre el archivo. Tener las dos serían dos revisiones
-manuales para la misma decisión. `/admin/plantillas` lista lo que subieron los
+manuales para la misma decisión. `/admin/templates` lista lo que subieron los
 clientes cuando se podía, para poder abrir una cuando haga falta; las prediseñadas llenas no
 salen ahí, porque son nuestras plantillas con el texto de alguien dentro y no hay
 ningún archivo ajeno que mirar.
 
 **El HTML de un cliente se dibuja solo para él, y solo en un marco aislado.**
-Es lo que deja editarlo viendo cómo queda (`/plantillas/html/<id>`): el código a
+Es lo que deja editarlo viendo cómo queda (`/templates/html/<id>`): el código a
 un lado, la vista previa al otro, y un botón por columna que escribe su marca
 donde está el cursor. El marco va con `sandbox` y sin ningún permiso —origen
 opaco, sin scripts, sin ver la galleta— y la respuesta lleva la cabecera de
@@ -639,7 +639,7 @@ administrador sigue sin dibujarse**: allí se baja como `text/plain`.
 **La lista de plantillas son tarjetas con el correo dentro.** Cada una enseña la
 pieza armada como correo, achicada en un marco aislado (`sandbox`, sin permisos,
 con `loading="lazy"`), y debajo el nombre, de qué clase es, cuándo se tocó y
-Editar, Duplicar y Borrar. Lo sirve **`GET /plantillas/<id>/vista`**, que arma
+Editar, Duplicar y Borrar. Lo sirve **`GET /templates/<id>/preview`**, que arma
 las tres clases de pieza con lo que ya existía (`html_preview()`,
 `canvas_email()` y `preview()`) y lleva la cabecera de correo; la pieza de otra
 cuenta responde 404. Una tabla de nombres obligaba a abrir cada una para
@@ -648,7 +648,7 @@ acordarse de cuál era.
 **La pantalla de Plantillas tiene dos caminos arriba**, los dos de todos los
 planes: Crear plantilla (el lienzo) y **Cargar plantilla (ZIP)**, que carga el
 ZIP de un lienzo. Cargar abre una bandeja con el formulario; sin JavaScript el
-botón lleva a `/plantillas/cargar`, que es la misma ruta. Al cargar se va
+botón lleva a `/templates/upload`, que es la misma ruta. Al cargar se va
 directo al editor del lienzo nuevo. Debajo, dos notas —el
 dato de cada persona, con las columnas de esa cuenta, y el tope de 102 KB— y la
 lista de todas sus piezas, con Editar, Duplicar y Borrar. **Duplicar copia las
@@ -657,7 +657,7 @@ ninguna otra nombra.
 
 ## El lienzo de «Crear plantilla»
 
-`/plantillas/crear` y `/plantillas/lienzo/<id>`, con `services/canvas.py` y
+`/templates/create` y `/templates/canvas/<id>`, con `services/canvas.py` y
 `static/js/canvas.js`. **Es una sola hoja de 600 px que crece hacia abajo**:
 texto, botón, imagen y geometría se ponen donde se quiera, se mueven, cambian
 de tamaño y de estilo, y se deshace y rehace. Se guarda **el lienzo en JSON con
@@ -679,7 +679,7 @@ sirve dentro de esa página. Lo pegado entra por `parse()` como todo lo demás: 
 servidor no se fía de ello más que de lo que escribe el editor.
 
 **Una foto se puede pegar del portapapeles**, y sube por la misma ruta que el
-botón (`/plantillas/lienzo/imagen`): se revisa por lo que trae dentro, se achica
+botón (`/templates/canvas/image`): se revisa por lo que trae dentro, se achica
 y cuenta contra el tope del plan. Si el portapapeles solo trae **una dirección
 web**, se pide descargarla y subirla: **el servidor nunca va a buscar una
 imagen a otro sitio**, que sería dejarlo pidiendo cualquier cosa a cualquier
@@ -897,11 +897,11 @@ guardar.
 nadie: las marcas `*|NOMBRE|*` se quedan escritas, porque lo que se baja es la
 plantilla.
 
-**El PDF baja lo que se está viendo**, por POST (`/plantillas/lienzo/pdf`), como
+**El PDF baja lo que se está viendo**, por POST (`/templates/canvas/pdf`), como
 la vista previa: también de una pieza que todavía no se ha guardado.
 
 **«Descargar ZIP» baja la plantilla guardada, para pasársela a otra persona**
-(`GET /plantillas/lienzo/<id>/html`). Trae dos cosas:
+(`GET /templates/canvas/<id>/html`). Trae dos cosas:
 
 - **El lienzo**: `lienzo.json`, el lienzo guardado tal cual y con su nombre, y
   sus fotos originales en `fotos/`, que el lienzo nombra por su ruta
@@ -941,7 +941,7 @@ lienzo), porque un ZIP pequeño puede inflarse a gigas.
 (`backend/sample_templates/<slug>.zip`), iguales para todos.
 - **Por qué en el código y no subidas desde administración:** el sitio es
   estático, y lo que enseña tiene que existir al construirlo.
-- **Qué pasa al pulsar una:** `GET /plantillas/muestra/<slug>` la carga con el
+- **Qué pasa al pulsar una:** `GET /templates/sample/<slug>` la carga con el
   mismo `canvas_from_pack()` de «Cargar plantilla», con la misma revisión y sus
   fotos contando contra el tope, y abre su lienzo.
   - Cada pulsación es otra copia.
@@ -1029,7 +1029,7 @@ regla nueva se quede fuera de esa lista. La lista corta de encima del lienzo
 sigue diciendo solo lo que falla.
 
 **La misma revisión corre mientras se trabaja**, en `POST
-/plantillas/lienzo/revisar`, que devuelve la lista y **el peso del correo tal
+/templates/canvas/check`, que devuelve la lista y **el peso del correo tal
 como sale** —con el pie de la baja y las imágenes—. El editor lo dibuja como una
 barra de cuánto queda antes de los 102 KB, en ámbar pasado el 70 % y en rojo
 pasado el 90 %.
@@ -1037,7 +1037,7 @@ pasado el 90 %.
 ## Las plantillas prediseñadas
 
 **Ya no se ofrecen.** Las piezas que alguien armó con ellas siguen en su lista y
-se editan con el formulario de siempre (`/plantillas/pieza/<id>`); empezar una
+se editan con el formulario de siempre (`/templates/piece/<id>`); empezar una
 nueva ya no se puede. Lo de abajo describe cómo funcionan esas piezas.
 
 Cuatro, en `backend/email_templates/`, en el HTML que entienden los lectores de
@@ -1138,7 +1138,7 @@ acaba de tomar.
   fundidas, y las fotos quitadas se quedaban contando.
 - **El tope lo dice el plan**, en la fila «Imágenes guardadas» de
   `docs/pricing.md` (`plans.image_limit()`): **20 · 50 · 100**, y sin plan lo
-  del Básico. No se publica en /planes. Solo cuentan las fotos que sube el
+  del Básico. No se publica en /pricing. Solo cuentan las fotos que sube el
   cliente, no las que funde el sistema ni las retiradas.
 - **Las fotos sueltas se recogen al llegar al tope.** Una foto subida en el
   editor cuenta desde que se sube, aunque la plantilla no se guarde nunca, y
@@ -1236,7 +1236,7 @@ sin límite, y el asunto copiado hace que el historial siga contando la verdad
 aunque después se corrija o se borre la campaña. **Borrar una campaña no borra
 sus envíos**: lo que salió, salió.
 
-Es lo que dibuja «Campañas enviadas» en `/envios` y las líneas de correo de la
+Es lo que dibuja «Campañas enviadas» en `/campaigns` y las líneas de correo de la
 Actividad de una ficha, que por eso son una por envío y no una por campaña.
 
 **Su `_id` nace al arrancar, no al terminar.** `campaigns.start()` lo genera y
@@ -1412,7 +1412,7 @@ de otro dominio, es lo que obliga a nombrar el sitio en `form-action`. **El
 «Volver» de la lista de cuentas lleva ahí también**: llevaba a las Estadísticas
 de la cuenta en uso.
 
-**Lo primero que ve una cuenta nueva es `/bienvenida`, no el panel.** Confirmar
+**Lo primero que ve una cuenta nueva es `/welcome`, no el panel.** Confirmar
 el registro aterriza ahí: el nombre de la persona, que su cuenta está lista, y
 dos botones —ver los planes, que están en el sitio público, e ir a
 Configuración—. Antes se caía directo en Estadísticas, que sin plan contratado y
@@ -1423,7 +1423,7 @@ Esa dirección se queda en el historial, así que lleva dos guardas que **no son
 para el día del registro**, donde no pueden darse: con un plan ya contratado
 manda al panel, y a un administrador lo devuelve a `/admin`.
 
-**`/panel` es la pantalla de Estadísticas.** La dirección no cambió aunque la
+**`/dashboard` es la pantalla de Estadísticas.** La dirección no cambió aunque la
 pantalla se llame así: cambiarla rompería los enlaces guardados y el correo de
 bienvenida a cambio de nada. **Solo enseña envíos**: los contactos, las
 importaciones y el plan tienen sus propias pantallas y salieron de aquí. Tiene
@@ -1455,7 +1455,7 @@ cuatro partes, con filtro por periodo, por etiqueta y por **campaña**:
   (`sent_counts` contra `docs/pricing.md`) en una barra, ámbar desde el 80 %
   (cuando se avisa) y roja al 100 %. **No dice cuándo se renueva**: todavía no
   hay renovación automática, y una fecha haría pensar que sí. Sin plan lo dice
-  y enlaza a /planes. Es un SVG y no un ancho en `style`, que la cabecera
+  y enlaza a /pricing. Es un SVG y no un ancho en `style`, que la cabecera
   del panel no deja.
 - Cada gráfica lleva **la escala a la izquierda** (números redondos,
   `stats.nice_top()`), **el eje del tiempo abajo** y **un cuadrito por tramo**
@@ -1509,7 +1509,7 @@ la frase de que aún no ha pasado nada.
 
 La llena `services/stats.py`, y **es la misma pantalla que ve el
 administrador** en `/admin/` para la cuenta que elija: una plantilla y dos
-entradas, para que no puedan separarse. **`/contactos`** tiene cinco
+entradas, para que no puedan separarse. **`/contacts`** tiene cinco
 pantallas: la lista —una fila por contacto: su correo, su nombre, **sus
 columnas propias**, si está activo, anulado o incompleto, sus etiquetas y
 cuándo entró—, la importación, las etiquetas, las columnas propias y las
@@ -1517,13 +1517,13 @@ supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
 desde un botón encima de la lista, y exportar pasa por una confirmación que dice
 cuántos van a salir. **Borrar también pregunta**: el botón de cada fila, y el de
 eliminar los anulados, llevan a una pantalla que dice cuántos se van y tiene el
-botón rojo; el que borra es el POST. **`/plantillas`** tiene arriba crear y cargar, y debajo
+botón rojo; el que borra es el POST. **`/templates`** tiene arriba crear y cargar, y debajo
 todas las piezas de la cuenta: las del lienzo, las cargadas en HTML y las
-prediseñadas que quedaron de antes. Y todo lo demás vive en **`/configuracion`**, con cuatro secciones:
+prediseñadas que quedaron de antes. Y todo lo demás vive en **`/settings`**, con cuatro secciones:
 **Cuenta** (datos, estado y plan), **Seguridad** (contraseña, autenticación de
 múltiples factores, dispositivos conectados y **los usuarios de la cuenta**),
 **Notificaciones** y **Facturación**
-(`/configuracion/pagos`, que no cambió de dirección porque ahí vuelve PayPal):
+(`/settings/billing`, que no cambió de dirección porque ahí vuelve PayPal):
 el plan con su fecha exacta, los métodos de pago que hay y el historial de
 compras (una fila por pago cobrado). Los métodos son hoy solo la lista; ahí se
 guardará el de cada cuenta el día que haya cobros recurrentes. **Las facturas están hechas pero escondidas** (`invoices.SHOWN`,
@@ -1580,7 +1580,7 @@ la primera vez que abre cualquiera de los dos.
 
 **Salir cuesta un clic desde los dos sitios.** El sitio público está en otro
 dominio y no lleva ningún testigo del panel, así que su «Cerrar sesión» no puede
-ser un formulario: es un enlace, y un enlace es un `GET /salir`. Ese GET cierra
+ser un formulario: es un enlace, y un enlace es un `GET /logout`. Ese GET cierra
 igual que el POST del menú del panel, y por eso no se le pide testigo.
 
 Lo único que no obedece es una petición que el navegador **dice estar
@@ -1592,7 +1592,7 @@ intermediario se la comiera, lo que se pierde es la protección y no el salir.
 
 ### Varias cuentas abiertas a la vez
 
-**«Cambiar de cuenta», encima de salir, lleva a `/cambiar-cuenta`**: la lista de
+**«Cambiar de cuenta», encima de salir, lleva a `/switch-account`**: la lista de
 las cuentas que este navegador tiene abiertas, para saltar de una a otra sin
 escribir ninguna contraseña. Existe porque quien administra prueba con varias
 —un cliente, otro cliente, el administrador— y antes eso era salir, buscar el
@@ -1608,7 +1608,7 @@ viaja en una galleta y porque nadie necesita más.
 Tres cosas que sostienen esto:
 
 - **Agregar una cuenta pasa por la pantalla de entrar completa**, con su
-  contraseña y su segundo paso: `/entrar?agregar=1`, que se titula «Agregar una
+  contraseña y su segundo paso: `/login?add=1`, que se titula «Agregar una
   cuenta». Aquí no se abre ninguna puerta que no estuviera ya abierta. La marca
   de «vengo a agregar» vive en la sesión y no en la dirección, porque el segundo
   paso pasa por otra pantalla.
@@ -1621,7 +1621,7 @@ Tres cosas que sostienen esto:
   cuenta suya podría entrar a otra sin que su dueño se enterara.
 - **Y se puede crear una cuenta nueva sin cerrar la abierta**, por el mismo
   camino: el pie de esa pantalla («¿Te gustaría crear otra cuenta?») lleva a
-  `/registro?agregar=1`, que se dibuja en vez de devolver a la portada, y al
+  `/signup?add=1`, que se dibuja en vez de devolver a la portada, y al
   confirmar el código la cuenta nueva se suma a las abiertas. Ninguna de las dos
   pantallas lleva un recuadro que lo explique.
 - **«Olvidé la contraseña» mientras se agrega una cuenta es de la que se está
@@ -1661,7 +1661,7 @@ enseña Administración de primera fila. Sí es a donde la devuelve
 `not_for_admins()` si abre una pantalla de cliente. Cuatro pantallas:
 **Estadísticas · Cuentas · Plantillas subidas · Correos del sistema**.
 
-**Correos del sistema** (`/admin/correos`) es la del «no me llegó el código»: se
+**Correos del sistema** (`/admin/emails`) es la del «no me llegó el código»: se
 escribe una dirección y sale cada correo que el panel le mandó, cuándo, cuál
 era y qué dijo Amazon. Se busca por dirección y no desde una ficha porque quien
 no recibe su código casi nunca llegó a tener cuenta. **No dibuja el cuerpo de
@@ -1785,7 +1785,7 @@ transaccionales: sin enlace de baja y sin marca de agua, que es la regla 8.
 
 **Cuando la cuenta entra al panel, y hoy no hay dónde más.** No existe el proceso
 en segundo plano que podría darse cuenta a las tres de la mañana, así que
-`notices.plan_watch()` se llama al dibujar `/panel`.
+`notices.plan_watch()` se llama al dibujar `/dashboard`.
 
 Tiene el límite que se ve y conviene tenerlo presente: **solo le llega a quien
 entra**, que es justamente quien menos lo necesita. El día que exista ese
@@ -1797,7 +1797,7 @@ medio año la primera vez que alguien entrara.
 
 ## Enviar correos
 
-`/envios`, debajo de Estadísticas y **solo para clientes**: se marcan las
+`/campaigns`, debajo de Estadísticas y **solo para clientes**: se marcan las
 etiquetas a las que va —ninguna es toda la lista—, una pieza guardada y el
 asunto, y sale ahora o queda programada.
 
@@ -1814,7 +1814,7 @@ guardadas», que se corrigen y se vuelven a mandar, y «Campañas enviadas», un
 línea por cada vez que salió algo, leída de `campaign_runs`. Una campaña
 mandada seis veces es una fila arriba y seis abajo.
 
-**Cada envío tiene su «Detalles»** (`/envios/enviados/<id>`): una fila por
+**Cada envío tiene su «Detalles»** (`/campaigns/sent/<id>`): una fila por
 persona a la que le salió, con si le llegó (lo último que contó Amazon:
 entregado, rebotó, rechazado o spam), cuándo lo abrió y cuándo pulsó por
 primera vez. Se filtra por etiqueta y por **qué pasó** (entregados, rebotaron,
@@ -1831,7 +1831,7 @@ sigue sin enseñarse.
 asunto sigue funcionando, pero los botones de las marcas viven en Plantillas.
 
 **Mandar pasa siempre por una pantalla que pregunta.** El botón de la lista es
-un enlace a `GET /envios/<id>/mandar`, que no manda nada: dice el asunto, a qué
+un enlace a `GET /campaigns/<id>/send`, que no manda nada: dice el asunto, a qué
 lista, **a cuántos contactos**, con qué pieza y cuánta cuota queda, y si ya
 salió antes avisa de que le va a llegar otra vez a todos, también a quien ya la
 recibió. El que manda es el POST. Es el mismo reparto que exportar contactos, y
@@ -1999,7 +1999,7 @@ enseña.
 ```
 Contratar con Tarjeta  →  intento en payments (method card, provider paguelofacil)
   →  enlace de pago (PARM_1 = el intento, y el intento dentro de la descripción)
-  →  paga en Paguélofácil  →  vuelve a /configuracion/pagos/tarjeta/volver
+  →  paga en Paguélofácil  →  vuelve a /settings/billing/card/return
   →  el servidor CONSULTA la operación (Oper) con el token
   →  aprobada, capturada, por el monto del plan y de ESE intento: se activa
 ```
@@ -2037,7 +2037,7 @@ Pagar mueve la cuenta a `active` y escribe `plan`, `plan_until` y `plan_cycle`
 a pagar mientras está vigente** (septiembre de 2026): se compra otra vez cuando
 vence, y cuenta desde ese día. Lo decide
 `accounts.current_plan()`, que da el plan solo mientras `plan_until` no pasó, y
-lo comprueban `/contratar/<plan>`, que lo dice con la fecha y no ofrece pagar, y
+lo comprueban `/checkout/<plan>`, que lo dice con la fecha y no ofrece pagar, y
 el POST que crea el pago. Hasta entonces pagar antes de tiempo sumaba al final
 de lo que quedaba; `renews_from()` y el correo de «Renovaste» siguen ahí por si
 un pago llega así, pero ya no hay camino para crearlo. Subir a un plan mayor sí
@@ -2059,8 +2059,8 @@ este mes, y `used_this_month()` lo resta, tanto para la cuota como para la
 barra de Estadísticas. Un correo enviado entre crear el intento y pagar no
 cambia el descuento ya calculado.
 
-**`/contratar/<plan>` es un resumen, no una elección.** Llega con el ciclo que
-se eligió en /planes (`?ciclo=anual`) y enseña un desglose **que suma**: el
+**`/checkout/<plan>` es un resumen, no una elección.** Llega con el ciclo que
+se eligió en /pricing (`?cycle=yearly`) y enseña un desglose **que suma**: el
 plan y el descuento con sus correos, **sin ITBMS**; la fila «ITBMS (7%)»; y al
 final el **total a pagar ahora**, que es lo que se cobra y lleva el ITBMS
 dentro, como todos los precios. El ITBMS sale del total (`plans.itbms_in()`),
@@ -2086,7 +2086,7 @@ pedido no se puede y el otro sí (quien tiene un anual y pulsó un mensual), ens
 el que sí.
 
 **Al volver de un pago cobrado se aterriza en su recibo**
-(`/configuracion/pagos/recibo/<id>`, solo del dueño y solo cobrado): el número
+(`/settings/billing/receipt/<id>`, solo del dueño y solo cobrado): el número
 de pago, el plan y el ciclo, el método, la fecha y hora y, de cifras, **solo el
 total pagado**: ni el ITBMS ni el descuento, que en el resumen va sin ITBMS y
 serían dos cifras distintas para lo mismo. El círculo de arriba gira como si
@@ -2106,14 +2106,14 @@ el pago sigue cobrado y el plan activo.
 precio público y a la medida. Quedan tres, todos con precio y todos comprables
 por la web.
 
-**El plan se elige en `/planes`, no dentro del panel.** El botón de cada plan
-del sitio público lleva a `/contratar/<plan>`, que enseña lo que cuesta y tiene
+**El plan se elige en `/pricing`, no dentro del panel.** El botón de cada plan
+del sitio público lleva a `/checkout/<plan>`, que enseña lo que cuesta y tiene
 el botón de pagar; sin sesión manda a entrar llevando **el nombre del plan, nunca
 una dirección**, y al abrir sesión sigue hasta ahí. Configuración → Opciones de
 pago ya no vende: dice desde dónde se cobra, qué plan hay contratado y qué se ha
 cobrado.
 
-**Las tarjetas de `/planes` tienen su interruptor de mensual y anual**, con
+**Las tarjetas de `/pricing` tienen su interruptor de mensual y anual**, con
 `landing/assets/js/plans.js`, el único guion que baja una sola página (el bloque
 `scripts` de `src/base.html.j2`). En anual cada tarjeta enseña **el equivalente
 mensual** —el anual entre doce— y debajo **«Total a pagar ahora»** con lo que
@@ -2153,8 +2153,8 @@ Cuatro cosas más de esas tarjetas:
   arriba, «Mejorar a X», salvo en mensual para quien tiene un anual, que dicen
   «Solo en anual», apagados. Debajo de las tarjetas, con el ITBMS, una nota dice
   que al mejorar se descuentan los correos sin usar y el mes empieza de nuevo.
-- **El botón de cada plan lleva el ciclo al panel**, con `?ciclo=anual`, y
-  `/contratar/<plan>` resalta ese botón. Sin parámetro, o con uno inventado,
+- **El botón de cada plan lleva el ciclo al panel**, con `?cycle=yearly`, y
+  `/checkout/<plan>` resalta ese botón. Sin parámetro, o con uno inventado,
   queda el mes, que es lo de siempre. `nav.js` sigue mandando en el texto del
   botón: esto solo le toca la dirección.
 - **Con «reducir movimiento» puesto no se anima nada**: el precio cambia de
@@ -2278,7 +2278,7 @@ noche, el resplandor claro de la primera).
 
 **«Cómo funciona», en la portada, es una tira de plantillas que corre sola**
 (septiembre de 2026). Lleva el título «¿Aún no sabes por dónde empezar?», las
-plantillas de `SAMPLES` y el botón «Ver tutorial», que va a /como-funciona,
+plantillas de `SAMPLES` y el botón «Ver tutorial», que va a /how-it-works,
 donde están los tutoriales (ver «Los tutoriales», más abajo).
 - **Es solo CSS**, sin guion:
   - la lista va dos veces seguidas y la tira se desplaza la mitad, así que el
@@ -2293,7 +2293,7 @@ donde están los tutoriales (ver «Los tutoriales», más abajo).
   miniatura.
 - **Pulsarla abre su lienzo en el panel** (ver `designs`).
 
-**Los tutoriales de /como-funciona son capturas del panel que se recorren
+**Los tutoriales de /how-it-works son capturas del panel que se recorren
 pulsando** (octubre de 2026), como Arcade: Contactos, Plantillas, Enviar correos,
 Estadísticas y Configuración, en pestañas. Sustituyeron a los cuatro pasos. Cada
 paso es la pantalla de verdad, en el tema puesto, con un anillo que late sobre
@@ -2384,7 +2384,7 @@ la portada pide cinco capturas, no diez.
 sección funciona entera sin JavaScript y las flechas del teclado la mueven
 solas, que es lo que se consigue gratis con un grupo de radios.
 `assets/js/carousel.js` agrega tres cosas y nada más, y ninguna existe sin él
-(como el interruptor de `/planes`): los botones de anterior y siguiente, el paso
+(como el interruptor de `/pricing`): los botones de anterior y siguiente, el paso
 automático cada cuatro segundos y la ventana de ver una captura en grande. Ese
 paso **se detiene con el ratón encima o con el foco dentro y vuelve a andar al
 quitarlo**, no corre fuera de la pantalla, ni con la pestaña escondida, ni con

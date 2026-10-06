@@ -28,9 +28,9 @@
     {% if errors.nombre %}<p class="error">{{ errors.nombre }}</p>{% endif %}
 
     <label for="correo">{{ t('users_email') }}</label>
-    <input id="correo" name="correo" type="email" autocomplete="off"
-           value="{{ form.get('correo', '') }}">
-    {% if errors.correo %}<p class="error">{{ errors.correo }}</p>{% endif %}
+    <input id="correo" name="email" type="email" autocomplete="off"
+           value="{{ form.get('email', '') }}">
+    {% if errors.email %}<p class="error">{{ errors.email }}</p>{% endif %}
     <p class="hint">{{ t('users_email_hint') }}</p>
     {% endif %}
 
@@ -51,7 +51,7 @@
   </form>
 
   <p class="foot">
-    <a href="{{ url_for('auth.settings', section='seguridad') }}#usuarios">{{ t('users_back') }}</a>
+    <a href="{{ url_for('auth.settings', section='security') }}#users">{{ t('users_back') }}</a>
   </p>
 </div>
 {% endblock %}

@@ -32,7 +32,7 @@
       {{ t('contacts_counter_left', n=left) }}
       {% else %}
       {{ t('contacts_full') }}
-      <a href="{{ site_url }}/planes/">{{ t('contacts_plans') }}</a>
+      <a href="{{ site_url }}/pricing/">{{ t('contacts_plans') }}</a>
       {% endif %}
       {% if blocked_total %}<br>
       {{ t('contacts_counter_blocked_one') if blocked_total == 1

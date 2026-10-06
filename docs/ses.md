@@ -68,7 +68,7 @@ SNS es el buzón por el que Amazon manda los avisos.
 1. En el tema recién creado: **Crear suscripción.**
 2. Protocolo: **HTTPS**.
 3. Punto de enlace:
-   `https://panel.sobreala.com/webhooks/ses/<el secreto del paso 1>`
+   `https://app.sobreala.com/webhooks/ses/<el secreto del paso 1>`
 4. **«Habilitar la entrega de mensajes sin procesar» se deja apagado.** El panel
    espera el sobre de SNS, con el aviso dentro.
 5. **Crear suscripción.**
@@ -174,7 +174,7 @@ sandbox y no cuentan contra la reputación:
 
 1. Importar las tres como contactos de una cuenta de prueba y mandarles una
    campaña.
-2. En unos segundos, en `/envios`, «Campañas enviadas» tiene que decir 2
+2. En unos segundos, en `/campaigns`, «Campañas enviadas» tiene que decir 2
    entregados, 1 rebote y 1 queja.
 3. En Contactos → Supresiones, `bounce@` sale como rebote y `complaint@` como
    queja.

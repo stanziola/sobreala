@@ -39,10 +39,10 @@
       <label class="btn btn--outline btn--small" for="archivo_{{ field.name }}">{{ t('import_file_choose') }}</label>
       <span class="filepick__name" data-file-name>{{ t('import_file_none') }}</span>
       <button class="btn btn--small" type="submit"
-              name="accion" value="imagen:{{ field.name }}">{{ t('designs_image_upload') }}</button>
+              name="action" value="imagen:{{ field.name }}">{{ t('designs_image_upload') }}</button>
       {% if field.value %}
       <button class="btn btn--small btn--outline" type="submit"
-              name="accion" value="quitar:{{ field.name }}">{{ t('designs_image_remove') }}</button>
+              name="action" value="quitar:{{ field.name }}">{{ t('designs_image_remove') }}</button>
       {% endif %}
     </div>
     <p class="hint">{{ t('designs_image_hint', mb=image_mb) }}</p>
@@ -66,9 +66,9 @@
     {% include "designs/_columns.html" %}
 
     <div class="compose__actions">
-      <button class="btn" type="submit" name="accion" value="guardar">{{ t('designs_save') }}</button>
+      <button class="btn" type="submit" name="action" value="guardar">{{ t('designs_save') }}</button>
       {# Este entra en el marco de al lado, no en la página. #}
-      <button class="btn btn--outline" type="submit" name="accion" value="vista"
+      <button class="btn btn--outline" type="submit" name="action" value="vista"
               formtarget="vista">{{ t('designs_preview_button') }}</button>
     </div>
 

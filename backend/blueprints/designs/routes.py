@@ -144,7 +144,7 @@ def shared(db, account, **extra):
     }
 
 
-@bp.route("/plantillas")
+@bp.route("/templates")
 def index():
     account = signed_in()
     if account is None:
@@ -152,12 +152,12 @@ def index():
     return render_template(
         "designs/index.html", section="plantillas",
         **shared(get_db(), account, errors={},
-                 saved=bool(request.args.get("guardado")),
-                 updated=bool(request.args.get("cambiado")),
-                 copied=bool(request.args.get("copia"))))
+                 saved=bool(request.args.get("saved")),
+                 updated=bool(request.args.get("changed")),
+                 copied=bool(request.args.get("copy"))))
 
 
-@bp.route("/plantillas/cargar", methods=["GET", "POST"])
+@bp.route("/templates/upload", methods=["GET", "POST"])
 def upload():
     """Cargar el ZIP de un lienzo, bajado del editor de esta cuenta o de otra:
     queda un lienzo nuevo y se abre en el editor tal como estaba. Es de todos
@@ -214,7 +214,7 @@ def sample_file(slug: str) -> Path | None:
     return path if path.is_file() else None
 
 
-@bp.route("/plantillas/muestra/<slug>")
+@bp.route("/templates/sample/<slug>")
 def sample(slug):
     """Pulsar una plantilla de la portada: queda como plantilla de la cuenta y
     se abre su lienzo. Es lo mismo que cargar su ZIP, así que pasa por la misma
@@ -229,7 +229,7 @@ def sample(slug):
         abort(404)
     account = signed_in()
     if account is None:
-        return redirect(url_for("auth.login", muestra=slug))
+        return redirect(url_for("auth.login", sample=slug))
     if is_prefetch():
         return Response(status=204)
 
@@ -281,7 +281,7 @@ def filled_for(db, account, email: str) -> str:
     return columns.fill(email, person, fields)
 
 
-@bp.route("/plantillas/html/<raw>", methods=["GET", "POST"])
+@bp.route("/templates/html/<raw>", methods=["GET", "POST"])
 def edit_html(raw):
     """El código a un lado y cómo queda al otro. La cuenta va en la consulta."""
     account = signed_in()
@@ -304,7 +304,7 @@ def edit_html(raw):
         name = designs.clean_name(request.form.get("nombre", "")) or name
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
-        elif request.form.get("accion") == "vista":
+        elif request.form.get("action") == "vista":
             return html_preview(html, plan)
         else:
             problems = html_check.check(html.encode("utf-8"))
@@ -317,7 +317,7 @@ def edit_html(raw):
                 # Las que el HTML de antes nombraba y este ya no (una foto
                 # cambiada con «Cambiar», por ejemplo).
                 drop_unused(db, account["_id"], images_in(found))
-                return redirect(url_for("designs.index", cambiado=1))
+                return redirect(url_for("designs.index", changed=1))
 
     return render_template(
         "designs/html.html", section="plantillas", account=account,
@@ -570,7 +570,7 @@ def compose(account, key: str, found):
                            render.clean(key, request.form))
         name = designs.clean_name(
             request.form.get("nombre") or filled.get("titulo", ""))
-        action, _, which = request.form.get("accion", "").partition(":")
+        action, _, which = request.form.get("action", "").partition(":")
 
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
@@ -593,11 +593,11 @@ def compose(account, key: str, found):
             elif found is None:
                 designs.save_filled(db, account["_id"], name=name,
                                     template=key, filled=filled)
-                return redirect(url_for("designs.index", guardado=1))
+                return redirect(url_for("designs.index", saved=1))
             else:
                 designs.update_filled(db, account["_id"], found["_id"],
                                       name=name, filled=filled)
-                return redirect(url_for("designs.index", cambiado=1))
+                return redirect(url_for("designs.index", changed=1))
 
     return render_template(
         "designs/fill.html", section="plantillas", account=account,
@@ -615,7 +615,7 @@ def compose(account, key: str, found):
         watermark=plans.has_watermark(plan))
 
 
-@bp.route("/plantillas/pieza/<raw>", methods=["GET", "POST"])
+@bp.route("/templates/piece/<raw>", methods=["GET", "POST"])
 def piece(raw):
     """Volver a abrir una guardada. La cuenta va en la consulta, siempre."""
     account = signed_in()
@@ -631,7 +631,7 @@ def piece(raw):
     return compose(account, found["template"], found)
 
 
-@bp.route("/plantillas/<raw>/vista")
+@bp.route("/templates/<raw>/preview")
 def piece_view(raw):
     """Una pieza guardada, armada como correo, para el marco de su tarjeta.
 
@@ -777,7 +777,7 @@ def canvas_size(doc, plan, urls: list[str | None]) -> int:
 
 
 # Una dirección de baja del largo de las de verdad, para pesar el correo.
-UNSUBSCRIBE_SAMPLE = "https://panel.sobreala.com/baja/" + "x" * 96
+UNSUBSCRIBE_SAMPLE = "https://app.sobreala.com/unsubscribe/" + "x" * 96
 
 
 def sample_grounds(doc) -> list[str | None]:
@@ -847,14 +847,14 @@ def canvas_editor(account, found):
                         designs.save_canvas(db, account["_id"], name=name,
                                             doc=posted, backgrounds=grounds,
                                             shades=shades)
-                        return redirect(url_for("designs.index", guardado=1))
+                        return redirect(url_for("designs.index", saved=1))
                     designs.update_canvas(db, account["_id"], found["_id"],
                                           name=name, doc=posted, backgrounds=grounds,
                                           shades=shades)
                     # Lo que la versión de antes nombraba y esta ya no: sus
                     # imágenes fundidas y las fotos que se quitaron del lienzo.
                     drop_unused(db, account["_id"], images_in(found))
-                    return redirect(url_for("designs.index", cambiado=1))
+                    return redirect(url_for("designs.index", changed=1))
 
     return render_template(
         "designs/canvas.html", section="plantillas", account=account,
@@ -871,7 +871,7 @@ def canvas_editor(account, found):
         watermark=plans.has_watermark(accounts.plan_of(account)))
 
 
-@bp.route("/plantillas/crear", methods=["GET", "POST"])
+@bp.route("/templates/create", methods=["GET", "POST"])
 def create():
     account = signed_in()
     if account is None:
@@ -879,7 +879,7 @@ def create():
     return canvas_editor(account, None)
 
 
-@bp.route("/plantillas/lienzo/<raw>", methods=["GET", "POST"])
+@bp.route("/templates/canvas/<raw>", methods=["GET", "POST"])
 def edit_canvas(raw):
     account = signed_in()
     if account is None:
@@ -892,7 +892,7 @@ def edit_canvas(raw):
     return canvas_editor(account, found)
 
 
-@bp.route("/plantillas/lienzo/revisar", methods=["POST"])
+@bp.route("/templates/canvas/check", methods=["POST"])
 def canvas_review():
     """Cuánto pesa, qué le falta para no ir a spam y cómo va cada requisito. Lo
     pide el editor mientras se trabaja, para la barra, la lista y la ventana de
@@ -915,7 +915,7 @@ def canvas_review():
                    issues=issues, rules=rule_texts(doc, size, problems, found))
 
 
-@bp.route("/plantillas/lienzo/vista", methods=["POST"])
+@bp.route("/templates/canvas/preview", methods=["POST"])
 def canvas_preview():
     """El lienzo como saldría, para el marco de al lado. Los fondos van dentro
     de la respuesta: mirar cómo queda no guarda nada."""
@@ -937,7 +937,7 @@ def canvas_preview():
     return Response(filled_for(db, account, email), mimetype="text/html")
 
 
-@bp.route("/plantillas/lienzo/pdf", methods=["POST"])
+@bp.route("/templates/canvas/pdf", methods=["POST"])
 def canvas_pdf():
     """La pieza en un PDF, para guardarla o imprimirla.
 
@@ -963,7 +963,7 @@ def canvas_pdf():
         "Content-Disposition": f'attachment; filename="{file_name(name, "pdf")}"'})
 
 
-@bp.route("/plantillas/lienzo/<raw>/html")
+@bp.route("/templates/canvas/<raw>/html")
 def canvas_html(raw):
     """La plantilla guardada en un ZIP, para pasársela a otra persona.
 
@@ -1045,7 +1045,7 @@ def file_name(name: str, ext: str) -> str:
 CANVAS_PHOTO_WIDTH = canvas.WIDTH * canvas.SCALE
 
 
-@bp.route("/plantillas/lienzo/imagen", methods=["POST"])
+@bp.route("/templates/canvas/image", methods=["POST"])
 def canvas_image():
     """Subir una foto al lienzo. Contesta en JSON: la pide el editor."""
     account = signed_in()
@@ -1079,7 +1079,7 @@ def canvas_image():
     return jsonify(name=name, url=imaging.url_of(name), width=width, height=height)
 
 
-@bp.route("/plantillas/duplicar", methods=["POST"])
+@bp.route("/templates/duplicate", methods=["POST"])
 def copy():
     account = signed_in()
     if account is None:
@@ -1092,11 +1092,11 @@ def copy():
         if found is not None:
             designs.duplicate(db, account["_id"], found["_id"],
                               name=t("designs_copy_name", name=found.get("name", "")))
-            return redirect(url_for("designs.index", copia=1))
+            return redirect(url_for("designs.index", copy=1))
     return redirect(url_for("designs.index"))
 
 
-@bp.route("/plantillas/borrar", methods=["POST"])
+@bp.route("/templates/delete", methods=["POST"])
 def remove():
     account = signed_in()
     if account is None:

@@ -444,7 +444,7 @@ TUTORIAL_DATA = LANDING_DIR / "tutorials.json"
 
 
 def tutorial_tours() -> list[dict]:
-    """The tutorials of /como-funciona: the words from content.py and, for each
+    """The tutorials of /how-it-works: the words from content.py and, for each
     step, its screenshot and its dot from tutorials.json.
 
     A step without its words stops the build: a tutorial that silently skipped
@@ -530,32 +530,32 @@ def read_wing_svg() -> str:
 
 PAGES = [
     ("index.html", "index.html.j2", "/", content.HOME),
-    ("como-funciona/index.html", "como-funciona.html.j2", "/como-funciona/", content.HOW),
-    ("planes/index.html", "precios.html.j2", "/planes/", content.PRICING),
-    ("nosotros/index.html", "nosotros.html.j2", "/nosotros/", content.ABOUT),
-    ("contacto/index.html", "contacto.html.j2", "/contacto/", content.CONTACT_PAGE),
-    ("privacidad/index.html", "legal.html.j2", "/privacidad/", content.PRIVACY),
-    ("terminos/index.html", "legal.html.j2", "/terminos/", content.TERMS),
+    ("how-it-works/index.html", "como-funciona.html.j2", "/how-it-works/", content.HOW),
+    ("pricing/index.html", "precios.html.j2", "/pricing/", content.PRICING),
+    ("about/index.html", "nosotros.html.j2", "/about/", content.ABOUT),
+    ("contact/index.html", "contacto.html.j2", "/contact/", content.CONTACT_PAGE),
+    ("privacy/index.html", "legal.html.j2", "/privacy/", content.PRIVACY),
+    ("terms/index.html", "legal.html.j2", "/terms/", content.TERMS),
 ]
 
 
 # Solo las páginas que alguien comparte. Las dos legales se quedan con el logo:
 # nadie pega los términos en un chat.
 SOCIAL_CARDS = [
-    ("inicio", content.HOME),
-    ("como-funciona", content.HOW),
-    ("precios", content.PRICING),
-    ("nosotros", content.ABOUT),
-    ("contacto", content.CONTACT_PAGE),
+    ("home", content.HOME),
+    ("how-it-works", content.HOW),
+    ("pricing", content.PRICING),
+    ("about", content.ABOUT),
+    ("contact", content.CONTACT_PAGE),
 ]
 
 # Qué tarjeta le toca a cada página. Lo que no esté aquí usa el logo.
 OG_IMAGES = {
-    "/": "inicio",
-    "/como-funciona/": "como-funciona",
-    "/planes/": "precios",
-    "/nosotros/": "nosotros",
-    "/contacto/": "contacto",
+    "/": "home",
+    "/how-it-works/": "how-it-works",
+    "/pricing/": "pricing",
+    "/about/": "about",
+    "/contact/": "contact",
 }
 
 

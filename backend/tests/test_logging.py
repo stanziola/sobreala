@@ -180,10 +180,10 @@ def test_a_duplicate_registration_is_recorded_as_such(client, database, outbox):
 
 
 def test_an_invalid_form_is_recorded(client, database):
-    client.get("/registro")
+    client.get("/signup")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    client.post("/registro", data={"csrf_token": csrf, "company_name": "X",
+    client.post("/signup", data={"csrf_token": csrf, "company_name": "X",
                                    "contact_name": "Y", "email": "corta@ejemplo.com",
                                    "password": "corta"})
     assert outcomes(database, events.REGISTER) == [events.INVALID]
@@ -191,7 +191,7 @@ def test_an_invalid_form_is_recorded(client, database):
 
 
 def test_a_form_without_csrf_is_recorded(client, database):
-    client.post("/registro", data={"company_name": "X", "contact_name": "Y",
+    client.post("/signup", data={"company_name": "X", "contact_name": "Y",
                                    "email": "sin@ejemplo.com",
                                    "password": "Contrasena-Larga1"})
     assert outcomes(database, events.REGISTER) == [events.CSRF_FAILED]
@@ -255,10 +255,10 @@ def test_the_three_resend_outcomes(client, database, outbox):
     """«Pedir otro código» ya no pregunta la dirección: va a la cuenta que
     este navegador está confirmando, y el registro dice qué pasó con ella."""
     def ask():
-        client.get("/confirmar")
+        client.get("/confirm")
         with client.session_transaction() as sess:
             csrf = sess["_csrf"]
-        return client.post("/reenviar-confirmacion", data={"csrf_token": csrf})
+        return client.post("/resend-confirmation", data={"csrf_token": csrf})
 
     nothing = ask()                          # nada pendiente todavía
     register(client)
@@ -268,9 +268,9 @@ def test_the_three_resend_outcomes(client, database, outbox):
 
     assert outcomes(database, events.RESEND) == [events.NO_ACCOUNT, events.SENT,
                                                  events.ALREADY_CONFIRMED]
-    assert pending.headers["Location"].endswith("/confirmar?reenvio=ok")
-    assert nothing.headers["Location"].endswith("/entrar")
-    assert confirmed.headers["Location"].endswith("/entrar")
+    assert pending.headers["Location"].endswith("/confirm?resent=ok")
+    assert nothing.headers["Location"].endswith("/login")
+    assert confirmed.headers["Location"].endswith("/login")
 
 
 def test_the_log_separates_what_the_confirmation_screen_merges(client, database,
@@ -335,11 +335,11 @@ def unreachable_db(monkeypatch):
 
 def test_a_dead_database_gives_a_readable_page_not_a_bare_500(unreachable_db):
     # The form itself still draws: it never touches the database.
-    assert unreachable_db.get("/entrar").status_code == 200
+    assert unreachable_db.get("/login").status_code == 200
     with unreachable_db.session_transaction() as sess:
         csrf = sess["_csrf"]
 
-    response = unreachable_db.post("/entrar", data={
+    response = unreachable_db.post("/login", data={
         "csrf_token": csrf, "email": "ana@ejemplo.com",
         "password": "Contrasena-Larga1"})
     body = response.get_data(as_text=True)
@@ -355,7 +355,7 @@ def test_a_dead_database_gives_a_readable_page_not_a_bare_500(unreachable_db):
 
 
 def test_the_health_route_reports_a_dead_database(unreachable_db):
-    response = unreachable_db.get("/salud")
+    response = unreachable_db.get("/health")
     assert response.status_code == 503
     payload = response.get_json()
     assert payload["app"] == "up"

@@ -9,7 +9,7 @@
 
   {# Se la llevó otra cuenta entre que se pidió el código y se escribió: pasa
      una vez entre un millón, y la pantalla tiene que decirlo igual. #}
-  {% if request.args.get('tomada') %}
+  {% if request.args.get('taken') %}
   <p class="notice">{{ t('error_email_taken') }}</p>
   {% endif %}
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
@@ -33,7 +33,7 @@
   </form>
 
   <p class="foot">
-    <a href="{{ url_for('auth.settings', section='cuenta') }}">{{ t('two_step_back') }}</a>
+    <a href="{{ url_for('auth.settings', section='account') }}">{{ t('two_step_back') }}</a>
   </p>
 </div>
 {% endblock %}

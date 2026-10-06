@@ -22,29 +22,29 @@ NEW = "Contrasena-Nueva2!"
 
 def ask(client, email=None):
     """Step one: ask for a code. With no email, the signed-in account's own."""
-    client.get("/recuperar")
+    client.get("/recover")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
     data = {"csrf_token": csrf}
     if email is not None:
         data["email"] = email
-    return client.post("/recuperar", data=data)
+    return client.post("/recover", data=data)
 
 
 def type_code(client, code):
-    client.get("/recuperar/codigo")
+    client.get("/recover/code")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
     digits = "".join(ch for ch in str(code) if ch.isdigit())
     typed = list(digits) if len(digits) == 6 else [str(code)]
-    return client.post("/recuperar/codigo", data={"csrf_token": csrf, "code": typed})
+    return client.post("/recover/code", data={"csrf_token": csrf, "code": typed})
 
 
 def set_new(client, password=NEW, repeat=None):
-    client.get("/recuperar/nueva")
+    client.get("/recover/new")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/recuperar/nueva", data={
+    return client.post("/recover/new", data={
         "csrf_token": csrf, "password": password,
         "repeat": password if repeat is None else repeat,
     })
@@ -62,13 +62,13 @@ def test_recovering_the_account_from_scratch(client, database, outbox):
     stranger = other(client)               # a device that was never signed in
     ask(stranger, "ana@ejemplo.com")
     assert type_code(stranger, code_from_outbox(outbox)).headers["Location"].endswith(
-        "/recuperar/nueva")
+        "/recover/new")
     done = set_new(stranger)
 
     assert done.status_code == 302
-    assert done.headers["Location"].endswith("/panel?cambiada=1")
+    assert done.headers["Location"].endswith("/dashboard?updated=1")
     # Signed in on this device, with the new password saved.
-    assert stranger.get("/panel").status_code == 200
+    assert stranger.get("/dashboard").status_code == 200
     account = accounts.by_email(database, "ana@ejemplo.com")
     assert verify_password(NEW, account["password_hash"])
 
@@ -89,9 +89,9 @@ def test_recovering_closes_every_other_session(client, database, outbox):
     type_code(stranger, code_from_outbox(outbox))
     set_new(stranger)
 
-    assert phone.get("/panel").status_code == 302
-    assert computer.get("/panel").status_code == 302
-    assert stranger.get("/panel").status_code == 200
+    assert phone.get("/dashboard").status_code == 302
+    assert computer.get("/dashboard").status_code == 302
+    assert stranger.get("/dashboard").status_code == 200
     account = accounts.by_email(database, "ana@ejemplo.com")
     assert len(sessions.for_account(database, account["_id"])) == 1
 
@@ -125,10 +125,10 @@ def test_it_answers_the_same_for_an_address_with_no_account(client, database,
 
 def ask_again(client):
     """«Pedir otro código» en la pantalla del código: sin ninguna dirección."""
-    client.get("/recuperar/codigo")
+    client.get("/recover/code")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/recuperar", data={"csrf_token": csrf, "otro": "1"})
+    return client.post("/recover", data={"csrf_token": csrf, "otro": "1"})
 
 
 def test_otro_codigo_no_pregunta_la_direccion(client, database, outbox):
@@ -138,11 +138,11 @@ def test_otro_codigo_no_pregunta_la_direccion(client, database, outbox):
     ask(stranger, "ana@ejemplo.com")
     first = code_from_outbox(outbox)
 
-    pantalla = stranger.get("/recuperar/codigo").get_data(as_text=True)
-    assert 'action="/recuperar"' in pantalla and 'name="email"' not in pantalla
+    pantalla = stranger.get("/recover/code").get_data(as_text=True)
+    assert 'action="/recover"' in pantalla and 'name="email"' not in pantalla
 
     answer = ask_again(stranger)
-    assert answer.headers["Location"].endswith("/recuperar/codigo?reenvio=ok")
+    assert answer.headers["Location"].endswith("/recover/code?resent=ok")
     assert "Te enviamos un código nuevo" in stranger.get(
         answer.headers["Location"]).get_data(as_text=True)
     second = code_from_outbox(outbox)
@@ -150,7 +150,7 @@ def test_otro_codigo_no_pregunta_la_direccion(client, database, outbox):
     ultimo = list(database.mail_log.find({"purpose": mail_log.RECOVER}))[-1]
     assert ultimo["to"] == "ana@ejemplo.com"
     assert type_code(stranger, second).headers["Location"].endswith(
-        "/recuperar/nueva")
+        "/recover/new")
 
 
 def test_otro_codigo_contesta_igual_sin_cuenta(client, database, outbox):
@@ -178,7 +178,7 @@ def test_without_a_code_nothing_advances(client, database, outbox):
     assert refused.status_code == 200
     assert "no es correcto" in refused.get_data(as_text=True)
     # And the last screen refuses to draw itself without a code behind it.
-    assert unknown.get("/recuperar/nueva").headers["Location"].endswith("/recuperar")
+    assert unknown.get("/recover/new").headers["Location"].endswith("/recover")
 
 
 def test_the_code_dies_after_five_tries(client, database, outbox):
@@ -214,7 +214,7 @@ def test_signed_in_the_form_does_not_ask_for_the_address(client, database, outbo
     inside = other(client)
     login(inside)
 
-    body = inside.get("/recuperar").get_data(as_text=True)
+    body = inside.get("/recover").get_data(as_text=True)
     assert "ana@ejemplo.com" in body
     assert 'name="email"' not in body
 
@@ -269,7 +269,7 @@ def other(client):
 
 def adding(browser):
     """Abrir la pantalla de entrar en modo «agregar otra cuenta»."""
-    return browser.get("/entrar?agregar=1")
+    return browser.get("/login?add=1")
 
 
 def test_agregando_una_cuenta_se_recupera_la_otra(client, database, outbox):
@@ -282,7 +282,7 @@ def test_agregando_una_cuenta_se_recupera_la_otra(client, database, outbox):
     login(browser, email="una@ejemplo.com")
     adding(browser)
 
-    pantalla = browser.get("/recuperar").get_data(as_text=True)
+    pantalla = browser.get("/recover").get_data(as_text=True)
     # Pregunta la dirección en vez de dar por hecho la de la sesión.
     assert "una@ejemplo.com" not in pantalla
 
@@ -302,10 +302,10 @@ def test_al_recuperar_la_segunda_la_primera_sigue_abierta(client, database,
 
     ask(browser, "dos@ejemplo.com")
     type_code(browser, code_from_outbox(outbox))
-    browser.get("/recuperar/nueva")
+    browser.get("/recover/new")
     with browser.session_transaction() as sess:
         token = sess["_csrf"]
-    browser.post("/recuperar/nueva", data={"csrf_token": token,
+    browser.post("/recover/new", data={"csrf_token": token,
                                            "password": NEW, "repeat": NEW})
 
     una = accounts.by_email(database, "una@ejemplo.com")["_id"]
@@ -323,7 +323,7 @@ def test_dentro_de_la_propia_cuenta_sigue_sin_preguntar(client, database, outbox
     browser = other(client)
     login(browser, email="una@ejemplo.com")
 
-    pantalla = browser.get("/recuperar").get_data(as_text=True)
+    pantalla = browser.get("/recover").get_data(as_text=True)
     assert "una@ejemplo.com" in pantalla
 
     ask(browser)

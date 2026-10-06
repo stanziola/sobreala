@@ -37,10 +37,10 @@ def test_cada_muestra_abre_su_lienzo(client, database, outbox, slug):
     browser = inside(client)
     account = database.accounts.find_one({"email": "ana@ejemplo.com"})
 
-    answer = browser.get(f"/plantillas/muestra/{slug}")
+    answer = browser.get(f"/templates/sample/{slug}")
 
     assert answer.status_code == 302
-    assert "/plantillas/lienzo/" in answer.headers["Location"]
+    assert "/templates/canvas/" in answer.headers["Location"]
     guardadas = designs.for_account(database, account["_id"])
     assert len(guardadas) == 1 and guardadas[0]["source"] == designs.CANVAS
 
@@ -48,37 +48,37 @@ def test_cada_muestra_abre_su_lienzo(client, database, outbox, slug):
 def test_cada_pulsacion_es_otra_copia(client, database, outbox):
     browser = inside(client)
     account = database.accounts.find_one({"email": "ana@ejemplo.com"})
-    browser.get("/plantillas/muestra/aviso")
-    browser.get("/plantillas/muestra/aviso")
+    browser.get("/templates/sample/aviso")
+    browser.get("/templates/sample/aviso")
     assert len(designs.for_account(database, account["_id"])) == 2
 
 
 def test_una_inventada_no_existe(client, database, outbox):
     browser = inside(client)
     for slug in ("no-existe", "..%2Fsecreto", "AVISO"):
-        assert browser.get(f"/plantillas/muestra/{slug}").status_code == 404
+        assert browser.get(f"/templates/sample/{slug}").status_code == 404
 
 
 def test_sin_sesion_entra_y_sigue_hasta_ella(client, database, outbox):
     register(client)
     visitor = other(client)
 
-    first = visitor.get("/plantillas/muestra/oferta")
-    assert first.headers["Location"].endswith("/entrar?muestra=oferta")
+    first = visitor.get("/templates/sample/oferta")
+    assert first.headers["Location"].endswith("/login?sample=oferta")
 
-    visitor.get("/entrar?muestra=oferta")
+    visitor.get("/login?sample=oferta")
     with visitor.session_transaction() as sess:
         csrf = sess["_csrf"]
-    after = visitor.post("/entrar?muestra=oferta", data={
+    after = visitor.post("/login?sample=oferta", data={
         "csrf_token": csrf, "email": "ana@ejemplo.com",
         "password": "Contrasena-Larga1"})
-    assert after.headers["Location"].endswith("/plantillas/muestra/oferta")
+    assert after.headers["Location"].endswith("/templates/sample/oferta")
 
 
 def test_una_precarga_no_crea_nada(client, database, outbox):
     browser = inside(client)
     account = database.accounts.find_one({"email": "ana@ejemplo.com"})
-    answer = browser.get("/plantillas/muestra/aviso",
+    answer = browser.get("/templates/sample/aviso",
                          headers={"Sec-Purpose": "prefetch"})
     assert answer.status_code == 204
     assert designs.for_account(database, account["_id"]) == []
@@ -86,6 +86,6 @@ def test_una_precarga_no_crea_nada(client, database, outbox):
 
 def test_un_administrador_no_puede(client, database, outbox):
     admin, _ = make_admin(client, database)
-    answer = admin.get("/plantillas/muestra/aviso")
+    answer = admin.get("/templates/sample/aviso")
     assert answer.headers["Location"].endswith("/admin/")
     assert database.designs.count_documents({}) == 0

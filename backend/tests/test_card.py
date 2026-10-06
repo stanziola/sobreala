@@ -42,13 +42,13 @@ def fake_card(monkeypatch, *, status=1, operation="AUTH_CAPTURE", amount=None,
 
 
 def pay_card(browser, plan="basico", cycle="monthly"):
-    return browser.post("/configuracion/pagos/contratar", data={
+    return browser.post("/settings/billing/checkout", data={
         "csrf_token": csrf(browser), "plan": plan, "cycle": cycle, "metodo": "card"})
 
 
 def back_from_card(browser, attempt, oper="OPER-1", **extra):
     query = {"PARM_1": str(attempt), "Oper": oper, "Estado": "Aprobada", **extra}
-    return browser.get("/configuracion/pagos/tarjeta/volver", query_string=query)
+    return browser.get("/settings/billing/card/return", query_string=query)
 
 
 def ready_to_pay(client, database):
@@ -62,7 +62,7 @@ def ready_to_pay(client, database):
 def test_sin_credenciales_la_tarjeta_dice_pronto(client, database, outbox, monkeypatch):
     fake_paypal(monkeypatch)
     browser, _ = ready_to_pay(client, database)
-    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    pantalla = browser.get("/checkout/basico").get_data(as_text=True)
     assert 'value="card"' not in pantalla
     assert "Pronto" in pantalla
 
@@ -77,7 +77,7 @@ def test_sin_credenciales_la_tarjeta_dice_pronto(client, database, outbox, monke
 def test_con_tarjeta_va_al_enlace_de_pago(client, database, outbox, monkeypatch):
     pedido = fake_card(monkeypatch)
     browser, _ = ready_to_pay(client, database)
-    assert 'value="card"' in browser.get("/contratar/basico").get_data(as_text=True)
+    assert 'value="card"' in browser.get("/checkout/basico").get_data(as_text=True)
 
     respuesta = pay_card(browser)
 
@@ -88,7 +88,7 @@ def test_con_tarjeta_va_al_enlace_de_pago(client, database, outbox, monkeypatch)
     assert intento["link_code"] == "LK-PRUEBA"
     assert pedido["amount"] == plans.amount("basico", "monthly")
     assert pedido["reference"] == str(intento["_id"])
-    assert pedido["return_url"].endswith("/configuracion/pagos/tarjeta/volver")
+    assert pedido["return_url"].endswith("/settings/billing/card/return")
 
 
 def test_solo_con_tarjeta_y_sin_paypal_se_puede_pagar(client, database, outbox,
@@ -96,10 +96,10 @@ def test_solo_con_tarjeta_y_sin_paypal_se_puede_pagar(client, database, outbox,
     fake_card(monkeypatch)
     monkeypatch.setattr("services.paypal.configured", lambda: False)
     browser, _ = ready_to_pay(client, database)
-    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    pantalla = browser.get("/checkout/basico").get_data(as_text=True)
     assert "El pago en línea todavía no está disponible" not in pantalla
     # PayPal escrito a mano cae en lo que hay: no se abre nada de PayPal.
-    respuesta = browser.post("/configuracion/pagos/contratar", data={
+    respuesta = browser.post("/settings/billing/checkout", data={
         "csrf_token": csrf(browser), "plan": "basico", "cycle": "monthly",
         "metodo": "paypal"})
     assert "error=paypal" in respuesta.headers["Location"]
@@ -113,13 +113,13 @@ def test_aprobada_y_consultada_activa_el_plan(client, database, outbox, monkeypa
 
     respuesta = back_from_card(browser, intento["_id"])
 
-    assert "/configuracion/pagos/recibo/" in respuesta.headers["Location"]
+    assert "/settings/billing/receipt/" in respuesta.headers["Location"]
     assert pedido["found"] == ["OPER-1"]
     pagado = database.payments.find_one({})
     assert pagado["status"] == payments.COMPLETED
     assert pagado["card_last4"] == "4242" and pagado["order_id"] == "OPER-1"
     assert accounts.plan_of(accounts.by_id(database, cuenta["_id"])) == "basico"
-    lista = browser.get("/configuracion/pagos").get_data(as_text=True)
+    lista = browser.get("/settings/billing").get_data(as_text=True)
     assert "terminada en 4242" in lista
 
 
@@ -132,7 +132,7 @@ def test_lo_que_dice_el_navegador_no_decide(client, database, outbox, monkeypatc
 
     respuesta = back_from_card(browser, intento["_id"], TotalPagado="15.00")
 
-    assert "error=cobro" in respuesta.headers["Location"]
+    assert "error=capture" in respuesta.headers["Location"]
     assert database.payments.find_one({})["status"] == payments.FAILED
     assert accounts.plan_of(accounts.by_id(database, cuenta["_id"])) is None
 
@@ -151,9 +151,9 @@ def test_el_monto_que_no_cuadra_no_activa(client, database, outbox, monkeypatch)
     browser, cuenta = ready_to_pay(client, database)
     pay_card(browser)
     respuesta = back_from_card(browser, database.payments.find_one({})["_id"])
-    assert "error=monto" in respuesta.headers["Location"]
+    assert "error=amount" in respuesta.headers["Location"]
     fallido = database.payments.find_one({})
-    assert fallido["status"] == payments.FAILED and "monto" in fallido["error"]
+    assert fallido["status"] == payments.FAILED and "amount" in fallido["error"]
     assert accounts.plan_of(accounts.by_id(database, cuenta["_id"])) is None
 
 
@@ -162,7 +162,7 @@ def test_una_operacion_de_otro_intento_no_sirve(client, database, outbox, monkey
     browser, cuenta = ready_to_pay(client, database)
     pay_card(browser)
     respuesta = back_from_card(browser, database.payments.find_one({})["_id"])
-    assert "error=orden" in respuesta.headers["Location"]
+    assert "error=order" in respuesta.headers["Location"]
     assert accounts.plan_of(accounts.by_id(database, cuenta["_id"])) is None
 
 
@@ -174,7 +174,7 @@ def test_el_intento_de_otra_cuenta_no_se_toca(client, database, outbox, monkeypa
 
     bea = inside(client, "bea@ejemplo.com")
     respuesta = back_from_card(bea, suyo["_id"])
-    assert "error=orden" in respuesta.headers["Location"]
+    assert "error=order" in respuesta.headers["Location"]
     assert database.payments.find_one({})["status"] == payments.CREATED
 
 
@@ -198,7 +198,7 @@ def test_la_vuelta_y_el_aviso_dan_un_solo_periodo(client, database, outbox,
 
     # Y después vuelve: no se alarga nada.
     respuesta = back_from_card(browser, intento["_id"])
-    assert "/configuracion/pagos/recibo/" in respuesta.headers["Location"]
+    assert "/settings/billing/receipt/" in respuesta.headers["Location"]
     assert accounts.plan_until(accounts.by_id(database, cuenta["_id"])) == hasta
     assert database.payments.count_documents({"status": payments.COMPLETED}) == 1
 
@@ -229,7 +229,7 @@ def test_los_precios_nuevos():
 
 def test_la_cabecera_deja_ir_a_pagar_con_tarjeta(client, database, outbox):
     browser = inside(client)
-    regla = next(p for p in browser.get("/configuracion/pagos")
+    regla = next(p for p in browser.get("/settings/billing")
                  .headers["Content-Security-Policy"].split(";")
                  if p.strip().startswith("form-action"))
     for sitio in Config.paguelofacil_checkout():

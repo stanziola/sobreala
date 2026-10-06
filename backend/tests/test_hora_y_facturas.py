@@ -51,7 +51,7 @@ def test_una_zona_inventada_cae_en_panama():
 
 
 def test_hoy_empieza_a_la_medianoche_de_la_zona():
-    primero = events.slots("hoy", PANAMA)[0].astimezone(PANAMA)
+    primero = events.slots("today", PANAMA)[0].astimezone(PANAMA)
     assert (primero.hour, primero.minute) == (0, 0)
     assert primero.date() == datetime.now(PANAMA).date()
 
@@ -78,7 +78,7 @@ def test_programar_se_entiende_en_la_hora_del_dispositivo(client, database, outb
     browser, account, piece = ready(client, database)
     en_panama(browser)
     manana = (datetime.now(PANAMA) + timedelta(days=1)).strftime("%Y-%m-%d")
-    browser.post("/envios", data={
+    browser.post("/campaigns", data={
         "csrf_token": campaigns_csrf(browser), "asunto": "Asamblea",
         "pieza": str(piece), "lista": "", "cuando": "luego",
         "fecha": f"{manana}T15:00"})
@@ -87,21 +87,21 @@ def test_programar_se_entiende_en_la_hora_del_dispositivo(client, database, outb
     guardada = campana["scheduled_at"]
     # Las 3:00 p. m. de Panamá son las 20:00 UTC.
     assert (guardada.hour, guardada.minute) == (20, 0)
-    pantalla = browser.get(f"/envios/{campana['_id']}").get_data(as_text=True)
+    pantalla = browser.get(f"/campaigns/{campana['_id']}").get_data(as_text=True)
     assert f"{manana}T15:00" in pantalla
 
 
 def test_la_zona_llega_codificada_como_la_guarda_el_navegador(client, database, outbox):
     browser = inside(client)
     browser.set_cookie("sa_tz", "Europe%2FMadrid")
-    browser.get("/panel")
+    browser.get("/dashboard")
     assert accounts.by_email(database, "ana@ejemplo.com")["time_zone"] == "Europe/Madrid"
 
 
 def test_la_cuenta_recuerda_su_ultima_zona(client, database, outbox):
     browser = inside(client)
     browser.set_cookie("sa_tz", "Europe/Madrid")
-    browser.get("/panel")
+    browser.get("/dashboard")
     assert accounts.by_email(database, "ana@ejemplo.com")["time_zone"] == "Europe/Madrid"
 
 
@@ -115,16 +115,16 @@ def test_la_escala_tiene_numeros_redondos():
 
 def test_el_eje_trae_marcas_en_la_hora_de_la_zona(client, database, outbox):
     browser = en_panama(inside(client))
-    pantalla = browser.get("/panel?periodo=24h").get_data(as_text=True)
+    pantalla = browser.get("/dashboard?period=24h").get_data(as_text=True)
     assert "chart__axis-x" in pantalla
     assert " a. m." in pantalla or " p. m." in pantalla
-    semana = browser.get("/panel?periodo=7d").get_data(as_text=True)
+    semana = browser.get("/dashboard?period=7d").get_data(as_text=True)
     assert any(dia in semana for dia in ("lun ", "mar ", "mié ", "jue ", "vie ", "sáb ", "dom "))
 
 
 def test_estadisticas_ya_no_trae_contactos_importaciones_ni_plan(client, database, outbox):
     browser = inside(client)
-    pantalla = browser.get("/panel").get_data(as_text=True)
+    pantalla = browser.get("/dashboard").get_data(as_text=True)
     for fuera in ("Tus contactos", "Importaciones", "Tu plan", "Correos al mes"):
         assert fuera not in pantalla
     assert "Aperturas y clics" in pantalla
@@ -168,7 +168,7 @@ def test_el_filtro_por_campana_no_mira_la_de_otra_cuenta(client, database, outbo
     de_bea = ObjectId()
     _envio(database, bea["_id"], de_bea)
 
-    with client.application.test_request_context("/panel"):
+    with client.application.test_request_context("/dashboard"):
         pantalla = stats.screen(database, ana, campaign=str(de_bea))
     assert pantalla["campaign"] is None
 
@@ -209,7 +209,7 @@ def test_facturacion_ensena_la_fecha_exacta_y_la_factura_en_camino(
         client, database, outbox, monkeypatch):
     browser, cuenta, pago = pagado(client, database, monkeypatch)
     en_panama(browser)
-    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "Facturación" in pantalla
     hasta = accounts.plan_until(accounts.by_email(database, "ana@ejemplo.com"))
     local = hasta.astimezone(PANAMA)
@@ -221,23 +221,23 @@ def test_el_admin_sube_la_factura_y_el_cliente_la_baja(client, database, outbox,
                                                        monkeypatch):
     browser, cuenta, pago = pagado(client, database, monkeypatch)
     admin, _ = make_admin(client, database)
-    url = f"/admin/cuentas/{cuenta['_id']}"
+    url = f"/admin/accounts/{cuenta['_id']}"
     admin.get(url)
     with admin.session_transaction() as sess:
         token = sess["_csrf"]
 
     # Lo que no es PDF no entra.
-    admin.post(f"{url}/factura", data={"csrf_token": token, "pago": str(pago["_id"]),
+    admin.post(f"{url}/invoice", data={"csrf_token": token, "pago": str(pago["_id"]),
                                        "archivo": (io.BytesIO(b"<html>no</html>"), "f.pdf")},
                content_type="multipart/form-data")
     assert database.invoices.count_documents({}) == 0
 
-    admin.post(f"{url}/factura", data={"csrf_token": token, "pago": str(pago["_id"]),
+    admin.post(f"{url}/invoice", data={"csrf_token": token, "pago": str(pago["_id"]),
                                        "archivo": (io.BytesIO(PDF), "f.pdf")},
                content_type="multipart/form-data")
     assert database.invoices.count_documents({}) == 1
 
-    bajada = browser.get(f"/configuracion/pagos/factura/{pago['_id']}")
+    bajada = browser.get(f"/settings/billing/invoice/{pago['_id']}")
     assert bajada.status_code == 200
     assert bajada.mimetype == "application/pdf"
     assert bajada.headers["Content-Disposition"].startswith("attachment")
@@ -245,7 +245,7 @@ def test_el_admin_sube_la_factura_y_el_cliente_la_baja(client, database, outbox,
 
     # Y la de otra cuenta no existe para nadie más.
     bea = inside(client, "bea@ejemplo.com")
-    assert bea.get(f"/configuracion/pagos/factura/{pago['_id']}").status_code == 404
+    assert bea.get(f"/settings/billing/invoice/{pago['_id']}").status_code == 404
 
 
 def test_al_cobrar_se_guarda_quien_pago(client, database, outbox, monkeypatch):
@@ -262,7 +262,7 @@ def test_al_cobrar_se_guarda_quien_pago(client, database, outbox, monkeypatch):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert payments.for_account(database, cuenta["_id"])[0]["payer_email"] == "ana@coop.com"
     # Se guarda, pero no se enseña: es para cuando haya cobros recurrentes.
-    assert "ana@coop.com" not in browser.get("/configuracion/pagos").get_data(as_text=True)
+    assert "ana@coop.com" not in browser.get("/settings/billing").get_data(as_text=True)
 
 
 def test_con_las_facturas_escondidas_no_se_ven_ni_se_suben(client, database, outbox,
@@ -275,12 +275,12 @@ def test_con_las_facturas_escondidas_no_se_ven_ni_se_suben(client, database, out
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     pago = payments.for_account(database, cuenta["_id"], only_paid=True)[0]
 
-    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "Factura en camino" not in pantalla
     admin, _ = make_admin(client, database)
-    ficha = admin.get(f"/admin/cuentas/{cuenta['_id']}").get_data(as_text=True)
+    ficha = admin.get(f"/admin/accounts/{cuenta['_id']}").get_data(as_text=True)
     assert "Pagos y facturas" not in ficha
-    assert browser.get(f"/configuracion/pagos/factura/{pago['_id']}").status_code == 404
+    assert browser.get(f"/settings/billing/invoice/{pago['_id']}").status_code == 404
 
 
 # ------------------------------------------------------------ borrar contactos
@@ -292,10 +292,10 @@ def test_borrar_un_contacto_pregunta_primero(client, database, outbox):
                     consent=contacts.consent_of(contacts.MEMBERS))
     fila = database.contacts.find_one({"email_normalized": "ana@coop.com"})
 
-    lista = browser.get("/contactos").get_data(as_text=True)
-    assert f"/contactos/borrar/{fila['_id']}" in lista
+    lista = browser.get("/contacts").get_data(as_text=True)
+    assert f"/contacts/delete/{fila['_id']}" in lista
 
-    pregunta = browser.get(f"/contactos/borrar/{fila['_id']}").get_data(as_text=True)
+    pregunta = browser.get(f"/contacts/delete/{fila['_id']}").get_data(as_text=True)
     assert "Vas a eliminar 1 contacto" in pregunta
     # Mirar la pregunta no borra nada.
     assert contacts.count(database, cuenta["_id"]) == 1
@@ -312,6 +312,6 @@ def test_eliminar_los_anulados_dice_cuantos(client, database, outbox):
     for email in ("a@coop.com", "b@coop.com"):
         suppressions.add(database, cuenta["_id"], email, reason=suppressions.UNSUBSCRIBE)
 
-    pregunta = browser.get("/contactos/anulados/eliminar").get_data(as_text=True)
+    pregunta = browser.get("/contacts/suppressed/delete").get_data(as_text=True)
     assert "Vas a eliminar 2 contactos" in pregunta
     assert contacts.count(database, cuenta["_id"]) == 3

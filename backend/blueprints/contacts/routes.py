@@ -149,7 +149,7 @@ def shared(db, account, **extra):
 
 # ------------------------------------------------------------------- the list
 
-@bp.route("/contactos")
+@bp.route("/contacts")
 def index():
     account = signed_in()
     if account is None:
@@ -157,9 +157,9 @@ def index():
 
     db = get_db()
     search = request.args.get("q", "").strip()[:120]
-    tag = request.args.get("etiqueta", "").strip()[:40]
+    tag = request.args.get("tag", "").strip()[:40]
     try:
-        skip = max(0, int(request.args.get("desde", "0")))
+        skip = max(0, int(request.args.get("since", "0")))
     except ValueError:
         skip = 0
 
@@ -174,7 +174,7 @@ def index():
                  search=search, tag=tag, skip=skip, per_page=PER_PAGE))
 
 
-@bp.route("/contactos/nuevo", methods=["GET", "POST"])
+@bp.route("/contacts/new", methods=["GET", "POST"])
 def add_one():
     """Agregar un contacto a mano, en su propia pantalla.
 
@@ -217,14 +217,14 @@ def add_one():
             # Si esa dirección está anulada, se guarda igual pero no va a
             # recibir nada: mejor decirlo ahora que dejarlo descubrir.
             if suppressions.has(db, account["_id"], address):
-                return redirect(url_for("contacts.index", anulado=1))
-            return redirect(url_for("contacts.index", guardado=1))
+                return redirect(url_for("contacts.index", suppressed=1))
+            return redirect(url_for("contacts.index", saved=1))
 
     return render_template("contacts/new.html", section="lista", errors=errors,
                            **shared(db, account, sources=contacts.SOURCES))
 
 
-@bp.route("/contactos/editar/<raw>", methods=["GET", "POST"])
+@bp.route("/contacts/edit/<raw>", methods=["GET", "POST"])
 def edit(raw):
     """Cambiar la dirección, el nombre y las etiquetas de un contacto.
 
@@ -260,7 +260,7 @@ def edit(raw):
             # Lo dice el índice único, no una consulta previa.
             errors["email"] = t("error_contact_taken")
         else:
-            return redirect(url_for("contacts.index", guardado=1))
+            return redirect(url_for("contacts.index", saved=1))
         row = contacts.by_id(db, account["_id"], contact_id)
 
     return render_template("contacts/edit.html", section="lista", errors=errors,
@@ -269,7 +269,7 @@ def edit(raw):
                            **shared(db, account))
 
 
-@bp.route("/contactos/borrar/<raw>")
+@bp.route("/contacts/delete/<raw>")
 def remove_ask(raw):
     """Antes de borrar uno, la pantalla que pregunta. No borra nada: el que
     borra es el POST. Es fácil pulsar Eliminar sin querer en una lista larga."""
@@ -287,7 +287,7 @@ def remove_ask(raw):
                            **shared(db, account))
 
 
-@bp.route("/contactos/borrar", methods=["POST"])
+@bp.route("/contacts/delete", methods=["POST"])
 def remove():
     account = signed_in()
     if account is None:
@@ -301,7 +301,7 @@ def remove():
     return redirect(request.form.get("volver") or url_for("contacts.index"))
 
 
-@bp.route("/contactos/anulados/eliminar", methods=["GET", "POST"])
+@bp.route("/contacts/suppressed/delete", methods=["GET", "POST"])
 def remove_suppressed():
     """Borrar los contactos anulados. Las supresiones se quedan.
 
@@ -324,7 +324,7 @@ def remove_suppressed():
     return redirect(url_for("contacts.index"))
 
 
-@bp.route("/contactos/exportar", methods=["GET", "POST"])
+@bp.route("/contacts/export", methods=["GET", "POST"])
 def export():
     """Bajar lo que enseña la tabla, respetando el buscador y el filtro.
 
@@ -345,7 +345,7 @@ def export():
     # campos escondidos al confirmar.
     source = request.form if request.method == "POST" else request.args
     search = source.get("q", "").strip()[:120]
-    tag = source.get("etiqueta", "").strip()[:accounts.TAG_LENGTH]
+    tag = source.get("tag", "").strip()[:accounts.TAG_LENGTH]
 
     if request.method == "GET" or not csrf_ok(request.form.get("csrf_token")):
         return render_template(
@@ -408,7 +408,7 @@ def export():
 
 # ------------------------------------------------------------- las etiquetas
 
-@bp.route("/contactos/etiquetas")
+@bp.route("/contacts/tags")
 def tags():
     """Las etiquetas de la cuenta, con cuántos contactos lleva cada una.
 
@@ -428,7 +428,7 @@ def tags():
                  tags_free=accounts.tag_limit(account) >= plans.UNLIMITED))
 
 
-@bp.route("/contactos/etiquetas/nueva", methods=["POST"])
+@bp.route("/contacts/tags/new", methods=["POST"])
 def add_tag():
     account = signed_in()
     if account is None:
@@ -436,12 +436,12 @@ def add_tag():
 
     if csrf_ok(request.form.get("csrf_token")):
         if not accounts.add_tag(get_db(), account["_id"],
-                                request.form.get("etiqueta", "")):
-            return redirect(url_for("contacts.tags", error="etiqueta"))
-    return redirect(url_for("contacts.tags", guardado=1))
+                                request.form.get("tag", "")):
+            return redirect(url_for("contacts.tags", error="tag"))
+    return redirect(url_for("contacts.tags", saved=1))
 
 
-@bp.route("/contactos/etiquetas/borrar", methods=["POST"])
+@bp.route("/contacts/tags/delete", methods=["POST"])
 def drop_tag():
     """Borrar una etiqueta: sale del registro y de los contactos que la
     llevaban. Los contactos se quedan."""
@@ -451,7 +451,7 @@ def drop_tag():
 
     if csrf_ok(request.form.get("csrf_token")):
         db = get_db()
-        tag = request.form.get("etiqueta", "").strip()[:accounts.TAG_LENGTH]
+        tag = request.form.get("tag", "").strip()[:accounts.TAG_LENGTH]
         accounts.remove_tag(db, account["_id"], tag)
         contacts.drop_tag(db, account["_id"], tag)
     return redirect(url_for("contacts.tags"))
@@ -459,7 +459,7 @@ def drop_tag():
 
 # ------------------------------------------- las columnas propias del contacto
 
-@bp.route("/contactos/columnas")
+@bp.route("/contacts/columns")
 def fields():
     """Las columnas que esta cuenta guarda de cada contacto.
 
@@ -482,7 +482,7 @@ def fields():
                      db, account["_id"], accounts.fields_of(account))))
 
 
-@bp.route("/contactos/columnas/nueva", methods=["GET", "POST"])
+@bp.route("/contacts/columns/new", methods=["GET", "POST"])
 def add_field():
     """Crear una columna, en su propia pantalla.
 
@@ -508,10 +508,10 @@ def add_field():
             errors["form"] = t("fields_full")
         elif not accounts.add_field(db, account["_id"],
                                     label=request.form.get("nombre", ""),
-                                    kind=request.form.get("tipo", "")):
+                                    kind=request.form.get("type", "")):
             errors["nombre"] = t("error_field")
         else:
-            return redirect(url_for("contacts.fields", guardado=1))
+            return redirect(url_for("contacts.fields", saved=1))
 
     return render_template(
         "contacts/field-new.html", section="columnas", errors=errors,
@@ -520,7 +520,7 @@ def add_field():
                  fields_free=limit >= plans.UNLIMITED))
 
 
-@bp.route("/contactos/columnas/tipo", methods=["POST"])
+@bp.route("/contacts/columns/type", methods=["POST"])
 def field_type():
     """Cambiarle el tipo a una columna que ya existe.
 
@@ -539,19 +539,19 @@ def field_type():
 
     db = get_db()
     key = request.form.get("columna", "").strip()[:columns.KEY_MAX]
-    kind = columns.clean_kind(request.form.get("tipo", ""))
+    kind = columns.clean_kind(request.form.get("type", ""))
     one = accounts.field_by_key(account, key)
     if one is None:
         return redirect(url_for("contacts.fields"))
 
     wrong = contacts.values_not_of_type(db, account["_id"], key, kind)
     if wrong:
-        return redirect(url_for("contacts.fields", error="tipo", n=wrong))
+        return redirect(url_for("contacts.fields", error="type", n=wrong))
     accounts.set_field_type(db, account["_id"], key, kind)
-    return redirect(url_for("contacts.fields", guardado=1))
+    return redirect(url_for("contacts.fields", saved=1))
 
 
-@bp.route("/contactos/columnas/borrar", methods=["POST"])
+@bp.route("/contacts/columns/delete", methods=["POST"])
 def drop_field():
     """Borrar una columna: sale del registro y de los contactos que la tenían
     escrita. Los contactos se quedan, y las piezas que la nombraban dejan de
@@ -614,7 +614,7 @@ def chosen_columns(db, account, head: list[str]):
     return take, None
 
 
-@bp.route("/contactos/importar", methods=["GET", "POST"])
+@bp.route("/contacts/import", methods=["GET", "POST"])
 def upload():
     account = signed_in()
     if account is None:
@@ -696,7 +696,7 @@ def upload():
 
 # ---------------------------------------------------------- the suppressions
 
-@bp.route("/contactos/supresiones")
+@bp.route("/contacts/suppressions")
 def blocked():
     account = signed_in()
     if account is None:
@@ -709,7 +709,7 @@ def blocked():
                  liftable=suppressions.LIFTABLE))
 
 
-@bp.route("/contactos/supresiones/anadir", methods=["POST"])
+@bp.route("/contacts/suppressions/add", methods=["POST"])
 def block():
     account = signed_in()
     if account is None:
@@ -718,13 +718,13 @@ def block():
     if csrf_ok(request.form.get("csrf_token")):
         address = importer.clean(request.form.get("email", ""))
         if not address:
-            return redirect(url_for("contacts.blocked", error="correo"))
+            return redirect(url_for("contacts.blocked", error="email"))
         suppressions.add(get_db(), account["_id"], address,
                          reason=suppressions.MANUAL, source="panel")
-    return redirect(url_for("contacts.blocked", guardado=1))
+    return redirect(url_for("contacts.blocked", saved=1))
 
 
-@bp.route("/contactos/supresiones/quitar", methods=["POST"])
+@bp.route("/contacts/suppressions/remove", methods=["POST"])
 def unblock():
     """Only what the client put there by hand comes off.
 

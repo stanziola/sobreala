@@ -56,10 +56,10 @@ def client(app):
 
 def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1"):
     """Fill the registration form the way a browser would, CSRF included."""
-    client.get("/registro")  # seeds the CSRF value in the session
+    client.get("/signup")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
         token = sess["_csrf"]
-    return client.post("/registro", data={
+    return client.post("/signup", data={
         "csrf_token": token,
         "company_name": "Cooperativa Ejemplo",
         "contact_name": "Ana",
@@ -71,10 +71,10 @@ def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1"):
 
 def login(client, email="ana@ejemplo.com", password="Contrasena-Larga1"):
     """Sign in the way a browser would, CSRF included."""
-    client.get("/entrar")  # seeds the CSRF value in the session
+    client.get("/login")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/entrar", data={"csrf_token": csrf, "email": email,
+    return client.post("/login", data={"csrf_token": csrf, "email": email,
                                         "password": password})
 
 
@@ -85,10 +85,10 @@ def logout(client):
     with it the CSRF field: signing in clears the session, so the token that was
     seeded by the login page is gone by now.
     """
-    client.get("/panel")
+    client.get("/dashboard")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    return client.post("/salir", data={"csrf_token": csrf})
+    return client.post("/logout", data={"csrf_token": csrf})
 
 
 def page_shape(response) -> str:
@@ -124,9 +124,9 @@ def confirm(client, code, split=True):
     The browser sends six fields called `code`, one per box. `split=False` sends
     a single one, which is the same form without JavaScript.
     """
-    client.get("/confirmar")  # seeds the CSRF value in the session
+    client.get("/confirm")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
     digits = "".join(ch for ch in str(code) if ch.isdigit())
     typed = list(digits) if split and len(digits) == 6 else [str(code)]
-    return client.post("/confirmar", data={"csrf_token": csrf, "code": typed})
+    return client.post("/confirm", data={"csrf_token": csrf, "code": typed})

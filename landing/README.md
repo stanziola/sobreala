@@ -6,9 +6,9 @@ Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
 | Ruta              | Archivo                    |
 |-------------------|----------------------------|
 | `/`               | `index.html`               |
-| `/como-funciona/` | `como-funciona/index.html` |
-| `/planes/`        | `planes/index.html`        |
-| `/nosotros/`      | `nosotros/index.html`      |
+| `/how-it-works/` | `como-funciona/index.html` |
+| `/pricing/`        | `planes/index.html`        |
+| `/about/`      | `nosotros/index.html`      |
 
 ## Cómo se genera
 

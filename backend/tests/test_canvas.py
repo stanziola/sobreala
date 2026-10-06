@@ -254,7 +254,7 @@ def con_texto(doc):
                 items=doc["items"] + [texto(20, doc["h"] + 20, w=560, h=320, text=PARRAFO)])
 
 
-def guardar(browser, doc, *, url="/plantillas/crear", nombre="Asamblea",
+def guardar(browser, doc, *, url="/templates/create", nombre="Asamblea",
             completar=True):
     doc = con_texto(doc) if completar else doc
     return browser.post(url, data={"csrf_token": csrf(browser, url),
@@ -271,7 +271,7 @@ def test_crear_guarda_el_lienzo(client, database, outbox):
     assert hecha["source"] == designs.CANVAS
     assert hecha["canvas"]["v"] == canvas.VERSION
     assert hecha["canvas"]["items"][0]["text"] == "Asamblea anual"
-    assert "Hecha en el editor" in browser.get("/plantillas").get_data(as_text=True)
+    assert "Hecha en el editor" in browser.get("/templates").get_data(as_text=True)
 
 
 def test_lo_que_no_se_puede_guardar_vuelve_con_lo_escrito(client, database, outbox):
@@ -286,7 +286,7 @@ def test_lo_que_no_se_puede_guardar_vuelve_con_lo_escrito(client, database, outb
 
 
 def subir_foto(browser, raw=None, nombre="foto.jpg"):
-    return browser.post("/plantillas/lienzo/imagen", data={
+    return browser.post("/templates/canvas/image", data={
         "csrf_token": csrf(browser), "archivo": (io.BytesIO(raw or foto()), nombre)},
         content_type="multipart/form-data")
 
@@ -335,10 +335,10 @@ def test_volver_a_guardar_borra_la_imagen_vieja_pero_no_la_de_la_copia(
     viejo = original["backgrounds"][0]
     copia = designs.duplicate(database, cuenta["_id"], original["_id"], name="Copia")
 
-    guardar(browser, doc, url=f"/plantillas/lienzo/{original['_id']}")
+    guardar(browser, doc, url=f"/templates/canvas/{original['_id']}")
     assert other(client).get(f"/img/{viejo}").status_code == 200  # la copia lo usa
 
-    browser.post("/plantillas/borrar", data={"csrf_token": csrf(browser), "id": str(copia)})
+    browser.post("/templates/delete", data={"csrf_token": csrf(browser), "id": str(copia)})
     assert other(client).get(f"/img/{viejo}").status_code == 404
     # Y la foto original sigue: la nombra la que queda.
     assert other(client).get(f"/img/{nombre}").status_code == 200
@@ -361,7 +361,7 @@ def test_el_lienzo_de_otro_no_se_abre(client, database, outbox):
     suya = designs.for_account(database, cuenta["_id"])[0]
 
     bea = inside(client, "bea@ejemplo.com")
-    assert bea.get(f"/plantillas/lienzo/{suya['_id']}").status_code == 404
+    assert bea.get(f"/templates/canvas/{suya['_id']}").status_code == 404
 
 
 def test_una_guardada_por_diapositivas_se_abre_como_hoja(client, database, outbox):
@@ -370,14 +370,14 @@ def test_una_guardada_por_diapositivas_se_abre_como_hoja(client, database, outbo
     vieja = designs.save_canvas(database, cuenta["_id"], name="Vieja", doc={"slides": [
         {"h": 300, "bg": "#0B3B5C", "items": [texto(40, 40, text="De antes")]}]},
         backgrounds=[None])
-    pantalla = browser.get(f"/plantillas/lienzo/{vieja}").get_data(as_text=True)
+    pantalla = browser.get(f"/templates/canvas/{vieja}").get_data(as_text=True)
     assert '"v": 2' in pantalla and "De antes" in pantalla
     assert "Diapositiva" not in pantalla
 
 
 def vista(browser, doc, **extra):
-    return browser.post("/plantillas/lienzo/vista", data=dict({
-        "csrf_token": csrf(browser, "/plantillas/crear"),
+    return browser.post("/templates/canvas/preview", data=dict({
+        "csrf_token": csrf(browser, "/templates/create"),
         "lienzo": json.dumps(doc)}, **extra))
 
 
@@ -408,7 +408,7 @@ def test_la_vista_previa_con_un_contacto_de_verdad(client, database, outbox):
     # Sin elegir a nadie: la pastilla con el nombre de la columna.
     assert "background:#E0F2FE" in vista(browser, doc).get_data(as_text=True)
     # Y en la pantalla, el selector lo ofrece.
-    assert "luis@coop.com" in browser.get("/plantillas/crear").get_data(as_text=True)
+    assert "luis@coop.com" in browser.get("/templates/create").get_data(as_text=True)
 
 
 def test_el_contacto_de_otra_cuenta_no_llena_la_vista(client, database, outbox):
@@ -558,8 +558,8 @@ def test_lo_que_puede_ir_a_spam_no_se_guarda(client, database, outbox):
 
 def test_la_revision_dice_cuanto_pesa_y_que_falta(client, database, outbox):
     browser = inside(client)
-    respuesta = browser.post("/plantillas/lienzo/revisar", data={
-        "csrf_token": csrf(browser, "/plantillas/crear"),
+    respuesta = browser.post("/templates/canvas/check", data={
+        "csrf_token": csrf(browser, "/templates/create"),
         "lienzo": json.dumps(lienzo(texto(40, 40, text="Hola")))})
     datos = respuesta.get_json()
     assert datos["ok"] is False
@@ -570,7 +570,7 @@ def test_la_revision_dice_cuanto_pesa_y_que_falta(client, database, outbox):
 
 def test_estadisticas_ya_no_lleva_a_configuracion(client, database, outbox):
     browser = inside(client)
-    assert "Ir a configuración" not in browser.get("/panel").get_data(as_text=True)
+    assert "Ir a configuración" not in browser.get("/dashboard").get_data(as_text=True)
 
 
 # ------------------------------------------------ el grupo del editor
@@ -763,7 +763,7 @@ def test_las_figuras_nuevas_se_pintan_y_la_linea_sigue_siendo_color():
 # ------------------------------------------------------- bajarse la pieza en PDF
 
 def pedir_pdf(browser, doc, nombre="Asamblea anual"):
-    return browser.post("/plantillas/lienzo/pdf", data={
+    return browser.post("/templates/canvas/pdf", data={
         "csrf_token": csrf(browser), "nombre": nombre,
         "lienzo": json.dumps(doc)})
 
@@ -816,14 +816,14 @@ def test_la_foto_de_otra_cuenta_no_se_dibuja_en_el_pdf(client, database, outbox)
 
 
 def test_el_pdf_pide_sesion_y_testigo(client, database, outbox):
-    assert other(client).post("/plantillas/lienzo/pdf", data={
+    assert other(client).post("/templates/canvas/pdf", data={
         "lienzo": json.dumps(lienzo(texto(40, 40)))}).status_code in (302, 403)
 
     browser = inside(client)
-    assert browser.post("/plantillas/lienzo/pdf", data={
+    assert browser.post("/templates/canvas/pdf", data={
         "csrf_token": "no", "lienzo": json.dumps(lienzo(texto(40, 40)))
     }).status_code == 403
-    assert browser.post("/plantillas/lienzo/pdf", data={
+    assert browser.post("/templates/canvas/pdf", data={
         "csrf_token": csrf(browser), "lienzo": "{no es json"}).status_code == 400
 
 
@@ -857,7 +857,7 @@ def guardada(browser, database, doc):
 
 
 def pedir_html(browser, pieza):
-    return browser.get(f"/plantillas/lienzo/{pieza['_id']}/html")
+    return browser.get(f"/templates/canvas/{pieza['_id']}/html")
 
 
 def abrir_zip(respuesta):
@@ -932,8 +932,8 @@ def test_el_zip_trae_el_lienzo_con_sus_fotos_y_el_html_aparte(client, database, 
     assert 'src="imagenes/1.jpg"' in salida
     assert "data:image/" not in salida and "/img/" not in salida
     # Lo que dice la barra o menos: la barra pesa lo mismo, con el pie.
-    barra = browser.post("/plantillas/lienzo/revisar", data={
-        "csrf_token": csrf(browser, "/plantillas/crear"),
+    barra = browser.post("/templates/canvas/check", data={
+        "csrf_token": csrf(browser, "/templates/create"),
         "lienzo": json.dumps(pieza["canvas"])}).get_json()["bytes"]
     assert len(salida.encode("utf-8")) <= barra
 
@@ -946,7 +946,7 @@ def test_el_zip_bajado_se_carga_como_lienzo_y_se_sigue_editando(client, database
     respuesta = subir(browser, pedir_html(browser, pieza).get_data(), filename="Asamblea.zip")
     # Directo al editor del lienzo nuevo.
     assert respuesta.status_code == 302
-    assert "/plantillas/lienzo/" in respuesta.headers["Location"]
+    assert "/templates/canvas/" in respuesta.headers["Location"]
 
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     [cargada] = [one for one in designs.for_account(database, cuenta["_id"])
@@ -962,7 +962,7 @@ def test_el_zip_bajado_se_carga_como_lienzo_y_se_sigue_editando(client, database
     assert "Oferta" in editor
 
     # Borrar la original no le rompe nada.
-    browser.post("/plantillas/borrar", data={"csrf_token": csrf(browser),
+    browser.post("/templates/delete", data={"csrf_token": csrf(browser),
                                              "id": str(pieza["_id"])})
     assert other(client).get(f"/img/{suya}").status_code == 200
 
@@ -980,7 +980,7 @@ def test_el_html_bajado_de_una_por_diapositivas_se_rehace(client, database, outb
     vieja = designs.save_canvas(database, cuenta["_id"], name="Vieja", doc={"slides": [
         {"h": 300, "bg": "#0B3B5C", "items": [texto(40, 40, text="De antes")]}]},
         backgrounds=[None])
-    respuesta = browser.get(f"/plantillas/lienzo/{vieja}/html")
+    respuesta = browser.get(f"/templates/canvas/{vieja}/html")
     assert respuesta.status_code == 200 and "De antes" in abrir_zip(respuesta)[0]
     assert designs.by_id(database, cuenta["_id"], vieja)["canvas"]["v"] == canvas.VERSION
 
@@ -988,24 +988,24 @@ def test_el_html_bajado_de_una_por_diapositivas_se_rehace(client, database, outb
 def test_el_html_pide_sesion_y_es_de_la_cuenta(client, database, outbox):
     browser = inside(client)
     pieza = guardada(browser, database, lienzo(texto(40, 40)))
-    url = f"/plantillas/lienzo/{pieza['_id']}/html"
+    url = f"/templates/canvas/{pieza['_id']}/html"
     assert other(client).get(url).status_code in (302, 403)
     assert inside(client, email="beto@ejemplo.com").get(url).status_code == 404
-    assert browser.get(f"/plantillas/lienzo/{ObjectId()}/html").status_code == 404
+    assert browser.get(f"/templates/canvas/{ObjectId()}/html").status_code == 404
     # La ruta de antes, que bajaba lo de pantalla con las fotos dentro, ya no está.
-    assert browser.post("/plantillas/lienzo/html", data={
+    assert browser.post("/templates/canvas/html", data={
         "csrf_token": csrf(browser),
         "lienzo": json.dumps(lienzo(texto(40, 40)))}).status_code == 404
 
 
 def test_el_editor_baja_el_html_solo_de_la_guardada(client, database, outbox):
     browser = inside(client)
-    nueva = browser.get("/plantillas/crear").get_data(as_text=True)
+    nueva = browser.get("/templates/create").get_data(as_text=True)
     # Sin guardar, el botón está pero no lleva a ningún archivo.
     assert "data-canvas-html" in nueva and '/html"' not in nueva
     pieza = guardada(browser, database, lienzo(texto(40, 40)))
-    abierta = browser.get(f"/plantillas/lienzo/{pieza['_id']}").get_data(as_text=True)
-    assert f'href="/plantillas/lienzo/{pieza["_id"]}/html"' in abierta
+    abierta = browser.get(f"/templates/canvas/{pieza['_id']}").get_data(as_text=True)
+    assert f'href="/templates/canvas/{pieza["_id"]}/html"' in abierta
 
 
 # ---------------------------------------------------- la lista de requisitos
@@ -1050,8 +1050,8 @@ def test_cada_regla_que_no_deja_guardar_esta_en_la_lista():
 
 def test_la_revision_devuelve_la_lista_con_sus_frases(client, database, outbox):
     browser = inside(client)
-    datos = browser.post("/plantillas/lienzo/revisar", data={
-        "csrf_token": csrf(browser, "/plantillas/crear"), "nombre": "",
+    datos = browser.post("/templates/canvas/check", data={
+        "csrf_token": csrf(browser, "/templates/create"), "nombre": "",
         "lienzo": json.dumps(lienzo(texto(40, 40, text="Hola")))}).get_json()
     reglas = datos["rules"]
     assert len(reglas) == 1 + len(canvas.BUILD_RULES) + len(canvas.SPAM_RULES)
@@ -1063,14 +1063,14 @@ def test_la_revision_devuelve_la_lista_con_sus_frases(client, database, outbox):
     assert datos["ok"] is False
     assert not any("nombre" in one.lower() for one in datos["issues"])
 
-    con_nombre = browser.post("/plantillas/lienzo/revisar", data={
-        "csrf_token": csrf(browser, "/plantillas/crear"), "nombre": "Boletín",
+    con_nombre = browser.post("/templates/canvas/check", data={
+        "csrf_token": csrf(browser, "/templates/create"), "nombre": "Boletín",
         "lienzo": json.dumps(lienzo(texto(40, 40, text="Hola")))}).get_json()
     assert con_nombre["rules"][0]["ok"] is True
 
 
 def test_el_editor_tiene_la_ventana_de_requisitos(client, database, outbox):
-    pantalla = inside(client).get("/plantillas/crear").get_data(as_text=True)
+    pantalla = inside(client).get("/templates/create").get_data(as_text=True)
     assert 'data-open-dialog="requisitos"' in pantalla and 'id="requisitos"' in pantalla
 
 
@@ -1131,7 +1131,7 @@ def test_una_linea_girada_va_en_imagen():
 
 
 def test_el_editor_ofrece_la_linea_en_geometria(client, database, outbox):
-    pantalla = inside(client).get("/plantillas/crear").get_data(as_text=True)
+    pantalla = inside(client).get("/templates/create").get_data(as_text=True)
     assert 'data-shape="line"' in pantalla and ">Línea<" in pantalla
     assert 'data-prop="h"' in pantalla
 
@@ -1167,7 +1167,7 @@ def test_el_pdf_dibuja_las_vinetas():
 
 
 def test_el_editor_ofrece_las_vinetas(client, database, outbox):
-    pantalla = inside(client).get("/plantillas/crear").get_data(as_text=True)
+    pantalla = inside(client).get("/templates/create").get_data(as_text=True)
     assert 'data-prop="list"' in pantalla and "Viñetas" in pantalla
 
 
@@ -1194,7 +1194,7 @@ def test_otra_cuenta_con_basico_carga_el_lienzo_con_sus_propias_fotos(client, da
     assert images.count(database, de_beto["_id"]) == 1
 
     # Ana borra su lienzo: lo de Ana se va, lo de Beto se queda.
-    ana.post("/plantillas/borrar", data={"csrf_token": csrf(ana), "id": str(pieza["_id"])})
+    ana.post("/templates/delete", data={"csrf_token": csrf(ana), "id": str(pieza["_id"])})
     assert other(client).get(f"/img/{nombre}").status_code == 404
     assert other(client).get(f"/img/{suya}").status_code == 200
 
@@ -1332,7 +1332,7 @@ def test_la_imagen_que_salio_no_se_borra_con_la_pieza(client, database, outbox,
     assert database.images.find_one({"name": fundida}).get("sent_at")
     assert not database.images.find_one({"name": mia}).get("sent_at")
 
-    browser.post("/plantillas/borrar", data={"csrf_token": csrf(browser),
+    browser.post("/templates/delete", data={"csrf_token": csrf(browser),
                                              "id": str(pieza)})
     # Los correos que ya llegaron la siguen viendo, doce meses desde el envío.
     assert other(client).get(f"/img/{fundida}").status_code == 200
@@ -1350,7 +1350,7 @@ def test_volver_a_guardar_lo_enviado_retira_las_fundidas_viejas(client, database
     browser, account, pieza, mia, fundida = enviada(client, database, monkeypatch)
     doc = lienzo(imagen(0, 0, 600, 300, name=mia),
                  texto(40, 320, w=520, text="Oferta corregida"), h=400)
-    assert guardar(browser, doc, url=f"/plantillas/lienzo/{pieza}").status_code == 302
+    assert guardar(browser, doc, url=f"/templates/canvas/{pieza}").status_code == 302
 
     nueva = designs.by_id(database, account["_id"], pieza)["backgrounds"][0]
     assert nueva and nueva != fundida
@@ -1374,9 +1374,9 @@ def test_un_html_que_nombra_una_retirada_la_deja_fija(client, database, outbox):
     # Una de las cargadas antes, que al guardarse la vuelve a nombrar.
     pieza = designs.save(database, cuenta["_id"], name="De antes",
                          html="<html><body><h1>Hola</h1></body></html>")
-    url = f"/plantillas/html/{pieza}"
+    url = f"/templates/html/{pieza}"
     html = f'<html><body><h1>Hola</h1><img src="{imaging.url_of(nombre)}" alt="x"></body></html>'
-    assert browser.post(url, data={"csrf_token": csrf(browser, url), "accion": "guardar",
+    assert browser.post(url, data={"csrf_token": csrf(browser, url), "action": "guardar",
                                    "nombre": "La vuelve a usar", "html": html}).status_code == 302
     # Vuelve a ser de una pieza: ya no vence.
     assert "expires_at" not in database.images.find_one({"name": nombre})
@@ -1446,7 +1446,7 @@ def test_volver_a_guardar_sin_una_foto_la_borra(client, database, outbox):
     nombre = subir_foto(browser).get_json()["name"]
     pieza = guardada_con_foto(browser, database, nombre)
     assert guardar(browser, lienzo(texto(40, 40, text="Sin foto")),
-                   url=f"/plantillas/lienzo/{pieza['_id']}").status_code == 302
+                   url=f"/templates/canvas/{pieza['_id']}").status_code == 302
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert not images.owns(database, cuenta["_id"], nombre)
     assert other(client).get(f"/img/{nombre}").status_code == 404

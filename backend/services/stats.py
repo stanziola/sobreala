@@ -1,6 +1,6 @@
 """Lo que enseña la pantalla de estadísticas, de una cuenta cualquiera.
 
-Vive aquí y no en un blueprint porque la miran dos: el cliente en `/panel`, con
+Vive aquí y no en un blueprint porque la miran dos: el cliente en `/dashboard`, con
 la suya, y el administrador en `/admin/`, con la de quien elija. Una sola
 función que llena una sola plantilla; si la pantalla cambia, cambia para los
 dos a la vez y no hay forma de que una se quede atrás.

@@ -32,7 +32,7 @@ from services import unsubscribe
 bp = Blueprint("unsubscribe", __name__)
 
 
-@bp.route("/baja/<token>", methods=["GET", "POST"])
+@bp.route("/unsubscribe/<token>", methods=["GET", "POST"])
 def page(token):
     contact_id = unsubscribe.contact_of(token)
     if contact_id is None:

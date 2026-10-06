@@ -153,7 +153,7 @@ def invoice_ready(account, *, paid_at) -> bool:
         heading=t("mail_invoice_heading"),
         paragraphs=[t("mail_invoice_body", when=when)],
         button={"href": f"{Config.APP_BASE_URL}"
-                        f"{url_for('auth.settings', section='pagos')}",
+                        f"{url_for('auth.settings', section='billing')}",
                 "label": t("mail_invoice_button")},
         foot=switch_off_hint())
 

@@ -55,4 +55,4 @@ def link(contact_id) -> str:
     Completa porque la abre el buzón de quien recibió la campaña, desde fuera
     de aquí.
     """
-    return f"{Config.APP_BASE_URL}/baja/{sign(contact_id)}"
+    return f"{Config.APP_BASE_URL}/unsubscribe/{sign(contact_id)}"

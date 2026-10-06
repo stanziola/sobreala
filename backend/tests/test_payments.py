@@ -33,7 +33,7 @@ def inside(client, email="ana@ejemplo.com"):
     return browser
 
 
-def csrf(client, url="/configuracion/pagos"):
+def csrf(client, url="/settings/billing"):
     client.get(url)
     with client.session_transaction() as sess:
         return sess["_csrf"]
@@ -74,12 +74,12 @@ def fake_paypal(monkeypatch, *, status="COMPLETED", amount=None, currency="USD")
 
 
 def buy(client, plan="basico", cycle="monthly"):
-    return client.post("/configuracion/pagos/contratar", data={
+    return client.post("/settings/billing/checkout", data={
         "csrf_token": csrf(client), "plan": plan, "cycle": cycle})
 
 
 def come_back(client, order="ORDEN-1"):
-    return client.get(f"/configuracion/pagos/volver?token={order}")
+    return client.get(f"/settings/billing/return?token={order}")
 
 
 # ------------------------------------------------------------- quién puede
@@ -93,7 +93,7 @@ def test_una_cuenta_registrada_no_puede_contratar(client, database, outbox,
 
     respuesta = buy(browser)
 
-    assert "error=estado" in respuesta.headers["Location"]
+    assert "error=status" in respuesta.headers["Location"]
     assert database.payments.count_documents({}) == 0
     assert accounts.by_email(database, "ana@ejemplo.com")["status"] == accounts.REGISTERED
 
@@ -159,7 +159,7 @@ def test_si_paypal_no_confirma_no_se_activa_nada(client, database, outbox,
 
     respuesta = come_back(browser)
 
-    assert "error=cobro" in respuesta.headers["Location"]
+    assert "error=capture" in respuesta.headers["Location"]
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert cuenta["status"] == accounts.REGISTERED
     assert cuenta.get("plan") is None
@@ -177,7 +177,7 @@ def test_si_el_monto_no_cuadra_no_se_activa_nada(client, database, outbox,
 
     respuesta = come_back(browser)
 
-    assert "error=monto" in respuesta.headers["Location"]
+    assert "error=amount" in respuesta.headers["Location"]
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert cuenta.get("plan") is None
     anotado = database.payments.find_one({"status": payments.FAILED})
@@ -194,7 +194,7 @@ def test_una_orden_de_otra_cuenta_no_encuentra_nada(client, database, outbox,
     ajena = inside(other(client), email="otra@ejemplo.com")
     respuesta = come_back(ajena)
 
-    assert "error=orden" in respuesta.headers["Location"]
+    assert "error=order" in respuesta.headers["Location"]
     assert accounts.by_email(database, "otra@ejemplo.com").get("plan") is None
 
 
@@ -208,7 +208,7 @@ def test_pagar_deja_la_cuenta_activa_con_su_plan(client, database, outbox,
     buy(browser)
 
     respuesta = come_back(browser)
-    assert "/configuracion/pagos/recibo/" in respuesta.headers["Location"]
+    assert "/settings/billing/receipt/" in respuesta.headers["Location"]
 
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert cuenta["status"] == accounts.ACTIVE
@@ -216,7 +216,7 @@ def test_pagar_deja_la_cuenta_activa_con_su_plan(client, database, outbox,
     assert cuenta["plan_until"] is not None
     # Y con eso, el tope de contactos deja de ser el de una cuenta sin plan.
     assert accounts.contact_limit(cuenta) == 1000
-    assert "de 1000 contactos" in browser.get("/contactos").get_data(as_text=True)
+    assert "de 1000 contactos" in browser.get("/contacts").get_data(as_text=True)
 
 
 def test_volver_dos_veces_no_alarga_el_periodo(client, database, outbox,
@@ -231,7 +231,7 @@ def test_volver_dos_veces_no_alarga_el_periodo(client, database, outbox,
     vencia = accounts.by_email(database, "ana@ejemplo.com")["plan_until"]
     respuesta = come_back(browser)
 
-    assert "/configuracion/pagos/recibo/" in respuesta.headers["Location"]
+    assert "/settings/billing/receipt/" in respuesta.headers["Location"]
     assert accounts.by_email(database, "ana@ejemplo.com")["plan_until"] == vencia
     assert database.payments.count_documents({"status": payments.COMPLETED}) == 1
 
@@ -249,10 +249,10 @@ def test_el_mismo_plan_se_vuelve_a_comprar_cuando_vence(client, database, outbox
 
     # Vigente: el mismo mes no se paga otra vez (la pantalla ofrece pasarlo a
     # anual, que sí es mejorar) y la ruta no crea otro pago.
-    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    pantalla = browser.get("/checkout/basico").get_data(as_text=True)
     assert 'name="cycle" value="monthly"' not in pantalla
     assert 'name="cycle" value="yearly"' in pantalla
-    assert buy(browser).headers["Location"].endswith("/contratar/basico")
+    assert buy(browser).headers["Location"].endswith("/checkout/basico")
     assert database.payments.count_documents({"account_id": cuenta["_id"]}) == 1
 
     # Vencido: se compra como la primera vez.
@@ -274,7 +274,7 @@ def test_sin_credenciales_la_pantalla_se_dibuja_y_no_deja_contratar(
     browser = inside(client)
     confirm(database)
 
-    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    pantalla = browser.get("/checkout/basico").get_data(as_text=True)
     assert "Básico" in pantalla
     assert "todavía no está disponible" in pantalla
 
@@ -288,12 +288,12 @@ def test_sin_el_correo_confirmado_no_se_contrata(client, database, outbox,
     fake_paypal(monkeypatch)
     browser = inside(client)
 
-    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    pantalla = browser.get("/checkout/basico").get_data(as_text=True)
     assert "Básico" in pantalla
     assert "confirma primero tu correo" in pantalla
-    assert "/configuracion/pagos/contratar" not in pantalla
+    assert "/settings/billing/checkout" not in pantalla
 
-    assert "error=estado" in buy(browser).headers["Location"]
+    assert "error=status" in buy(browser).headers["Location"]
     assert database.payments.count_documents({}) == 0
 
 
@@ -318,7 +318,7 @@ def test_una_cuenta_suspendida_no_contrata(client, database, outbox,
     token = csrf(browser)
     accounts.set_status(database, cuenta["_id"], accounts.SUSPENDED)
 
-    browser.post("/configuracion/pagos/contratar", data={
+    browser.post("/settings/billing/checkout", data={
         "csrf_token": token, "plan": "basico", "cycle": "monthly"})
 
     assert database.payments.count_documents({}) == 0
@@ -336,7 +336,7 @@ def test_la_cabecera_permite_ir_a_pagar(client, database, outbox):
     """
     from config import Config
 
-    cabecera = client.get("/entrar").headers["Content-Security-Policy"]
+    cabecera = client.get("/login").headers["Content-Security-Policy"]
     regla = next(p.strip() for p in cabecera.split(";")
                  if p.strip().startswith("form-action"))
 
@@ -360,10 +360,10 @@ def test_el_destino_de_pago_sale_del_entorno(monkeypatch):
 # ------------------------------------------ la pantalla de contratar un plan
 
 def test_sin_sesion_contratar_manda_a_entrar_con_su_plan(client, database):
-    respuesta = client.get("/contratar/basico")
+    respuesta = client.get("/checkout/basico")
 
     assert respuesta.status_code == 302
-    assert "/entrar" in respuesta.headers["Location"]
+    assert "/login" in respuesta.headers["Location"]
     assert "plan=basico" in respuesta.headers["Location"]
 
 
@@ -377,13 +377,13 @@ def test_al_entrar_sigue_hasta_el_plan_que_iba_a_comprar(client, database,
         {"$set": {"email_confirmed_at": cuenta["created_at"]}})
 
     navegador = other(client)
-    navegador.get("/entrar?plan=negocio")      # lo anota al dibujar la pantalla
+    navegador.get("/login?plan=negocio")      # lo anota al dibujar la pantalla
     respuesta = login(navegador)
 
-    assert respuesta.headers["Location"].endswith("/contratar/negocio")
+    assert respuesta.headers["Location"].endswith("/checkout/negocio")
     # Y se gasta: volver a entrar aterriza donde siempre.
     otra = other(client)
-    otra.get("/entrar")
+    otra.get("/login")
     assert login(otra).headers["Location"] == Config.PUBLIC_SITE_URL
 
 
@@ -391,7 +391,7 @@ def test_un_plan_inventado_en_la_direccion_no_se_recuerda(client, database,
                                                           outbox):
     register(client)
     navegador = other(client)
-    navegador.get("/entrar?plan=infinito")
+    navegador.get("/login?plan=infinito")
 
     assert login(navegador).headers["Location"] == Config.PUBLIC_SITE_URL
 
@@ -402,14 +402,14 @@ def test_contratar_ensena_el_plan_y_sus_dos_ciclos(client, database, outbox,
     browser = inside(client)
     confirm(database)
 
-    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    pantalla = browser.get("/checkout/basico").get_data(as_text=True)
     assert "Obtener Plan Básico" in pantalla
     # El resumen del ciclo que se eligió, con su total y un solo botón de pagar,
     # y el otro ciclo a un enlace.
     assert "Total a pagar ahora" in pantalla
     assert f"Pagar ${plans.amount('basico', 'monthly')}" in pantalla
     assert f"Prefiero pagar un año: ${plans.amount('basico', 'yearly')}" in pantalla
-    assert pantalla.count('action="/configuracion/pagos/contratar"') == 1
+    assert pantalla.count('action="/settings/billing/checkout"') == 1
     assert pantalla.count('name="cycle"') == 1
 
 
@@ -421,7 +421,7 @@ def test_contratar_ensena_con_que_se_puede_pagar_y_con_que_todavia_no(
     browser = inside(client)
     confirm(database)
 
-    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    pantalla = browser.get("/checkout/basico").get_data(as_text=True)
 
     assert 'value="paypal"' in pantalla
     # Cada método son sus logos: la tarjeta, Visa y Mastercard.
@@ -439,7 +439,7 @@ def test_el_metodo_queda_escrito_en_el_intento(client, database, outbox,
     browser = inside(client)
     confirm(database)
 
-    browser.post("/configuracion/pagos/contratar", data={
+    browser.post("/settings/billing/checkout", data={
         "csrf_token": csrf(browser), "plan": "basico", "cycle": "monthly",
         "metodo": "paypal"})
 
@@ -456,7 +456,7 @@ def test_un_metodo_que_todavia_no_cobra_no_abre_ninguna_puerta(
     browser = inside(client)
     confirm(database)
 
-    browser.post("/configuracion/pagos/contratar", data={
+    browser.post("/settings/billing/checkout", data={
         "csrf_token": csrf(browser), "plan": "basico", "cycle": "monthly",
         "metodo": "yappy"})
 
@@ -472,7 +472,7 @@ def test_un_plan_que_no_existe_no_tiene_pantalla_de_contratar(client, database, 
     confirm(database)
 
     for plan in ("corporativo", "inventado"):
-        respuesta = browser.get(f"/contratar/{plan}")
+        respuesta = browser.get(f"/checkout/{plan}")
         assert respuesta.status_code == 302
         assert "error=plan" in respuesta.headers["Location"]
     assert database.payments.count_documents({}) == 0
@@ -486,8 +486,8 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     buy(browser)
     come_back(browser)
 
-    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
-    assert "/configuracion/pagos/contratar" not in pantalla
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
+    assert "/settings/billing/checkout" not in pantalla
     # Y sí sigue diciendo qué tienes y qué se te ha cobrado.
     assert "PayPal" in pantalla
     assert "Yappy" in pantalla
@@ -512,7 +512,7 @@ def test_tus_pagos_solo_ensena_lo_que_se_cobro(client, database, outbox,
     # Y otro que se queda a medias: se crea la orden y nadie vuelve de PayPal.
     buy(browser, plan="negocio")
 
-    pantalla = browser.get("/configuracion/pagos").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
 
     # Una fila por pago cobrado, esperando su factura; el intento a medias no.
     assert pantalla.count("Factura en camino") == 1
@@ -533,13 +533,13 @@ def test_con_un_plan_no_se_baja_a_uno_menor(client, database, outbox,
     cuenta = confirm(database)
     accounts.set_plan(database, cuenta["_id"], "empresa")
 
-    pantalla = browser.get("/contratar/basico").get_data(as_text=True)
+    pantalla = browser.get("/checkout/basico").get_data(as_text=True)
     assert "Ya tienes un plan mayor" in pantalla
-    assert 'action="/configuracion/pagos/contratar"' not in pantalla
+    assert 'action="/settings/billing/checkout"' not in pantalla
 
     # Y el servidor lo comprueba, no solo la pantalla.
     respuesta = buy(browser, plan="basico")
-    assert respuesta.headers["Location"].endswith("/contratar/basico")
+    assert respuesta.headers["Location"].endswith("/checkout/basico")
     assert database.payments.count_documents({}) == 0
 
 
@@ -551,15 +551,15 @@ def test_el_plan_vigente_no_se_renueva_antes_de_tiempo(client, database, outbox,
     cuenta = confirm(database)
     accounts.set_plan(database, cuenta["_id"], "negocio")
 
-    pantalla = browser.get("/contratar/negocio").get_data(as_text=True)
+    pantalla = browser.get("/checkout/negocio").get_data(as_text=True)
     assert 'name="cycle" value="monthly"' not in pantalla
-    assert buy(browser, plan="negocio").headers["Location"].endswith("/contratar/negocio")
+    assert buy(browser, plan="negocio").headers["Location"].endswith("/checkout/negocio")
 
     # Con un anual, ni siquiera el paso a anual: ya lo tiene.
     database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {"plan_cycle": "yearly"}})
-    pantalla = browser.get("/contratar/negocio?ciclo=anual").get_data(as_text=True)
+    pantalla = browser.get("/checkout/negocio?cycle=anual").get_data(as_text=True)
     assert "Cuando venza lo vuelves a contratar" in pantalla
-    assert 'action="/configuracion/pagos/contratar"' not in pantalla
+    assert 'action="/settings/billing/checkout"' not in pantalla
 
 
 def test_subir_de_plan_sigue_pudiendo(client, database, outbox, monkeypatch):

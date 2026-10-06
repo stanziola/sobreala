@@ -5,10 +5,10 @@
 {% block pane %}
 <h2 class="settings__title">{{ t('contacts_tab_list') }}</h2>
 
-{% if request.args.get('guardado') %}
+{% if request.args.get('saved') %}
 <p class="notice notice--ok">{{ t('contacts_saved') }}</p>
 {% endif %}
-{% if request.args.get('anulado') %}
+{% if request.args.get('suppressed') %}
 <p class="notice">{{ t('contacts_added_blocked') }}</p>
 {% endif %}
 
@@ -31,7 +31,7 @@
   {% if total %}
   {# Se lleva el buscador y el filtro puestos, así sirve para sacar un grupo. #}
   <a class="btn btn--outline"
-     href="{{ url_for('contacts.export', q=search, etiqueta=tag) }}">{{ t('contacts_export') }}</a>
+     href="{{ url_for('contacts.export', q=search, tag=tag) }}">{{ t('contacts_export') }}</a>
   {% endif %}
 </div>
 
@@ -43,7 +43,7 @@
          placeholder="{{ t('contacts_search') }}" autocomplete="off">
 
   <label class="visually-hidden" for="etiqueta">{{ t('contacts_all_tags') }}</label>
-  <select id="etiqueta" name="etiqueta">
+  <select id="etiqueta" name="tag">
     <option value="">{{ t('contacts_all_tags') }}</option>
     {% for name in tags %}
     <option value="{{ name }}"{% if name == tag %} selected{% endif %}>{{ name }}</option>
@@ -116,12 +116,12 @@
 <div class="row">
   {% if skip > 0 %}
   <a class="btn btn--small btn--outline"
-     href="{{ url_for('contacts.index', q=search, etiqueta=tag, desde=skip - per_page) }}">
+     href="{{ url_for('contacts.index', q=search, tag=tag, since=skip - per_page) }}">
     {{ t('contacts_newer') }}</a>
   {% endif %}
   {% if skip + per_page < matching %}
   <a class="btn btn--small btn--outline"
-     href="{{ url_for('contacts.index', q=search, etiqueta=tag, desde=skip + per_page) }}">
+     href="{{ url_for('contacts.index', q=search, tag=tag, since=skip + per_page) }}">
     {{ t('contacts_older') }}</a>
   {% endif %}
 </div>

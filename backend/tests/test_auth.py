@@ -11,7 +11,7 @@ from models import token as tokens
 from services.security import hash_code, now
 
 WRONG = "000000"
-url_for_recover = "/recuperar"
+url_for_recover = "/recover"
 
 
 def other_code(code: str) -> str:
@@ -21,25 +21,25 @@ def other_code(code: str) -> str:
 
 def ask_recovery(client, email):
     """Ask for a recovery code and follow to the screen that comes next."""
-    client.get("/recuperar")
+    client.get("/recover")
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    client.post("/recuperar", data={"csrf_token": csrf, "email": email})
-    return client.get("/recuperar/codigo")
+    client.post("/recover", data={"csrf_token": csrf, "email": email})
+    return client.get("/recover/code")
 
 
 # ------------------------------------------------------------------ registration
 
 def test_el_pie_del_registro_lleva_a_iniciar_sesion(client, database):
-    pie = client.get("/registro").get_data(as_text=True).split('class="foot"')[1]
+    pie = client.get("/signup").get_data(as_text=True).split('class="foot"')[1]
     assert "¿Ya tienes una cuenta?" in pie
-    assert '<a href="/entrar">Iniciar sesión</a>' in pie
+    assert '<a href="/login">Iniciar sesión</a>' in pie
 
 
 def test_register_creates_account_and_sends_a_code(client, database, outbox):
     response = register(client)
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/confirmar")
+    assert response.headers["Location"].endswith("/confirm")
 
     account = accounts.by_email(database, "ana@ejemplo.com")
     assert account is not None
@@ -70,10 +70,10 @@ def test_code_in_the_email_is_not_the_one_stored(client, database, outbox):
 
 
 def test_short_password_is_refused(client, database):
-    client.get("/registro")
+    client.get("/signup")
     with client.session_transaction() as sess:
         token = sess["_csrf"]
-    response = client.post("/registro", data={
+    response = client.post("/signup", data={
         "csrf_token": token, "company_name": "X", "contact_name": "Y",
         "email": "corta@ejemplo.com", "password": "corta",
     })
@@ -82,10 +82,10 @@ def test_short_password_is_refused(client, database):
 
 
 def test_password_over_the_bcrypt_limit_is_refused(client, database):
-    client.get("/registro")
+    client.get("/signup")
     with client.session_transaction() as sess:
         token = sess["_csrf"]
-    response = client.post("/registro", data={
+    response = client.post("/signup", data={
         "csrf_token": token, "company_name": "X", "contact_name": "Y",
         "email": "larga@ejemplo.com", "password": "a" * 100,
     })
@@ -94,7 +94,7 @@ def test_password_over_the_bcrypt_limit_is_refused(client, database):
 
 
 def test_registering_without_csrf_does_nothing(client, database):
-    client.post("/registro", data={
+    client.post("/signup", data={
         "company_name": "X", "contact_name": "Y",
         "email": "sin@ejemplo.com", "password": "Contrasena-Larga1",
     })
@@ -132,11 +132,11 @@ def test_confirmation_works_and_signs_in(client, database, outbox):
 
     assert response.status_code == 302
     # Confirmar ya no cae en Estadísticas: la primera pantalla es la bienvenida.
-    assert response.headers["Location"].endswith("/bienvenida")
+    assert response.headers["Location"].endswith("/welcome")
     assert accounts.by_email(database, "ana@ejemplo.com")["email_confirmed_at"]
     # Confirming leaves the visitor inside, without asking for the password
     # they typed two screens ago.
-    assert "Hola, Ana" in client.get("/panel").get_data(as_text=True)
+    assert "Hola, Ana" in client.get("/dashboard").get_data(as_text=True)
 
 
 def test_the_welcome_screen_says_what_comes_next(client, database, outbox):
@@ -144,13 +144,13 @@ def test_the_welcome_screen_says_what_comes_next(client, database, outbox):
     register(client)
     confirm(client, code_from_outbox(outbox))
 
-    pantalla = client.get("/bienvenida").get_data(as_text=True)
+    pantalla = client.get("/welcome").get_data(as_text=True)
     assert "te damos la bienvenida" in pantalla
     assert "Ana" in pantalla
     assert "Elige el plan" in pantalla
     # Los dos botones: los planes viven en el sitio publico.
-    assert "/planes/" in pantalla
-    assert "/configuracion" in pantalla
+    assert "/pricing/" in pantalla
+    assert "/settings" in pantalla
 
 
 def test_the_welcome_screen_steps_aside_once_there_is_a_plan(client, database,
@@ -162,14 +162,14 @@ def test_the_welcome_screen_steps_aside_once_there_is_a_plan(client, database,
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     accounts.set_plan(database, cuenta["_id"], "basico")
 
-    respuesta = client.get("/bienvenida")
+    respuesta = client.get("/welcome")
 
     assert respuesta.status_code == 302
-    assert respuesta.headers["Location"].endswith("/panel")
+    assert respuesta.headers["Location"].endswith("/dashboard")
 
 
 def test_the_welcome_screen_needs_a_session(client, database):
-    assert client.get("/bienvenida").status_code == 302
+    assert client.get("/welcome").status_code == 302
 
 
 def test_confirming_sends_the_welcome(client, database, outbox):
@@ -180,9 +180,9 @@ def test_confirming_sends_the_welcome(client, database, outbox):
     assert len(bodies) == 2, "the code and the welcome"
     welcome = bodies[-1]
     assert "Te damos la bienvenida, Ana" in welcome
-    assert "/panel" in welcome
+    assert "/dashboard" in welcome
     # Transactional: no unsubscribe and no watermark, as rule 8 requires.
-    assert "baja" not in welcome.lower()
+    assert "baja" not in welcome.lower() and "unsubscribe" not in welcome.lower()
     assert "Enviado con Sobreala" not in welcome
 
 
@@ -208,9 +208,9 @@ def test_a_failed_welcome_does_not_lock_anyone_out(client, database, outbox,
 
     response = confirm(client, code)
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/bienvenida")
+    assert response.headers["Location"].endswith("/welcome")
     assert accounts.by_email(database, "ana@ejemplo.com")["email_confirmed_at"]
-    assert "Hola, Ana" in client.get("/panel").get_data(as_text=True)
+    assert "Hola, Ana" in client.get("/dashboard").get_data(as_text=True)
 
 
 def test_a_used_code_does_not_work_twice(client, database, outbox):
@@ -285,12 +285,12 @@ def test_the_code_arrives_in_six_pieces_or_in_one(client, database, outbox):
     protocol.
     """
     register(client)
-    assert confirm(client, code_from_outbox(outbox)).headers["Location"].endswith("/bienvenida")
+    assert confirm(client, code_from_outbox(outbox)).headers["Location"].endswith("/welcome")
 
     fresh = client.application.test_client()
     register(fresh, email="beto@ejemplo.com")
     whole = confirm(fresh, code_from_outbox(outbox), split=False)
-    assert whole.headers["Location"].endswith("/bienvenida")
+    assert whole.headers["Location"].endswith("/welcome")
 
 
 def test_with_the_time_gone_the_screen_is_drawn_blocked(client, database, outbox):
@@ -298,7 +298,7 @@ def test_with_the_time_gone_the_screen_is_drawn_blocked(client, database, outbox
     with client.session_transaction() as sess:
         sess["code_expires_at"] = "2020-01-01T00:00:00+00:00"
 
-    body = client.get("/confirmar").get_data(as_text=True)
+    body = client.get("/confirm").get_data(as_text=True)
     assert "El código venció" in body
     assert 'class="code__box" type="text"' in body and "disabled" in body
 
@@ -315,7 +315,7 @@ def test_the_clock_on_screen_does_not_decide(client, database, outbox):
     with client.session_transaction() as sess:
         sess["code_expires_at"] = "2020-01-01T00:00:00+00:00"
 
-    assert confirm(client, code).headers["Location"].endswith("/bienvenida")
+    assert confirm(client, code).headers["Location"].endswith("/welcome")
 
 
 def csrf_of(client):
@@ -325,8 +325,8 @@ def csrf_of(client):
 
 def ask_again(client):
     """«Pedir otro código», como lo pulsa la pantalla: sin ninguna dirección."""
-    client.get("/confirmar")
-    return client.post("/reenviar-confirmacion",
+    client.get("/confirm")
+    return client.post("/resend-confirmation",
                        data={"csrf_token": csrf_of(client)})
 
 
@@ -340,25 +340,25 @@ def test_resending_replaces_the_previous_code(client, database, outbox):
     assert first != second
     assert database.account_tokens.count_documents({}) == 1
     assert "no es correcto" in confirm(client, first).get_data(as_text=True)
-    assert confirm(client, second).headers["Location"].endswith("/bienvenida")
+    assert confirm(client, second).headers["Location"].endswith("/welcome")
 
 
 def test_otro_codigo_no_pregunta_la_direccion(client, database, outbox):
     """Va a la que se escribió al registrarse, y la vuelta lo dice."""
     register(client)
-    pantalla = client.get("/confirmar").get_data(as_text=True)
+    pantalla = client.get("/confirm").get_data(as_text=True)
     # Un botón que manda el formulario, sin ningún campo de correo.
-    assert 'action="/reenviar-confirmacion"' in pantalla
+    assert 'action="/resend-confirmation"' in pantalla
     assert 'type="email"' not in pantalla
 
     answer = ask_again(client)
-    assert answer.headers["Location"].endswith("/confirmar?reenvio=ok")
+    assert answer.headers["Location"].endswith("/confirm?resent=ok")
     assert "Te enviamos un código nuevo" in client.get(
         answer.headers["Location"]).get_data(as_text=True)
     assert len(list(outbox.glob("*.txt"))) == 2
     # El código se manda a esa misma dirección, con el parámetro puesto: un
     # código mal escrito no vuelve a decir que salió otro.
-    wrong = client.post("/confirmar?reenvio=ok", data={
+    wrong = client.post("/confirm?resent=ok", data={
         "csrf_token": csrf_of(client), "code": list(WRONG)})
     assert "Te enviamos un código nuevo" not in wrong.get_data(as_text=True)
 
@@ -367,15 +367,15 @@ def test_sin_nada_que_confirmar_no_manda_nada(client, database, outbox):
     """Un navegador que no registró nada no tiene a quién mandarle el código:
     se entra con la contraseña, y dentro el aviso del panel lo ofrece."""
     answer = ask_again(client)
-    assert answer.headers["Location"].endswith("/entrar")
+    assert answer.headers["Location"].endswith("/login")
     assert list(outbox.glob("*.txt")) == []
 
 
 def test_pedirlo_por_get_no_manda_nada(client, database, outbox):
     """Manda un correo, así que una precarga del navegador no puede pedirlo."""
     register(client)
-    answer = client.get("/reenviar-confirmacion")
-    assert answer.headers["Location"].endswith("/confirmar")
+    answer = client.get("/resend-confirmation")
+    assert answer.headers["Location"].endswith("/confirm")
     assert len(list(outbox.glob("*.txt"))) == 1
 
 
@@ -388,7 +388,7 @@ def test_pasado_el_limite_lo_dice(client, database, outbox):
         ask_again(client)
     answer = ask_again(client)
 
-    assert answer.headers["Location"].endswith("/confirmar?reenvio=espera")
+    assert answer.headers["Location"].endswith("/confirm?resent=wait")
     assert "Demasiados intentos" in client.get(
         answer.headers["Location"]).get_data(as_text=True)
     assert len(list(outbox.glob("*.txt"))) == 1 + RESEND_PER_EMAIL[0]
@@ -405,7 +405,7 @@ def test_si_no_sale_lo_dice(client, database, outbox, monkeypatch):
     monkeypatch.setattr(mailer, "send", broken)
     answer = ask_again(client)
 
-    assert answer.headers["Location"].endswith("/confirmar?reenvio=fallo")
+    assert answer.headers["Location"].endswith("/confirm?resent=failed")
     pantalla = client.get(answer.headers["Location"]).get_data(as_text=True)
     assert "No pudimos enviarte el código" in pantalla
     assert "Te enviamos un código nuevo" not in pantalla
@@ -415,9 +415,9 @@ def test_ya_no_se_ofrece_corregir_el_correo(client, database, outbox):
     """Quien lo escribió mal se registra otra vez con el bueno; la cuenta a
     medias se borra sola a las 24 horas."""
     register(client)
-    pantalla = client.get("/confirmar").get_data(as_text=True)
+    pantalla = client.get("/confirm").get_data(as_text=True)
     assert "Escribiste mal" not in pantalla
-    assert client.get("/confirmar/corregir").status_code == 404
+    assert client.get("/confirm/corregir").status_code == 404
 
 
 # ------------------------------------------------------------------------ login
@@ -435,13 +435,13 @@ def test_login_and_logout(client, database):
     assert response.status_code == 302
     assert response.headers["Location"] == Config.PUBLIC_SITE_URL
 
-    panel = client.get("/panel")
+    panel = client.get("/dashboard")
     assert "Hola, Ana" in panel.get_data(as_text=True)
 
     with client.session_transaction() as sess:
         csrf = sess["_csrf"]
-    client.post("/salir", data={"csrf_token": csrf})
-    assert client.get("/panel").status_code == 302
+    client.post("/logout", data={"csrf_token": csrf})
+    assert client.get("/dashboard").status_code == 302
 
 
 def test_wrong_password_does_not_get_in(client, database):
@@ -449,7 +449,7 @@ def test_wrong_password_does_not_get_in(client, database):
     response = login(client, password="otra-contrasena")
     assert response.status_code == 200
     assert "no coinciden" in response.get_data(as_text=True)
-    assert client.get("/panel").status_code == 302
+    assert client.get("/dashboard").status_code == 302
 
 
 def test_unknown_address_answers_like_a_wrong_password(client, database):
@@ -465,15 +465,15 @@ def test_panel_warns_until_the_address_is_confirmed(client, database, outbox):
     preguntar la dirección."""
     register(client)
     login(client)
-    panel = client.get("/panel").get_data(as_text=True)
+    panel = client.get("/dashboard").get_data(as_text=True)
     assert "confirmas tu correo" in panel
-    assert 'action="/reenviar-confirmacion"' in panel
+    assert 'action="/resend-confirmation"' in panel
 
-    answer = client.post("/reenviar-confirmacion",
+    answer = client.post("/resend-confirmation",
                          data={"csrf_token": csrf_of(client)})
-    assert answer.headers["Location"].endswith("/confirmar?reenvio=ok")
+    assert answer.headers["Location"].endswith("/confirm?resent=ok")
     confirm(client, code_from_outbox(outbox))
-    assert "confirmas tu correo" not in client.get("/panel").get_data(as_text=True)
+    assert "confirmas tu correo" not in client.get("/dashboard").get_data(as_text=True)
 
 
 def test_the_logo_always_leads_back_to_the_site(client, database, outbox):
@@ -483,18 +483,18 @@ def test_the_logo_always_leads_back_to_the_site(client, database, outbox):
     reread; after signing in it is still the only one, because the panel has no
     other link out.
     """
-    outside = client.get("/entrar").get_data(as_text=True)
+    outside = client.get("/login").get_data(as_text=True)
     assert 'class="bar__brand" href="https://sobreala.com/"' in outside
     assert "Volver al sitio" in outside
 
     register(client)
     login(client)
-    inside = client.get("/panel").get_data(as_text=True)
+    inside = client.get("/dashboard").get_data(as_text=True)
     assert 'class="bar__brand" href="https://sobreala.com/"' in inside
 
 
 def test_panel_needs_a_session(client, database):
-    assert client.get("/panel").status_code == 302
+    assert client.get("/dashboard").status_code == 302
 
 
 # ------------------------------------------------------------------------ model

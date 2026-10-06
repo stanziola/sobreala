@@ -86,7 +86,7 @@
   }
 
 
-  // Written on the parent domain so sobreala.com and panel.sobreala.com read
+  // Written on the parent domain so sobreala.com and app.sobreala.com read
   // the same choice. Anywhere else (a local run) it stays on the host, which is
   // shared anyway: cookies ignore ports.
   function rememberTheme(theme) {
@@ -242,7 +242,7 @@
   var anual = partes[2] === "yearly";
 
   // Una cuenta de administrador no compra planes, así que los botones de
-  // contratar de /planes sobran: el panel la mandaría a administración. Va
+  // contratar de /pricing sobran: el panel la mandaría a administración. Va
   // antes que el menú porque esto vive fuera de él.
   if (admin) {
     Array.prototype.forEach.call(
@@ -260,7 +260,7 @@
     var botones = Array.prototype.slice.call(document.querySelectorAll("[data-plan-rank]"));
     var mio = -1;
     botones.forEach(function (b) {
-      if ((b.getAttribute("data-buy") || "").indexOf("/contratar/" + plan) >= 0) {
+      if ((b.getAttribute("data-buy") || "").indexOf("/checkout/" + plan) >= 0) {
         mio = Number(b.getAttribute("data-plan-rank"));
       }
     });
@@ -280,7 +280,7 @@
           b.removeAttribute("href");
         } else {
           b.removeAttribute("aria-disabled");
-          b.setAttribute("href", b.getAttribute("data-buy") + (enAnual ? "?ciclo=anual" : ""));
+          b.setAttribute("href", b.getAttribute("data-buy") + (enAnual ? "?cycle=yearly" : ""));
         }
       });
     };
