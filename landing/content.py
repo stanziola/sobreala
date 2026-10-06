@@ -16,9 +16,9 @@ from __future__ import annotations
 # --------------------------------------------------------------------------- site
 
 SITE = {
-    "name": "Panamails",
-    "domain": "panamails.com",
-    "base_url": "https://panamails.com",
+    "name": "Sobreala",
+    "domain": "sobreala.com",
+    "base_url": "https://sobreala.com",
     "locale": "es",
     "tagline": "Administra tu base de correos y envía de manera organizada.",
 }
@@ -26,17 +26,17 @@ SITE = {
 # Contact. The WhatsApp link carries a prefilled message so the conversation
 # starts with context instead of a blank "hola".
 CONTACT = {
-    "whatsapp_number": "50768935742",
-    "whatsapp_display": "+507 6893-5742",
-    "whatsapp_message": "Hola, me interesa Panamails para mi negocio.",
-    "email": "panamails.info@gmail.com",
+    "whatsapp_number": "50760807972",
+    "whatsapp_display": "+507 6080-7972",
+    "whatsapp_message": "Hola, me interesa Sobreala para mi negocio.",
+    "email": "info@sobreala.com",
     # Prefilled like the WhatsApp message, so the conversation starts with context.
-    "email_subject": "Consulta sobre Panamails",
-    "email_body": "Hola, me interesa Panamails para mi negocio.",
+    "email_subject": "Consulta sobre Sobreala",
+    "email_body": "Hola, me interesa Sobreala para mi negocio.",
     "email_copy_label": "Copiar",
     "email_copied_label": "Copiado",
-    "instagram_user": "pana.mails",
-    "instagram_url": "https://instagram.com/pana.mails",
+    "instagram_user": "sobreala",
+    "instagram_url": "https://instagram.com/sobreala",
 }
 
 NAV = [
@@ -49,7 +49,7 @@ NAV = [
 # The panel is a different service on a different host: Railway, not Cloudflare
 # Pages. These two buttons are the only way in from the public site.
 PANEL = {
-    "base_url": "https://panel.panamails.com",
+    "base_url": "https://panel.sobreala.com",
     "login_label": "Ingresar",
     "register_label": "Registrarse",
     # Se enseña en lugar de los dos anteriores cuando el panel dejó su migaja.
@@ -94,7 +94,7 @@ CTA_SECONDARY = {"label": "Ver los planes", "url": "/planes/"}
 # --------------------------------------------------------------------------- home
 
 HOME = {
-    "meta_title": "Panamails · Email marketing para tu negocio",
+    "meta_title": "Sobreala · Email marketing para tu negocio",
     "meta_description": (
         "Email marketing sin complicaciones: sube tus contactos, escribe tu campaña "
         "y envíala por correo a toda tu lista desde un solo panel."
@@ -289,7 +289,7 @@ HOME = {
             {
                 "q": "¿Necesito tener un dominio propio?",
                 "a": (
-                    "No. Los correos salen desde un subdominio de Panamails con el "
+                    "No. Los correos salen desde un subdominio de Sobreala con el "
                     "nombre de tu negocio como remitente y tu correo para respuestas. "
                     "Si tienes dominio propio, lo configuramos contigo durante la "
                     "activación."
@@ -315,7 +315,7 @@ HOME = {
                 "a": (
                     "Con los medios de pago que ves al pie de esta página. Los datos de "
                     "la tarjeta se manejan siempre en el sitio del proveedor de pago, "
-                    "nunca en Panamails."
+                    "nunca en Sobreala."
                 ),
             },
             {
@@ -365,7 +365,7 @@ TUTORIALS = {
     "done_title": "¡Listo!",
     "again": "Repetir",
     "next": "Siguiente tutorial: {name}",
-    "signup": {"label": "Crear mi cuenta", "url": "https://panel.panamails.com/registro"},
+    "signup": {"label": "Crear mi cuenta", "url": "https://panel.sobreala.com/registro"},
     "screen": "Pantalla del panel: {what}",
     "tours": [
         {
@@ -652,16 +652,16 @@ TUTORIALS = {
 # --------------------------------------------------------------------------- how it works
 
 HOW = {
-    "meta_title": "Cómo funciona · Panamails",
+    "meta_title": "Cómo funciona · Sobreala",
     "meta_description": (
-        "Tutoriales del panel de Panamails: contactos, plantillas, envíos, "
+        "Tutoriales del panel de Sobreala: contactos, plantillas, envíos, "
         "estadísticas y configuración, paso a paso y pulsando."
     ),
     "hero": {
         "eyebrow": "Cómo funciona",
         "title": "De tu base de datos al correo de tus clientes",
         "subtitle": (
-            "Así vas a usar Panamails, paso a paso. Sin instalar nada y sin pelear con "
+            "Así vas a usar Sobreala, paso a paso. Sin instalar nada y sin pelear con "
             "configuraciones técnicas."
         ),
     },
@@ -670,13 +670,13 @@ HOW = {
         "title": "Los correos salen con el nombre y el correo de tu empresa",
         "text": (
             "Muchos negocios no tienen dominio propio, así que no te pedimos uno. Tus "
-            "correos salen desde un subdominio de Panamails, pero quien los recibe ve "
+            "correos salen desde un subdominio de Sobreala, pero quien los recibe ve "
             "el nombre de tu negocio como remitente, y si responde, la respuesta llega "
             "a tu correo de siempre."
         ),
         "example": {
             "from_label": "De",
-            "from_value": "Tu Empresa <tuempresa@envios.panamails.com>",
+            "from_value": "Tu Empresa <tuempresa@envios.sobreala.com>",
             "reply_label": "Responder a",
             "reply_value": "tuempresa@gmail.com",
         },
@@ -730,9 +730,9 @@ HOW = {
 # --------------------------------------------------------------------------- pricing
 
 PRICING = {
-    "meta_title": "Precios · Panamails",
+    "meta_title": "Precios · Sobreala",
     "meta_description": (
-        "Planes de Panamails desde $15 al mes, con contactos, correos mensuales y "
+        "Planes de Sobreala desde $15 al mes, con contactos, correos mensuales y "
         "soporte que responde. Plan anual con 20% de descuento."
     ),
     "hero": {
@@ -896,7 +896,7 @@ PRICING = {
                 "q": "¿Qué es la marca de agua del plan Básico?",
                 "a": (
                     "Una línea discreta al pie del correo que dice que fue enviado con "
-                    "Panamails. Solo aparece en el plan Básico. Es distinta del enlace "
+                    "Sobreala. Solo aparece en el plan Básico. Es distinta del enlace "
                     "de baja, que va en todos los planes."
                 ),
             },
@@ -922,25 +922,25 @@ PRICING = {
 # --------------------------------------------------------------------------- about
 
 ABOUT = {
-    "meta_title": "Nosotros · Panamails",
+    "meta_title": "Nosotros · Sobreala",
     "meta_description": (
-        "Qué es Panamails, para quién lo estamos construyendo y por qué una "
+        "Qué es Sobreala, para quién lo estamos construyendo y por qué una "
         "plataforma de email marketing pensada para listas que ya existen."
     ),
     "hero": {
         "eyebrow": "Nosotros",
         "title": "Quiénes somos y por qué hacemos esto",
         "subtitle": (
-            "Panamails se construye para negocios y organizaciones que ya tienen una "
+            "Sobreala se construye para negocios y organizaciones que ya tienen una "
             "lista de correos guardada en alguna parte y no tienen cómo usarla."
         ),
     },
     "sections": [
         {
-            "title": "¿Qué es Panamails?",
+            "title": "¿Qué es Sobreala?",
             "paragraphs": [
                 (
-                    "Panamails es una plataforma de email marketing: un panel donde una "
+                    "Sobreala es una plataforma de email marketing: un panel donde una "
                     "empresa sube sus contactos, arma un correo y lo envía a toda su "
                     "lista de una vez. Ofertas, recordatorios, convocatorias, boletines."
                 ),
@@ -1016,7 +1016,7 @@ ABOUT = {
             "title": "¿En qué punto estamos?",
             "paragraphs": [
                 (
-                    "Panamails está en construcción. Este sitio presenta el proyecto y "
+                    "Sobreala está en construcción. Este sitio presenta el proyecto y "
                     "los planes. La plataforma se está desarrollando y las primeras "
                     "cuentas se abrirán poco a poco, acompañando a cada cliente en su "
                     "primera campaña."
@@ -1030,13 +1030,13 @@ ABOUT = {
 # Una página y no un ancla al pie: así se puede enlazar desde fuera, aparece en
 # los buscadores y se puede mandar por WhatsApp sola.
 CONTACT_PAGE = {
-    "meta_title": "Contacto · Panamails",
+    "meta_title": "Contacto · Sobreala",
     "meta_description": "Escríbenos por WhatsApp o por correo. Respondemos el "
                         "mismo día hábil, desde Santiago de Veraguas.",
     "hero": {
         "eyebrow": "Contacto",
         "title": "Hablemos de tu lista",
-        "subtitle": "Escríbenos y te decimos en dos minutos si Panamails te "
+        "subtitle": "Escríbenos y te decimos en dos minutos si Sobreala te "
                     "sirve. Sin compromiso y sin formularios largos.",
     },
     "ways": [
@@ -1060,7 +1060,7 @@ CONTACT_PAGE = {
     "who": {
         "title": "Quién contesta",
         "paragraphs": [
-            "Panamails lo lleva **Luis Stanziola**, desde Santiago de "
+            "Sobreala lo lleva **Luis Stanziola**, desde Santiago de "
             "Veraguas. No hay centro de llamadas: escribes y te contesta la "
             "misma persona que va a configurar tu cuenta.",
             "Atendemos de **lunes a viernes**. Si escribes un fin de semana, "
@@ -1093,7 +1093,7 @@ LEGAL_HOLDER = {
 
 def holder_line() -> str:
     """La frase de apertura de las dos páginas legales."""
-    quien = f"Panamails es el nombre comercial de {LEGAL_HOLDER['name']}"
+    quien = f"Sobreala es el nombre comercial de {LEGAL_HOLDER['name']}"
     if LEGAL_HOLDER["identifier"]:
         quien += f", {LEGAL_HOLDER['identifier']}"
     return f"{quien}, en {LEGAL_HOLDER['place']}."
@@ -1103,9 +1103,9 @@ UPDATED = "15 de septiembre de 2026"
 TERMS_UPDATED = "18 de septiembre de 2026"
 
 PRIVACY = {
-    "meta_title": "Política de privacidad · Panamails",
+    "meta_title": "Política de privacidad · Sobreala",
     "meta_description": (
-        "Qué datos trata Panamails, para qué, con quién los comparte, cuánto "
+        "Qué datos trata Sobreala, para qué, con quién los comparte, cuánto "
         "tiempo los guarda y cómo ejercer tus derechos bajo la Ley 81 de 2019."
     ),
     "hero": {
@@ -1121,7 +1121,7 @@ PRIVACY = {
         {
             "title": "Quién responde por tus datos",
             "paragraphs": [
-                holder_line() + " Escríbenos a panamails.info@gmail.com "
+                holder_line() + " Escríbenos a info@sobreala.com "
                 "para cualquier asunto de esta política, incluido el ejercicio "
                 "de tus derechos.",
                 "Esta política se rige por la Ley 81 de 2019 sobre protección de "
@@ -1214,7 +1214,7 @@ PRIVACY = {
             ],
             "note": (
                 "Sus servidores están fuera de Panamá, principalmente en "
-                "Estados Unidos, así que usar Panamails implica una "
+                "Estados Unidos, así que usar Sobreala implica una "
                 "transferencia internacional de datos hacia esos proveedores. "
                 "También podemos entregar información si una autoridad "
                 "competente lo ordena."
@@ -1240,12 +1240,12 @@ PRIVACY = {
             "paragraphs": [
                 "Puedes pedir acceso a tus datos, corregirlos, cancelarlos, "
                 "oponerte a un tratamiento o llevártelos a otro servicio. "
-                "Escríbenos a panamails.info@gmail.com desde la dirección de tu "
+                "Escríbenos a info@sobreala.com desde la dirección de tu "
                 "cuenta y respondemos dentro de los plazos de la Ley 81 de "
                 "2019. Si no quedas conforme, puedes acudir a la Autoridad "
                 "Nacional de Transparencia y Acceso a la Información (ANTAI).",
                 "Si llegaste aquí porque recibiste un correo de una empresa que "
-                "usa Panamails, los datos son de esa empresa y tu solicitud le "
+                "usa Sobreala, los datos son de esa empresa y tu solicitud le "
                 "corresponde a ella; escríbenos igual y la encaminamos. Si lo "
                 "que quieres es dejar de recibir esos correos, el enlace de "
                 "baja del propio mensaje lo hace al instante, y también podemos "
@@ -1275,7 +1275,7 @@ PRIVACY = {
                 "Un **valor guardado en tu navegador** con el tema que "
                 "elegiste, claro u oscuro. No sale de tu equipo.",
                 "Una **marca de un solo dígito** que el panel deja en "
-                "panamails.com para que el sitio público sepa si dibujarte el "
+                "sobreala.com para que el sitio público sepa si dibujarte el "
                 "botón «Mi cuenta». No lleva tu nombre ni tu dirección: es un "
                 "uno y nada más.",
             ],
@@ -1300,7 +1300,7 @@ PRIVACY = {
         {
             "title": "Menores de edad",
             "paragraphs": [
-                "Panamails es un servicio para negocios y organizaciones. No "
+                "Sobreala es un servicio para negocios y organizaciones. No "
                 "está dirigido a menores de 18 años ni recogemos sus datos a "
                 "sabiendas.",
             ],
@@ -1316,9 +1316,9 @@ PRIVACY = {
 }
 
 TERMS = {
-    "meta_title": "Términos y condiciones · Panamails",
+    "meta_title": "Términos y condiciones · Sobreala",
     "meta_description": (
-        "Condiciones de uso de Panamails: cuenta, planes y pagos, reglas de "
+        "Condiciones de uso de Sobreala: cuenta, planes y pagos, reglas de "
         "envío, tratamiento de los datos de tus contactos y responsabilidades."
     ),
     "hero": {
@@ -1341,7 +1341,7 @@ TERMS = {
         {
             "title": "2. Qué es el servicio",
             "paragraphs": [
-                "Panamails es una plataforma de email marketing: subes tus "
+                "Sobreala es una plataforma de email marketing: subes tus "
                 "contactos, armas una campaña y la envías desde un panel.",
                 "La plataforma está en construcción. Algunas funciones no "
                 "existen todavía y otras pueden cambiar; los cambios "
@@ -1391,7 +1391,7 @@ TERMS = {
             ],
         },
         {
-            "title": "5. Para qué NO puedes usar Panamails",
+            "title": "5. Para qué NO puedes usar Sobreala",
             "paragraphs": [
                 "Esta es la parte que más importa. El dominio de envío es "
                 "compartido entre todos los clientes: lo que uno haga mal lo "
@@ -1447,7 +1447,7 @@ TERMS = {
             "paragraphs": [
                 "Cuando subes una lista, esos datos personales son de las "
                 "personas que están en ella y **tú eres el responsable** de "
-                "haberlos obtenido bien. Panamails actúa como **custodio**: los "
+                "haberlos obtenido bien. Sobreala actúa como **custodio**: los "
                 "trata solo por instrucción tuya. En concreto:",
             ],
             "items": [
@@ -1525,7 +1525,7 @@ TERMS = {
         {
             "title": "14. Contacto",
             "paragraphs": [
-                "panamails.info@gmail.com, o el WhatsApp que aparece en el pie "
+                "info@sobreala.com, o el WhatsApp que aparece en el pie "
                 "de esta página.",
             ],
         },
@@ -1561,7 +1561,7 @@ FOOTER = {
         },
     ],
     "soon_label": "Próximamente",
-    "legal_note": "Panamails",
+    "legal_note": "Sobreala",
     # Payment logos live in brand/payments/. If that folder is empty the footer
     # falls back to this line, so the site is never left half-finished.
     "payments_label": "Pagos",

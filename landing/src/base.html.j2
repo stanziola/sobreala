@@ -27,7 +27,7 @@
     // The shared crumb first: the site and the panel are two origins, and
     // localStorage is per origin, so only a cookie on the parent domain lets a
     // choice made on one be seen on the other.
-    var c = /(?:^|;\s*)pm_theme=(dark|light)/.exec(document.cookie);
+    var c = /(?:^|;\s*)sa_theme=(dark|light)/.exec(document.cookie);
     if (c) t = c[1];
     else try { t = localStorage.getItem("theme"); } catch (e) {}
     if (t !== "dark" && t !== "light") {
@@ -58,7 +58,7 @@
   <div class="shell site-header__inner">
     <a class="brand" href="/"{% if current_url == '/' %} aria-current="page"{% endif %}>
       <span class="brand__wing">{{ wing_svg }}</span>
-      <span class="brand__name">Panamails</span>
+      <span class="brand__name">Sobreala</span>
     </a>
 
     {#- El botón del tema ya no vive aquí: se mudó al menú de abajo, para que
@@ -223,7 +223,7 @@
       <div class="site-footer__brand">
         <a class="brand brand--footer" href="/">
           <span class="brand__wing">{{ wing_svg }}</span>
-          <span class="brand__name">Panamails</span>
+          <span class="brand__name">Sobreala</span>
         </a>
         <p class="site-footer__desc">{{ footer.description }}</p>
       </div>

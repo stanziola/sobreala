@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the public Panamails site into landing/.
+"""Generate the public Sobreala site into landing/.
 
 Sources of truth, none of them duplicated here:
 
@@ -403,7 +403,7 @@ def build_social_cards() -> list[Path]:
 
         lienzo.paste(ala, (margen, margen - 18), ala)
         draw.text((margen + ala.width + 20, margen + ala.height // 2),
-                  "Panamails", font=wordmark, fill=marca, anchor="lm")
+                  "Sobreala", font=wordmark, fill=marca, anchor="lm")
 
         lineas = wrap_text(draw, card_title(page), titulo, OG_SIZE[0] - margen * 2)
         alto = 86
@@ -412,7 +412,7 @@ def build_social_cards() -> list[Path]:
             draw.text((margen, y), linea, font=titulo, fill="#FFFFFF")
             y += alto
 
-        draw.text((margen, OG_SIZE[1] - margen), "panamails.com",
+        draw.text((margen, OG_SIZE[1] - margen), "sobreala.com",
                   font=pie, fill=claro, anchor="ls")
 
         target = OG_DIR / f"{slug}.png"
@@ -724,7 +724,7 @@ def check() -> list[Path]:
     global LANDING_DIR, ASSETS_DIR, OUT_IMG, OG_DIR
     saved = (LANDING_DIR, ASSETS_DIR, OUT_IMG, OG_DIR)
     stale: list[Path] = []
-    with tempfile.TemporaryDirectory(prefix="panamails-check-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="sobreala-check-") as tmp:
         fake = Path(tmp)
         LANDING_DIR = fake
         ASSETS_DIR = fake / "assets"
@@ -746,7 +746,7 @@ def check() -> list[Path]:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Generate the public Panamails site.")
+    ap = argparse.ArgumentParser(description="Generate the public Sobreala site.")
     ap.add_argument("--serve", action="store_true", help="serve the built site locally")
     ap.add_argument("--port", type=int, default=8080, metavar="N", help="port for --serve")
     ap.add_argument("--check", action="store_true",

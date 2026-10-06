@@ -49,8 +49,8 @@ def ses(monkeypatch):
     fake_boto3.client = make_client
     monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
     monkeypatch.setattr(Config, "MAIL_BACKEND", "ses")
-    monkeypatch.setattr(Config, "SYSTEM_FROM_EMAIL", "cuenta@mail.panamails.com")
-    monkeypatch.setattr(Config, "SYSTEM_FROM_NAME", "Panamails")
+    monkeypatch.setattr(Config, "SYSTEM_FROM_EMAIL", "notifications@mail.sobreala.com")
+    monkeypatch.setattr(Config, "SYSTEM_FROM_NAME", "Sobreala")
     monkeypatch.setattr(Config, "AWS_REGION", "us-east-1")
     monkeypatch.setattr(Config, "SES_TRANSACTIONAL_CONFIGURATION_SET", "")
     return client
@@ -67,7 +67,7 @@ def test_the_call_to_aws_has_the_shape_ses_expects(ses, database):
     assert identifier == "0100018f-aws-id"
     assert ses.region == "us-east-1"
     sent = ses.calls[0]
-    assert sent["Source"] == "Panamails <cuenta@mail.panamails.com>"
+    assert sent["Source"] == "Sobreala <notifications@mail.sobreala.com>"
     assert sent["Destination"] == {"ToAddresses": ["ana@ejemplo.com"]}
     assert sent["Message"]["Subject"]["Data"] == "Tu código"
     # Both parts travel: the text one is what a client that refuses HTML shows.
@@ -81,9 +81,9 @@ def test_the_configuration_set_only_travels_when_there_is_one(ses, database,
     send_one()
     assert "ConfigurationSetName" not in ses.calls[0]
 
-    monkeypatch.setattr(Config, "SES_TRANSACTIONAL_CONFIGURATION_SET", "panamails-sistema")
+    monkeypatch.setattr(Config, "SES_TRANSACTIONAL_CONFIGURATION_SET", "sobreala-sistema")
     send_one()
-    assert ses.calls[1]["ConfigurationSetName"] == "panamails-sistema"
+    assert ses.calls[1]["ConfigurationSetName"] == "sobreala-sistema"
 
 
 def test_a_sent_message_is_recorded_with_the_aws_identifier(ses, database):
@@ -134,7 +134,7 @@ def test_with_credentials_it_starts(monkeypatch):
     monkeypatch.setattr(Config, "MAIL_BACKEND", "ses")
     monkeypatch.setattr(Config, "AWS_ACCESS_KEY_ID", "AKIA...")
     monkeypatch.setattr(Config, "AWS_SECRET_ACCESS_KEY", "secreta")
-    monkeypatch.setattr(Config, "SYSTEM_FROM_EMAIL", "cuenta@mail.panamails.com")
+    monkeypatch.setattr(Config, "SYSTEM_FROM_EMAIL", "notifications@mail.sobreala.com")
 
     Config.check()  # no exception
 

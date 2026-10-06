@@ -48,7 +48,7 @@ ROLES = (CLIENT, ADMIN, MEMBER)
 # puede.
 #
 # El dueño lo puede todo, siempre, y no lleva permisos escritos: lo que decide
-# es no tener `owner_id`. Una cuenta de administrador de Panamails no tiene
+# es no tener `owner_id`. Una cuenta de administrador de Sobreala no tiene
 # ninguno de estos permisos, porque esas pantallas no son suyas.
 STATS = "stats"          # Estadísticas
 CAMPAIGNS = "campaigns"  # ver las campañas y el detalle de cada envío
@@ -391,7 +391,7 @@ def can(account: dict[str, Any] | None, permission: str) -> bool:
     """Si esta cuenta puede hacer eso.
 
     El dueño lo puede todo: su cuenta es la empresa. Un administrador de
-    Panamails, nada de esto: no tiene contactos a los que escribirle. Un usuario,
+    Sobreala, nada de esto: no tiene contactos a los que escribirle. Un usuario,
     lo que el dueño le marcó.
     """
     one = account or {}
@@ -598,7 +598,7 @@ def postal_of(account: dict[str, Any] | None) -> str:
     """La dirección física de la empresa, o vacío si todavía no la escribió.
 
     La ley CAN-SPAM la pide en todo correo publicitario, y es la de quien
-    anuncia: la de cada cliente, no la de Panamails.
+    anuncia: la de cada cliente, no la de Sobreala.
     """
     return str((account or {}).get("postal_address") or "")
 

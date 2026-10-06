@@ -58,17 +58,17 @@ SNS es el buzón por el que Amazon manda los avisos.
    está verificada la identidad de SES. Un tema en otra región no se puede
    elegir desde SES.
 2. **SNS → Temas → Crear tema.**
-3. Tipo **Estándar** (no FIFO). Nombre: `panamails-ses-eventos`.
+3. Tipo **Estándar** (no FIFO). Nombre: `sobreala-ses-eventos`.
 4. Lo demás como viene. **Crear tema.**
 5. Copiar el **ARN** que aparece arriba. Tiene esta forma:
-   `arn:aws:sns:us-east-2:123456789012:panamails-ses-eventos`.
+   `arn:aws:sns:us-east-2:123456789012:sobreala-ses-eventos`.
 
 ## 3. La suscripción al panel
 
 1. En el tema recién creado: **Crear suscripción.**
 2. Protocolo: **HTTPS**.
 3. Punto de enlace:
-   `https://panel.panamails.com/webhooks/ses/<el secreto del paso 1>`
+   `https://panel.sobreala.com/webhooks/ses/<el secreto del paso 1>`
 4. **«Habilitar la entrega de mensajes sin procesar» se deja apagado.** El panel
    espera el sobre de SNS, con el aviso dentro.
 5. **Crear suscripción.**
@@ -91,27 +91,27 @@ a un código de confirmación no se le mide nada.
 
 **SES → Configuración → Conjuntos de configuración → Crear conjunto.**
 
-### `panamails-campanas`
+### `sobreala-campanas`
 
-1. Nombre: `panamails-campanas`. Lo demás como viene. **Crear.**
+1. Nombre: `sobreala-campanas`. Lo demás como viene. **Crear.**
 2. Dentro, pestaña **Destinos de eventos → Agregar destino.**
 3. Tipos de evento: **Entregas, Rebotes, Quejas, Rechazos, Aperturas y Clics.**
    Sin «Envíos» (eso ya lo anota el panel al mandar) ni «Errores de
    representación» ni «Retrasos en la entrega».
-4. Destino: **Amazon SNS**, y elegir `panamails-ses-eventos`.
+4. Destino: **Amazon SNS**, y elegir `sobreala-ses-eventos`.
 5. Nombre del destino: `panel`. **Siguiente** y **Agregar destino.**
 
-### `panamails-sistema`
+### `sobreala-sistema`
 
-Igual, con nombre `panamails-sistema`, y en el paso 3 **sin Aperturas ni Clics**:
+Igual, con nombre `sobreala-sistema`, y en el paso 3 **sin Aperturas ni Clics**:
 solo Entregas, Rebotes, Quejas y Rechazos. Mismo tema.
 
 ## 5. Los nombres, en Railway
 
 | Variable | Valor |
 |---|---|
-| `SES_CONFIGURATION_SET` | `panamails-campanas` |
-| `SES_TRANSACTIONAL_CONFIGURATION_SET` | `panamails-sistema` |
+| `SES_CONFIGURATION_SET` | `sobreala-campanas` |
+| `SES_TRANSACTIONAL_CONFIGURATION_SET` | `sobreala-sistema` |
 | `SES_TOPIC_ARN` | El ARN del paso 2 |
 
 Desplegar. Desde aquí cada correo sale con su conjunto, y los avisos empiezan a
@@ -125,16 +125,16 @@ no venga de ese tema.
 DKIM es la firma que prueba que el correo lo mandó quien dice. Sin ella,
 Microsoft y Gmail desconfían, y desde fuera no se puede ver si está bien.
 
-1. **SES → Identidades → panamails.com**, pestaña **Autenticación**.
+1. **SES → Identidades → sobreala.com**, pestaña **Autenticación**.
 2. «Configuración de DKIM» tiene que decir **Correcto** (Successful).
 3. Si dice otra cosa: SES enseña tres registros CNAME que acaban en
-   `._domainkey.panamails.com`. Tienen que estar en Cloudflare → DNS **con la
+   `._domainkey.sobreala.com`. Tienen que estar en Cloudflare → DNS **con la
    nube gris (solo DNS)**. Con la nube naranja Cloudflare los esconde detrás de
    su proxy y la firma no se puede comprobar.
 
 ## 7. Los informes de DMARC
 
-Hoy `_dmarc.panamails.com` dice `v=DMARC1; p=none;` y nada más: la política está
+Con `_dmarc.sobreala.com` en `v=DMARC1; p=none;` y nada más, la política está
 publicada, pero nadie recibe los informes de quién manda correo en nombre del
 dominio y si pasa las comprobaciones.
 
@@ -207,11 +207,11 @@ puede mirar su equipo de sistemas. Antes de escribirles, que DKIM esté
 
 ### El mensaje para sistemas
 
-> Asunto: Correos de panamails.com retenidos en Microsoft 365
+> Asunto: Correos de sobreala.com retenidos en Microsoft 365
 >
 > Buenos días,
 >
-> Soy <tu nombre>, de Panamails (panamails.com), una plataforma panameña de
+> Soy <tu nombre>, de Sobreala (sobreala.com), una plataforma panameña de
 > correo. Personas de la UTP se registran en nuestro servicio con su correo
 > institucional y no reciben el código de confirmación. Nuestro proveedor
 > (Amazon SES) confirma que su servidor aceptó el mensaje, así que sospechamos
@@ -220,16 +220,16 @@ puede mirar su equipo de sistemas. Antes de escribirles, que DKIM esté
 > ¿Podrían revisarlo en su lado?
 >
 > 1. En el **seguimiento de mensajes** (Exchange admin center → Mail flow →
->    Message trace), buscar correos del remitente `cuenta@panamails.com`
+>    Message trace), buscar correos del remitente `notifications@sobreala.com`
 >    a `<dirección de la persona>` el `<fecha>` cerca de las `<hora>`.
 > 2. Si aparecen en **cuarentena** (Microsoft Defender → Email & collaboration →
 >    Review → Quarantine), el motivo que indique.
-> 3. Si es posible, agregar el dominio `panamails.com` a los remitentes
+> 3. Si es posible, agregar el dominio `sobreala.com` a los remitentes
 >    permitidos (Tenant Allow/Block List).
 >
 > Nuestros datos de envío, por si les sirven: los correos salen por Amazon SES
-> (región us-east-2), firmados con DKIM para `panamails.com`, con SPF en
-> `mail.panamails.com` y DMARC publicado.
+> (región us-east-2), firmados con DKIM para `sobreala.com`, con SPF en
+> `mail.sobreala.com` y DMARC publicado.
 >
 > Quedo atento, y gracias.
 

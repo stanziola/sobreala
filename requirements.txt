@@ -1,4 +1,4 @@
-# Dependencias del backend de Panamails.
+# Dependencias del backend de Sobreala.
 #
 # Este archivo va en la RAÍZ a propósito: es donde Railpack, el constructor de
 # Railway, busca para reconocer el proyecto como Python. Tiene que listar los

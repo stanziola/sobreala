@@ -187,7 +187,7 @@ def test_el_pago_trae_el_itbms_los_logos_y_la_frase(client, database, outbox, mo
     assert 'alt="PayPal"' in pantalla and 'alt="Visa"' in pantalla
     assert "Tarjeta de crédito o débito" not in pantalla.split("Usar este")[0]
     assert "Se paga en la página de PayPal" not in pantalla
-    assert "Panamails nunca guarda tus datos de pago." in pantalla
+    assert "Sobreala nunca guarda tus datos de pago." in pantalla
     assert "el pago se hace en la página del proveedor" not in pantalla
 
 

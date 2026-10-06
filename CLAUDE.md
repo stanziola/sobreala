@@ -1,4 +1,4 @@
-# Panamails
+# Sobreala
 
 Plataforma de email marketing para negocios de Panamá. Las empresas clientes
 suben sus contactos, arman campañas (ofertas, recordatorios, eventos) y las
@@ -44,7 +44,7 @@ dominio. Ver `docs/decisiones.md`.
 ## Estructura del repositorio
 
 ```
-panamails/
+sobreala/
 ├── CLAUDE.md
 ├── README.md
 ├── .env.example
@@ -178,14 +178,14 @@ aplicación aparte: comparte modelos y servicios con el resto.
   `git config` y el mensaje dice qué cambió y nada más. Si algún día eso no se
   pudiera cumplir, entonces no se commitea.
 - **Los permisos viven en `.claude/settings.json` del proyecto**, no en el del
-  usuario, para que esto valga en Panamails y no en sus otros repositorios. Van
+  usuario, para que esto valga en Sobreala y no en sus otros repositorios. Van
   sin preguntar: `status`, `log`, `diff`, `show`, `add`, `commit`, `push`,
   `branch`, `remote` y `fetch`. Quedan negados a propósito, y los hace una
   persona a mano: `reset --hard`, `push --force`, `rebase`, `clean`,
   `filter-branch` y borrar el `reflog`.
 - **Lo que existe en los dos sitios se cambia en los dos.** La barra de arriba,
-  su menú y todo lo que se repita entre `panamails.com` (`landing/src/`) y
-  `panel.panamails.com` (`backend/templates/`) son **dos plantillas distintas
+  su menú y todo lo que se repita entre `sobreala.com` (`landing/src/`) y
+  `panel.sobreala.com` (`backend/templates/`) son **dos plantillas distintas
   que tienen que decir lo mismo**. Al tocar una, se abre la otra en el mismo
   cambio y se comprueban las dos en el navegador, con sesión y sin ella. Ya
   mordió dos veces: la fila de Plantillas se puso solo en el panel, y salir
@@ -243,7 +243,7 @@ contraseña y su segundo factor son suyos, no de la empresa.
 |---|---|
 | El dueño | Todo, siempre. No lleva permisos escritos: lo que decide es no tener `owner_id` |
 | Un usuario | Lo que el dueño le marcó (`accounts.can()`), y **su** Seguridad |
-| Un administrador de Panamails | Ninguno de estos permisos: no tiene clientes a los que escribirle |
+| Un administrador de Sobreala | Ninguno de estos permisos: no tiene clientes a los que escribirle |
 
 - **Mandar arrastra ver**: `SEND` implica `CAMPAIGNS`, porque un usuario que
   manda y no ve lo que mandó no tiene sentido (`clean_permissions()`).
@@ -811,7 +811,7 @@ imagen. El editor los marca en rojo y el servidor no guarda.
 **El modo oscuro no cambia los colores del diseño.** Outlook en el teléfono y en
 la web «corrige» colores en oscuro: el texto blanco sobre una foto salía gris
 oscuro y un botón negro se quedaba sin fondo. Cada color lleva una clase
-(`pmc-FFFFFF` la letra, `pmb-000000` el fondo) y `canvas.dark_css()` escribe en
+(`sac-FFFFFF` la letra, `sab-000000` el fondo) y `canvas.dark_css()` escribe en
 la cabecera una regla por color con `[data-ogsc]` y `[data-ogsb]`, que es lo que
 Outlook respeta. El sobre (`email_templates/_wrap.html`) dice además
 `color-scheme: light`, para el iPhone. Gmail en oscuro invierte todo y eso no se
@@ -910,7 +910,7 @@ la vista previa: también de una pieza que todavía no se ha guardado.
   editando como si nada.
 - **El HTML**, con sus imágenes fundidas en `imagenes/`, que el HTML nombra por
   su ruta: al abrirlo en una computadora se ve entero, y sirve fuera de
-  Panamails. En el panel ya no se carga.
+  Sobreala. En el panel ya no se carga.
 
 El HTML es lo mismo que sale al enviar (`sender.Piece`) y va **sin nuestro pie**
 (`render.email_from_body(bare=True)`): la baja, la dirección y la marca de agua
@@ -1296,7 +1296,7 @@ visitante, no lo que la plataforma sabe de su propio tráfico.
 3. **El enlace de baja se inyecta al enviar, no al guardar el HTML** — así el
    cliente no lo puede quitar. Es único por destinatario (con token). Va en
    todos los planes, sin excepción, más la cabecera `List-Unsubscribe`.
-4. **La marca de agua "Enviado con Panamails" se inyecta al enviar, solo en el
+4. **La marca de agua "Enviado con Sobreala" se inyecta al enviar, solo en el
    plan Básico**, con el ala de la marca al lado (`static/img/email-logo.png`,
    que genera `build_assets.py` desde `brand/logo/logo.png`, en PNG porque Gmail
    y Outlook no dibujan SVG). Al subir de plan desaparece sola, y Negocio y
@@ -1322,11 +1322,11 @@ visitante, no lo que la plataforma sabe de su propio tráfico.
 
 ## Envío
 
-Todos los clientes envían desde un subdominio de Panamails; **no se les exige
+Todos los clientes envían desde un subdominio de Sobreala; **no se les exige
 configurar DNS** porque la mayoría no tiene dominio propio:
 
 ```
-De:        Tu Empresa <tuempresa@envios.panamails.com>
+De:        Tu Empresa <tuempresa@envios.sobreala.com>
 Responder: tuempresa@gmail.com
 ```
 
@@ -1344,9 +1344,9 @@ automáticas son la única protección:
 
 Usar **tenants de SES** para aislar reputación y supresión por cliente.
 
-Requisitos de remitente masivo que aplican a Panamails (no a sus clientes), al
+Requisitos de remitente masivo que aplican a Sobreala (no a sus clientes), al
 pasar de 5,000 correos diarios sumando todos: DMARC publicado en
-`panamails.com`, SPF y DKIM, baja de un clic procesada en menos de 2 días, y
+`sobreala.com`, SPF y DKIM, baja de un clic procesada en menos de 2 días, y
 tasa de quejas agregada bajo 0.1%.
 
 ---
@@ -1545,7 +1545,7 @@ solos; ofrecerlos es sacarlos de esa tupla.
 
 **Todo se guarda en UTC y todo se escribe en la zona del dispositivo de quien
 mira** (`services/clock.py`). El guion de la cabecera del panel escribe la
-galleta `pm_tz` con la zona del navegador; la primera página de un dispositivo
+galleta `sa_tz` con la zona del navegador; la primera página de un dispositivo
 nuevo todavía no la trae y sale en hora de Panamá. `on_date` y `at_moment` la
 usan, las gráficas cortan sus tramos en ella, y **una hora escrita para
 programar una campaña se lee en ella** —antes se tomaba como UTC, y las 3 de la
@@ -1568,8 +1568,8 @@ lo que se dedica la empresa; lo demás son ajustes, y se buscan cuando hacen
 falta. Sin sesión el mismo control es un botón de tres líneas con las dos que
 sirven sin cuenta.
 
-**El modo claro u oscuro viaja entre los dos sitios en la galleta `pm_theme`**,
-en `.panamails.com`. El sitio y el panel son dos orígenes y cada uno tiene su
+**El modo claro u oscuro viaja entre los dos sitios en la galleta `sa_theme`**,
+en `.sobreala.com`. El sitio y el panel son dos orígenes y cada uno tiene su
 propio almacenamiento, así que guardarlo solo ahí dejaba el panel en claro
 después de elegir oscuro en el sitio. El guion de la cabecera de los dos mira
 primero la galleta; lo que alguien eligió antes de que existiera se copia a ella
@@ -1721,7 +1721,7 @@ Pendiente además: revisar rebotes por cliente.
 
 Además:
 
-1. **Tasa de rebotes y quejas agregada en la portada** — la de Panamails, no la
+1. **Tasa de rebotes y quejas agregada en la portada** — la de Sobreala, no la
    de cada cliente. Es la métrica que puede cerrar el negocio.
 2. Estado de pagos y renovaciones (Yappy puede requerir cobro manual).
 3. Envíos en curso, pausados y fallidos.
@@ -1874,9 +1874,9 @@ una política de líneas largas.
 
 ### De quién sale
 
-De la identidad **verificada hoy** en SES —`panamails.com`—, con el nombre de la
+De la identidad del dominio en SES —`sobreala.com`—, con el nombre de la
 empresa a la vista y su dirección como responder a. Lo que dice el apartado de
-arriba, `tuempresa@envios.panamails.com`, es a dónde va esto el día que ese
+arriba, `tuempresa@envios.sobreala.com`, es a dónde va esto el día que ese
 subdominio esté verificado: mientras no lo esté, usarlo haría fallar cada envío.
 Es una sola función, `sender.from_address()`.
 
@@ -2077,7 +2077,7 @@ los archivos los copia `build_assets.py` de `brand/payments/` a
 logos y, escondido, en su «Usar este», para que un lector de pantalla no diga
 tres veces «Usar este» sin decir de qué. De noche descansan sobre la tarjeta
 oscura tal cual: hubo una pastilla blanca y se quitó, sabiendo que PayPal, Visa
-y Yappy, que son azules, ahí se leen poco. Debajo, una sola frase: «Panamails
+y Yappy, que son azules, ahí se leen poco. Debajo, una sola frase: «Sobreala
 nunca guarda tus datos de pago.» Del cliente
 de fuera de Panamá no se sabe el país (el panel no guarda sus datos de
 facturación), así que el desglose dice ITBMS para todos y la factura, que se
@@ -2146,8 +2146,8 @@ Cuatro cosas más de esas tarjetas:
   `is-ready`): un botón que no hace nada es peor que no tenerlo.
 - **El botón de cada plan dice «Obtener Plan X»**, y **con un plan vigente
   siguen la regla de mejorar** según el interruptor (`nav.js`, leyendo la migaja
-  `pm_in`, que lleva el plan y su ciclo, `1:negocio:monthly`, solo mientras está
-  vigente; `plans.js` avisa con el evento `pm:cycle` cada vez que cambia el
+  `sa_in`, que lleva el plan y su ciclo, `1:negocio:monthly`, solo mientras está
+  vigente; `plans.js` avisa con el evento `sa:cycle` cada vez que cambia el
   ciclo): los de abajo y el propio dicen «Ya tienes todas las ventajas»,
   apagados; el propio en anual, si se tiene mensual, «Pasar a anual»; los de
   arriba, «Mejorar a X», salvo en mensual para quien tiene un anual, que dicen
@@ -2462,7 +2462,7 @@ SES_CONFIGURATION_SET               # campañas, con aperturas y clics
 SES_TRANSACTIONAL_CONFIGURATION_SET # correo del sistema, sin ellos
 SES_WEBHOOK_SECRET        # va en la dirección del aviso; sin él, 404
 SES_TOPIC_ARN             # opcional: descarta avisos de otro tema
-SENDING_DOMAIN            # envios.panamails.com
+SENDING_DOMAIN            # envios.sobreala.com
 PAYPAL_ENV                # sandbox | live; en producción con sandbox no arranca
 PAYPAL_CLIENT_ID
 PAYPAL_SECRET
@@ -2490,7 +2490,7 @@ no se descubra el día del lanzamiento.
 - ~~**Dirección postal física en el pie de cada campaña.**~~ Hecho, y **es la de
   cada cliente**: la CAN-SPAM la pide en todo correo publicitario (basta un
   destinatario con Gmail o Hotmail) y es la de quien anuncia, no la de
-  Panamails. Se escribe en Configuración → Cuenta (`postal_address`, de 10 a
+  Sobreala. Se escribe en Configuración → Cuenta (`postal_address`, de 10 a
   200 caracteres), va inyectada al pie junto a la baja, y **sin ella no se
   envía**: `sender.blocked()` dice `postal`. El administrador la ve en la
   ficha y no la edita. Hubo una sola para todos en la variable `POSTAL_ADDRESS`,
@@ -2508,9 +2508,9 @@ no se descubra el día del lanzamiento.
   revisa si algo va mal.
 - **La pausa automática por rebotes y quejas**, la de la tabla de «Envío». Hoy
   depende de mirar las cifras a mano.
-- **Verificar `envios.panamails.com`** como identidad aparte en SES, con su
-  propio configuration set. El correo del sistema sale por `panamails.com`
-  (MAIL FROM `mail.panamails.com`, ya configurado); separar los dos es lo que
+- **Verificar `envios.sobreala.com`** como identidad aparte en SES, con su
+  propio configuration set. El correo del sistema sale por `sobreala.com`
+  (MAIL FROM `mail.sobreala.com`); separar los dos es lo que
   impide que la reputación de las campañas arrastre a los códigos de
   confirmación.
 - **Tenants de SES por cliente**, para aislar reputación y supresión. Ya está
@@ -2518,9 +2518,9 @@ no se descubra el día del lanzamiento.
 - **Registro de consentimiento por contacto.** Guardar de dónde salió cada
   dirección y cuándo, en el propio documento del contacto. Hoy el importador no
   lo pide, y es exactamente lo que hay que enseñar cuando alguien reclame.
-- **Revisar la solicitud de producción de SES ya enviada** (`solicitud-ses.txt`
-  en la raíz): lo que se prometió ahí sobre bajas, supresiones y umbrales tiene
-  que estar funcionando de verdad cuando empiecen las campañas.
+- **Pedir la producción de SES en la cuenta nueva de Sobreala**, que empieza en
+  sandbox: lo que se prometa ahí sobre bajas, supresiones y umbrales tiene que
+  estar funcionando de verdad cuando empiecen las campañas.
 - **Contrato de encargo para clientes grandes.** El tratamiento de datos de
   terceros ya está pactado en los términos públicos (§8), que se aceptan al
   registrarse. Una cooperativa grande puede pedir además un documento firmado;

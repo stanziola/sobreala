@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the Panamails logo assets from one vector geometry + two config files.
+"""Generate the Sobreala logo assets from one vector geometry + two config files.
 
 The logo is a wing made of four stacked feathers. It is built from a single
 closed path (the white wing) drawn twice: once in the shadow color, offset
@@ -390,7 +390,7 @@ def svg_logo(colors: dict[str, str], layout: dict) -> str:
     w, h = CANVAS
     return (
         f"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {w} {h}\" width=\"{w}\" height=\"{h}\" role=\"img\" aria-labelledby=\"title\">\n"
-        f"  <title id=\"title\">Panamails</title>\n"
+        f"  <title id=\"title\">Sobreala</title>\n"
         f"  {GENERATED_NOTE}"
         f"  <rect width=\"{w}\" height=\"{h}\" fill=\"{colors['color-background']}\"/>\n"
         + wing_group(colors["color-logo"], colors["color-shadow"], shift=logo_shift(layout))
@@ -407,7 +407,7 @@ def svg_symbol(colors: dict[str, str]) -> str:
     w, h = SYMBOL_SIZE
     return (
         f"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {w} {h}\" width=\"{w}\" height=\"{h}\" role=\"img\" aria-labelledby=\"title\">\n"
-        f"  <title id=\"title\">Panamails</title>\n"
+        f"  <title id=\"title\">Sobreala</title>\n"
         f"  {GENERATED_NOTE}"
         + wing_group(colors["color-logo"], colors["color-shadow"], shift=symbol_shift())
         + "</svg>\n"
@@ -557,7 +557,7 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panamails · colores y posición</title>
+<title>Sobreala · colores y posición</title>
 <!-- resolves to brand/favicon/ when opened as a file, and to /favicon/ when served -->
 <link rel="icon" href="../favicon/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon/favicon.ico" sizes="32x32">
@@ -651,7 +651,7 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
 </head>
 <body>
 <div class="wrap">
-  <h1>Colores y posición · Panamails</h1>
+  <h1>Colores y posición · Sobreala</h1>
   <p class="sub" id="sub"></p>
 
   <div class="grid">
@@ -676,7 +676,7 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
           <div class="icon">__FAV_48__<b>48 px</b></div>
           <div class="icon">__FAV_180__<b>180 px · apple&#8209;touch</b></div>
         </div>
-        <div class="tab">__FAV_TAB__ <span>Panamails</span></div>
+        <div class="tab">__FAV_TAB__ <span>Sobreala</span></div>
         <p class="note">El de 180 px va cuadrado a propósito: iOS le aplica su propio redondeo y las esquinas transparentes saldrían negras.</p>
       </div>
     </div>
@@ -976,7 +976,7 @@ def preview_html(colors: dict[str, str], layout: dict, served: bool = False) -> 
     the copy written to disk never offers a button that has no server behind it.
     """
     logo_svg = (
-        f"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {CANVAS[0]} {CANVAS[1]}\" role=\"img\" aria-label=\"Panamails\">\n"
+        f"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {CANVAS[0]} {CANVAS[1]}\" role=\"img\" aria-label=\"Sobreala\">\n"
         f"  <rect class=\"bg\" width=\"{CANVAS[0]}\" height=\"{CANVAS[1]}\" fill=\"var(--color-background)\"/>\n"
         # centered position baked in; the live offset comes from CSS variables on .wing
         + wing_group("var(--color-logo)", "var(--color-shadow)", shift=centering_shift())
@@ -1148,7 +1148,7 @@ def serve(port: int = 8765, host: str = "127.0.0.1", open_browser: bool = True) 
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "PanamailsBrand"
+        server_version = "SobrealaBrand"
 
         def _send(self, code: int, body: bytes, ctype: str):
             self.send_response(code)
@@ -1248,7 +1248,7 @@ def serve(port: int = 8765, host: str = "127.0.0.1", open_browser: bool = True) 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
-        description="Generate the Panamails logo and favicons from brand/colors.css + brand/layout.json.",
+        description="Generate the Sobreala logo and favicons from brand/colors.css + brand/layout.json.",
         epilog="Any value passed here is written into its config file and then everything is rebuilt, "
                "so the config files stay the single source of truth. "
                "To try colors and positions without applying them, open brand/preview/colores.html.",

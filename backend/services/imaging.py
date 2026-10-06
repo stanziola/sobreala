@@ -191,7 +191,7 @@ IN_HTML = re.compile(r"/img/([A-Za-z0-9_-]{16,64}\.(?:jpg|png|gif))")
 # lienzo (`lienzo.json`) con sus fotos originales en `fotos/`, que es lo que se
 # vuelve a cargar y se sigue editando; y el HTML con sus imágenes fundidas en
 # `imagenes/`, que es para verlo al abrirlo en una computadora o usarlo fuera de
-# Panamails. Al cargarlo, las fotos entran a la cuenta que lo carga.
+# Sobreala. Al cargarlo, las fotos entran a la cuenta que lo carga.
 ZIP_CANVAS = "lienzo.json"
 ZIP_PHOTOS = "fotos/"
 ZIP_FOLDER = "imagenes/"

@@ -13,9 +13,9 @@
   (function () {
     try {
       var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      var had = /(?:^|;\s*)pm_tz=([^;]*)/.exec(document.cookie);
+      var had = /(?:^|;\s*)sa_tz=([^;]*)/.exec(document.cookie);
       if (zone && (!had || decodeURIComponent(had[1]) !== zone)) {
-        document.cookie = "pm_tz=" + encodeURIComponent(zone)
+        document.cookie = "sa_tz=" + encodeURIComponent(zone)
           + "; path=/; max-age=31536000; SameSite=Lax"
           + (location.protocol === "https:" ? "; Secure" : "");
       }
@@ -27,7 +27,7 @@
     // The shared crumb first: the site and the panel are two origins, and
     // localStorage is per origin, so only a cookie on the parent domain lets a
     // choice made on one be seen on the other.
-    var c = /(?:^|;\s*)pm_theme=(dark|light)/.exec(document.cookie);
+    var c = /(?:^|;\s*)sa_theme=(dark|light)/.exec(document.cookie);
     if (c) t = c[1];
     else try { t = localStorage.getItem("theme"); } catch (e) {}
     if (t !== "dark" && t !== "light") {

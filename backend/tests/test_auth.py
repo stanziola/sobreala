@@ -183,7 +183,7 @@ def test_confirming_sends_the_welcome(client, database, outbox):
     assert "/panel" in welcome
     # Transactional: no unsubscribe and no watermark, as rule 8 requires.
     assert "baja" not in welcome.lower()
-    assert "Enviado con Panamails" not in welcome
+    assert "Enviado con Sobreala" not in welcome
 
 
 def test_a_failed_welcome_does_not_lock_anyone_out(client, database, outbox,
@@ -477,20 +477,20 @@ def test_panel_warns_until_the_address_is_confirmed(client, database, outbox):
 
 
 def test_the_logo_always_leads_back_to_the_site(client, database, outbox):
-    """The logo is the way out to panamails.com, from every page.
+    """The logo is the way out to sobreala.com, from every page.
 
     Before signing in it is the only way back to the pages someone may want to
     reread; after signing in it is still the only one, because the panel has no
     other link out.
     """
     outside = client.get("/entrar").get_data(as_text=True)
-    assert 'class="bar__brand" href="https://panamails.com/"' in outside
+    assert 'class="bar__brand" href="https://sobreala.com/"' in outside
     assert "Volver al sitio" in outside
 
     register(client)
     login(client)
     inside = client.get("/panel").get_data(as_text=True)
-    assert 'class="bar__brand" href="https://panamails.com/"' in inside
+    assert 'class="bar__brand" href="https://sobreala.com/"' in inside
 
 
 def test_panel_needs_a_session(client, database):

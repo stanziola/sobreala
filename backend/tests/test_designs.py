@@ -26,7 +26,7 @@ from services import html_check, imaging, plans, render
 PASSWORD = "Contrasena-Larga1"
 
 LIMPIO = (b"<html><body><h1>Hola socios</h1>"
-          b"<img src=\"https://panamails.com/x.png\"></body></html>")
+          b"<img src=\"https://sobreala.com/x.png\"></body></html>")
 
 
 def other(client):
@@ -256,7 +256,7 @@ def test_ni_la_baja_ni_la_marca_se_guardan_dentro_de_la_pieza(client, database, 
 
     assert guardada["fields"]["titulo"] == "Corte de agua"
     assert "Anular" not in str(guardada["fields"])
-    assert "Panamails" not in str(guardada["fields"])
+    assert "Sobreala" not in str(guardada["fields"])
 
 
 def test_lo_escrito_vuelve_al_reabrirla(client, database, outbox):
@@ -570,7 +570,7 @@ def test_el_panel_lee_el_modo_de_la_galleta_compartida(client, database, outbox)
     """El sitio y el panel son dos orígenes: la preferencia viaja en una
     galleta del dominio padre, y el guion de la cabecera la mira primero."""
     pantalla = client.get("/entrar").get_data(as_text=True)
-    assert "pm_theme=" in pantalla
+    assert "sa_theme=" in pantalla
 
 
 # ------------------------------------------- la vista de cada tarjeta
@@ -619,8 +619,8 @@ def test_las_imagenes_del_html_se_clasifican(client, database, outbox):
     mia = images.save(database, cuenta["_id"], data=foto(40, 40), ext="jpg",
                       mime="image/jpeg")
     borrada = "x" * 22 + ".jpg"
-    html = (f'<html><body><img src="https://panel.panamails.com/img/{mia}">'
-            f'<img src="https://panel.panamails.com/img/{borrada}">'
+    html = (f'<html><body><img src="https://panel.sobreala.com/img/{mia}">'
+            f'<img src="https://panel.sobreala.com/img/{borrada}">'
             '<img src="https://otro-sitio.com/foto.png">'
             '<img src="https://otro-sitio.com/foto.png">'
             '<img src="data:image/png;base64,AAAA"></body></html>')
@@ -639,7 +639,7 @@ def test_la_imagen_de_otra_cuenta_sale_como_de_otra_cuenta(client, database, out
     ajena = images.save(database, beto["_id"], data=foto(40, 40), ext="jpg",
                         mime="image/jpeg")
     ana = accounts.by_email(database, "ana@ejemplo.com")
-    html = f'<img src="https://panel.panamails.com/img/{ajena}">'
+    html = f'<img src="https://panel.sobreala.com/img/{ajena}">'
     assert html_images(database, ana["_id"], html)[0]["state"] == "other"
 
 

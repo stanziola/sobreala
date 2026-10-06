@@ -21,7 +21,7 @@ from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
 # A crumb the public site can read. It carries "1" for a client and "admin" for
 # an administrator, and nothing else: unlike the session cookie it is NOT
-# HttpOnly, so any script on panamails.com can see it, and anything with a name
+# HttpOnly, so any script on sobreala.com can see it, and anything with a name
 # or an address in it would be handing that to a static site with no reason to
 # know it.
 #
@@ -29,14 +29,14 @@ from services.security import MIN_PASSWORD_LENGTH, csrf_token
 # el panel de envíos y los contactos, que su cuenta no tiene. Cuesta que
 # cualquier script de ese dominio pueda saber que quien mira es administrador;
 # no hay forma de que un sitio estático lo sepa sin que se lo digan.
-HINT_COOKIE = "pm_in"
+HINT_COOKIE = "sa_in"
 
 
 def hint_domain() -> str | None:
     """The parent domain both deploys hang off, or None when there is none.
 
-    The panel lives at panel.panamails.com and the site at panamails.com, so the
-    crumb goes on .panamails.com to be readable from both. Running locally there
+    The panel lives at panel.sobreala.com and the site at sobreala.com, so the
+    crumb goes on .sobreala.com to be readable from both. Running locally there
     is nothing to share —cookies ignore ports— and the domain is left out,
     because a browser refuses one that does not match the host.
     """

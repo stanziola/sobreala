@@ -31,7 +31,7 @@ RECOVERY_CODES = 8
 
 # No I, O, 0 or 1: these get read off paper and typed by hand.
 ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-ISSUER = "Panamails"
+ISSUER = "Sobreala"
 
 
 def new_secret() -> str:

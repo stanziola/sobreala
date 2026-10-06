@@ -296,7 +296,7 @@ def walk(ws, tour: str, steps: list[dict], csv_path: Path, demo: dict):
 
 
 def shoot(demo: dict) -> tuple[dict, dict]:
-    work = Path(tempfile.mkdtemp(prefix="panamails-tutorial-"))
+    work = Path(tempfile.mkdtemp(prefix="sobreala-tutorial-"))
     csv_path = work / "mis-contactos.csv"
     csv_path.write_text(CSV, encoding="utf-8")
     # PayPal con credenciales de mentira: en producción cobra, y sin ellas

@@ -1,6 +1,6 @@
-# Sitio público de Panamails
+# Sitio público de Sobreala
 
-Cuatro páginas estáticas que presentan Panamails. Se despliegan tal cual en
+Cuatro páginas estáticas que presentan Sobreala. Se despliegan tal cual en
 Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
 
 | Ruta              | Archivo                    |
@@ -69,7 +69,7 @@ resto de la página: `landing/assets/img/panel/light/*.webp` y `.../dark/*.webp`
 los mismos cinco nombres en cada carpeta. Las hace `landing/shots.py`, que
 siembra una cuenta de demostración («Tu empresa», contactos de ejemplo,
 plantillas, campañas y tres meses de eventos), arranca el panel contra una base
-aparte (`panamails_shots`), lo abre en Chrome sin cabeza y recorta cada pantalla
+aparte (`sobreala_shots`), lo abre en Chrome sin cabeza y recorta cada pantalla
 a 16:9. Cada dirección se abre **una sola vez** y se fotografía en claro y en
 oscuro, así que los dos juegos salen idénticos salvo el color.
 

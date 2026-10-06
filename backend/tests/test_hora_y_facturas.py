@@ -37,7 +37,7 @@ PANAMA = ZoneInfo("America/Panama")
 
 
 def en_panama(browser):
-    browser.set_cookie("pm_tz", "America/Panama")
+    browser.set_cookie("sa_tz", "America/Panama")
     return browser
 
 
@@ -93,14 +93,14 @@ def test_programar_se_entiende_en_la_hora_del_dispositivo(client, database, outb
 
 def test_la_zona_llega_codificada_como_la_guarda_el_navegador(client, database, outbox):
     browser = inside(client)
-    browser.set_cookie("pm_tz", "Europe%2FMadrid")
+    browser.set_cookie("sa_tz", "Europe%2FMadrid")
     browser.get("/panel")
     assert accounts.by_email(database, "ana@ejemplo.com")["time_zone"] == "Europe/Madrid"
 
 
 def test_la_cuenta_recuerda_su_ultima_zona(client, database, outbox):
     browser = inside(client)
-    browser.set_cookie("pm_tz", "Europe/Madrid")
+    browser.set_cookie("sa_tz", "Europe/Madrid")
     browser.get("/panel")
     assert accounts.by_email(database, "ana@ejemplo.com")["time_zone"] == "Europe/Madrid"
 

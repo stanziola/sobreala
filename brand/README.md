@@ -1,4 +1,4 @@
-# Marca Panamails
+# Marca Sobreala
 
 Activos de marca: logo vectorial, favicons, paleta de colores y posición.
 
@@ -158,7 +158,7 @@ unidades de grosor. Ponerlo en `0` devuelve la geometría exacta del PNG.
 Logo:
 
 ```html
-<img src="/assets/img/logo.svg" alt="Panamails" width="271" height="254">
+<img src="/assets/img/logo.svg" alt="Sobreala" width="271" height="254">
 ```
 
 También se puede pegar el contenido de `logo.svg` inline si hace falta

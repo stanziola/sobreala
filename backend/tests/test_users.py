@@ -86,7 +86,7 @@ def test_se_invita_y_pone_su_contrasena(client, database, outbox):
     assert usuario["permissions"] == ["contacts", "designs"]
     # Nace sin contraseña: la pone él.
     assert not usuario["password_hash"]
-    assert "Panamails" in sorted(outbox.glob("*.html"))[-1].read_text(encoding="utf-8")
+    assert "Sobreala" in sorted(outbox.glob("*.html"))[-1].read_text(encoding="utf-8")
 
     suyo, hecho = accept(client, invite_link(outbox))
     assert hecho.status_code == 302

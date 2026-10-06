@@ -1282,7 +1282,7 @@
   /* Lo copiado viaja como texto nuestro en el portapapeles, así que se pega
      también en otra plantilla o en otra pestaña. Si el navegador no deja
      escribirlo, queda en `bench`, que sirve dentro de esta página. */
-  var MARK = "panamails-lienzo";
+  var MARK = "sobreala-lienzo";
 
   function copyPicked() {
     if (!picked.length) return;

@@ -1,5 +1,5 @@
 /*
- * Panamails brand colors — single source of truth.
+ * Sobreala brand colors — single source of truth.
  *
  * Every asset that needs these colors reads them from this file:
  *   - the landing and the panels import it as a stylesheet and use var(--color-...)

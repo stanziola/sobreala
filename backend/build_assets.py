@@ -201,7 +201,7 @@ def crop_logos(out_dir: Path) -> None:
 
 
 # El ala que va al pie de las campañas del plan Básico, junto a «Enviado con
-# Panamails». En PNG y no en SVG, que Outlook y Gmail no dibujan, y al doble del
+# Sobreala». En PNG y no en SVG, que Outlook y Gmail no dibujan, y al doble del
 # tamaño al que se ve (32 px) para que salga nítida en un teléfono. Es el PNG de
 # la marca tal cual, solo achicado.
 EMAIL_LOGO = "email-logo.png"
@@ -232,7 +232,7 @@ def check() -> list[Path]:
     global OUT_CSS, OUT_WING, OUT_FONTS, OUT_IMG
     saved = (OUT_CSS, OUT_WING, OUT_FONTS, OUT_IMG)
     stale: list[Path] = []
-    with tempfile.TemporaryDirectory(prefix="panamails-check-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="sobreala-check-") as tmp:
         fake = Path(tmp)
         OUT_CSS = fake / "static" / "css" / "panel.css"
         OUT_WING = fake / "templates" / "_wing.svg"

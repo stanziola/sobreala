@@ -1,6 +1,6 @@
 """Las capturas del panel que enseña la portada.
 
-El sitio dice lo que hace Panamails; estas capturas lo enseñan. Salen del panel
+El sitio dice lo que hace Sobreala; estas capturas lo enseñan. Salen del panel
 de verdad, no de un dibujo: se siembra una cuenta de demostración en una base
 aparte, se arranca el panel contra ella, se abre en un Chrome sin cabeza y se
 recorta la zona que importa de cada pantalla.
@@ -42,7 +42,7 @@ OUT = ROOT / "landing" / "assets" / "img" / "panel"
 CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 PORT = 9444              # el de las capturas, para no chocar con otro Chrome
 PANEL_PORT = 5099        # el panel de las capturas, aparte del de desarrollo
-DB = "panamails_shots"
+DB = "sobreala_shots"
 
 EMAIL = "hola@ejemplo.com"
 PASSWORD = "Contrasena-Larga1"
@@ -414,7 +414,7 @@ def take(ws, where: str, shot: dict) -> dict[str, bytes]:
 
 def shoot(demo: dict) -> dict[str, dict[str, bytes]]:
     """Las cinco capturas, en orden, cada una en los dos temas."""
-    work = Path(tempfile.mkdtemp(prefix="panamails-shots-"))
+    work = Path(tempfile.mkdtemp(prefix="sobreala-shots-"))
     panel = start_panel(work / "panel.log")
     chrome = None
     try:

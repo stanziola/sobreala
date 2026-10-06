@@ -88,7 +88,7 @@ def _from_address() -> str:
     """The address the message really comes from.
 
     Over SMTP this must be the mailbox that is actually authenticating. Sending
-    as cuenta@mail.panamails.com through Gmail's servers fails SPF and DKIM
+    as notifications@mail.sobreala.com through Gmail's servers fails SPF and DKIM
     alignment and lands in spam, so the SMTP user wins when it is set.
     """
     if Config.MAIL_BACKEND == "smtp" and Config.MAIL_SMTP_FROM:

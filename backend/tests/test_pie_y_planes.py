@@ -2,7 +2,7 @@
 
 Lo que se fija aquí: que Corporativo ya no existe en ningún lado, que el sitio no
 ofrece soporte por plan ni diseño como servicio, que el pie del Básico lleva el
-ala de Panamails y el de los demás no, y que la dirección postal del pie es la
+ala de Sobreala y el de los demás no, y que la dirección postal del pie es la
 de cada cliente y sin ella no se envía.
 """
 

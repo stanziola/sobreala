@@ -1,4 +1,4 @@
-# Backend de Panamails
+# Backend de Sobreala
 
 Aplicación Flask con el panel del cliente. Por ahora solo cubre cuentas:
 registro, confirmación del correo, entrar y salir.
@@ -45,7 +45,7 @@ masivos en nombre de terceros. Unos pocos correos de confirmación son otra cosa
 y sirve como puente mientras SES sale del modo de pruebas. Dos avisos:
 
 - `MAIL_SMTP_FROM` tiene que ser el mismo buzón que autentica. Enviar como
-  `cuenta@mail.panamails.com` a través de Gmail falla SPF y DKIM y cae en spam.
+  `notifications@mail.sobreala.com` a través de Gmail falla SPF y DKIM y cae en spam.
   El código pone ese buzón como remitente y deja la dirección de la marca en
   `Responder a`.
 - Gmail limita alrededor de 500 destinatarios al día y puede bloquear una cuenta
@@ -72,25 +72,27 @@ Railway **no deja salir tráfico SMTP**: la conexión muere con `Network is
 unreachable` antes de abandonar el servidor. Por eso el correo del sistema tiene
 que salir por una API HTTPS, y la elegida en `CLAUDE.md` es SES.
 
-Lo que hay montado hoy, comprobable desde cualquier parte con `nslookup`:
+Lo que hay que montar en la cuenta de AWS y en Cloudflare, comprobable después
+desde cualquier parte con `nslookup`. **Todavía no está**: la cuenta de AWS de
+Sobreala es nueva y su SES empieza en sandbox.
 
 | Registro | Valor | Para qué |
 |---|---|---|
-| identidad SES | `panamails.com`, verificada en **us-east-2** | Cubre también sus subdominios |
-| `mail.panamails.com` MX | `feedback-smtp.us-east-2.amazonses.com` | MAIL FROM propio: los rebotes vuelven a SES |
-| `mail.panamails.com` TXT | `v=spf1 include:amazonses.com ~all` | SPF del sobre, alineado con el dominio |
-| `_dmarc.panamails.com` TXT | `v=DMARC1; p=none;` | DMARC observando |
-| `panamails.com` MX | Cloudflare Email Routing | Correo entrante del dominio |
+| identidad SES | `sobreala.com`, verificada en **us-east-2** | Cubre también sus subdominios |
+| `mail.sobreala.com` MX | `feedback-smtp.us-east-2.amazonses.com` | MAIL FROM propio: los rebotes vuelven a SES |
+| `mail.sobreala.com` TXT | `v=spf1 include:amazonses.com ~all` | SPF del sobre, alineado con el dominio |
+| `_dmarc.sobreala.com` TXT | `v=DMARC1; p=none;` | DMARC observando |
+| `sobreala.com` MX | Cloudflare Email Routing | Correo entrante del dominio |
 
 **La región es `us-east-2`, no `us-east-1`.** SES es por región y la identidad
 solo existe en la que se verificó; con la región equivocada, el envío falla con
 «identity not verified» aunque todo lo demás esté bien.
 
-El remitente es `cuenta@panamails.com`, del dominio raíz, **no**
-`cuenta@mail.panamails.com`: ese subdominio es el MAIL FROM y su MX apunta al
+El remitente es `notifications@sobreala.com`, del dominio raíz, **no**
+`notifications@mail.sobreala.com`: ese subdominio es el MAIL FROM y su MX apunta al
 endpoint de rebotes de SES, así que una respuesta enviada ahí no llegaría a
 nadie. Conviene crear en **Cloudflare Email Routing** una regla que lleve
-`cuenta@panamails.com` a un buzón real, para que responder al correo sirva de
+`notifications@sobreala.com` a un buzón real, para que responder al correo sirva de
 algo.
 
 Falta:
@@ -103,9 +105,9 @@ Falta:
    deshaciendo la cuenta, que es lo que hace la aplicación cuando el correo no
    sale.
 3. En Railway: `MAIL_BACKEND=ses`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
-   `AWS_REGION=us-east-2` y `SYSTEM_FROM_EMAIL=cuenta@panamails.com`.
+   `AWS_REGION=us-east-2` y `SYSTEM_FROM_EMAIL=notifications@sobreala.com`.
 
-`curl https://panel.panamails.com/salud` responde con `"mail": "ses"` cuando el
+`curl https://panel.sobreala.com/salud` responde con `"mail": "ses"` cuando el
 despliegue tomó las variables. Si falta una credencial, la aplicación **no
 arranca** y lo dice en el registro de Railway: es preferible a descubrirlo con
 el primer cliente que intente registrarse.
@@ -117,13 +119,13 @@ transaccionales se revisa a mano en `mail_log`; para campañas es obligatorio.
 ## Comprobar que está vivo: `/salud`
 
 ```
-curl https://panel.panamails.com/salud
+curl https://panel.sobreala.com/salud
 ```
 
 Devuelve JSON y se lee desde fuera, sin entrar a ningún panel:
 
 ```json
-{"app": "up", "mail": "ses", "database": "up", "indexes": true, "name": "panamails_app"}
+{"app": "up", "mail": "ses", "database": "up", "indexes": true, "name": "sobreala_app"}
 ```
 
 `mail` es el backend de correo con el que arrancó el proceso. Es la forma más
@@ -242,7 +244,7 @@ certificado necesita que el servicio ya exista.
    paso 5.
 3. En **Atlas**, permitir la conexión desde cualquier origen. Los servidores de
    Railway no tienen dirección fija; la base queda protegida por sus credenciales.
-4. En **Railway**, agregar el dominio `panel.panamails.com`. Te dará un destino.
+4. En **Railway**, agregar el dominio `panel.sobreala.com`. Te dará un destino.
 5. En **Cloudflare**, crear un `CNAME` de `panel` hacia ese destino, **en gris,
    sin el proxy naranja**, para que Railway pueda emitir el certificado.
    **Con el proxy encendido antes de que el certificado exista, Cloudflare no
@@ -251,7 +253,7 @@ certificado necesita que el servicio ya exista.
    entonces el modo SSL tiene que ser **Full (strict)**: con «Flexible»,
    Cloudflare habla HTTP con el origen y la galleta de sesión, que va marcada
    como segura, no deja iniciar sesión.
-6. Poner `APP_BASE_URL=https://panel.panamails.com` y volver a desplegar.
+6. Poner `APP_BASE_URL=https://panel.sobreala.com` y volver a desplegar.
 
 **El paso 6 es el que más se olvida.** El código de confirmación no lleva
 enlace, pero el aviso de «ya tienes una cuenta» sí, y sin este paso apunta a
@@ -265,19 +267,17 @@ enlace, pero el aviso de «ya tienes una cuenta» sí, y sin este paso apunta a
 FLASK_ENV=production
 SECRET_KEY=            (una NUEVA, distinta a la de tu computadora)
 MONGODB_URI=           (la de Atlas)
-MONGODB_DB=panamails_app
-APP_BASE_URL=https://panel.panamails.com
-PUBLIC_SITE_URL=https://panamails.com
+MONGODB_DB=sobreala_app
+APP_BASE_URL=https://panel.sobreala.com
+PUBLIC_SITE_URL=https://sobreala.com
 CONFIRMATION_CODE_MINUTES=30
-MAIL_BACKEND=smtp
-SYSTEM_FROM_EMAIL=panamails.info@gmail.com
-SYSTEM_FROM_NAME=Panamails
-MAIL_SMTP_HOST=smtp.gmail.com
-MAIL_SMTP_PORT=587
-MAIL_SMTP_USER=        (tu correo)
-MAIL_SMTP_PASSWORD=    (la contraseña de aplicación)
-MAIL_SMTP_FROM=        (el mismo correo)
+MAIL_BACKEND=file      (hasta que SES esté verificado; después ses)
+SYSTEM_FROM_EMAIL=notifications@sobreala.com
+SYSTEM_FROM_NAME=Sobreala
 ```
+
+Con `MAIL_BACKEND=ses` se suman `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+`AWS_REGION=us-east-2` y los conjuntos de configuración de `docs/ses.md`.
 
 ### Dos cosas que cambian solas en producción
 
@@ -289,9 +289,8 @@ sola persona.
 
 ### La base de datos
 
-El clúster tiene `panamails` y `panamails_demo` de dos intentos anteriores, con
-otro modelo de datos. Esta aplicación usa **`panamails_app`**, aparte, para no
-mezclarse con ellos.
+La aplicación usa la base **`sobreala_app`** del clúster de Atlas, y las pruebas
+`sobreala_test`, que crean y borran.
 
 ## Pendiente
 

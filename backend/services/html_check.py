@@ -1,7 +1,7 @@
 """Revisar el HTML que sube un cliente antes de guardarlo.
 
 Lo que se rechaza está en CLAUDE.md y no es una lista de gustos: cada regla
-existe porque el correo se envía en nombre de Panamails y todos los clientes
+existe porque el correo se envía en nombre de Sobreala y todos los clientes
 comparten la reputación del dominio.
 
   * `<script>`, `<iframe>`, `<object>` y los atributos de evento no los ejecuta

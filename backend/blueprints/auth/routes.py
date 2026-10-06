@@ -1827,7 +1827,7 @@ def invoice_file(raw):
     paid = get_db().payments.find_one({"_id": payment_id,
                                        "account_id": account["_id"]}) or {}
     when = paid.get("completed_at") or found.get("uploaded_at")
-    name = f"factura-panamails-{when:%Y-%m-%d}.pdf" if when else "factura-panamails.pdf"
+    name = f"factura-sobreala-{when:%Y-%m-%d}.pdf" if when else "factura-sobreala.pdf"
     return Response(bytes(found["data"]), mimetype="application/pdf", headers={
         "Content-Disposition": f'attachment; filename="{name}"',
         "Cache-Control": "no-store"})
@@ -1904,7 +1904,7 @@ def start_payment():
         try:
             code, checkout_url = paguelofacil.create_link(
                 amount=amount,
-                description=f"Panamails {plans.PLANS[plan]['name']}",
+                description=f"Sobreala {plans.PLANS[plan]['name']}",
                 reference=str(attempt),
                 return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_card')}")
         except paguelofacil.PagueloFacilError as exc:
@@ -1918,7 +1918,7 @@ def start_payment():
     try:
         order_id, approve = paypal.create(
             amount=amount, currency=plans.CURRENCY,
-            description=f"Panamails {plans.PLANS[plan]['name']}",
+            description=f"Sobreala {plans.PLANS[plan]['name']}",
             reference=str(attempt),
             return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_payment')}",
             cancel_url=f"{Config.APP_BASE_URL}{back}?error=cancelado")
@@ -2221,7 +2221,7 @@ def user_form(raw: str = ""):
                 made = accounts.add_member(db, owner, contact_name=name,
                                            email=email, permissions=wanted)
                 if made is None:
-                    # Esa dirección ya tiene cuenta en Panamails. No se dice de
+                    # Esa dirección ya tiene cuenta en Sobreala. No se dice de
                     # quién es, pero sí que no se puede usar: quien invita tiene
                     # que poder arreglarlo.
                     errors["correo"] = t("users_email_taken")

@@ -229,10 +229,10 @@ def test_el_boton_lleva_su_version_para_outlook():
 def test_el_modo_oscuro_no_cambia_los_colores():
     doc = leer(lienzo(texto(0, 0, color="#FFFFFF"), boton(0, 100, bg="#000000")))
     reglas = canvas.dark_css(doc)
-    assert "[data-ogsc] .pmc-FFFFFF{color:#FFFFFF !important;}" in reglas
-    assert "[data-ogsb] .pmb-000000{background-color:#000000 !important;}" in reglas
+    assert "[data-ogsc] .sac-FFFFFF{color:#FFFFFF !important;}" in reglas
+    assert "[data-ogsb] .sab-000000{background-color:#000000 !important;}" in reglas
     html = canvas.to_html(doc, [None, None])
-    assert 'class="pmc-FFFFFF"' in html and 'class="pmb-000000"' in html
+    assert 'class="sac-FFFFFF"' in html and 'class="sab-000000"' in html
 
 
 # ------------------------------------------------------------ las rutas
@@ -392,7 +392,7 @@ def test_la_vista_previa_es_un_correo_aislado(client, database, outbox):
     # teléfono lo siga achicando: mide 600 fijos.
     assert "-webkit-text-size-adjust:100%" in salida and 'name="viewport"' not in salida
     assert 'name="color-scheme" content="light"' in salida
-    assert "[data-ogsc] .pmc-18181B" in salida
+    assert "[data-ogsc] .sac-18181B" in salida
 
 
 def test_la_vista_previa_con_un_contacto_de_verdad(client, database, outbox):

@@ -8,7 +8,7 @@ act on. It prints the settings it is about to use, sends, and on failure shows
 the provider's own words — SES answers things like
 
     MessageRejected: Email address is not verified. The following identities
-    failed the check in region US-EAST-1: cuenta@mail.panamails.com
+    failed the check in region US-EAST-1: notifications@mail.sobreala.com
 
 which says exactly what is missing. The attempt goes through mailer.send(), so
 it is written to mail_log like any other message, with purpose "check".
@@ -36,7 +36,7 @@ from config import Config  # noqa: E402
 from models import mail_log  # noqa: E402
 from services import mailer  # noqa: E402
 
-SUBJECT = "Prueba de envío de Panamails"
+SUBJECT = "Prueba de envío de Sobreala"
 
 HINTS = {
     "MessageRejected": "La dirección o el dominio no están verificados en SES, "
@@ -55,12 +55,12 @@ HINTS = {
 
 def body(to: str) -> tuple[str, str]:
     moment = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    text = (f"Prueba de envío de Panamails.\n\n"
+    text = (f"Prueba de envío de Sobreala.\n\n"
             f"Backend: {Config.MAIL_BACKEND}\n"
             f"Para: {to}\n"
             f"Fecha: {moment}\n\n"
             f"Si te llegó este mensaje, el envío del sistema funciona.\n")
-    html = ("<p>Prueba de envío de <b>Panamails</b>.</p>"
+    html = ("<p>Prueba de envío de <b>Sobreala</b>.</p>"
             f"<ul><li>Backend: {Config.MAIL_BACKEND}</li>"
             f"<li>Para: {to}</li><li>Fecha: {moment}</li></ul>"
             "<p>Si te llegó este mensaje, el envío del sistema funciona.</p>")

@@ -777,7 +777,7 @@ def canvas_size(doc, plan, urls: list[str | None]) -> int:
 
 
 # Una dirección de baja del largo de las de verdad, para pesar el correo.
-UNSUBSCRIBE_SAMPLE = "https://panel.panamails.com/baja/" + "x" * 96
+UNSUBSCRIBE_SAMPLE = "https://panel.sobreala.com/baja/" + "x" * 96
 
 
 def sample_grounds(doc) -> list[str | None]:
@@ -972,7 +972,7 @@ def canvas_html(raw):
     (`canvas_from_pack()`) y se sigue editando como si nada. Y trae el **HTML**,
     que es lo mismo que sale al enviar (`sender.Piece`), con sus imágenes
     fundidas en `imagenes/`: al abrirlo en una computadora se ve entero, y
-    sirve fuera de Panamails. Dentro del HTML no pueden ir: una sola foto ya
+    sirve fuera de Sobreala. Dentro del HTML no pueden ir: una sola foto ya
     pasaba de los 102 KB.
 
     **Sin nuestro pie**: la baja, la dirección y la marca de agua se ponen al

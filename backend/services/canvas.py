@@ -712,12 +712,12 @@ def line_px(one: dict[str, Any]) -> int:
 
 def ink(color: str) -> str:
     """La clase que protege un color de letra del modo oscuro (`dark_css()`)."""
-    return "pmc-" + color[1:].upper()
+    return "sac-" + color[1:].upper()
 
 
 def paint(color: str) -> str:
     """La clase que protege un color de fondo del modo oscuro."""
-    return "pmb-" + color[1:].upper()
+    return "sab-" + color[1:].upper()
 
 
 def _font_style(one: dict[str, Any]) -> str:

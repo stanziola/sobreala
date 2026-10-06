@@ -5,7 +5,7 @@ Google Fonts ni desde ningún tercero.
 
 ```
 fonts/
-├── changa-one/ChangaOne-Regular.ttf   # wordmark "Panamails"
+├── changa-one/ChangaOne-Regular.ttf   # wordmark "Sobreala"
 ├── changa-one/OFL.txt
 ├── sora/Sora-VariableFont_wght.ttf    # todo lo demás (variable, todos los pesos)
 └── sora/OFL.txt
@@ -13,7 +13,7 @@ fonts/
 
 | Familia | Dónde se usa |
 |---|---|
-| **Changa One** | Solo la palabra "Panamails": header, footer y la marca escrita |
+| **Changa One** | Solo la palabra "Sobreala": header, footer y la marca escrita |
 | **Sora** | Todo lo demás: títulos, cuerpo, botones, navegación, tarjetas |
 
 ## Convención

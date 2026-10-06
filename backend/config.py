@@ -41,24 +41,22 @@ class Config:
     # password lives in .env, which is git-ignored, and Atlas needs the server's
     # address on its allowlist. The local server is only the fallback.
     MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017")
-    # panamails and panamails_demo in the cluster hold two earlier attempts
-    # with a different data model; this application keeps its own database.
-    MONGODB_DB = os.getenv("MONGODB_DB", "panamails_app")
+    MONGODB_DB = os.getenv("MONGODB_DB", "sobreala_app")
     # Tests never touch the real cluster: they use this one and drop it.
     MONGODB_TEST_URI = os.getenv("MONGODB_TEST_URI", "mongodb://127.0.0.1:27017")
-    MONGODB_TEST_DB = os.getenv("MONGODB_TEST_DB", "panamails_test")
+    MONGODB_TEST_DB = os.getenv("MONGODB_TEST_DB", "sobreala_test")
 
     # --- email -------------------------------------------------------------
     # "file" writes the message to MAIL_OUTBOX_DIR and prints the link, so the
     # whole flow can be exercised while SES is still in its sandbox.
     MAIL_BACKEND = os.getenv("MAIL_BACKEND", "file")
     MAIL_OUTBOX_DIR = os.getenv("MAIL_OUTBOX_DIR", str(BASE_DIR / ".mail_outbox"))
-    # The identity verified in SES is the domain panamails.com, which covers its
-    # subdomains. The address is at the root and not at mail.panamails.com
+    # The identity verified in SES is the domain sobreala.com, which covers its
+    # subdomains. The address is at the root and not at mail.sobreala.com
     # because that subdomain is the MAIL FROM: its MX points at the SES feedback
     # endpoint, so a reply sent there would never reach anyone.
-    SYSTEM_FROM_EMAIL = os.getenv("SYSTEM_FROM_EMAIL", "cuenta@panamails.com")
-    SYSTEM_FROM_NAME = os.getenv("SYSTEM_FROM_NAME", "Panamails")
+    SYSTEM_FROM_EMAIL = os.getenv("SYSTEM_FROM_EMAIL", "notifications@sobreala.com")
+    SYSTEM_FROM_NAME = os.getenv("SYSTEM_FROM_NAME", "Sobreala")
     # System mail keeps its own SES configuration set: a client's campaign
     # bounces must never affect whether confirmation mail is delivered.
     SES_TRANSACTIONAL_CONFIGURATION_SET = os.getenv("SES_TRANSACTIONAL_CONFIGURATION_SET", "")
@@ -101,7 +99,7 @@ class Config:
     APP_BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:5000").rstrip("/")
     # El sitio público es otro despliegue, en Cloudflare Pages. De ahí cuelgan
     # los términos y la política de privacidad que se aceptan al registrarse.
-    PUBLIC_SITE_URL = os.getenv("PUBLIC_SITE_URL", "https://panamails.com").rstrip("/")
+    PUBLIC_SITE_URL = os.getenv("PUBLIC_SITE_URL", "https://sobreala.com").rstrip("/")
     # Confirmation is a six digit code typed on the screen that asked for it, so
     # it does not need to survive a day in an inbox the way a link did. Minutes,
     # not hours: a short life is half of what makes a short code safe.

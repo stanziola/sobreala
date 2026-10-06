@@ -31,7 +31,7 @@ def fake_card(monkeypatch, *, status=1, operation="AUTH_CAPTURE", amount=None,
         asked["found"].append(oper)
         return {"oper": oper, "status": status, "operation": operation,
                 "amount": asked.get("amount", "") if amount is None else amount,
-                "description": (f"Panamails · {asked.get('reference', '')}"
+                "description": (f"Sobreala · {asked.get('reference', '')}"
                                 if description is None else description),
                 "last4": last4, "email": "ana@banco.com"}
 
@@ -158,7 +158,7 @@ def test_el_monto_que_no_cuadra_no_activa(client, database, outbox, monkeypatch)
 
 
 def test_una_operacion_de_otro_intento_no_sirve(client, database, outbox, monkeypatch):
-    fake_card(monkeypatch, description="Panamails · 0123456789abcdef01234567")
+    fake_card(monkeypatch, description="Sobreala · 0123456789abcdef01234567")
     browser, cuenta = ready_to_pay(client, database)
     pay_card(browser)
     respuesta = back_from_card(browser, database.payments.find_one({})["_id"])
@@ -191,7 +191,7 @@ def test_la_vuelta_y_el_aviso_dan_un_solo_periodo(client, database, outbox,
     # Paga y cierra el navegador: llega primero el aviso.
     aviso = client.post(f"/webhooks/paguelofacil/{SECRETO}", json={
         "codOper": "OPER-1", "status": 1, "operationType": "AUTH_CAPTURE",
-        "totalPay": "15.00", "description": f"Panamails Básico · {intento['_id']}"})
+        "totalPay": "15.00", "description": f"Sobreala Básico · {intento['_id']}"})
     assert aviso.status_code == 200
     hasta = accounts.plan_until(accounts.by_id(database, cuenta["_id"]))
     assert hasta is not None
@@ -253,7 +253,7 @@ def test_el_enlace_a_un_sitio_desconocido_no_se_sigue(monkeypatch):
 
     monkeypatch.setattr("urllib.request.urlopen", respuesta)
     try:
-        paguelofacil.create_link(amount="15.00", description="Panamails",
+        paguelofacil.create_link(amount="15.00", description="Sobreala",
                                  reference="abc", return_url="https://panel/volver")
     except paguelofacil.PagueloFacilError:
         pass

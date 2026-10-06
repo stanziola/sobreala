@@ -9,7 +9,7 @@ from __future__ import annotations
 
 TEXTS = {
     # --- shared ------------------------------------------------------------
-    "brand": "Panamails",
+    "brand": "Sobreala",
     "nav_panel": "Estadísticas",
     "nav_logout": "Cerrar sesión",
     # Encima de salir. Lleva a la lista de las cuentas que este navegador tiene
@@ -114,7 +114,7 @@ TEXTS = {
     # «Te damos la bienvenida» y no «Bienvenido»: es la fórmula que ya usa el
     # correo de bienvenida, y no le adivina el género a nadie por su nombre.
     "welcome_tab": "Tu cuenta está lista",
-    "welcome_title": "{name}, te damos la bienvenida a Panamails",
+    "welcome_title": "{name}, te damos la bienvenida a Sobreala",
     "welcome_lead": "Tu cuenta está lista. Elige el plan que más se adapte a ti "
                     "para empezar a enviar correos.",
     "welcome_plans": "Ver planes",
@@ -144,7 +144,7 @@ TEXTS = {
     "mail_email_code_subject": "{code} es tu código para cambiar tu correo",
     "mail_email_code_heading": "Tu código para cambiar el correo",
     "mail_email_code_body": "Alguien pidió usar esta dirección para una cuenta "
-                            "de Panamails. Escribe este código en la pantalla "
+                            "de Sobreala. Escribe este código en la pantalla "
                             "que lo pidió:",
     "mail_email_code_expiry": "El código vence en {minutes} minutos. Si no "
                               "fuiste tú, no hagas nada: sin el código no "
@@ -153,9 +153,9 @@ TEXTS = {
                                   "tú, no hagas nada: sin el código no cambia "
                                   "nada.",
 
-    "mail_email_changed_subject": "El correo de tu cuenta de Panamails cambió",
+    "mail_email_changed_subject": "El correo de tu cuenta de Sobreala cambió",
     "mail_email_changed_heading": "Tu cuenta cambió de correo",
-    "mail_email_changed_body": "De ahora en adelante tu cuenta de Panamails usa "
+    "mail_email_changed_body": "De ahora en adelante tu cuenta de Sobreala usa "
                                "{new}. A esta dirección ya no le va a llegar "
                                "nada.",
     "mail_email_changed_write": "Si no fuiste tú, escríbenos de inmediato a "
@@ -265,7 +265,7 @@ TEXTS = {
     "two_step_scan_lead": "Ábrelo con tu app de códigos. Después escribe los "
                           "seis dígitos que te muestre, para comprobar que "
                           "quedó bien.",
-    "two_step_scan_note_title": "Si ya tenías Panamails en tu app",
+    "two_step_scan_note_title": "Si ya tenías Sobreala en tu app",
     "two_step_scan_note": "Cada vez que activas la verificación el código es "
                           "nuevo, así que el anterior dejó de servir. Bórralo "
                           "de tu app antes de escanear este para evitar "
@@ -373,7 +373,7 @@ TEXTS = {
     "users_email_hint": "Tiene que ser suyo, no el de la empresa: es a donde "
                         "llega la invitación, el aviso de un ingreso nuevo y "
                         "la recuperación de su contraseña.",
-    "users_email_taken": "Ese correo ya tiene una cuenta en Panamails. Usa "
+    "users_email_taken": "Ese correo ya tiene una cuenta en Sobreala. Usa "
                          "otro.",
     "users_permissions": "Qué puede hacer",
     "users_permissions_hint": "Sin marcar nada, solo entra y cambia su "
@@ -410,7 +410,7 @@ TEXTS = {
 
     # La pantalla donde esa persona pone su contraseña.
     "invite_title": "Pon tu contraseña",
-    "invite_lead": "{company} te dio entrada a su cuenta de Panamails. Elige "
+    "invite_lead": "{company} te dio entrada a su cuenta de Sobreala. Elige "
                    "una contraseña y entras.",
     "invite_password": "Tu contraseña",
     "invite_action": "Entrar",
@@ -579,7 +579,7 @@ TEXTS = {
                        "te cobraron, escríbenos.",
     "pay_error_monto": "El monto cobrado no coincide con el del plan, así que "
                        "no activamos nada. Escríbenos y lo revisamos.",
-    "settings_payments_hint": "Panamails nunca guarda tus datos de pago.",
+    "settings_payments_hint": "Sobreala nunca guarda tus datos de pago.",
 
     # --- estadísticas ------------------------------------------------------
     # La misma pantalla para el cliente y para el administrador; lo único que
@@ -669,7 +669,7 @@ TEXTS = {
     "stats_best_none": "En este periodo no salió ninguna campaña.",
 
     # Bajarse lo que enseña la pantalla.
-    "export_title": "Estadísticas de Panamails",
+    "export_title": "Estadísticas de Sobreala",
     "export_account": "Cuenta",
     "export_compared": "Comparado con",
     "export_made": "Generado",
@@ -1112,7 +1112,7 @@ TEXTS = {
     "designs_preview_note": "El botón de anular la suscripción se agrega solo, "
                             "en todos los planes.",
     "designs_preview_watermark": "Tu plan lleva la marca «Enviado con "
-                                 "Panamails» al pie. Desaparece sola al subir "
+                                 "Sobreala» al pie. Desaparece sola al subir "
                                  "de plan.",
 
     # --- las imágenes ------------------------------------------------------
@@ -1768,7 +1768,7 @@ TEXTS = {
     "error_tag": "Ese nombre está vacío, ya lo tienes, o llegaste al máximo de "
                  "etiquetas.",
     "error_suspended": "Tu cuenta está suspendida. Escríbenos a "
-                       "panamails.info@gmail.com y lo revisamos.",
+                       "info@sobreala.com y lo revisamos.",
 
     # --- error pages -------------------------------------------------------
     # Shown instead of the server's own blank error page. The technical detail
@@ -1789,9 +1789,9 @@ TEXTS = {
                    "escríbenos y lo revisamos.",
 
     # --- emails ------------------------------------------------------------
-    "mail_confirm_subject": "{code} es tu código de Panamails",
+    "mail_confirm_subject": "{code} es tu código de Sobreala",
     "mail_confirm_heading": "Confirma tu correo",
-    "mail_confirm_body": "Gracias por crear tu cuenta en Panamails. Escribe "
+    "mail_confirm_body": "Gracias por crear tu cuenta en Sobreala. Escribe "
                          "este código en la página donde lo pediste:",
     "mail_confirm_expiry": "El código vence en {minutes} minutos.",
     "mail_confirm_expiry_one": "El código vence en un minuto.",
@@ -1802,7 +1802,7 @@ TEXTS = {
     # complete. Transactional, like the rest of the system mail — it describes
     # the state of an account its owner just created, it does not offer
     # anything, so rule 8 holds and it carries no unsubscribe link.
-    "mail_welcome_subject": "Tu cuenta de Panamails está lista",
+    "mail_welcome_subject": "Tu cuenta de Sobreala está lista",
     # Neutral on purpose: we do not know the recipient's gender.
     "mail_welcome_heading": "Te damos la bienvenida, {name}",
     "mail_welcome_body": "Confirmaste tu correo, así que tu cuenta ya está "
@@ -1815,15 +1815,15 @@ TEXTS = {
                          "dónde salió tu lista y hacemos una prueba antes de "
                          "que salga. Es una sola vez, y es lo que mantiene la "
                          "entregabilidad alta para todos los que envían desde "
-                         "Panamails.",
+                         "Sobreala.",
     "mail_welcome_help": "Si algo no te calza, escríbenos a "
-                         "panamails.info@gmail.com y lo vemos.",
+                         "info@sobreala.com y lo vemos.",
 
     # The recovery code. Same shape as the confirmation one, and the subject
     # carries it too: on a phone it is readable from the notification.
     "mail_recover_subject": "{code} es tu código para recuperar tu cuenta",
     "mail_recover_heading": "Recupera tu cuenta",
-    "mail_recover_body": "Pediste poner una contraseña nueva en Panamails. "
+    "mail_recover_body": "Pediste poner una contraseña nueva en Sobreala. "
                          "Escribe este código en la página donde lo pediste:",
     "mail_recover_ignore": "Si no lo pediste, ignora este mensaje: tu "
                            "contraseña no cambia hasta que alguien escriba el "
@@ -1834,7 +1834,7 @@ TEXTS = {
     # where, and what to do about it without needing the password.
     "mail_login_subject": "Entraron a tu cuenta desde un dispositivo nuevo",
     "mail_login_heading": "Un ingreso desde un dispositivo nuevo",
-    "mail_login_body": "Alguien entró a tu cuenta de Panamails desde un "
+    "mail_login_body": "Alguien entró a tu cuenta de Sobreala desde un "
                        "dispositivo que no habías usado antes:",
     "mail_login_ip": "Dirección IP {ip}",
     "mail_login_alert_title": "¿No fuiste tú?",
@@ -1846,13 +1846,13 @@ TEXTS = {
                          "volveremos a avisarte desde ese dispositivo.",
 
     # The only warning someone gets when another person changed their password.
-    "mail_password_subject": "Tu contraseña de Panamails cambió",
+    "mail_password_subject": "Tu contraseña de Sobreala cambió",
     "mail_password_heading": "Tu contraseña cambió",
     "mail_password_body": "Acabamos de cambiar la contraseña de tu cuenta y "
                           "cerramos la sesión en los demás dispositivos.",
     "mail_password_ok": "Si fuiste tú, no tienes que hacer nada más.",
     "mail_password_alert_title": "¿No fuiste tú?",
-    "mail_password_alert": "Escríbenos de inmediato a panamails.info@gmail.com. "
+    "mail_password_alert": "Escríbenos de inmediato a info@sobreala.com. "
                            "Quien haya entrado conoce tu contraseña anterior, "
                            "así que conviene revisar también el correo con el "
                            "que abriste la cuenta.",
@@ -1863,10 +1863,10 @@ TEXTS = {
     # taken away for good, and turning it off is the first thing anybody does
     # after getting in.
     # La invitación a entrar como usuario de una cuenta.
-    "mail_invite_subject": "{company} te invitó a su cuenta de Panamails",
+    "mail_invite_subject": "{company} te invitó a su cuenta de Sobreala",
     "mail_invite_heading": "Te dieron entrada a {company}",
     "mail_invite_body": "Vas a poder entrar a la cuenta de {company} en "
-                        "Panamails con tu propio correo. Pulsa el botón y "
+                        "Sobreala con tu propio correo. Pulsa el botón y "
                         "elige tu contraseña.",
     "mail_invite_expires": "El enlace sirve una sola vez y vence en {days} "
                            "días.",
@@ -1889,17 +1889,17 @@ TEXTS = {
     "mail_two_step_on_alert": "Alguien con tu contraseña acaba de poner su "
                               "propio teléfono como segundo paso, y con eso te "
                               "puede dejar afuera de tu cuenta. Escríbenos de "
-                              "inmediato a panamails.info@gmail.com.",
+                              "inmediato a info@sobreala.com.",
     "mail_two_step_off_alert": "Quien lo hizo conoce tu contraseña. Cámbiala "
                                "ahora mismo y escríbenos a "
-                               "panamails.info@gmail.com.",
+                               "info@sobreala.com.",
     "mail_two_step_button": "Entrar a mi cuenta",
 
     # Sent when someone tries to register with an address that already has an
     # account. The screen must not reveal this, so the owner is told by email.
     "mail_exists_subject": "Alguien intentó crear una cuenta con tu correo",
     "mail_exists_heading": "Ya tienes una cuenta",
-    "mail_exists_body": "Alguien intentó registrarse en Panamails con esta "
+    "mail_exists_body": "Alguien intentó registrarse en Sobreala con esta "
                         "dirección, que ya tiene una cuenta. Si fuiste tú, "
                         "simplemente entra con tu contraseña.",
     "mail_exists_button": "Entrar a mi cuenta",
@@ -1960,7 +1960,7 @@ TEXTS = {
                               "enviamos desde el mismo dominio, así que si los "
                               "rebotes suben se pausa el envío solo.",
 
-    "mail_suspended_subject": "Tu cuenta de Panamails quedó suspendida",
+    "mail_suspended_subject": "Tu cuenta de Sobreala quedó suspendida",
     "mail_suspended_heading": "Suspendimos tu cuenta",
     "mail_suspended_body": "Mientras esté suspendida no se puede entrar ni "
                            "enviar. No se borró nada: tus contactos y tus "

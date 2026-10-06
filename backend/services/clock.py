@@ -5,7 +5,7 @@ Todo se guarda en UTC, que es lo único que no cambia con el lugar. Lo que se
 gráfica) sale en la zona del dispositivo de quien la está mirando, y una hora
 que alguien **escribe** (programar una campaña) se entiende en esa misma zona.
 
-El navegador dice su zona en la galleta `pm_tz`, que escribe el guion de la
+El navegador dice su zona en la galleta `sa_tz`, que escribe el guion de la
 cabecera del panel con `Intl.DateTimeFormat().resolvedOptions().timeZone`. La
 primera página de un dispositivo nuevo todavía no la trae y sale en hora de
 Panamá, que es el mercado; desde la segunda, en la suya.
@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-COOKIE = "pm_tz"
+COOKIE = "sa_tz"
 DEFAULT = "America/Panama"
 # Un nombre de zona es algo como «America/Argentina/Buenos_Aires». Lo que no
 # tenga esa forma no se le pregunta a zoneinfo, que buscaría un archivo con él.

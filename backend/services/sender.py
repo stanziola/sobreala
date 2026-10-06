@@ -125,7 +125,7 @@ def from_address(account: dict[str, Any]) -> str:
 
     Hoy, de la identidad que **está verificada en SES**, con el nombre de la
     empresa a la vista. CLAUDE.md dice que el día de mañana cada cliente escribe
-    desde `tuempresa@envios.panamails.com`, pero ese subdominio todavía no está
+    desde `tuempresa@envios.sobreala.com`, pero ese subdominio todavía no está
     verificado y usarlo haría fallar cada envío. Es esta función y nada más: el
     día que se verifique, se cambia aquí.
     """

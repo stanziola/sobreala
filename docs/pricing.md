@@ -1,4 +1,4 @@
-# Panamails — Planes y precios
+# Sobreala — Planes y precios
 
 Documento de referencia interno. Define los planes comerciales, sus límites y las
 reglas de negocio asociadas.
@@ -90,7 +90,7 @@ Requiere guardar la posición de envío de cada campaña, no solo un contador gl
 ### Marca de agua (solo Básico)
 
 - Los correos enviados desde el plan **Básico** llevan una firma discreta al pie:
-  el ala de Panamails y *"Enviado con Panamails"*, con enlace al sitio.
+  el ala de Sobreala y *"Enviado con Sobreala"*, con enlace al sitio.
 - **A partir de Negocio los correos salen sin ninguna marca.**
 - La firma va separada del enlace de baja: el enlace de baja de un click es
   obligatorio en **todos** los planes y nunca se quita.

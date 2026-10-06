@@ -107,7 +107,7 @@ def create(*, amount: str, currency: str, description: str, reference: str,
             "custom_id": reference,
         }],
         "application_context": {
-            "brand_name": "Panamails",
+            "brand_name": "Sobreala",
             "locale": "es-ES",
             "landing_page": "LOGIN",
             "shipping_preference": "NO_SHIPPING",
