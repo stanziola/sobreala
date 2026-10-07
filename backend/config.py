@@ -41,7 +41,7 @@ class Config:
     # password lives in .env, which is git-ignored, and Atlas needs the server's
     # address on its allowlist. The local server is only the fallback.
     MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017")
-    MONGODB_DB = os.getenv("MONGODB_DB", "sobreala_app")
+    MONGODB_DB = os.getenv("MONGODB_DB", "sobreala_db")
     # Tests never touch the real cluster: they use this one and drop it.
     MONGODB_TEST_URI = os.getenv("MONGODB_TEST_URI", "mongodb://127.0.0.1:27017")
     MONGODB_TEST_DB = os.getenv("MONGODB_TEST_DB", "sobreala_test")

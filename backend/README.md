@@ -125,7 +125,7 @@ curl https://app.sobreala.com/health
 Devuelve JSON y se lee desde fuera, sin entrar a ningún panel:
 
 ```json
-{"app": "up", "mail": "ses", "database": "up", "indexes": true, "name": "sobreala_app"}
+{"app": "up", "mail": "ses", "database": "up", "indexes": true, "name": "sobreala_db"}
 ```
 
 `mail` es el backend de correo con el que arrancó el proceso. Es la forma más
@@ -267,7 +267,7 @@ certificado necesita que el servicio ya exista.
 FLASK_ENV=production
 SECRET_KEY=            (una NUEVA, distinta a la de tu computadora)
 MONGODB_URI=           (la de Atlas)
-MONGODB_DB=sobreala_app
+MONGODB_DB=sobreala_db
 APP_BASE_URL=https://app.sobreala.com
 PUBLIC_SITE_URL=https://sobreala.com
 CONFIRMATION_CODE_MINUTES=30
@@ -289,7 +289,7 @@ sola persona.
 
 ### La base de datos
 
-La aplicación usa la base **`sobreala_app`** del clúster de Atlas, y las pruebas
+La aplicación usa la base **`sobreala_db`** del clúster de Atlas, y las pruebas
 `sobreala_test`, que crean y borran.
 
 ## Pendiente
