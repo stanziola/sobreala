@@ -1322,19 +1322,43 @@ visitante, no lo que la plataforma sabe de su propio tráfico.
 
 ## Envío
 
-Todos los clientes envían desde un subdominio de Sobreala; **no se les exige
-configurar DNS** porque la mayoría no tiene dominio propio:
+**Cada cliente elige de quién salen sus campañas**, en Enviar correos →
+Remitente (`/campaigns/sender`, `blueprints/campaigns/`), y vale para todas sus
+campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
 
-```
-De:        Tu Empresa <tuempresa@envios.sobreala.com>
-Responder: tuempresa@gmail.com
-```
+| Cliente | De | Responder a |
+|---|---|---|
+| Sin dominio propio | `Tu Empresa <usuario@envios.sobreala.com>`, con el usuario que eligió | La dirección que confirmó con un código, o el correo del dueño |
+| Con su dominio verificado | `Tu Empresa <boletin@tuempresa.com>`, la que elija de su dominio | Igual; una de su propio dominio no pide código |
+| Sin usuario elegido | **No sale**: `sender.blocked()` dice `sender` | — |
 
-Al cliente que sí tiene dominio, Luis le configura el DKIM durante la
-activación (opcional, mejor entregabilidad).
+- **Una campaña nunca sale de `notifications@sobreala.com`**, que es solo del
+  correo del sistema. `sender.sender_email()` no tiene esa salida: así una
+  lista mala de un cliente no puede llevarse a spam los códigos de
+  confirmación.
+- **`SENDING_DOMAIN`** (por omisión `envios.sobreala.com`) es el subdominio de
+  quien no tiene dominio propio. Lo comparten todos ellos, y con él su
+  reputación ante Gmail; los protegen la habilitación a mano y la pausa
+  automática.
+- **El usuario es único entre cuentas**, y el dominio también: lo garantizan dos
+  índices únicos parciales sobre `sender.handle` y `sender.domain`. Los
+  reservados (`info`, `soporte`, `notifications`…) no se pueden elegir.
+- **El dominio propio lo conecta el cliente solo.** El panel crea su identidad
+  en SES por la API v2 (`services/ses_identity.py`, con Easy DKIM), le enseña
+  los tres CNAME para su DNS, y consulta si ya está verificada al abrir la
+  pantalla y con «Comprobar ahora»: no hay proceso que lo mire solo. Quitarlo
+  borra la identidad de SES. Los de correo gratis (gmail.com y compañía) no se
+  pueden conectar, porque nadie puede ponerles registros. Sin MAIL FROM propio
+  todavía: DKIM ya alinea DMARC.
+- **El «Responder a» se confirma con un código** a esa dirección
+  (`tokens.REPLY_TO`, el mismo mecanismo que cambiar el correo de la cuenta),
+  para que nadie ponga la de un tercero y le lleguen las respuestas de toda una
+  lista. Hasta que entra, las respuestas siguen yendo a la de antes.
+- La ficha del administrador lo enseña, de solo lectura: es parte de lo que se
+  mira antes de habilitar el envío.
 
-Como todos comparten el dominio, **la reputación es una sola** y las defensas
-automáticas son la única protección:
+Los de `envios.sobreala.com` comparten reputación, y las defensas automáticas
+son su protección:
 
 | Métrica de una cuenta | Acción automática |
 |---|---|
@@ -1874,11 +1898,8 @@ una política de líneas largas.
 
 ### De quién sale
 
-De la identidad del dominio en SES —`sobreala.com`—, con el nombre de la
-empresa a la vista y su dirección como responder a. Lo que dice el apartado de
-arriba, `tuempresa@envios.sobreala.com`, es a dónde va esto el día que ese
-subdominio esté verificado: mientras no lo esté, usarlo haría fallar cada envío.
-Es una sola función, `sender.from_address()`.
+Del remitente que eligió el cliente: ver «Envío», arriba. Lo deciden
+`sender.sender_email()` y `sender.reply_to()`, y nada más.
 
 Y SES sigue en modo de prueba: **solo entrega a direcciones verificadas**. Lo que
 responda por cada destinatario se guarda en la campaña y la pantalla lo enseña.
@@ -2462,7 +2483,7 @@ SES_CONFIGURATION_SET               # campañas, con aperturas y clics
 SES_TRANSACTIONAL_CONFIGURATION_SET # correo del sistema, sin ellos
 SES_WEBHOOK_SECRET        # va en la dirección del aviso; sin él, 404
 SES_TOPIC_ARN             # opcional: descarta avisos de otro tema
-SENDING_DOMAIN            # envios.sobreala.com
+SENDING_DOMAIN            # opcional: por omisión envios.sobreala.com
 PAYPAL_ENV                # sandbox | live; en producción con sandbox no arranca
 PAYPAL_CLIENT_ID
 PAYPAL_SECRET

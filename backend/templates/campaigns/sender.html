@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ t('sender_title') }}{% endblock %}
+
+{% macro row(title, desc, id='') %}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title"{% if id %} id="{{ id }}"{% endif %}>{{ title }}</h3>
+    {% if desc %}<p class="setting__desc">{{ desc }}</p>{% endif %}
+  </div>
+  <div class="setting__action">{{ caller() }}</div>
+</div>
+{% endmacro %}
+
+{% block content %}
+<p class="foot"><a href="{{ url_for('campaigns.index') }}">{{ t('sender_back') }}</a></p>
+<h1 class="settings__heading">{{ t('sender_title') }}</h1>
+<p class="settings__lead">{{ t('sender_lead') }}</p>
+
+{% if done %}<p class="notice notice--ok">{{ t('sender_done_' + done) }}</p>{% endif %}
+{% if not can_edit %}<p class="notice">{{ t('sender_owner_only') }}</p>{% endif %}
+
+{# Lo que va a ver quien reciba la campaña, arriba y tal cual. #}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('sender_now') }}</h3>
+    <p class="setting__desc">
+      {% if from_email %}{{ t('sender_now_from', name=account.company_name, email=from_email) }}
+      {% else %}{{ t('sender_now_none') }}{% endif %}<br>
+      {{ t('sender_now_reply', email=reply) }}
+    </p>
+  </div>
+</div>
+
+{# ----- el usuario en el subdominio de envíos ----- #}
+{% call row(t('sender_handle'), t('sender_handle_hint', domain=sending_domain), id='handle') %}
+{% if can_edit %}
+<form class="setting__form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="handle">
+  <label class="visually-hidden" for="sender-handle">{{ t('sender_handle') }}</label>
+  <input id="sender-handle" class="handle-field" name="handle" type="text" maxlength="30" autocomplete="off"
+         value="{{ form.get('handle', suggestion) }}" spellcheck="false">
+  <span class="setting__value">@{{ sending_domain }}</span>
+  <button class="btn btn--small" type="submit">{{ t('sender_save') }}</button>
+  {% if errors.handle %}<p class="error">{{ errors.handle }}</p>{% endif %}
+</form>
+{% else %}
+<span class="setting__value">{{ (mine.handle ~ '@' ~ sending_domain) if mine.handle else t('sender_none') }}</span>
+{% endif %}
+{% endcall %}
+
+{# ----- responder a ----- #}
+{% call row(t('sender_reply'), t('sender_reply_hint'), id='reply') %}
+{% if can_edit %}
+<form class="setting__form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="reply">
+  <label class="visually-hidden" for="sender-reply">{{ t('sender_reply') }}</label>
+  <input id="sender-reply" name="reply_to" type="email" autocomplete="email"
+         value="{{ form.get('reply_to', reply) }}">
+  <button class="btn btn--small" type="submit">{{ t('sender_reply_save') }}</button>
+  {% if errors.reply %}<p class="error">{{ errors.reply }}</p>{% endif %}
+  {% if mine.reply_to_pending %}
+  <p class="hint">{{ t('sender_reply_waiting', email=mine.reply_to_pending) }}
+    <a href="{{ url_for('campaigns.reply_code') }}">{{ t('sender_reply_code_link') }}</a></p>
+  {% endif %}
+</form>
+{% else %}
+<span class="setting__value">{{ reply }}</span>
+{% endif %}
+{% endcall %}
+
+{# ----- el dominio propio ----- #}
+<h2 class="settings__subtitle" id="domain">{{ t('sender_domain') }}</h2>
+<p class="settings__lead">{{ t('sender_domain_lead') }}</p>
+{% if errors.domain %}<p class="error error--form">{{ errors.domain }}</p>{% endif %}
+
+{% if not mine.domain %}
+  {% if can_edit %}
+  <form class="setting__form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="domain">
+    <label for="sender-domain">{{ t('sender_domain_field') }}</label>
+    <input id="sender-domain" name="domain" type="text" autocomplete="off" spellcheck="false"
+           placeholder="tuempresa.com" value="{{ form.get('domain', '') }}">
+    <button class="btn btn--small" type="submit">{{ t('sender_domain_connect') }}</button>
+  </form>
+  {% else %}
+  <p class="setting__value setting__value--muted">{{ t('sender_domain_none') }}</p>
+  {% endif %}
+
+{% else %}
+  {% call row(mine.domain, '') %}
+  <span class="tag{% if mine.domain_status == 'verified' %} tag--on{% else %} tag--warn{% endif %}">
+    {{ t('sender_status_' + (mine.domain_status or 'pending')) }}</span>
+  {% endcall %}
+
+  {% if mine.domain_status != 'verified' %}
+  {# Los tres CNAME, cada uno en un campo de solo lectura: se seleccionan y se
+     copian enteros, también sin JavaScript. #}
+  <p>{{ t('sender_records_lead') }}</p>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>{{ t('sender_records_type') }}</th><th>{{ t('sender_records_name') }}</th>
+        <th>{{ t('sender_records_value') }}</th></tr></thead>
+      <tbody>
+      {% for one in records %}
+      <tr>
+        <td>{{ one.type }}</td>
+        <td><input class="copy-field" type="text" readonly value="{{ one.name }}"
+                   aria-label="{{ t('sender_records_name') }} {{ loop.index }}"></td>
+        <td><input class="copy-field" type="text" readonly value="{{ one.value }}"
+                   aria-label="{{ t('sender_records_value') }} {{ loop.index }}"></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">{{ t('sender_records_hint') }}</p>
+  {% endif %}
+
+  {% if mine.domain_status == 'verified' %}
+  {% call row(t('sender_local'), t('sender_local_hint', domain=mine.domain)) %}
+  {% if can_edit %}
+  <form class="setting__form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="local">
+    <label class="visually-hidden" for="sender-local">{{ t('sender_local') }}</label>
+    <input id="sender-local" class="handle-field" name="local" type="text" maxlength="64" autocomplete="off"
+           spellcheck="false" value="{{ form.get('local', mine.domain_local or '') }}">
+    <span class="setting__value">@{{ mine.domain }}</span>
+    <button class="btn btn--small" type="submit">{{ t('sender_save') }}</button>
+    {% if errors.local %}<p class="error">{{ errors.local }}</p>{% endif %}
+  </form>
+  {% else %}
+  <span class="setting__value">{{ (mine.domain_local ~ '@' ~ mine.domain) if mine.domain_local else t('sender_none') }}</span>
+  {% endif %}
+  {% endcall %}
+  {% endif %}
+
+  {% if can_edit %}
+  <div class="setting__form">
+    {% if mine.domain_status != 'verified' %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="check">
+      <button class="btn btn--small" type="submit">{{ t('sender_check') }}</button>
+    </form>
+    {% endif %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="remove">
+      <button class="btn btn--small btn--outline" type="submit">{{ t('sender_remove') }}</button>
+    </form>
+  </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

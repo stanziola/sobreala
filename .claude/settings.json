@@ -11,7 +11,16 @@
       "Bash(git branch:*)",
       "Bash(git remote:*)",
       "Bash(git fetch:*)",
-      "Bash(git config --get:*)"
+      "Bash(git config --get:*)",
+      "Read(//c/Users/luisa/Downloads/**)"
+    ],
+    "ask": [
+      "Edit(//c/Users/luisa/Downloads/**)",
+      "Edit(//c/Users/luisa/Documents/**)",
+      "Edit(//c/Users/luisa/Desktop/**)",
+      "Edit(//c/Users/luisa/Pictures/**)",
+      "Edit(//c/Users/luisa/OneDrive/Documents/**)",
+      "Edit(//c/Users/luisa/OneDrive/Pictures/**)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",
@@ -28,6 +37,12 @@
       "PowerShell(git rebase:*)",
       "PowerShell(git clean:*)",
       "PowerShell(git filter-branch:*)"
+    ]
+  },
+  "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Creating, overwriting, moving or deleting files outside C:\\Users\\luisa\\OneDrive\\Desktop\\sobreala and the session scratchpad, including through shell or Python commands, without the user asking for that exact file"
     ]
   }
 }

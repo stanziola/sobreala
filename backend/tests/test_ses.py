@@ -81,9 +81,9 @@ def test_the_configuration_set_only_travels_when_there_is_one(ses, database,
     send_one()
     assert "ConfigurationSetName" not in ses.calls[0]
 
-    monkeypatch.setattr(Config, "SES_TRANSACTIONAL_CONFIGURATION_SET", "sobreala-sistema")
+    monkeypatch.setattr(Config, "SES_TRANSACTIONAL_CONFIGURATION_SET", "sobreala-system")
     send_one()
-    assert ses.calls[1]["ConfigurationSetName"] == "sobreala-sistema"
+    assert ses.calls[1]["ConfigurationSetName"] == "sobreala-system"
 
 
 def test_a_sent_message_is_recorded_with_the_aws_identifier(ses, database):

@@ -39,7 +39,7 @@ POSTAL = "Apartado 0816-00001, Santiago, Veraguas"
 
 
 def ready(client, database, *, email="ana@ejemplo.com", plan="basico",
-          cleared=True, howmany=3, tag="", postal=POSTAL):
+          cleared=True, howmany=3, tag="", postal=POSTAL, handle=True):
     """Una cuenta que sí puede enviar, con sus contactos y una pieza guardada."""
     register(client, email=email)
     browser = other(client)
@@ -52,6 +52,9 @@ def ready(client, database, *, email="ana@ejemplo.com", plan="basico",
         accounts.clear_sending(database, account["_id"], account["_id"])
     if postal:
         accounts.set_postal(database, account["_id"], postal)
+    if handle:
+        # Su usuario de envío: sin él una campaña no sale de ningún sitio.
+        accounts.set_handle(database, account["_id"], "c" + str(account["_id"])[-8:])
     if tag:
         accounts.add_tag(database, account["_id"], tag)
 

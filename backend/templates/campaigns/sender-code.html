@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ t('sender_code_title') }}{% endblock %}
+
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('sender_code_title') }}</h1>
+  {# La dirección a la que se mandó, escrita: si tiene un error de dedo, este
+     es el momento de verlo. #}
+  <p class="lead">{{ t('sender_code_lead', email=waiting) }}</p>
+
+  {% with submit = 'sender_code_submit' %}{% include "_code-form.html" %}{% endwith %}
+
+  <p class="foot">
+    <a href="{{ url_for('campaigns.sender_page') }}#reply">{{ t('sender_code_other') }}</a>
+  </p>
+</div>
+{% endblock %}

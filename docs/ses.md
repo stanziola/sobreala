@@ -58,10 +58,10 @@ SNS es el buzón por el que Amazon manda los avisos.
    está verificada la identidad de SES. Un tema en otra región no se puede
    elegir desde SES.
 2. **SNS → Temas → Crear tema.**
-3. Tipo **Estándar** (no FIFO). Nombre: `sobreala-ses-eventos`.
+3. Tipo **Estándar** (no FIFO). Nombre: `sobreala-ses-events`.
 4. Lo demás como viene. **Crear tema.**
 5. Copiar el **ARN** que aparece arriba. Tiene esta forma:
-   `arn:aws:sns:us-east-2:123456789012:sobreala-ses-eventos`.
+   `arn:aws:sns:us-east-2:123456789012:sobreala-ses-events`.
 
 ## 3. La suscripción al panel
 
@@ -91,27 +91,27 @@ a un código de confirmación no se le mide nada.
 
 **SES → Configuración → Conjuntos de configuración → Crear conjunto.**
 
-### `sobreala-campanas`
+### `sobreala-campaigns`
 
-1. Nombre: `sobreala-campanas`. Lo demás como viene. **Crear.**
+1. Nombre: `sobreala-campaigns`. Lo demás como viene. **Crear.**
 2. Dentro, pestaña **Destinos de eventos → Agregar destino.**
 3. Tipos de evento: **Entregas, Rebotes, Quejas, Rechazos, Aperturas y Clics.**
    Sin «Envíos» (eso ya lo anota el panel al mandar) ni «Errores de
    representación» ni «Retrasos en la entrega».
-4. Destino: **Amazon SNS**, y elegir `sobreala-ses-eventos`.
+4. Destino: **Amazon SNS**, y elegir `sobreala-ses-events`.
 5. Nombre del destino: `panel`. **Siguiente** y **Agregar destino.**
 
-### `sobreala-sistema`
+### `sobreala-system`
 
-Igual, con nombre `sobreala-sistema`, y en el paso 3 **sin Aperturas ni Clics**:
+Igual, con nombre `sobreala-system`, y en el paso 3 **sin Aperturas ni Clics**:
 solo Entregas, Rebotes, Quejas y Rechazos. Mismo tema.
 
 ## 5. Los nombres, en Railway
 
 | Variable | Valor |
 |---|---|
-| `SES_CONFIGURATION_SET` | `sobreala-campanas` |
-| `SES_TRANSACTIONAL_CONFIGURATION_SET` | `sobreala-sistema` |
+| `SES_CONFIGURATION_SET` | `sobreala-campaigns` |
+| `SES_TRANSACTIONAL_CONFIGURATION_SET` | `sobreala-system` |
 | `SES_TOPIC_ARN` | El ARN del paso 2 |
 
 Desplegar. Desde aquí cada correo sale con su conjunto, y los avisos empiezan a
@@ -131,6 +131,31 @@ Microsoft y Gmail desconfían, y desde fuera no se puede ver si está bien.
    `._domainkey.sobreala.com`. Tienen que estar en Cloudflare → DNS **con la
    nube gris (solo DNS)**. Con la nube naranja Cloudflare los esconde detrás de
    su proxy y la firma no se puede comprobar.
+
+## 6b. El subdominio de las campañas, y los dominios de los clientes
+
+**`envios.sobreala.com` es otra identidad**, aparte de `sobreala.com`: de ahí
+salen las campañas de quien no tiene dominio propio, y separarla es lo que
+impide que su reputación toque la de los códigos de confirmación.
+
+1. **SES → Identidades → Crear identidad → Dominio**: `envios.sobreala.com`,
+   Easy DKIM, RSA 2048.
+2. Sus tres CNAME en Cloudflare, **en gris**, igual que los de `sobreala.com`.
+3. Esperar a que diga **Verificada**. `SENDING_DOMAIN` ya vale eso por omisión:
+   no hace falta ponerla en Railway.
+
+**Los dominios de los clientes no se crean a mano.** El panel los crea, los
+consulta y los borra por la API v2 (`services/ses_identity.py`). Para eso el
+usuario de IAM necesita, además de enviar:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["ses:CreateEmailIdentity", "ses:GetEmailIdentity",
+             "ses:DeleteEmailIdentity"],
+  "Resource": "arn:aws:ses:us-east-2:TU_CUENTA:identity/*"
+}
+```
 
 ## 7. Los informes de DMARC
 

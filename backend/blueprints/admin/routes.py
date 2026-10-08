@@ -41,6 +41,7 @@ from models import session as sessions
 from models import suppression as suppressions
 from services import notices
 from services import plans
+from services import sender
 from services import stats
 from services.security import csrf_ok
 
@@ -254,6 +255,8 @@ def account_page(account, raw):
         "admin/account.html", section="cuentas", admin=account, client=client,
         statuses=accounts.STATUSES, plans=sorted(accounts.PLAN_CONTACTS),
         cycles=plans.CYCLES, can_send=accounts.can_send(client),
+        client_from=sender.sender_email(client), client_reply=sender.reply_to(client),
+        client_sender=accounts.sender_of(client),
         limit=accounts.contact_limit(client),
         # Cifras y orígenes. Las direcciones de sus contactos no se listan.
         contacts_total=contacts.count(db, client["_id"]),

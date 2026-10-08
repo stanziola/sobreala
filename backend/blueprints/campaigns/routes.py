@@ -24,10 +24,14 @@ from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import Blueprint, abort, redirect, render_template, request, url_for
+from flask import (Blueprint, abort, redirect, render_template, request,
+                   session, url_for)
 
-from blueprints.auth.routes import (current_account, current_workspace, needs,
-                                    not_for_admins)
+from blueprints.auth.routes import (CONFIRM_PER_IP, REGISTER_PER_EMAIL,
+                                    clean_email, client_ip, current_account,
+                                    current_workspace, needs, not_for_admins,
+                                    seconds_left)
+from config import Config
 from db import get_db
 from i18n import t
 from models import account as accounts
@@ -36,9 +40,10 @@ from models import campaign_run as runs
 from models import contact as contacts
 from models import design as designs
 from models import event as events
-from services import render, sender
+from models import token as tokens
+from services import notices, render, sender, ses_identity
 from services import clock
-from services.security import csrf_ok
+from services.security import csrf_ok, rate_limit
 
 bp = Blueprint("campaigns", __name__)
 
@@ -140,6 +145,8 @@ def shared(db, account, **extra):
         # siempre, no al final: enterarse de que no se puede después de armarlo
         # todo es la peor forma de enterarse.
         "blocked": sender.blocked(account),
+        "from_email": sender.sender_email(account),
+        "reply": sender.reply_to(account),
         "quota": accounts.quota_left(account),
         "editable": campaigns.editable,
         "due": campaigns.due,
@@ -370,3 +377,200 @@ def send(raw):
         return redirect(url_for("campaigns.index", done="blocked"))
     return redirect(url_for("campaigns.index",
                             done="partial" if result["left"] else "all"))
+
+
+# --------------------------------------------------------------- remitente
+#
+# De quién sale cada campaña y a dónde llegan las respuestas. Vale para todas
+# las campañas de la cuenta. La ve quien puede ver las campañas, y la cambia
+# solo el dueño, como la dirección postal: es la firma de la empresa.
+
+REPLY_ATTEMPTS = "reply_to_attempts"
+REPLY_DEADLINE = "reply_to_expires_at"
+# Cuántas veces al día se puede pedir un dominio, comprobarlo o quitarlo: cada
+# una es una llamada a Amazon.
+DOMAIN_PER_ACCOUNT = (20, 86400)
+
+
+def sender_screen(db, account, **extra):
+    mine = accounts.sender_of(account)
+    return render_template(
+        "campaigns/sender.html", section="envios", account=account, mine=mine,
+        sending_domain=Config.SENDING_DOMAIN,
+        from_email=sender.sender_email(account),
+        reply=sender.reply_to(account),
+        suggestion=mine.get("handle") or accounts.suggest_handle(
+            db, account.get("company_name", "")),
+        records=ses_identity.records(mine["domain"], mine.get("dkim_tokens") or [])
+        if mine.get("domain") else [],
+        can_edit=not accounts.is_member(current_account()),
+        **extra)
+
+
+@bp.route("/campaigns/sender", methods=["GET", "POST"])
+def sender_page():
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    db = get_db()
+    mine = accounts.sender_of(account)
+    errors: dict[str, str] = {}
+
+    if request.method == "GET":
+        # Un dominio que espera sus registros se mira al abrir la pantalla: no
+        # hay quién lo mire a las tres de la mañana.
+        if mine.get("domain") and mine.get("domain_status") != accounts.DOMAIN_VERIFIED:
+            try:
+                accounts.set_domain_status(db, account["_id"],
+                                           ses_identity.status(mine["domain"]))
+                # Leída otra vez de la base: la de la sesión es de antes.
+                account = accounts.by_id(db, account["_id"])
+            except ses_identity.IdentityError as exc:
+                print(f"  [remitente] {mine['domain']}: {exc}", flush=True)
+        return sender_screen(db, account, errors=errors, form={},
+                             done=request.args.get("done", ""))
+
+    if accounts.is_member(current_account()) or not csrf_ok(request.form.get("csrf_token")):
+        return redirect(url_for("campaigns.sender_page"))
+
+    action = request.form.get("action", "")
+    if action == "handle":
+        handle = accounts.clean_handle(request.form.get("handle", ""))
+        if handle is None:
+            errors["handle"] = t("sender_handle_bad", min=accounts.HANDLE_MIN,
+                                 max=accounts.HANDLE_MAX)
+        elif not accounts.set_handle(db, account["_id"], handle):
+            errors["handle"] = t("sender_handle_taken")
+        else:
+            return redirect(url_for("campaigns.sender_page", done="handle"))
+
+    elif action == "reply":
+        typed = request.form.get("reply_to", "").strip()
+        address = clean_email(typed) if typed else None
+        domain = mine.get("domain") if accounts.domain_ready(account) else ""
+        if not address:
+            errors["reply"] = t("error_email_invalid")
+        elif address.lower() == sender.reply_to(account).lower():
+            errors["reply"] = t("sender_reply_same")
+        elif domain and address.lower().endswith("@" + domain):
+            # Una dirección de su propio dominio ya está probada: el dominio
+            # entero se probó suyo con sus registros DNS.
+            accounts.set_reply_to(db, account["_id"], address)
+            return redirect(url_for("campaigns.sender_page", done="reply"))
+        elif not rate_limit(db, f"reply:mail:{accounts.normalize_email(address)}",
+                            *REGISTER_PER_EMAIL) \
+                or not rate_limit(db, f"reply:account:{account['_id']}",
+                                  *REGISTER_PER_EMAIL):
+            # Cada intento le manda un correo a una dirección escrita a mano:
+            # con tope, nadie llena el buzón de un tercero desde aquí.
+            errors["reply"] = t("error_too_many")
+        else:
+            accounts.start_reply_to(db, account["_id"], address)
+            code = tokens.issue(db, account["_id"], tokens.REPLY_TO)
+            notices.reply_to_code(account, code=code, to=address,
+                                  minutes=Config.CONFIRMATION_CODE_MINUTES)
+            session[REPLY_ATTEMPTS] = 0
+            session[REPLY_DEADLINE] = (accounts.now() + timedelta(
+                minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
+            return redirect(url_for("campaigns.reply_code"))
+
+    elif action in ("domain", "check", "remove"):
+        if not rate_limit(db, f"domain:account:{account['_id']}", *DOMAIN_PER_ACCOUNT):
+            errors["domain"] = t("error_too_many")
+        elif action == "domain":
+            domain = accounts.clean_domain(request.form.get("domain", ""))
+            if mine.get("domain"):
+                errors["domain"] = t("sender_domain_already")
+            elif domain is None:
+                errors["domain"] = t("sender_domain_bad")
+            elif db.accounts.find_one({"sender.domain": domain}, {"_id": 1}):
+                # Antes de hablar con Amazon: el dominio de otra cuenta no se
+                # crea ni se toca desde aquí.
+                errors["domain"] = t("sender_domain_taken")
+            else:
+                try:
+                    found = ses_identity.create(domain)
+                except ses_identity.IdentityError as exc:
+                    print(f"  [remitente] {domain}: {exc}", flush=True)
+                    errors["domain"] = t("sender_domain_failed")
+                else:
+                    if accounts.set_domain(db, account["_id"], domain, found):
+                        return redirect(url_for("campaigns.sender_page",
+                                                done="domain") + "#domain")
+                    errors["domain"] = t("sender_domain_taken")
+        elif not mine.get("domain"):
+            return redirect(url_for("campaigns.sender_page"))
+        elif action == "check":
+            try:
+                accounts.set_domain_status(db, account["_id"],
+                                           ses_identity.status(mine["domain"]))
+                return redirect(url_for("campaigns.sender_page", done="check")
+                                + "#domain")
+            except ses_identity.IdentityError as exc:
+                print(f"  [remitente] {mine['domain']}: {exc}", flush=True)
+                errors["domain"] = t("sender_domain_failed")
+        else:
+            try:
+                ses_identity.delete(mine["domain"])
+            except ses_identity.IdentityError as exc:
+                print(f"  [remitente] {mine['domain']}: {exc}", flush=True)
+                errors["domain"] = t("sender_domain_failed")
+            else:
+                accounts.clear_domain(db, account["_id"])
+                # Un «Responder a» de ese dominio ya no lo prueba nada.
+                if sender.reply_to(account).lower().endswith("@" + mine["domain"]):
+                    accounts.clear_reply_to(db, account["_id"])
+                return redirect(url_for("campaigns.sender_page", done="removed"))
+
+    elif action == "local":
+        if mine.get("domain_status") != accounts.DOMAIN_VERIFIED:
+            return redirect(url_for("campaigns.sender_page"))
+        local = accounts.clean_local(request.form.get("local", ""))
+        if local is None:
+            errors["local"] = t("sender_local_bad")
+        else:
+            accounts.set_domain_local(db, account["_id"], local)
+            return redirect(url_for("campaigns.sender_page", done="local") + "#domain")
+
+    return sender_screen(db, account, errors=errors, done="", form=request.form)
+
+
+@bp.route("/campaigns/sender/code", methods=["GET", "POST"])
+def reply_code():
+    """El código que llegó al «Responder a» nuevo. Hasta que entra, las
+    respuestas siguen llegando a la dirección de antes."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    waiting = accounts.sender_of(account).get("reply_to_pending")
+    if accounts.is_member(current_account()) or not waiting:
+        return redirect(url_for("campaigns.sender_page"))
+
+    db = get_db()
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        typed = "".join(request.form.getlist("code"))
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif not rate_limit(db, f"reply:ip:{client_ip()}", *CONFIRM_PER_IP):
+            errors["form"] = t("error_too_many")
+        else:
+            attempts = session.get(REPLY_ATTEMPTS, 0) + 1
+            session[REPLY_ATTEMPTS] = attempts
+            reason, doc = tokens.check(db, account["_id"], typed, tokens.REPLY_TO)
+            if reason in (tokens.UNKNOWN, tokens.INVALID) \
+                    and attempts >= tokens.MAX_ATTEMPTS:
+                reason = tokens.TOO_MANY
+            if reason == tokens.VALID and not tokens.spend(db, doc):
+                reason = tokens.USED
+            if reason == tokens.VALID:
+                accounts.set_reply_to(db, account["_id"], waiting)
+                return redirect(url_for("campaigns.sender_page", done="reply"))
+            errors["form"] = t({tokens.USED: "error_code_used",
+                                tokens.TOO_MANY: "error_code_too_many"}.get(
+                                    reason, "error_code_invalid"))
+
+    return render_template("campaigns/sender-code.html", section="envios",
+                           errors=errors, waiting=waiting,
+                           minutes=Config.CONFIRMATION_CODE_MINUTES,
+                           left=seconds_left(REPLY_DEADLINE))

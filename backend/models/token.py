@@ -38,6 +38,10 @@ EMAIL_CHANGE = "email_change"
 # quien lo recibe todavía no tiene contraseña, así que lo que el enlace prueba
 # es que esa dirección es suya, y al otro lado pone la suya.
 INVITE = "invite"
+# Confirmar el «Responder a» de las campañas. El código va a esa dirección:
+# es lo que prueba que es de quien la escribió y no de un tercero que
+# recibiría las respuestas de toda una lista.
+REPLY_TO = "reply_to"
 
 # Why a code was refused, so the visitor gets a useful message instead of a
 # generic error. UNKNOWN is "there is no code waiting for this account"; INVALID

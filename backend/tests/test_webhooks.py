@@ -25,7 +25,7 @@ from test_admin import make_admin
 from test_campaigns import catch, make, ready, send_it
 
 SECRET = "un-secreto-largo-de-prueba"
-TOPIC = "arn:aws:sns:us-east-2:123456789012:sobreala-ses-eventos"
+TOPIC = "arn:aws:sns:us-east-2:123456789012:sobreala-ses-events"
 
 
 @pytest.fixture(autouse=True)
@@ -52,7 +52,7 @@ def campaign_event(kind, *, account, campaign, run, to, **body):
             "destination": [to],
             "tags": {"account": [str(account)], "campaign": [str(campaign)],
                      "run": [str(run)],
-                     "ses:configuration-set": ["sobreala-campanas"]},
+                     "ses:configuration-set": ["sobreala-campaigns"]},
         },
         **body,
     }
@@ -238,7 +238,7 @@ def test_un_aviso_de_un_correo_del_sistema_marca_su_fila(client, database):
     notify(client, {
         "eventType": "Bounce",
         "mail": {"messageId": "0100sys", "destination": ["joseph@utp.ac.pa"],
-                 "tags": {"ses:configuration-set": ["sobreala-sistema"]}},
+                 "tags": {"ses:configuration-set": ["sobreala-system"]}},
         **bounce("Permanent", "joseph@utp.ac.pa")})
 
     fila = database.mail_log.find_one({"provider_id": "0100sys"})

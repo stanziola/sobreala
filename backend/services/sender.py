@@ -120,17 +120,32 @@ def plain_text(html: str) -> str:
     return "\n".join(line for line in lines if line)
 
 
-def from_address(account: dict[str, Any]) -> str:
-    """De quién sale la campaña.
+def sender_email(account: dict[str, Any]) -> str:
+    """La dirección de la que sale una campaña, o vacío si todavía no hay.
 
-    Hoy, de la identidad que **está verificada en SES**, con el nombre de la
-    empresa a la vista. CLAUDE.md dice que el día de mañana cada cliente escribe
-    desde `tuempresa@envios.sobreala.com`, pero ese subdominio todavía no está
-    verificado y usarlo haría fallar cada envío. Es esta función y nada más: el
-    día que se verifique, se cambia aquí.
+    Con su dominio verificado y una dirección elegida, de ese dominio. Si no, de
+    su usuario en `SENDING_DOMAIN`. **Nunca de `SYSTEM_FROM_EMAIL`**: esa es
+    la de los códigos y los recibos, y una lista mala de un cliente no puede
+    llevárselos a spam. Sin usuario, vacío, y `blocked()` dice `sender`.
     """
+    mine = accounts.sender_of(account)
+    if accounts.domain_ready(account):
+        return f"{mine['domain_local']}@{mine['domain']}"
+    if mine.get("handle"):
+        return f"{mine['handle']}@{Config.SENDING_DOMAIN}"
+    return ""
+
+
+def from_address(account: dict[str, Any]) -> str:
+    """De quién sale la campaña, con el nombre de la empresa a la vista."""
     name = (account.get("company_name") or Config.SYSTEM_FROM_NAME).strip()
-    return formataddr((name, Config.SYSTEM_FROM_EMAIL))
+    return formataddr((name, sender_email(account)))
+
+
+def reply_to(account: dict[str, Any]) -> str:
+    """A dónde llegan las respuestas: la que el cliente confirmó, o el correo
+    con el que entra el dueño. La conversación es suya, no nuestra."""
+    return accounts.sender_of(account).get("reply_to") or account.get("email", "")
 
 
 def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
@@ -160,8 +175,8 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     message["Subject"] = columns.fill(campaign["subject"], contact, fields,
                                       html=False)
     # Responder le llega al cliente, no a nosotros: la conversación es suya.
-    if account.get("email"):
-        message["Reply-To"] = account["email"]
+    if reply_to(account):
+        message["Reply-To"] = reply_to(account)
     # Las dos cabeceras de la baja de un clic. La segunda es la que hace que
     # Gmail y Outlook enseñen su propio botón: sin ella, el enlace del pie es
     # lo único que hay.
@@ -222,6 +237,10 @@ def blocked(account: dict[str, Any]) -> list[str]:
     # Sin la dirección de la empresa no sale: la ley la pide al pie.
     if not accounts.postal_of(account):
         why.append("postal")
+    # Sin usuario de envío no hay de quién salir, y caer a la dirección del
+    # sistema es justo lo que no se hace.
+    if not sender_email(account):
+        why.append("sender")
     return why
 
 

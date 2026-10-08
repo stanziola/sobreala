@@ -192,6 +192,8 @@ def seed():
     accounts.activate_plan(db, who, "negocio", events.now() + timedelta(days=300))
     accounts.clear_sending(db, who, who)
     accounts.set_postal(db, who, "Apartado 0816-00001, Santiago, Veraguas")
+    # De quién salen sus campañas: sin usuario, Enviar correos diría que falta.
+    accounts.set_handle(db, who, "tuempresa")
     db.accounts.update_one({"_id": who},
                            {"$set": {"password_hash": security.hash_password(PASSWORD)}})
 

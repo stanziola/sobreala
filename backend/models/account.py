@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -615,6 +617,180 @@ def clean_postal(raw: str) -> str | None:
 def set_postal(db, account_id, address: str) -> None:
     db.accounts.update_one({"_id": account_id},
                            {"$set": {"postal_address": address, "updated_at": now()}})
+
+
+# --------------------------------------------------------------- remitente
+#
+# De quién sale una campaña. Sin dominio propio, de `handle@SENDING_DOMAIN`;
+# con uno verificado, de cualquier dirección de ese dominio. Nunca de la
+# dirección del correo del sistema: ver services/sender.py.
+
+HANDLE_MIN = 3
+HANDLE_MAX = 30
+# Los que suenan a la plataforma o a un buzón de servicio. Nadie puede firmar
+# una campaña como «soporte@envios.sobreala.com».
+RESERVED_HANDLES = frozenset({
+    "info", "notifications", "notificaciones", "admin", "administrador",
+    "postmaster", "abuse", "noreply", "no-reply", "soporte", "support",
+    "sobreala", "envios", "hola", "contacto", "seguridad", "security",
+    "billing", "facturacion", "mailer-daemon", "root", "webmaster",
+})
+# Dominios de correo gratis: nadie puede ponerles registros DNS, y enviar como
+# ellos lo rechaza su propio DMARC.
+FREE_MAIL = frozenset({
+    "gmail.com", "googlemail.com", "hotmail.com", "hotmail.es", "outlook.com",
+    "outlook.es", "live.com", "msn.com", "yahoo.com", "yahoo.es", "ymail.com",
+    "icloud.com", "me.com", "mac.com", "aol.com", "proton.me", "protonmail.com",
+    "gmx.com", "zoho.com", "mail.com", "yandex.com",
+})
+SENDER_FIELDS = ("handle", "reply_to", "domain", "domain_local")
+DOMAIN_PENDING = "pending"
+DOMAIN_VERIFIED = "verified"
+DOMAIN_FAILED = "failed"
+
+
+def sender_of(account: dict[str, Any] | None) -> dict[str, Any]:
+    """El remitente guardado, o vacío."""
+    return dict((account or {}).get("sender") or {})
+
+
+def clean_handle(raw: str) -> str | None:
+    """El usuario de envío, o None si no se puede usar.
+
+    Minúsculas, números, punto y guion; ni empieza ni termina en punto o
+    guion, ni lleva dos puntos seguidos, que es lo que un servidor de correo
+    rechaza en la parte de antes de la @."""
+    text = str(raw or "").strip().lower()
+    if not HANDLE_MIN <= len(text) <= HANDLE_MAX:
+        return None
+    if not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", text) or ".." in text:
+        return None
+    if text in RESERVED_HANDLES:
+        return None
+    return text
+
+
+def clean_local(raw: str) -> str | None:
+    """Lo de antes de la @ en el dominio del cliente. Su dominio es suyo, así
+    que aquí no hay reservados: solo la forma."""
+    text = str(raw or "").strip().lower()
+    if not 1 <= len(text) <= 64:
+        return None
+    if not re.fullmatch(r"[a-z0-9](?:[a-z0-9._+-]*[a-z0-9])?", text) or ".." in text:
+        return None
+    return text
+
+
+def clean_domain(raw: str) -> str | None:
+    """El dominio que escribió el cliente, limpio, o None.
+
+    Acepta que lo peguen con `https://`, con `www.` o con una ruta detrás,
+    porque así es como lo copia la gente de su navegador."""
+    text = str(raw or "").strip().lower()
+    text = re.sub(r"^[a-z]+://", "", text).split("/")[0].split("@")[-1]
+    if text.startswith("www."):
+        text = text[4:]
+    text = text.rstrip(".")
+    labels = text.split(".")
+    if len(text) > 253 or len(labels) < 2 or not re.fullmatch(r"[a-z]{2,63}", labels[-1]):
+        return None
+    if not all(re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", one)
+               for one in labels):
+        return None
+    # Nuestro dominio y todo lo que cuelga de él no es de ningún cliente.
+    ours = Config.SENDING_DOMAIN.split(".", 1)[-1]
+    if text in FREE_MAIL or text == ours or text.endswith("." + ours):
+        return None
+    return text
+
+
+def suggest_handle(db, company_name: str) -> str:
+    """El usuario que se le ofrece al entrar: el nombre de la empresa sin
+    espacios ni tildes, y con un número si otra cuenta ya lo tiene."""
+    plain = unicodedata.normalize("NFKD", str(company_name or "")).encode(
+        "ascii", "ignore").decode().lower()
+    base = re.sub(r"[^a-z0-9]+", "", plain)[:HANDLE_MAX - 2]
+    if len(base) < HANDLE_MIN or base in RESERVED_HANDLES:
+        base = (base + "envios")[:HANDLE_MAX - 2]
+    wanted = base
+    for n in range(2, 100):
+        if not db.accounts.find_one({"sender.handle": wanted}, {"_id": 1}):
+            return wanted
+        wanted = f"{base}{n}"
+    return wanted
+
+
+def set_handle(db, account_id, handle: str) -> bool:
+    """Guardar el usuario. False si otra cuenta lo tiene: lo decide el índice
+    único, así que dos que lo piden a la vez no se lo llevan los dos."""
+    try:
+        db.accounts.update_one({"_id": account_id},
+                               {"$set": {"sender.handle": handle, "updated_at": now()}})
+    except DuplicateKeyError:
+        return False
+    return True
+
+
+def set_reply_to(db, account_id, address: str) -> None:
+    """El «Responder a», ya probado. Borra lo que estuviera esperando código."""
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"sender.reply_to": address, "updated_at": now()},
+                            "$unset": {"sender.reply_to_pending": ""}})
+
+
+def start_reply_to(db, account_id, address: str) -> None:
+    """La dirección nueva espera su código aparte: la de antes sigue valiendo."""
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"sender.reply_to_pending": address,
+                                     "updated_at": now()}})
+
+
+def clear_reply_to(db, account_id) -> None:
+    """Volver a que las respuestas lleguen al correo del dueño."""
+    db.accounts.update_one({"_id": account_id},
+                           {"$unset": {"sender.reply_to": ""}})
+
+
+def set_domain(db, account_id, domain: str, tokens: list[str]) -> bool:
+    """Empezar a conectar un dominio. False si otra cuenta ya lo tiene."""
+    try:
+        db.accounts.update_one({"_id": account_id}, {"$set": {
+            "sender.domain": domain, "sender.domain_status": DOMAIN_PENDING,
+            "sender.dkim_tokens": list(tokens), "sender.domain_checked_at": now(),
+            "updated_at": now()}, "$unset": {"sender.domain_local": "",
+                                             "sender.domain_verified_at": ""}})
+    except DuplicateKeyError:
+        return False
+    return True
+
+
+def set_domain_status(db, account_id, status: str) -> None:
+    changes: dict[str, Any] = {"sender.domain_status": status,
+                               "sender.domain_checked_at": now()}
+    if status == DOMAIN_VERIFIED:
+        changes["sender.domain_verified_at"] = now()
+    db.accounts.update_one({"_id": account_id, "sender.domain": {"$exists": True}},
+                           {"$set": changes})
+
+
+def set_domain_local(db, account_id, local: str) -> None:
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"sender.domain_local": local, "updated_at": now()}})
+
+
+def clear_domain(db, account_id) -> None:
+    db.accounts.update_one({"_id": account_id}, {"$unset": {
+        "sender.domain": "", "sender.domain_status": "", "sender.dkim_tokens": "",
+        "sender.domain_local": "", "sender.domain_checked_at": "",
+        "sender.domain_verified_at": ""}})
+
+
+def domain_ready(account: dict[str, Any] | None) -> bool:
+    """Si las campañas ya pueden salir de su dominio: verificado y con la
+    dirección elegida."""
+    mine = sender_of(account)
+    return bool(mine.get("domain") and mine.get("domain_local")
+                and mine.get("domain_status") == DOMAIN_VERIFIED)
 
 
 def clear_sending(db, account_id, admin_id) -> bool:

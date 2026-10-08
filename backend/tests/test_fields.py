@@ -345,6 +345,8 @@ def test_cada_uno_recibe_lo_suyo_y_el_incompleto_no_recibe(
     accounts.clear_sending(database, cuenta["_id"], cuenta["_id"])
     # La dirección del pie, que sin ella no se envía.
     accounts.set_postal(database, cuenta["_id"], "Apartado 0816-00001, Santiago")
+    # Y su usuario de envío, que sin él tampoco.
+    accounts.set_handle(database, cuenta["_id"], "cooperativa")
     crear(browser, "Ciudad")
     contacts.create(database, cuenta["_id"], email="socio0@ejemplo.com",
                     consent=contacts.consent_of(contacts.MEMBERS),

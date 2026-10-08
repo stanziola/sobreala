@@ -49,6 +49,8 @@ EMAIL_CHANGE_CODE = "email_change_code"
 # La invitación a entrar como usuario de una cuenta.
 INVITE = "invite"
 EMAIL_CHANGED = "email_changed"
+# El código que confirma el «Responder a» de las campañas.
+REPLY_TO_CODE = "reply_to_code"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"
 

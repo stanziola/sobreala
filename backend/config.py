@@ -57,6 +57,10 @@ class Config:
     # endpoint, so a reply sent there would never reach anyone.
     SYSTEM_FROM_EMAIL = os.getenv("SYSTEM_FROM_EMAIL", "notifications@sobreala.com")
     SYSTEM_FROM_NAME = os.getenv("SYSTEM_FROM_NAME", "Sobreala")
+    # Campaigns of clients without a verified domain of their own leave from
+    # <handle>@this. Never from SYSTEM_FROM_EMAIL: a client's bad list must not
+    # drag down the reputation of the confirmation codes.
+    SENDING_DOMAIN = os.getenv("SENDING_DOMAIN", "envios.sobreala.com").strip().lower()
     # System mail keeps its own SES configuration set: a client's campaign
     # bounces must never affect whether confirmation mail is delivered.
     SES_TRANSACTIONAL_CONFIGURATION_SET = os.getenv("SES_TRANSACTIONAL_CONFIGURATION_SET", "")

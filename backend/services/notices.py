@@ -256,6 +256,22 @@ def email_change_code(account, *, code: str, to: str, minutes: int) -> bool:
         else t("mail_email_code_expiry", minutes=minutes))
 
 
+def reply_to_code(account, *, code: str, to: str, minutes: int) -> bool:
+    """El código que prueba que el «Responder a» es de quien lo escribió.
+
+    Va a esa dirección, como el de cambiar el correo, y sin interruptor: si
+    nadie lo usa, el «Responder a» se queda como estaba.
+    """
+    return deliver(
+        account, to=to, purpose=mail_log.REPLY_TO_CODE,
+        subject=t("mail_reply_code_subject", code=code),
+        heading=t("mail_reply_code_heading"),
+        paragraphs=[t("mail_reply_code_body", company=account.get("company_name", ""))],
+        code=code,
+        foot=t("mail_email_code_expiry_one") if minutes == 1
+        else t("mail_email_code_expiry", minutes=minutes))
+
+
 def email_changed(account, *, old: str, new: str) -> bool:
     """El aviso a la dirección **vieja** de que la cuenta se mudó.
 

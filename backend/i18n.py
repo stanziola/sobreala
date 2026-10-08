@@ -142,6 +142,11 @@ TEXTS = {
 
     # Los dos mensajes: el código va a la dirección nueva y el aviso a la vieja.
     "mail_email_code_subject": "{code} es tu código para cambiar tu correo",
+    "mail_reply_code_subject": "{code} es tu código para confirmar esta dirección",
+    "mail_reply_code_heading": "Confirma esta dirección de respuesta",
+    "mail_reply_code_body": "{company} quiere que las respuestas a sus campañas "
+                            "de Sobreala lleguen a esta dirección. Escribe este "
+                            "código en la pantalla que lo pidió:",
     "mail_email_code_heading": "Tu código para cambiar el correo",
     "mail_email_code_body": "Alguien pidió usar esta dirección para una cuenta "
                             "de Sobreala. Escribe este código en la pantalla "
@@ -1484,6 +1489,79 @@ TEXTS = {
                            "pide al pie de cada correo.",
     "send_blocked_postal_link": "Escribirla en Configuración",
     "send_blocked_quota": "Se acabaron los correos de tu plan este mes.",
+    "send_blocked_sender": "Falta elegir desde qué dirección salen tus campañas.",
+    "send_blocked_sender_link": "Elegirla en Remitente",
+    # Remitente: de quién salen las campañas y a dónde vuelven las respuestas.
+    "sender_title": "Remitente",
+    "sender_back": "Volver a Enviar correos",
+    "sender_lead": "Desde qué dirección salen tus campañas y a dónde llegan las "
+                   "respuestas. Vale para todas tus campañas.",
+    "sender_change": "Cambiar remitente",
+    "sender_owner_only": "Solo el dueño de la cuenta puede cambiar el remitente.",
+    "sender_now": "Así lo ve quien recibe tus campañas",
+    "sender_now_from": "Sale de: {name} <{email}>",
+    "sender_now_none": "Sale de: todavía no elegiste una dirección",
+    "sender_now_reply": "Responde a: {email}",
+    "sender_none": "Sin elegir",
+    "sender_save": "Guardar",
+    "sender_handle": "Tu dirección de envío",
+    "sender_handle_hint": "La parte de antes de la @. Tus campañas salen de "
+                          "{domain} mientras no conectes un dominio propio.",
+    "sender_handle_bad": "Usa de {min} a {max} letras, números, puntos o guiones, "
+                         "sin espacios ni tildes. Algunos nombres están reservados.",
+    "sender_handle_taken": "Esa dirección ya la usa otra cuenta. Prueba con otra.",
+    "sender_reply": "Responder a",
+    "sender_reply_hint": "A dónde llegan las respuestas de tus contactos. Puede "
+                         "ser cualquier correo: te mandamos un código para "
+                         "confirmar que es tuyo.",
+    "sender_reply_save": "Cambiar",
+    "sender_reply_same": "Las respuestas ya llegan a esa dirección.",
+    "sender_reply_waiting": "Esperando el código que mandamos a {email}.",
+    "sender_reply_code_link": "Escribir el código",
+    "sender_code_title": "Confirma la dirección de respuesta",
+    "sender_code_lead": "Te mandamos un código de seis dígitos a {email}. "
+                        "Escríbelo aquí.",
+    "sender_code_submit": "Confirmar",
+    "sender_code_other": "Usar otra dirección",
+    "sender_domain": "Tu dominio propio",
+    "sender_domain_lead": "Si tu empresa tiene su dominio (por ejemplo "
+                          "tuempresa.com), conéctalo y tus campañas saldrán de "
+                          "una dirección tuya, con tu propia reputación. Es "
+                          "opcional.",
+    "sender_domain_field": "Tu dominio",
+    "sender_domain_connect": "Conectar",
+    "sender_domain_none": "Sin dominio conectado.",
+    "sender_domain_bad": "Ese dominio no se puede usar. Escríbelo como "
+                         "tuempresa.com. Los de correo gratis, como gmail.com, "
+                         "no se pueden conectar.",
+    "sender_domain_taken": "Ese dominio ya está conectado en otra cuenta.",
+    "sender_domain_already": "Ya tienes un dominio conectado. Quítalo para "
+                             "conectar otro.",
+    "sender_domain_failed": "No pudimos hablar con Amazon en este momento. "
+                            "Prueba otra vez en unos minutos.",
+    "sender_status_pending": "Pendiente",
+    "sender_status_verified": "Verificado",
+    "sender_status_failed": "No se encontraron los registros",
+    "sender_records_lead": "Agrega estos tres registros en el DNS de tu dominio, "
+                           "donde lo compraste o donde lo administras:",
+    "sender_records_type": "Tipo",
+    "sender_records_name": "Nombre",
+    "sender_records_value": "Valor",
+    "sender_records_hint": "Amazon los comprueba solo. Suele tardar unos minutos, "
+                           "y puede llegar a 72 horas.",
+    "sender_check": "Comprobar ahora",
+    "sender_remove": "Quitar dominio",
+    "sender_local": "Dirección de tu dominio",
+    "sender_local_hint": "La parte de antes de la @ en {domain}: boletin, "
+                         "noticias o la que quieras.",
+    "sender_local_bad": "Escribe solo la parte de antes de la @, sin espacios.",
+    "sender_done_handle": "Guardamos tu dirección de envío.",
+    "sender_done_reply": "Listo: las respuestas llegarán a esa dirección.",
+    "sender_done_domain": "Dominio agregado. Ahora pon los registros en su DNS.",
+    "sender_done_check": "Comprobamos tu dominio con Amazon.",
+    "sender_done_local": "Guardamos la dirección de tu dominio.",
+    "sender_done_removed": "Quitamos tu dominio. Tus campañas vuelven a salir de "
+                           "tu dirección de envío.",
     "send_blocked_cleared": "Falta que habilitemos el envío de tu cuenta. Es "
                             "una sola vez, miramos de dónde salió tu lista y te "
                             "avisamos por correo.",
