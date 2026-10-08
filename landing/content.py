@@ -335,6 +335,10 @@ HOME = {
 # opens it in the editor. The colour fills the card until each one has its
 # picture.
 SAMPLES = [
+    {"slug": "restaurant", "name": "Restaurante", "color": "#B91C1C"},
+    {"slug": "perfume", "name": "Perfumería", "color": "#DB2777"},
+    {"slug": "hiring", "name": "Reclutamiento", "color": "#0369A1"},
+    {"slug": "real-estate", "name": "Bienes raíces", "color": "#4D7C0F"},
     {"slug": "aviso", "name": "Aviso", "color": "#3166A7"},
     {"slug": "oferta", "name": "Oferta", "color": "#C2410C"},
     {"slug": "boletin", "name": "Boletín", "color": "#0F766E"},
