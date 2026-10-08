@@ -76,6 +76,8 @@ sobreala/
 │   │                       # avisa si falta alguna
 │   ├── tutorials.py        # las capturas de los tutoriales y tutorials.json
 │   │                       # (GENERADO); --check avisa si falta alguna
+│   ├── samples.py          # las miniaturas de las plantillas de muestra de la
+│   │                       # portada; --check avisa si falta alguna
 │   ├── src/                # plantillas Jinja2 (base, parciales, páginas) y site.css
 │   ├── assets/             # css, js, fonts, img (fonts, img, img/panel y
 │   │                       # css/site.css son generados)
@@ -949,10 +951,12 @@ lienzo), porque un ZIP pequeño puede inflarse a gigas.
   - A una precarga del navegador no se le crea nada.
 - **Sin sesión**, lleva a entrar recordando el nombre (`WANTED_SAMPLE`, como el
   plan) y sigue hasta ella.
-- **Agregar una** es dejar su ZIP en la carpeta y su fila en `SAMPLES`. Una
-  prueba comprueba que las dos listas coinciden.
-- **Hoy son ocho de relleno:** un rectángulo de color, su nombre y un texto de
-  ejemplo, sin fotos.
+- **Agregar una** es dejar su ZIP en la carpeta, su fila en `SAMPLES` y correr
+  `python landing/samples.py`, que hace su miniatura. Una prueba comprueba que
+  las dos listas coinciden y otra que cada una tiene su miniatura.
+- **Hoy son cuatro, de verdad** (octubre de 2026): restaurante, perfumería,
+  reclutamiento y bienes raíces, con sus fotos. Hubo ocho de relleno (un
+  rectángulo de color, su nombre y un texto) y se quitaron con sus ZIP.
 
 **Entre cuentas nunca se copia nada.** Hubo `adopt_images()`, que al cargar un
 HTML iba a buscar las imágenes de la otra cuenta y las copiaba; si esa ya las
@@ -2302,16 +2306,26 @@ noche, el resplandor claro de la primera).
 plantillas de `SAMPLES` y el botón «Ver tutorial», que va a /how-it-works,
 donde están los tutoriales (ver «Los tutoriales», más abajo).
 - **Es solo CSS**, sin guion:
-  - la lista va dos veces seguidas y la tira se desplaza la mitad, así que el
-    salto no se ve;
-  - la copia va escondida del lector de pantalla y del tabulador.
+  - la lista va tres veces seguidas y cada una avanza su propio ancho, así que
+    el salto no se ve;
+  - **tres y no dos** porque con cuatro plantillas una lista mide 1,280 px:
+    con dos, en una pantalla ancha se veía el final de la segunda, y con tres
+    no se ve hasta los 2,560 px. Si las plantillas cambian, cambia esa cuenta;
+  - la vuelta dura 18 s, unos 70 px por segundo, la velocidad de cuando eran
+    doce;
+  - las copias van escondidas del lector de pantalla y del tabulador.
 - **Se para con el ratón encima o con el foco dentro**, para poder pulsar una.
 - **Con «reducir movimiento» queda quieta** y se recorre de lado.
 - **No agranda nada al pasar el ratón**, por lo mismo que Features.
 - **Se tomó de un componente de React con Tailwind**, que el sitio no usa: el
   efecto se hizo con el CSS de siempre.
-- **Cada tarjeta es, por ahora, su color**, hasta que cada plantilla tenga su
-  miniatura.
+- **Cada tarjeta es la plantilla misma**, con su nombre debajo: 300 px de
+  ancho (200 en el teléfono) y en 3:4, que deja leer los titulares y ver las
+  fotos. La miniatura es **GENERADA**: `landing/samples.py` abre el correo
+  armado que trae el ZIP en un Chrome sin cabeza, a 600 de ancho, y guarda la
+  parte de arriba en `assets/img/samples/<slug>.webp`; lo que pasa de 800 se
+  corta. **Hay que volver a correrlo cuando cambie un ZIP**, y
+  `build_site.py` no construye si a una le falta la suya.
 - **Pulsarla abre su lienzo en el panel** (ver `designs`).
 
 **Los tutoriales de /how-it-works son capturas del panel que se recorren

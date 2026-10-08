@@ -33,6 +33,7 @@ landing/
 │   ├── js/nav.js        # menú móvil, cambio de tema y año del pie
 │   ├── js/carousel.js   # las flechas y el paso automático del carrusel
 │   ├── img/panel/       # GENERADO por shots.py: las capturas de la portada
+│   ├── img/samples/     # GENERADO por samples.py: las miniaturas de las plantillas de muestra
 │   ├── css/site.css     # GENERADO: colors.css + colors-dark.css + @font-face + src/site.css
 │   ├── fonts/           # GENERADO: .woff2 a partir de brand/fonts/
 │   └── img/             # GENERADO: logo, favicons e iconos desde brand/
@@ -58,6 +59,7 @@ De dónde sale cada cosa:
 | Logos de métodos de pago    | `brand/payments/`               | a mano, ver su README |
 | Estructura y estilos        | `landing/src/`                  | esos archivos |
 | Capturas del panel          | el panel mismo                  | `python landing/shots.py` |
+| Miniaturas de las muestras  | `backend/sample_templates/`     | `python landing/samples.py` |
 
 Después de cambiar cualquiera de ellos, regenerar y commitear también lo generado.
 

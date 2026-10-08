@@ -15,6 +15,7 @@ from models import design as designs
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 SAMPLES_DIR = ROOT / "backend" / "sample_templates"
+PICTURES_DIR = ROOT / "landing" / "assets" / "img" / "samples"
 
 
 def site_samples():
@@ -30,6 +31,13 @@ def test_cada_tarjeta_tiene_su_zip_y_al_reves():
     del_sitio = {one["slug"] for one in site_samples()}
     en_disco = {path.stem for path in SAMPLES_DIR.glob("*.zip")}
     assert del_sitio == en_disco
+
+
+def test_cada_tarjeta_tiene_su_miniatura():
+    faltan = [one["slug"] for one in site_samples()
+              if not (PICTURES_DIR / f"{one['slug']}.webp").exists()]
+    assert not faltan, (f"Faltan miniaturas: {faltan}. "
+                        "Corre: python landing/samples.py")
 
 
 @pytest.mark.parametrize("slug", [one["slug"] for one in site_samples()])
@@ -48,14 +56,14 @@ def test_cada_muestra_abre_su_lienzo(client, database, outbox, slug):
 def test_cada_pulsacion_es_otra_copia(client, database, outbox):
     browser = inside(client)
     account = database.accounts.find_one({"email": "ana@ejemplo.com"})
-    browser.get("/templates/sample/aviso")
-    browser.get("/templates/sample/aviso")
+    browser.get("/templates/sample/restaurant")
+    browser.get("/templates/sample/restaurant")
     assert len(designs.for_account(database, account["_id"])) == 2
 
 
 def test_una_inventada_no_existe(client, database, outbox):
     browser = inside(client)
-    for slug in ("no-existe", "..%2Fsecreto", "AVISO"):
+    for slug in ("no-existe", "..%2Fsecreto", "RESTAURANT"):
         assert browser.get(f"/templates/sample/{slug}").status_code == 404
 
 
@@ -63,22 +71,22 @@ def test_sin_sesion_entra_y_sigue_hasta_ella(client, database, outbox):
     register(client)
     visitor = other(client)
 
-    first = visitor.get("/templates/sample/oferta")
-    assert first.headers["Location"].endswith("/login?sample=oferta")
+    first = visitor.get("/templates/sample/restaurant")
+    assert first.headers["Location"].endswith("/login?sample=restaurant")
 
-    visitor.get("/login?sample=oferta")
+    visitor.get("/login?sample=restaurant")
     with visitor.session_transaction() as sess:
         csrf = sess["_csrf"]
-    after = visitor.post("/login?sample=oferta", data={
+    after = visitor.post("/login?sample=restaurant", data={
         "csrf_token": csrf, "email": "ana@ejemplo.com",
         "password": "Contrasena-Larga1"})
-    assert after.headers["Location"].endswith("/templates/sample/oferta")
+    assert after.headers["Location"].endswith("/templates/sample/restaurant")
 
 
 def test_una_precarga_no_crea_nada(client, database, outbox):
     browser = inside(client)
     account = database.accounts.find_one({"email": "ana@ejemplo.com"})
-    answer = browser.get("/templates/sample/aviso",
+    answer = browser.get("/templates/sample/restaurant",
                          headers={"Sec-Purpose": "prefetch"})
     assert answer.status_code == 204
     assert designs.for_account(database, account["_id"]) == []
@@ -86,6 +94,6 @@ def test_una_precarga_no_crea_nada(client, database, outbox):
 
 def test_un_administrador_no_puede(client, database, outbox):
     admin, _ = make_admin(client, database)
-    answer = admin.get("/templates/sample/aviso")
+    answer = admin.get("/templates/sample/restaurant")
     assert answer.headers["Location"].endswith("/admin/")
     assert database.designs.count_documents({}) == 0

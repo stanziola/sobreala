@@ -465,6 +465,32 @@ def tutorial_tours() -> list[dict]:
     return tours
 
 
+# The pictures of the home page samples, written by samples.py. Fixed here and
+# not built from LANDING_DIR at build time: check() points that to a scratch
+# folder, and the build does not make these.
+SAMPLE_IMG = LANDING_DIR / "assets" / "img" / "samples"
+
+
+def sample_cards() -> list[dict]:
+    """The home page samples from content.py, each with its picture and the
+    size the <img> reserves before it loads.
+
+    A sample without its picture stops the build: its card would be empty.
+    """
+    from PIL import Image
+
+    cards = []
+    for one in content.SAMPLES:
+        made = SAMPLE_IMG / f"{one['slug']}.webp"
+        if not made.exists():
+            raise SystemExit(f"Falta la miniatura de la muestra {one['slug']}. "
+                             "Corre: python landing/samples.py")
+        with Image.open(made) as opened:
+            size = opened.size
+        cards.append({**one, "image": f"/assets/img/samples/{made.name}", "size": size})
+    return cards
+
+
 def icon_size(url: str, height: int) -> tuple[int, int]:
     """Las medidas con las que se dibuja un logo, a este alto.
 
@@ -619,7 +645,7 @@ def build() -> list[Path]:
         "footer": content.FOOTER,
         "tutorials": content.TUTORIALS,
         "tutorial_tours": tutorial_tours(),
-        "samples": content.SAMPLES,
+        "samples": sample_cards(),
         "font_faces": faces,
         "social_icons": social,
         # Ordered as PAYMENT_LOGOS, so the footer keeps a stable order.

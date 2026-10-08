@@ -332,21 +332,13 @@ HOME = {
 
 # The sample templates of the home page strip. Each slug is a ZIP in
 # backend/sample_templates/ (a test checks both lists match), and clicking one
-# opens it in the editor. The colour fills the card until each one has its
-# picture.
+# opens it in the editor. Each card shows its picture, made from that ZIP by
+# landing/samples.py.
 SAMPLES = [
-    {"slug": "restaurant", "name": "Restaurante", "color": "#B91C1C"},
-    {"slug": "perfume", "name": "Perfumería", "color": "#DB2777"},
-    {"slug": "hiring", "name": "Reclutamiento", "color": "#0369A1"},
-    {"slug": "real-estate", "name": "Bienes raíces", "color": "#4D7C0F"},
-    {"slug": "aviso", "name": "Aviso", "color": "#3166A7"},
-    {"slug": "oferta", "name": "Oferta", "color": "#C2410C"},
-    {"slug": "boletin", "name": "Boletín", "color": "#0F766E"},
-    {"slug": "convocatoria", "name": "Convocatoria", "color": "#6D28D9"},
-    {"slug": "recordatorio-de-pago", "name": "Recordatorio de pago", "color": "#B45309"},
-    {"slug": "evento", "name": "Evento", "color": "#BE185D"},
-    {"slug": "bienvenida", "name": "Bienvenida", "color": "#15803D"},
-    {"slug": "cumpleanos", "name": "Cumpleaños", "color": "#1D4ED8"},
+    {"slug": "restaurant", "name": "Restaurante"},
+    {"slug": "perfume", "name": "Perfumería"},
+    {"slug": "hiring", "name": "Reclutamiento"},
+    {"slug": "real-estate", "name": "Bienes raíces"},
 ]
 
 # The tutorials of the "cómo funciona" page: one per section of the panel. The

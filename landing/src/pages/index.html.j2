@@ -139,19 +139,22 @@
       <p class="section__intro">{{ page.steps.intro }}</p>
     </div>
   </div>
-  {#- La tira corre de lado a lado, fuera del shell. Va dos veces seguidas para
-      que el bucle no se note: la segunda, escondida del lector de pantalla y
-      del tabulador, así cada plantilla se recorre una sola vez. Solo CSS. -#}
+  {#- La tira corre de lado a lado, fuera del shell. Va tres veces seguidas para
+      que el bucle no se note: con cuatro plantillas una lista mide menos que
+      una pantalla ancha, y con dos se vería su final. Las copias van escondidas
+      del lector de pantalla y del tabulador, así cada plantilla se recorre una
+      sola vez. Solo CSS. -#}
   <div class="samples">
     <div class="samples__track">
-      {% for copy in (0, 1) %}
+      {% for copy in (0, 1, 2) %}
       <ul class="samples__list"{% if copy %} aria-hidden="true"{% endif %}>
         {% for one in samples %}
         <li>
           <a class="sample" href="{{ panel.base_url }}/templates/sample/{{ one.slug }}"
-             style="--sample: {{ one.color }}"
              aria-label="{{ page.steps.open | replace('{name}', one.name) }}"
              {%- if copy %} tabindex="-1"{% endif %}>
+            <img class="sample__picture" src="{{ one.image }}" alt=""
+                 width="{{ one.size[0] }}" height="{{ one.size[1] }}" loading="lazy">
             <span class="sample__name">{{ one.name }}</span>
           </a>
         </li>

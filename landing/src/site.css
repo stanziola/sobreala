@@ -746,40 +746,52 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 }
 
 /* --------------------------------------------------------- samples (home)
-   La tira de plantillas de muestra, donde estaban los cuatro pasos. Corre sola
-   de lado a lado con solo CSS: la lista va dos veces seguidas y la tira se
-   desplaza la mitad, que es justo una lista, así que el salto no se ve. Cada
-   lista lleva al final el mismo hueco que hay entre tarjetas, para que las dos
-   midan igual. Se para con el ratón encima o el foco dentro, para poder pulsar
-   una sin perseguirla, y con «reducir movimiento» no corre. Sin zoom al pasar
-   el ratón: agrandar la imagen se quitó de Features por lo mismo. */
+   La tira de plantillas de muestra, donde estaban los cuatro pasos. Cada
+   tarjeta es la plantilla misma, en la miniatura que hace landing/samples.py
+   desde su ZIP, con su nombre debajo. Corre sola de lado a lado con solo CSS:
+   la lista va tres veces seguidas y cada una avanza justo su propio ancho, así
+   que el salto no se ve. Tres y no dos: con cuatro plantillas una lista mide
+   1,280 px, menos que una pantalla ancha, y con dos se vería el final de la
+   segunda; con tres no se ve hasta los 2,560 px. Cada lista lleva al final el
+   mismo hueco que hay entre tarjetas, para que todas midan igual. La vuelta
+   dura lo que da unos 70 px por segundo, lo de cuando eran doce. Se para con
+   el ratón encima o el foco dentro, para poder pulsar una sin perseguirla, y
+   con «reducir movimiento» no corre. Sin zoom al pasar el ratón: agrandar la
+   imagen se quitó de Features por lo mismo. */
 .samples {
-  --sample-size: 150px; --sample-gap: 14px;
+  --sample-size: 200px; --sample-gap: 14px;
   overflow: hidden; padding-block: 6px;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
-@media (min-width: 760px) { .samples { --sample-size: 220px; --sample-gap: 20px; } }
-.samples__track { display: flex; width: max-content; animation: samples-run 40s linear infinite; }
+@media (min-width: 760px) { .samples { --sample-size: 300px; --sample-gap: 20px; } }
+.samples__track { display: flex; width: max-content; }
 .samples__list {
   display: flex; gap: var(--sample-gap); padding-right: var(--sample-gap);
   margin: 0; list-style: none;
+  animation: samples-run 18s linear infinite;
 }
-.samples:hover .samples__track,
-.samples:focus-within .samples__track { animation-play-state: paused; }
-@keyframes samples-run { to { transform: translateX(-50%); } }
+.samples:hover .samples__list,
+.samples:focus-within .samples__list { animation-play-state: paused; }
+@keyframes samples-run { to { transform: translateX(-100%); } }
 .sample {
-  display: flex; align-items: flex-end; width: var(--sample-size); aspect-ratio: 1;
-  padding: 16px; border-radius: var(--radius); background: var(--sample);
-  color: #FFFFFF; font-weight: 700; text-decoration: none;
+  display: flex; flex-direction: column; gap: 10px; width: var(--sample-size);
+  border-radius: var(--radius);
+  color: var(--color-ink); font-weight: 700; text-decoration: none;
+}
+/* La miniatura ya viene en 3:4; el recorte desde arriba es por si alguna no. */
+.sample__picture {
+  display: block; width: 100%; height: auto; aspect-ratio: 3 / 4;
+  object-fit: cover; object-position: top;
+  border-radius: var(--radius); background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 .sample:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
 .sample__name { font-size: 1.05rem; line-height: 1.25; }
-/* Quieta: se recorre de lado a mano, y la copia del bucle sobra. */
+/* Quieta: se recorre de lado a mano, y las copias del bucle sobran. */
 @media (prefers-reduced-motion: reduce) {
   .samples { overflow-x: auto; }
-  .samples__track { animation: none; }
+  .samples__list { animation: none; }
   .samples__list[aria-hidden="true"] { display: none; }
 }
 
