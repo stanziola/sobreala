@@ -162,7 +162,7 @@ def test_con_un_anual_solo_se_mejora_en_anual(client, database, outbox, monkeypa
 
 
 def test_planes_dice_obtener_y_la_nota_del_prorrateo():
-    html = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
+    html = (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
     assert "Obtener Plan Negocio" in html and "Empezar con" not in html
     assert "los correos que no usaste se descuentan" in html
     assert 'data-label-to-yearly="Pasar a anual"' in html

@@ -556,12 +556,18 @@ def read_wing_svg() -> str:
 
 PAGES = [
     ("index.html", "index.html.j2", "/", content.HOME),
-    ("how-it-works/index.html", "como-funciona.html.j2", "/how-it-works/", content.HOW),
-    ("pricing/index.html", "precios.html.j2", "/pricing/", content.PRICING),
-    ("about/index.html", "nosotros.html.j2", "/about/", content.ABOUT),
-    ("contact/index.html", "contacto.html.j2", "/contact/", content.CONTACT_PAGE),
     ("privacy/index.html", "legal.html.j2", "/privacy/", content.PRIVACY),
     ("terms/index.html", "legal.html.j2", "/terms/", content.TERMS),
+]
+
+# The pages that became sections of the home page, and the anchor each one
+# lands on. They still answer, because the panel, saved links and search
+# engines know them: each is a page that only sends the visitor on.
+REDIRECTS = [
+    ("pricing/index.html", "/pricing/", "planes", content.PRICING),
+    ("how-it-works/index.html", "/how-it-works/", "como-funciona", content.HOW),
+    ("about/index.html", "/about/", "nosotros", content.ABOUT),
+    ("contact/index.html", "/contact/", "contacto", content.CONTACT_PAGE),
 ]
 
 
@@ -569,19 +575,11 @@ PAGES = [
 # nadie pega los términos en un chat.
 SOCIAL_CARDS = [
     ("home", content.HOME),
-    ("how-it-works", content.HOW),
-    ("pricing", content.PRICING),
-    ("about", content.ABOUT),
-    ("contact", content.CONTACT_PAGE),
 ]
 
 # Qué tarjeta le toca a cada página. Lo que no esté aquí usa el logo.
 OG_IMAGES = {
     "/": "home",
-    "/how-it-works/": "how-it-works",
-    "/pricing/": "pricing",
-    "/about/": "about",
-    "/contact/": "contact",
 }
 
 
@@ -646,6 +644,11 @@ def build() -> list[Path]:
         "tutorials": content.TUTORIALS,
         "tutorial_tours": tutorial_tours(),
         "samples": sample_cards(),
+        # The other sections of the home page, each with its own words.
+        "pricing": content.PRICING,
+        "how": content.HOW,
+        "about": content.ABOUT,
+        "contact_page": content.CONTACT_PAGE,
         "font_faces": faces,
         "social_icons": social,
         # Ordered as PAYMENT_LOGOS, so the footer keeps a stable order.
@@ -666,6 +669,14 @@ def build() -> list[Path]:
             og_image=(f"/assets/img/og/{OG_IMAGES[url]}.png"
                       if url in OG_IMAGES else "/assets/img/logo.png"),
             **shared)
+        target = LANDING_DIR / out_name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(html.rstrip() + "\n", encoding="utf-8", newline="\n")
+        written.append(target)
+
+    for out_name, url, anchor, page in REDIRECTS:
+        html = env.get_template("redirect.html.j2").render(
+            page=page, current_url=url, anchor=anchor, **shared)
         target = LANDING_DIR / out_name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html.rstrip() + "\n", encoding="utf-8", newline="\n")

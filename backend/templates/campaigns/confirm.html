@@ -37,7 +37,7 @@
 {% if blocked %}
 <p class="notice">
   {% for why in blocked %}{{ t('send_blocked_' + why) }} {% endfor %}
-  {% if 'plan' in blocked %}<a href="{{ site_url }}/pricing/">{{ t('welcome_plans') }}</a>{% endif %}
+  {% if 'plan' in blocked %}<a href="{{ site_url }}/#planes">{{ t('welcome_plans') }}</a>{% endif %}
 </p>
 {% endif %}
 

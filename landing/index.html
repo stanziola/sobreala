@@ -72,27 +72,19 @@
 
     <nav class="site-nav" id="site-nav" aria-label="Navegación principal">
       <ul class="site-nav__list">
-        <li>
-          <a class="site-nav__link is-active"
-             href="/" aria-current="page">
+        <li><a class="site-nav__link" href="/#inicio" data-section-link>
             Inicio
           </a>
         </li>
-        <li>
-          <a class="site-nav__link"
-             href="/how-it-works/">
-            Cómo funciona
-          </a>
-        </li>
-        <li>
-          <a class="site-nav__link"
-             href="/pricing/">
+        <li><a class="site-nav__link" href="/#planes" data-section-link>
             Planes
           </a>
         </li>
-        <li>
-          <a class="site-nav__link"
-             href="/about/">
+        <li><a class="site-nav__link" href="/#como-funciona" data-section-link>
+            Cómo funciona
+          </a>
+        </li>
+        <li><a class="site-nav__link" href="/#nosotros" data-section-link>
             Nosotros
           </a>
         </li>
@@ -182,6 +174,7 @@
 <span class="visually-hidden" role="status" id="theme-status"></span>
 
 <main id="content">
+<div class="page-part" id="inicio">
 
 <section class="hero">
   <div class="shell hero__inner">
@@ -195,7 +188,7 @@
         <a class="btn btn--primary btn--lg" href="https://wa.me/50760807972?text=Hola%2C%20me%20interesa%20Sobreala%20para%20mi%20negocio." target="_blank" rel="noopener">
           Contáctanos por WhatsApp
         </a>
-        <a class="btn btn--outline btn--lg" href="/pricing/">Ver los planes</a>
+        <a class="btn btn--outline btn--lg" href="/#planes">Ver los planes</a>
       </div>
       <p class="hero__note">Escríbenos y te acompañamos en tu primera campaña.</p>
     </div>
@@ -880,11 +873,327 @@
       </div>
     </div>
   </div>
-</section><section class="section" aria-labelledby="features-title">
+</section>
+
+</div>
+
+<div class="page-part" id="planes">
+
+<section class="section" aria-labelledby="planes-title">
   <div class="shell">
     <div class="section__head">
-      <h2 class="section__title" id="features-title">Features</h2>
-      <p class="section__intro">Estas son las pantallas con las que trabajas: tus contactos, tus plantillas, tus envíos y lo que pasó con cada correo.</p>
+      <p class="eyebrow">Precios</p>
+      <h2 class="section__title" id="planes-title">Planes</h2>
+      <p class="section__intro">Se ajustan a lo que necesites. Eliges por la cantidad de contactos que tengas, y cada plan te da cinco correos por contacto al mes: suficiente para escribirle a toda tu lista cinco veces.</p>
+    </div><div class="cycle" data-cycle role="group" aria-label="Cómo quieres pagar">
+      <div class="cycle__switch">
+        <button class="cycle__option is-on" type="button" data-cycle-set="monthly"
+                aria-pressed="true">Mensual</button>
+        <button class="cycle__option" type="button" data-cycle-set="yearly"
+                aria-pressed="false">Anual</button>
+      </div>
+      <span class="cycle__save">-20%</span><canvas class="cycle__confetti" data-confetti aria-hidden="true"></canvas>
+    </div>
+
+    <ul class="plans">
+      <li class="plan"
+          data-plan
+          data-monthly="15"
+          data-yearly-monthly="12"
+          data-note-monthly="Total a pagar ahora: $15"
+          data-note-yearly="Total a pagar ahora: $144">
+        <h3 class="plan__name">Básico</h3>
+        <p class="plan__pitch">Para empezar con una lista pequeña.</p>
+        <p class="plan__price"><span class="plan__amount"><span class="plan__currency">$</span><span data-price>15</span></span>
+          <span class="plan__period">/ mes</span>
+        </p>
+        <p class="plan__yearly" data-note>Total a pagar ahora: $15</p>
+        <ul class="plan__list">
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">1,000</span> <span class="plan__label">contactos</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">5,000</span> <span class="plan__label">correos por mes</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">1</span> <span class="plan__label">usuarios de la cuenta</span></li>
+        </ul>
+<a class="btn btn--outline btn--block"
+           data-hide-for-admin data-plan-rank="0"
+           data-label-start="Obtener Plan Básico"
+           data-label-upgrade="Mejorar a Básico"
+           data-label-to-yearly="Pasar a anual"
+           data-label-covered="Ya tienes todas las ventajas"
+           data-label-yearly-only="Solo en anual"
+           data-buy="https://app.sobreala.com/checkout/basico"
+           href="https://app.sobreala.com/checkout/basico">Obtener Plan Básico</a>
+      </li>
+      <li class="plan plan--featured"
+          data-plan
+          data-monthly="25"
+          data-yearly-monthly="20"
+          data-note-monthly="Total a pagar ahora: $25"
+          data-note-yearly="Total a pagar ahora: $240">
+        <span class="plan__badge">
+          <svg class="icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"
+               aria-hidden="true" focusable="false"><path d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4-5.8-3-5.8 3 1.1-6.4L2.6 9.4l6.5-.9z"/></svg>
+          Recomendado</span>
+        <h3 class="plan__name">Negocio</h3>
+        <p class="plan__pitch">Para quien ya envía cada mes y quiere su propio diseño.</p>
+        <p class="plan__price"><span class="plan__amount"><span class="plan__currency">$</span><span data-price>25</span></span>
+          <span class="plan__period">/ mes</span>
+        </p>
+        <p class="plan__yearly" data-note>Total a pagar ahora: $25</p>
+        <ul class="plan__list">
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">3,000</span> <span class="plan__label">contactos</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">15,000</span> <span class="plan__label">correos por mes</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">2</span> <span class="plan__label">usuarios de la cuenta</span></li>
+        </ul>
+<a class="btn btn--primary btn--block"
+           data-hide-for-admin data-plan-rank="1"
+           data-label-start="Obtener Plan Negocio"
+           data-label-upgrade="Mejorar a Negocio"
+           data-label-to-yearly="Pasar a anual"
+           data-label-covered="Ya tienes todas las ventajas"
+           data-label-yearly-only="Solo en anual"
+           data-buy="https://app.sobreala.com/checkout/negocio"
+           href="https://app.sobreala.com/checkout/negocio">Obtener Plan Negocio</a>
+      </li>
+      <li class="plan"
+          data-plan
+          data-monthly="55"
+          data-yearly-monthly="44"
+          data-note-monthly="Total a pagar ahora: $55"
+          data-note-yearly="Total a pagar ahora: $528">
+        <h3 class="plan__name">Empresa</h3>
+        <p class="plan__pitch">Para cooperativas y colegios con una lista grande.</p>
+        <p class="plan__price"><span class="plan__amount"><span class="plan__currency">$</span><span data-price>55</span></span>
+          <span class="plan__period">/ mes</span>
+        </p>
+        <p class="plan__yearly" data-note>Total a pagar ahora: $55</p>
+        <ul class="plan__list">
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">10,000</span> <span class="plan__label">contactos</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">50,000</span> <span class="plan__label">correos por mes</span></li>
+          <li>
+            <span class="plan__check"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
+            <span class="plan__value">3</span> <span class="plan__label">usuarios de la cuenta</span></li>
+        </ul>
+<a class="btn btn--outline btn--block"
+           data-hide-for-admin data-plan-rank="2"
+           data-label-start="Obtener Plan Empresa"
+           data-label-upgrade="Mejorar a Empresa"
+           data-label-to-yearly="Pasar a anual"
+           data-label-covered="Ya tienes todas las ventajas"
+           data-label-yearly-only="Solo en anual"
+           data-buy="https://app.sobreala.com/checkout/empresa"
+           href="https://app.sobreala.com/checkout/empresa">Obtener Plan Empresa</a>
+      </li>
+    </ul><p class="plans__note">Precios con ITBMS incluido.</p>
+    <p class="plans__note">Al mejorar tu plan, los correos que no usaste se descuentan del precio nuevo y tu mes empieza de nuevo.</p>
+  </div>
+</section>
+
+<section class="section section--alt" aria-labelledby="tabla-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">Comparación</p>
+      <h2 class="section__title" id="tabla-title">Todo lo que incluye cada plan</h2>
+    </div>
+    <p class="table-hint" aria-hidden="true">Desliza para ver todos los planes</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Tabla comparativa de planes">
+      <table class="compare">
+        <thead>
+          <tr>
+            <th scope="col"><span class="visually-hidden">Característica</span></th>
+            <th scope="col">Básico</th>
+            <th scope="col">Negocio</th>
+            <th scope="col">Empresa</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Precio mensual</th>
+            <td>$15</td>
+            <td>$25</td>
+            <td>$55</td>
+          </tr>
+          <tr>
+            <th scope="row">Precio anual</th>
+            <td>$144</td>
+            <td>$240</td>
+            <td>$528</td>
+          </tr>
+          <tr>
+            <th scope="row">Contactos</th>
+            <td>
+1,000            </td>
+            <td>
+3,000            </td>
+            <td>
+10,000            </td>
+          </tr>
+          <tr>
+            <th scope="row">Correos por mes</th>
+            <td>
+5,000            </td>
+            <td>
+15,000            </td>
+            <td>
+50,000            </td>
+          </tr>
+          <tr>
+            <th scope="row">Etiquetas</th>
+            <td>
+1            </td>
+            <td>
+2            </td>
+            <td>
+4            </td>
+          </tr>
+          <tr>
+            <th scope="row">Columnas de datos</th>
+            <td>
+1            </td>
+            <td>
+5            </td>
+            <td>
+10            </td>
+          </tr>
+          <tr>
+            <th scope="row">Crear plantillas en el editor</th>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Correos sin marca de agua</th>
+            <td>
+<span class="no" role="img" aria-label="No incluido">—</span>
+            </td>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Estadísticas de cada campaña</th>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Exportar a CSV y PDF</th>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+            <td>
+<span class="yes" role="img" aria-label="Incluido">✓</span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Usuarios de la cuenta</th>
+            <td>
+1            </td>
+            <td>
+2            </td>
+            <td>
+3            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section><section class="section" aria-labelledby="detalle-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">En detalle</p>
+      <h2 class="section__title" id="detalle-title">Qué significa cada fila</h2>
+      <p class="section__intro">Lo que hay detrás de los números de la tabla, para que sepas qué estás eligiendo.</p>
+    </div>
+    <ul class="grid grid--2">
+      <li class="note-card">
+        <h3 class="note-card__title">Contactos</h3>
+        <p>Las personas que tienes guardadas. Tienes una sola lista y cada dirección está en ella una sola vez, aunque le pongas varias etiquetas. Quien anula su suscripción deja de ocupar lugar: si tu plan son 3,000 contactos, son 3,000 personas a las que puedes escribirle.</p>
+      </li>
+      <li class="note-card">
+        <h3 class="note-card__title">Etiquetas</h3>
+        <p>No manejas listas separadas: es una sola lista y las etiquetas son las que la dividen. A cada contacto le pones las que quieras (colaborador, empleado, junta directiva, estudiante, profesor). Al enviar un correo eliges toda la lista o las etiquetas que quieras, y quien lleve más de una de las marcadas recibe un solo correo. El número dice cuántas etiquetas distintas puedes crear.</p>
+      </li>
+      <li class="note-card">
+        <h3 class="note-card__title">Columnas de datos</h3>
+        <p>Lo que guardas de cada persona además de su correo y su nombre: su ciudad, su número de socio, cuánto debe, cuándo vence. Las creas tú, con el nombre que quieras, y el número de la tabla indica cuántas columnas adicionales puedes guardar en tu base.</p>
+      </li>
+      <li class="note-card">
+        <h3 class="note-card__title">Crear plantillas en el editor</h3>
+        <p>Armas tu correo como una diapositiva: pones textos, botones e imágenes donde quieras, con tus colores y tus fuentes. Las imágenes van de fondo y el texto encima, que es como llega igual a Gmail, a Outlook y al teléfono. Va en todos los planes, y cada plantilla se guarda para usarla las veces que quieras.</p>
+      </li>
+      <li class="note-card">
+        <h3 class="note-card__title">Exportar a CSV y PDF</h3>
+        <p>Puedes descargar tus estadísticas y tu base de datos como CSV y PDF, cuando quieras.</p>
+      </li>
+      <li class="note-card">
+        <h3 class="note-card__title">Usuarios de la cuenta</h3>
+        <p>Cuántas personas de tu empresa entran, cada una con su correo y su contraseña, y el dueño cuenta. Él puede todo: el plan, el pago y los datos de la cuenta. A cada persona le marcas lo suyo: ver las cifras, subir contactos, armar plantillas o mandar campañas.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="section section--alt" aria-labelledby="included-title">
+  <div class="shell shell--narrow">
+    <div class="included">
+      <h2 class="included__title" id="included-title">En todos los planes, sin excepción</h2>
+      <ul class="included__list">
+        <li>Botón para anular la suscripción en cada correo</li>
+        <li>Contactos sin duplicados, aunque lleven varias etiquetas</li>
+        <li>Lista de bajas y rebotes gestionada automáticamente</li>
+        <li>Estadísticas de cada campaña, exportables</li>
+        <li>Acompañamiento en tu primera campaña</li>
+        <li>Sin permanencia mínima: cancelas cuando quieras</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</div>
+<div class="page-part" id="como-funciona"><section class="section" aria-labelledby="como-funciona-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">Cómo funciona</p>
+      <h2 class="section__title" id="como-funciona-title">De tu base de datos al correo de tus clientes</h2>
+      <p class="section__intro">Así vas a usar Sobreala, paso a paso. Sin instalar nada y sin pelear con configuraciones técnicas.</p>
+    </div>
+    <div class="section__sub">
+      <h3 class="section__subtitle" id="features-title">Features</h3>
+      <p>Estas son las pantallas con las que trabajas: tus contactos, tus plantillas, tus envíos y lo que pasó con cada correo.</p>
     </div><div class="tour" data-tour
          data-tour-zoom="Captura del panel, en grande"
          data-tour-close="Cerrar la captura">
@@ -1092,12 +1401,1158 @@
   </div>
   <div class="shell">
     <p class="section__actions">
-      <a class="btn btn--primary btn--lg" href="/how-it-works/">Ver tutorial</a>
+      <a class="btn btn--primary btn--lg" href="#tutorials">Ver tutorial</a>
     </p>
+  </div>
+</section><section class="section" id="tutorials" aria-labelledby="tutoriales-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">Tutoriales</p>
+      <h2 class="section__title" id="tutoriales-title">Aprende a usar el panel, pulsando</h2>
+      <p class="section__intro">Estas son las pantallas de verdad. Pulsa el punto que late y avanzas, como si estuvieras dentro de tu cuenta.</p>
+    </div>
+
+    <div class="tutorial" data-tutorial>
+      <nav class="tutorial__tabs" aria-label="Tutoriales">
+        <a class="tutorial__tab" href="#contacts" data-tab="contacts">Contactos</a>
+        <a class="tutorial__tab" href="#templates" data-tab="templates">Plantillas</a>
+        <a class="tutorial__tab" href="#campaigns" data-tab="campaigns">Enviar correos</a>
+        <a class="tutorial__tab" href="#stats" data-tab="stats">Estadísticas</a>
+        <a class="tutorial__tab" href="#settings" data-tab="settings">Configuración</a>
+      </nav>
+      <p class="visually-hidden" data-tutorial-status aria-live="polite"></p>
+
+      <article class="guide" id="contacts" data-guide="contacts">
+        <header class="guide__head">
+          <h3 class="guide__name">Contactos</h3>
+          <p class="guide__lead">Crea una etiqueta e importa tu lista desde un archivo CSV.</p>
+        </header>
+        <ol class="guide__steps">
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-1.webp"
+                   alt="Pantalla del panel: Abre el menú con el nombre de tu empresa"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-1.webp"
+                   alt="Pantalla del panel: Abre el menú con el nombre de tu empresa"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 86.91; --y: 1.75; --w: 10.9; --h: 5.29"
+                    data-label="Pulsar: Abre el menú con el nombre de tu empresa"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 1 de 10</p>
+                <p class="guide-step__do">Abre el menú con el nombre de tu empresa</p>
+                <p class="guide-step__why">Desde ahí llegas a todo el panel.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-2.webp"
+                   alt="Pantalla del panel: Entra a Contactos"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-2.webp"
+                   alt="Pantalla del panel: Entra a Contactos"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 80.39; --y: 20.25; --w: 16.72; --h: 5.54"
+                    data-label="Pulsar: Entra a Contactos"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 2 de 10</p>
+                <p class="guide-step__do">Entra a Contactos</p>
+                <p class="guide-step__why">Es tu lista: quién recibe tus correos.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-3.webp"
+                   alt="Pantalla del panel: Abre Etiquetas"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-3.webp"
+                   alt="Pantalla del panel: Abre Etiquetas"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 34.84; --w: 14.84; --h: 5.79"
+                    data-label="Pulsar: Abre Etiquetas"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 3 de 10</p>
+                <p class="guide-step__do">Abre Etiquetas</p>
+                <p class="guide-step__why">Las etiquetas son tus grupos: clientes, socios, boletín. Se crean primero y después se eligen.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-4.webp"
+                   alt="Pantalla del panel: Escribe el nombre y pulsa Crear"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-4.webp"
+                   alt="Pantalla del panel: Escribe el nombre y pulsa Crear"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 20.39; --y: 87.35; --w: 6.98; --h: 6.2"
+                    data-label="Pulsar: Escribe el nombre y pulsa Crear"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 4 de 10</p>
+                <p class="guide-step__do">Escribe el nombre y pulsa Crear</p>
+                <p class="guide-step__why">Aquí la llamamos «Socios».</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-5.webp"
+                   alt="Pantalla del panel: Ve a Importar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-5.webp"
+                   alt="Pantalla del panel: Ve a Importar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 28.3; --w: 14.84; --h: 5.79"
+                    data-label="Pulsar: Ve a Importar"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 5 de 10</p>
+                <p class="guide-step__do">Ve a Importar</p>
+                <p class="guide-step__why">La etiqueta ya quedó creada. Ahora sube la lista que ya tienes, en un archivo CSV.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-6.webp"
+                   alt="Pantalla del panel: Elige tu archivo"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-6.webp"
+                   alt="Pantalla del panel: Elige tu archivo"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 20.39; --y: 40.62; --w: 10.22; --h: 5.13"
+                    data-label="Pulsar: Elige tu archivo"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 6 de 10</p>
+                <p class="guide-step__do">Elige tu archivo</p>
+                <p class="guide-step__why">Un CSV con una columna de correos. Si trae nombres, también los leemos.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-7.webp"
+                   alt="Pantalla del panel: Di dónde va cada columna"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-7.webp"
+                   alt="Pantalla del panel: Di dónde va cada columna"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 58.75; --y: 61.7; --w: 37.58; --h: 5.75"
+                    data-label="Pulsar: Di dónde va cada columna"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 7 de 10</p>
+                <p class="guide-step__do">Di dónde va cada columna</p>
+                <p class="guide-step__why">El correo y el nombre se reconocen solos. Las demás las eliges tú, o las dejas fuera.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-8.webp"
+                   alt="Pantalla del panel: Cuéntanos de dónde salió la lista"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-8.webp"
+                   alt="Pantalla del panel: Cuéntanos de dónde salió la lista"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 21.88; --y: 47.13; --w: 43.75; --h: 5.75"
+                    data-label="Pulsar: Cuéntanos de dónde salió la lista"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 8 de 10</p>
+                <p class="guide-step__do">Cuéntanos de dónde salió la lista</p>
+                <p class="guide-step__why">Lo guardamos con cada contacto: es lo que se enseña si alguien reclama. Marca también su etiqueta.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-9.webp"
+                   alt="Pantalla del panel: Pulsa Importar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-9.webp"
+                   alt="Pantalla del panel: Pulsa Importar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 20.39; --y: 70.25; --w: 9.12; --h: 6.2"
+                    data-label="Pulsar: Pulsa Importar"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 9 de 10</p>
+                <p class="guide-step__do">Pulsa Importar</p>
+                <p class="guide-step__why">En unos segundos te decimos qué pasó con tu archivo.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/contacts-10.webp"
+                   alt="Pantalla del panel: Esto pasó con tu archivo"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/contacts-10.webp"
+                   alt="Pantalla del panel: Esto pasó con tu archivo"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 10 de 10</p>
+                <p class="guide-step__do">Esto pasó con tu archivo</p>
+                <p class="guide-step__why">Cuántas filas se leyeron, cuántos contactos son nuevos y cuántos ya estaban.</p>
+                <button class="btn btn--primary guide-step__finish" type="button"
+                        data-finish hidden>Terminar</button>
+              </div>
+            </div>
+          </li>
+          <li class="guide-done" data-done>
+            <p class="guide-done__title">¡Listo!</p>
+            <p class="guide-done__text">Tu lista ya está dentro, con su etiqueta y su origen. Si una dirección venía repetida, quedó una sola vez.</p>
+            <p class="guide-done__actions">
+              <button class="btn btn--outline" type="button" data-again hidden>Repetir</button>
+              <a class="btn btn--primary" href="#templates" data-goto="templates">Siguiente tutorial: Plantillas</a>
+            </p>
+          </li>
+        </ol>
+      </article>
+      <article class="guide" id="templates" data-guide="templates">
+        <header class="guide__head">
+          <h3 class="guide__name">Plantillas</h3>
+          <p class="guide__lead">Arma tu correo en el editor, míralo y guárdalo.</p>
+        </header>
+        <ol class="guide__steps">
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-1.webp"
+                   alt="Pantalla del panel: Abre el menú con el nombre de tu empresa"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-1.webp"
+                   alt="Pantalla del panel: Abre el menú con el nombre de tu empresa"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 86.91; --y: 1.75; --w: 10.9; --h: 5.29"
+                    data-label="Pulsar: Abre el menú con el nombre de tu empresa"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 1 de 10</p>
+                <p class="guide-step__do">Abre el menú con el nombre de tu empresa</p>
+                <p class="guide-step__why">Las plantillas están ahí, debajo de Contactos.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-2.webp"
+                   alt="Pantalla del panel: Entra a Plantillas"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-2.webp"
+                   alt="Pantalla del panel: Entra a Plantillas"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 80.39; --y: 25.79; --w: 16.72; --h: 5.54"
+                    data-label="Pulsar: Entra a Plantillas"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 2 de 10</p>
+                <p class="guide-step__do">Entra a Plantillas</p>
+                <p class="guide-step__why">Son los correos que armas para mandar.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-3.webp"
+                   alt="Pantalla del panel: Pulsa Crear plantilla"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-3.webp"
+                   alt="Pantalla del panel: Pulsa Crear plantilla"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 30.3; --w: 48.2; --h: 7.86"
+                    data-label="Pulsar: Pulsa Crear plantilla"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 3 de 10</p>
+                <p class="guide-step__do">Pulsa Crear plantilla</p>
+                <p class="guide-step__why">Se abre el editor con una hoja en blanco.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-4.webp"
+                   alt="Pantalla del panel: Agrega un texto"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-4.webp"
+                   alt="Pantalla del panel: Agrega un texto"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 77.73; --w: 13.28; --h: 5.95"
+                    data-label="Pulsar: Agrega un texto"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 4 de 10</p>
+                <p class="guide-step__do">Agrega un texto</p>
+                <p class="guide-step__why">Con estos botones pones textos, botones, imágenes y figuras en la hoja.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-5.webp"
+                   alt="Pantalla del panel: Doble clic para escribir"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-5.webp"
+                   alt="Pantalla del panel: Doble clic para escribir"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 37.19; --y: 47.87; --w: 40.62; --h: 4.25"
+                    data-label="Pulsar: Doble clic para escribir"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 5 de 10</p>
+                <p class="guide-step__do">Doble clic para escribir</p>
+                <p class="guide-step__why">Arrástralo a donde quieras. Arriba cambias su letra, su tamaño y su color.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-6.webp"
+                   alt="Pantalla del panel: Así se ve una ya armada: pulsa el título"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-6.webp"
+                   alt="Pantalla del panel: Así se ve una ya armada: pulsa el título"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 37.19; --y: 47.24; --w: 40.62; --h: 5.5"
+                    data-label="Pulsar: Así se ve una ya armada: pulsa el título"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 6 de 10</p>
+                <p class="guide-step__do">Así se ve una ya armada: pulsa el título</p>
+                <p class="guide-step__why">Al pulsar algo, la barra de arriba enseña lo que puedes cambiarle.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-7.webp"
+                   alt="Pantalla del panel: Pulsa Previsualización"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-7.webp"
+                   alt="Pantalla del panel: Pulsa Previsualización"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 54.92; --y: 36.13; --w: 11.74; --h: 6.2"
+                    data-label="Pulsar: Pulsa Previsualización"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 7 de 10</p>
+                <p class="guide-step__do">Pulsa Previsualización</p>
+                <p class="guide-step__why">Ves el correo tal como va a llegar, también en el teléfono.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-8.webp"
+                   alt="Pantalla del panel: Ciérrala cuando termines de mirar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-8.webp"
+                   alt="Pantalla del panel: Ciérrala cuando termines de mirar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 95.31; --y: 2.75; --w: 2.81; --h: 4.5"
+                    data-label="Pulsar: Ciérrala cuando termines de mirar"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 8 de 10</p>
+                <p class="guide-step__do">Ciérrala cuando termines de mirar</p>
+                <p class="guide-step__why">El botón para anular la suscripción se agrega solo, en todos los correos.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-9.webp"
+                   alt="Pantalla del panel: Pulsa Guardar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-9.webp"
+                   alt="Pantalla del panel: Pulsa Guardar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 90.09; --y: 36.13; --w: 8.66; --h: 6.2"
+                    data-label="Pulsar: Pulsa Guardar"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 9 de 10</p>
+                <p class="guide-step__do">Pulsa Guardar</p>
+                <p class="guide-step__why">Se puede guardar cuando la revisión de arriba está en verde: es lo que evita que tu correo vaya a spam.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/templates-10.webp"
+                   alt="Pantalla del panel: Tu plantilla quedó guardada"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/templates-10.webp"
+                   alt="Pantalla del panel: Tu plantilla quedó guardada"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 10 de 10</p>
+                <p class="guide-step__do">Tu plantilla quedó guardada</p>
+                <p class="guide-step__why">Aparece en tu lista, lista para usarla en un envío.</p>
+                <button class="btn btn--primary guide-step__finish" type="button"
+                        data-finish hidden>Terminar</button>
+              </div>
+            </div>
+          </li>
+          <li class="guide-done" data-done>
+            <p class="guide-done__title">¡Listo!</p>
+            <p class="guide-done__text">Tu plantilla está guardada y lista para enviar. También puedes cargar una que alguien te pasó, con «Cargar plantilla (ZIP)».</p>
+            <p class="guide-done__actions">
+              <button class="btn btn--outline" type="button" data-again hidden>Repetir</button>
+              <a class="btn btn--primary" href="#campaigns" data-goto="campaigns">Siguiente tutorial: Enviar correos</a>
+            </p>
+          </li>
+        </ol>
+      </article>
+      <article class="guide" id="campaigns" data-guide="campaigns">
+        <header class="guide__head">
+          <h3 class="guide__name">Enviar correos</h3>
+          <p class="guide__lead">Arma una campaña, elige a quién le llega y mándala.</p>
+        </header>
+        <ol class="guide__steps">
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-1.webp"
+                   alt="Pantalla del panel: Abre el menú con el nombre de tu empresa"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-1.webp"
+                   alt="Pantalla del panel: Abre el menú con el nombre de tu empresa"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 86.91; --y: 1.75; --w: 10.9; --h: 5.29"
+                    data-label="Pulsar: Abre el menú con el nombre de tu empresa"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 1 de 9</p>
+                <p class="guide-step__do">Abre el menú con el nombre de tu empresa</p>
+                <p class="guide-step__why">Enviar correos está justo debajo de Estadísticas.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-2.webp"
+                   alt="Pantalla del panel: Entra a Enviar correos"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-2.webp"
+                   alt="Pantalla del panel: Entra a Enviar correos"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 80.39; --y: 14.71; --w: 16.72; --h: 5.54"
+                    data-label="Pulsar: Entra a Enviar correos"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 2 de 9</p>
+                <p class="guide-step__do">Entra a Enviar correos</p>
+                <p class="guide-step__why">Aquí armas cada campaña.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-3.webp"
+                   alt="Pantalla del panel: Escribe el asunto"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-3.webp"
+                   alt="Pantalla del panel: Escribe el asunto"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 44.61; --w: 43.75; --h: 6.2"
+                    data-label="Pulsar: Escribe el asunto"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 3 de 9</p>
+                <p class="guide-step__do">Escribe el asunto</p>
+                <p class="guide-step__why">Es lo primero que se lee, y muchas veces lo único. Corto y concreto.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-4.webp"
+                   alt="Pantalla del panel: Marca a quién le llega"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-4.webp"
+                   alt="Pantalla del panel: Marca a quién le llega"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 61.07; --w: 16.33; --h: 5.19"
+                    data-label="Pulsar: Marca a quién le llega"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 4 de 9</p>
+                <p class="guide-step__do">Marca a quién le llega</p>
+                <p class="guide-step__why">Puedes marcar varias etiquetas: quien lleve más de una recibe un solo correo. Sin marcar ninguna, le llega a toda tu lista.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-5.webp"
+                   alt="Pantalla del panel: Elige la plantilla"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-5.webp"
+                   alt="Pantalla del panel: Elige la plantilla"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 75.78; --w: 43.75; --h: 5.75"
+                    data-label="Pulsar: Elige la plantilla"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 5 de 9</p>
+                <p class="guide-step__do">Elige la plantilla</p>
+                <p class="guide-step__why">Una de las que guardaste en Plantillas.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-6.webp"
+                   alt="Pantalla del panel: Elige cuándo sale"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-6.webp"
+                   alt="Pantalla del panel: Elige cuándo sale"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 89.77; --w: 1.02; --h: 1.62"
+                    data-label="Pulsar: Elige cuándo sale"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 6 de 9</p>
+                <p class="guide-step__do">Elige cuándo sale</p>
+                <p class="guide-step__why">Ahora mismo, o en la fecha y hora que prefieras.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-7.webp"
+                   alt="Pantalla del panel: Pulsa Guardar la campaña"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-7.webp"
+                   alt="Pantalla del panel: Pulsa Guardar la campaña"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 46.88; --w: 16.19; --h: 6.2"
+                    data-label="Pulsar: Pulsa Guardar la campaña"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 7 de 9</p>
+                <p class="guide-step__do">Pulsa Guardar la campaña</p>
+                <p class="guide-step__why">Queda guardada: la puedes mandar hoy y volver a usarla después.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-8.webp"
+                   alt="Pantalla del panel: Pulsa Enviar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-8.webp"
+                   alt="Pantalla del panel: Pulsa Enviar"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 50.36; --y: 47.58; --w: 5.74; --h: 4.88"
+                    data-label="Pulsar: Pulsa Enviar"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 8 de 9</p>
+                <p class="guide-step__do">Pulsa Enviar</p>
+                <p class="guide-step__why">Antes de salir, el panel te pregunta.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/campaigns-9.webp"
+                   alt="Pantalla del panel: Revisa y confirma"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/campaigns-9.webp"
+                   alt="Pantalla del panel: Revisa y confirma"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 9 de 9</p>
+                <p class="guide-step__do">Revisa y confirma</p>
+                <p class="guide-step__why">Te dice el asunto, a cuántos contactos va y cuántos correos te quedan. Un correo que salió no se puede recoger.</p>
+                <button class="btn btn--primary guide-step__finish" type="button"
+                        data-finish hidden>Terminar</button>
+              </div>
+            </div>
+          </li>
+          <li class="guide-done" data-done>
+            <p class="guide-done__title">¡Listo!</p>
+            <p class="guide-done__text">Al confirmar, sale. Después, en «Campañas enviadas», cada envío tiene su Detalles con lo que pasó con cada persona.</p>
+            <p class="guide-done__actions">
+              <button class="btn btn--outline" type="button" data-again hidden>Repetir</button>
+              <a class="btn btn--primary" href="#stats" data-goto="stats">Siguiente tutorial: Estadísticas</a>
+            </p>
+          </li>
+        </ol>
+      </article>
+      <article class="guide" id="stats" data-guide="stats">
+        <header class="guide__head">
+          <h3 class="guide__name">Estadísticas</h3>
+          <p class="guide__lead">Mira cómo le fue a cada envío y bájalo en CSV o PDF.</p>
+        </header>
+        <ol class="guide__steps">
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/stats-1.webp"
+                   alt="Pantalla del panel: Elige el periodo"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/stats-1.webp"
+                   alt="Pantalla del panel: Elige el periodo"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 28.05; --w: 30.34; --h: 5.75"
+                    data-label="Pulsar: Elige el periodo"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 1 de 6</p>
+                <p class="guide-step__do">Elige el periodo</p>
+                <p class="guide-step__why">De la última hora a los últimos 90 días. Aquí, 30 días.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/stats-2.webp"
+                   alt="Pantalla del panel: Así le fue a tus correos"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/stats-2.webp"
+                   alt="Pantalla del panel: Así le fue a tus correos"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 53.91; --w: 97.5; --h: 13.72"
+                    data-label="Pulsar: Así le fue a tus correos"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 2 de 6</p>
+                <p class="guide-step__do">Así le fue a tus correos</p>
+                <p class="guide-step__why">Cada cifra se compara con el periodo anterior: en verde si mejoró y en rojo si empeoró.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/stats-3.webp"
+                   alt="Pantalla del panel: Pasa el ratón por la gráfica"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/stats-3.webp"
+                   alt="Pantalla del panel: Pasa el ratón por la gráfica"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 32.97; --w: 97.5; --h: 34.12"
+                    data-label="Pulsar: Pasa el ratón por la gráfica"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 3 de 6</p>
+                <p class="guide-step__do">Pasa el ratón por la gráfica</p>
+                <p class="guide-step__why">Cada barra dice cuántos salieron ese día y cuántos rebotaron.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/stats-4.webp"
+                   alt="Pantalla del panel: Bájalo en CSV o en PDF"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/stats-4.webp"
+                   alt="Pantalla del panel: Bájalo en CSV o en PDF"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 37.3; --w: 7.98; --h: 5.13"
+                    data-label="Pulsar: Bájalo en CSV o en PDF"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 4 de 6</p>
+                <p class="guide-step__do">Bájalo en CSV o en PDF</p>
+                <p class="guide-step__why">Lo mismo que ves, para guardarlo o llevarlo a una reunión.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/stats-5.webp"
+                   alt="Pantalla del panel: Abre uno de tus mejores envíos"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/stats-5.webp"
+                   alt="Pantalla del panel: Abre uno de tus mejores envíos"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 48.81; --w: 12.92; --h: 2.38"
+                    data-label="Pulsar: Abre uno de tus mejores envíos"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 5 de 6</p>
+                <p class="guide-step__do">Abre uno de tus mejores envíos</p>
+                <p class="guide-step__why">Están ordenados por aperturas. Pulsa uno para ver a quién le llegó.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/stats-6.webp"
+                   alt="Pantalla del panel: Esto pasó con cada persona"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/stats-6.webp"
+                   alt="Pantalla del panel: Esto pasó con cada persona"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 6 de 6</p>
+                <p class="guide-step__do">Esto pasó con cada persona</p>
+                <p class="guide-step__why">Si le llegó, cuándo lo abrió y cuándo pulsó. Puedes buscar y filtrar por etiqueta.</p>
+                <button class="btn btn--primary guide-step__finish" type="button"
+                        data-finish hidden>Terminar</button>
+              </div>
+            </div>
+          </li>
+          <li class="guide-done" data-done>
+            <p class="guide-done__title">¡Listo!</p>
+            <p class="guide-done__text">Cada envío deja su registro: entregados, aperturas, clics, rebotes y bajas, persona por persona.</p>
+            <p class="guide-done__actions">
+              <button class="btn btn--outline" type="button" data-again hidden>Repetir</button>
+              <a class="btn btn--primary" href="#settings" data-goto="settings">Siguiente tutorial: Configuración</a>
+            </p>
+          </li>
+        </ol>
+      </article>
+      <article class="guide" id="settings" data-guide="settings">
+        <header class="guide__head">
+          <h3 class="guide__name">Configuración</h3>
+          <p class="guide__lead">Tu dirección postal, tu seguridad, tu equipo y tu plan.</p>
+        </header>
+        <ol class="guide__steps">
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/settings-1.webp"
+                   alt="Pantalla del panel: Abre el menú con el nombre de tu empresa"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/settings-1.webp"
+                   alt="Pantalla del panel: Abre el menú con el nombre de tu empresa"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 86.91; --y: 1.75; --w: 10.9; --h: 5.29"
+                    data-label="Pulsar: Abre el menú con el nombre de tu empresa"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 1 de 8</p>
+                <p class="guide-step__do">Abre el menú con el nombre de tu empresa</p>
+                <p class="guide-step__why">Configuración está al final.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/settings-2.webp"
+                   alt="Pantalla del panel: Entra a Configuración"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/settings-2.webp"
+                   alt="Pantalla del panel: Entra a Configuración"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 80.39; --y: 31.33; --w: 16.72; --h: 5.54"
+                    data-label="Pulsar: Entra a Configuración"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 2 de 8</p>
+                <p class="guide-step__do">Entra a Configuración</p>
+                <p class="guide-step__why">Tu cuenta, tu seguridad, tus avisos y tu facturación.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/settings-3.webp"
+                   alt="Pantalla del panel: Escribe tu dirección postal"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/settings-3.webp"
+                   alt="Pantalla del panel: Escribe tu dirección postal"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 71.55; --y: 57.57; --w: 24.78; --h: 6.2"
+                    data-label="Pulsar: Escribe tu dirección postal"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 3 de 8</p>
+                <p class="guide-step__do">Escribe tu dirección postal</p>
+                <p class="guide-step__why">Sale al pie de tus correos, porque la ley la pide. Sin ella no se envía. Un apartado postal sirve.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/settings-4.webp"
+                   alt="Pantalla del panel: Abre Seguridad"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/settings-4.webp"
+                   alt="Pantalla del panel: Abre Seguridad"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 28.3; --w: 14.84; --h: 5.79"
+                    data-label="Pulsar: Abre Seguridad"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 4 de 8</p>
+                <p class="guide-step__do">Abre Seguridad</p>
+                <p class="guide-step__why">Tu contraseña, tus dispositivos y tu equipo.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/settings-5.webp"
+                   alt="Pantalla del panel: Activa la autenticación de múltiples factores"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/settings-5.webp"
+                   alt="Pantalla del panel: Activa la autenticación de múltiples factores"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 89.81; --y: 43.69; --w: 6.52; --h: 5.13"
+                    data-label="Pulsar: Activa la autenticación de múltiples factores"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 5 de 8</p>
+                <p class="guide-step__do">Activa la autenticación de múltiples factores</p>
+                <p class="guide-step__why">Además de tu contraseña, un código de una app en tu teléfono. Recomendado.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/settings-6.webp"
+                   alt="Pantalla del panel: Dale entrada a tu equipo"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/settings-6.webp"
+                   alt="Pantalla del panel: Dale entrada a tu equipo"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 86.39; --y: 69.76; --w: 9.94; --h: 4.88"
+                    data-label="Pulsar: Dale entrada a tu equipo"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 6 de 8</p>
+                <p class="guide-step__do">Dale entrada a tu equipo</p>
+                <p class="guide-step__why">Cada persona con su correo y su contraseña. Tú decides lo que puede hacer.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/settings-7.webp"
+                   alt="Pantalla del panel: Abre Facturación"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/settings-7.webp"
+                   alt="Pantalla del panel: Abre Facturación"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <span class="guide-step__ring" data-spot
+                    style="--x: 1.25; --y: 41.38; --w: 14.84; --h: 5.79"
+                    data-label="Pulsar: Abre Facturación"></span>
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 7 de 8</p>
+                <p class="guide-step__do">Abre Facturación</p>
+                <p class="guide-step__why">Tu plan, hasta cuándo va y lo que has pagado.</p>
+              </div>
+            </div>
+          </li>
+          <li class="guide-step" data-step>
+            <div class="guide-step__screen" data-screen><div class="guide-step__frame" data-frame><div class="guide-step__zoom" data-zoom>
+              <img class="guide-step__shot guide-step__shot--light"
+                   src="/assets/img/tutorial/light/settings-8.webp"
+                   alt="Pantalla del panel: Aquí está tu plan"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              <img class="guide-step__shot guide-step__shot--dark"
+                   src="/assets/img/tutorial/dark/settings-8.webp"
+                   alt="Pantalla del panel: Aquí está tu plan"
+                   width="1280" height="800" decoding="async" loading="lazy">
+              </div></div>
+              <div class="guide-step__tip" data-tip>
+                <p class="guide-step__count">Paso 8 de 8</p>
+                <p class="guide-step__do">Aquí está tu plan</p>
+                <p class="guide-step__why">Con su fecha, los métodos de pago y el historial de compras.</p>
+                <button class="btn btn--primary guide-step__finish" type="button"
+                        data-finish hidden>Terminar</button>
+              </div>
+            </div>
+          </li>
+          <li class="guide-done" data-done>
+            <p class="guide-done__title">¡Listo!</p>
+            <p class="guide-done__text">Eso es todo lo que hay que dejar listo. Cuando quieras, contrata tu plan desde la página de planes.</p>
+            <p class="guide-done__actions">
+              <button class="btn btn--outline" type="button" data-again hidden>Repetir</button>
+              <a class="btn btn--primary" href="https://app.sobreala.com/signup">Crear mi cuenta</a>
+            </p>
+          </li>
+        </ol>
+      </article>
+
+      <div class="tutorial__controls" data-controls hidden>
+        <button class="btn btn--outline" type="button" data-back>Atrás</button>
+        <button class="btn btn--outline" type="button" data-restart>Empezar de nuevo</button>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="section" aria-labelledby="faq-title">
+<section class="section section--alt" aria-labelledby="envio-title">
+  <div class="shell split">
+    <div class="split__text">
+      <p class="eyebrow">El envío</p>
+      <h2 class="section__title" id="envio-title">Los correos salen con el nombre y el correo de tu empresa</h2>
+      <p class="section__intro">Muchos negocios no tienen dominio propio, así que no te pedimos uno. Tus correos salen desde un subdominio de Sobreala, pero quien los recibe ve el nombre de tu negocio como remitente, y si responde, la respuesta llega a tu correo de siempre.</p>
+      <p class="note">Si ya tienes dominio propio, lo configuramos contigo durante la activación para que los correos salgan desde él.</p>
+    </div>
+    <div class="split__aside">
+      <div class="mail-card">
+        <p class="mail-card__row">
+          <span class="mail-card__label">De</span>
+          <span class="mail-card__value">Tu Empresa &lt;tuempresa@envios.sobreala.com&gt;</span>
+        </p>
+        <p class="mail-card__row">
+          <span class="mail-card__label">Responder a</span>
+          <span class="mail-card__value">tuempresa@gmail.com</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="cuidamos-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">Lo que cuidamos por ti</p>
+      <h2 class="section__title" id="cuidamos-title">Reglas que funcionan solas</h2>
+      <p class="section__intro">Hay cosas que si se hacen mal terminan con tus correos en la carpeta de spam. Estas van incluidas y no dependen de que te acuerdes.</p>
+    </div>
+    <ul class="grid grid--2">
+      <li class="note-card note-card--check">
+        <h3 class="note-card__title">Botón de anular suscripción, siempre</h3>
+        <p>El enlace para dejar de recibir correos se agrega en el envío, es único para cada persona y va en todos los planes. No se puede quitar.</p>
+      </li>
+      <li class="note-card note-card--check">
+        <h3 class="note-card__title">Nadie recibe la misma campaña dos veces</h3>
+        <p>Si una persona lleva tres de tus etiquetas y la campaña va a las tres, recibe una sola copia y te cuesta un solo envío. Otra campaña distinta, más adelante, sí le llega.</p>
+      </li>
+      <li class="note-card note-card--check">
+        <h3 class="note-card__title">Rebotes y quejas fuera</h3>
+        <p>Las direcciones que rebotan o marcan tu correo como spam salen de tus envíos de forma permanente. Reimportarlas no las reactiva.</p>
+      </li>
+      <li class="note-card note-card--check">
+        <h3 class="note-card__title">Sin sorpresas al llegar al límite</h3>
+        <p>Te avisamos al 80% de tu cuota. Si la agotas a mitad de campaña, se pausa en vez de fallar, y al empezar el mes o al subir de plan, sigue desde donde se quedó.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+</div>
+<section class="section section--alt page-part" id="nosotros" aria-labelledby="nosotros-title">
+  <div class="shell shell--narrow prose">
+    <div class="section__head">
+      <p class="eyebrow">Nosotros</p>
+      <h2 class="section__title" id="nosotros-title">Quiénes somos y por qué hacemos esto</h2>
+      <p class="section__intro">Sobreala se construye para negocios y organizaciones que ya tienen una lista de correos guardada en alguna parte y no tienen cómo usarla.</p>
+    </div>
+    <section class="prose__block">
+      <h3 class="prose__title">¿Qué es Sobreala?</h3>
+      <p>Sobreala es una plataforma de email marketing: un panel donde una empresa sube sus contactos, arma un correo y lo envía a toda su lista de una vez. Ofertas, recordatorios, convocatorias, boletines.</p>
+    </section>
+    <section class="prose__block">
+      <h3 class="prose__title">¿Para quién?</h3>
+      <p>Sobre todo para organizaciones que ya juntaron una lista por otra razón: cooperativas de ahorro y crédito con sus socios, colegios privados con los padres, gremios con sus miembros, universidades con sus estudiantes. También comercios y PyMEs que llevan tiempo anotando correos de clientes.</p>
+      <p>Si todavía no tienes lista, eso también nos interesa: ayudarte a construirla es parte del trabajo.</p>
+    </section>
+    <section class="prose__block">
+      <h3 class="prose__title">¿Por qué?</h3>
+      <p>Una organización con dos mil correos guardados en una hoja de cálculo tiene, sin saberlo, su canal más directo. No depende de un algoritmo, no se pierde entre publicaciones y llega a quien ya levantó la mano.</p>
+      <p>Lo que falta casi nunca es la lista. Es una forma sencilla de escribirle sin terminar en spam ni pasar la tarde copiando y pegando.</p>
+    </section>
+    <section class="prose__block">
+      <h3 class="prose__title">¿Cómo lo hacemos?</h3>
+      <p>Tus correos no salen de un servidor de correo cualquiera ni de una cuenta de empresa. Salen por Amazon SES, la infraestructura de envío masivo de Amazon, a través de su API. Un servidor propio se topa con unos 2,000 correos diarios y quema la reputación del dominio en la primera campaña grande.</p>
+      <p>El dominio desde el que sales va firmado con SPF, DKIM y DMARC, que es lo que Gmail y Outlook revisan antes de decidir si tu correo entra a la bandeja o al spam. Tú no configuras nada de eso: si no tienes dominio propio, envías desde un subdominio nuestro ya autenticado.</p>
+      <p>Cada cuenta va aislada de las demás. Los envíos se separan por cliente, así que los rebotes de uno no arrastran la entregabilidad del resto, y la lista de bajas es tuya y no global: si alguien se da de baja de un colegio, sigue recibiendo los correos de su cooperativa.</p>
+      <p>Las reglas que cuidan tu reputación vienen activadas de fábrica. Cada correo lleva su enlace de baja, los contactos no se duplican, y quien rebota o marca tu correo como spam queda fuera de tus envíos. Si una cuenta pasa del 3% de rebotes o del 0.05% de quejas, su envío se pausa solo antes de que el problema crezca. Nada de eso se configura ni se puede apagar.</p>
+    </section>
+    <section class="prose__block">
+      <h3 class="prose__title">¿En qué punto estamos?</h3>
+      <p>Sobreala está en construcción. Este sitio presenta el proyecto y los planes. La plataforma se está desarrollando y las primeras cuentas se abrirán poco a poco, acompañando a cada cliente en su primera campaña.</p>
+    </section>
+  </div>
+</section>
+<section class="section page-part" id="contacto" aria-labelledby="contacto-title">
+  <div class="shell shell--narrow">
+    <div class="section__head">
+      <p class="eyebrow">Contacto</p>
+      <h2 class="section__title" id="contacto-title">Hablemos de tu lista</h2>
+      <p class="section__intro">Escríbenos y te decimos en dos minutos si Sobreala te sirve. Sin compromiso y sin formularios largos.</p>
+    </div>
+    <ul class="ways">
+      <li class="way">
+        <a class="way__link" href="https://wa.me/50760807972?text=Hola%2C%20me%20interesa%20Sobreala%20para%20mi%20negocio." target="_blank" rel="noopener">
+          <span class="icon icon--mask" style="--icon: url('/assets/img/social/whatsapp.svg')" aria-hidden="true"></span>
+          <span class="way__text">
+            <span class="way__title">WhatsApp</span>
+            <span class="way__value">+507 6080-7972</span>
+          </span>
+        </a>
+        <p class="way__detail">Lo más rápido. Contestamos el mismo día hábil.</p>
+      </li>
+      <li class="way">
+<button class="way__link" type="button" data-copy="info@sobreala.com"
+                aria-label="Copiar info@sobreala.com">
+<svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="m3 6.5 9 6 9-6"/></svg>          <span class="way__text">
+            <span class="way__title">Correo</span>
+            <span class="way__value">info@sobreala.com</span>
+          </span>
+          <span class="way__done" aria-hidden="true">Copiado</span>
+        </button>
+        <span class="visually-hidden" role="status" data-copy-status></span>
+        <p class="way__detail">Para lo que necesite quedar por escrito, como una cotización o los datos de tu organización.</p>
+      </li>
+      <li class="way">
+        <a class="way__link" href="https://instagram.com/sobreala" target="_blank" rel="noopener">
+          <span class="icon icon--mask" style="--icon: url('/assets/img/social/instagram.svg')" aria-hidden="true"></span>
+          <span class="way__text">
+            <span class="way__title">Instagram</span>
+            <span class="way__value">@sobreala</span>
+          </span>
+        </a>
+        <p class="way__detail">Ahí publicamos ejemplos de piezas y novedades.</p>
+      </li>
+    </ul>
+
+    <div class="prose">
+      <section class="prose__block">
+        <h3 class="prose__title">Quién contesta</h3>
+        <p>Sobreala lo lleva <strong>Luis Stanziola</strong>, desde Santiago de Veraguas. No hay centro de llamadas: escribes y te contesta la misma persona que va a configurar tu cuenta.</p>
+        <p>Atendemos de <strong>lunes a viernes</strong>. Si escribes un fin de semana, te respondemos el lunes.</p>
+      </section>
+
+      <section class="prose__block">
+        <h3 class="prose__title">¿Ya tienes cuenta?</h3>
+        <p>Si es algo de tu cuenta, entra al panel: ahí están tus datos, tu plan y tus dispositivos conectados.</p>
+        <p><a class="btn btn--outline" href="https://app.sobreala.com/login">Ingresar</a></p>
+      </section>
+    </div>
+  </div>
+</section>
+<section class="section section--alt" id="preguntas" aria-labelledby="faq-title">
   <div class="shell shell--narrow">
     <p class="eyebrow">Preguntas frecuentes</p>
     <h2 class="section__title" id="faq-title">Lo que suelen preguntarnos</h2>
@@ -1156,6 +2611,51 @@
           <div class="faq__a"><p>No hace falta: la armas tú en el editor, con tu logo, tus colores y tus fotos. Y si alguien te la prepara, te pasa el archivo y la sigues editando tú.</p></div>
         </details>
       </li>
+      <li class="faq__item">
+        <details>
+          <summary class="faq__q">
+            <span>¿Qué pasa si no uso todos mis correos del mes?</span>
+            <span class="faq__mark" aria-hidden="true"></span>
+          </summary>
+          <div class="faq__a"><p>Los correos que no uses pasan al mes siguiente y vencen ahí. Al enviar se gastan primero los acumulados, para que no se pierdan.</p></div>
+        </details>
+      </li>
+      <li class="faq__item">
+        <details>
+          <summary class="faq__q">
+            <span>¿Puedo cambiar de plan después?</span>
+            <span class="faq__mark" aria-hidden="true"></span>
+          </summary>
+          <div class="faq__a"><p>Sí. Puedes subir o bajar de plan según cómo crezca tu lista. Al subir de plan, la marca de agua del plan Básico desaparece sola.</p></div>
+        </details>
+      </li>
+      <li class="faq__item">
+        <details>
+          <summary class="faq__q">
+            <span>¿Qué es la marca de agua del plan Básico?</span>
+            <span class="faq__mark" aria-hidden="true"></span>
+          </summary>
+          <div class="faq__a"><p>Una línea discreta al pie del correo que dice que fue enviado con Sobreala. Solo aparece en el plan Básico. Es distinta del enlace de baja, que va en todos los planes.</p></div>
+        </details>
+      </li>
+      <li class="faq__item">
+        <details>
+          <summary class="faq__q">
+            <span>¿Hay permanencia o penalización por cancelar?</span>
+            <span class="faq__mark" aria-hidden="true"></span>
+          </summary>
+          <div class="faq__a"><p>No hay permanencia mínima y puedes cancelar cuando quieras. El saldo de correos acumulados se pierde al cancelar.</p></div>
+        </details>
+      </li>
+      <li class="faq__item">
+        <details>
+          <summary class="faq__q">
+            <span>¿El cobro es automático cada mes?</span>
+            <span class="faq__mark" aria-hidden="true"></span>
+          </summary>
+          <div class="faq__a"><p>Depende del medio de pago que elijas. Con algunos el cobro se renueva solo; con otros te enviamos el enlace de pago antes de cada vencimiento. Te lo confirmamos al activar tu cuenta.</p></div>
+        </details>
+      </li>
     </ul>
   </div>
 </section>
@@ -1184,10 +2684,10 @@
           <h2 class="site-footer__title">Producto</h2>
           <ul>
             <li>
-              <a href="/how-it-works/">Cómo funciona</a>
+              <a href="/#planes">Planes</a>
             </li>
             <li>
-              <a href="/pricing/">Planes</a>
+              <a href="/#como-funciona">Cómo funciona</a>
             </li>
           </ul>
         </div>
@@ -1195,10 +2695,10 @@
           <h2 class="site-footer__title">Empresa</h2>
           <ul>
             <li>
-              <a href="/about/">Nosotros</a>
+              <a href="/#nosotros">Nosotros</a>
             </li>
             <li>
-              <a href="/contact/">Contacto</a>
+              <a href="/#contacto">Contacto</a>
             </li>
           </ul>
         </div>
@@ -1268,5 +2768,7 @@
 
 <script src="/assets/js/nav.js" defer></script><script src="/assets/js/trouble.js" defer></script>
 <script src="/assets/js/carousel.js" defer></script>
+<script src="/assets/js/plans.js" defer></script>
+<script src="/assets/js/tutorial.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,18 @@
+<!doctype html>
+{#- Una de las páginas que pasaron a ser sección de la portada. Solo manda a su
+    ancla: el panel, los enlaces guardados y los buscadores siguen pidiendo la
+    dirección vieja. El guion conserva el «#» que traiga (el de un tutorial,
+    /how-it-works/#templates); sin guion, la etiqueta meta hace lo mismo sin él. -#}
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>{{ page.meta_title }}</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="{{ site.base_url }}/">
+<meta http-equiv="refresh" content="0; url=/#{{ anchor }}">
+<script>location.replace("/#" + (location.hash.slice(1) || "{{ anchor }}"));</script>
+</head>
+<body>
+<p><a href="/#{{ anchor }}">{{ page.hero.title }}</a></p>
+</body>
+</html>

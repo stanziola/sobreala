@@ -75,8 +75,9 @@
       <ul class="site-nav__list">
         {% for item in nav %}
         <li>
-          <a class="site-nav__link{% if current_url == item.url %} is-active{% endif %}"
-             href="{{ item.url }}"{% if current_url == item.url %} aria-current="page"{% endif %}>
+          {#- Cada botón baja a su sección de la portada. Cuál está a la vista lo
+              marca nav.js mientras se desplaza: todo es la misma dirección. -#}
+          <a class="site-nav__link" href="{{ item.url }}" data-section-link>
             {{ item.label }}
           </a>
         </li>

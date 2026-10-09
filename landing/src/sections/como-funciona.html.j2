@@ -1,12 +1,106 @@
-{% extends "base.html.j2" %}
+{#- Cómo funciona: lo que era /how-it-works, ahora una sección de la portada.
+    Abre con Features, sigue la tira de plantillas y después los tutoriales,
+    que es a donde baja el botón de la tira. -#}
+<div class="page-part" id="como-funciona">
 
-{% block main %}
+{#- Sigue al tema como el resto de la página: hubo una banda que se invertía,
+    y existía solo porque las capturas del panel eran siempre oscuras. Ahora hay
+    un juego por tema, así que no hace falta. -#}
+<section class="section" aria-labelledby="como-funciona-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">{{ page.hero.eyebrow }}</p>
+      <h2 class="section__title" id="como-funciona-title">{{ page.hero.title }}</h2>
+      <p class="section__intro">{{ page.hero.subtitle }}</p>
+    </div>
+    <div class="section__sub">
+      <h3 class="section__subtitle" id="features-title">{{ home.features.title }}</h3>
+      <p>{{ home.features.intro }}</p>
+    </div>
+    {#- Capturas del panel de verdad, hechas con landing/shots.py. Los botones
+        de radio son los que abren cada una, asi que esto funciona entero sin
+        JavaScript y con el teclado; carousel.js solo agrega las flechas y el
+        paso automatico. -#}
+    <div class="tour" data-tour
+         data-tour-zoom="{{ home.features.zoom }}"
+         data-tour-close="{{ home.features.close }}">
+      {% for item in home.features['items'] %}
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-{{ loop.index }}"{{ " checked" if loop.first }}>
+      {% endfor %}
+      <div class="tour__strip">
+        {% for item in home.features['items'] %}
+        <label class="tour__panel" for="tour-{{ loop.index }}">
+          {#- Dos juegos de capturas, uno por tema. La que no toca va en
+              `display: none`, y como las diez van `lazy` el navegador no se baja
+              la que no se ve: una sola de las dos cuesta bytes. -#}
+          <img class="tour__shot tour__shot--light"
+               src="/assets/img/panel/light/{{ item.shot }}.webp"
+               alt="{{ item.alt }}" width="1400" height="788"
+               decoding="async" loading="lazy">
+          <img class="tour__shot tour__shot--dark"
+               src="/assets/img/panel/dark/{{ item.shot }}.webp"
+               alt="{{ item.alt }}" width="1400" height="788"
+               decoding="async" loading="lazy">
+        </label>
+        {% endfor %}
+      </div>
+      <div class="tour__texts">
+        {% for item in home.features['items'] %}
+        <div class="tour__text">
+          <h3 class="tour__title">{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="tour__nav">
+        <button class="tour__arrow" type="button" data-tour-back
+                aria-label="{{ home.features.back }}">
+          {%- include "partials/icon-caret.svg.j2" -%}</button>
+        <button class="tour__arrow" type="button" data-tour-next
+                aria-label="{{ home.features.next }}">
+          {%- include "partials/icon-caret.svg.j2" -%}</button>
+      </p>
+    </div>
+  </div>
+</section>
 
-<section class="page-hero">
-  <div class="shell shell--narrow">
-    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
-    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
-    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
+<section class="section section--alt" aria-labelledby="pasos-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">{{ home.steps.eyebrow }}</p>
+      <h2 class="section__title" id="pasos-title">{{ home.steps.title }}</h2>
+      <p class="section__intro">{{ home.steps.intro }}</p>
+    </div>
+  </div>
+  {#- La tira corre de lado a lado, fuera del shell. Va tres veces seguidas para
+      que el bucle no se note: con cuatro plantillas una lista mide menos que
+      una pantalla ancha, y con dos se vería su final. Las copias van escondidas
+      del lector de pantalla y del tabulador, así cada plantilla se recorre una
+      sola vez. Solo CSS. -#}
+  <div class="samples">
+    <div class="samples__track">
+      {% for copy in (0, 1, 2) %}
+      <ul class="samples__list"{% if copy %} aria-hidden="true"{% endif %}>
+        {% for one in samples %}
+        <li>
+          <a class="sample" href="{{ panel.base_url }}/templates/sample/{{ one.slug }}"
+             aria-label="{{ home.steps.open | replace('{name}', one.name) }}"
+             {%- if copy %} tabindex="-1"{% endif %}>
+            <img class="sample__picture" src="{{ one.image }}" alt=""
+                 width="{{ one.size[0] }}" height="{{ one.size[1] }}" loading="lazy">
+            <span class="sample__name">{{ one.name }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="shell">
+    <p class="section__actions">
+      <a class="btn btn--primary btn--lg" href="{{ home.steps.cta.url }}">{{ home.steps.cta.label }}</a>
+    </p>
   </div>
 </section>
 
@@ -139,8 +233,4 @@
   </div>
 </section>
 
-{% endblock %}
-
-{% block scripts %}
-<script src="/assets/js/tutorial.js" defer></script>
-{% endblock %}
+</div>

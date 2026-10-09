@@ -1,17 +1,11 @@
-{% extends "base.html.j2" %}
-
-{% block main %}
-
-<section class="page-hero">
+{#- Contacto: lo que era /contact, ahora una sección de la portada. -#}
+<section class="section page-part" id="contacto" aria-labelledby="contacto-title">
   <div class="shell shell--narrow">
-    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
-    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
-    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
-  </div>
-</section>
-
-<section class="section">
-  <div class="shell shell--narrow">
+    <div class="section__head">
+      <p class="eyebrow">{{ page.hero.eyebrow }}</p>
+      <h2 class="section__title" id="contacto-title">{{ page.hero.title }}</h2>
+      <p class="section__intro">{{ page.hero.subtitle }}</p>
+    </div>
     <ul class="ways">
       {% for way in page.ways %}
       <li class="way">
@@ -58,19 +52,17 @@
 
     <div class="prose">
       <section class="prose__block">
-        <h2 class="prose__title">{{ page.who.title }}</h2>
+        <h3 class="prose__title">{{ page.who.title }}</h3>
         {% for p in page.who.paragraphs %}
         <p>{{ p|strong }}</p>
         {% endfor %}
       </section>
 
       <section class="prose__block">
-        <h2 class="prose__title">{{ page.already.title }}</h2>
+        <h3 class="prose__title">{{ page.already.title }}</h3>
         <p>{{ page.already.text }}</p>
         <p><a class="btn btn--outline" href="{{ panel.base_url }}/login">{{ panel.login_label }}</a></p>
       </section>
     </div>
   </div>
 </section>
-
-{% endblock %}

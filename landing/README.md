@@ -1,14 +1,16 @@
 # Sitio público de Sobreala
 
-Cuatro páginas estáticas que presentan Sobreala. Se despliegan tal cual en
-Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
+Una sola página que presenta Sobreala (Inicio, Planes, Cómo funciona,
+Nosotros, Contacto y las preguntas), más las dos legales. Se despliegan tal cual
+en Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
 
-| Ruta              | Archivo                    |
-|-------------------|----------------------------|
-| `/`               | `index.html`               |
-| `/how-it-works/` | `como-funciona/index.html` |
-| `/pricing/`        | `planes/index.html`        |
-| `/about/`      | `nosotros/index.html`      |
+| Ruta | Archivo |
+|------|---------|
+| `/` | `index.html`, la página única |
+| `/privacy/`, `/terms/` | `privacy/index.html`, `terms/index.html` |
+| `/pricing/`, `/how-it-works/`, `/about/`, `/contact/` | páginas de paso que llevan a su sección (`#planes`, `#como-funciona`, `#nosotros`, `#contacto`) |
+
+El detalle de cómo está armada está en `docs/sitio.md`.
 
 ## Cómo se genera
 
@@ -27,7 +29,9 @@ landing/
 ├── src/
 │   ├── base.html.j2     # <head>, header, footer, SEO
 │   ├── partials/        # cta-band, faq, feature-icons, iconos de correo y chat
-│   ├── pages/           # index, como-funciona, precios, nosotros
+│   ├── pages/           # index (la página única) y legal
+│   ├── sections/        # planes, como-funciona, nosotros, contacto: partes de index
+│   ├── redirect.html.j2 # las páginas de paso de las direcciones viejas
 │   └── site.css         # estilos (sin ningún HEX: usa las variables de brand/colors.css)
 ├── assets/
 │   ├── js/nav.js        # menú móvil, cambio de tema y año del pie
@@ -37,10 +41,9 @@ landing/
 │   ├── css/site.css     # GENERADO: colors.css + colors-dark.css + @font-face + src/site.css
 │   ├── fonts/           # GENERADO: .woff2 a partir de brand/fonts/
 │   └── img/             # GENERADO: logo, favicons e iconos desde brand/
-├── index.html           # GENERADO
-├── como-funciona/       # GENERADO
-├── planes/              # GENERADO
-├── nosotros/            # GENERADO
+├── index.html           # GENERADO: la página única
+├── privacy/, terms/     # GENERADO: las legales
+├── pricing/, how-it-works/, about/, contact/   # GENERADO: páginas de paso
 ├── favicon.ico, favicon.svg, robots.txt, sitemap.xml   # GENERADOS
 └── README.md
 ```

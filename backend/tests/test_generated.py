@@ -45,7 +45,7 @@ def test_planes_ya_no_vende_complementos():
     """Las recargas y las piezas adicionales se dejaron de vender: ni en el
     documento de precios ni en la página de planes."""
     precios = (ROOT / "docs" / "pricing.md").read_text(encoding="utf-8")
-    planes = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
+    planes = (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
     for texto in ("Recarga de 1,000 correos", "Diseño de pieza HTML adicional"):
         assert texto not in precios
         assert texto not in planes

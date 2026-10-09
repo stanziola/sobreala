@@ -40,10 +40,10 @@ CONTACT = {
 }
 
 NAV = [
-    {"label": "Inicio", "url": "/"},
-    {"label": "Cómo funciona", "url": "/how-it-works/"},
-    {"label": "Planes", "url": "/pricing/"},
-    {"label": "Nosotros", "url": "/about/"},
+    {"label": "Inicio", "url": "/#inicio"},
+    {"label": "Planes", "url": "/#planes"},
+    {"label": "Cómo funciona", "url": "/#como-funciona"},
+    {"label": "Nosotros", "url": "/#nosotros"},
 ]
 
 # The panel is a different service on a different host: Railway, not Cloudflare
@@ -89,7 +89,7 @@ PLAN_BUTTONS = {
 }
 
 CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}
-CTA_SECONDARY = {"label": "Ver los planes", "url": "/pricing/"}
+CTA_SECONDARY = {"label": "Ver los planes", "url": "/#planes"}
 
 # --------------------------------------------------------------------------- home
 
@@ -265,14 +265,15 @@ HOME = {
         ],
     },
     # La tira de plantillas de muestra, donde estaban los cuatro pasos: los
-    # pasos siguen enteros en /how-it-works, que es a donde lleva el botón.
+    # pasos siguen enteros en los tutoriales, justo debajo, que es a donde lleva
+    # el botón.
     "steps": {
         "eyebrow": "Cómo funciona",
         "title": "¿Aún no sabes por dónde empezar?",
         "intro": "Prueba nuestras plantillas personalizadas.",
         # Lo que dice cada tarjeta a un lector de pantalla, con su nombre.
         "open": "Abrir la plantilla {name} en el editor",
-        "cta": {"label": "Ver tutorial", "url": "/how-it-works/"},
+        "cta": {"label": "Ver tutorial", "url": "#tutorials"},
     },
     "faq": {
         "eyebrow": "Preguntas frecuentes",
@@ -324,6 +325,43 @@ HOME = {
                     "No hace falta: la armas tú en el editor, con tu logo, tus "
                     "colores y tus fotos. Y si alguien te la prepara, te pasa el "
                     "archivo y la sigues editando tú."
+                ),
+            },
+            {
+                "q": "¿Qué pasa si no uso todos mis correos del mes?",
+                "a": (
+                    "Los correos que no uses pasan al mes siguiente y vencen ahí. Al "
+                    "enviar se gastan primero los acumulados, para que no se pierdan."
+                ),
+            },
+            {
+                "q": "¿Puedo cambiar de plan después?",
+                "a": (
+                    "Sí. Puedes subir o bajar de plan según cómo crezca tu lista. Al "
+                    "subir de plan, la marca de agua del plan Básico desaparece sola."
+                ),
+            },
+            {
+                "q": "¿Qué es la marca de agua del plan Básico?",
+                "a": (
+                    "Una línea discreta al pie del correo que dice que fue enviado con "
+                    "Sobreala. Solo aparece en el plan Básico. Es distinta del enlace "
+                    "de baja, que va en todos los planes."
+                ),
+            },
+            {
+                "q": "¿Hay permanencia o penalización por cancelar?",
+                "a": (
+                    "No hay permanencia mínima y puedes cancelar cuando quieras. El "
+                    "saldo de correos acumulados se pierde al cancelar."
+                ),
+            },
+            {
+                "q": "¿El cobro es automático cada mes?",
+                "a": (
+                    "Depende del medio de pago que elijas. Con algunos el cobro se "
+                    "renueva solo; con otros te enviamos el enlace de pago antes de cada "
+                    "vencimiento. Te lo confirmamos al activar tu cuenta."
                 ),
             },
         ],
@@ -868,49 +906,6 @@ PRICING = {
             "Estadísticas de cada campaña, exportables",
             "Acompañamiento en tu primera campaña",
             "Sin permanencia mínima: cancelas cuando quieras",
-        ],
-    },
-    "faq": {
-        "eyebrow": "Sobre los planes",
-        "title": "Dudas de facturación",
-        "items": [
-            {
-                "q": "¿Qué pasa si no uso todos mis correos del mes?",
-                "a": (
-                    "Los correos que no uses pasan al mes siguiente y vencen ahí. Al "
-                    "enviar se gastan primero los acumulados, para que no se pierdan."
-                ),
-            },
-            {
-                "q": "¿Puedo cambiar de plan después?",
-                "a": (
-                    "Sí. Puedes subir o bajar de plan según cómo crezca tu lista. Al "
-                    "subir de plan, la marca de agua del plan Básico desaparece sola."
-                ),
-            },
-            {
-                "q": "¿Qué es la marca de agua del plan Básico?",
-                "a": (
-                    "Una línea discreta al pie del correo que dice que fue enviado con "
-                    "Sobreala. Solo aparece en el plan Básico. Es distinta del enlace "
-                    "de baja, que va en todos los planes."
-                ),
-            },
-            {
-                "q": "¿Hay permanencia o penalización por cancelar?",
-                "a": (
-                    "No hay permanencia mínima y puedes cancelar cuando quieras. El "
-                    "saldo de correos acumulados se pierde al cancelar."
-                ),
-            },
-            {
-                "q": "¿El cobro es automático cada mes?",
-                "a": (
-                    "Depende del medio de pago que elijas. Con algunos el cobro se "
-                    "renueva solo; con otros te enviamos el enlace de pago antes de cada "
-                    "vencimiento. Te lo confirmamos al activar tu cuenta."
-                ),
-            },
         ],
     },
 }
@@ -1537,15 +1532,15 @@ FOOTER = {
         {
             "title": "Producto",
             "links": [
-                {"label": "Cómo funciona", "url": "/how-it-works/"},
-                {"label": "Planes", "url": "/pricing/"},
+                {"label": "Planes", "url": "/#planes"},
+                {"label": "Cómo funciona", "url": "/#como-funciona"},
             ],
         },
         {
             "title": "Empresa",
             "links": [
-                {"label": "Nosotros", "url": "/about/"},
-                {"label": "Contacto", "url": "/contact/"},
+                {"label": "Nosotros", "url": "/#nosotros"},
+                {"label": "Contacto", "url": "/#contacto"},
             ],
         },
         {

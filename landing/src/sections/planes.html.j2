@@ -1,18 +1,13 @@
-{% extends "base.html.j2" %}
+{#- Planes: lo que costaba en /pricing, ahora una sección de la portada. -#}
+<div class="page-part" id="planes">
 
-{% block main %}
-
-<section class="page-hero">
-  <div class="shell shell--narrow">
-    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
-    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
-    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
-  </div>
-</section>
-
-<section class="section section--overlap" aria-labelledby="planes-title">
+<section class="section" aria-labelledby="planes-title">
   <div class="shell">
-    <h2 class="visually-hidden" id="planes-title">Planes</h2>
+    <div class="section__head">
+      <p class="eyebrow">{{ page.hero.eyebrow }}</p>
+      <h2 class="section__title" id="planes-title">{{ page.hero.title }}</h2>
+      <p class="section__intro">{{ page.hero.subtitle }}</p>
+    </div>
 
     {#- Mensual o anual. Dos botones de verdad, no un interruptor dibujado: se
         pulsan con el teclado y dicen cuál está puesto con aria-pressed. La
@@ -174,10 +169,4 @@
   </div>
 </section>
 
-{% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
-
-{% endblock %}
-
-{% block scripts %}
-<script src="/assets/js/plans.js" defer></script>
-{% endblock %}
+</div>

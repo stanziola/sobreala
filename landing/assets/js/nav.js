@@ -59,6 +59,39 @@
   if (mq.addEventListener) mq.addEventListener("change", onChange);
   else mq.addListener(onChange);
 
+  // --- the section in view ------------------------------------------------
+  // The whole site is one page and the bar's buttons only scroll it, so the
+  // button marked is the section being read, not the address. A section counts
+  // as read while it crosses the band just under the bar; with two in the band
+  // the first one wins. The legal pages have none of these sections and mark
+  // nothing.
+  var spots = [];
+  Array.prototype.forEach.call(nav.querySelectorAll("[data-section-link]"), function (link) {
+    var id = link.getAttribute("href").split("#")[1];
+    var part = id && document.getElementById(id);
+    if (part) spots.push({ link: link, part: part, seen: false });
+  });
+  if (spots.length && "IntersectionObserver" in window) {
+    var paintSpots = function () {
+      var on = null;
+      spots.forEach(function (spot) { if (!on && spot.seen) on = spot; });
+      spots.forEach(function (spot) {
+        spot.link.classList.toggle("is-active", spot === on);
+        if (spot === on) spot.link.setAttribute("aria-current", "true");
+        else spot.link.removeAttribute("aria-current");
+      });
+    };
+    var band = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        spots.forEach(function (spot) {
+          if (spot.part === entry.target) spot.seen = entry.isIntersecting;
+        });
+      });
+      paintSpots();
+    }, { rootMargin: "-" + header.offsetHeight + "px 0px -60% 0px" });
+    spots.forEach(function (spot) { band.observe(spot.part); });
+  }
+
   // --- theme ------------------------------------------------------------
   // The head script already set data-theme before the first paint. Here we only
   // handle switching it, remembering the choice, and the reveal animation.

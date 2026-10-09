@@ -149,7 +149,7 @@ def test_the_welcome_screen_says_what_comes_next(client, database, outbox):
     assert "Ana" in pantalla
     assert "Elige el plan" in pantalla
     # Los dos botones: los planes viven en el sitio publico.
-    assert "/pricing/" in pantalla
+    assert "/#planes" in pantalla
     assert "/settings" in pantalla
 
 

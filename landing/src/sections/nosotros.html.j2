@@ -1,0 +1,18 @@
+{#- Nosotros: lo que era /about, ahora una sección de la portada. -#}
+<section class="section section--alt page-part" id="nosotros" aria-labelledby="nosotros-title">
+  <div class="shell shell--narrow prose">
+    <div class="section__head">
+      <p class="eyebrow">{{ page.hero.eyebrow }}</p>
+      <h2 class="section__title" id="nosotros-title">{{ page.hero.title }}</h2>
+      <p class="section__intro">{{ page.hero.subtitle }}</p>
+    </div>
+    {% for block in page.sections %}
+    <section class="prose__block">
+      <h3 class="prose__title">{{ block.title }}</h3>
+      {% for p in block.paragraphs %}
+      <p>{{ p }}</p>
+      {% endfor %}
+    </section>
+    {% endfor %}
+  </div>
+</section>

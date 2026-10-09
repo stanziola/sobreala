@@ -103,7 +103,7 @@
     <span class="setting__value">{{ plan }}</span>
     {% else %}
     <span class="setting__value setting__value--muted">{{ t('settings_account_no_plan') }}</span>
-    <a class="btn btn--small btn--outline" href="{{ site_url }}/pricing/">{{ t('settings_account_plans') }}</a>
+    <a class="btn btn--small btn--outline" href="{{ site_url }}/#planes">{{ t('settings_account_plans') }}</a>
     {% endif %}
     <a class="btn btn--small btn--outline"
        href="{{ url_for('auth.settings', section='billing') }}">{{ t('settings_account_to_billing') }}</a>
@@ -150,7 +150,7 @@
     {% if seats_left %}
     <a class="btn btn--small" href="{{ url_for('auth.user_form') }}">{{ t('users_new') }}</a>
     {% else %}
-    <a class="btn btn--small btn--outline" href="{{ site_url }}/pricing/">{{ t('users_more_seats') }}</a>
+    <a class="btn btn--small btn--outline" href="{{ site_url }}/#planes">{{ t('users_more_seats') }}</a>
     {% endif %}
     {% endcall %}
 

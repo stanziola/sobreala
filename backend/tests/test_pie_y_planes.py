@@ -33,13 +33,13 @@ def test_el_sitio_no_ofrece_corporativo_ni_soporte_ni_diseno():
     assert "| Soporte |" not in precios
     assert "Diseño personalizado de tu correo" not in precios
 
-    for pagina in ("pricing", "how-it-works", "about", "terms"):
+    for pagina in ("", "terms"):
         html = (ROOT / "landing" / pagina / "index.html").read_text(encoding="utf-8")
         assert "Corporativo" not in html, pagina
         assert "Plantillas personalizadas" not in html, pagina
         assert "diseñamos la pieza" not in html.lower(), pagina
         assert "diseño de las piezas de correo" not in html.lower(), pagina
-    planes = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
+    planes = (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
     assert ">Soporte<" not in planes
 
 
@@ -48,8 +48,7 @@ def test_el_html_propio_ya_no_se_ofrece_en_ningun_lado():
     se pasan como el ZIP de un lienzo."""
     precios = (ROOT / "docs" / "pricing.md").read_text(encoding="utf-8")
     assert "Subir tu propio HTML" not in precios
-    for pagina in ("index.html", "pricing/index.html", "how-it-works/index.html",
-                   "terms/index.html"):
+    for pagina in ("index.html", "terms/index.html"):
         html = (ROOT / "landing" / pagina).read_text(encoding="utf-8")
         assert "propio HTML" not in html and "HTML que subas" not in html, pagina
 
@@ -116,7 +115,7 @@ def test_sin_testigo_no_se_guarda(client, database, outbox):
 def test_las_tarjetas_traen_los_dos_precios_y_nacen_en_mensual():
     """El interruptor no inventa cifras: las dos salen de docs/pricing.md, y la
     página sirve igual sin JavaScript, en mensual."""
-    html = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
+    html = (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
 
     assert 'data-cycle-set="monthly"' in html and 'data-cycle-set="yearly"' in html
     # El anual entre doce, que es lo que se enseña al elegir año.
@@ -129,9 +128,10 @@ def test_las_tarjetas_traen_los_dos_precios_y_nacen_en_mensual():
         assert f"Total a pagar ahora: ${anual}" in html
     # Nace con el mensual dibujado: sin el guion, eso es lo que se lee.
     assert '<span data-price>15</span>' in html
-    # Y el guion de esta página solo lo baja esta página.
+    # Y su guion, que va en la portada desde que los planes son una sección
+    # suya, no en las páginas legales.
     assert "/assets/js/plans.js" in html
-    assert "plans.js" not in (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
+    assert "plans.js" not in (ROOT / "landing" / "terms" / "index.html").read_text(encoding="utf-8")
 
 
 def test_el_equivalente_mensual_y_el_descuento_salen_del_documento():
@@ -150,7 +150,7 @@ def test_el_equivalente_mensual_y_el_descuento_salen_del_documento():
         assert one["yearly_value"] == one["monthly_value"] * 12 * 80 // 100
     assert precios["yearly_off"] == "20%"
 
-    html = (ROOT / "landing" / "pricing" / "index.html").read_text(encoding="utf-8")
+    html = (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
     assert '<span class="cycle__save">-20%</span>' in html
     # Y el panel lo saca del mismo documento, para la pantalla de contratar.
     assert plans.discount("basico") == 20
