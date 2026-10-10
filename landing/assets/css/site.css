@@ -783,20 +783,79 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .art-glow { stop-color: var(--art-glow); }
 .art-drop { flood-color: var(--art-shadow); }
 
-/* ------------------------------------------------------------------ uses (home)
-   Para qué se usa: cuatro tarjetas, cada una con su foto, su título y una
-   línea. La foto va sola, sin nada encima ni marco, que es lo que la hace
-   sutil. Cuatro a lo ancho, dos en la tableta y una en el teléfono. */
-.uses { display: grid; gap: clamp(20px, 3vw, 28px); grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 620px) { .uses { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1040px) { .uses { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.use { min-width: 0; }
-.use__photo {
-  display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover;
-  border-radius: var(--radius); background: var(--color-surface-alt);
+/* --------------------------------------------------------------- stories (home)
+   «Haz crecer tu negocio»: un caso a la vez en una tarjeta grande, como el
+   carrusel de casos que se dio de referencia. La foto lleva encima, abajo a la
+   izquierda y sobre un degradado oscuro, el rótulo y el título; al lado va la
+   descripción. Los cuatro comparten una celda, así que el bloque mide lo que
+   el más alto y no salta al cambiar; el que no toca se esconde con visibility,
+   que lo saca también del lector de pantalla y del tabulador.
+   Lo que abre cada uno son botones de radio y las reglas nombran los cuatro
+   ids: si algún día son otros, estas listas crecen con ellos. */
+.stories__pick { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.stories__frame { display: grid; grid-template-columns: minmax(0, 1fr); }
+.story {
+  grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1fr);
+  overflow: hidden; border-radius: var(--radius-lg);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  opacity: 0; visibility: hidden;
+  transition: opacity 400ms var(--ease), visibility 0s linear 400ms;
 }
-.use__title { margin-top: 16px; font-size: 1.08rem; font-weight: 700; line-height: 1.3; color: var(--color-ink); }
-.use__text { margin-top: 6px; color: var(--color-ink-soft); }
+#uso-1:checked ~ .stories__frame .story:nth-child(1),
+#uso-2:checked ~ .stories__frame .story:nth-child(2),
+#uso-3:checked ~ .stories__frame .story:nth-child(3),
+#uso-4:checked ~ .stories__frame .story:nth-child(4) {
+  opacity: 1; visibility: visible; transition: opacity 400ms var(--ease);
+}
+.story__media { position: relative; min-width: 0; }
+.story__photo {
+  display: block; width: 100%; height: 100%; aspect-ratio: 16 / 10; object-fit: cover;
+  background: var(--color-surface-alt);
+}
+/* Lo que deja leer el título sobre cualquier foto, de día y de noche. */
+.story__media::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, rgba(0, 0, 0, .72), rgba(0, 0, 0, .3) 40%, rgba(0, 0, 0, 0) 65%);
+}
+.story__caption { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: clamp(18px, 3vw, 34px); }
+.story__label { font-size: .85rem; font-weight: 600; color: var(--color-on-dark-soft); }
+.story__title {
+  margin-top: 6px; max-width: 18ch; color: var(--color-on-dark);
+  font-size: clamp(1.5rem, 3.2vw, 2.5rem); font-weight: 700; line-height: 1.15; letter-spacing: -.01em;
+}
+.story__side { display: flex; align-items: center; padding: clamp(20px, 3vw, 36px); }
+.story__text { font-size: clamp(1.08rem, 1.7vw, 1.3rem); line-height: 1.55; color: var(--color-ink); }
+@media (min-width: 900px) {
+  .story { grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); }
+}
+
+/* Los puntos: una barra por caso, la del abierto más larga y más oscura. La
+   etiqueta mide 24 px de alto para que se pueda tocar; la barra es su ::after. */
+.stories__dots { display: flex; justify-content: center; gap: 6px; margin-top: 18px; }
+.stories__dot {
+  position: relative; display: block; width: 30px; height: 24px; cursor: pointer;
+  transition: width var(--normal) var(--ease);
+}
+.stories__dot::after {
+  content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 6px; margin-top: -3px;
+  border-radius: 3px; background: var(--color-border); transition: background var(--fast) var(--ease);
+}
+.stories__dot:hover::after { background: var(--color-field); }
+#uso-1:checked ~ .stories__dots .stories__dot:nth-child(1),
+#uso-2:checked ~ .stories__dots .stories__dot:nth-child(2),
+#uso-3:checked ~ .stories__dots .stories__dot:nth-child(3),
+#uso-4:checked ~ .stories__dots .stories__dot:nth-child(4) { width: 46px; }
+#uso-1:checked ~ .stories__dots .stories__dot:nth-child(1)::after,
+#uso-2:checked ~ .stories__dots .stories__dot:nth-child(2)::after,
+#uso-3:checked ~ .stories__dots .stories__dot:nth-child(3)::after,
+#uso-4:checked ~ .stories__dots .stories__dot:nth-child(4)::after { background: var(--color-ink-soft); }
+#uso-1:focus-visible ~ .stories__dots .stories__dot:nth-child(1),
+#uso-2:focus-visible ~ .stories__dots .stories__dot:nth-child(2),
+#uso-3:focus-visible ~ .stories__dots .stories__dot:nth-child(3),
+#uso-4:focus-visible ~ .stories__dots .stories__dot:nth-child(4) {
+  outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 6px;
+}
 
 /* ------------------------------------------------------------------ tour (home)
    El carrusel de Features: cinco dibujos sencillos, uno por cosa, que

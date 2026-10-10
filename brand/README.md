@@ -42,12 +42,18 @@ python brand/build_logo.py --serve
 ```
 
 Abre el editor en el navegador. Muestra el logo sobre un **eje de referencia**
-con cuadrícula y ejes centrales, y los favicons a tamaño real. Puedes:
+con cuadrícula y ejes centrales, los favicons a tamaño real y la foto de perfil
+recortada como la recortan las redes. Puedes:
 
 - mover el ala en X e Y con campos, deslizadores o las flechas del teclado
   (Shift para pasos de 5), con botones de **Centrar** y **Como el original**.
   El mismo desplazamiento se aplica en el logo y en el favicon
 - cambiar los tres colores, con azules de atajo
+- ajustar la foto de perfil en un círculo grande: arrastrar el ala (o moverla
+  con las flechas, con el círculo seleccionado), elegir su tamaño
+  (`avatar_fill`) y verla a 110, 56 y 32 px, con la zona segura marcada y un
+  aviso si el ala se sale de ella. **Su posición es solo suya**
+  (`avatar_offset`): no mueve el logo ni el favicon
 - ver los márgenes resultantes y un aviso si el logo se sale del lienzo
 - pulsar **Guardar y regenerar**: escribe `colors.css` y `layout.json` y vuelve
   a generar SVG, PNG e ICO al momento
@@ -91,6 +97,9 @@ python brand/build_logo.py --help
 
 # encuadre del favicon
 --favicon-fill F   --favicon-radius F   # tamaño del ala y radio de las esquinas
+
+# la foto de perfil: tamaño del ala y su posición, que es solo suya
+--avatar-fill F    --avatar-x N    --avatar-y N
 ```
 
 Los valores inválidos se rechazan **antes** de escribir nada, así que un error
@@ -119,14 +128,15 @@ definición oscura en ese archivo acabaría dentro del logo generado.
 
 ## Posición
 
-`layout.json` guarda cuatro valores, todos de encuadre:
+`layout.json` guarda cinco valores, todos de encuadre:
 
 | Clave                   | Qué controla                                                            |
 |-------------------------|-------------------------------------------------------------------------|
-| `offset`                | `[x, y]` del ala desde el centro; el mismo valor en el logo, el favicon y el perfil |
+| `offset`                | `[x, y]` del ala desde el centro; el mismo valor en el logo y el favicon |
 | `favicon_fill`          | Proporción del lado del icono que ocupa el ancho del ala                 |
 | `favicon_corner_radius` | Radio de las esquinas del favicon, como fracción del lado                |
 | `avatar_fill`           | Proporción del lado de la foto de perfil que ocupa el ancho del ala      |
+| `avatar_offset`         | `[x, y]` del ala en la foto de perfil, aparte de `offset`                |
 
 El sistema de coordenadas es el del SVG: X hacia la derecha, Y hacia abajo, en
 unidades del lienzo de 271×254. El favicon usa las mismas unidades, así que el
@@ -209,12 +219,17 @@ LinkedIn, X, TikTok y YouTube. **Es la misma para todas**:
 
 - **1080×1080 y cuadrada.** Es lo que todas guardan tal cual, sin recortarla
   ni rehacerla. Si se sube otra proporción, cada una corta por su lado.
-- **El ala sola, sobre el azul**, con los colores y el `offset` del favicon. Sin
-  la palabra: al tamaño al que se ve una foto de perfil no se leería.
+- **El ala sola, sobre el azul**, con los colores del favicon. Sin la palabra:
+  al tamaño al que se ve una foto de perfil no se leería.
 - **Opaca y sin esquinas redondeadas.** Cada red pone su propia máscara (un
   círculo casi en todas, un cuadrado en LinkedIn), y una esquina transparente
   sale negra o blanca según la aplicación.
-- **El ala ocupa el 60 % del ancho** (`avatar_fill`) y llega al 73 % del radio
-  del círculo con el que la recortan. Así queda dentro con aire, y en cuadrado
-  también se ve centrada. Si se sube `avatar_fill` y el ala pasa del 80 % del
-  radio (`AVATAR_SAFE` en `build_logo.py`), el build avisa.
+- **Se ajusta en el editor** (`--serve`), en el panel «Foto de perfil para
+  redes»: un círculo grande donde se arrastra el ala, con su tamaño
+  (`avatar_fill`) y **su propia posición** (`avatar_offset`). Hasta octubre de
+  2026 la posición era la del logo y el favicon; se separó para poder
+  centrarla en el círculo sin moverlos a ellos.
+- **El ala ocupa el 60 % del ancho** y llega al 73 % del radio del círculo con
+  el que la recortan, así que queda dentro con aire. Si el ala pasa del 80 % del
+  radio (`AVATAR_SAFE` en `build_logo.py`), por tamaño o por posición, el build
+  avisa.

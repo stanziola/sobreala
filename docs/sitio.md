@@ -12,7 +12,7 @@ van en este orden, cada una con el ancla a la que baja su botón de la barra:
 
 | Ancla | Qué lleva | Plantilla |
 |---|---|---|
-| `#inicio` | La portada, «¿Sigues enviando correos masivos…?» y los usos | `src/pages/index.html.j2` |
+| `#inicio` | La portada, «¿Sigues enviando correos masivos…?» y «Haz crecer tu negocio» | `src/pages/index.html.j2` |
 | `#planes` | Interruptor y tarjetas, la tabla y el glosario | `src/sections/planes.html.j2` |
 | `#como-funciona` | Features con su lista, la tira de plantillas, los tutoriales y el envío | `src/sections/como-funciona.html.j2` |
 | `#nosotros` | Quiénes somos | `src/sections/nosotros.html.j2` |
@@ -162,18 +162,39 @@ llevan el prefijo de su escena** (`am-`, `as-`, `ap-`, `at-`): las cuatro viven
 en la misma página, y un `id` repetido hace que una use el degradado de otra (de
 noche, el resplandor claro de la primera).
 
-**Debajo de «¿Sigues enviando…?», «Lo que puedes enviar con Sobreala»: cuatro
-usos, cada uno con una foto de personas reales** (octubre de 2026). Comunícate
-con tu equipo, Llega a más clientes, Convoca a tus socios y Mantén informadas a
-las familias: empresas, comercios, cooperativas y colegios, que son el cliente
-típico. Cuatro columnas en lo ancho, dos en la tableta y una en el teléfono.
+**Debajo de «¿Sigues enviando…?», «Haz crecer tu negocio»: cuatro casos, uno a
+la vez, en una tarjeta grande** (octubre de 2026). Son Llega a más clientes,
+Comunícate con tu equipo, Convoca a tus socios y Mantén informadas a las
+familias, para comercios, empresas, cooperativas y colegios, que son el cliente
+típico. **La florista va primera**, como se pidió.
+- **Sigue la referencia que se dio**, el carrusel de casos de Mailchimp:
+  - la foto ocupa unos 2/3 de la tarjeta, con el rótulo y el título encima, abajo
+    a la izquierda, sobre un degradado oscuro que los deja leer en cualquier
+    foto;
+  - al lado va un panel con la descripción, y en el teléfono el panel queda
+    debajo;
+  - abajo hay un punto por caso, y el del abierto es más largo.
+  Fue antes una rejilla de cuatro tarjetas pequeñas con el encabezado «Ejemplos /
+  Lo que puedes enviar con Sobreala».
+- **El panel lleva solo la descripción.** La referencia trae cifras, el nombre
+  de un cliente y un enlace a su caso, y aquí serían inventados.
+- **Funciona como «¿Sigues enviando…?»**: lo que abre cada caso son botones de
+  radio, y los puntos son sus etiquetas, así que va sin JavaScript y con las
+  flechas del teclado. `assets/js/stories.js` agrega el paso automático:
+  - pasa cada 8 s;
+  - se para con el ratón encima, con el foco dentro, fuera de la pantalla y con
+    la pestaña escondida;
+  - si alguien pulsa un punto, deja de pasar solo el resto de la visita;
+  - con «reducir movimiento», no existe.
 - **Las fotos son de Pexels, con su licencia**: uso comercial sin pedir permiso
   ni citar al autor. Lo que no deja es venderlas tal cual ni dar a entender que
   quien sale respalda algo, y por eso **nadie aparece como cliente ni dice
   nada**.
-- Van recortadas a 4:3, en WebP de 800 × 600, en `assets/img/usos/` (de 38 a
-  48 KB cada una), con `loading="lazy"`. Los textos y el `alt` de cada una están
-  en `HOME["uses"]` de `content.py`.
+- Van recortadas a 16:10, en WebP de 1280 × 800, en `assets/img/usos/` (de 55 a
+  71 KB cada una), con `loading="lazy"`. Salieron de los originales de 1600 ×
+  1067 de Pexels. Las de antes, de 800 de ancho, quedaban cortas para la
+  tarjeta grande. Los textos, el rótulo y el `alt` de cada una están en
+  `HOME["uses"]` de `content.py`.
 - De dónde sale cada una:
 
 | Archivo | Autor | En Pexels |

@@ -42,6 +42,11 @@ Usage:
     # favicon framing
     python brand/build_logo.py --favicon-fill 0.84 --favicon-radius 0.20
 
+    # the profile picture for social networks: size of the wing, and its own
+    # position (it does not move the logo or the favicon)
+    python brand/build_logo.py --avatar-fill 0.6
+    python brand/build_logo.py --avatar-x 0 --avatar-y 0
+
     # print the current config and do nothing else
     python brand/build_logo.py --show
 
@@ -50,8 +55,9 @@ Usage:
     python brand/build_logo.py --serve
     python brand/build_logo.py --serve --port 9000
 
-The editor previews the logo over a reference grid and the favicons at real
-size, and re-colors and re-positions them live. Opened as a plain file it has no
+The editor previews the logo over a reference grid, the favicons at real size
+and the profile picture as the networks crop it, and re-colors, re-positions and
+re-sizes them live. Opened as a plain file it has no
 Save button and hands you the equivalent command instead.
 
 NOTE for maintainers: PREVIEW_TEMPLATE is a raw string on purpose. As a normal
@@ -208,17 +214,19 @@ DEFAULT_LAYOUT = {
     "favicon_fill": 0.84,
     "favicon_corner_radius": 0.20,
     "avatar_fill": 0.6,
+    "avatar_offset": [0.0, 0.0],
 }
 
 LAYOUT_DOC = {
     "offset": "Where the wing sits, as [x, y] in canvas units from centered (+x right, +y down). "
-              "The same offset applies in the logo canvas, the favicon and the profile picture. "
-              "[0, 0] = centered in all three.",
+              "The same offset applies in the logo canvas and in the favicon. [0, 0] = centered in both.",
     "favicon_fill": "Share of the favicon side taken by the wing's width (0-1). The rest is the safe "
                     "area that keeps it clear of the rounded corners.",
     "favicon_corner_radius": "Rounded corners of the favicon, as a fraction of the side. 0 = square.",
     "avatar_fill": "Share of the profile picture's side taken by the wing's width (0-1). The networks "
                    "crop it to a circle, so the wing needs air inside it: past 80% of the radius the build warns.",
+    "avatar_offset": "Where the wing sits in the profile picture, as [x, y] in canvas units from centered, "
+                     "like offset. Its own: moving it does not touch the logo or the favicon.",
 }
 
 
@@ -243,7 +251,7 @@ def validate_layout(data: dict) -> tuple[dict, list[str]]:
         if key not in data:
             continue
         value = data[key]
-        if key == "offset":
+        if key in ("offset", "avatar_offset"):
             if not (isinstance(value, (list, tuple)) and len(value) == 2
                     and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in value)):
                 errors.append(f"'{key}' must be a list of two numbers, got {value!r}")
@@ -347,10 +355,10 @@ def avatar_canvas(layout: dict) -> float:
 
 
 def avatar_shift(layout: dict) -> tuple[float, float]:
-    """Where the wing goes in the profile picture: centered, plus the same configured offset."""
+    """Where the wing goes in the profile picture: centered, plus its own offset."""
     c = avatar_canvas(layout)
-    return (-BBOX[0] + (c - BBOX_SIZE[0]) / 2 + layout["offset"][0],
-            -BBOX[1] + (c - BBOX_SIZE[1]) / 2 + layout["offset"][1])
+    return (-BBOX[0] + (c - BBOX_SIZE[0]) / 2 + layout["avatar_offset"][0],
+            -BBOX[1] + (c - BBOX_SIZE[1]) / 2 + layout["avatar_offset"][1])
 
 
 # --------------------------------------------------------------------------- path data
@@ -594,7 +602,8 @@ def check_placement(layout: dict) -> list[str]:
     reach = float(np.hypot(pts[:, 0] - c / 2, pts[:, 1] - c / 2).max()) / (c / 2)
     if reach > AVATAR_SAFE:
         warnings.append(f"en el perfil el ala llega al {reach:.0%} del radio del circulo, mas del "
-                        f"{AVATAR_SAFE:.0%}: al recortarla en redondo queda pegada al borde. Baja avatar_fill")
+                        f"{AVATAR_SAFE:.0%}: al recortarla en redondo queda pegada al borde. Baja avatar_fill "
+                        "o acerca el ala al centro (avatar_offset)")
     return warnings
 
 
@@ -646,6 +655,20 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
   .icons { display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap; }
   .icon b { display: block; font-size: 11px; color: var(--ui-dim); font-weight: 500; margin-top: 8px; text-align: center; }
   .icon svg { display: block; }
+  /* The profile picture: one big circle to adjust it, dragging the wing, and
+     the small circles it is seen at. Its wing moves with its own variables. */
+  .avatar-stage {
+    width: 300px; max-width: 100%; margin: 0 auto; border-radius: 50%;
+    cursor: grab; touch-action: none;
+  }
+  .avatar-stage.dragging { cursor: grabbing; }
+  .avatar-stage:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 4px; }
+  .avatar-stage svg { width: 100%; height: auto; }
+  .avatar { display: block; }
+  .avatar.round { border-radius: 50%; }
+  .avatar .wing { transform: translate(var(--av-x), var(--av-y)); }
+  .avatar .safe { display: none; }
+  .show-safe .avatar .safe { display: inline; }
   .tab {
     display: inline-flex; align-items: center; gap: 8px; margin-top: 18px;
     background: #2b3038; border-radius: 9px 9px 0 0; padding: 8px 34px 8px 11px;
@@ -726,6 +749,45 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
         <div class="tab">__FAV_TAB__ <span>Sobreala</span></div>
         <p class="note">El de 180 px va cuadrado a propósito: iOS le aplica su propio redondeo y las esquinas transparentes saldrían negras.</p>
       </div>
+
+      <div class="panel show-safe" id="avatar-panel">
+        <h2>Foto de perfil para redes
+          <label class="switch"><input type="checkbox" id="toggle-safe" checked> zona segura</label>
+        </h2>
+        <div class="avatar-stage" id="avatar-stage" tabindex="0" role="group"
+             aria-label="Foto de perfil: arrastra el ala para moverla">__AV_STAGE__</div>
+        <p class="note" style="text-align:center">Arrastra el ala para moverla. Con el círculo seleccionado, las flechas también la mueven (Mayús: pasos de 5).</p>
+        <div class="icons" style="margin-top:18px">
+          <div class="icon">__AV_110__<b>110 px · perfil</b></div>
+          <div class="icon">__AV_56__<b>56 px · publicaciones</b></div>
+          <div class="icon">__AV_32__<b>32 px · comentarios</b></div>
+        </div>
+        <div class="field" style="margin-top:18px">
+          <label for="num-af">Tamaño del ala <span style="opacity:.7">(% del ancho de la foto)</span></label>
+          <div class="row">
+            <input type="number" id="num-af" min="30" max="95" step="1" data-av>
+            <input type="range" id="rng-af" min="30" max="95" step="1" data-av>
+          </div>
+        </div>
+        <div class="field">
+          <label for="num-ax">Horizontal · X <span style="opacity:.7">(+ derecha)</span></label>
+          <div class="row">
+            <input type="number" id="num-ax" step="0.5" data-avpos="ax">
+            <input type="range" id="rng-ax" min="-120" max="120" step="0.5" data-avpos="ax">
+          </div>
+        </div>
+        <div class="field">
+          <label for="num-ay">Vertical · Y <span style="opacity:.7">(+ abajo)</span></label>
+          <div class="row">
+            <input type="number" id="num-ay" step="0.5" data-avpos="ay">
+            <input type="range" id="rng-ay" min="-120" max="120" step="0.5" data-avpos="ay">
+          </div>
+        </div>
+        <div class="actions"><button class="btn sm" id="btn-av-center" type="button">Centrar en el círculo</button></div>
+        <p class="readout" id="av-readout"></p>
+        <p class="warn" id="av-warn"></p>
+        <p class="note">Se guarda en <code>brand/perfil/perfil-1080.png</code>: cuadrada, de 1080 px y la misma para todas las redes. Las redes la recortan en círculo. La línea punteada es el __AV_SAFE__ % del radio: con el ala dentro, ninguna red la corta. Su posición es solo suya: no mueve el logo ni el favicon.</p>
+      </div>
     </div>
 
     <div>
@@ -805,13 +867,16 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
 <script>
   const DEFAULTS = {
     "color-background": "__BG__", "color-logo": "__LOGO__", "color-shadow": "__SHADOW__",
-    lx: __LX__, ly: __LY__
+    lx: __LX__, ly: __LY__, af: __AF__, ax: __AX__, ay: __AY__
   };
   const PRESETS = __PRESETS__;
   const CANVAS = __CANVAS__;             // [w, h] of the logo canvas
   const BBOX = __BBOX__;                 // wing + shadow bbox at offset (0, 0)
   const CENTER = __CENTER__;             // translation that centers it in the logo canvas
   const ORIGINAL = __ORIGINAL__;         // offset that matches the reference image
+  // The profile picture: the centre of the wing's frame, its width, the safe
+  // share of the circle's radius, and the outline of wing + shadow at offset 0.
+  const AVATAR = __AVATAR__;
   const COLOR_KEYS = ["color-background", "color-logo", "color-shadow"];
   const POS_KEYS = ["lx", "ly"];
   const root = document.documentElement;
@@ -860,12 +925,45 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
     if (y1 > CANVAS[1]) out.push(fmt(y1 - CANVAS[1]) + " por abajo");
     document.getElementById("warn").textContent = out.length ? "Se sale del lienzo: " + out.join(", ") : "";
 
+    // The profile picture: the viewBox frames the wing at the chosen size, the
+    // way render_avatar() does, and its own offset (--av-x, --av-y) moves it.
+    root.style.setProperty("--av-x", state.ax + "px");
+    root.style.setProperty("--av-y", state.ay + "px");
+    ["ax", "ay"].forEach(k => {
+      const n = document.getElementById("num-" + k), r = document.getElementById("rng-" + k);
+      if (n && document.activeElement !== n) n.value = fmt(state[k]);
+      if (r) r.value = state[k];
+    });
+    const side = AVATAR.width / state.af;
+    const acx = AVATAR.center[0], acy = AVATAR.center[1];
+    const box = [acx - side / 2, acy - side / 2, side, side].map(fmt).join(" ");
+    document.querySelectorAll("svg[data-avatar]").forEach(el => el.setAttribute("viewBox", box));
+    document.querySelectorAll("svg[data-avatar] .safe").forEach(el => el.setAttribute("r", fmt(AVATAR.safe * side / 2)));
+    let reach = 0;
+    AVATAR.points.forEach(pt => {
+      reach = Math.max(reach, Math.hypot(pt[0] + state.ax - acx, pt[1] + state.ay - acy));
+    });
+    reach = reach / (side / 2);
+    const pct = Math.round(state.af * 100);
+    const nAf = document.getElementById("num-af"), rAf = document.getElementById("rng-af");
+    if (nAf && document.activeElement !== nAf) nAf.value = pct;
+    if (rAf) rAf.value = pct;
+    document.getElementById("av-readout").innerHTML =
+      "el ala ocupa el <b>" + pct + " %</b> del ancho y llega al <b>" + Math.round(reach * 100) +
+      " %</b> del radio del círculo";
+    document.getElementById("av-warn").textContent = reach > AVATAR.safe
+      ? "Pasa del " + Math.round(AVATAR.safe * 100) + " %: al recortarla en redondo queda pegada al borde."
+      : "";
+
     const flags = [];
     COLOR_KEYS.forEach(key => {
       if (state[key] !== DEFAULTS[key]) flags.push("--" + key.replace("color-", "") + ' "' + state[key] + '"');
     });
     if (state.lx !== DEFAULTS.lx) flags.push("--x " + fmt(state.lx));
     if (state.ly !== DEFAULTS.ly) flags.push("--y " + fmt(state.ly));
+    if (state.af !== DEFAULTS.af) flags.push("--avatar-fill " + state.af);
+    if (state.ax !== DEFAULTS.ax) flags.push("--avatar-x " + fmt(state.ax));
+    if (state.ay !== DEFAULTS.ay) flags.push("--avatar-y " + fmt(state.ay));
     document.getElementById("cmd").textContent = flags.length
       ? "python brand/build_logo.py " + flags.join(" ")
       : "python brand/build_logo.py\n\n# (sin cambios respecto a la configuración actual)";
@@ -885,6 +983,46 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
     el.addEventListener("input", () => setPos(el.dataset.pos, el.value));
     el.addEventListener("blur", () => render());
   });
+  document.querySelectorAll("input[data-av]").forEach(el => {
+    el.addEventListener("input", () => {
+      const n = parseFloat(el.value);
+      if (!isNaN(n) && n >= 5 && n <= 100) { state.af = Math.round(n * 100) / 10000; render(); }
+    });
+    el.addEventListener("blur", () => render());
+  });
+  document.getElementById("toggle-safe").addEventListener("change", e => {
+    document.getElementById("avatar-panel").classList.toggle("show-safe", e.target.checked);
+  });
+  document.querySelectorAll("input[data-avpos]").forEach(el => {
+    el.addEventListener("input", () => setPos(el.dataset.avpos, el.value));
+    el.addEventListener("blur", () => render());
+  });
+  document.getElementById("btn-av-center").addEventListener("click", () => {
+    state.ax = 0; state.ay = 0; render();
+  });
+
+  // Dragging the wing inside the circle: the pointer's travel in screen
+  // pixels, turned into canvas units by the size the circle is drawn at.
+  const stageEl = document.getElementById("avatar-stage");
+  let drag = null;
+  stageEl.addEventListener("pointerdown", e => {
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, ax: state.ax, ay: state.ay };
+    stageEl.setPointerCapture(e.pointerId);
+    stageEl.classList.add("dragging");
+    stageEl.focus();
+    e.preventDefault();
+  });
+  stageEl.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const k = (AVATAR.width / state.af) / stageEl.getBoundingClientRect().width;
+    state.ax = round2(drag.ax + (e.clientX - drag.x) * k);
+    state.ay = round2(drag.ay + (e.clientY - drag.y) * k);
+    render();
+  });
+  ["pointerup", "pointercancel"].forEach(type => stageEl.addEventListener(type, () => {
+    drag = null;
+    stageEl.classList.remove("dragging");
+  }));
 
   const sw = document.getElementById("swatches");
   PRESETS.forEach(hex => {
@@ -920,7 +1058,7 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
   document.getElementById("save-box").hidden = !SERVED;
   document.getElementById("cmd-box").hidden = SERVED;
   document.getElementById("sub").innerHTML = SERVED
-    ? 'Mueve, colorea y cuando te guste dale a <b>Guardar y regenerar</b>: escribe los valores en <code>brand/colors.css</code> y <code>brand/layout.json</code> y vuelve a generar el SVG, el PNG y los favicons. Nada se guarda hasta que pulses el botón.'
+    ? 'Mueve, colorea, ajusta la foto de perfil en su círculo y cuando te guste dale a <b>Guardar y regenerar</b>: escribe los valores en <code>brand/colors.css</code> y <code>brand/layout.json</code> y vuelve a generar el SVG, el PNG, los favicons y la foto de perfil. Nada se guarda hasta que pulses el botón.'
     : 'Prueba aquí. No se guarda nada: cuando te decidas, copia el comando de abajo y ejecútalo. Para guardar con un botón desde esta misma página, ábrela con <code>python brand/build_logo.py --serve</code>.';
 
   function setStatus(text, kind) {
@@ -944,7 +1082,8 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
               "color-logo": state["color-logo"],
               "color-shadow": state["color-shadow"]
             },
-            layout: { offset: [state.lx, state.ly] }
+            layout: { offset: [state.lx, state.ly], avatar_fill: state.af,
+                      avatar_offset: [state.ax, state.ay] }
           })
         });
         const text = await res.text();
@@ -970,10 +1109,13 @@ PREVIEW_TEMPLATE = r"""<!doctype html>
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
     const step = e.shiftKey ? 5 : 0.5;
-    if (e.key === "ArrowLeft") state.lx = round2(state.lx - step);
-    if (e.key === "ArrowRight") state.lx = round2(state.lx + step);
-    if (e.key === "ArrowUp") state.ly = round2(state.ly - step);
-    if (e.key === "ArrowDown") state.ly = round2(state.ly + step);
+    // With the circle selected the arrows move the profile picture's wing;
+    // anywhere else, the logo's and the favicon's, as always.
+    const kx = t === stageEl ? "ax" : "lx", ky = t === stageEl ? "ay" : "ly";
+    if (e.key === "ArrowLeft") state[kx] = round2(state[kx] - step);
+    if (e.key === "ArrowRight") state[kx] = round2(state[kx] + step);
+    if (e.key === "ArrowUp") state[ky] = round2(state[ky] - step);
+    if (e.key === "ArrowDown") state[ky] = round2(state[ky] + step);
     e.preventDefault(); render();
   });
 
@@ -1039,6 +1181,43 @@ def preview_html(colors: dict[str, str], layout: dict, served: bool = False) -> 
         svg = svg.replace(f"width=\"{c}\" height=\"{c}\"", f"width=\"{px}\" height=\"{px}\"", 1)
         return svg.replace("<svg ", "<svg class=\"fav\" ", 1)
 
+    centre = ((BBOX[0] + BBOX[2]) / 2, (BBOX[1] + BBOX[3]) / 2)
+
+    def avatar(px: int, round_: bool = True, guide: bool = False) -> str:
+        """Preview of the profile picture at one size, as a network crops it.
+
+        The wing stays at its reference coordinates and the viewBox frames it,
+        centred on the wing's frame like render_avatar(); the page changes the
+        viewBox when the size changes, and the offset arrives through .wing.
+        """
+        side = avatar_canvas(layout)
+        box = " ".join(_fmt(v) for v in (centre[0] - side / 2, centre[1] - side / 2, side, side))
+        safe = (f"  <circle class=\"safe\" cx=\"{_fmt(centre[0])}\" cy=\"{_fmt(centre[1])}\" "
+                f"r=\"{_fmt(AVATAR_SAFE * side / 2)}\" fill=\"none\" stroke=\"#fff\" "
+                "stroke-opacity=\".8\" stroke-width=\"1.2\" stroke-dasharray=\"4 4\" "
+                "vector-effect=\"non-scaling-stroke\"/>\n") if guide else ""
+        return (
+            f"<svg class=\"avatar{' round' if round_ else ''}\" xmlns=\"http://www.w3.org/2000/svg\" "
+            f"viewBox=\"{box}\" width=\"{px}\" height=\"{px}\" role=\"img\" aria-label=\"Sobreala\" data-avatar>\n"
+            "  <rect class=\"bg\" x=\"-1000\" y=\"-1000\" width=\"2500\" height=\"2500\" "
+            "fill=\"var(--color-background)\"/>\n"
+            + wing_group("var(--color-logo)", "var(--color-shadow)")
+            + safe
+            + "</svg>"
+        )
+
+    # The outline the page measures the reach with: the same wing + shadow that
+    # check_placement() measures, thinner, since it travels inside the page.
+    outline_pts = np.concatenate([
+        wing_polygon(samples_per_unit=1.0),
+        wing_polygon(SHADOW_OFFSET, samples_per_unit=1.0, top_lift=SHADOW_TOP_LIFT)])
+    avatar_data = json.dumps({
+        "center": [round(centre[0], 2), round(centre[1], 2)],
+        "width": round(BBOX_SIZE[0], 2),
+        "safe": AVATAR_SAFE,
+        "points": [[round(float(x), 2), round(float(y), 2)] for x, y in outline_pts],
+    }, separators=(",", ":"))
+
     presets = [colors["color-background"]] + [p for p in PRESET_BACKGROUNDS if p != colors["color-background"]]
     lx, ly = layout["offset"]
     html = PREVIEW_TEMPLATE
@@ -1055,6 +1234,15 @@ def preview_html(colors: dict[str, str], layout: dict, served: bool = False) -> 
         ("__BBOX__", "[" + ", ".join(_fmt(v) for v in BBOX) + "]"),
         ("__CENTER__", "[" + ", ".join(_fmt(v) for v in centering_shift()) + "]"),
         ("__ORIGINAL__", "[" + ", ".join(_fmt(v) for v in original_offset()) + "]"),
+        ("__AV_STAGE__", avatar(300, guide=True)),
+        ("__AV_110__", avatar(110)),
+        ("__AV_56__", avatar(56)),
+        ("__AV_32__", avatar(32)),
+        ("__AVATAR__", avatar_data),
+        ("__AV_SAFE__", str(round(AVATAR_SAFE * 100))),
+        ("__AF__", repr(float(layout["avatar_fill"]))),
+        ("__AX__", _fmt(layout["avatar_offset"][0])),
+        ("__AY__", _fmt(layout["avatar_offset"][1])),
         ("__SERVED__", "true" if served else "false"),
         ("__LX__", _fmt(lx)), ("__LY__", _fmt(ly)),
         ("__BG__", colors["color-background"]),
@@ -1131,6 +1319,7 @@ def describe(colors: dict[str, str], layout: dict) -> str:
         f"favicon_fill:          {layout['favicon_fill']}",
         f"favicon_corner_radius: {layout['favicon_corner_radius']}",
         f"avatar_fill:           {layout['avatar_fill']}",
+        f"avatar_offset:         [{_fmt(layout['avatar_offset'][0])}, {_fmt(layout['avatar_offset'][1])}]",
         f"logo en el lienzo {CANVAS[0]}x{CANVAS[1]}: x {_fmt(x0)}..{_fmt(x1)}  y {_fmt(y0)}..{_fmt(y1)}",
     ])
 
@@ -1314,6 +1503,12 @@ def main(argv=None) -> int:
     ap.add_argument("--original", action="store_true", help="put the wing exactly where the reference image has it")
     ap.add_argument("--favicon-fill", type=float, metavar="F", help="share of the favicon side taken by the wing (0-1)")
     ap.add_argument("--favicon-radius", type=float, metavar="F", help="corner radius as a fraction of the side (0-0.5)")
+    ap.add_argument("--avatar-fill", type=float, metavar="F",
+                    help="share of the profile picture's side taken by the wing (0-1)")
+    ap.add_argument("--avatar-x", type=float, metavar="N",
+                    help="horizontal offset of the wing in the profile picture (+ right), its own")
+    ap.add_argument("--avatar-y", type=float, metavar="N",
+                    help="vertical offset of the wing in the profile picture (+ down), its own")
     ap.add_argument("--show", action="store_true", help="print the current config and exit")
     ap.add_argument("--serve", action="store_true",
                     help="open the editor in a browser with a Save button that writes the config (local only)")
@@ -1354,6 +1549,12 @@ def main(argv=None) -> int:
         new_layout["favicon_fill"] = round(args.favicon_fill, 4)
     if args.favicon_radius is not None:
         new_layout["favicon_corner_radius"] = round(args.favicon_radius, 4)
+    if args.avatar_fill is not None:
+        new_layout["avatar_fill"] = round(args.avatar_fill, 4)
+    if args.avatar_x is not None:
+        new_layout["avatar_offset"][0] = round(args.avatar_x, 2)
+    if args.avatar_y is not None:
+        new_layout["avatar_offset"][1] = round(args.avatar_y, 2)
 
     new_layout, errors = validate_layout(new_layout)
     if errors:

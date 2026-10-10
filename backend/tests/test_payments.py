@@ -357,6 +357,32 @@ def test_el_destino_de_pago_sale_del_entorno(monkeypatch):
     assert Config.paypal_checkout() == "https://www.sandbox.paypal.com"
 
 
+def test_en_produccion_sandbox_solo_si_esta_escrito(monkeypatch, capsys):
+    """Con llaves puestas fuera de desarrollo: live arranca, sandbox escrito a
+    propósito arranca y lo dice en el registro, y sin la variable no arranca,
+    para que el lanzamiento no se quede en sandbox por olvido."""
+    import pytest
+
+    for name, value in (("ENV", "production"), ("SECRET_KEY", "una-clave"),
+                        ("APP_BASE_URL", "https://app.sobreala.com"),
+                        ("MAIL_BACKEND", "file"), ("PAGUELOFACIL_CCLW", ""),
+                        ("PAYPAL_CLIENT_ID", "llave-de-prueba")):
+        monkeypatch.setattr(Config, name, value)
+
+    monkeypatch.setattr(Config, "PAYPAL_ENV", "live")
+    monkeypatch.setattr(Config, "PAYPAL_ENV_SET", True)
+    Config.check()
+    assert "en sandbox" not in capsys.readouterr().out
+
+    monkeypatch.setattr(Config, "PAYPAL_ENV", "sandbox")
+    Config.check()
+    assert "en sandbox: los cobros son de prueba" in capsys.readouterr().out
+
+    monkeypatch.setattr(Config, "PAYPAL_ENV_SET", False)
+    with pytest.raises(RuntimeError, match="PAYPAL_ENV no esta escrito"):
+        Config.check()
+
+
 # ------------------------------------------ la pantalla de contratar un plan
 
 def test_sin_sesion_contratar_manda_a_entrar_con_su_plan(client, database):

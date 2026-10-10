@@ -1,12 +1,14 @@
 {
   "_readme": {
-    "offset": "Where the wing sits, as [x, y] in canvas units from centered (+x right, +y down). The same offset applies in the logo canvas, the favicon and the profile picture. [0, 0] = centered in all three.",
+    "offset": "Where the wing sits, as [x, y] in canvas units from centered (+x right, +y down). The same offset applies in the logo canvas and in the favicon. [0, 0] = centered in both.",
     "favicon_fill": "Share of the favicon side taken by the wing's width (0-1). The rest is the safe area that keeps it clear of the rounded corners.",
     "favicon_corner_radius": "Rounded corners of the favicon, as a fraction of the side. 0 = square.",
-    "avatar_fill": "Share of the profile picture's side taken by the wing's width (0-1). The networks crop it to a circle, so the wing needs air inside it: past 80% of the radius the build warns."
+    "avatar_fill": "Share of the profile picture's side taken by the wing's width (0-1). The networks crop it to a circle, so the wing needs air inside it: past 80% of the radius the build warns.",
+    "avatar_offset": "Where the wing sits in the profile picture, as [x, y] in canvas units from centered, like offset. Its own: moving it does not touch the logo or the favicon."
   },
   "offset": [-3.0, -6.0],
   "favicon_fill": 0.84,
   "favicon_corner_radius": 0.2,
-  "avatar_fill": 0.6
+  "avatar_fill": 0.83,
+  "avatar_offset": [0.0, 11.0]
 }

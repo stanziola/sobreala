@@ -370,7 +370,8 @@ SES_TRANSACTIONAL_CONFIGURATION_SET # correo del sistema, sin ellos
 SES_WEBHOOK_SECRET        # va en la dirección del aviso; sin él, 404
 SES_TOPIC_ARN             # opcional: descarta avisos de otro tema
 SENDING_DOMAIN            # opcional: por omisión envios.sobreala.com
-PAYPAL_ENV                # sandbox | live; en producción con sandbox no arranca
+PAYPAL_ENV                # sandbox | live; en producción, con llaves, tiene que
+                          # estar escrita: sin ella no arranca
 PAYPAL_CLIENT_ID
 PAYPAL_SECRET
 PAYPAL_WEBHOOK_ID         # para comprobar los avisos; todavía sin usar

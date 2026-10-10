@@ -58,6 +58,26 @@ Tres cosas de ese camino que no son negociables:
    `services/plans.py` lee las mismas dos filas que lee el sitio. Cambiar una
    cifra ahí la cambia en el sitio, en el panel y en lo que se cobra.
 
+### Sandbox o de verdad (`PAYPAL_ENV`)
+
+`PAYPAL_ENV` dice a qué PayPal se le habla: `sandbox` mueve dinero falso, con
+las llaves de la pestaña Sandbox de developer.paypal.com, y `live` cobra de
+verdad, con las de Live. Las llaves de una no sirven en la otra. **Fuera de
+desarrollo, con llaves puestas, la variable tiene que estar escrita**
+(`Config.check()`):
+
+- Con `live`, arranca.
+- Con `sandbox` escrito, arranca y deja en el registro `[paypal] en sandbox:
+  los cobros son de prueba`. Es lo que se usa para probar en Railway antes de
+  lanzar (octubre de 2026).
+- Sin la variable, no arranca. Hasta octubre de 2026 se negaba también con
+  `sandbox` escrito, y así no había forma de probar en Railway. Ahora la
+  variable escrita es lo que separa «a propósito» de «por olvido».
+
+**Mientras esté en sandbox, un pago de prueba activa el plan como uno de
+verdad**, y cualquiera con una cuenta de prueba de PayPal puede hacerlo. Antes
+de abrir las puertas van las llaves de Live y `PAYPAL_ENV=live`.
+
 ### Con qué se paga
 
 La pantalla de contratar pregunta **dos cosas y en este orden**: con qué se paga

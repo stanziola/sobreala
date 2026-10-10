@@ -130,6 +130,10 @@ class Config:
     # sandbox mueve dinero falso, live cobra tarjetas de verdad. Cada uno tiene
     # su propio par de llaves en developer.paypal.com y no son intercambiables.
     PAYPAL_ENV = os.getenv("PAYPAL_ENV", "sandbox").strip().lower()
+    # Si la variable está escrita. Sin ella el entorno también vale sandbox, y
+    # check() necesita distinguir «se dejó en sandbox a propósito» de «nadie lo
+    # escribió».
+    PAYPAL_ENV_SET = bool(os.getenv("PAYPAL_ENV", "").strip())
     PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
     PAYPAL_SECRET = os.getenv("PAYPAL_SECRET", "")
     # Sin esto no se puede comprobar que un aviso venga de PayPal, así que
@@ -216,12 +220,18 @@ class Config:
             raise RuntimeError(
                 f"PAYPAL_ENV debe ser sandbox o live, no {cls.PAYPAL_ENV!r}")
         # Un cobro que no cobra no se nota desde dentro: la página del checkout
-        # se abre igual, el cliente cree que pagó y el dinero nunca llega.
-        # Mejor negarse a arrancar que descubrirlo al cerrar el mes.
-        if cls.ENV != "development" and cls.PAYPAL_CLIENT_ID                 and cls.PAYPAL_ENV != "live":
-            raise RuntimeError(
-                "PAYPAL_ENV sigue en sandbox con credenciales puestas: los "
-                "cobros no llegarian a ninguna cuenta de verdad")
+        # se abre igual, el cliente cree que pagó y el dinero nunca llega. Por
+        # eso, con llaves puestas, el entorno tiene que estar escrito: sandbox
+        # vale mientras se prueba, pero solo si alguien lo puso a propósito, y
+        # queda dicho en el registro. Sin la variable no arranca, para que el
+        # lanzamiento no se quede en sandbox por olvido.
+        if cls.ENV != "development" and cls.PAYPAL_CLIENT_ID \
+                and cls.PAYPAL_ENV != "live":
+            if not cls.PAYPAL_ENV_SET:
+                raise RuntimeError(
+                    "Hay credenciales de PayPal y PAYPAL_ENV no esta escrito: "
+                    "pon live para cobrar de verdad, o sandbox para probar")
+            print("  [paypal] en sandbox: los cobros son de prueba", flush=True)
         if cls.PAGUELOFACIL_ENV not in ("sandbox", "live"):
             raise RuntimeError(
                 f"PAGUELOFACIL_ENV debe ser sandbox o live, no {cls.PAGUELOFACIL_ENV!r}")

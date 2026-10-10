@@ -869,36 +869,78 @@
 </section><section class="section" aria-labelledby="usos-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow">Ejemplos</p>
-      <h2 class="section__title" id="usos-title">Lo que puedes enviar con Sobreala</h2>
-      <p class="section__intro">Algunas ideas de lo que envían negocios y organizaciones como la tuya.</p>
+      <h2 class="section__title" id="usos-title">Haz crecer tu negocio</h2>
     </div>
-    <ul class="uses">
-      <li class="use">
-        <img class="use__photo" src="/assets/img/usos/equipo.webp"
-             alt="Un equipo de trabajo reunido frente a un portátil." width="800" height="600" loading="lazy" decoding="async">
-        <h3 class="use__title">Comunícate con tu equipo</h3>
-        <p class="use__text">Comunicados, cambios de horario y boletines para tus colaboradores.</p>
-      </li>
-      <li class="use">
-        <img class="use__photo" src="/assets/img/usos/clientes.webp"
-             alt="La dueña de una floristería arregla un ramo en su tienda." width="800" height="600" loading="lazy" decoding="async">
-        <h3 class="use__title">Llega a más clientes</h3>
-        <p class="use__text">Ofertas, lanzamientos y novedades para quienes ya te conocen.</p>
-      </li>
-      <li class="use">
-        <img class="use__photo" src="/assets/img/usos/socios.webp"
-             alt="Un hombre presenta frente a un grupo sentado en una sala de reuniones." width="800" height="600" loading="lazy" decoding="async">
-        <h3 class="use__title">Convoca a tus socios</h3>
-        <p class="use__text">Asambleas, recordatorios y estados de cuenta, cada uno con su nombre y su monto.</p>
-      </li>
-      <li class="use">
-        <img class="use__photo" src="/assets/img/usos/familias.webp"
-             alt="Una madre y su hija miran juntas un portátil en casa." width="800" height="600" loading="lazy" decoding="async">
-        <h3 class="use__title">Mantén informadas a las familias</h3>
-        <p class="use__text">Circulares, eventos y el calendario del colegio, en el correo de cada familia.</p>
-      </li>
-    </ul>
+    <div class="stories" data-stories>
+      <input class="stories__pick" type="radio" name="usos"
+             id="uso-1" checked>
+      <input class="stories__pick" type="radio" name="usos"
+             id="uso-2">
+      <input class="stories__pick" type="radio" name="usos"
+             id="uso-3">
+      <input class="stories__pick" type="radio" name="usos"
+             id="uso-4">
+      <div class="stories__frame">
+        <article class="story" aria-labelledby="uso-title-1">
+          <div class="story__media">
+            <img class="story__photo" src="/assets/img/usos/clientes.webp"
+                 alt="La dueña de una floristería arregla un ramo en su tienda." width="1280" height="800" loading="lazy" decoding="async">
+            <div class="story__caption">
+              <p class="story__label">Comercios</p>
+              <h3 class="story__title" id="uso-title-1">Llega a más clientes</h3>
+            </div>
+          </div>
+          <div class="story__side">
+            <p class="story__text">Ofertas, lanzamientos y novedades para quienes ya te conocen.</p>
+          </div>
+        </article>
+        <article class="story" aria-labelledby="uso-title-2">
+          <div class="story__media">
+            <img class="story__photo" src="/assets/img/usos/equipo.webp"
+                 alt="Un equipo de trabajo reunido frente a un portátil." width="1280" height="800" loading="lazy" decoding="async">
+            <div class="story__caption">
+              <p class="story__label">Empresas</p>
+              <h3 class="story__title" id="uso-title-2">Comunícate con tu equipo</h3>
+            </div>
+          </div>
+          <div class="story__side">
+            <p class="story__text">Comunicados, cambios de horario y boletines para tus colaboradores.</p>
+          </div>
+        </article>
+        <article class="story" aria-labelledby="uso-title-3">
+          <div class="story__media">
+            <img class="story__photo" src="/assets/img/usos/socios.webp"
+                 alt="Un hombre presenta frente a un grupo sentado en una sala de reuniones." width="1280" height="800" loading="lazy" decoding="async">
+            <div class="story__caption">
+              <p class="story__label">Cooperativas y gremios</p>
+              <h3 class="story__title" id="uso-title-3">Convoca a tus socios</h3>
+            </div>
+          </div>
+          <div class="story__side">
+            <p class="story__text">Asambleas, recordatorios y estados de cuenta, cada uno con su nombre y su monto.</p>
+          </div>
+        </article>
+        <article class="story" aria-labelledby="uso-title-4">
+          <div class="story__media">
+            <img class="story__photo" src="/assets/img/usos/familias.webp"
+                 alt="Una madre y su hija miran juntas un portátil en casa." width="1280" height="800" loading="lazy" decoding="async">
+            <div class="story__caption">
+              <p class="story__label">Colegios</p>
+              <h3 class="story__title" id="uso-title-4">Mantén informadas a las familias</h3>
+            </div>
+          </div>
+          <div class="story__side">
+            <p class="story__text">Circulares, eventos y el calendario del colegio, en el correo de cada familia.</p>
+          </div>
+        </article>
+      </div>
+      <p class="stories__dots">
+        <label class="stories__dot" for="uso-1"><span class="visually-hidden">Llega a más clientes</span></label>
+        <label class="stories__dot" for="uso-2"><span class="visually-hidden">Comunícate con tu equipo</span></label>
+        <label class="stories__dot" for="uso-3"><span class="visually-hidden">Convoca a tus socios</span></label>
+        <label class="stories__dot" for="uso-4"><span class="visually-hidden">Mantén informadas a las familias</span></label>
+      </p>
+    </div>
   </div>
 </section>
 
@@ -2801,6 +2843,7 @@
 </footer>
 
 <script src="/assets/js/nav.js" defer></script><script src="/assets/js/trouble.js" defer></script>
+<script src="/assets/js/stories.js" defer></script>
 <script src="/assets/js/carousel.js" defer></script>
 <script src="/assets/js/plans.js" defer></script>
 <script src="/assets/js/tutorial.js" defer></script>

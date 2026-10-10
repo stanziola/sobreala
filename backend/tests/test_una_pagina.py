@@ -55,13 +55,27 @@ def test_la_portada_dice_menos():
     assert 'href="/#planes">Ver planes</a>' in portada
 
 
-def test_los_usos_van_debajo_del_problema_con_sus_cuatro_fotos():
+def test_haz_crecer_tu_negocio_va_debajo_del_problema():
+    """Cuatro casos, uno a la vez y con la florista primero, sin el encabezado
+    de antes y con su paso automático."""
+    from PIL import Image
+
     html = (LANDING / "index.html").read_text(encoding="utf-8")
     assert (html.index('id="problema-title"') < html.index('id="usos-title"')
             < html.index('id="planes"'))
-    for foto in ("equipo", "clientes", "socios", "familias"):
-        assert f'src="/assets/img/usos/{foto}.webp"' in html, foto
-        assert (LANDING / "assets" / "img" / "usos" / f"{foto}.webp").exists(), foto
+    assert 'id="usos-title">Haz crecer tu negocio</h2>' in html
+    assert "Lo que puedes enviar con Sobreala" not in html
+    seccion = html[html.index('id="usos-title"'):html.index('id="planes"')]
+    assert seccion.count('name="usos"') == 4 and 'id="uso-1" checked' in seccion
+    assert seccion.count('class="stories__dot"') == 4
+    fotos = re.findall(r'src="/assets/img/usos/(\w+)\.webp"', seccion)
+    assert fotos == ["clientes", "equipo", "socios", "familias"]
+    assert seccion.count('width="1280" height="800"') == 4
+    for foto in fotos:
+        with Image.open(LANDING / "assets" / "img" / "usos" / f"{foto}.webp") as im:
+            assert im.size == (1280, 800), foto
+    assert '<script src="/assets/js/stories.js" defer></script>' in html
+    assert (LANDING / "assets" / "js" / "stories.js").exists()
 
 
 def test_features_trae_sus_dibujos_y_su_lista():

@@ -82,27 +82,47 @@
   </div>
 </section>
 
-{#- Para qué se usa: cuatro casos, cada uno con una foto de personas reales
-    (Pexels, licencia libre; los autores, en docs/sitio.md). Nadie aparece como
-    cliente ni dice nada. Cuatro columnas a lo ancho, dos en la tableta y una
-    en el teléfono. -#}
+{#- «Haz crecer tu negocio»: cuatro casos, uno a la vez, en una tarjeta grande
+    como la del carrusel de casos que se dio de referencia: la foto con el
+    rótulo y el título encima, y la descripción al lado. Las fotos son de Pexels,
+    con licencia libre (los autores, en docs/sitio.md), y no hay cifras ni
+    testimonios: nadie aparece como cliente.
+    Lo que abre cada uno son botones de radio, como «¿Sigues enviando…?»: así
+    funciona sin JavaScript y con las flechas del teclado. Los puntos de abajo
+    son sus etiquetas, y stories.js solo agrega el paso automático. -#}
 <section class="section" aria-labelledby="usos-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow">{{ page.uses.eyebrow }}</p>
       <h2 class="section__title" id="usos-title">{{ page.uses.title }}</h2>
-      <p class="section__intro">{{ page.uses.intro }}</p>
     </div>
-    <ul class="uses">
+    <div class="stories" data-stories>
       {% for use in page.uses['items'] %}
-      <li class="use">
-        <img class="use__photo" src="/assets/img/usos/{{ use.photo }}.webp"
-             alt="{{ use.alt }}" width="800" height="600" loading="lazy" decoding="async">
-        <h3 class="use__title">{{ use.title }}</h3>
-        <p class="use__text">{{ use.text }}</p>
-      </li>
+      <input class="stories__pick" type="radio" name="usos"
+             id="uso-{{ loop.index }}"{{ " checked" if loop.first }}>
       {% endfor %}
-    </ul>
+      <div class="stories__frame">
+        {% for use in page.uses['items'] %}
+        <article class="story" aria-labelledby="uso-title-{{ loop.index }}">
+          <div class="story__media">
+            <img class="story__photo" src="/assets/img/usos/{{ use.photo }}.webp"
+                 alt="{{ use.alt }}" width="1280" height="800" loading="lazy" decoding="async">
+            <div class="story__caption">
+              <p class="story__label">{{ use.label }}</p>
+              <h3 class="story__title" id="uso-title-{{ loop.index }}">{{ use.title }}</h3>
+            </div>
+          </div>
+          <div class="story__side">
+            <p class="story__text">{{ use.text }}</p>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <p class="stories__dots">
+        {% for use in page.uses['items'] %}
+        <label class="stories__dot" for="uso-{{ loop.index }}"><span class="visually-hidden">{{ use.title }}</span></label>
+        {% endfor %}
+      </p>
+    </div>
   </div>
 </section>
 
@@ -120,6 +140,7 @@
 
 {% block scripts %}
 <script src="/assets/js/trouble.js" defer></script>
+<script src="/assets/js/stories.js" defer></script>
 <script src="/assets/js/carousel.js" defer></script>
 <script src="/assets/js/plans.js" defer></script>
 <script src="/assets/js/tutorial.js" defer></script>

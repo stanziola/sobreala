@@ -176,32 +176,35 @@ HOME = {
             },
         ],
     },
-    # Para qué se usa, debajo de «¿Sigues enviando…?»: cuatro casos, cada uno con
-    # una foto de personas reales. Son de Pexels, con su licencia libre (uso
-    # comercial sin pedir permiso ni citar al autor); quién hizo cada una está
-    # en docs/sitio.md. Nadie aparece como cliente ni dice nada, así que no se
-    # insinúa que respalden Sobreala.
+    # «Haz crecer tu negocio», debajo de «¿Sigues enviando…?»: cuatro casos, uno
+    # a la vez, en una tarjeta grande con la foto, el rótulo y el título encima
+    # y la descripción al lado. Las fotos son de personas reales, de Pexels con
+    # su licencia libre (uso comercial sin pedir permiso ni citar al autor);
+    # quién hizo cada una está en docs/sitio.md. Nadie aparece como cliente ni
+    # dice nada, y la tarjeta no lleva cifras ni testimonios, así que no se
+    # insinúa que respalden Sobreala. La florista va primera, como se pidió.
     "uses": {
-        "eyebrow": "Ejemplos",
-        "title": "Lo que puedes enviar con Sobreala",
-        "intro": "Algunas ideas de lo que envían negocios y organizaciones como la tuya.",
+        "title": "Haz crecer tu negocio",
         "items": [
             {
-                "photo": "equipo",
-                "alt": "Un equipo de trabajo reunido frente a un portátil.",
-                "title": "Comunícate con tu equipo",
-                "text": "Comunicados, cambios de horario y boletines para tus "
-                        "colaboradores.",
-            },
-            {
                 "photo": "clientes",
+                "label": "Comercios",
                 "alt": "La dueña de una floristería arregla un ramo en su tienda.",
                 "title": "Llega a más clientes",
                 "text": "Ofertas, lanzamientos y novedades para quienes ya te "
                         "conocen.",
             },
             {
+                "photo": "equipo",
+                "label": "Empresas",
+                "alt": "Un equipo de trabajo reunido frente a un portátil.",
+                "title": "Comunícate con tu equipo",
+                "text": "Comunicados, cambios de horario y boletines para tus "
+                        "colaboradores.",
+            },
+            {
                 "photo": "socios",
+                "label": "Cooperativas y gremios",
                 "alt": "Un hombre presenta frente a un grupo sentado en una sala "
                        "de reuniones.",
                 "title": "Convoca a tus socios",
@@ -210,6 +213,7 @@ HOME = {
             },
             {
                 "photo": "familias",
+                "label": "Colegios",
                 "alt": "Una madre y su hija miran juntas un portátil en casa.",
                 "title": "Mantén informadas a las familias",
                 "text": "Circulares, eventos y el calendario del colegio, en el "
