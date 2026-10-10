@@ -1,7 +1,9 @@
-{#- Planes: lo que costaba en /pricing, ahora una sección de la portada. -#}
+{#- Planes: lo que costaba en /pricing, ahora una sección de la portada. Los
+    fondos alternan con lo que viene antes (los usos, en blanco) y después
+    (Features, en blanco). -#}
 <div class="page-part" id="planes">
 
-<section class="section" aria-labelledby="planes-title">
+<section class="section section--alt" aria-labelledby="planes-title">
   <div class="shell">
     <div class="section__head">
       <p class="eyebrow">{{ page.hero.eyebrow }}</p>
@@ -84,7 +86,7 @@
   </div>
 </section>
 
-<section class="section section--alt" aria-labelledby="tabla-title">
+<section class="section" aria-labelledby="tabla-title">
   <div class="shell">
     <div class="section__head">
       <p class="eyebrow">{{ page.table.eyebrow }}</p>
@@ -136,7 +138,7 @@
 {#- La tabla de arriba no se explica sola: una fila que dice «4» no cuenta
     nada a quien no conoce el producto. Aquí va lo que hay detrás de las que no
     se adivinan, con el mismo patrón de tarjetas de Cómo funciona. -#}
-<section class="section" aria-labelledby="detalle-title">
+<section class="section section--alt" aria-labelledby="detalle-title">
   <div class="shell">
     <div class="section__head">
       <p class="eyebrow">{{ page.glossary.eyebrow }}</p>
@@ -154,19 +156,7 @@
   </div>
 </section>
 
-{# Lo que va en todos los planes. Hubo al lado una lista de complementos
-   (recargas y piezas adicionales) y se dejaron de vender. #}
-<section class="section section--alt" aria-labelledby="included-title">
-  <div class="shell shell--narrow">
-    <div class="included">
-      <h2 class="included__title" id="included-title">{{ page.included.title }}</h2>
-      <ul class="included__list">
-        {% for item in page.included['items'] %}
-        <li>{{ item }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-  </div>
-</section>
+{#- Lo que va en todos los planes se juntó con Features (octubre de 2026): ahí
+    está su lista, debajo del carrusel. -#}
 
 </div>

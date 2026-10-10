@@ -4,8 +4,8 @@
 <div class="page-part" id="como-funciona">
 
 {#- Sigue al tema como el resto de la página: hubo una banda que se invertía,
-    y existía solo porque las capturas del panel eran siempre oscuras. Ahora hay
-    un juego por tema, así que no hace falta. -#}
+    y existía solo porque las capturas del panel eran siempre oscuras. Ahora
+    son dibujos que siguen al tema, así que no hace falta. -#}
 <section class="section" aria-labelledby="como-funciona-title">
   <div class="shell">
     <div class="section__head">
@@ -17,13 +17,11 @@
       <h3 class="section__subtitle" id="features-title">{{ home.features.title }}</h3>
       <p>{{ home.features.intro }}</p>
     </div>
-    {#- Capturas del panel de verdad, hechas con landing/shots.py. Los botones
-        de radio son los que abren cada una, asi que esto funciona entero sin
-        JavaScript y con el teclado; carousel.js solo agrega las flechas y el
-        paso automatico. -#}
-    <div class="tour" data-tour
-         data-tour-zoom="{{ home.features.zoom }}"
-         data-tour-close="{{ home.features.close }}">
+    {#- Cinco dibujos sencillos, uno por cosa (partials/feature-*.svg.j2), en vez
+        de capturas del panel. Los botones de radio son los que abren cada uno,
+        así que esto funciona entero sin JavaScript y con el teclado;
+        carousel.js solo agrega las flechas y el paso automático. -#}
+    <div class="tour" data-tour>
       {% for item in home.features['items'] %}
       <input class="tour__pick" type="radio" name="tour"
              id="tour-{{ loop.index }}"{{ " checked" if loop.first }}>
@@ -31,17 +29,7 @@
       <div class="tour__strip">
         {% for item in home.features['items'] %}
         <label class="tour__panel" for="tour-{{ loop.index }}">
-          {#- Dos juegos de capturas, uno por tema. La que no toca va en
-              `display: none`, y como las diez van `lazy` el navegador no se baja
-              la que no se ve: una sola de las dos cuesta bytes. -#}
-          <img class="tour__shot tour__shot--light"
-               src="/assets/img/panel/light/{{ item.shot }}.webp"
-               alt="{{ item.alt }}" width="1400" height="788"
-               decoding="async" loading="lazy">
-          <img class="tour__shot tour__shot--dark"
-               src="/assets/img/panel/dark/{{ item.shot }}.webp"
-               alt="{{ item.alt }}" width="1400" height="788"
-               decoding="async" loading="lazy">
+          {%- include "partials/feature-" ~ item.art ~ ".svg.j2" -%}
         </label>
         {% endfor %}
       </div>
@@ -61,6 +49,18 @@
                 aria-label="{{ home.features.next }}">
           {%- include "partials/icon-caret.svg.j2" -%}</button>
       </p>
+    </div>
+
+    {#- Lo que no tiene dibujo. Era la mitad de «Reglas que funcionan solas» y
+        de «En todos los planes»; la otra mitad la cuentan los cinco de arriba. -#}
+    {% set more = home.features.more %}
+    <div class="included included--features">
+      <h4 class="included__title">{{ more.title }}</h4>
+      <ul class="included__list">
+        {% for one in more['items'] %}
+        <li><strong>{{ one.title }}</strong>{% if one.text %} {{ one.text }}{% endif %}</li>
+        {% endfor %}
+      </ul>
     </div>
   </div>
 </section>
@@ -212,24 +212,6 @@
         </p>
       </div>
     </div>
-  </div>
-</section>
-
-<section class="section" aria-labelledby="cuidamos-title">
-  <div class="shell">
-    <div class="section__head">
-      <p class="eyebrow">{{ page.care.eyebrow }}</p>
-      <h2 class="section__title" id="cuidamos-title">{{ page.care.title }}</h2>
-      <p class="section__intro">{{ page.care.intro }}</p>
-    </div>
-    <ul class="grid grid--2">
-      {% for item in page.care['items'] %}
-      <li class="note-card note-card--check">
-        <h3 class="note-card__title">{{ item.title }}</h3>
-        <p>{{ item.text }}</p>
-      </li>
-      {% endfor %}
-    </ul>
   </div>
 </section>
 

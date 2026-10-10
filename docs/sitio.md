@@ -12,22 +12,29 @@ van en este orden, cada una con el ancla a la que baja su botón de la barra:
 
 | Ancla | Qué lleva | Plantilla |
 |---|---|---|
-| `#inicio` | La portada y «¿Sigues enviando correos masivos…?» | `src/pages/index.html.j2` |
-| `#planes` | Interruptor y tarjetas, la tabla, el glosario e «incluido» | `src/sections/planes.html.j2` |
-| `#como-funciona` | Features, la tira de plantillas, los tutoriales, el envío y las reglas | `src/sections/como-funciona.html.j2` |
+| `#inicio` | La portada, «¿Sigues enviando correos masivos…?» y los usos | `src/pages/index.html.j2` |
+| `#planes` | Interruptor y tarjetas, la tabla y el glosario | `src/sections/planes.html.j2` |
+| `#como-funciona` | Features con su lista, la tira de plantillas, los tutoriales y el envío | `src/sections/como-funciona.html.j2` |
 | `#nosotros` | Quiénes somos | `src/sections/nosotros.html.j2` |
-| `#contacto` | WhatsApp, correo e Instagram, quién contesta | `src/sections/contacto.html.j2` |
 | `#preguntas` | Una sola lista: las generales y las de facturación | `src/partials/faq.html.j2` |
 
+**Contacto es el pie** (`id="contacto"` en `base.html.j2`): WhatsApp, correo e
+Instagram. Hubo una sección «Hablemos de tu lista» antes de las preguntas, y se
+quitó en octubre de 2026 porque repetía el pie; `/contact/` y `/#contacto`
+aterrizan ahí. Con ella se fue el `id` repetido que había entre las dos.
+
 - **Cada sección conserva sus textos en su diccionario de `content.py`**
-  (`PRICING`, `HOW`, `ABOUT`, `CONTACT_PAGE`), y `index.html.j2` la incluye con
-  `{% with page = … %}`, así que dentro nada cambió de nombre. El `hero` de
+  (`PRICING`, `HOW`, `ABOUT`), y `index.html.j2` la incluye con
+  `{% with page = … %}`, así que dentro nada cambió de nombre. `CONTACT_PAGE`
+  solo guarda el título de la página de paso. El `hero` de
   cada una es ahora la cabeza de su sección, con su `h2`: hay un solo `h1`.
+- **La barra lleva Inicio, Planes y Cómo funciona.** Nosotros está solo en el
+  pie (octubre de 2026), y su sección sigue en la página.
 - **Los botones de la barra solo desplazan** (`/#planes`, con la `/` para que
   sirvan también desde las legales). La barra fija no tapa el título:
   `scroll-margin-top` en `.page-part` y en las secciones con `id`. **El botón de
   la sección que se está leyendo se marca** con un `IntersectionObserver` en
-  `nav.js`, mirando una franja justo debajo de la barra; en Contacto y en las
+  `nav.js`, mirando una franja justo debajo de la barra; en Nosotros y en las
   preguntas, que no tienen botón, se queda el último.
 - **Las direcciones de antes siguen respondiendo**: `/pricing/`,
   `/how-it-works/`, `/about/` y `/contact/` son páginas de paso
@@ -43,6 +50,19 @@ van en este orden, cada una con el ancla a la que baja su botón de la barra:
 
 ## La portada
 
+**Arriba van el título y dos botones, nada más** (octubre de 2026): «Solicitar
+demo» y «Ver planes». Se quitaron la frase de debajo («Envía un correo a todos
+tus contactos con un solo click») y la nota de «Escríbenos y te acompañamos».
+- **«Solicitar demo» lleva a crear la cuenta** (`/signup` del panel), porque la
+  demostración se pide desde la bienvenida, con el WhatsApp y el RUC o la
+  cédula. Con sesión, `nav.js` le cambia la dirección por `/welcome`
+  (`data-signed-href`), y al administrador se le esconde, como los botones de
+  los planes.
+- **«Ver planes» baja a `#planes`.** Los dos viven en `CTA_PRIMARY` y
+  `CTA_SECONDARY` de `content.py`.
+- **La pestaña dice solo «Sobreala»** (`HOME["meta_title"]`). La tarjeta para
+  compartir no cambió: dibuja el título de la portada.
+
 **«¿Sigues enviando correos masivos desde Gmail o Outlook?» son cuatro puntos
 que se recorren**: a un lado la lista, con el que estás viendo marcado con un
 ganchito y los otros tres con su número, y al otro su ilustración y su párrafo.
@@ -51,7 +71,7 @@ quedaban. La sección no lleva etiqueta de arriba ni entradilla: la pregunta lo
 dice todo.
 
 **Lo que abre cada punto son cuatro botones de radio**, como el carrusel de
-capturas, así que funciona entero sin JavaScript y las flechas del teclado lo
+Features, así que funciona entero sin JavaScript y las flechas del teclado lo
 mueven solas. `assets/js/trouble.js` agrega una sola cosa: pasar al siguiente
 solo, **cada quince segundos**, que es lo que tarda en leerse un punto entero
 (unas 50 a 60 palabras); con seis no daba tiempo. Se para con el ratón encima o
@@ -142,6 +162,27 @@ llevan el prefijo de su escena** (`am-`, `as-`, `ap-`, `at-`): las cuatro viven
 en la misma página, y un `id` repetido hace que una use el degradado de otra (de
 noche, el resplandor claro de la primera).
 
+**Debajo de «¿Sigues enviando…?», «Lo que puedes enviar con Sobreala»: cuatro
+usos, cada uno con una foto de personas reales** (octubre de 2026). Comunícate
+con tu equipo, Llega a más clientes, Convoca a tus socios y Mantén informadas a
+las familias: empresas, comercios, cooperativas y colegios, que son el cliente
+típico. Cuatro columnas en lo ancho, dos en la tableta y una en el teléfono.
+- **Las fotos son de Pexels, con su licencia**: uso comercial sin pedir permiso
+  ni citar al autor. Lo que no deja es venderlas tal cual ni dar a entender que
+  quien sale respalda algo, y por eso **nadie aparece como cliente ni dice
+  nada**.
+- Van recortadas a 4:3, en WebP de 800 × 600, en `assets/img/usos/` (de 38 a
+  48 KB cada una), con `loading="lazy"`. Los textos y el `alt` de cada una están
+  en `HOME["uses"]` de `content.py`.
+- De dónde sale cada una:
+
+| Archivo | Autor | En Pexels |
+|---|---|---|
+| `equipo.webp` | Yan Krukau | https://www.pexels.com/photo/coworkers-in-front-of-a-laptop-7691727/ |
+| `clientes.webp` | Amina Filkins | https://www.pexels.com/photo/happy-asian-florist-working-in-cozy-floral-shop-5414331/ |
+| `socios.webp` | Pavel Danilyuk | https://www.pexels.com/photo/a-man-speaking-in-front-of-the-people-sitting-inside-the-conference-room-8761330/ |
+| `familias.webp` | Tiger Lily | https://www.pexels.com/photo/a-mother-and-her-daughter-looking-at-a-laptop-8260185/ |
+
 **En «Cómo funciona», debajo de Features, va una tira de plantillas que corre
 sola** (septiembre de 2026). Lleva el título «¿Aún no sabes por dónde
 empezar?», las plantillas de `SAMPLES` y el botón «Ver tutorial», que baja a
@@ -202,112 +243,110 @@ no avanza: el anillo late otra vez.
   corre hasta dejar el anillo en medio: entera no se leía nada.
 - **Con «reducir movimiento»** no late ni se funde.
 
-**«Features» son cinco capturas del panel de verdad**, en un carrusel que
-aprieta: la abierta ocupa su sitio y las otras cuatro quedan en listones.
-Debajo, el texto de la que esté abierta. La sección no lleva etiqueta de arriba,
+**«Features» son cinco dibujos sencillos** (octubre de 2026), en un carrusel
+que aprieta: el abierto ocupa su sitio y los otros cuatro quedan en listones.
+Debajo, el texto del que esté abierto. La sección no lleva etiqueta de arriba,
 a diferencia de las demás: el titular ya es la etiqueta.
 
-**La abierta mide lo mismo que la captura** (1400 × 788).
+**Cada dibujo cuenta una sola cosa:**
+
+| `art` | Lo que se ve |
+|---|---|
+| `contacts` | Dos filas con la misma dirección, cada una con su etiqueta, que se juntan en una: el contador dice «1 / 1000» |
+| `editor` | Una hoja con un título elegido (con sus tiradores), una foto y un botón |
+| `schedule` | «Enviar ahora» y «Programar», con el segundo marcado y su fecha |
+| `results` | Tres cifras grandes (entregados, aperturas y clics) y «CSV · PDF» |
+| `unsubscribe` | El enlace al pie de un correo y el «Listo, ya no recibirás estos correos» |
+
+- **Fueron cinco capturas del panel**, en un juego por tema que hacía
+  `shots.py`, con una ventana para verlas en grande. Enseñaban demasiado de
+  golpe, y se quitaron con su ventana: los dibujos se leen enteros en su sitio.
+  `shots.py` se quedó con lo que comparten los tutoriales y las miniaturas: la
+  cuenta de demostración, el panel y Chrome.
+- **Son SVG dentro de la página**, en `src/partials/feature-*.svg.j2`, que la
+  plantilla incluye por el `art` de cada uno. Se pintan con las clases `.art-*`
+  de las ilustraciones de arriba, así que el mismo dibujo sirve de día y de
+  noche. Los `id` llevan el prefijo de su dibujo (`fc-`, `fe-`, `fs-`, `fr-`,
+  `fu-`), por lo mismo que los de las ilustraciones.
+- **Las palabras que llevan dentro viven en `content.py`** (`words`), como todo
+  el español del sitio. `alt` es lo que oye un lector de pantalla
+  (`aria-label` del SVG): el listón es la etiqueta de su botón de radio, y sin
+  eso no tendría nombre.
+- **Cerrado se ve su centro** (`preserveAspectRatio="xMidYMid slice"`), que es
+  donde cada uno tiene lo que cuenta.
+
+**El abierto mide lo mismo que el dibujo** (16:9).
 - **Cómo:** su ancho es el alto de la tira (su ancho entre 3.2) por la
-  proporción de la imagen, y las cerradas se reparten lo que sobra.
-- **Qué se consigue:** la abierta se ve entera, y todas las capturas se dibujan
-  a la misma escala, la del alto, así que abrir una solo destapa más de ella.
-- **Por qué cambió:** antes crecía a 7 contra 1 y quedaba más ancha que la
-  captura. `object-fit: cover` le cortaba arriba y abajo y la agrandaba al
+  proporción del dibujo, y los cerrados se reparten lo que sobra.
+- **Qué se consigue:** el abierto se ve entero, y todos se dibujan a la misma
+  escala, la del alto, así que abrir uno solo destapa más de él.
+- **Por qué:** cuando eran capturas crecía a 7 contra 1 y quedaba más ancho que
+  la imagen. `object-fit: cover` le cortaba arriba y abajo y la agrandaba al
   terminar de abrirse, y se veía como un pequeño zoom.
-- **El ratón sobre una cerrada** la agranda a costa de las otras cerradas,
-  nunca de la abierta.
-- **Si cambia el tamaño de las capturas o la proporción de la tira**, cambia esa
-  cuenta, que está en `landing/src/site.css`.
-
-**Hay dos juegos de capturas, uno por tema**, en
-`landing/assets/img/panel/light/` y `.../dark/`, con los mismos cinco nombres en
-cada carpeta. Las hace `landing/shots.py`: siembra una cuenta de demostración en
-una base aparte, arranca el panel contra ella, lo abre en Chrome sin cabeza y
-recorta cada pantalla a 16:9. **Cada dirección se abre una sola vez y se
-fotografía en los dos temas**, poniéndole `data-theme` entre foto y foto, que es
-lo mismo que hace el guion de la cabecera del panel: así los dos juegos salen
-idénticos salvo el color y la vuelta no tarda el doble. **Hay que volver a
-correrlo cuando cambie una de esas cinco pantallas**, o la portada enseñará algo
-que ya no existe.
-
-Los datos de la demostración son neutros a propósito: «Tu empresa», nombres de
-pila con `@ejemplo.com` y asuntos corrientes. Ni una cooperativa, ni un colegio,
-ni nada que se lea como un cliente de verdad.
+- **El ratón sobre un cerrado** lo agranda a costa de los otros cerrados, nunca
+  del abierto.
+- **Si cambia la proporción de los dibujos o la de la tira**, cambia esa cuenta,
+  que está en `landing/src/site.css`.
 
 **Los listones no llevan rótulo.** Lo llevaron, de lado y con un velo oscuro
 debajo para que se leyeran encima de la captura; el velo tapaba justo lo que la
 sección viene a enseñar. Sin rótulo no hace falta ninguno de los dos.
 
-**La sección sigue al tema, como el resto de la página.** Hubo una banda que se
-invertía —oscura de día y blanca de noche— y estaba ahí por una sola razón: las
-capturas eran siempre del panel en oscuro, así que necesitaban un fondo oscuro
-al lado. Con un juego por tema esa razón desapareció, y con ella las cuatro
-variables `--color-flip*` y las clases `.section--flip` y `.section--deep`, que
-era la otra banda fija de la portada («Cómo funciona»). La portada queda azul ·
-gris · blanco · gris · blanco, y los mismos escalones al revés en oscuro.
-
-**Cada listón trae sus dos capturas y el CSS esconde la que no toca** (un par de
-reglas con `:root[data-theme="dark"]`). El claro es el de por omisión porque
-**sin JavaScript no hay atributo ninguno**: la elección la resuelve el guion de
-la cabecera antes de pintar, leyendo la galleta, el `localStorage` y la
-preferencia del sistema. **Las diez van `loading="lazy"`, también la primera**:
-una escondida con `lazy` no se baja nunca, así que el juego que no se ve no
-cuesta bytes, y una primera ansiosa habría arrastrado a su gemela. Está medido:
-la portada pide cinco capturas, no diez.
-
-**Lo que abre cada captura son cinco botones de radio**, no un guion. Por eso la
+**Lo que abre cada dibujo son cinco botones de radio**, no un guion. Por eso la
 sección funciona entera sin JavaScript y las flechas del teclado la mueven
 solas, que es lo que se consigue gratis con un grupo de radios.
-`assets/js/carousel.js` agrega tres cosas y nada más, y ninguna existe sin él
-(como el interruptor de Planes): los botones de anterior y siguiente, el paso
-automático cada cuatro segundos y la ventana de ver una captura en grande. Ese
-paso **se detiene con el ratón encima o con el foco dentro y vuelve a andar al
-quitarlo**, no corre fuera de la pantalla, ni con la pestaña escondida, ni con
-una captura abierta en grande, y no existe con «reducir movimiento» puesto.
-**Elegir una a mano no lo apaga**: solo reinicia la cuenta, para que la que se
-acaba de pulsar no se cambie medio segundo después. Lo deciden cuatro
+`assets/js/carousel.js` agrega dos cosas y nada más, y ninguna existe sin él
+(como el interruptor de Planes): los botones de anterior y siguiente, y el paso
+automático cada cuatro segundos. Ese paso **se detiene con el ratón encima o
+con el foco dentro y vuelve a andar al quitarlo**, no corre fuera de la
+pantalla ni con la pestaña escondida, y no existe con «reducir movimiento»
+puesto. **Elegir uno a mano no lo apaga**: solo reinicia la cuenta, para que el
+que se acaba de pulsar no se cambie medio segundo después. Lo deciden tres
 interruptores y un solo `sync()`; antes cada uno llamaba a `play()` por su
 cuenta y el ratón podía arrancarlo con la sección fuera de la vista.
 
-**Pulsar la captura abierta la enseña en grande**, en un `<dialog>` que escribe
-el guion. Una cerrada de la tira solo se abre, que es la navegación de siempre;
-apilado (el teléfono) no hay abiertas ni cerradas, así que cualquiera se
-agranda, y eso lo decide preguntarle al CSS si la tira está en `display:
-contents` en vez de repetir en el guion el ancho del corte. La imagen se copia
-del `<img>` **que se está viendo**, así que sale en el tema puesto y ya está en
-la caché. Es un `<dialog>` y no un invento propio porque de ahí salen gratis el
-`Escape`, el foco atrapado dentro, el fondo oscurecido y el foco de vuelta al
-botón de radio de esa captura. **La X vive en el relleno del diálogo, o sea
-fuera de la captura**, y ese relleno nunca baja de lo que ella mide; a los lados
-se encoge en el teléfono, donde el sitio es para la captura. Pulsar el borde de
-alrededor también cierra. En el teléfono el zoom no agranda gran cosa (una
-captura apaisada ya ocupa el ancho): lo que da es la captura sola, sin la página
-alrededor.
-
 **En el teléfono no hay apretujón**: los dos contenedores se vuelven
-transparentes (`display: contents`) y cada captura queda encima de su texto, con
-las cinco a la vista. El apretujón necesita ancho para significar algo, y ahí no
-lo hay.
+transparentes (`display: contents`) y cada dibujo queda encima de su texto, con
+los cinco a la vista. El apretujón necesita ancho para significar algo, y ahí
+no lo hay.
 
-Las reglas del carrusel nombran las cinco por su id (`#tour-1` … `#tour-5`), que
-es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otras,
-esas listas de `landing/src/site.css` crecen con ellas.
+Las reglas del carrusel nombran los cinco por su id (`#tour-1` … `#tour-5`), que
+es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otros,
+esas listas de `landing/src/site.css` crecen con ellos.
 
-**Los logos de pago van a color, en una franja del color de la página**: Yappy,
-PayPal, Visa y Mastercard (septiembre de 2026). La fila de abajo del pie, la de
-los pagos, va de lado a lado, fuera del `shell`, y es **blanca de día y casi
-negra de noche** (`--color-page`, con la letra en `--color-ink-soft`); el resto
-del pie sigue azul, y una línea fina las separa (`--color-footer-edge`). Los
-logos fueron un tiempo directo sobre el azul, donde PayPal, Visa y Yappy, que
-son azules, apenas se leían (el PayPal oscuro daba 2:1); sobre el
-blanco se leen todos, y de noche, sobre el negro, esos tres quedan con poco
-contraste, y así se decidió. Antes de eso iban los dos que había, en blanco.
-Qué variante del kit usa el sitio lo dice
-`PAYMENT_LOGOS` en `landing/build_site.py`, con su nombre bien escrito para el
-texto alternativo en `PAYMENT_LABELS`; **ningún logo lleva fondo propio**. **Visa y Mastercard
-traen su margen de respeto dentro del SVG**, y a 28 px de alto el dibujo quedaba
-diminuto: las copias que sirven el sitio y el panel se recortan con el viewBox
-de `brand/payments/viewbox.json` (el kit no se toca). Las medidas de cada `<img>` salen del archivo generado
-(`icon_size()`): escritas a ojo, y cuadradas para logos apaisados, el pie
-saltaba mientras cargaba.
+**Debajo del carrusel, la lista «En todos los planes, sin excepción»** (octubre
+de 2026): rebotes y quejas fuera, sin sorpresas al llegar al límite,
+acompañamiento en la primera campaña y sin permanencia mínima.
+- **Aquí se juntaron tres bloques**: Features, «Reglas que funcionan solas», que
+  cerraba Cómo funciona, y la lista «En todos los planes» del final de Planes.
+  Lo que repetían lo cuentan ahora los textos de los cinco dibujos, y lo demás
+  va en esta lista. La tabla comparativa de Planes se quedó.
+- Usa la caja de la lista de Planes (`.included`, en el gris casi negro de
+  `--color-deep`), de dos en dos en lo ancho.
+- **De paso salieron dos frases que prometían algo que no existe**: «envíate una
+  prueba», porque ese envío de prueba no está hecho, y el aviso al 80 % de la
+  cuota, por lo mismo.
+
+**La sección sigue al tema, como el resto de la página.** Hubo una banda que se
+invertía, oscura de día y blanca de noche, porque las capturas de entonces eran
+siempre del panel en oscuro; con ella se fueron las variables `--color-flip*` y
+las clases `.section--flip` y `.section--deep`. **Los fondos alternan de arriba
+abajo**: azul (la portada) · gris («¿Sigues enviando…?») · blanco (los usos) ·
+gris (las tarjetas de Planes) · blanco (la tabla) · gris (el glosario) · blanco
+(Features) · gris (la tira) · blanco (los tutoriales) · gris (el envío) ·
+blanco (Nosotros) · gris (las preguntas) · azul (el pie). En oscuro, los mismos
+escalones.
+
+**El pie es un solo azul** (octubre de 2026). Abajo, dentro del mismo azul, va
+el «© Sobreala» en pequeño, con una raya fina encima (`--color-footer-edge`).
+- **Se quitaron los logos de pago** (Yappy, PayPal, Visa y Mastercard), que iban
+  en una franja del color de la página debajo del azul. De noche el final de la
+  página se leía negro, azul y negro otra vez, y de los cuatro medios hoy solo
+  cobra PayPal: prometían de más. Los medios se ven al pagar, en el panel.
+- **`build_site.py` ya no los copia**: salieron `PAYMENT_LOGOS`,
+  `PAYMENT_LABELS`, `icon_size()` y `crop_logos()`, y la carpeta
+  `assets/img/payments/`. El kit sigue en `brand/payments/`, y el panel tiene su
+  propia copia para el pago (`backend/build_assets.py`, recortada con
+  `brand/payments/viewbox.json`), que no cambió.
+- **«¿Cómo se paga?» ya no dice «los que ves al pie»**: dice que al contratar
+  se elige con qué pagar.

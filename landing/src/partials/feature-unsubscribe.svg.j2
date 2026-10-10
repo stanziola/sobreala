@@ -1,0 +1,45 @@
+{#- Anular la suscripción: el pie de un correo con su enlace, y al lado lo que ve
+    quien lo pulsa. Palabras de content.py y colores de las clases .art-*, como
+    los demás dibujos de Features. -#}
+{% set w = item.words %}
+<svg class="tour__art" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid slice"
+     role="img" aria-label="{{ item.alt }}" focusable="false">
+  <defs>
+    <filter id="fu-drop" x="-30%" y="-20%" width="160%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" class="art-drop"/>
+    </filter>
+  </defs>
+  <rect class="art-stage" width="480" height="270"/>
+
+  {#- el correo: unas rayas que hacen de texto, la raya del pie y el enlace -#}
+  <g filter="url(#fu-drop)">
+    <rect class="art-card" x="26" y="38" width="186" height="194" rx="14"/>
+  </g>
+  <rect class="art-line" x="46" y="60" width="146" height="8" rx="4"/>
+  <rect class="art-line" x="46" y="78" width="116" height="8" rx="4"/>
+  <rect class="art-line" x="46" y="96" width="132" height="8" rx="4"/>
+  <rect class="art-line" x="46" y="114" width="92" height="8" rx="4"/>
+  <rect class="art-card-edge" x="46" y="146" width="146" height="1.5"/>
+  <text class="art-ink" x="119" y="168" text-anchor="middle" font-size="10.5"
+        opacity=".62">{{ w.sender }}</text>
+  <rect class="art-blue-soft" x="49" y="180" width="140" height="26" rx="13" opacity=".45"/>
+  <text class="art-blue" x="119" y="197.5" text-anchor="middle" font-size="12.5"
+        font-weight="700">{{ w.link }}</text>
+
+  {#- de ahí, a lo que ve quien lo pulsa -#}
+  <path class="art-s-dash" d="M196 193C224 193 222 140 244 140" fill="none" stroke-width="2.6"
+        stroke-dasharray="5 6" stroke-linecap="round"/>
+  <path class="art-s-dash" d="m238 133 8 7-8 7" fill="none" stroke-width="2.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g filter="url(#fu-drop)">
+    <rect class="art-card" x="254" y="98" width="204" height="84" rx="16"/>
+  </g>
+  <circle class="art-green" cx="282" cy="140" r="15"/>
+  <path d="m275 140 5 5 9-10" fill="none" stroke="white" stroke-width="2.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  {% for line in w.done %}
+  <text class="art-ink" x="306" y="{{ 136 + loop.index0 * 17 }}" font-size="12"
+        font-weight="700">{{ line }}</text>
+  {% endfor %}
+</svg>

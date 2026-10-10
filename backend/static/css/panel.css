@@ -893,6 +893,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   background: var(--color-accent-soft); color: var(--color-ink);
   border: 1px solid var(--color-accent);
 }
+/* Lo que falta verificar de una cuenta todavía cerrada. Amarillo y no azul:
+   no impide nada de la pantalla, pero es lo que queda por hacer. Va después de
+   .notice para ganarle con la misma especificidad. */
+.notice--pending { background: #FEF3C7; border-color: #D97706; color: #78350F; }
+.notice--pending p + p { margin-top: 6px; }
+.notice--pending a { color: #92400E; font-weight: 600; }
+:root[data-theme="dark"] .notice--pending {
+  background: rgba(245, 158, 11, .14); border-color: #F59E0B; color: #FDE68A;
+}
+:root[data-theme="dark"] .notice--pending a { color: #FCD34D; }
 .foot { margin-top: 20px; font-size: .95rem; color: var(--color-ink-soft); }
 /* Un botón que se lee como enlace. «Pedir otro código» manda un correo, así
    que es un POST y no un enlace, pero en la pantalla se ve como antes. */

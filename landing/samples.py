@@ -6,7 +6,7 @@ no un dibujo de ella: sale del correo armado que trae su ZIP
 el pie. Se abre en un Chrome sin cabeza a 600 de ancho, que es lo que mide el
 correo, y se guarda la parte de arriba en 3:4.
 
-Mismo trato que `shots.py`: fuentes de verdad → comando → archivos generados
+Mismo trato que `tutorials.py`: fuentes de verdad → comando → archivos generados
 que no se tocan a mano.
 
     python landing/samples.py            # rehacer las miniaturas

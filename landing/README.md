@@ -1,7 +1,7 @@
 # Sitio público de Sobreala
 
 Una sola página que presenta Sobreala (Inicio, Planes, Cómo funciona,
-Nosotros, Contacto y las preguntas), más las dos legales. Se despliegan tal cual
+Nosotros y las preguntas; Contacto es el pie), más las dos legales. Se despliegan tal cual
 en Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
 
 | Ruta | Archivo |
@@ -28,15 +28,16 @@ landing/
 ├── content.py           # TODOS los textos, en español
 ├── src/
 │   ├── base.html.j2     # <head>, header, footer, SEO
-│   ├── partials/        # cta-band, faq, feature-icons, iconos de correo y chat
+│   ├── partials/        # cta-band, faq, feature-icons, los dibujos de Features
+│   │                    # (feature-*.svg.j2), iconos de correo y chat
 │   ├── pages/           # index (la página única) y legal
-│   ├── sections/        # planes, como-funciona, nosotros, contacto: partes de index
+│   ├── sections/        # planes, como-funciona, nosotros: partes de index
 │   ├── redirect.html.j2 # las páginas de paso de las direcciones viejas
 │   └── site.css         # estilos (sin ningún HEX: usa las variables de brand/colors.css)
 ├── assets/
 │   ├── js/nav.js        # menú móvil, cambio de tema y año del pie
 │   ├── js/carousel.js   # las flechas y el paso automático del carrusel
-│   ├── img/panel/       # GENERADO por shots.py: las capturas de la portada
+│   ├── img/usos/        # a mano: las cuatro fotos de los usos (Pexels; autores en docs/sitio.md)
 │   ├── img/samples/     # GENERADO por samples.py: las miniaturas de las plantillas de muestra
 │   ├── css/site.css     # GENERADO: colors.css + colors-dark.css + @font-face + src/site.css
 │   ├── fonts/           # GENERADO: .woff2 a partir de brand/fonts/
@@ -59,37 +60,20 @@ De dónde sale cada cosa:
 | Tipografías                 | `brand/fonts/`                  | ver `brand/fonts/README.md` |
 | Logo y favicons             | `brand/logo/`, `brand/favicon/` | `python brand/build_logo.py` |
 | Iconos de redes             | `brand/social/`                 | a mano, ver su README |
-| Logos de métodos de pago    | `brand/payments/`               | a mano, ver su README |
 | Estructura y estilos        | `landing/src/`                  | esos archivos |
-| Capturas del panel          | el panel mismo                  | `python landing/shots.py` |
+| Fotos de los usos           | `landing/assets/img/usos/`      | a mano, ver `docs/sitio.md` |
 | Miniaturas de las muestras  | `backend/sample_templates/`     | `python landing/samples.py` |
 
 Después de cambiar cualquiera de ellos, regenerar y commitear también lo generado.
 
-## Las capturas del panel
+## Features y los usos
 
-La portada enseña cinco capturas del panel de verdad en un carrusel, no
-ilustraciones. Van **en los dos temas**, porque la sección sigue al tema como el
-resto de la página: `landing/assets/img/panel/light/*.webp` y `.../dark/*.webp`,
-los mismos cinco nombres en cada carpeta. Las hace `landing/shots.py`, que
-siembra una cuenta de demostración («Tu empresa», contactos de ejemplo,
-plantillas, campañas y tres meses de eventos), arranca el panel contra una base
-aparte (`sobreala_shots`), lo abre en Chrome sin cabeza y recorta cada pantalla
-a 16:9. Cada dirección se abre **una sola vez** y se fotografía en claro y en
-oscuro, así que los dos juegos salen idénticos salvo el color.
-
-```
-python landing/shots.py            # rehacer las diez
-python landing/shots.py --check    # decir si falta alguna
-```
-
-**Hay que volver a correrlo cada vez que cambie una de esas cinco pantallas**, o
-el sitio enseñará algo que ya no existe. Pide MongoDB corriendo en local, Chrome
-instalado y Pillow.
-
-Qué se captura y qué hace falta para que ninguna salga vacía lo dice la tupla
-`SHOTS` del propio archivo: la dirección, desde dónde recorta y, cuando toca, en
-qué pulsar antes, qué dejar escrito y en qué ancho de ventana.
+Features son cinco dibujos sencillos en SVG (`src/partials/feature-*.svg.j2`),
+dentro de la página y pintados con las variables del tema; las palabras que
+llevan están en `content.py`. Hasta octubre de 2026 eran capturas del panel que
+hacía `shots.py`, y se quitaron. Las fotos de los usos se agregan a mano, en
+WebP de 800 × 600; quién hizo cada una y con qué licencia está en
+`docs/sitio.md`.
 
 ## Precios sin duplicar
 
@@ -133,9 +117,6 @@ Los iconos del pie son PNG en negro sobre fondo transparente que el CSS pinta co
 `currentColor`, así que salen blancos sobre el azul del pie y podrían ser de
 cualquier color en otro fondo. El build los recorta a cuadrado antes de copiarlos,
 para que ninguno salga deformado.
-
-La franja de pagos del pie muestra los logos de `brand/payments/`. Si esa carpeta
-está vacía, muestra una línea de texto en su lugar.
 
 Los botones "Hablemos por WhatsApp" abren un chat con mensaje prellenado y
 "Escribir por correo" abre el correo. No hay registro, login, panel ni pagos:

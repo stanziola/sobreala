@@ -221,34 +221,20 @@ COPY_IMAGES = [
     (BRAND_DIR / "favicon" / "favicon-180x180.png", "favicon-180x180.png"),
 ]
 
-# Third-party marks. The official brand kits live untouched under brand/social/
-# and brand/payments/; this is the one place that says which variant the site
-# uses. To switch (say, to the color version), change the path here and rebuild.
-# A missing file is not an error: the footer falls back to an inline icon or to
-# a text line, and the build prints a warning.
+# Third-party marks. The official brand kits live untouched under brand/social/;
+# this is the one place that says which variant the site uses. To switch (say,
+# to the color version), change the path here and rebuild. A missing file is not
+# an error: the footer falls back to an inline icon, and the build prints a
+# warning.
+#
+# Los logos de pago (brand/payments/) ya no salen en el sitio: iban en una
+# franja del pie que se quitó en octubre de 2026. El panel tiene su propia copia
+# para el checkout (backend/build_assets.py).
 SOCIAL_ICONS = {
     "instagram": BRAND_DIR / "social" / "instagram" / "02 White Glyph" / "Instagram_Glyph_White.svg",
     "whatsapp": BRAND_DIR / "social" / "whatsapp" / "01_Glyph" / "01_Digital RGB" / "03_SVG"
                 / "Digital_Glyph_White_RGB_2026.svg",
 }
-# Los dos en blanco, porque la franja del pie es del azul de la marca: el azul
-# oscuro de PayPal encima da 2:1 y sus propias normas piden la versión blanca
-# sobre fondos oscuros. Yappy solo tiene la "traslucid", que también es blanca.
-PAYMENT_LOGOS = {
-    "yappy": BRAND_DIR / "payments" / "yappy" / "yappy-color-landscape.svg",
-    "paypal": BRAND_DIR / "payments" / "paypal" / "Horizontal Full Color" / "pp_h_rgb.png",
-    "visa": (BRAND_DIR / "payments" / "visa" / "Visa Brand Mark DIGITAL 2025"
-             / "Visa Brand Mark DIGITAL" / "VBM_digital_2025" / "blue" / "VBM_bluRGB_2025.svg"),
-    "mastercard": (BRAND_DIR / "payments" / "mastercard" / "Mastercard Symbol - SVG"
-                   / "Artwork" / "ma_symbol.svg"),
-}
-# Cómo se escribe cada marca, para el texto alternativo.
-PAYMENT_LABELS = {"yappy": "Yappy", "paypal": "PayPal", "visa": "Visa",
-                  "mastercard": "Mastercard"}
-# Raster payment logos are shrunk to this height (4x their 28 px display size).
-PAYMENT_LOGO_PX = 112
-# El alto al que se dibujan en el pie.
-PAYMENT_SHOWN_PX = 28
 
 
 def build_fonts() -> list[dict]:
@@ -305,12 +291,11 @@ def write_css(faces: list[dict]) -> Path:
     return out
 
 
-def prepare_png(source: Path, target: Path, square: bool, max_height: int | None) -> None:
-    """Copy a PNG trimmed to its visible content, optionally squared and shrunk.
+def prepare_png(source: Path, target: Path, square: bool) -> None:
+    """Copy a PNG trimmed to its visible content, optionally squared.
 
     Icon files often come on a wide canvas with the glyph centered; rendered in a
-    square box that squashes the glyph, so social icons are squared here. Logos
-    keep their proportions and are only shrunk: the kits ship at print size.
+    square box that squashes the glyph, so social icons are squared here.
     """
     from PIL import Image
 
@@ -323,8 +308,6 @@ def prepare_png(source: Path, target: Path, square: bool, max_height: int | None
         canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
         canvas.paste(im, ((side - im.width) // 2, (side - im.height) // 2))
         im = canvas
-    if max_height and im.height > max_height:
-        im = im.resize((round(im.width * max_height / im.height), max_height), Image.LANCZOS)
     im.save(target, optimize=True)
 
 
@@ -422,7 +405,7 @@ def build_social_cards() -> list[Path]:
 
 
 def copy_icon_set(sources: dict[str, Path], out_dir: Path, url_prefix: str,
-                  square: bool = False, max_height: int | None = None) -> dict:
+                  square: bool = False) -> dict:
     """Copy the chosen kit file of each icon as <name>.<ext>. Returns name -> URL."""
     out_dir.mkdir(parents=True, exist_ok=True)
     available = {}
@@ -432,7 +415,7 @@ def copy_icon_set(sources: dict[str, Path], out_dir: Path, url_prefix: str,
             continue
         target = out_dir / f"{name}{source.suffix.lower()}"
         if source.suffix.lower() == ".png":
-            prepare_png(source, target, square=square, max_height=max_height)
+            prepare_png(source, target, square=square)
         else:
             shutil.copy2(source, target)
         available[name] = f"{url_prefix}/{target.name}"
@@ -491,54 +474,14 @@ def sample_cards() -> list[dict]:
     return cards
 
 
-def icon_size(url: str, height: int) -> tuple[int, int]:
-    """Las medidas con las que se dibuja un logo, a este alto.
-
-    Van en el `<img>` para que el navegador le guarde el sitio antes de bajarlo:
-    sin eso, la franja del pie salta al cargar. Se sacan del archivo generado,
-    así que cambiar de variante no deja las medidas viejas escritas.
-    """
-    made = LANDING_DIR / url.lstrip("/")
-    if made.suffix.lower() == ".svg":
-        box = re.search(r'viewBox="[\d.\s]*?([\d.]+)\s+([\d.]+)"',
-                        made.read_text(encoding="utf-8"))
-        wide, tall = (float(box.group(1)), float(box.group(2))) if box else (1.0, 1.0)
-    else:
-        from PIL import Image
-
-        with Image.open(made) as opened:
-            wide, tall = opened.size
-    return round(height * wide / max(tall, 1)), height
-
-
-def crop_logos(out_dir: Path) -> None:
-    """El recorte de brand/payments/viewbox.json en las copias SVG: Visa y
-    Mastercard traen su margen de respeto dentro del archivo, y a 28 px de alto
-    el dibujo quedaba diminuto. El kit no se toca."""
-    import json
-
-    crops = json.loads((BRAND_DIR / "payments" / "viewbox.json").read_text(encoding="utf-8"))
-    for name, box in crops.items():
-        made = out_dir / f"{name}.svg"
-        if name.startswith("_") or not made.exists():
-            continue
-        text = made.read_text(encoding="utf-8")
-        made.write_text(re.sub(r'viewBox="[^"]*"', f'viewBox="{box}"', text, count=1),
-                        encoding="utf-8", newline="")
-
-
-def copy_assets() -> tuple[dict, dict]:
-    """Copy logo, favicons, social icons and payment logos. Returns what exists."""
+def copy_assets() -> dict:
+    """Copy logo, favicons and social icons. Returns the social icons that exist."""
     OUT_IMG.mkdir(parents=True, exist_ok=True)
     for source, name in COPY_IMAGES:
         if source.exists():
             shutil.copy2(source, OUT_IMG / name)
 
-    social = copy_icon_set(SOCIAL_ICONS, OUT_IMG / "social", "/assets/img/social", square=True)
-    payments = copy_icon_set(PAYMENT_LOGOS, OUT_IMG / "payments", "/assets/img/payments",
-                             max_height=PAYMENT_LOGO_PX)
-    crop_logos(OUT_IMG / "payments")
-    return social, payments
+    return copy_icon_set(SOCIAL_ICONS, OUT_IMG / "social", "/assets/img/social", square=True)
 
 
 def read_wing_svg() -> str:
@@ -617,7 +560,7 @@ def build() -> list[Path]:
 
     faces = build_fonts()
     css = write_css(faces)
-    social, payments = copy_assets()
+    social = copy_assets()
     build_social_cards()
     pricing = read_pricing()
 
@@ -648,14 +591,8 @@ def build() -> list[Path]:
         "pricing": content.PRICING,
         "how": content.HOW,
         "about": content.ABOUT,
-        "contact_page": content.CONTACT_PAGE,
         "font_faces": faces,
         "social_icons": social,
-        # Ordered as PAYMENT_LOGOS, so the footer keeps a stable order.
-        "payment_logos": [
-            {"name": n, "label": PAYMENT_LABELS.get(n, n.capitalize()), "url": payments[n],
-             "size": icon_size(payments[n], PAYMENT_SHOWN_PX)}
-            for n in PAYMENT_LOGOS if n in payments],
         "wing_svg": Markup(read_wing_svg()),  # trusted: our own generated SVG
         "pricing_data": pricing,
     }

@@ -16,31 +16,37 @@ payments/
 **Se agregan a mano.** Son marcas de terceros: no las genera ningún script ni
 dependen de `colors.css`, y se muestran tal cual, sin recolorear.
 
-## Qué variante usa el sitio
+## Quién los usa
 
-Lo decide `PAYMENT_LOGOS` en `landing/build_site.py`, que apunta al archivo
-exacto dentro de cada kit. Hoy: **las versiones a color** (Yappy apaisado,
-PayPal horizontal, Visa azul y el símbolo de Mastercard), directo sobre el azul
-del pie, que es lo que se decidió aunque PayPal, Visa y Yappy tengan poco
-contraste ahí. El panel usa los mismos cuatro en la pantalla de pago: los copia
-`backend/build_assets.py` (`PAYMENT_LOGOS` de ese archivo). Para cambiar de
-variante, cambia la ruta y ejecuta los dos generadores.
+**Solo el panel, en la pantalla de pago.** Los copia `backend/build_assets.py`,
+y su `PAYMENT_LOGOS` apunta al archivo exacto dentro de cada kit. Hoy: **las
+versiones a color** (Yappy apaisado, PayPal horizontal, Visa azul y el símbolo
+de Mastercard). Para cambiar de variante, cambia la ruta y ejecuta ese
+generador.
+
+El sitio público los llevó en una franja del pie hasta octubre de 2026, y se
+quitaron: de noche el final de la página se leía negro, azul y negro otra vez,
+y de los cuatro medios solo cobraba PayPal (ver `docs/sitio.md`).
 
 **El margen de respeto se recorta en las copias**, no en el kit: los SVG de Visa
-y Mastercard traen su espacio libre dentro del archivo, y a 22 o 28 px de alto
-el dibujo quedaba diminuto. El viewBox justo alrededor del dibujo vive en
-`viewbox.json`, y lo aplican los dos generadores al copiar.
+y Mastercard traen su espacio libre dentro del archivo, y a 22 px de alto el
+dibujo quedaba diminuto. El viewBox justo alrededor del dibujo vive en
+`viewbox.json`, y lo aplica el generador al copiar.
 
-Los PNG se recortan a su contenido y se reducen a 112 px de alto al generar el
-sitio (se muestran a 28 px), para no servir archivos de tamaño de imprenta.
+El PNG de PayPal se recorta a su contenido y se reduce a 88 px de alto, cuatro
+veces el que se dibuja, para no servir un archivo de tamaño de imprenta.
 
 ## Si falta un archivo
 
-El generador avisa y el pie muestra una línea de texto con los medios de pago en
-vez de los logos, así que el sitio nunca queda a medias.
+El generador lo salta sin error, pero la pantalla de pago lo sigue pidiendo
+(`PAY_LOGOS` en `backend/blueprints/auth/routes.py`): en vez del dibujo sale su
+nombre, el texto alternativo.
 
 ## Para agregar otro medio de pago
 
 1. Descarga su kit oficial y déjalo en `payments/<marca>/`.
-2. Agrega la entrada en `PAYMENT_LOGOS` apuntando a la versión a color.
-3. Regenera. El pie los muestra en el orden de esa tabla.
+2. Agrega la entrada en `PAYMENT_LOGOS` de `backend/build_assets.py`,
+   apuntando a la versión a color.
+3. Agrega el archivo a su método en `PAY_LOGOS`
+   (`backend/blueprints/auth/routes.py`), con su nombre bien escrito.
+4. Regenera con `python backend/build_assets.py`.

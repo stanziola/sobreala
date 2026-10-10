@@ -59,11 +59,12 @@ sobreala/
 │       sitio.md            # el detalle de cada parte (ver «Cada parte, en corto»)
 ├── brand/
 │   ├── colors.css          # variables de color, fuente única de verdad
-│   ├── layout.json         # posición del ala (logo y favicon) y encuadre del favicon
-│   ├── build_logo.py       # genera logo/, favicon/ y preview/ desde esos dos
+│   ├── layout.json         # posición del ala (logo, favicon y perfil) y su encuadre
+│   ├── build_logo.py       # genera logo/, favicon/, perfil/ y preview/ desde esos dos
 │   ├── logo/               # logo.svg, logo-transparent.svg, logo.png (generados)
 │   │   └── reference/      # PNG original del logo, referencia visual maestra
 │   ├── favicon/            # favicon.svg, .ico y PNG 16/32/180 (generados)
+│   ├── perfil/             # perfil-1080.png: la foto de perfil para redes (generada)
 │   ├── preview/            # colores.html: editor de color y posición (generado)
 │   ├── social/             # iconos de redes (Instagram, etc.), agregados a mano
 │   └── fonts/
@@ -75,16 +76,16 @@ sobreala/
 │   ├── build_site.py       # genera las páginas; único punto de entrada.
 │   │                       # --check avisa si lo publicado quedó viejo
 │   ├── content.py          # todos los textos del sitio, en español
-│   ├── shots.py            # las capturas del panel de la portada; --check
-│   │                       # avisa si falta alguna
+│   ├── shots.py            # la cuenta de demostración, el panel y Chrome que
+│   │                       # usan tutorials.py y samples.py
 │   ├── tutorials.py        # las capturas de los tutoriales y tutorials.json
 │   │                       # (GENERADO); --check avisa si falta alguna
 │   ├── samples.py          # las miniaturas de las plantillas de muestra de la
 │   │                       # portada; --check avisa si falta alguna
 │   ├── src/                # plantillas Jinja2 (base, parciales, secciones de la
 │   │                       # página única, páginas legales y de paso) y site.css
-│   ├── assets/             # css, js, fonts, img (fonts, img, img/panel y
-│   │                       # css/site.css son generados)
+│   ├── assets/             # css, js, fonts, img (fonts, img y css/site.css son
+│   │                       # generados; img/usos, las fotos, van a mano)
 │   ├── index.html          # GENERADO: la página única (precios leídos de
 │   │                       # docs/pricing.md al construir)
 │   ├── privacy/, terms/    # GENERADO: las dos legales
@@ -312,13 +313,15 @@ cosa está como está, y lo que ya se probó y se quitó.
 
 ### El sitio público (`docs/sitio.md`)
 
-- **Es una sola página**: Inicio, Planes, Cómo funciona, Nosotros, Contacto y
-  Preguntas, en ese orden. Los botones de la barra solo bajan a su sección.
-  Privacidad y Términos son aparte.
+- **Es una sola página**: Inicio, Planes, Cómo funciona, Nosotros y Preguntas,
+  en ese orden, y Contacto es el pie. La barra lleva Inicio, Planes y Cómo
+  funciona, y solo baja a su sección; Nosotros está en el pie. Privacidad y
+  Términos son aparte.
 - `/pricing/`, `/how-it-works/`, `/about/` y `/contact/` siguen existiendo como
   páginas de paso que llevan a su ancla (`REDIRECTS` en `build_site.py`).
-- Los textos viven en `landing/content.py`. Las capturas, los tutoriales y las
-  miniaturas de las muestras se hacen con su comando.
+- Los textos viven en `landing/content.py`. Los tutoriales y las miniaturas de
+  las muestras se hacen con su comando; Features son dibujos en SVG, y las
+  fotos de los usos van a mano, con sus autores en `docs/sitio.md`.
 
 ---
 

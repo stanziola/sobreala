@@ -66,7 +66,7 @@ def test_cerrada_no_entra_a_ninguna_pantalla_de_cliente(client, database, outbox
     for url in AREAS:
         respuesta = browser.get(url)
         assert respuesta.status_code == 302, url
-        assert respuesta.headers["Location"].endswith("/welcome"), url
+        assert "/welcome?para=" in respuesta.headers["Location"], url
 
     # Lo que sí: su bienvenida, su Configuración y contratar.
     assert "Pedir la demostración" in browser.get("/welcome").get_data(as_text=True)
@@ -76,7 +76,7 @@ def test_cerrada_no_entra_a_ninguna_pantalla_de_cliente(client, database, outbox
 
 def test_cerrada_no_guarda_nada_aunque_escriba_el_formulario(client, database,
                                                              outbox):
-    """La puerta está en la ruta: esconder la fila no es un permiso."""
+    """La puerta está en la ruta: la fila del menú no es un permiso."""
     browser, cuenta = cerrada(client, database)
 
     respuesta = browser.post("/contacts/import", data={
@@ -84,24 +84,56 @@ def test_cerrada_no_guarda_nada_aunque_escriba_el_formulario(client, database,
         "archivo": (io.BytesIO(b"correo\nana@coop.com\n"), "lista.csv")},
         content_type="multipart/form-data")
 
-    assert respuesta.headers["Location"].endswith("/welcome")
+    assert respuesta.headers["Location"].endswith("/welcome?para=contacts")
     assert database.contacts.count_documents({"account_id": cuenta["_id"]}) == 0
 
 
-def test_el_menu_y_la_migaja_dicen_que_esta_cerrada(client, database, outbox,
-                                                    monkeypatch):
-    """Los dos menús, el del panel y el del sitio, enseñan su demostración en
-    lugar de las cuatro filas de cliente. El del sitio lo sabe por la migaja."""
+def test_el_menu_ensena_las_cuatro_filas_y_cada_una_lleva_a_la_demo(
+        client, database, outbox, monkeypatch):
+    """Cerrada, el menú es el de siempre: las cuatro filas de cliente, y cada
+    una aterriza en la bienvenida diciendo a cuál quería entrar. La migaja es
+    la de cualquiera sin plan, así que el menú del sitio también las enseña."""
     monkeypatch.setattr(Config, "PUBLIC_SITE_URL", "http://localhost")
     browser, _ = cerrada(client, database)
 
     pantalla = browser.get("/welcome").get_data(as_text=True)
 
-    assert ">Tu demostración<" in pantalla
     for fila in (">Estadísticas<", ">Enviar correos<", ">Contactos<",
                  ">Plantillas<"):
-        assert fila not in pantalla, fila
-    assert browser.get_cookie("sa_in").value == "new"
+        assert fila in pantalla, fila
+    assert ">Tu demostración<" not in pantalla
+    assert browser.get_cookie("sa_in").value == "1"
+
+    for url, seccion in (("/dashboard", "Estadísticas"),
+                         ("/campaigns", "Enviar correos"),
+                         ("/contacts", "Contactos"), ("/templates", "Plantillas")):
+        destino = browser.get(url).headers["Location"]
+        bienvenida = browser.get(destino).get_data(as_text=True)
+        assert (f"Para entrar a {seccion}, contrata un plan o pide la "
+                "demostración.") in bienvenida, url
+        assert "Pedir la demostración" in bienvenida, url
+
+    # Sin `para`, o con uno que no existe, no dice nada de más.
+    for url in ("/welcome", "/welcome?para=otra"):
+        assert "Para entrar a" not in browser.get(url).get_data(as_text=True)
+
+
+def test_configuracion_avisa_en_amarillo_mientras_esta_cerrada(client, database,
+                                                               outbox):
+    """Su dirección y su RUC o cédula se verifican en la demostración: hasta
+    entonces, Cuenta lo dice. Abierta, el aviso se va solo."""
+    admin, _ = make_admin(client, database)
+    browser, cuenta = cerrada(client, database)
+
+    cerrada_ = browser.get("/settings").get_data(as_text=True)
+    assert "notice--pending" in cerrada_
+    assert "Pendiente de verificación:" in cerrada_
+    assert "se verifican en la demostración" in cerrada_
+
+    open_account(admin, cuenta)
+    abierta = browser.get("/settings").get_data(as_text=True)
+    assert "notice--pending" not in abierta
+    assert "Pendiente de verificación:" not in abierta
 
 
 # ---------------------------------------------------------- pedir la demo
@@ -202,7 +234,6 @@ def test_abrirla_pide_motivo_y_deja_todo_escrito(client, database, outbox,
     assert browser.get("/contacts").status_code == 200
     menu = browser.get("/dashboard").get_data(as_text=True)
     assert ">Contactos<" in menu
-    assert ">Tu demostración<" not in menu
     assert browser.get_cookie("sa_in").value == "1"
 
 

@@ -3,9 +3,10 @@
 
 {% block main %}
 
-{#- Todo el sitio en una página, en este orden: Inicio, Planes, Cómo funciona,
-    Nosotros, Contacto y las preguntas. Cada parte lleva el ancla a la que baja
-    su botón de la barra; las páginas que había antes llevan aquí (redirect.html.j2). -#}
+{#- Todo el sitio en una página, en este orden: Inicio (con los usos), Planes,
+    Cómo funciona, Nosotros y las preguntas. Cada parte lleva el ancla a la que
+    baja su botón de la barra o su enlace del pie; las páginas que había antes
+    llevan aquí (redirect.html.j2). Contacto es el pie (#contacto). -#}
 {% set home = page %}
 <div class="page-part" id="inicio">
 
@@ -16,14 +17,15 @@
         {{ page.hero.title_lead }}
         <span class="hero__title-accent">{{ page.hero.title_accent }}</span>
       </h1>
-      <p class="hero__subtitle">{{ page.hero.subtitle }}</p>
+      {#- Pedir la demostración pide una cuenta, así que lleva a crearla. Con
+          sesión, nav.js lo cambia por la bienvenida (data-signed-href); a un
+          administrador se le esconde, como los botones de los planes. -#}
       <div class="hero__actions">
-        <a class="btn btn--primary btn--lg" href="{{ whatsapp_url }}" target="_blank" rel="noopener">
-          {{ cta_primary.label }}
-        </a>
+        <a class="btn btn--primary btn--lg" data-hide-for-admin
+           href="{{ panel.base_url }}{{ cta_primary.path }}"
+           data-signed-href="{{ panel.base_url }}{{ cta_primary.signed_path }}">{{ cta_primary.label }}</a>
         <a class="btn btn--outline btn--lg" href="{{ cta_secondary.url }}">{{ cta_secondary.label }}</a>
       </div>
-      <p class="hero__note">{{ page.hero.note }}</p>
     </div>
     <div class="hero__art">
       <div class="hero__wing">{{ wing_svg }}</div>
@@ -37,7 +39,7 @@
       <h2 class="section__title" id="problema-title">{{ page.problem.title }}</h2>
     </div>
     {#- Los cuatro puntos, con el que estás viendo marcado. Lo que abre cada uno
-        son botones de radio, como el carrusel de capturas: así funciona entero
+        son botones de radio, como el carrusel de Features: así funciona entero
         sin JavaScript y las flechas del teclado lo mueven solas. trouble.js
         solo agrega el paso automático. -#}
     <div class="trouble" data-trouble>
@@ -80,6 +82,30 @@
   </div>
 </section>
 
+{#- Para qué se usa: cuatro casos, cada uno con una foto de personas reales
+    (Pexels, licencia libre; los autores, en docs/sitio.md). Nadie aparece como
+    cliente ni dice nada. Cuatro columnas a lo ancho, dos en la tableta y una
+    en el teléfono. -#}
+<section class="section" aria-labelledby="usos-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">{{ page.uses.eyebrow }}</p>
+      <h2 class="section__title" id="usos-title">{{ page.uses.title }}</h2>
+      <p class="section__intro">{{ page.uses.intro }}</p>
+    </div>
+    <ul class="uses">
+      {% for use in page.uses['items'] %}
+      <li class="use">
+        <img class="use__photo" src="/assets/img/usos/{{ use.photo }}.webp"
+             alt="{{ use.alt }}" width="800" height="600" loading="lazy" decoding="async">
+        <h3 class="use__title">{{ use.title }}</h3>
+        <p class="use__text">{{ use.text }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
 </div>
 
 {% with page = pricing %}{% include "sections/planes.html.j2" %}{% endwith %}
@@ -87,8 +113,6 @@
 {% with page = how %}{% include "sections/como-funciona.html.j2" %}{% endwith %}
 
 {% with page = about %}{% include "sections/nosotros.html.j2" %}{% endwith %}
-
-{% with page = contact_page %}{% include "sections/contacto.html.j2" %}{% endwith %}
 
 {% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
 

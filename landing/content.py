@@ -39,11 +39,11 @@ CONTACT = {
     "instagram_url": "https://instagram.com/sobreala",
 }
 
+# Nosotros no está arriba: se llega desde el pie, y su sección sigue en la página.
 NAV = [
     {"label": "Inicio", "url": "/#inicio"},
     {"label": "Planes", "url": "/#planes"},
     {"label": "Cómo funciona", "url": "/#como-funciona"},
-    {"label": "Nosotros", "url": "/#nosotros"},
 ]
 
 # The panel is a different service on a different host: Railway, not Cloudflare
@@ -62,9 +62,6 @@ PANEL = {
     "designs_label": "Plantillas",
     "settings_label": "Configuración",
     "panel_label": "Estadísticas",
-    # La de una cuenta que todavía no se abrió (ni demostración ni pago), en
-    # lugar de las cuatro de cliente. La misma fila que el menú del panel.
-    "demo_label": "Tu demostración",
     # Solo la ve quien tiene el rol, y quien lo decide es la galleta que deja
     # el panel: este sitio es estático y no sabe quién mira.
     "admin_label": "Administración",
@@ -91,13 +88,18 @@ PLAN_BUTTONS = {
     "yearly_only": "Solo en anual",
 }
 
-CTA_PRIMARY = {"label": "Contáctanos por WhatsApp", "kind": "whatsapp"}
-CTA_SECONDARY = {"label": "Ver los planes", "url": "/#planes"}
+# Los dos botones de la portada. La demostración se pide desde la cuenta, con su
+# WhatsApp y su RUC, así que el botón lleva a crearla; a quien ya tiene sesión,
+# nav.js lo manda a su bienvenida, que es donde se pide. Las dos direcciones son
+# del panel.
+CTA_PRIMARY = {"label": "Solicitar demo", "path": "/signup", "signed_path": "/welcome"}
+CTA_SECONDARY = {"label": "Ver planes", "url": "/#planes"}
 
 # --------------------------------------------------------------------------- home
 
 HOME = {
-    "meta_title": "Sobreala · Email marketing para tu negocio",
+    # El nombre de la pestaña, y nada más.
+    "meta_title": "Sobreala",
     "meta_description": (
         "Email marketing sin complicaciones: sube tus contactos, escribe tu campaña "
         "y envíala por correo a toda tu lista desde un solo panel."
@@ -105,8 +107,6 @@ HOME = {
     "hero": {
         "title_lead": "Administra tu base de datos de correos",
         "title_accent": "y envía de manera organizada.",
-        "subtitle": "Envía un correo a todos tus contactos con un solo click.",
-        "note": "Escríbenos y te acompañamos en tu primera campaña.",
     },
     "problem": {
         # Sin etiqueta de arriba ni entradilla: la pregunta lo dice todo.
@@ -176,29 +176,74 @@ HOME = {
             },
         ],
     },
+    # Para qué se usa, debajo de «¿Sigues enviando…?»: cuatro casos, cada uno con
+    # una foto de personas reales. Son de Pexels, con su licencia libre (uso
+    # comercial sin pedir permiso ni citar al autor); quién hizo cada una está
+    # en docs/sitio.md. Nadie aparece como cliente ni dice nada, así que no se
+    # insinúa que respalden Sobreala.
+    "uses": {
+        "eyebrow": "Ejemplos",
+        "title": "Lo que puedes enviar con Sobreala",
+        "intro": "Algunas ideas de lo que envían negocios y organizaciones como la tuya.",
+        "items": [
+            {
+                "photo": "equipo",
+                "alt": "Un equipo de trabajo reunido frente a un portátil.",
+                "title": "Comunícate con tu equipo",
+                "text": "Comunicados, cambios de horario y boletines para tus "
+                        "colaboradores.",
+            },
+            {
+                "photo": "clientes",
+                "alt": "La dueña de una floristería arregla un ramo en su tienda.",
+                "title": "Llega a más clientes",
+                "text": "Ofertas, lanzamientos y novedades para quienes ya te "
+                        "conocen.",
+            },
+            {
+                "photo": "socios",
+                "alt": "Un hombre presenta frente a un grupo sentado en una sala "
+                       "de reuniones.",
+                "title": "Convoca a tus socios",
+                "text": "Asambleas, recordatorios y estados de cuenta, cada uno "
+                        "con su nombre y su monto.",
+            },
+            {
+                "photo": "familias",
+                "alt": "Una madre y su hija miran juntas un portátil en casa.",
+                "title": "Mantén informadas a las familias",
+                "text": "Circulares, eventos y el calendario del colegio, en el "
+                        "correo de cada familia.",
+            },
+        ],
+    },
     "features": {
         # Sin etiqueta de arriba, a diferencia de las demás secciones: el
         # titular ya es la etiqueta.
         "title": "Features",
-        # Las flechas del carrusel de capturas. Solo las dibuja el guion.
+        # Las flechas del carrusel. Solo las dibuja el guion.
         "back": "Ver la anterior",
         "next": "Ver la siguiente",
-        # La ventana de ver una captura en grande, que también dibuja el guion.
-        "zoom": "Captura del panel, en grande",
-        "close": "Cerrar la captura",
         "intro": (
-            "Estas son las pantallas con las que trabajas: tus contactos, tus "
-            "plantillas, tus envíos y lo que pasó con cada correo."
+            "Lo que puedes hacer con Sobreala, de tu lista al resultado de cada "
+            "correo."
         ),
+        # Cinco dibujos sencillos (src/partials/feature-*.svg.j2) en vez de
+        # capturas del panel, que enseñaban demasiado de golpe. Cada uno cuenta
+        # una sola cosa; las palabras que lleva dentro van en `words`, y `alt` es
+        # lo que dice a un lector de pantalla. Aquí se juntaron también «Reglas
+        # que funcionan solas» y «En todos los planes» (octubre de 2026): lo que
+        # repetían va en estos textos y lo demás en la lista de abajo.
         "items": [
             {
-                "icon": "contacts",
-                "shot": "contactos",
+                "art": "contacts",
                 "alt": (
-                    "La lista de contactos del panel, con el correo de cada "
-                    "persona, su nombre, sus columnas propias, su estado y sus "
-                    "etiquetas."
+                    "Dos contactos con la misma dirección, uno con la etiqueta "
+                    "Socios y otro con Junta, que cuentan como uno solo: 1 de 1000."
                 ),
+                "words": {"email": "ana@coop.com", "tag_a": "Socios",
+                          "tag_b": "Junta", "count": "1", "limit": " / 1000",
+                          "unit": "contactos"},
                 "title": "Contactos sin duplicados",
                 "text": (
                     "Cada dirección existe una sola vez en tu cuenta. Si una persona "
@@ -207,13 +252,9 @@ HOME = {
                 ),
             },
             {
-                "icon": "campaign",
-                "shot": "lienzo",
-                "alt": (
-                    "El editor de plantillas: un texto elegido sobre la hoja, con "
-                    "su barra de fuente, tamaño y color, y el correo armándose al "
-                    "lado."
-                ),
+                "art": "editor",
+                "alt": "Una plantilla en el editor: un título elegido, una foto y un botón.",
+                "words": {"title": "Oferta de octubre", "button": "Ver oferta"},
                 "title": "Campañas creadas en el editor",
                 "text": (
                     "Diseña tus campañas directamente desde el editor, colocando "
@@ -223,28 +264,28 @@ HOME = {
                 ),
             },
             {
-                "icon": "schedule",
-                "shot": "envios",
+                "art": "schedule",
                 "alt": (
-                    "La pantalla de enviar correos, con el asunto escrito, una "
-                    "etiqueta marcada, la plantilla elegida y la opción de mandarlo "
-                    "ahora o a una fecha y hora."
+                    "Las dos formas de enviar: ahora, o programado para el 15 de "
+                    "octubre a las 9:00."
                 ),
+                "words": {"now": "Enviar ahora", "later": "Programar",
+                          "when": "15 de octubre, 9:00"},
                 "title": "Envío inmediato o programado",
                 "text": (
-                    "Selecciona tu lista, revisa la vista previa y envíate una prueba "
-                    "antes de enviar. Luego, elige si quieres que tu campaña salga de "
-                    "inmediato o en la fecha y hora que prefieras."
+                    "Elige tu lista, revisa la vista previa y decide si tu campaña "
+                    "sale de inmediato o en la fecha y hora que prefieras."
                 ),
             },
             {
-                "icon": "chart",
-                "shot": "estadisticas",
+                "art": "results",
                 "alt": (
-                    "La pantalla de estadísticas: enviados, entregados, rebotes, "
-                    "aperturas y clics, cada cifra comparada con el periodo "
-                    "anterior, y las gráficas de envíos y de aperturas."
+                    "Los resultados de una campaña: 98 % entregados, 41 % de "
+                    "aperturas y 12 % de clics, para bajar en CSV o PDF."
                 ),
+                "words": {"figures": [("98 %", "Entregados"), ("41 %", "Aperturas"),
+                                      ("12 %", "Clics")],
+                          "export": "CSV · PDF"},
                 "title": "Resultados de cada campaña",
                 "text": (
                     "Entregados, aperturas, clicks, rebotes y bajas, por campaña, con "
@@ -252,20 +293,38 @@ HOME = {
                 ),
             },
             {
-                "icon": "shield",
-                "shot": "baja",
+                "art": "unsubscribe",
                 "alt": (
-                    "La pantalla que abre quien pulsa el enlace de baja, con el "
-                    "botón de dejar de recibir estos correos."
+                    "El enlace para anular la suscripción al pie de un correo, y el "
+                    "aviso de que esa persona ya no recibirá más."
                 ),
+                "words": {"sender": "Enviado por Tu Empresa",
+                          "link": "Anular suscripción",
+                          "done": ["Listo, ya no recibirás", "estos correos."]},
                 "title": "Cada persona puede anular su suscripción cuando quiera",
                 "text": (
-                    "Todos los correos llevan el botón para anular la suscripción, en "
-                    "todos los planes. Quien lo usa deja de recibir al momento y tú no "
-                    "tienes que hacer nada."
+                    "Todos los correos llevan el botón para anular la suscripción, "
+                    "único para cada persona y en todos los planes. No se puede "
+                    "quitar, y quien lo usa deja de recibir al momento."
                 ),
             },
         ],
+        # Lo que no tiene dibujo: lo de «Reglas que funcionan solas» y «En todos
+        # los planes» que los cinco de arriba no cuentan ya.
+        "more": {
+            "title": "En todos los planes, sin excepción",
+            "items": [
+                {"title": "Rebotes y quejas fuera.",
+                 "text": ("Las direcciones que rebotan o marcan tu correo como "
+                          "spam salen de tus envíos para siempre, y reimportarlas "
+                          "no las reactiva.")},
+                {"title": "Sin sorpresas al llegar al límite.",
+                 "text": ("Si se acaban tus correos a mitad de campaña, se detiene "
+                          "en vez de fallar, y la sigues desde donde quedó.")},
+                {"title": "Acompañamiento en tu primera campaña.", "text": ""},
+                {"title": "Sin permanencia mínima.", "text": "Cancelas cuando quieras."},
+            ],
+        },
     },
     # La tira de plantillas de muestra, donde estaban los cuatro pasos: los
     # pasos siguen enteros en los tutoriales, justo debajo, que es a donde lleva
@@ -318,9 +377,9 @@ HOME = {
             {
                 "q": "¿Cómo se paga?",
                 "a": (
-                    "Con los medios de pago que ves al pie de esta página. Los datos de "
-                    "la tarjeta se manejan siempre en el sitio del proveedor de pago, "
-                    "nunca en Sobreala."
+                    "Al contratar eliges con qué pagar. Los datos de la tarjeta se "
+                    "manejan siempre en el sitio del proveedor de pago, nunca en "
+                    "Sobreala."
                 ),
             },
             {
@@ -723,46 +782,8 @@ HOW = {
             "para que los correos salgan desde él."
         ),
     },
-    "care": {
-        "eyebrow": "Lo que cuidamos por ti",
-        "title": "Reglas que funcionan solas",
-        "intro": (
-            "Hay cosas que si se hacen mal terminan con tus correos en la carpeta de "
-            "spam. Estas van incluidas y no dependen de que te acuerdes."
-        ),
-        "items": [
-            {
-                "title": "Botón de anular suscripción, siempre",
-                "text": (
-                    "El enlace para dejar de recibir correos se agrega en el envío, es "
-                    "único para cada persona y va en todos los planes. No se puede quitar."
-                ),
-            },
-            {
-                "title": "Nadie recibe la misma campaña dos veces",
-                "text": (
-                    "Si una persona lleva tres de tus etiquetas y la campaña va a las "
-                    "tres, recibe una sola copia y te cuesta un solo envío. Otra "
-                    "campaña distinta, más adelante, sí le llega."
-                ),
-            },
-            {
-                "title": "Rebotes y quejas fuera",
-                "text": (
-                    "Las direcciones que rebotan o marcan tu correo como spam salen de "
-                    "tus envíos de forma permanente. Reimportarlas no las reactiva."
-                ),
-            },
-            {
-                "title": "Sin sorpresas al llegar al límite",
-                "text": (
-                    "Te avisamos al 80% de tu cuota. Si la agotas a mitad de campaña, se "
-                    "pausa en vez de fallar, y al empezar el mes o al subir de plan, sigue "
-                    "desde donde se quedó."
-                ),
-            },
-        ],
-    },
+    # «Reglas que funcionan solas» se juntó con Features (octubre de 2026): lo
+    # que decía está en sus textos y en su lista de «En todos los planes».
 }
 
 # --------------------------------------------------------------------------- pricing
@@ -901,17 +922,8 @@ PRICING = {
             },
         ],
     },
-    "included": {
-        "title": "En todos los planes, sin excepción",
-        "items": [
-            "Botón para anular la suscripción en cada correo",
-            "Contactos sin duplicados, aunque lleven varias etiquetas",
-            "Lista de bajas y rebotes gestionada automáticamente",
-            "Estadísticas de cada campaña, exportables",
-            "Acompañamiento en tu primera campaña",
-            "Sin permanencia mínima: cancelas cuando quieras",
-        ],
-    },
+    # «En todos los planes, sin excepción» se juntó con Features (octubre de
+    # 2026), en la lista de debajo del carrusel.
 }
 
 # --------------------------------------------------------------------------- about
@@ -1024,49 +1036,12 @@ ABOUT = {
 # --------------------------------------------------------------------------- contact
 # Una página y no un ancla al pie: así se puede enlazar desde fuera, aparece en
 # los buscadores y se puede mandar por WhatsApp sola.
+# La sección de contacto se quitó (octubre de 2026): WhatsApp, correo e
+# Instagram están en el pie, que lleva el ancla #contacto. Esto queda solo
+# para la página de paso de /contact/, que manda ahí.
 CONTACT_PAGE = {
     "meta_title": "Contacto · Sobreala",
-    "meta_description": "Escríbenos por WhatsApp o por correo. Respondemos el "
-                        "mismo día hábil, desde Santiago de Veraguas.",
-    "hero": {
-        "eyebrow": "Contacto",
-        "title": "Hablemos de tu lista",
-        "subtitle": "Escríbenos y te decimos en dos minutos si Sobreala te "
-                    "sirve. Sin compromiso y sin formularios largos.",
-    },
-    "ways": [
-        {
-            "kind": "whatsapp",
-            "title": "WhatsApp",
-            "detail": "Lo más rápido. Contestamos el mismo día hábil.",
-        },
-        {
-            "kind": "email",
-            "title": "Correo",
-            "detail": "Para lo que necesite quedar por escrito, como una "
-                      "cotización o los datos de tu organización.",
-        },
-        {
-            "kind": "instagram",
-            "title": "Instagram",
-            "detail": "Ahí publicamos ejemplos de piezas y novedades.",
-        },
-    ],
-    "who": {
-        "title": "Quién contesta",
-        "paragraphs": [
-            "Sobreala lo lleva **Luis Stanziola**, desde Santiago de "
-            "Veraguas. No hay centro de llamadas: escribes y te contesta la "
-            "misma persona que va a configurar tu cuenta.",
-            "Atendemos de **lunes a viernes**. Si escribes un fin de semana, "
-            "te respondemos el lunes.",
-        ],
-    },
-    "already": {
-        "title": "¿Ya tienes cuenta?",
-        "text": "Si es algo de tu cuenta, entra al panel: ahí están tus datos, "
-                "tu plan y tus dispositivos conectados.",
-    },
+    "hero": {"title": "Contacto"},
 }
 
 # --------------------------------------------------------------------------- legal
@@ -1544,7 +1519,6 @@ FOOTER = {
             "title": "Empresa",
             "links": [
                 {"label": "Nosotros", "url": "/#nosotros"},
-                {"label": "Contacto", "url": "/#contacto"},
             ],
         },
         {
@@ -1557,8 +1531,4 @@ FOOTER = {
     ],
     "soon_label": "Próximamente",
     "legal_note": "Sobreala",
-    # Payment logos live in brand/payments/. If that folder is empty the footer
-    # falls back to this line, so the site is never left half-finished.
-    "payments_label": "Pagos",
-    "payments_fallback": "Pagos con Yappy, PayPal y tarjeta",
 }

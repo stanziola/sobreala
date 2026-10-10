@@ -201,17 +201,17 @@ def test_el_recibo_solo_trae_el_total(client, database, outbox, monkeypatch):
     assert "ITBMS" not in recibo and "$1.64" not in recibo
 
 
-def test_el_pie_trae_los_cuatro_logos_a_color():
+def test_el_pie_no_trae_logos_de_pago_y_el_panel_si():
+    """El pie del sitio es un solo azul, sin la franja de los logos (octubre de
+    2026): de los cuatro, hoy solo cobra PayPal. Los medios se ven al pagar."""
     html = (ROOT / "landing" / "index.html").read_text(encoding="utf-8")
-    for nombre, archivo in (("Yappy", "yappy.svg"), ("PayPal", "paypal.png"),
-                            ("Visa", "visa.svg"), ("Mastercard", "mastercard.svg")):
-        assert f'src="/assets/img/payments/{archivo}" alt="{nombre}"' in html
-    # Las copias de Visa y Mastercard van recortadas a su dibujo, en el sitio y
-    # en el panel, con el viewBox de brand/payments/viewbox.json.
+    assert "/assets/img/payments/" not in html
+    assert not (ROOT / "landing" / "assets" / "img" / "payments").exists()
+    # Las copias del panel siguen, y Visa y Mastercard van recortadas a su
+    # dibujo con el viewBox de brand/payments/viewbox.json.
     import json
 
     recortes = json.loads((ROOT / "brand" / "payments" / "viewbox.json").read_text(encoding="utf-8"))
     for marca in ("visa", "mastercard"):
-        for copia in (ROOT / "landing" / "assets" / "img" / "payments" / f"{marca}.svg",
-                      ROOT / "backend" / "static" / "img" / "payments" / f"{marca}.svg"):
-            assert f'viewBox="{recortes[marca]}"' in copia.read_text(encoding="utf-8")
+        copia = ROOT / "backend" / "static" / "img" / "payments" / f"{marca}.svg"
+        assert f'viewBox="{recortes[marca]}"' in copia.read_text(encoding="utf-8")

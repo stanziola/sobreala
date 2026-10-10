@@ -143,10 +143,10 @@ def build() -> list[Path]:
     return written
 
 
-# Los logos de los métodos de pago, para la pantalla de contratar. Son los mismos
-# archivos a color que usa el pie del sitio (brand/payments/README.md). Los SVG
-# van tal cual; el PNG de PayPal se recorta a lo que se ve y se achica a este
-# alto, cuatro veces el que se dibuja.
+# Los logos de los métodos de pago, para la pantalla de contratar: los archivos a
+# color de brand/payments/ (ver su README). Los SVG van tal cual; el PNG de
+# PayPal se recorta a lo que se ve y se achica a este alto, cuatro veces el que
+# se dibuja.
 PAYMENTS = BRAND_DIR / "payments"
 PAYMENT_LOGOS = {
     "paypal": PAYMENTS / "paypal" / "Horizontal Full Color" / "pp_h_rgb.png",
@@ -185,9 +185,9 @@ def payment_logos(img: Path) -> list[Path]:
 
 
 def crop_logos(out_dir: Path) -> None:
-    """El recorte de brand/payments/viewbox.json en las copias SVG, el mismo
-    que aplica el sitio: Visa y Mastercard traen su margen de respeto dentro del
-    archivo, y a 22 px de alto el dibujo quedaba diminuto. El kit no se toca."""
+    """El recorte de brand/payments/viewbox.json en las copias SVG: Visa y
+    Mastercard traen su margen de respeto dentro del archivo, y a 22 px de alto
+    el dibujo quedaba diminuto. El kit no se toca."""
     import json
 
     crops = json.loads((PAYMENTS / "viewbox.json").read_text(encoding="utf-8"))

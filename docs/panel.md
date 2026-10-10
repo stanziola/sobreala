@@ -26,8 +26,10 @@ pasado nada: la peor primera pantalla posible.
 `docs/cuenta.md`), `/welcome` es la pantalla de la demostración: los dos caminos
 que la abren, lo que incluye la llamada, el formulario para pedirla (su
 WhatsApp y su RUC o cédula) y los botones de ver los planes y de Configuración.
-Las cuatro pantallas de cliente la devuelven ahí. **Ya abierta y sin plan**,
-dice que la cuenta está lista y lleva esos dos botones, como antes.
+Las cuatro pantallas de cliente, que siguen en el menú, la devuelven ahí con
+`?para=`, y arriba dice a cuál quería entrar («Para entrar a Contactos, contrata
+un plan o pide la demostración»). **Ya abierta y sin plan**, dice que la cuenta
+está lista y lleva esos dos botones, como antes.
 
 Esa dirección se queda en el historial, así que lleva dos guardas que **no son
 para el día del registro**, donde no pueden darse: con un plan ya contratado

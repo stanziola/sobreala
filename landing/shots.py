@@ -1,22 +1,17 @@
-"""Las capturas del panel que enseña la portada.
+"""La cuenta de demostración, el panel y el Chrome de las capturas del sitio.
 
-El sitio dice lo que hace Sobreala; estas capturas lo enseñan. Salen del panel
-de verdad, no de un dibujo: se siembra una cuenta de demostración en una base
-aparte, se arranca el panel contra ella, se abre en un Chrome sin cabeza y se
-recorta la zona que importa de cada pantalla.
+Lo comparten `tutorials.py`, que recorre el panel paso a paso, y `samples.py`,
+que abre Chrome para las miniaturas de las muestras: la cuenta sembrada en una
+base aparte, el panel arrancado contra ella y lo justo para hablar con un Chrome
+sin cabeza.
 
 **Los datos son inventados y se nota**: la empresa se llama «Tu empresa», los
 contactos son nombres de pila en `@ejemplo.com` y los asuntos son corrientes.
 Nada de esto puede leerse como un cliente de verdad.
 
-Mismo trato que `brand/build_logo.py`: fuentes de verdad → comando → archivos
-generados que no se tocan a mano.
-
-    python landing/shots.py            # sembrar, capturar y escribir los webp
-    python landing/shots.py --check    # decir si faltan, sin tocar nada
-
-Hace falta Chrome instalado y MongoDB corriendo. **Se corre a mano cuando una
-pantalla del panel cambie**: si no, el sitio enseña algo que ya no existe.
+Hasta octubre de 2026 también hacía las cinco capturas del panel que enseñaba
+Features en la portada (`landing/assets/img/panel/`). Features pasó a dibujos
+sencillos (`landing/src/partials/feature-*.svg.j2`) y las capturas se quitaron.
 """
 
 from __future__ import annotations
@@ -28,55 +23,24 @@ import socket
 import struct
 import subprocess
 import sys
-import tempfile
 import time
 import urllib.request
-from datetime import datetime, timedelta, timezone
-from io import BytesIO
+from datetime import timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BACKEND = ROOT / "backend"
-OUT = ROOT / "landing" / "assets" / "img" / "panel"
 
 CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-PORT = 9444              # el de las capturas, para no chocar con otro Chrome
 PANEL_PORT = 5099        # el panel de las capturas, aparte del de desarrollo
 DB = "sobreala_shots"
 
 EMAIL = "hola@ejemplo.com"
 PASSWORD = "Contrasena-Larga1"
 
-# Dos juegos, uno por tema: la portada enseña el del tema que tenga puesto quien
-# mira, así que la sección puede seguir al tema como el resto de la página. Cada
-# uno va en su carpeta, con los mismos cinco nombres dentro.
+# Los dos temas del panel. Los tutoriales se capturan en los dos, cada juego en
+# su carpeta, y la página enseña el del tema que tenga puesto quien mira.
 THEMES = ("light", "dark")
-
-# El bloque del carrusel es 16:9. A este ancho una captura se lee nítida en el
-# panel abierto (unos 900 px) sin pasar de 120 KB en webp.
-WIDE, TALL = 1400, 788
-
-# Lo que se captura. De cada una: el archivo (`name`), la dirección (`url`, y
-# sin ella la pone el guion más abajo), desde dónde recorta (`from`) y, si hace
-# falta, en qué pulsar antes (`pick`), qué dejar escrito (`fill`) y en qué ancho
-# de ventana (`width`). Los tres últimos son para que ninguna salga vacía: un
-# formulario en blanco, un lienzo sin nada elegido o una tarjeta sola en medio
-# de una pantalla enorme enseñan el producto apagado.
-SHOTS = (
-    {"name": "contactos", "url": "/contacts", "from": ".table-wrap"},
-    {"name": "lienzo", "from": ".editor", "pick": ".cv-item--text"},
-    {"name": "envios", "url": "/campaigns", "from": ".compose",
-     "fill": "(function(){var f=document.getElementById('asunto');"
-             "f.value='Boletín de septiembre';"
-             "var t=document.querySelectorAll('[name=lista]');"
-             "if(t[1])t[1].checked=true;"
-             "var r=document.querySelector('[name=cuando][value=ahora]');"
-             "if(r)r.checked=true;})()"},
-    {"name": "estadisticas", "url": "/dashboard?period=30d", "from": ".rates"},
-    # La última, y sin sesión: al enlace de baja lo abre quien recibió el
-    # correo, no el cliente, así que arriba no va su menú de cuenta.
-    {"name": "baja", "from": ".card", "width": 820, "guest": True},
-)
 
 
 # --------------------------------------------------------------- el navegador
@@ -190,7 +154,6 @@ def seed():
     who = cuenta["_id"]
     accounts.confirm_email(db, who)
     accounts.activate_plan(db, who, "negocio", events.now() + timedelta(days=300))
-    accounts.clear_sending(db, who, who)
     accounts.set_postal(db, who, "Apartado 0816-00001, Santiago, Veraguas")
     # De quién salen sus campañas: sin usuario, Enviar correos diría que falta.
     accounts.set_handle(db, who, "tuempresa")
@@ -306,7 +269,7 @@ def seed():
     return {"design": str(diseno), "baja": baja}
 
 
-# ------------------------------------------------------------------- capturar
+# ------------------------------------------------------------------- el panel
 
 def start_panel(log: Path):
     """El panel contra la base de la demostración, en su propio puerto."""
@@ -335,167 +298,3 @@ def wait_for(url: str, seconds: int = 30) -> None:
         except Exception:
             time.sleep(0.5)
     raise RuntimeError(f"no arrancó: {url}")
-
-
-def crop(raw: bytes, top: float, ratio: float) -> bytes:
-    """La ventana entera, cortada a 16:9 desde donde empieza lo que importa.
-
-    Se recorta la ventana y no la caja del elemento: una pantalla del panel se
-    entiende viendo su barra, su título y lo que hay alrededor. Y se cuenta en
-    píxeles del dispositivo (`ratio`), no en los del CSS: Chrome dibuja al doble
-    para que la captura se lea nítida, y con los del CSS el recorte salía a la
-    mitad y ampliado.
-    """
-    from PIL import Image
-
-    with Image.open(BytesIO(raw)) as shot:
-        wide, tall = shot.size
-        cut_tall = min(tall, round(wide * TALL / WIDE))
-        y = int(max(0, min(top * ratio, tall - cut_tall)))
-        cut = shot.crop((0, y, wide, y + cut_tall)).resize((WIDE, TALL), Image.LANCZOS)
-        buffer = BytesIO()
-        cut.convert("RGB").save(buffer, format="WEBP", quality=82, method=6)
-        return buffer.getvalue()
-
-
-def take(ws, where: str, shot: dict) -> dict[str, bytes]:
-    """Abrir una dirección una vez y capturar su ventana en los dos temas.
-
-    Lo que dice `from` se sube arriba del todo, con un poco de aire, y de ahí
-    sale el recorte: así cada captura empieza donde está lo que se quiere
-    enseñar y no en el hueco de arriba de la página.
-
-    Se abre una sola vez y se cambia el tema entre foto y foto: así los dos
-    juegos salen idénticos salvo el color, y la vuelta no tarda el doble.
-    """
-    selector, pick, fill = shot["from"], shot.get("pick"), shot.get("fill")
-    if shot.get("guest"):
-        ws.call("Network.clearBrowserCookies")
-    if shot.get("width"):
-        # Una pantalla con poco dentro se captura en una ventana más angosta:
-        # lo que enseña ocupa su sitio en vez de nadar en el vacío.
-        ws.call("Emulation.setDeviceMetricsOverride", mobile=False,
-                width=shot["width"], height=round(shot["width"] * TALL / WIDE),
-                deviceScaleFactor=2)
-    ws.js("location.href=%s" % json.dumps(where))
-    time.sleep(3.5)
-    if pick:
-        where_is = json.loads(ws.js(
-            "JSON.stringify((function(){var e=document.querySelector(%s);"
-            "if(!e)return null;e.scrollIntoView({block:'center'});"
-            "var b=e.getBoundingClientRect();"
-            "return {x:b.left+b.width/2,y:b.top+b.height/2}})())"
-            % json.dumps(pick)))
-        if where_is:
-            for kind, buttons in (("mousePressed", 1), ("mouseReleased", 0)):
-                ws.call("Input.dispatchMouseEvent", type=kind,
-                        x=where_is["x"], y=where_is["y"], button="left",
-                        buttons=buttons, clickCount=1)
-            time.sleep(1)
-    if fill:
-        ws.js(fill)
-        time.sleep(0.5)
-    top = ws.js(
-        "(function(){var e=document.querySelector(%s);"
-        "if(!e)return 0;e.scrollIntoView({block:'start'});"
-        "window.scrollBy(0,-110);"
-        "return Math.max(0, e.getBoundingClientRect().top - 110)})()"
-        % json.dumps(selector))
-    ratio = ws.js("window.devicePixelRatio || 1")
-    made = {}
-    for theme in THEMES:
-        # Lo mismo que hace el guion de la cabecera del panel antes de pintar.
-        ws.js("document.documentElement.dataset.theme=%s" % json.dumps(theme))
-        time.sleep(1.2)
-        raw = base64.b64decode(ws.call("Page.captureScreenshot", format="png")["data"])
-        made[theme] = crop(raw, float(top or 0), float(ratio))
-    if shot.get("width"):
-        ws.call("Emulation.clearDeviceMetricsOverride")
-    return made
-
-
-def shoot(demo: dict) -> dict[str, dict[str, bytes]]:
-    """Las cinco capturas, en orden, cada una en los dos temas."""
-    work = Path(tempfile.mkdtemp(prefix="sobreala-shots-"))
-    panel = start_panel(work / "panel.log")
-    chrome = None
-    try:
-        wait_for(f"http://127.0.0.1:{PANEL_PORT}/login")
-        chrome = subprocess.Popen(
-            [CHROME, "--headless=new", "--disable-gpu",
-             f"--remote-debugging-port={PORT}", f"--user-data-dir={work / 'chrome'}",
-             "--no-first-run", "--hide-scrollbars",
-             "--force-device-scale-factor=2", "--window-size=1500,1000",
-             f"http://127.0.0.1:{PANEL_PORT}/login"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        ws = None
-        for _ in range(60):
-            try:
-                pages = json.load(urllib.request.urlopen(
-                    f"http://127.0.0.1:{PORT}/json/list"))
-                page = next((p for p in pages if p["type"] == "page"
-                             and p["url"].startswith("http")), None)
-                if page:
-                    ws = WS(page["webSocketDebuggerUrl"])
-                    for method in ("Runtime.enable", "Page.enable", "DOM.enable",
-                                   "Network.enable"):
-                        ws.call(method)
-                    break
-            except Exception:
-                pass
-            time.sleep(0.5)
-        if ws is None:
-            raise RuntimeError("Chrome no abrió")
-
-        time.sleep(1.5)
-        ws.js("(function(){var f=document.getElementById('email');if(!f)return;"
-              "f=f.form;f.email.value=%s;f.password.value=%s;f.submit();})()"
-              % (json.dumps(EMAIL), json.dumps(PASSWORD)))
-        time.sleep(3)
-
-        sitios = {
-            "lienzo": f"/templates/canvas/{demo['design']}",
-            "baja": demo["baja"],
-        }
-        made = {}
-        for shot in SHOTS:
-            name = shot["name"]
-            url = f"http://127.0.0.1:{PANEL_PORT}" + (shot.get("url") or sitios[name])
-            made[name] = take(ws, url, shot)
-        return made
-    finally:
-        if chrome:
-            chrome.terminate()
-        panel.terminate()
-        time.sleep(1)
-
-
-# ----------------------------------------------------------------- el comando
-
-def main() -> None:
-    check = "--check" in sys.argv
-    if check:
-        faltan = [f"{theme}/{s['name']}" for theme in THEMES for s in SHOTS
-                  if not (OUT / theme / f"{s['name']}.webp").exists()]
-        if faltan:
-            print("Faltan capturas:", ", ".join(faltan))
-            print("Correlas con: python landing/shots.py")
-            raise SystemExit(1)
-        print("Las capturas del panel estan, en los dos temas.")
-        return
-
-    print("Sembrando la cuenta de demostracion…")
-    demo = seed()
-    print("Capturando…")
-    made = shoot(demo)
-    for theme in THEMES:
-        (OUT / theme).mkdir(parents=True, exist_ok=True)
-    for name, themes in made.items():
-        for theme, data in themes.items():
-            target = OUT / theme / f"{name}.webp"
-            target.write_bytes(data)
-            print(f"  {target.relative_to(ROOT)}  {len(data) // 1024} KB")
-
-
-if __name__ == "__main__":
-    main()

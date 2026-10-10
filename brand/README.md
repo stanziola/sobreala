@@ -1,13 +1,14 @@
 # Marca Sobreala
 
-Activos de marca: logo vectorial, favicons, paleta de colores y posición.
+Activos de marca: logo vectorial, favicons, foto de perfil para redes, paleta
+de colores y posición.
 
 ```
 brand/
 ├── colors.css                  # fuente de verdad de los COLORES (tema claro)
 ├── colors-dark.css             # los mismos nombres, valores del tema oscuro
 ├── layout.json                 # fuente de verdad de la POSICIÓN y el encuadre
-├── build_logo.py               # genera todo lo de logo/, favicon/ y preview/
+├── build_logo.py               # genera todo lo de logo/, favicon/, perfil/ y preview/
 ├── logo/
 │   ├── logo.svg                # composición completa: fondo + ala (viewBox 271×254)
 │   ├── logo-transparent.svg    # solo el símbolo, fondo transparente (viewBox 207×123)
@@ -20,13 +21,16 @@ brand/
 │   ├── favicon-16x16.png
 │   ├── favicon-32x32.png
 │   └── favicon-180x180.png     # apple-touch-icon (cuadrado, ver abajo)
+├── perfil/
+│   └── perfil-1080.png         # foto de perfil para redes, 1080×1080 (ver abajo)
 ├── preview/
 │   └── colores.html            # editor de colores y posición, en vivo
 └── social/                     # iconos de redes (Instagram, etc.), se agregan a mano
     └── README.md               # convención de nombres y formato
 ```
 
-Todo lo de `logo/`, `favicon/` y `preview/` (salvo `reference/`) es **generado**:
+Todo lo de `logo/`, `favicon/`, `perfil/` y `preview/` (salvo `reference/`) es
+**generado**:
 no se edita a mano, se regenera. `social/` es lo contrario: ahí van los iconos
 de redes sociales, que son marcas de terceros y se agregan a mano siguiendo la
 convención de `social/README.md`.
@@ -115,13 +119,14 @@ definición oscura en ese archivo acabaría dentro del logo generado.
 
 ## Posición
 
-`layout.json` guarda tres valores, todos de encuadre:
+`layout.json` guarda cuatro valores, todos de encuadre:
 
 | Clave                   | Qué controla                                                            |
 |-------------------------|-------------------------------------------------------------------------|
-| `offset`                | `[x, y]` del ala desde el centro; el mismo valor en el logo y el favicon |
+| `offset`                | `[x, y]` del ala desde el centro; el mismo valor en el logo, el favicon y el perfil |
 | `favicon_fill`          | Proporción del lado del icono que ocupa el ancho del ala                 |
 | `favicon_corner_radius` | Radio de las esquinas del favicon, como fracción del lado                |
+| `avatar_fill`           | Proporción del lado de la foto de perfil que ocupa el ancho del ala      |
 
 El sistema de coordenadas es el del SVG: X hacia la derecha, Y hacia abajo, en
 unidades del lienzo de 271×254. El favicon usa las mismas unidades, así que el
@@ -196,3 +201,20 @@ mano tras regenerar.
   en `favicon.svg` (los navegadores lo muestran a 16–32 px). La silueta no
   cambia. Para usar la geometría exacta en todos los tamaños, poner esos
   factores a `1.0` (`FAVICON_SHADOW_SCALE` y `FAVICON_SVG_SHADOW_SCALE`).
+
+## La foto de perfil
+
+`perfil/perfil-1080.png` es la que se sube a Instagram, Facebook, WhatsApp,
+LinkedIn, X, TikTok y YouTube. **Es la misma para todas**:
+
+- **1080×1080 y cuadrada.** Es lo que todas guardan tal cual, sin recortarla
+  ni rehacerla. Si se sube otra proporción, cada una corta por su lado.
+- **El ala sola, sobre el azul**, con los colores y el `offset` del favicon. Sin
+  la palabra: al tamaño al que se ve una foto de perfil no se leería.
+- **Opaca y sin esquinas redondeadas.** Cada red pone su propia máscara (un
+  círculo casi en todas, un cuadrado en LinkedIn), y una esquina transparente
+  sale negra o blanca según la aplicación.
+- **El ala ocupa el 60 % del ancho** (`avatar_fill`) y llega al 73 % del radio
+  del círculo con el que la recortan. Así queda dentro con aire, y en cuadrado
+  también se ve centrada. Si se sube `avatar_fill` y el ala pasa del 80 % del
+  radio (`AVATAR_SAFE` en `build_logo.py`), el build avisa.

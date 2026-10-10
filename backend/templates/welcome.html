@@ -8,7 +8,9 @@
   {% if closed %}
   {# Una cuenta cerrada: todavía no la abrió ni la demostración ni un pago. Las
      cuatro pantallas de cliente la devuelven aquí, así que esta tiene que decir
-     las dos formas de seguir: pedir la demostración, o contratar. #}
+     las dos formas de seguir: pedir la demostración, o contratar. Si llegó
+     desde una de ellas, primero se dice cuál quería abrir. #}
+  {% if gate %}<p class="notice">{{ t('welcome_gate', section=gate) }}</p>{% endif %}
   <p class="lead">{{ t('welcome_closed_lead') }}</p>
 
   <p>{{ t('welcome_demo_includes') }}</p>

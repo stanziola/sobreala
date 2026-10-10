@@ -11,7 +11,7 @@ with sub-pixel accuracy.
 
 Nothing tweakable is hard-coded here:
   brand/colors.css    colors  (--color-background, --color-logo, --color-shadow)
-  brand/layout.json   placement (where the wing sits, favicon framing)
+  brand/layout.json   placement (where the wing sits, favicon and profile framing)
 
 Outputs:
   brand/logo/logo.svg               full composition, colored background (viewBox 0 0 271 254)
@@ -20,6 +20,7 @@ Outputs:
   brand/favicon/favicon.svg         rounded square
   brand/favicon/favicon-16x16.png, favicon-32x32.png, favicon-180x180.png
   brand/favicon/favicon.ico         16 + 32 + 48 px
+  brand/perfil/perfil-1080.png      profile picture for social networks, square and opaque
   brand/preview/colores.html        live color + position editor (open it in a browser)
 
 Usage:
@@ -75,6 +76,7 @@ LAYOUT_JSON = BRAND_DIR / "layout.json"
 LOGO_DIR = BRAND_DIR / "logo"
 FAVICON_DIR = BRAND_DIR / "favicon"
 PREVIEW_DIR = BRAND_DIR / "preview"
+AVATAR_DIR = BRAND_DIR / "perfil"
 
 # --------------------------------------------------------------------------- geometry
 # Coordinates are in the reference frame: a 271 x 254 canvas, same as the
@@ -142,6 +144,13 @@ APPLE_TOUCH_ROUNDED = False
 FAVICON_SHADOW_SCALE = {16: 2.0, 32: 1.5, 48: 1.25}
 FAVICON_SVG_SHADOW_SCALE = 1.5
 
+# Profile picture for social networks: 1080 px square, the size Instagram,
+# Facebook, WhatsApp, LinkedIn, X, TikTok and YouTube keep without redoing it.
+# Almost all of them crop it to a circle, so the wing (and its shadow) has to
+# stay within this share of that circle's radius; check_placement() warns past it.
+AVATAR_SIZE = 1080
+AVATAR_SAFE = 0.8
+
 # --------------------------------------------------------------------------- colors
 COLOR_KEYS = ("color-background", "color-logo", "color-shadow")
 HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -198,14 +207,18 @@ DEFAULT_LAYOUT = {
     "offset": [0.0, 0.0],
     "favicon_fill": 0.84,
     "favicon_corner_radius": 0.20,
+    "avatar_fill": 0.6,
 }
 
 LAYOUT_DOC = {
     "offset": "Where the wing sits, as [x, y] in canvas units from centered (+x right, +y down). "
-              "The same offset applies in the logo canvas and in the favicon. [0, 0] = centered in both.",
+              "The same offset applies in the logo canvas, the favicon and the profile picture. "
+              "[0, 0] = centered in all three.",
     "favicon_fill": "Share of the favicon side taken by the wing's width (0-1). The rest is the safe "
                     "area that keeps it clear of the rounded corners.",
     "favicon_corner_radius": "Rounded corners of the favicon, as a fraction of the side. 0 = square.",
+    "avatar_fill": "Share of the profile picture's side taken by the wing's width (0-1). The networks "
+                   "crop it to a circle, so the wing needs air inside it: past 80% of the radius the build warns.",
 }
 
 
@@ -245,6 +258,8 @@ def validate_layout(data: dict) -> tuple[dict, list[str]]:
         errors.append(f"'favicon_fill' must be between 0.05 and 1.0, got {layout['favicon_fill']}")
     if not 0.0 <= layout["favicon_corner_radius"] <= 0.5:
         errors.append(f"'favicon_corner_radius' must be between 0 and 0.5, got {layout['favicon_corner_radius']}")
+    if not 0.05 <= layout["avatar_fill"] <= 1.0:
+        errors.append(f"'avatar_fill' must be between 0.05 and 1.0, got {layout['avatar_fill']}")
     return layout, errors
 
 
@@ -325,6 +340,17 @@ def favicon_shift(layout: dict, with_offset: bool = True) -> tuple[float, float]
 def favicon_shadow_scale(px: int) -> float:
     """How much to widen the shadow offset at a given raster size (1.0 = exact geometry)."""
     return FAVICON_SHADOW_SCALE.get(px, 1.0)
+
+
+def avatar_canvas(layout: dict) -> float:
+    return BBOX_SIZE[0] / layout["avatar_fill"]
+
+
+def avatar_shift(layout: dict) -> tuple[float, float]:
+    """Where the wing goes in the profile picture: centered, plus the same configured offset."""
+    c = avatar_canvas(layout)
+    return (-BBOX[0] + (c - BBOX_SIZE[0]) / 2 + layout["offset"][0],
+            -BBOX[1] + (c - BBOX_SIZE[1]) / 2 + layout["offset"][1])
 
 
 # --------------------------------------------------------------------------- path data
@@ -525,6 +551,18 @@ def render_favicon(colors: dict[str, str], layout: dict, px: int, rounded: bool 
     return im
 
 
+def render_avatar(colors: dict[str, str], layout: dict, px: int = AVATAR_SIZE) -> Image.Image:
+    """The profile picture: the wing alone on the background, like the favicon.
+
+    Square and opaque on purpose: each network applies its own mask (a circle
+    almost everywhere, a square in LinkedIn), and a transparent corner comes out
+    black or white depending on the app. Without the word: at the size a profile
+    picture is shown, it would not read.
+    """
+    return render_composition(colors, px / avatar_canvas(layout), shift=avatar_shift(layout),
+                              size=(px, px)).convert("RGB")
+
+
 # --------------------------------------------------------------------------- checks
 def check_placement(layout: dict) -> list[str]:
     """Warn when the current offsets push content out of frame or into the corners."""
@@ -548,6 +586,15 @@ def check_placement(layout: dict) -> list[str]:
     clipped = int((np.hypot(pts[:, 0] - cx, pts[:, 1] - cy) > r + 1e-9).sum())
     if clipped:
         warnings.append(f"el favicon recorta el ala en {clipped} puntos: baja favicon_fill o favicon_corner_radius")
+
+    c = avatar_canvas(layout)
+    sx, sy = avatar_shift(layout)
+    pts = np.concatenate([wing_polygon((sx, sy)),
+                          wing_polygon((sx + SHADOW_OFFSET[0], sy + SHADOW_OFFSET[1]), top_lift=SHADOW_TOP_LIFT)])
+    reach = float(np.hypot(pts[:, 0] - c / 2, pts[:, 1] - c / 2).max()) / (c / 2)
+    if reach > AVATAR_SAFE:
+        warnings.append(f"en el perfil el ala llega al {reach:.0%} del radio del circulo, mas del "
+                        f"{AVATAR_SAFE:.0%}: al recortarla en redondo queda pegada al borde. Baja avatar_fill")
     return warnings
 
 
@@ -1025,7 +1072,7 @@ def preview_html(colors: dict[str, str], layout: dict, served: bool = False) -> 
 def build(colors: dict[str, str] | None = None, layout: dict | None = None) -> list[Path]:
     colors = colors or read_colors()
     layout = layout or read_layout()
-    for d in (LOGO_DIR, FAVICON_DIR, PREVIEW_DIR):
+    for d in (LOGO_DIR, FAVICON_DIR, PREVIEW_DIR, AVATAR_DIR):
         d.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
 
@@ -1067,6 +1114,10 @@ def build(colors: dict[str, str] | None = None, layout: dict | None = None) -> l
     ico_images[0].save(ico, format="ICO", sizes=[(px, px) for px in FAVICON_ICO_SIZES], append_images=ico_images[1:])
     written.append(ico)
 
+    avatar = AVATAR_DIR / f"perfil-{AVATAR_SIZE}.png"
+    render_avatar(colors, layout).save(avatar, optimize=True)
+    written.append(avatar)
+
     write_text(PREVIEW_DIR / "colores.html", preview_html(colors, layout))
     return written
 
@@ -1079,6 +1130,7 @@ def describe(colors: dict[str, str], layout: dict) -> str:
         f"   (0, 0 = centrado; como el original seria [{_fmt(original_offset()[0])}, {_fmt(original_offset()[1])}])",
         f"favicon_fill:          {layout['favicon_fill']}",
         f"favicon_corner_radius: {layout['favicon_corner_radius']}",
+        f"avatar_fill:           {layout['avatar_fill']}",
         f"logo en el lienzo {CANVAS[0]}x{CANVAS[1]}: x {_fmt(x0)}..{_fmt(x1)}  y {_fmt(y0)}..{_fmt(y1)}",
     ])
 

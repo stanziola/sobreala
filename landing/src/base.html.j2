@@ -131,15 +131,6 @@
             <span class="usermenu__icons">{% include "partials/icon-shield.svg.j2" %}</span>
             <span>{{ panel.admin_label }}</span></a>
 
-          {#- Una cuenta que todavía no se abrió (ni demostración ni pago) no
-              tiene ninguna de las cuatro de abajo: tiene su demostración, en
-              el mismo sitio. Lo dice la galleta («new»), igual que el menú del
-              panel, que es la otra mitad de esto. -#}
-          <a class="usermenu__item" data-new-only hidden
-             href="{{ panel.base_url }}/welcome">
-            <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
-            <span>{{ panel.demo_label }}</span></a>
-
           {#- El panel va primero porque es a lo que se dedica la empresa: lo
               demás son ajustes de la cuenta, y se buscan cuando hace falta. -#}
           <a class="usermenu__item" data-client-only hidden
@@ -295,27 +286,12 @@
 
   </div>
 
-  {# La franja de abajo, la de los pagos, va de lado a lado, fuera del `shell`,
-     en el color de la página (blanca de día, negra de noche): es lo que despega
-     los logos a color del azul del pie. #}
-  <div class="site-footer__bottom">
-    <div class="shell site-footer__legal">
-      <p><span>&copy; <span id="year">2026</span> {{ footer.legal_note }}</span></p>
-      {% if payment_logos %}
-      <p class="payments">
-        <span class="payments__label">{{ footer.payments_label }}</span>
-        {# Las medidas salen del archivo generado: escritas a ojo (y cuadradas,
-           cuando los logos son apaisados) el pie saltaba al cargar. #}
-        {% for logo in payment_logos %}
-        <img class="payments__logo"
-             src="{{ logo.url }}" alt="{{ logo.label }}"
-             width="{{ logo.size[0] }}" height="{{ logo.size[1] }}" loading="lazy">
-        {% endfor %}
-      </p>
-      {% else %}
-      <p class="payments"><span class="payments__label">{{ footer.payments_fallback }}</span></p>
-      {% endif %}
-    </div>
+  {# El © va dentro del mismo azul, pequeño y con su raya fina encima. Hubo
+     debajo una franja en el color de la página con los logos de pago, y se
+     quitó (octubre de 2026): de noche se leía negro, azul y negro otra vez, y
+     de los cuatro medios solo PayPal cobra hoy. Los medios se ven al pagar. #}
+  <div class="shell site-footer__bottom">
+    <p class="site-footer__legal">&copy; <span id="year">2026</span> {{ footer.legal_note }}</p>
   </div>
 </footer>
 

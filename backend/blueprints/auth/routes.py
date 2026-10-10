@@ -267,16 +267,16 @@ def bar_account():
         return {}
     try:
         account = current_account()
-        # Una empresa que todavía no se abrió (ni demostración ni pago) no ve
-        # ninguna de las cuatro filas: solo la de su demostración.
-        closed = is_closed(account)
         return {"bar_account": account, "bar_admin": accounts.is_admin(account),
                 # Qué filas enseñarle: un usuario ve solo lo que su empresa le
                 # dio. Las rutas lo comprueban igual, porque esconder una fila
-                # no es un permiso.
-                "bar_can": {name: accounts.can(account, name) and not closed
+                # no es un permiso. Una empresa cerrada las ve todas: cada una
+                # la lleva a contratar o a pedir la demostración (`needs()`).
+                "bar_can": {name: accounts.can(account, name)
                             for name in accounts.PERMISSIONS},
-                "bar_closed": closed,
+                # Una empresa que todavía no se abrió, ni con la demostración
+                # ni con el pago: Configuración lo avisa en amarillo.
+                "bar_closed": is_closed(account),
                 # El nombre de arriba es el de la empresa, también para un
                 # usuario suyo: es la cuenta en la que está trabajando.
                 "bar_company": (current_workspace() or {}).get("company_name", "")}
@@ -431,7 +431,8 @@ def needs(account: dict | None, permission: str):
     sí pueda abrir, no en una pantalla de error.
 
     Antes que el permiso va la empresa: una que todavía no se abrió, ni con la
-    demostración ni con el pago, cae en su bienvenida, que es donde la pide. Las
+    demostración ni con el pago, cae en su bienvenida, donde se contrata o se
+    pide la demostración, y la bienvenida dice qué pantalla quería abrir. Las
     cuatro pantallas de cliente pasan por aquí, así que una nueva hereda la
     puerta sin que nadie se acuerde de ponérsela.
 
@@ -439,7 +440,7 @@ def needs(account: dict | None, permission: str):
     `answer = needs(account, ...)` sin envolver cada vista en un decorador.
     """
     if is_closed(account):
-        return redirect(url_for("auth.welcome"))
+        return redirect(url_for("auth.welcome", para=permission))
     if accounts.can(account, permission):
         return None
     return redirect(home_for(account))
@@ -1566,6 +1567,17 @@ def welcome():
     return demo_screen(account)
 
 
+# La pantalla que quería abrir una cuenta cerrada, con el nombre que lleva en el
+# menú: es lo que dice la bienvenida al recibirla (`?para=`, que pone `needs()`).
+GATE_NAMES = {
+    accounts.STATS: "nav_panel",
+    accounts.CAMPAIGNS: "menu_send",
+    accounts.SEND: "menu_send",
+    accounts.CONTACTS: "menu_contacts",
+    accounts.DESIGNS: "menu_designs",
+}
+
+
 def demo_screen(account: dict, *, errors: dict | None = None,
                 form: dict | None = None):
     """La bienvenida de una cuenta cerrada, con lo que ya pidió si lo pidió.
@@ -1573,15 +1585,21 @@ def demo_screen(account: dict, *, errors: dict | None = None,
     El número y el RUC salen escritos: el número del registro, donde era
     opcional, y los dos si ya pidió la demostración una vez. Corregirlos es
     volver a pedirla.
+
+    Si llegó desde una de las cuatro pantallas, arriba dice cuál quería abrir y
+    que se abre contratando o con la demostración. Un valor que no es una
+    pantalla no dice nada: la dirección la escribe cualquiera.
     """
     company = current_workspace() or account
+    wanted = GATE_NAMES.get(request.args.get("para", ""))
     return render_template(
         "welcome.html", account=account, closed=True, errors=errors or {},
         form=form or {"phone": company.get("phone", ""),
                       "tax_id": accounts.tax_id_of(company)},
         # Lo que quedó guardado, no lo que se acaba de escribir mal.
         asked=company.get("demo_requested_at"),
-        asked_phone=company.get("phone", ""))
+        asked_phone=company.get("phone", ""),
+        gate=t(wanted) if wanted else "")
 
 
 @bp.route("/welcome/demo", methods=["POST"])

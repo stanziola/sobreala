@@ -1,0 +1,37 @@
+{#- Resultados de cada campaña: tres cifras grandes y lo que significan, y la
+    pastilla de bajarlas. Nada de gráficas: las cifras se leen de un vistazo, que
+    es lo que este dibujo tiene que contar. Palabras de content.py y colores de
+    las clases .art-*, como los demás dibujos de Features. -#}
+{% set w = item.words %}
+<svg class="tour__art" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid slice"
+     role="img" aria-label="{{ item.alt }}" focusable="false">
+  <defs>
+    <filter id="fr-drop" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" class="art-drop"/>
+    </filter>
+  </defs>
+  <rect class="art-stage" width="480" height="270"/>
+
+  {#- las tres cifras, cada una en su ficha y con su color -#}
+  {% for figure in w.figures %}
+  {% set left = 56 + loop.index0 * 128 %}
+  <g filter="url(#fr-drop)">
+    <rect class="art-card" x="{{ left }}" y="58" width="112" height="104" rx="16"/>
+  </g>
+  <rect class="{{ ['art-green', 'art-blue', 'art-purple'][loop.index0] }}" x="{{ left + 40 }}"
+        y="72" width="32" height="5" rx="2.5"/>
+  <text class="art-ink" x="{{ left + 56 }}" y="122" text-anchor="middle" font-size="27"
+        font-weight="800">{{ figure[0] }}</text>
+  <text class="art-ink" x="{{ left + 56 }}" y="144" text-anchor="middle" font-size="12.5"
+        opacity=".72">{{ figure[1] }}</text>
+  {% endfor %}
+
+  {#- bajarlas en CSV o PDF -#}
+  <g filter="url(#fr-drop)">
+    <rect class="art-card" x="182" y="186" width="116" height="34" rx="17"/>
+  </g>
+  <path class="art-s-blue" d="M207 196v12m-5-5 5 5 5-5m-9 9h8" fill="none" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="art-ink" x="250" y="207.5" text-anchor="middle" font-size="12.5"
+        font-weight="700">{{ w.export }}</text>
+</svg>

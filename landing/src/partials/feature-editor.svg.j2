@@ -1,0 +1,46 @@
+{#- Campañas creadas en el editor: una hoja de correo con su cabecera, un título,
+    una foto y un botón, y el título elegido con sus agarraderas, como queda en
+    el lienzo al pulsarlo. Palabras de content.py y colores de las clases .art-*,
+    como los demás dibujos de Features. -#}
+{% set w = item.words %}
+<svg class="tour__art" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid slice"
+     role="img" aria-label="{{ item.alt }}" focusable="false">
+  <defs>
+    <filter id="fe-drop" x="-30%" y="-20%" width="160%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" class="art-drop"/>
+    </filter>
+    <clipPath id="fe-photo"><rect x="156" y="114" width="168" height="78" rx="9"/></clipPath>
+  </defs>
+  <rect class="art-stage" width="480" height="270"/>
+
+  {#- la hoja -#}
+  <g filter="url(#fe-drop)">
+    <rect class="art-card" x="140" y="20" width="200" height="232" rx="14"/>
+  </g>
+
+  {#- la cabecera, con el logo de quien envía -#}
+  <rect class="art-blue" x="156" y="36" width="168" height="28" rx="7"/>
+  <rect x="168" y="47" width="54" height="6" rx="3" fill="white" opacity=".85"/>
+
+  {#- el título, elegido: su recuadro y sus cuatro agarraderas -#}
+  <text class="art-ink" x="240" y="94" text-anchor="middle" font-size="15"
+        font-weight="700">{{ w.title }}</text>
+  <rect class="art-s-blue" x="160" y="75" width="160" height="28" rx="4" fill="none"
+        stroke-width="1.6" stroke-dasharray="4 3"/>
+  {% for x, y in [(160, 75), (320, 75), (160, 103), (320, 103)] %}
+  <rect class="art-card art-s-blue" x="{{ x - 4 }}" y="{{ y - 4 }}" width="8" height="8"
+        rx="2" stroke-width="1.6"/>
+  {% endfor %}
+
+  {#- la foto: un sol y dos montes -#}
+  <g clip-path="url(#fe-photo)">
+    <rect class="art-blue-soft" x="156" y="114" width="168" height="78"/>
+    <circle class="art-amber" cx="290" cy="136" r="10"/>
+    <path class="art-blue" d="M150 196l52-48 30 28 18-16 46 36z" opacity=".75"/>
+  </g>
+
+  {#- el botón -#}
+  <rect class="art-blue" x="192" y="206" width="96" height="30" rx="15"/>
+  <text x="240" y="225.5" text-anchor="middle" font-size="12" font-weight="700"
+        fill="white">{{ w.button }}</text>
+</svg>

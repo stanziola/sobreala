@@ -12,9 +12,9 @@ no se desfasan. Se rehacen con este comando cuando cambia una pantalla:
     python landing/tutorials.py            # sembrar, recorrer y escribir
     python landing/tutorials.py --check    # decir si falta algo, sin tocar nada
 
-Usa la misma cuenta de demostración, el mismo panel y el mismo Chrome que
-`shots.py`. Los textos de cada paso no viven aquí: están en `content.py`
-(`TUTORIALS`), con el resto del texto del sitio.
+Usa la cuenta de demostración, el panel y el Chrome de `shots.py`. Los textos
+de cada paso no viven aquí: están en `content.py` (`TUTORIALS`), con el resto
+del texto del sitio.
 """
 
 from __future__ import annotations

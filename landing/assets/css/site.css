@@ -589,15 +589,9 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   line-height: 1.08; font-weight: 800; letter-spacing: -.02em;
 }
 .hero__title-accent { color: var(--color-on-dark-soft); }
-.hero__subtitle {
-  margin-top: 20px; max-width: 540px;
-  font-size: clamp(1.02rem, .95rem + .4vw, 1.2rem); line-height: 1.6;
-  color: var(--color-on-dark-soft);
-}
-.hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
 .hero__actions .btn--outline { color: var(--color-on-dark); border-color: var(--color-on-dark-soft); }
 .hero__actions .btn--outline:hover { background: var(--color-on-dark); color: var(--color-background); border-color: var(--color-on-dark); }
-.hero__note { margin-top: 18px; font-size: .9rem; color: var(--color-on-dark-soft); }
 .hero__art { display: flex; justify-content: center; }
 .hero__wing { width: min(100%, 520px); }
 .hero__wing svg { width: 100%; height: auto; }
@@ -626,14 +620,6 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .note-card:hover, .feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--color-accent-soft); }
 .note-card__title, .feature-card__title { font-size: 1.12rem; font-weight: 700; line-height: 1.3; margin-bottom: 10px; }
 .note-card p, .feature-card p { color: var(--color-ink-soft); }
-.note-card--check { padding-left: 54px; position: relative; }
-.note-card--check::before {
-  content: ""; position: absolute; left: 22px; top: 30px; width: 18px; height: 18px;
-  border-radius: 50%; background: var(--color-accent);
-  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M9.3 16.6 4.7 12l1.4-1.4 3.2 3.2 8.6-8.6L19.3 6.6z'/></svg>") center / 70% no-repeat, linear-gradient(black, black);
-          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M9.3 16.6 4.7 12l1.4-1.4 3.2 3.2 8.6-8.6L19.3 6.6z'/></svg>") center / 70% no-repeat, linear-gradient(black, black);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-}
 .feature-card__icon {
   display: inline-flex; width: 46px; height: 46px; margin-bottom: 16px;
   align-items: center; justify-content: center; border-radius: 12px;
@@ -797,22 +783,38 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .art-glow { stop-color: var(--art-glow); }
 .art-drop { flood-color: var(--art-shadow); }
 
+/* ------------------------------------------------------------------ uses (home)
+   Para qué se usa: cuatro tarjetas, cada una con su foto, su título y una
+   línea. La foto va sola, sin nada encima ni marco, que es lo que la hace
+   sutil. Cuatro a lo ancho, dos en la tableta y una en el teléfono. */
+.uses { display: grid; gap: clamp(20px, 3vw, 28px); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 620px) { .uses { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1040px) { .uses { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.use { min-width: 0; }
+.use__photo {
+  display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover;
+  border-radius: var(--radius); background: var(--color-surface-alt);
+}
+.use__title { margin-top: 16px; font-size: 1.08rem; font-weight: 700; line-height: 1.3; color: var(--color-ink); }
+.use__text { margin-top: 6px; color: var(--color-ink-soft); }
+
 /* ------------------------------------------------------------------ tour (home)
-   El carrusel de capturas del panel. Lo que abre cada una son cinco botones de
-   radio, así que funciona entero sin JavaScript y las flechas del teclado lo
-   mueven solas; carousel.js solo agrega sus botones y el paso automático.
+   El carrusel de Features: cinco dibujos sencillos, uno por cosa, que
+   reemplazaron a las capturas del panel porque enseñaban demasiado de golpe.
+   Lo que abre cada uno son cinco botones de radio, así que funciona entero
+   sin JavaScript y las flechas del teclado lo mueven solas; carousel.js solo
+   agrega sus botones y el paso automático.
    Las reglas nombran los cinco por su id: si algún día son otros, estas listas
    crecen con ellos.
-   Los colores son los del tema, como el resto de la página: hubo una banda que
-   se invertía, y estaba solo porque las capturas eran siempre oscuras.
+   Los dibujos son SVG con las clases .art-*: el mismo sirve de día y de noche.
    En el teléfono no hay apretujón: los dos contenedores se vuelven
-   transparentes (display: contents) y cada captura queda encima de su texto,
+   transparentes (display: contents) y cada dibujo queda encima de su texto,
    que es lo único que se lee en esa pantalla. */
-/* La columna con minmax(0, 1fr): sin eso el ancho propio de las capturas
-   (1400 px) manda y la portada se va de lado en el teléfono. */
+/* La columna con minmax(0, 1fr): sin eso un hijo más ancho que la pantalla
+   manda y la portada se va de lado en el teléfono. */
 .tour { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 /* Sigue enfocable a propósito: es lo que hace que las flechas del teclado
-   cambien de captura sin una línea de guion. */
+   cambien de dibujo sin una línea de guion. */
 .tour__pick { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .tour__strip, .tour__texts { display: contents; }
 .tour__panel:nth-child(1) { order: 1; }
@@ -830,18 +832,9 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   aspect-ratio: 16 / 9; border-radius: var(--radius);
   background: var(--color-surface-alt); border: 1px solid var(--color-border);
 }
-.tour__shot { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* Cada listón trae las dos capturas de esa pantalla, la del panel en claro y la
-   del panel en oscuro, y aquí se esconde la que no toca. El claro es el de por
-   omisión porque sin JavaScript no hay atributo ninguno y la página sale clara.
-   Las dos van `lazy`, así que la escondida no se baja. */
-.tour__shot--dark { display: none; }
-:root[data-theme="dark"] .tour__shot--light { display: none; }
-:root[data-theme="dark"] .tour__shot--dark { display: block; }
-/* Apilado (el teléfono) no hay una abierta y otras cerradas: se ven las cinco,
-   así que cualquiera se puede agrandar. Solo con el guion, que es quien dibuja
-   la ventana. */
-.tour.is-ready .tour__panel { cursor: zoom-in; }
+/* El dibujo llena su listón. Cerrado se ve su centro, que es donde cada uno
+   tiene lo que cuenta (preserveAspectRatio «slice» en cada SVG). */
+.tour__art { display: block; width: 100%; height: 100%; }
 .tour__title { color: var(--color-ink); font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
 .tour__text { max-width: 66ch; color: var(--color-ink-soft); }
 .tour__nav { display: none; }
@@ -851,39 +844,27 @@ a.usermenu__item:hover, button.usermenu__item:hover {
      la siguiente: así los botones no quedan flotando solos más abajo. */
   .tour { grid-template-columns: minmax(0, 1fr) auto; }
   /* Sin tope de alto: la abierta sale de esta proporción, y un tope la dejaría
-     más ancha que la captura. */
+     más ancha que el dibujo. */
   .tour__strip {
     grid-column: 1 / -1;
     display: flex; gap: 10px; aspect-ratio: 3.2;
   }
   .tour__texts { grid-column: 1; display: block; min-height: 116px; }
-  /* De la captura de un listón se ve la izquierda, que es donde el panel
-     tiene su menú y sus títulos; el centro de muchas pantallas es hueco. */
-  .tour__shot { object-position: left center; }
   .tour__panel {
     flex: 1 1 0; min-width: 0; aspect-ratio: auto;
     transition: flex-grow 600ms var(--ease), flex-basis 600ms var(--ease);
   }
-  /* En la tira, pulsar una cerrada la abre; la que ya está abierta se agranda. */
-  .tour.is-ready .tour__panel { cursor: pointer; }
-  /* La abierta mide lo mismo que la captura (1400 × 788): el alto de la tira,
-     que es su ancho entre 3.2, por la proporción de la imagen. Las cerradas se
-     reparten lo que sobra. Así se ve entera y todas se dibujan a la misma
-     escala, la del alto: abrir una solo destapa más de ella. Crecía a 7 contra
-     1 y quedaba más ancha que la captura, así que «cover» le cortaba arriba y
-     abajo y la agrandaba al terminar de abrirse. */
+  /* La abierta mide lo mismo que el dibujo (16:9): el alto de la tira, que es
+     su ancho entre 3.2, por la proporción del dibujo. Las cerradas se reparten
+     lo que sobra. Así se ve entero y todos se dibujan a la misma escala, la del
+     alto: abrir uno solo destapa más de él. */
   #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1),
   #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2),
   #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3),
   #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4),
   #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5) {
-    flex-grow: 0; flex-basis: calc(100% * 1400 / 788 / 3.2);
+    flex-grow: 0; flex-basis: calc(100% * 16 / 9 / 3.2);
   }
-  .tour.is-ready #tour-1:checked ~ .tour__strip .tour__panel:nth-child(1),
-  .tour.is-ready #tour-2:checked ~ .tour__strip .tour__panel:nth-child(2),
-  .tour.is-ready #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3),
-  .tour.is-ready #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4),
-  .tour.is-ready #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5) { cursor: zoom-in; }
   #tour-1:focus-visible ~ .tour__strip .tour__panel:nth-child(1),
   #tour-2:focus-visible ~ .tour__strip .tour__panel:nth-child(2),
   #tour-3:focus-visible ~ .tour__strip .tour__panel:nth-child(3),
@@ -918,47 +899,6 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    su ancho, y no se encoge. */
 @media (min-width: 760px) and (hover: hover) {
   .tour__panel:hover { flex-grow: 2.2; }
-}
-
-/* La ventana de ver una captura en grande. La escribe carousel.js, así que sin
-   el guion no existe, como las flechas. Es un <dialog> y no un invento propio
-   porque de ahí salen gratis el Escape, el foco atrapado dentro, el fondo
-   oscurecido y el foco de vuelta al listón al cerrarla. */
-.tour__zoom {
-  width: min(96vw, 1400px); max-width: none;
-  /* El relleno es lo que deja a la X fuera de la captura, así que arriba nunca
-     baja de lo que ella mide (40 px) más un respiro. A los lados, en el
-     teléfono, el sitio es para la captura: si no, la ventana salía más chica
-     que el listón de detrás. */
-  padding: 52px 12px;
-  border: 0; background: transparent;
-}
-/* Un velo, no un color de la marca: por eso va escrito y no sale de una
-   variable. Lo mismo el realce de la X al pasar por encima. */
-.tour__zoom::backdrop { background: rgba(0, 0, 0, .78); }
-.tour__zoom-shot {
-  display: block; width: 100%; height: auto; max-height: 78vh;
-  object-fit: contain; border-radius: var(--radius);
-  background: var(--color-surface-alt);
-}
-/* La X vive en el relleno del diálogo, o sea fuera de la captura. En una
-   pantalla angosta el relleno se encoge y queda pegada al borde, pero siempre
-   dentro de la vista. Va sobre el velo, así que sus colores son los de encima
-   del azul, que son casi blancos en los dos temas. */
-.tour__zoom-close {
-  position: absolute; top: 0; right: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-  background: transparent; color: var(--color-on-dark);
-  border: 1px solid var(--color-on-dark-soft);
-  transition: background var(--fast) var(--ease);
-}
-.tour__zoom-close:hover { background: rgba(255, 255, 255, .16); }
-.tour__zoom-close .icon { width: 18px; height: 18px; }
-@media (min-width: 760px) {
-  /* De 760 en adelante sobra ancho, así que la ventana respira por los cuatro
-     lados. */
-  .tour__zoom { padding: clamp(46px, 5vw, 56px); }
 }
 
 /* --------------------------------------------------------- samples (home)
@@ -1306,10 +1246,15 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .included__title { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; }
 .included__list { display: grid; gap: 12px; }
 .included__list li { position: relative; padding-left: 28px; color: var(--color-on-dark-soft); }
+.included__list li strong { color: var(--color-on-dark); font-weight: 700; }
 .included__list li::before {
   content: "✓"; position: absolute; left: 0; top: 0; width: 20px; text-align: center;
   color: var(--color-accent); font-weight: 800;
 }
+/* La lista de debajo del carrusel de Features: lo que no tiene dibujo. Era la
+   caja de «En todos los planes»; con cuatro puntos, de dos en dos en lo ancho. */
+.included--features { margin-top: clamp(28px, 4vw, 40px); }
+@media (min-width: 760px) { .included--features .included__list { grid-template-columns: 1fr 1fr; gap: 14px 32px; } }
 
 /* ------------------------------------------------------------------ FAQ */
 .faq { display: grid; gap: 10px; margin-top: 8px; }
@@ -1332,44 +1277,6 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 .faq__a { padding: 0 20px 20px; color: var(--color-ink-soft); }
 
 /* ------------------------------------------------------------------ prose (nosotros) */
-/* ----------------------------------------------------------------- contacto
-   Las tres formas de escribir, cada una en su tarjeta. El correo es un botón
-   que copia y no un mailto: en una computadora sin programa de correo
-   configurado un mailto no hace nada, y ahí se pierde el contacto. */
-.ways {
-  display: grid; gap: 16px; margin: 0 0 clamp(36px, 6vw, 56px); padding: 0;
-  list-style: none;
-}
-@media (min-width: 780px) { .ways { grid-template-columns: repeat(3, 1fr); } }
-.way {
-  padding: 22px; border-radius: var(--radius); background: var(--color-surface);
-  border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);
-}
-.way__link {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 0; border: 0; background: none; color: inherit;
-  font: inherit; text-align: left; cursor: pointer;
-}
-.way__link:hover { text-decoration: none; }
-.way__link:hover .way__value { text-decoration: underline; text-underline-offset: .18em; }
-/* El glifo enmascarado no trae medidas propias: se pinta con currentColor
-   sobre una caja que hay que darle, como en el pie. Sin esto mide cero y no
-   se ve nada. */
-.way__link .icon, .way__link svg { flex: none; width: 22px; height: 22px;
-                                   color: var(--color-accent-strong); }
-.way__text { display: grid; gap: 2px; min-width: 0; }
-.way__title { font-weight: 700; font-size: 1.08rem; }
-.way__value { color: var(--color-ink-soft); font-size: .95rem; overflow-wrap: anywhere; }
-.way__detail { margin-top: 12px; color: var(--color-ink-soft); font-size: .95rem; line-height: 1.6; }
-/* La misma señal de copiado que en el pie. */
-.way__done {
-  max-width: 0; padding: 2px 0; border-radius: 999px; overflow: hidden;
-  white-space: nowrap; background: var(--color-accent); color: var(--color-on-accent);
-  font-size: .66rem; font-weight: 700; line-height: 1.5; opacity: 0;
-  transition: max-width 220ms var(--ease), padding 220ms var(--ease), opacity 160ms var(--ease);
-}
-.way__link.is-done .way__done { max-width: 140px; padding: 2px 6px; opacity: 1; }
-
 .prose { display: grid; gap: clamp(32px, 5vw, 52px); }
 .prose__title { font-size: 1.5rem; font-weight: 700; margin-bottom: 14px; letter-spacing: -.01em; }
 .prose p { font-size: 1.08rem; line-height: 1.7; color: var(--color-ink); }
@@ -1440,21 +1347,10 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
   max-width: 140px; margin-left: 0; padding: 2px 5px; opacity: 1;
 }
 
-/* La fila de abajo, la de los pagos, va de lado a lado y fuera del `shell`, en
-   el color de la página: blanca de día y casi negra de noche, para que los
-   logos a color descansen sobre ella y no sobre el azul del pie. */
+/* La fila de abajo, dentro del mismo azul: el © pequeño, con la raya fina
+   encima. Hubo una franja en el color de la página para los logos de pago, y
+   se quitó con ellos. */
 .site-footer__bottom {
   margin-top: clamp(28px, 5vw, 44px); border-top: 1px solid var(--color-footer-edge);
-  background: var(--color-page);
 }
-.site-footer__legal {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
-  padding-block: 16px;
-  font-size: .88rem; color: var(--color-ink-soft);
-}
-.payments { display: flex; align-items: center; gap: 12px; }
-.payments__label { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
-/* A color, como vienen en su kit, y sin fondo propio: sobre el blanco se leen
-   todos; de noche, sobre el negro, PayPal, Visa y Yappy, que son azules, con
-   poco contraste (así se decidió). */
-.payments__logo { height: 28px; width: auto; }
+.site-footer__legal { padding-block: 18px; font-size: .85rem; color: var(--color-on-dark-soft); }

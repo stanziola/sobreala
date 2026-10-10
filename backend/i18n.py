@@ -23,9 +23,6 @@ TEXTS = {
     # the entries that need an account.
     "menu_options": "Opciones",
     "menu_account": "Mi cuenta",
-    # La fila de una cuenta que todavía no se abrió, en lugar de las cuatro de
-    # cliente. El menú del sitio público dice lo mismo.
-    "menu_demo": "Tu demostración",
     "menu_settings": "Configuración",
     "menu_theme": "Modo oscuro",
     "menu_theme_light": "Modo claro",
@@ -124,6 +121,9 @@ TEXTS = {
     "welcome_settings": "Ir a configuración",
     # La misma pantalla con la cuenta todavía cerrada: los dos caminos que la
     # abren, la demostración y contratar, sin empujar hacia ninguno.
+    # Arriba, si llegó desde una de las cuatro pantallas, cuál quería abrir.
+    "welcome_gate": "Para entrar a {section}, contrata un plan o pide la "
+                    "demostración.",
     "welcome_closed_lead": "Hay dos formas de empezar: pides una demostración y "
                            "te enseñamos el panel, o contratas un plan y "
                            "empiezas enseguida.",
@@ -380,6 +380,11 @@ TEXTS = {
                                      "verdad hace falta uno.",
     "settings_account_closed_hint": "Tu cuenta se abre con la demostración o "
                                     "al contratar un plan.",
+    # El aviso amarillo de arriba de Cuenta, mientras la cuenta siga cerrada.
+    "settings_pending_title": "Pendiente de verificación:",
+    "settings_pending_text": "tu dirección y tus datos de identidad (RUC o "
+                             "cédula) se verifican en la demostración.",
+    "settings_pending_link": "Pedir la demostración",
     "settings_account_plans": "Ver los planes",
 
     "settings_security_lead": "Todo lo que decide quién puede entrar a tu "

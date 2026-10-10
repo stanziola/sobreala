@@ -420,7 +420,8 @@ como texto y se puede copiar; una página de 600 puntos por el alto de la hoja.
 
 **Una imagen (PNG) no**: el servidor no tiene las fuentes del correo, así que
 habría que pintarla en el navegador y serían tres sitios donde se dibuja lo
-mismo. Para las capturas del sitio público ya está `landing/shots.py`.
+mismo. Para las capturas del sitio público ya están `landing/tutorials.py` y
+`landing/samples.py`.
 
 **El enlace de un botón nace vacío**, con `https://` como marca de agua y no
 escrito dentro: escrito, quien pegaba una dirección acababa con

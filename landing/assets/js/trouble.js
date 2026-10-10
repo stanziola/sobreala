@@ -16,7 +16,7 @@
    escondida, y con «reducir movimiento» puesto no existe: quien lo pide no
    quiere que la página se mueva mientras lee.
 
-   Estas pausas son las mismas que las del carrusel de capturas y están escritas
+   Estas pausas son las mismas que las del carrusel de Features y están escritas
    dos veces a propósito: cada archivo se lee por su cuenta y tocar uno no puede
    romper el otro. Si algún día molesta, el sitio donde juntarlas es una función
    `autoplay()` que usen los dos. */

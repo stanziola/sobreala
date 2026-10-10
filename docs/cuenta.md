@@ -95,12 +95,21 @@ contraseña y su segundo factor son suyos, no de la empresa.
 **Una cuenta nueva nace cerrada** (octubre de 2026). Cualquiera puede
 registrarse con solo confirmar un correo, y las imágenes viven en la base: unas
 200 cuentas falsas, con sus 20 fotos cada una, llenarían los 512 MB de Atlas.
-Cerrada, solo ve su bienvenida y Configuración, y puede comprar un plan. Las
-cuatro pantallas de cliente (Contactos, Plantillas, Enviar correos y
-Estadísticas) la devuelven a `/welcome`: lo decide `needs()`, por donde ya
-pasaban todas, así que una pantalla nueva hereda la puerta. El menú de los dos
-sitios enseña en su lugar una sola fila, «Tu demostración» (`bar_closed` en el
-panel, la migaja `new` en el sitio).
+Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
+- **El menú de los dos sitios enseña las cuatro filas de siempre**
+  (Estadísticas, Enviar correos, Contactos y Plantillas), y cada pantalla la
+  devuelve a `/welcome?para=<permiso>`, que arriba dice «Para entrar a
+  Contactos, contrata un plan o pide la demostración» (`GATE_NAMES` en
+  `blueprints/auth/routes.py`). Lo decide `needs()`, por donde ya pasaban
+  todas, así que una pantalla nueva hereda la puerta.
+- **Hubo en su lugar una sola fila, «Tu demostración»**, con su migaja `new`
+  en el sitio, y se quitó (octubre de 2026): escondía lo que trae Sobreala, y
+  las cuatro filas ya llevan a la demostración. La migaja de una cuenta
+  cerrada es `1`, como la de cualquiera sin plan.
+- **En Configuración → Cuenta sale un aviso amarillo** (`.notice--pending`,
+  solo con `bar_closed`): su dirección y sus datos de identidad (RUC o cédula)
+  están pendientes de verificar, y se verifican en la demostración, con el
+  enlace para pedirla. Se va solo al abrir la cuenta.
 
 **Se abre por uno de dos caminos, y son independientes** (`accounts.is_open()`):
 

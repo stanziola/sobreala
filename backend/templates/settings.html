@@ -51,6 +51,15 @@
     {# ------------------------------------------------------------ cuenta #}
     {% if section == 'account' %}
     <h2 class="settings__title">{{ t('settings_section_account') }}</h2>
+    {# Mientras la cuenta no se abra, nadie ha mirado su dirección ni su RUC o
+       cédula: se verifican en la demostración. Amarillo, porque no impide nada
+       de esta pantalla pero es lo que falta. #}
+    {% if bar_closed %}
+    <div class="notice notice--pending">
+      <p><strong>{{ t('settings_pending_title') }}</strong> {{ t('settings_pending_text') }}</p>
+      <p><a href="{{ url_for('auth.welcome') }}">{{ t('settings_pending_link') }}</a></p>
+    </div>
+    {% endif %}
     <hr class="settings__rule">
 
     {% call row(t('settings_account_contact'), '') %}
