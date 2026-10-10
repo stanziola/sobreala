@@ -39,7 +39,7 @@ POSTAL = "Apartado 0816-00001, Santiago, Veraguas"
 
 
 def ready(client, database, *, email="ana@ejemplo.com", plan="basico",
-          cleared=True, howmany=3, tag="", postal=POSTAL, handle=True):
+          howmany=3, tag="", postal=POSTAL, handle=True):
     """Una cuenta que sí puede enviar, con sus contactos y una pieza guardada."""
     register(client, email=email)
     browser = other(client)
@@ -48,8 +48,6 @@ def ready(client, database, *, email="ana@ejemplo.com", plan="basico",
 
     if plan:
         accounts.set_plan(database, account["_id"], plan)
-    if cleared:
-        accounts.clear_sending(database, account["_id"], account["_id"])
     if postal:
         accounts.set_postal(database, account["_id"], postal)
     if handle:
@@ -347,17 +345,6 @@ def test_sin_plan_no_sale_nada(client, database, outbox, monkeypatch):
 
     assert salidos == []
     assert "hace falta un plan" in browser.get("/campaigns").get_data(as_text=True)
-
-
-def test_sin_habilitacion_no_sale_nada(client, database, outbox, monkeypatch):
-    salidos = catch(monkeypatch)
-    browser, account, piece = ready(client, database, cleared=False)
-    make(browser, piece)
-
-    send_it(browser, database, account["_id"])
-
-    assert salidos == []
-    assert "habilitemos el envío" in browser.get("/campaigns").get_data(as_text=True)
 
 
 def test_solo_le_llega_a_la_lista_elegida(client, database, outbox, monkeypatch):

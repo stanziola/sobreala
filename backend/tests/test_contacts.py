@@ -168,8 +168,8 @@ def test_sin_decir_de_donde_salio_no_se_importa_nada(client, database, outbox):
 
 def test_al_llegar_al_tope_se_detiene_y_lo_que_entro_se_queda(client, database,
                                                               outbox, monkeypatch):
-    from config import Config
-    monkeypatch.setattr(Config, "CONTACTS_FREE_LIMIT", 2)
+    # Sin plan, el tope es el del Básico: se baja a dos para no subir mil filas.
+    monkeypatch.setitem(accounts.PLAN_CONTACTS, "basico", 2)
 
     browser = inside(client)
     upload(browser, LISTA)
@@ -525,8 +525,7 @@ def test_no_se_puede_editar_el_contacto_de_otra_cuenta(client, database, outbox)
 def test_un_anulado_no_cuenta_contra_el_limite(client, database, outbox,
                                                monkeypatch):
     """No puede recibir nada: cobrar sitio de plan por él sería peso muerto."""
-    from config import Config
-    monkeypatch.setattr(Config, "CONTACTS_FREE_LIMIT", 2)
+    monkeypatch.setitem(accounts.PLAN_CONTACTS, "basico", 2)
 
     browser = inside(client)
     upload(browser, "correo\nana@coop.com\nbea@coop.com\n")
@@ -643,7 +642,8 @@ def test_el_buscador_no_deja_pasar_una_expresion_regular(client, database, outbo
 
 def test_el_limite_se_ve_en_pantalla(client, database, outbox):
     browser = inside(client)
-    assert "de 500 contactos" in browser.get("/contacts").get_data(as_text=True)
+    # Sin plan, el del Básico.
+    assert "de 1000 contactos" in browser.get("/contacts").get_data(as_text=True)
 
 
 # ---------------------------------------------------------- las columnas

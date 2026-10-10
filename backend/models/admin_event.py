@@ -18,7 +18,10 @@ from typing import Any
 STATUS = "status"        # de un estado a otro
 PLAN = "plan"            # contrató, cambió o se quedó sin plan
 ROLE = "role"            # se dio o se quitó el rol de administrador
-SENDING = "sending"      # se habilitó a la cuenta para enviar su primera campaña
+# Se habilitó a la cuenta para enviar su primera campaña. Ya no se toma (la
+# habilitación se quitó en octubre de 2026); queda para leer las de antes.
+SENDING = "sending"
+OPEN = "open"            # se abrió la cuenta después de la demostración
 INVOICE = "invoice"      # se subió o se reemplazó la factura de un pago
 
 

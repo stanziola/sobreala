@@ -4,6 +4,61 @@
 {% block content %}
 <div class="card card--narrow">
   <h1>{{ t('welcome_title', name=account.contact_name) }}</h1>
+
+  {% if closed %}
+  {# Una cuenta cerrada: todavía no la abrió ni la demostración ni un pago. Las
+     cuatro pantallas de cliente la devuelven aquí, así que esta tiene que decir
+     las dos formas de seguir: pedir la demostración, o contratar. #}
+  <p class="lead">{{ t('welcome_closed_lead') }}</p>
+
+  <p>{{ t('welcome_demo_includes') }}</p>
+  <ul class="steps">
+    <li>{{ t('welcome_demo_tour') }}</li>
+    <li>{{ t('welcome_demo_list') }}</li>
+    <li>{{ t('welcome_demo_import') }}</li>
+    <li>{{ t('welcome_demo_piece') }}</li>
+  </ul>
+  <p class="hint">{{ t('welcome_demo_after') }}</p>
+
+  {% if request.args.get('demo') == 'sent' %}
+  <p class="notice notice--ok">{{ t('welcome_demo_sent', phone=asked_phone) }}</p>
+  {% elif asked %}
+  <p class="notice">{{ t('welcome_demo_asked', when=asked|ago, phone=asked_phone) }}</p>
+  {% endif %}
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  {# Pedirla otra vez corrige los datos y vuelve a avisar: por eso el formulario
+     sigue ahí después de pedirla, con lo que ya dijo escrito. #}
+  <form method="post" action="{{ url_for('auth.request_demo') }}" novalidate data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="phone">{{ t('welcome_demo_phone') }}</label>
+    <input id="phone" name="phone" type="tel" value="{{ form.phone }}"
+           autocomplete="tel" required>
+    {% if errors.phone %}<p class="error">{{ errors.phone }}</p>{% endif %}
+
+    <label for="tax_id">{{ t('tax_id_label') }}</label>
+    <input id="tax_id" name="tax_id" value="{{ form.tax_id }}" required
+           aria-describedby="tax-id-hint">
+    <p class="hint" id="tax-id-hint">{{ t('tax_id_hint') }}</p>
+    {% if errors.tax_id %}<p class="error">{{ errors.tax_id }}</p>{% endif %}
+
+    <button class="btn" type="submit">
+      {{ t('welcome_demo_again') if asked else t('welcome_demo_ask') }}</button>
+  </form>
+
+  {# El otro camino. Contratar abre la cuenta con todo de una vez, sin esperar
+     la demostración. #}
+  <div class="status">
+    <p>{{ t('welcome_buy_lead') }}</p>
+    <div class="row">
+      <a class="btn btn--outline" href="{{ site_url }}/#planes">{{ t('welcome_plans') }}</a>
+      <a class="btn btn--outline"
+         href="{{ url_for('auth.settings') }}">{{ t('welcome_settings') }}</a>
+    </div>
+  </div>
+
+  {% else %}
   <p class="lead">{{ t('welcome_lead') }}</p>
 
   {# Los planes viven en el sitio público, que es de donde sale el botón de
@@ -13,5 +68,6 @@
     <a class="btn btn--outline"
        href="{{ url_for('auth.settings') }}">{{ t('welcome_settings') }}</a>
   </div>
+  {% endif %}
 </div>
 {% endblock %}

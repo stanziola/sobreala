@@ -13,8 +13,9 @@ PyMEs — organizaciones que ya tienen una lista de correos armada por otra raz�
 página más las dos legales, estáticas y generadas con Jinja2), la cuenta entera —registro, código,
 doble factor, dispositivos, configuración—, **contactos** con su importador y
 sus supresiones, **plantillas** —el lienzo, que se baja y se carga como ZIP,
-y las cargadas en HTML y las prediseñadas que quedaron de antes—, el **panel de
-administración** con la habilitación de envío, el
+y las cargadas en HTML y las prediseñadas que quedaron de antes—, la cuenta
+que se abre **con la demostración o con el pago**, el **panel de
+administración**, el
 **cobro de un plan con PayPal** y el **envío de campañas**, con su enlace de
 baja, y **el aviso de Amazon** que cuenta qué pasó con cada correo después de
 salir. Faltan la pausa automática por rebotes y quejas, y el proceso en segundo
@@ -109,8 +110,8 @@ sobreala/
     │                       # quedaron viejos
     ├── services/
     │   ├── mailer.py       # correo del sistema: file | smtp | ses
-    │   ├── notices.py      # los avisos de la cuenta: plan, habilitación,
-    │   │                   # suspensión, y el aviso de pago para el admin
+    │   ├── notices.py      # los avisos de la cuenta: plan, cuenta abierta,
+    │   │                   # suspensión, y los avisos para el admin
     │   ├── security.py     # contraseñas, CSRF, límite de intentos
     │   ├── totp.py         # autenticación de múltiples factores
     │   ├── importer.py     # CSV en streaming, upsert por lotes
@@ -204,7 +205,7 @@ cosa está como está, y lo que ya se probó y se quitó.
 
 | Antes de tocar… | Leer |
 |---|---|
-| Registro, entrada, contraseña, doble factor, sesiones, usuarios de la cuenta, habilitación, avisos, `mail_log`, `auth_events` | `docs/cuenta.md` |
+| Registro, entrada, contraseña, doble factor, sesiones, usuarios de la cuenta, abrir la cuenta (demostración o pago), avisos, `mail_log`, `auth_events` | `docs/cuenta.md` |
 | Contactos, etiquetas, columnas propias, supresiones, importación | `docs/contactos.md` |
 | Plantillas: el lienzo, el ZIP, el PDF, la revisión antispam, las de antes, las imágenes | `docs/plantillas.md` |
 | Remitente, campañas, envío por tandas, la baja, eventos, el aviso de SES | `docs/envios.md` |
@@ -220,8 +221,12 @@ cosa está como está, y lo que ya se probó y se quitó.
   es el único que escribe `active`**, y lo llama un pago cobrado o el plan puesto
   a mano. Suspender lo decide el administrador, con motivo en `admin_events`, y
   cierra las sesiones.
-- **La habilitación para enviar** (`sending_cleared_at`) es la única puerta con
-  una persona detrás; registrarse, importar y pagar no la necesitan.
+- **Una cuenta nueva nace cerrada** (`accounts.is_open()`): ve su bienvenida y
+  Configuración, y puede pagar. Se abre **con la demostración**, que pide desde
+  `/welcome` y abre el administrador en la ficha (y queda con lo del Básico sin
+  enviar), **o con el pago**, que la abre con todo, envío incluido. Las dos piden
+  el RUC o la cédula (`tax_id`). La puerta está en `needs()`. La habilitación
+  antes del primer envío se quitó en octubre de 2026.
 - `role` vale `client` o `admin` en todas las cuentas. `/admin` responde 404 a
   quien no lo es y exige doble factor; un administrador solo administra.
 - **Los usuarios de una empresa son documentos de `accounts`** con `owner_id`
@@ -269,8 +274,8 @@ cosa está como está, y lo que ya se probó y se quitó.
 - **Cada cliente elige su remitente**: `usuario@envios.sobreala.com` o su propio
   dominio verificado. Una campaña nunca sale de `notifications@sobreala.com`.
 - **`services/sender.py` es el único sitio que le escribe a un contacto**; los
-  del sistema salen por `mailer.py`. Para mandar hacen falta plan con cuota y la
-  habilitación (`accounts.can_send()`).
+  del sistema salen por `mailer.py`. Para mandar hace falta un plan con cuota
+  (`sender.blocked()`).
 - Una campaña se guarda y se manda las veces que haga falta. Sale por tandas de
   cien y anota la posición; cada salida es una línea en `campaign_runs`.
 - `events`: uno por envío, persona y tipo. Las cifras cuentan **personas**.

@@ -187,13 +187,18 @@ cargara, se cierra y dibuja el ganchito, y se queda quieto, **en verde**
 (`--color-success`, más claro de noche); es solo CSS, y con «reducir
 movimiento» sale ya terminado. Recargar la vuelta vuelve a enseñar el mismo recibo, sin cobrar ni
 alargar nada. El comprobante por correo dice lo cobrado y el descuento, este
-con su ITBMS dentro. Pagar **no** habilita el envío: eso es la otra puerta, y el
-comprobante que sale lo dice para que no se descubra al intentar enviar.
+con su ITBMS dentro. **Pagar abre la cuenta y deja enviar de una vez**
+(`activate_plan()`): hasta octubre de 2026 hacía falta además una habilitación a
+mano, y se quitó (ver «Abrir la cuenta» en `docs/cuenta.md`).
+
+**El checkout pide el RUC o la cédula** si la cuenta todavía no lo dejó al
+pedir la demostración: así queda registro de todas las empresas, y es lo que
+pide la factura. Si ya lo dejó sale escrito, y se puede corregir ahí mismo.
 
 Del cobro salen **dos correos**: el comprobante al cliente y un aviso a quien
-administra, porque el que pagó queda esperando una habilitación que hace una
-persona. Los dos van después de todo lo que decide algo: si el correo no sale,
-el pago sigue cobrado y el plan activo.
+administra, para enterarse sin tener que entrar a mirar. Los dos van después de
+todo lo que decide algo: si el correo no sale, el pago sigue cobrado y el plan
+activo.
 
 **Hubo un cuarto plan, Corporativo, y se quitó** (septiembre de 2026): iba sin
 precio público y a la medida. Quedan tres, todos con precio y todos comprables

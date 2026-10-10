@@ -214,7 +214,7 @@ def test_pagar_deja_la_cuenta_activa_con_su_plan(client, database, outbox,
     assert cuenta["status"] == accounts.ACTIVE
     assert cuenta["plan"] == "basico"
     assert cuenta["plan_until"] is not None
-    # Y con eso, el tope de contactos deja de ser el de una cuenta sin plan.
+    # Y el tope de contactos es el de su plan.
     assert accounts.contact_limit(cuenta) == 1000
     assert "de 1000 contactos" in browser.get("/contacts").get_data(as_text=True)
 

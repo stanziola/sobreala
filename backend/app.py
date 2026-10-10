@@ -19,8 +19,9 @@ from models.account import (current_plan, is_admin, plan_cycle,
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
 
-# A crumb the public site can read. It carries "1" for a client and "admin" for
-# an administrator, and nothing else: unlike the session cookie it is NOT
+# A crumb the public site can read. It carries "1" for a client, "new" for a
+# client whose account is not open yet (no demo, no payment) and "admin" for an
+# administrator, and nothing else: unlike the session cookie it is NOT
 # HttpOnly, so any script on sobreala.com can see it, and anything with a name
 # or an address in it would be handing that to a static site with no reason to
 # know it.
@@ -171,7 +172,7 @@ def create_app(overrides: dict | None = None) -> Flask:
         """
         from blueprints.auth.routes import SESSION_KEY
 
-        from blueprints.auth.routes import current_account
+        from blueprints.auth.routes import current_account, is_closed
 
         signed_in = bool(session.get(SESSION_KEY))
         # Se compara contra el valor que debería tener, no contra su presencia:
@@ -183,6 +184,11 @@ def create_app(overrides: dict | None = None) -> Flask:
                 account = current_account()
                 if is_admin(account):
                     wanted = "admin"
+                elif is_closed(account):
+                    # Su menú enseña la demostración en vez de las cuatro filas
+                    # de cliente, igual que el del panel. Abrirla la reescribe
+                    # en la siguiente página que pida.
+                    wanted = "new"
                 else:
                     # «1» a secas, o «1:negocio» con el plan vigente. El plan
                     # va ahí para que /pricing pueda apagar el que ya se tiene

@@ -53,8 +53,8 @@ imagen de fuera**: la sube quien la tiene.
 
 **Nadie aprueba una pieza a mano.** Lo que puede hacer daño lo rechaza el
 validador al guardarla, y eso es mecánico, no un juicio. La mirada de una persona
-ocurre una sola vez por cuenta, en la habilitación para enviar, y es sobre la
-cuenta y su lista, no sobre el archivo. Tener las dos serían dos revisiones
+ocurre una sola vez por cuenta, en la demostración que la abre, y es sobre la
+empresa y su lista, no sobre el archivo. Tener las dos serían dos revisiones
 manuales para la misma decisión. `/admin/templates` lista lo que subieron los
 clientes cuando se podía, para poder abrir una cuando haga falta; las prediseñadas llenas no
 salen ahí, porque son nuestras plantillas con el texto de alguien dentro y no hay

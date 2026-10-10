@@ -131,6 +131,15 @@
             <span class="usermenu__icons">{% include "partials/icon-shield.svg.j2" %}</span>
             <span>{{ panel.admin_label }}</span></a>
 
+          {#- Una cuenta que todavía no se abrió (ni demostración ni pago) no
+              tiene ninguna de las cuatro de abajo: tiene su demostración, en
+              el mismo sitio. Lo dice la galleta («new»), igual que el menú del
+              panel, que es la otra mitad de esto. -#}
+          <a class="usermenu__item" data-new-only hidden
+             href="{{ panel.base_url }}/welcome">
+            <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
+            <span>{{ panel.demo_label }}</span></a>
+
           {#- El panel va primero porque es a lo que se dedica la empresa: lo
               demás son ajustes de la cuenta, y se buscan cuando hace falta. -#}
           <a class="usermenu__item" data-client-only hidden

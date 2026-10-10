@@ -117,12 +117,9 @@ class Config:
     TOKEN_GRACE_DAYS = int(os.getenv("TOKEN_GRACE_DAYS", "7"))
 
     # --- contacts and importing --------------------------------------------
-    # What an account with no plan may hold. The paid limits come from
-    # docs/pricing.md and live in models/account.py; this is the only number
-    # that is not written there, because a plan-less account is not a plan.
-    # Enough to try it with a real list, small enough that Básico still buys
-    # something.
-    CONTACTS_FREE_LIMIT = int(os.getenv("CONTACTS_FREE_LIMIT", "500"))
+    # An account with no plan holds what Básico holds (account.contact_limit()):
+    # it only gets to the panel through the demo or a payment, and what it
+    # still lacks is sending, not room.
     # The three limits from CLAUDE.md. The size is enforced by Flask before the
     # request reaches any code of ours, so an oversized file is refused without
     # being read.

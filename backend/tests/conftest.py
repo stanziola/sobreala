@@ -54,12 +54,18 @@ def client(app):
     return app.test_client()
 
 
-def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1"):
-    """Fill the registration form the way a browser would, CSRF included."""
+def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1", *,
+             abierta=True):
+    """Fill the registration form the way a browser would, CSRF included.
+
+    La cuenta queda abierta y con su RUC, como si ya hubiera tenido su
+    demostración: casi todas las pruebas son de lo que se hace dentro del panel,
+    no de la puerta. Las que prueban la puerta piden `abierta=False`.
+    """
     client.get("/signup")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
         token = sess["_csrf"]
-    return client.post("/signup", data={
+    response = client.post("/signup", data={
         "csrf_token": token,
         "company_name": "Cooperativa Ejemplo",
         "contact_name": "Ana",
@@ -67,6 +73,15 @@ def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1"):
         "phone": "60000000",
         "password": password,
     })
+    if abierta:
+        from models import account as accounts
+        database = db_module.get_client()[Config.MONGODB_TEST_DB]
+        found = accounts.by_email(database, email)
+        if found is not None:
+            accounts.open_account(database, found["_id"])
+            if not accounts.tax_id_of(found):
+                accounts.set_tax_id(database, found["_id"], "8-123-456")
+    return response
 
 
 def login(client, email="ana@ejemplo.com", password="Contrasena-Larga1"):

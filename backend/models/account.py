@@ -22,7 +22,11 @@ from services.security import hash_password, verify_password
 # alguien te apruebe para poder pagar no protegía nada que valiera esa espera, y
 # la mirada que sí importa —de dónde salió esa lista— se hace ahora justo antes
 # del primer envío, que es donde puede hacer daño.
-REGISTERED = "registered"   # se registró; explora, importa y puede comprar
+#
+# Esa mirada también se quitó (octubre de 2026): la hace la demostración, que es
+# uno de los dos caminos que abren la cuenta (ver `is_open()`).
+REGISTERED = "registered"   # se registró; hasta que se abre, solo su bienvenida
+                            # y Configuración, y puede comprar
 ACTIVE = "active"           # pagó; su plan corre hasta plan_until
 SUSPENDED = "suspended"     # corte por rebotes o quejas. No es una aprobación
 STATUSES = (REGISTERED, ACTIVE, SUSPENDED)
@@ -577,18 +581,120 @@ def set_status(db, account_id, status: str) -> str | None:
     return before.get("status")
 
 
-def can_send(account: dict[str, Any] | None) -> bool:
-    """Si de esta cuenta puede salir una campaña.
+# ------------------------------------------------------------ abrir la cuenta
 
-    Es la única puerta que queda con una persona detrás, y está donde hace
-    falta: todos los clientes envían desde el mismo dominio, así que comparten
-    una sola reputación, y una lista comprada la quema para todos. Se mira una
-    vez, antes del primer envío; después la cuenta queda habilitada.
+def is_open(account: dict[str, Any] | None) -> bool:
+    """Si la empresa ya puede usar el panel: contactos, plantillas, campañas y
+    Estadísticas.
 
-    Registrarse, importar y pagar no la necesitan: nada de eso le llega a
-    nadie.
+    Una cuenta nueva nace cerrada. Cualquiera puede registrarse y las imágenes
+    viven en la base, así que unas cuantas cuentas falsas la llenarían. Se abre
+    por uno de dos caminos, y ninguno lo recorre un desconocido:
+
+      * **La demostración**: la pide desde su bienvenida y el administrador la
+        abre desde la ficha. `opened_by` dice quién.
+      * **El pago**: `activate_plan()` la abre sola, sin `opened_by`. Una
+        cuenta falsa no paga.
+
+    `plan` y `sending_cleared_at` son de antes de que esto existiera: una cuenta
+    que ya había pagado, o que ya se había habilitado para enviar, estaba
+    revisada, y así no hubo nada que migrar.
     """
-    return bool(account and account.get("sending_cleared_at"))
+    found = account or {}
+    return bool(found.get("opened_at") or found.get("plan")
+                or found.get("sending_cleared_at"))
+
+
+def open_account(db, account_id, admin_id=None) -> bool:
+    """Abrir la cuenta. False si ya lo estaba.
+
+    Escritura condicional sobre la ausencia del campo, así que pulsar dos veces
+    no anota dos decisiones ni mueve la fecha de la primera. Sin `admin_id` es
+    que la abrió un pago.
+    """
+    changes: dict[str, Any] = {"opened_at": now(), "updated_at": now()}
+    if admin_id is not None:
+        changes["opened_by"] = admin_id
+    result = db.accounts.update_one(
+        {"_id": account_id, "opened_at": {"$exists": False}}, {"$set": changes})
+    return result.modified_count == 1
+
+
+# El WhatsApp de la demostración: de 7 dígitos, un fijo sin código, a 15, que es
+# lo más largo que mide un número internacional.
+PHONE_DIGITS = (7, 15)
+
+
+def clean_phone(raw: str) -> str | None:
+    """El número como se guarda, o None si no es un teléfono.
+
+    Se aceptan los separadores que la gente escribe (espacios, guiones,
+    paréntesis y puntos) y un `+` delante. Se guarda sin ellos, que es lo que
+    hace falta para armar el enlace de WhatsApp.
+    """
+    text = (raw or "").strip()
+    if not re.fullmatch(r"\+?[\d\s\-().]+", text):
+        return None
+    digits = re.sub(r"\D", "", text)
+    if not PHONE_DIGITS[0] <= len(digits) <= PHONE_DIGITS[1]:
+        return None
+    return ("+" if text.startswith("+") else "") + digits
+
+
+def whatsapp_url(phone: str | None) -> str:
+    """El enlace que abre un chat de WhatsApp con ese número, o vacío.
+
+    WhatsApp lo quiere con su código de país y sin `+`. Uno de 8 dígitos sin
+    código se lee como panameño, que es de donde son casi todos.
+    """
+    text = (phone or "").strip()
+    digits = re.sub(r"\D", "", text)
+    if not digits:
+        return ""
+    if len(digits) == 8 and not text.startswith("+"):
+        digits = "507" + digits
+    return f"https://wa.me/{digits}"
+
+
+# El RUC o la cédula. No se exige un formato: en Panamá hay varios (el de una
+# sociedad, el de una persona natural, el de un extranjero), y un negocio de
+# fuera trae su propia identificación fiscal. Lo comprueba una persona en la
+# demostración; al pagar queda escrito, que es lo que pide la factura.
+TAX_ID_LENGTH = (4, 40)
+
+
+def clean_tax_id(raw: str) -> str | None:
+    """El RUC o la cédula en una sola línea, o None si no parece uno."""
+    text = " ".join((raw or "").split())
+    if not TAX_ID_LENGTH[0] <= len(text) <= TAX_ID_LENGTH[1]:
+        return None
+    if not re.fullmatch(r"[0-9A-Za-z .\-/]+", text):
+        return None
+    if sum(ch.isdigit() for ch in text) < 3:
+        return None
+    return text
+
+
+def tax_id_of(account: dict[str, Any] | None) -> str:
+    return str((account or {}).get("tax_id") or "")
+
+
+def set_tax_id(db, account_id, tax_id: str) -> None:
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"tax_id": tax_id, "updated_at": now()}})
+
+
+def request_demo(db, account_id, *, phone: str, tax_id: str) -> None:
+    """Dejar pedida la demostración, con el WhatsApp al que se le escribe y el
+    RUC o la cédula que se comprueba antes de abrirle la cuenta.
+
+    El número va al mismo `phone` del registro, donde era opcional: es el mismo
+    dato, y dos campos para lo mismo acabarían diciendo cosas distintas. Pedirla
+    otra vez corrige los datos y mueve la fecha.
+    """
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "phone": phone, "tax_id": tax_id, "demo_requested_at": now(),
+        "updated_at": now()}})
 
 
 # La dirección postal de la empresa, que va al pie de sus campañas.
@@ -793,19 +899,6 @@ def domain_ready(account: dict[str, Any] | None) -> bool:
                 and mine.get("domain_status") == DOMAIN_VERIFIED)
 
 
-def clear_sending(db, account_id, admin_id) -> bool:
-    """Habilitar el envío. False si ya lo estaba.
-
-    Escritura condicional sobre la ausencia del campo, así que pulsar dos veces
-    no anota dos decisiones ni mueve la fecha de la primera.
-    """
-    result = db.accounts.update_one(
-        {"_id": account_id, "sending_cleared_at": {"$exists": False}},
-        {"$set": {"sending_cleared_at": now(), "sending_cleared_by": admin_id,
-                  "updated_at": now()}})
-    return result.modified_count == 1
-
-
 def set_plan(db, account_id, plan: str | None) -> str | None:
     """Put an account on a plan, or take it off one. Returns the previous."""
     if plan is not None and plan not in PLAN_CONTACTS:
@@ -828,6 +921,9 @@ def activate_plan(db, account_id, plan: str, until, cycle: str | None = None,
     `fresh_month` es para una mejora: el mes empieza de nuevo, así que lo que
     ya se envió este mes deja de contar contra la cuota nueva. Se guarda cuánto
     iba (`quota_base`) y `used_this_month()` lo resta.
+
+    Y abre la cuenta, si no lo estaba: pagar es uno de los dos caminos, y quien
+    paga entra con todo de una vez, sin esperar a nadie.
     """
     changes: dict[str, Any] = {"plan": plan, "status": ACTIVE, "plan_until": until,
                                "updated_at": now()}
@@ -838,6 +934,7 @@ def activate_plan(db, account_id, plan: str, until, cycle: str | None = None,
         changes["quota_base"] = {"month": quota_month(),
                                  "sent": sent_this_month(found)}
     db.accounts.update_one({"_id": account_id}, {"$set": changes})
+    open_account(db, account_id)
 
 
 def plan_until(account: dict[str, Any] | None):
@@ -897,7 +994,7 @@ def by_status(db) -> dict[str, int]:
     return counted
 
 
-def search(db, *, status: str = "", text: str = "", pending: bool = False,
+def search(db, *, status: str = "", text: str = "", demo: bool = False,
            limit: int = 100, skip: int = 0) -> tuple[list[dict[str, Any]], int]:
     """The admin table: filter by state, search by address or company.
 
@@ -909,16 +1006,19 @@ def search(db, *, status: str = "", text: str = "", pending: bool = False,
     **Ni los usuarios que una empresa creó**, por lo mismo: el cliente es la
     empresa, y su ficha ya dice quiénes entran a ella.
 
-    `pending` es la otra cola que pide acción: pagaron y todavía no pueden
-    enviar.
+    `demo` es la cola que pide acción: pidieron la demostración y su cuenta
+    sigue cerrada. Las mismas condiciones que `is_open()`, dichas al revés.
     """
     import re
 
     query: dict[str, Any] = {"role": {"$ne": ADMIN}, "owner_id": {"$exists": False}}
     if status in STATUSES:
         query["status"] = status
-    if pending:
-        query["plan"] = {"$exists": True, "$ne": None}
+    if demo:
+        query["demo_requested_at"] = {"$exists": True}
+        query["opened_at"] = {"$exists": False}
+        # None encuentra también a las que no tienen el campo.
+        query["plan"] = None
         query["sending_cleared_at"] = {"$exists": False}
     if text:
         safe = re.escape(text.strip())
@@ -960,8 +1060,9 @@ PENDING = (IMPORTS, CAMPAIGNS, MONTHLY)
 # es cliente o administradora, así que nunca se mezclan en el mismo documento.
 ADMIN_PAYMENT = "admin_payment"
 ADMIN_SIGNUP = "admin_signup"
+ADMIN_DEMO = "admin_demo"
 ADMIN_PLAN_END = "admin_plan_end"
-ADMIN_NOTICES = (ADMIN_PAYMENT, ADMIN_SIGNUP, ADMIN_PLAN_END)
+ADMIN_NOTICES = (ADMIN_PAYMENT, ADMIN_SIGNUP, ADMIN_DEMO, ADMIN_PLAN_END)
 
 # Los dos avisos del estado del plan, que se mandan una sola vez cada uno.
 EXPIRING = "expiring"
@@ -1018,11 +1119,12 @@ PLAN_CONTACTS = {
 def contact_limit(account: dict[str, Any] | None) -> int:
     """Cuántos contactos puede tener esta cuenta.
 
-    Sin plan no hay cifra en docs/pricing.md, así que manda la del config: una
-    cuenta recién creada puede probar con una lista de verdad antes de pagar.
+    Sin plan, los del plan más barato, como las etiquetas, las columnas y las
+    imágenes: una cuenta que se abrió con la demostración tiene lo del Básico,
+    y lo único que le falta es enviar.
     """
-    from config import Config
-    return PLAN_CONTACTS.get(plan_of(account) or "", Config.CONTACTS_FREE_LIMIT)
+    cheapest = PLAN_CONTACTS.get(next(iter(plans.PLANS), ""), 0)
+    return PLAN_CONTACTS.get(plan_of(account) or "", cheapest)
 
 
 # --------------------------------------------------------- la cuota del mes

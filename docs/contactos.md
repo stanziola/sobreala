@@ -85,8 +85,11 @@ pantalla acaba de decir y no lo que quedó en la dirección de otra.
 
 **El límite de contactos sale del plan** (`PLAN_CONTACTS` en
 `models/account.py`, copiado de `docs/pricing.md`). Una cuenta **sin plan** tiene
-`CONTACTS_FREE_LIMIT`, hoy 500: alcanza para probar con una lista de verdad y
-deja que el Básico, con 1,000, valga la pena.
+el del plan más barato, como las etiquetas, las columnas y las imágenes: 1,000.
+Solo llega aquí abierta por la demostración, y lo que le falta es enviar, no
+sitio (ver «Abrir la cuenta» en `docs/cuenta.md`). Hasta octubre de 2026 eran
+500 (`CONTACTS_FREE_LIMIT`), para que el Básico valiera la pena; sin plan no
+sale ningún correo, así que el Básico ya vale la pena solo.
 
 ### `suppressions`
 Correos que una cuenta no puede volver a contactar. **Colección aparte; el

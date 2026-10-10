@@ -59,8 +59,9 @@ def make_admin(client, database, email="jefe@ejemplo.com"):
     return browser, accounts.by_email(database, email)
 
 
-def make_client_account(client, database, email="socia@ejemplo.com"):
-    register(other(client), email=email)
+def make_client_account(client, database, email="socia@ejemplo.com", *,
+                        abierta=True):
+    register(other(client), email=email, abierta=abierta)
     browser = other(client)
     login(browser, email=email)
     return browser, accounts.by_email(database, email)
@@ -95,9 +96,10 @@ def upload_piece(database, cliente, nombre="Boletín"):
                         uploaded_by=cliente["_id"])
 
 
-def clear_sending(admin, cliente, motivo="hablé con ellos, la lista es suya"):
-    """Habilitar el envío, que es la única aprobación que queda."""
-    return admin.post(f"/admin/accounts/{cliente['_id']}/enable-sending", data={
+def open_account(admin, cliente, motivo="hicimos la demo, el RUC existe"):
+    """Abrir la cuenta después de la demostración, que es la única aprobación
+    que queda."""
+    return admin.post(f"/admin/accounts/{cliente['_id']}/open", data={
         "csrf_token": csrf(admin, "/admin/"), "reason": motivo})
 
 
@@ -224,20 +226,21 @@ def test_cambiar_el_plan_cambia_el_limite_de_contactos(client, database, outbox)
     admin, _ = make_admin(client, database)
     navegador, cliente = make_client_account(client, database)
 
-    assert accounts.contact_limit(cliente) == 500
+    # Sin plan, el del Básico: así que el que cambia el número es el Negocio.
+    assert accounts.contact_limit(cliente) == 1000
 
-    update(admin, database, cliente, plan="basico", ciclo="yearly",
-           motivo="pagó el Básico anual por transferencia")
+    update(admin, database, cliente, plan="negocio", ciclo="yearly",
+           motivo="pagó el Negocio anual por transferencia")
 
     despues = accounts.by_id(database, cliente["_id"])
-    assert despues["plan"] == "basico"
-    assert accounts.contact_limit(despues) == 1000
+    assert despues["plan"] == "negocio"
+    assert accounts.contact_limit(despues) == 3000
     # Ponerlo a mano hace lo mismo que un pago: activa y con vencimiento, no un
     # plan suelto que no vence nunca.
     assert despues["status"] == accounts.ACTIVE
     assert accounts.plan_until(despues) is not None
     # Y la pantalla del cliente lo dice sin que nadie la toque.
-    assert "de 1000 contactos" in navegador.get("/contacts").get_data(as_text=True)
+    assert "de 3000 contactos" in navegador.get("/contacts").get_data(as_text=True)
 
 
 # ------------------------------------------------------------------ la ficha
@@ -266,7 +269,7 @@ def test_la_ficha_ensena_cifras_y_no_direcciones(client, database, outbox):
     ficha = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
 
     # La cifra sí, el origen que declaró también, las direcciones no.
-    assert "2 / 500" in ficha
+    assert "2 / 1000" in ficha
     assert "socios.csv" in ficha
     assert "socios de la organización" in ficha or "socios" in ficha
     assert "ana@coop.com" not in ficha
@@ -358,7 +361,8 @@ def test_actualizar_sin_cambiar_nada_no_escribe_una_decision(client, database,
 def test_la_actividad_trae_entradas_importaciones_pagos_y_decisiones(
         client, database, outbox):
     admin, _ = make_admin(client, database)
-    navegador, cliente = make_client_account(client, database)
+    navegador, cliente = make_client_account(client, database, abierta=False)
+    open_account(admin, cliente, motivo="hablé con la junta")
 
     navegador.get("/contacts/import")
     with navegador.session_transaction() as sess:
@@ -367,8 +371,6 @@ def test_la_actividad_trae_entradas_importaciones_pagos_y_decisiones(
         "csrf_token": token, "source": "members", "note": "",
         "archivo": (io.BytesIO(b"correo\nana@coop.com\n"), "socios.csv")},
         content_type="multipart/form-data")
-
-    clear_sending(admin, cliente, motivo="hablé con la junta")
 
     ficha = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
     assert "Actividad" in ficha
@@ -491,11 +493,12 @@ def test_la_actividad_no_ensena_las_direcciones_de_sus_contactos(
 def test_lo_decidido_se_lee_en_la_ficha_de_la_cuenta(client, database, outbox):
     """Ya no hay portada con «últimas decisiones»: cada ficha tiene la suya."""
     admin, _ = make_admin(client, database)
-    _, cliente = make_client_account(client, database)
-    clear_sending(admin, cliente, motivo="revisé su lista")
+    _, cliente = make_client_account(client, database, abierta=False)
+    open_account(admin, cliente, motivo="revisé su lista")
 
     ficha = admin.get(f"/admin/accounts/{cliente['_id']}").get_data(as_text=True)
     assert "Actividad" in ficha
+    assert "Se abrió la cuenta" in ficha
     assert "revisé su lista" in ficha
 
 
@@ -546,7 +549,7 @@ def test_la_lista_ensena_de_quien_es_cada_pieza(client, database, outbox):
 
 def test_el_archivo_no_se_sirve_como_html(client, database, outbox):
     """Bajarlo, no dibujarlo: es el documento de otro y esta sesión es la que
-    puede suspender y habilitar a todo el mundo."""
+    puede abrir y suspender las cuentas de todo el mundo."""
     from models import design as designs
 
     admin, _ = make_admin(client, database)
@@ -674,64 +677,6 @@ def test_un_cliente_sigue_llegando_a_todo(client, database, outbox):
 
     pagos = navegador.get("/settings/billing").get_data(as_text=True)
     assert "Facturación" in pagos
-
-
-# ----------------------------------- la única aprobación que queda
-
-def test_habilitar_el_envio_deja_su_decision_escrita(client, database, outbox):
-    admin, jefe = make_admin(client, database)
-    _, cliente = make_client_account(client, database)
-
-    assert accounts.can_send(accounts.by_id(database, cliente["_id"])) is False
-
-    clear_sending(admin, cliente, motivo="revisé su lista, son sus socios")
-
-    despues = accounts.by_id(database, cliente["_id"])
-    assert accounts.can_send(despues) is True
-    escrito = decisions.for_account(database, cliente["_id"])
-    assert len(escrito) == 1
-    assert escrito[0]["kind"] == decisions.SENDING
-    assert escrito[0]["admin_id"] == jefe["_id"]
-    assert "sus socios" in escrito[0]["reason"]
-
-
-def test_habilitar_dos_veces_no_duplica_nada(client, database, outbox):
-    admin, _ = make_admin(client, database)
-    _, cliente = make_client_account(client, database)
-
-    clear_sending(admin, cliente)
-    cuando = accounts.by_id(database, cliente["_id"])["sending_cleared_at"]
-    clear_sending(admin, cliente, motivo="otra vez")
-
-    assert len(decisions.for_account(database, cliente["_id"])) == 1
-    assert accounts.by_id(database, cliente["_id"])["sending_cleared_at"] == cuando
-
-
-def test_habilitar_sin_motivo_no_habilita(client, database, outbox):
-    admin, _ = make_admin(client, database)
-    _, cliente = make_client_account(client, database)
-
-    respuesta = clear_sending(admin, cliente, motivo="   ")
-
-    assert "missing=reason" in respuesta.headers["Location"]
-    assert accounts.can_send(accounts.by_id(database, cliente["_id"])) is False
-
-
-def test_el_filtro_trae_a_quien_pago_y_no_puede_enviar(client, database, outbox):
-    """La cola de habilitación es un filtro más de Cuentas, no una pantalla."""
-    admin, _ = make_admin(client, database)
-    _, cliente = make_client_account(client, database)
-    correo = cliente["email"]
-    cola = "/admin/accounts?status=pending"
-
-    # Sin plan no está esperando nada: todavía no va a enviar.
-    assert correo not in admin.get(cola).get_data(as_text=True)
-
-    update(admin, database, cliente, plan="basico", motivo="pagó por Yappy")
-    assert correo in admin.get(cola).get_data(as_text=True)
-
-    clear_sending(admin, cliente)
-    assert correo not in admin.get(cola).get_data(as_text=True)
 
 
 def test_la_lista_de_cuentas_no_trae_administradores(client, database, outbox):

@@ -18,11 +18,16 @@ de otro dominio, es lo que obliga a nombrar el sitio en `form-action`. **El
 de la cuenta en uso.
 
 **Lo primero que ve una cuenta nueva es `/welcome`, no el panel.** Confirmar
-el registro aterriza ahí: el nombre de la persona, que su cuenta está lista, y
-dos botones —ver los planes, que están en el sitio público, e ir a
-Configuración—. Antes se caía directo en Estadísticas, que sin plan contratado y
-sin un solo envío es un cuadro vacío diciendo que todavía no ha pasado nada: la
-peor primera pantalla posible.
+el registro aterriza ahí. Antes se caía directo en Estadísticas, que sin plan
+contratado y sin un solo envío es un cuadro vacío diciendo que todavía no ha
+pasado nada: la peor primera pantalla posible.
+
+**Mientras la cuenta siga cerrada** (octubre de 2026, ver «Abrir la cuenta» en
+`docs/cuenta.md`), `/welcome` es la pantalla de la demostración: los dos caminos
+que la abren, lo que incluye la llamada, el formulario para pedirla (su
+WhatsApp y su RUC o cédula) y los botones de ver los planes y de Configuración.
+Las cuatro pantallas de cliente la devuelven ahí. **Ya abierta y sin plan**,
+dice que la cuenta está lista y lleva esos dos botones, como antes.
 
 Esa dirección se queda en el historial, así que lleva dos guardas que **no son
 para el día del registro**, donde no pueden darse: con un plan ya contratado
@@ -281,11 +286,14 @@ acción cabe en un filtro de Cuentas y lo demás ya está en la ficha.
 administrador**: no son clientes, no compran ni envían, y como un administrador
 no paga nunca se quedaban en «registrada» para siempre, que es lo que hacía que
 la columna de estado se leyera mal. Su filtro de estado tiene una entrada más,
-**«esperando habilitación»**, que no es un estado sino la cola que pide acción:
-pagaron y todavía no pueden enviar.
+**«piden demostración»**, que no es un estado sino la cola que pide acción: la
+pidieron y su cuenta sigue cerrada. Hasta octubre de 2026 era «esperando
+habilitación», y se fue con la habilitación.
 
-Arriba del todo de la ficha está lo único que espera una decisión: **habilitar el
-envío**. Debajo, **un solo formulario** —plan, ciclo, suspensión y un motivo—: si
+Arriba del todo de la ficha está lo único que espera una decisión: **la
+demostración**, con cuándo la pidió, su WhatsApp como enlace y el botón «Abrir la
+cuenta», que pide un motivo. Junto a los datos de contacto, su RUC o cédula.
+Debajo, **un solo formulario** —plan, ciclo, suspensión y un motivo—: si
 cambian dos cosas se anotan dos líneas en `admin_events` con el mismo motivo,
 porque guardar una por cosa cambiada es lo que las hace legibles meses después.
 Ponerle el plan a mano llama al mismo `activate_plan()` que usa PayPal, así que

@@ -37,11 +37,12 @@ PLAN_PAID = "plan_paid"
 PLAN_EXPIRING = "plan_expiring"
 PLAN_EXPIRED = "plan_expired"
 INVOICE = "invoice"
-SENDING_CLEARED = "sending_cleared"
+OPENED = "opened"
 SUSPENDED = "suspended"
 REINSTATED = "reinstated"
 ADMIN_PAYMENT = "admin_payment"
 ADMIN_SIGNUP = "admin_signup"
+ADMIN_DEMO = "admin_demo"
 ADMIN_PLAN_END = "admin_plan_end"
 # Cambiar el correo de la cuenta: el código va a la dirección nueva y el aviso
 # a la vieja, así que son dos mensajes distintos y a dos sitios distintos.

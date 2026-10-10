@@ -1,4 +1,4 @@
-"""Los avisos de la cuenta: el plan, la habilitación de envío y la suspensión.
+"""Los avisos de la cuenta: el plan, la cuenta abierta y la suspensión.
 
 Lo que se fija aquí es cuándo sale cada correo y cuándo no. Que contratar y
 renovar no digan lo mismo. Que un aviso de vencimiento salga **una sola vez** y
@@ -15,7 +15,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from conftest import code_from_outbox, confirm as type_code, login, register
-from test_admin import clear_sending, make_admin, update
+from test_admin import make_admin, open_account, update
 
 from models import account as accounts
 from models import mail_log
@@ -215,7 +215,9 @@ def test_contratar_manda_el_comprobante_y_avisa_a_quien_administra(
     # Y quien administra se entera sin tener que entrar a mirar.
     aviso = only(database, mail_log.ADMIN_PAYMENT)
     assert aviso["to"] == "jefe@ejemplo.com"
-    assert "falta habilitarle" in aviso["text"]
+    assert "contrató el plan" in aviso["text"]
+    # Ya no queda nada que hacer después de un pago: no hay habilitación.
+    assert "habilit" not in aviso["text"]
 
 
 def test_volver_a_comprar_al_vencer_dice_lo_mismo_que_contratar(
@@ -330,16 +332,18 @@ def test_apagar_el_estado_del_plan_apaga_solo_eso(client, database, outbox):
 
 # ------------------------------------------- lo que decide un administrador
 
-def test_habilitar_el_envio_se_avisa(client, database, outbox):
+def test_abrir_la_cuenta_se_avisa(client, database, outbox):
     admin, _ = make_admin(client, database)
-    browser = inside(client, "socia@ejemplo.com")
+    register(other(client), email="socia@ejemplo.com", abierta=False)
     cliente = accounts.by_email(database, "socia@ejemplo.com")
 
-    clear_sending(admin, cliente)
+    open_account(admin, cliente)
 
-    aviso = only(database, mail_log.SENDING_CLEARED)
+    aviso = only(database, mail_log.OPENED)
     assert aviso["to"] == "socia@ejemplo.com"
-    assert "habilitada" in aviso["text"]
+    assert "Abrimos tu cuenta" in aviso["text"]
+    # Lleva a Contactos, que es lo primero que se hace con ella.
+    assert "/contacts" in aviso["text"]
 
 
 def test_suspender_avisa_sin_decir_el_motivo(client, database, outbox):

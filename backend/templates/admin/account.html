@@ -23,6 +23,21 @@
   </div>
 </div>
 
+{# Lo que dejó al abrir la cuenta, por la demostración o al pagar: es lo que
+   dice quién es la empresa. Se mira, no se edita. #}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('tax_id_label') }}</h3>
+  </div>
+  <div class="setting__action">
+    {% if tax_id %}
+    <span class="setting__value">{{ tax_id }}</span>
+    {% else %}
+    <span class="tag tag--quiet">{{ t('admin_tax_id_missing') }}</span>
+    {% endif %}
+  </div>
+</div>
+
 {# La dirección que va al pie de sus campañas. Se mira, no se edita: es del
    cliente, y la escribe en su Configuración. #}
 <div class="setting">
@@ -77,30 +92,44 @@
   </div>
 </div>
 
-{# La única puerta que queda con una persona detrás. Va antes que nada porque
-   es lo único de esta pantalla que espera una decisión. #}
+{# La única puerta con una persona detrás; la otra forma de pasarla es pagar.
+   Va antes que nada porque es lo único de esta pantalla que espera una
+   decisión. Se abre al empezar la llamada, para importar su lista y armar su
+   primera plantilla juntos. #}
 <div class="setting">
   <div class="setting__text">
-    <h3 class="setting__title">{{ t('admin_sending_gate') }}</h3>
-    <p class="setting__desc">{{ t('admin_sending_gate_hint') }}</p>
+    <h3 class="setting__title">{{ t('admin_demo_title') }}</h3>
+    <p class="setting__desc">
+      {% if client.demo_requested_at %}
+      {{ t('admin_demo_asked', when=client.demo_requested_at|ago) }}
+      {% if whatsapp %}<a href="{{ whatsapp }}" target="_blank" rel="noopener">{{ t('admin_demo_whatsapp', phone=client.phone) }}</a>{% endif %}
+      {% else %}
+      {{ t('admin_demo_not_asked') }}
+      {% endif %}
+    </p>
   </div>
   <div class="setting__action">
-    {% if can_send %}
-    <span class="tag tag--quiet">{{ t('admin_sending_cleared_when',
-      when=client.sending_cleared_at|ago) }}</span>
+    {# Quién la abrió: tú después de la demo, un pago, o la habilitación de
+       antes, cuando esto no existía. #}
+    {% if client.opened_at and client.opened_by %}
+    <span class="tag tag--quiet">{{ t('admin_demo_opened_when', when=client.opened_at|ago) }}</span>
+    {% elif client.opened_at or client.plan %}
+    <span class="tag tag--quiet">{{ t('admin_demo_opened_paid') }}</span>
+    {% elif is_open %}
+    <span class="tag tag--quiet">{{ t('admin_demo_opened') }}</span>
     {% else %}
-    <span class="tag tag--warn">{{ t('admin_sending_pending') }}</span>
+    <span class="tag tag--warn">{{ t('admin_demo_closed') }}</span>
     {% endif %}
   </div>
 </div>
 
-{% if not can_send %}
-<form method="post" action="{{ url_for('admin.clear_sending', raw=client._id) }}">
+{% if not is_open %}
+<form method="post" action="{{ url_for('admin.open_account', raw=client._id) }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label for="motivo-envio">{{ t('admin_reason') }}</label>
-  <input id="motivo-envio" name="reason" type="text" maxlength="300" required
+  <label for="motivo-demo">{{ t('admin_reason') }}</label>
+  <input id="motivo-demo" name="reason" type="text" maxlength="300" required
          autocomplete="off">
-  <button class="btn" type="submit">{{ t('admin_sending_clear') }}</button>
+  <button class="btn" type="submit">{{ t('admin_demo_open') }}</button>
 </form>
 {% endif %}
 
@@ -304,6 +333,9 @@
           {% else %}
             {% if row.kind == 'status' %}
             {{ t('admin_history_status', before=row.before, after=row.after) }}
+            {% elif row.kind == 'open' %}
+            {{ t('admin_history_open') }}
+            {# La habilitación ya no se toma; las de antes se siguen leyendo. #}
             {% elif row.kind == 'sending' %}
             {{ t('admin_history_sending') }}
             {% else %}

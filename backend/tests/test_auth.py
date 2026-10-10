@@ -180,7 +180,8 @@ def test_confirming_sends_the_welcome(client, database, outbox):
     assert len(bodies) == 2, "the code and the welcome"
     welcome = bodies[-1]
     assert "Te damos la bienvenida, Ana" in welcome
-    assert "/dashboard" in welcome
+    # Lleva a la bienvenida, que es donde se pide la demostración.
+    assert "/welcome" in welcome
     # Transactional: no unsubscribe and no watermark, as rule 8 requires.
     assert "baja" not in welcome.lower() and "unsubscribe" not in welcome.lower()
     assert "Enviado con Sobreala" not in welcome

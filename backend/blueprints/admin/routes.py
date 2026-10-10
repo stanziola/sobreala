@@ -50,9 +50,9 @@ bp = Blueprint("admin", __name__, url_prefix="/admin")
 PER_PAGE = 100
 
 # El valor que toma el filtro de estado cuando lo que se quiere ver es la cola
-# de habilitación. No es un estado de la cuenta, así que no puede estar en
-# STATUSES; es una vista más de la misma lista.
-PENDING_FILTER = "pending"
+# de las que pidieron la demostración. No es un estado de la cuenta, así que no
+# puede estar en STATUSES; es una vista más de la misma lista.
+DEMO_FILTER = "demo"
 
 
 def only_admins(view):
@@ -228,17 +228,17 @@ def accounts_list(account):
     except ValueError:
         skip = 0
 
-    # La cola de habilitación es un filtro más y no una pantalla aparte: sigue
-    # siendo la lista de lo que pide acción, pero vive donde están todas.
-    pending = request.args.get("status") == PENDING_FILTER
-    rows, total = accounts.search(db, status=status, text=text, pending=pending,
+    # La cola de las demostraciones es un filtro más y no una pantalla aparte:
+    # sigue siendo la lista de lo que pide acción, pero vive donde están todas.
+    demo = request.args.get("status") == DEMO_FILTER
+    rows, total = accounts.search(db, status=status, text=text, demo=demo,
                                   limit=PER_PAGE, skip=skip)
     return render_template("admin/accounts.html", section="cuentas",
                            admin=account, rows=rows, total=total,
-                           status=PENDING_FILTER if pending else status,
+                           status=DEMO_FILTER if demo else status,
                            search=text, skip=skip, per_page=PER_PAGE,
                            statuses=accounts.STATUSES,
-                           pending_filter=PENDING_FILTER)
+                           demo_filter=DEMO_FILTER)
 
 
 @bp.route("/accounts/<raw>")
@@ -254,7 +254,9 @@ def account_page(account, raw):
     return render_template(
         "admin/account.html", section="cuentas", admin=account, client=client,
         statuses=accounts.STATUSES, plans=sorted(accounts.PLAN_CONTACTS),
-        cycles=plans.CYCLES, can_send=accounts.can_send(client),
+        cycles=plans.CYCLES, is_open=accounts.is_open(client),
+        whatsapp=accounts.whatsapp_url(client.get("phone")),
+        tax_id=accounts.tax_id_of(client),
         client_from=sender.sender_email(client), client_reply=sender.reply_to(client),
         client_sender=accounts.sender_of(client),
         limit=accounts.contact_limit(client),
@@ -364,16 +366,15 @@ def update(account, raw):
     return redirect(url_for("admin.account_page", raw=raw, done=1))
 
 
-@bp.route("/accounts/<raw>/enable-sending", methods=["POST"])
+@bp.route("/accounts/<raw>/open", methods=["POST"])
 @only_admins
-def clear_sending(account, raw):
-    """Habilitar a una cuenta para que salga su primera campaña.
+def open_account(account, raw):
+    """Abrir la cuenta después de la demostración.
 
-    Es la única puerta que queda con una persona detrás. Todos los clientes
-    envían desde el mismo dominio, así que comparten una sola reputación: una
-    lista comprada la quema para todos. Se mira una vez —de dónde dijo que salió
-    cada lista, y la pieza que va a mandar— y después la cuenta queda
-    habilitada.
+    Es la única puerta con una persona detrás, y la otra forma de pasarla es
+    pagar. Se abre al empezar la llamada, para importar la lista y armar la
+    primera plantilla juntos. Antes se mira que la empresa exista, con el RUC o
+    la cédula que dejó al pedirla; el motivo queda escrito en `admin_events`.
     """
     db = get_db()
     client = wanted(raw)
@@ -384,12 +385,12 @@ def clear_sending(account, raw):
     if not reason:
         return redirect(url_for("admin.account_page", raw=raw, missing="reason"))
 
-    if accounts.clear_sending(db, client["_id"], account["_id"]):
+    if accounts.open_account(db, client["_id"], account["_id"]):
         # Es la única espera que se le pide a un cliente, así que enterarse de
         # que terminó no puede depender de que vuelva a entrar a mirar.
-        notices.sending_cleared(client)
-        decisions.record(db, kind=decisions.SENDING, admin_id=account["_id"],
-                         account_id=client["_id"], before=None, after="cleared",
+        notices.opened(client)
+        decisions.record(db, kind=decisions.OPEN, admin_id=account["_id"],
+                         account_id=client["_id"], before=None, after="opened",
                          reason=reason)
     return redirect(url_for("admin.account_page", raw=raw, done=1))
 

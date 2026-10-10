@@ -23,6 +23,9 @@ TEXTS = {
     # the entries that need an account.
     "menu_options": "Opciones",
     "menu_account": "Mi cuenta",
+    # La fila de una cuenta que todavía no se abrió, en lugar de las cuatro de
+    # cliente. El menú del sitio público dice lo mismo.
+    "menu_demo": "Tu demostración",
     "menu_settings": "Configuración",
     "menu_theme": "Modo oscuro",
     "menu_theme_light": "Modo claro",
@@ -113,12 +116,41 @@ TEXTS = {
     # --- la bienvenida, al confirmar el registro ---------------------------
     # «Te damos la bienvenida» y no «Bienvenido»: es la fórmula que ya usa el
     # correo de bienvenida, y no le adivina el género a nadie por su nombre.
-    "welcome_tab": "Tu cuenta está lista",
+    "welcome_tab": "Te damos la bienvenida",
     "welcome_title": "{name}, te damos la bienvenida a Sobreala",
     "welcome_lead": "Tu cuenta está lista. Elige el plan que más se adapte a ti "
                     "para empezar a enviar correos.",
     "welcome_plans": "Ver planes",
     "welcome_settings": "Ir a configuración",
+    # La misma pantalla con la cuenta todavía cerrada: los dos caminos que la
+    # abren, la demostración y contratar, sin empujar hacia ninguno.
+    "welcome_closed_lead": "Hay dos formas de empezar: pides una demostración y "
+                           "te enseñamos el panel, o contratas un plan y "
+                           "empiezas enseguida.",
+    "welcome_demo_includes": "En la demostración abrimos tu cuenta y, juntos:",
+    "welcome_demo_tour": "recorremos el panel y cómo sale una campaña;",
+    "welcome_demo_list": "vemos de dónde sale tu lista;",
+    "welcome_demo_import": "la importamos;",
+    "welcome_demo_piece": "y armamos tu primera plantilla.",
+    "welcome_demo_after": "Desde ahí tienes lo del plan Básico para preparar "
+                          "todo. Para enviar, eliges tu plan.",
+    "welcome_demo_phone": "Tu WhatsApp",
+    "welcome_demo_ask": "Pedir la demostración",
+    "welcome_demo_again": "Avisar de nuevo",
+    "welcome_demo_sent": "Listo. Te escribimos al {phone} para agendarla.",
+    "welcome_demo_asked": "La pediste {when}. Te escribimos al {phone}. Si "
+                          "quieres corregir algo, cámbialo y avísanos de nuevo.",
+    "welcome_buy_lead": "¿Ya sabes qué plan quieres? Al contratarlo empiezas "
+                        "enseguida, sin esperar la demostración.",
+    "demo_needs_email": "Para pedirla, confirma primero tu correo: es a donde te "
+                        "avisamos cuando tu cuenta esté abierta.",
+    "demo_too_many": "Ya nos avisaste varias veces hoy. Te vamos a escribir; si "
+                     "es urgente, escríbenos a info@sobreala.com.",
+    # El RUC o la cédula, que se pide al abrir la cuenta por cualquiera de los
+    # dos caminos: al pedir la demostración y al pagar.
+    "tax_id_label": "RUC o cédula",
+    "tax_id_hint": "Si tu negocio es de fuera de Panamá, escribe tu "
+                   "identificación fiscal.",
 
     # --- cambiar el correo de la cuenta ------------------------------------
     "email_change_title": "Cambiar tu correo",
@@ -346,6 +378,8 @@ TEXTS = {
     "settings_account_no_plan_hint": "Puedes preparar tus contactos y armar "
                                      "campañas sin plan. Para enviarlas de "
                                      "verdad hace falta uno.",
+    "settings_account_closed_hint": "Tu cuenta se abre con la demostración o "
+                                    "al contratar un plan.",
     "settings_account_plans": "Ver los planes",
 
     "settings_security_lead": "Todo lo que decide quién puede entrar a tu "
@@ -436,13 +470,17 @@ TEXTS = {
                                          "cuenta van siempre.",
     "settings_notice_admin_payment": "Alguien pagó un plan",
     "settings_notice_admin_payment_desc": "Cuando un cliente contrata o renueva. "
-                                          "Dice si queda esperando que le "
-                                          "habilites el envío, que es lo único "
-                                          "que espera por una persona.",
+                                          "Pagar le abre la cuenta y le deja "
+                                          "enviar, así que no queda nada "
+                                          "pendiente.",
     "settings_notice_admin_signup": "Se registró una cuenta nueva",
     "settings_notice_admin_signup_desc": "Cuando alguien confirma su correo y la "
                                          "cuenta queda creada de verdad. Los "
                                          "registros a medias no avisan nada.",
+    "settings_notice_admin_demo": "Alguien pidió una demostración",
+    "settings_notice_admin_demo_desc": "Cuando una cuenta la pide desde su "
+                                       "bienvenida, con su WhatsApp y su RUC o "
+                                       "cédula. Es la que espera que la abras.",
     "settings_notice_admin_plan_end": "A un cliente se le venció el plan",
     "settings_notice_admin_plan_end_desc": "Se mira cuando el cliente entra a su "
                                            "panel, así que de quien no vuelve a "
@@ -732,9 +770,7 @@ TEXTS = {
                          "pide otro código.",
     "panel_unconfirmed_action": "Pedir otro código",
     "panel_status_label": "Estado de tu cuenta",
-    "panel_status_registered": "Registrada. Ya puedes contratar un plan; antes "
-                               "de tu primera campaña revisamos tu lista "
-                               "contigo.",
+    "panel_status_registered": "Registrada: todavía sin plan.",
     "panel_status_active": "Activa.",
     "panel_status_suspended": "Suspendida. Escríbenos para revisarla.",
 
@@ -1562,9 +1598,6 @@ TEXTS = {
     "sender_done_local": "Guardamos la dirección de tu dominio.",
     "sender_done_removed": "Quitamos tu dominio. Tus campañas vuelven a salir de "
                            "tu dirección de envío.",
-    "send_blocked_cleared": "Falta que habilitemos el envío de tu cuenta. Es "
-                            "una sola vez, miramos de dónde salió tu lista y te "
-                            "avisamos por correo.",
     "send_blocked_piece": "La plantilla de esa campaña ya no existe.",
 
     "send_state_ready": "Lista para salir",
@@ -1662,7 +1695,7 @@ TEXTS = {
 
     # --- administración ----------------------------------------------------
     "admin_title": "Administración",
-    "admin_filter_pending": "Esperando habilitación",
+    "admin_filter_demo": "Piden demostración",
     "admin_tab_accounts": "Cuentas",
     "admin_mail_title": "Correos del sistema",
     "admin_mail_lead": "Lo que el panel le mandó a una dirección (códigos, "
@@ -1747,6 +1780,9 @@ TEXTS = {
     "admin_history_title": "Actividad",
     "admin_history_empty": "Nada todavía.",
     "admin_history_status": "Estado: de {before} a {after}",
+    "admin_history_open": "Se abrió la cuenta",
+    # La habilitación ya no se toma (octubre de 2026). Queda para leer las
+    # decisiones de antes.
     "admin_history_sending": "Se habilitó el envío",
     "admin_history_plan": "Plan: de {before} a {after}",
 
@@ -1789,25 +1825,29 @@ TEXTS = {
     "admin_designs_empty": "Ningún cliente ha subido nada todavía.",
     "admin_designs_download": "Ver el archivo",
 
-    # La única puerta que queda con una persona detrás.
-    "admin_sending_gate": "Habilitación para enviar",
-    "admin_sending_gate_hint": "Todos tus clientes envían desde el mismo "
-                               "dominio, así que comparten una sola "
-                               "reputación. Mira de dónde dijo que salió su "
-                               "lista antes de habilitarla. Se hace una sola "
-                               "vez por cuenta.",
-    "admin_sending_clear": "Habilitar el envío",
-    "admin_sending_cleared": "Habilitada para enviar",
-    "admin_sending_cleared_when": "Habilitada {when}",
-    "admin_sending_pending": "Todavía no puede enviar",
+    # La única puerta con una persona detrás; la otra forma de pasarla es pagar.
+    "admin_demo_title": "Demostración",
+    "admin_demo_asked": "La pidió {when}.",
+    "admin_demo_whatsapp": "Escribirle al {phone}",
+    "admin_demo_not_asked": "Todavía no la pide. Si paga un plan, la cuenta se "
+                            "abre sola.",
+    "admin_demo_opened_when": "Abierta {when}",
+    "admin_demo_opened_paid": "Abierta al pagar",
+    "admin_demo_opened": "Abierta",
+    "admin_demo_closed": "Cerrada",
+    "admin_demo_open": "Abrir la cuenta",
+    "admin_tax_id_missing": "Todavía no lo deja",
 
     "admin_two_step_needed": "Para entrar a administración activa antes la "
                              "autenticación de múltiples factores. Es la "
-                             "cuenta que puede suspender y habilitar a todos "
-                             "los demás.",
+                             "cuenta que puede abrir y suspender las cuentas "
+                             "de todos los demás.",
 
     # --- errors ------------------------------------------------------------
     "error_required": "Completa este campo.",
+    "error_phone": "Escribe un número de WhatsApp. Si no es de Panamá, con su "
+                   "código de país.",
+    "error_tax_id": "Escribe tu RUC o tu cédula, como aparece en tus documentos.",
     "error_email_invalid": "Ese correo no parece válido.",
     "error_email_taken": "Ya existe una cuenta con ese correo.",
     "error_password_short": "La contraseña debe tener al menos 10 caracteres.",
@@ -1880,20 +1920,19 @@ TEXTS = {
     # complete. Transactional, like the rest of the system mail — it describes
     # the state of an account its owner just created, it does not offer
     # anything, so rule 8 holds and it carries no unsubscribe link.
-    "mail_welcome_subject": "Tu cuenta de Sobreala está lista",
+    "mail_welcome_subject": "Tu cuenta de Sobreala está creada",
     # Neutral on purpose: we do not know the recipient's gender.
     "mail_welcome_heading": "Te damos la bienvenida, {name}",
     "mail_welcome_body": "Confirmaste tu correo, así que tu cuenta ya está "
-                         "creada y ya puedes contratar un plan. Desde el panel "
-                         "subes tus contactos, los organizas con etiquetas y "
-                         "dejas tus campañas armadas.",
-    "mail_welcome_button": "Entrar al panel",
-    "mail_welcome_next_title": "Antes de tu primer envío",
-    "mail_welcome_next": "La primera campaña la revisamos contigo: miramos de "
-                         "dónde salió tu lista y hacemos una prueba antes de "
-                         "que salga. Es una sola vez, y es lo que mantiene la "
-                         "entregabilidad alta para todos los que envían desde "
-                         "Sobreala.",
+                         "creada. Para empezar hay dos caminos: pides una "
+                         "demostración y te escribimos por WhatsApp para "
+                         "agendarla, o contratas un plan y empiezas enseguida.",
+    "mail_welcome_button": "Pedir la demostración",
+    "mail_welcome_next_title": "Qué incluye la demostración",
+    "mail_welcome_next": "Abrimos tu cuenta y, juntos, recorremos el panel, "
+                         "vemos de dónde sale tu lista, la importamos y armamos "
+                         "tu primera plantilla. Desde ahí tienes lo del plan "
+                         "Básico para preparar todo.",
     "mail_welcome_help": "Si algo no te calza, escríbenos a "
                          "info@sobreala.com y lo vemos.",
 
@@ -1985,7 +2024,7 @@ TEXTS = {
                           "sigue segura y nadie ha entrado.",
 
     # --- los avisos de la cuenta -------------------------------------------
-    # El plan, la habilitación de envío y la suspensión. Los compone
+    # El plan, la cuenta abierta y la suspensión. Los compone
     # services/notices.py sobre una sola plantilla, porque los ocho tienen la
     # misma forma y lo único que cambia es esto.
     "mail_notice_off": "Estos avisos se apagan en Configuración → "
@@ -1996,10 +2035,6 @@ TEXTS = {
     "mail_plan_charged": "Pagaste ${amount}.",
     "mail_plan_charged_credit": "Pagaste ${amount}, con ${credit} de descuento por "
                                 "los correos que no usaste de tu plan anterior.",
-    "mail_plan_note_title": "Antes de tu primer envío",
-    "mail_plan_note_text": "Miramos una sola vez de dónde salió tu lista y te "
-                           "habilitamos el envío. Te avisamos por correo en "
-                           "cuanto esté.",
 
     "mail_plan_started_subject": "Tu plan {plan} ya está activo",
     "mail_plan_started_heading": "Ya tienes el plan {plan}",
@@ -2027,16 +2062,12 @@ TEXTS = {
                               "servir en cuanto contrates otra vez.",
     "mail_plan_expired_button": "Ver mi plan",
 
-    "mail_cleared_subject": "Ya puedes enviar tus campañas",
-    "mail_cleared_heading": "Tu cuenta quedó habilitada",
-    "mail_cleared_body": "Revisamos de dónde salió tu lista y ya puedes enviar. "
-                         "Es una sola vez por cuenta, así que no tienes que "
-                         "volver a esperar.",
-    "mail_cleared_button": "Ir a mi panel",
-    "mail_cleared_note_title": "Cuida tu lista",
-    "mail_cleared_note_text": "Escríbele solo a quien te dejó su correo. Todos "
-                              "enviamos desde el mismo dominio, así que si los "
-                              "rebotes suben se pausa el envío solo.",
+    "mail_opened_subject": "Tu cuenta de Sobreala está abierta",
+    "mail_opened_heading": "Ya puedes empezar",
+    "mail_opened_body": "Abrimos tu cuenta: ya puedes subir tus contactos y "
+                        "armar tus plantillas y campañas, con lo del plan "
+                        "Básico. Para enviarlas, eliges tu plan.",
+    "mail_opened_button": "Ir a mis contactos",
 
     "mail_suspended_subject": "Tu cuenta de Sobreala quedó suspendida",
     "mail_suspended_heading": "Suspendimos tu cuenta",
@@ -2055,10 +2086,6 @@ TEXTS = {
     "mail_admin_payment_subject": "{company} contrató el plan {plan}",
     "mail_admin_payment_heading": "Un cliente pagó",
     "mail_admin_payment_body": "{company} ({email}) contrató el plan {plan}.",
-    "mail_admin_payment_waiting": "Todavía no puede enviar: falta habilitarle "
-                                  "el envío desde su ficha.",
-    "mail_admin_payment_cleared": "Ya estaba habilitada para enviar, así que no "
-                                  "hay nada pendiente.",
     "mail_admin_payment_button": "Ver la ficha",
 
     "mail_admin_signup_subject": "{company} se registró",
@@ -2067,6 +2094,12 @@ TEXTS = {
                               "{company} ya está creada. Todavía no tiene plan "
                               "ni puede enviar.",
     "mail_admin_signup_button": "Ver la ficha",
+
+    "mail_admin_demo_subject": "{company} pidió una demostración",
+    "mail_admin_demo_heading": "{company} quiere una demostración",
+    "mail_admin_demo_body": "{name} ({email}) la pidió desde su bienvenida.",
+    "mail_admin_demo_data": "WhatsApp: {phone}. RUC o cédula: {tax_id}.",
+    "mail_admin_demo_button": "Ver la ficha",
 
     "mail_admin_plan_end_subject": "Se le venció el plan a {company}",
     "mail_admin_plan_end_heading": "{company} se quedó sin plan",

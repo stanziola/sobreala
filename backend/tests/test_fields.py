@@ -342,7 +342,6 @@ def test_cada_uno_recibe_lo_suyo_y_el_incompleto_no_recibe(
     monkeypatch.setattr(sender, "deliver",
                         lambda message: salidos.append(message) or "de-mentira")
     browser, cuenta = inside(client, database)
-    accounts.clear_sending(database, cuenta["_id"], cuenta["_id"])
     # La dirección del pie, que sin ella no se envía.
     accounts.set_postal(database, cuenta["_id"], "Apartado 0816-00001, Santiago")
     # Y su usuario de envío, que sin él tampoco.

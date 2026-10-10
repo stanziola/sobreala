@@ -234,8 +234,9 @@
    is HttpOnly and SameSite=Lax, and neither travels here nor can be read.
 
    What can be read is the crumb the panel leaves on the parent domain when
-   someone signs in: "1" for a client and "admin" for an administrator, and
-   nothing else. A hint, not a proof — if the session was closed from another
+   someone signs in: "1" for a client, "new" for a client whose account is not
+   open yet and "admin" for an administrator, and nothing else. A hint, not a
+   proof — if the session was closed from another
    device this will keep offering "Mi panel" until someone presses it, and the
    panel will then ask them to sign in. That is the right order: what decides
    who gets in is the panel, not this line.
@@ -268,9 +269,11 @@
   if (!grupo) return;
   var crumb = /(^|;\s*)sa_in=([^;]*)/.exec(document.cookie);
   if (!crumb) return;
-  // "admin", "1", o "1:negocio:monthly" con el plan vigente y su ciclo.
+  // "admin", "new", "1", o "1:negocio:monthly" con el plan vigente y su ciclo.
   var partes = crumb[2].split(":");
   var admin = partes[0] === "admin";
+  // Una cuenta que todavía no se abrió: ni la demostración ni un pago.
+  var nueva = partes[0] === "new";
   var plan = partes[1] || "";
   var anual = partes[2] === "yearly";
 
@@ -340,8 +343,9 @@
   Array.prototype.forEach.call(menu.querySelectorAll("[data-account-only]"),
                                function (row) { row.hidden = false; });
   // Las que dependen de quién es: administración para uno, panel y contactos
-  // para el otro.
-  var suyas = admin ? "[data-admin-only]" : "[data-client-only]";
+  // para el otro, y su demostración para una cuenta que todavía no se abrió.
+  var suyas = admin ? "[data-admin-only]"
+    : (nueva ? "[data-new-only]" : "[data-client-only]");
   Array.prototype.forEach.call(menu.querySelectorAll(suyas),
                                function (row) { row.hidden = false; });
 })();

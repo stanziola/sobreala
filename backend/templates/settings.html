@@ -97,8 +97,10 @@
     {# Nada escribe todavía el campo del plan, así que hoy todas las cuentas
        caen en la rama de abajo. Dicho con palabras y no con un espacio en
        blanco donde debería ir un plan. #}
+    {# Cerrada, la cuenta no prepara nada todavía: se dice cómo se abre. #}
     {% call row(t('settings_account_plan'),
-                '' if plan else t('settings_account_no_plan_hint')) %}
+                '' if plan else (t('settings_account_closed_hint') if bar_closed
+                                 else t('settings_account_no_plan_hint'))) %}
     {% if plan %}
     <span class="setting__value">{{ plan }}</span>
     {% else %}

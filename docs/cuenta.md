@@ -13,15 +13,19 @@ Estados: `registered` → `active` → `suspended`
 
 | Estado | Qué significa |
 |---|---|
-| `registered` | Se registró. Explora, importa contactos y **puede comprar un plan**. |
+| `registered` | Se registró. Hasta que se abre (con la demostración o con un pago) solo ve su bienvenida y Configuración, y **puede comprar un plan**. |
 | `active` | Pagó. Su plan corre hasta `plan_until`. |
 | `suspended` | Nada. Corte automático por rebotes/quejas, o manual. |
 
 **Hubo un cuarto, `approved`, y se quitó.** Era una aprobación comercial a mano
 sin la cual no se podía comprar. Esperar a que alguien te apruebe para poder
 pagar no protegía nada que valiera esa espera; la mirada que sí importa —de
-dónde salió esa lista— se hace ahora justo antes del primer envío, que es donde
-puede hacer daño. Ver «La habilitación para enviar», más abajo.
+dónde salió esa lista— pasó a hacerse justo antes del primer envío, y desde
+octubre de 2026 en la demostración. Ver «Abrir la cuenta», más abajo.
+
+**Abierta o cerrada no es un estado**, es otro hecho (`opened_at`), como
+confirmar el correo: una cuenta `registered` puede estar abierta por la demo y
+sin plan todavía.
 
 **Estar activa es el efecto de un pago cobrado, no una decisión.** `activate_plan()`
 es el único sitio que escribe `active`, y lo llaman tanto la vuelta de PayPal
@@ -86,18 +90,57 @@ contraseña y su segundo factor son suyos, no de la empresa.
 - **La tabla de administración no lista usuarios**, como no lista
   administradores: el cliente es la empresa, y su ficha ya dice quiénes entran.
 
-### La habilitación para enviar
+### Abrir la cuenta: la demostración o el pago
 
-`sending_cleared_at` en la cuenta, y `sending_cleared_by` con quién la puso. **Es
-la única puerta que queda con una persona detrás.** Todos los clientes envían
-desde el mismo dominio, así que comparten una sola reputación: una lista comprada
-la quema para todos. Se mira una vez —de dónde dijo que salió cada lista, y la
-pieza que va a mandar— y después la cuenta queda habilitada.
+**Una cuenta nueva nace cerrada** (octubre de 2026). Cualquiera puede
+registrarse con solo confirmar un correo, y las imágenes viven en la base: unas
+200 cuentas falsas, con sus 20 fotos cada una, llenarían los 512 MB de Atlas.
+Cerrada, solo ve su bienvenida y Configuración, y puede comprar un plan. Las
+cuatro pantallas de cliente (Contactos, Plantillas, Enviar correos y
+Estadísticas) la devuelven a `/welcome`: lo decide `needs()`, por donde ya
+pasaban todas, así que una pantalla nueva hereda la puerta. El menú de los dos
+sitios enseña en su lugar una sola fila, «Tu demostración» (`bar_closed` en el
+panel, la migaja `new` en el sitio).
 
-Registrarse, importar y pagar **no la necesitan**: nada de eso le llega a nadie.
-La portada de `/admin` lista lo que espera, que son las cuentas con plan y sin
-habilitar. Todavía no hay campañas, así que nada consulta `can_send()` hoy; el
-blueprint de campañas, cuando exista, lee ese booleano antes de mandar nada.
+**Se abre por uno de dos caminos, y son independientes** (`accounts.is_open()`):
+
+| Camino | Quién la abre | Qué tiene después |
+|---|---|---|
+| La demostración | El administrador, con «Abrir la cuenta» en la ficha y un motivo (`opened_by`, `admin_events`) | Lo del Básico sin enviar y sin vencimiento: 1,000 contactos, 1 etiqueta, 1 columna, 20 imágenes y campañas armadas. Para enviar, contrata |
+| El pago | `activate_plan()`, sola y sin `opened_by` | Todo lo de su plan desde el primer momento, envío incluido |
+
+- **La demostración se pide desde la bienvenida** (`POST /welcome/demo`), con
+  su WhatsApp (el `phone` del registro, donde era opcional) y su **RUC o
+  cédula** (`tax_id`). Solo el dueño, con el correo confirmado y hasta tres
+  avisos al día. A quien administra le llega «{empresa} pidió una
+  demostración» (`admin_demo`, con interruptor), y la cuenta sale en el filtro
+  «Piden demostración» de Cuentas.
+- **En la llamada se abre la cuenta al empezar** y, juntos, se recorre el
+  panel, se mira de dónde sale su lista, se importa y se arma su primera
+  plantilla. Al abrirla le llega «Tu cuenta de Sobreala está abierta», que no
+  se puede apagar.
+- **El RUC o la cédula se pide también al pagar** (`/checkout`) si todavía no
+  lo dejó: así queda registro de todas las empresas, entren por donde entren, y
+  es lo que pide la factura. No se exige un formato (`clean_tax_id()`): hay
+  varios, y un negocio de fuera trae su propia identificación fiscal. **El
+  aviso de operación no se pide**: dejaría fuera a cooperativas, gremios,
+  asociaciones y negocios pequeños, que no siempre lo tienen.
+- **No hubo nada que migrar**: `is_open()` cuenta también `plan` y
+  `sending_cleared_at`, así que las cuentas que ya habían pagado o se habían
+  habilitado siguen abiertas. Las registradas sin plan quedaron cerradas hasta
+  que alguien las abra.
+
+**Hubo una habilitación para enviar, y se quitó** (octubre de 2026).
+`sending_cleared_at` era una mirada a mano antes de la primera campaña: de dónde
+dijo que salió cada lista, y la pieza que iba a mandar. Con la cuenta abierta
+por la demostración o por el pago era una segunda espera para la misma decisión,
+y a quien acababa de pagar le pedía esperar justo cuando quería empezar. Lo que
+miraba pasó a la demostración. El campo queda en las cuentas viejas, que
+`is_open()` lee, y sus decisiones se siguen leyendo en la actividad de la ficha.
+
+**Lo que se pierde con eso**: nadie mira la lista real antes del primer envío de
+quien entra pagando. Hasta que exista la pausa automática por rebotes y quejas,
+eso se vigila en las cifras.
 
 **`role` está en todas las cuentas** y vale `client` o `admin`; un campo que a
 veces está y a veces no es difícil de leer y fácil de equivocar en una consulta.
@@ -112,7 +155,7 @@ suspender y leer las cifras de todos los clientes.
 contactos, ni plantillas, ni puede comprar un plan: no tiene a quién escribirle,
 así que esas pantallas le saldrían vacías. De Configuración le quedan dos:
 **Seguridad** —contraseña, múltiples factores y dispositivos—, que es lo que hay que
-cuidar en la cuenta que puede suspender y habilitar a todas las demás, y
+cuidar en la cuenta que puede abrir y suspender a todas las demás, y
 **Notificaciones**, que es la misma pantalla con otra lista: qué le avisamos de
 las cuentas de sus clientes. Las filas se esconden del menú
 **y las rutas la devuelven a `/admin`**: esconder un botón no es un permiso.
@@ -241,7 +284,7 @@ usado.
 
 ## Los avisos de la cuenta
 
-`services/notices.py` es el único sitio que los compone, y son doce:
+`services/notices.py` es el único sitio que los compone, y son trece:
 
 | Correo | Cuándo sale | ¿Se puede apagar? |
 |---|---|---|
@@ -249,23 +292,26 @@ usado.
 | Renovaste el plan X | Igual, cuando el plan pagado es el que ya corría (ya no se puede pagar así) | Sí, «Pagos y plan» |
 | Tu plan vence en 7 días | Al entrar al panel, si falta una semana o menos. Sin botón: se vuelve a contratar al vencer | Sí, «Estado de tu plan» |
 | Tu plan venció | Al entrar al panel, si ya pasó la fecha | Sí, «Estado de tu plan» |
-| Ya puedes enviar | Al habilitar el envío desde la ficha | No |
+| Tu cuenta está abierta | Al abrirla desde la ficha, después de la demostración | No |
 | Tu cuenta fue suspendida | Al suspenderla | No |
 | Tu cuenta está activa otra vez | Al levantar la suspensión | No |
 | Tu código para cambiar el correo | Al pedirlo, **a la dirección nueva** | No |
 | Tu cuenta cambió de correo | Al terminar, **a la dirección vieja** | No |
-| Alguien pagó y espera habilitación | Al cobrar | Sí, «Alguien pagó un plan» |
+| Alguien pagó un plan | Al cobrar | Sí, «Alguien pagó un plan» |
 | Se registró una cuenta nueva | Al confirmar el correo | Sí, «Se registró una cuenta nueva» |
+| Alguien pidió una demostración | Al pedirla desde la bienvenida, con su WhatsApp y su RUC o cédula | Sí, «Alguien pidió una demostración» |
 | A un cliente se le venció el plan | Cuando ese cliente entra al panel | Sí, «A un cliente se le venció el plan» |
 
-**Los tres últimos van a quien administra**, no a un cliente, y hablan de lo
+**Los cuatro últimos van a quien administra**, no a un cliente, y hablan de lo
 que pasa en las cuentas de los demás.
 
-**Los tres del medio no llevan interruptor, y no por descuido.** «Ya puedes
-enviar» pasa una vez por cuenta y es la respuesta a la única espera que se le
-pide a un cliente. Los dos de la suspensión son la respuesta a «¿por qué no
-puedo entrar?», y quien está suspendido no puede entrar a cambiar sus
-preferencias, así que un interruptor no le serviría de nada.
+**Los tres del medio no llevan interruptor, y no por descuido.** «Tu cuenta
+está abierta» pasa una vez por cuenta y es la respuesta a la única espera que se
+le pide a un cliente, la de la demostración. Hubo uno igual, «Ya puedes
+enviar», que respondía a la habilitación, y se fue con ella. Los dos de la
+suspensión son la respuesta a «¿por qué no puedo entrar?», y quien está
+suspendido no puede entrar a cambiar sus preferencias, así que un interruptor
+no le serviría de nada.
 
 **El de un plan vencido tiene el límite de dónde se mira**, que es el mismo del
 aviso al cliente: se detecta cuando ese cliente entra a su panel, así que de
@@ -278,7 +324,7 @@ Ese motivo se redacta para `admin_events`, puede ser corto y duro, y lo que
 necesita quien lo recibe es otra cosa: qué significa, que no se borró nada y a
 dónde escribir.
 
-**Los doce comparten un solo par de plantillas**, `email/notice.html` y `.txt`,
+**Los trece comparten un solo par de plantillas**, `email/notice.html` y `.txt`,
 porque todos tienen la misma forma: un titular, unos párrafos, y a veces un
 botón, un recuadro o un código de seis dígitos. Los siete correos anteriores —confirmación,
 bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el suyo;

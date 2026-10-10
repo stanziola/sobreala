@@ -21,9 +21,9 @@ repositorio, en `email_templates/`, iguales para todos y sin nada que aprobar.
 
 **Nadie aprueba una pieza a mano.** Lo que puede hacer daño lo rechaza el
 validador al subirla —`services/html_check.py`— y eso es mecánico, no un
-juicio. La única puerta con una persona detrás está una vez por cuenta, antes de
-su primera campaña, y es sobre la cuenta y su lista, no sobre el archivo. Tener
-las dos serían dos revisiones manuales para la misma decisión.
+juicio. La única puerta con una persona detrás es la demostración que abre la
+cuenta, y es sobre la empresa y su lista, no sobre el archivo. Tener las dos
+serían dos revisiones manuales para la misma decisión.
 
 Todo queda guardado y visible desde administración, que es lo que permite abrir
 una pieza cuando haga falta.

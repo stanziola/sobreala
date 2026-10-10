@@ -23,8 +23,10 @@ campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
   confirmación.
 - **`SENDING_DOMAIN`** (por omisión `envios.sobreala.com`) es el subdominio de
   quien no tiene dominio propio. Lo comparten todos ellos, y con él su
-  reputación ante Gmail; los protegen la habilitación a mano y la pausa
-  automática.
+  reputación ante Gmail; los protegen la demostración o el pago que abren cada
+  cuenta, y la pausa automática, que todavía no existe. Hubo además una
+  habilitación a mano antes del primer envío, y se quitó en octubre de 2026
+  (ver «Abrir la cuenta» en `docs/cuenta.md`).
 - **El usuario es único entre cuentas**, y el dominio también: lo garantizan dos
   índices únicos parciales sobre `sender.handle` y `sender.domain`. Los
   reservados (`info`, `soporte`, `notifications`…) no se pueden elegir.
@@ -39,8 +41,7 @@ campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
   (`tokens.REPLY_TO`, el mismo mecanismo que cambiar el correo de la cuenta),
   para que nadie ponga la de un tercero y le lleguen las respuestas de toda una
   lista. Hasta que entra, las respuestas siguen yendo a la de antes.
-- La ficha del administrador lo enseña, de solo lectura: es parte de lo que se
-  mira antes de habilitar el envío.
+- La ficha del administrador lo enseña, de solo lectura.
 
 Los de `envios.sobreala.com` comparten reputación, y las defensas automáticas
 son su protección:
@@ -192,10 +193,11 @@ salió antes avisa de que le va a llegar otra vez a todos, también a quien ya l
 recibió. El que manda es el POST. Es el mismo reparto que exportar contactos, y
 aquí pesa más: un correo que salió no se puede recoger.
 
-**Para mandar hacen falta las dos puertas**: un plan con cuota del mes por gastar,
-y la habilitación de envío, que es la única con una persona detrás
-(`accounts.can_send()`). `services/sender.py` las mira antes de armar un solo
-correo.
+**Para mandar hace falta un plan con cuota del mes por gastar**, además de la
+dirección postal y el remitente (`sender.blocked()`, que lo mira antes de armar
+un solo correo). Hubo una segunda puerta, la habilitación de envío a mano, y se
+quitó en octubre de 2026: quien paga entra con todo y envía de una vez, y la
+mirada de una persona pasó a la demostración que abre la cuenta.
 
 **`services/sender.py` es el único sitio que le escribe a un contacto de un
 cliente.** Los del sistema salen por `mailer.py`, que es otro camino con otras

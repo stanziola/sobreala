@@ -66,6 +66,10 @@ RECOVER_PER_EMAIL = (5, 3600)
 # per address, that is a way to fill a stranger's inbox from many machines, so
 # the notice has one of its own, separate from the per-IP budget.
 REGISTER_PER_EMAIL = (5, 3600)
+# Pedir la demostración avisa al administrador por correo. Se puede pedir otra
+# vez, para corregir el número o porque nadie escribió, pero no tanto que sirva
+# para llenarle el buzón.
+DEMO_PER_ACCOUNT = (3, 86400)
 
 # What to tell someone about their password. The rules themselves live in
 # services/security.py; this only names them in Spanish.
@@ -263,18 +267,22 @@ def bar_account():
         return {}
     try:
         account = current_account()
+        # Una empresa que todavía no se abrió (ni demostración ni pago) no ve
+        # ninguna de las cuatro filas: solo la de su demostración.
+        closed = is_closed(account)
         return {"bar_account": account, "bar_admin": accounts.is_admin(account),
                 # Qué filas enseñarle: un usuario ve solo lo que su empresa le
                 # dio. Las rutas lo comprueban igual, porque esconder una fila
                 # no es un permiso.
-                "bar_can": {name: accounts.can(account, name)
+                "bar_can": {name: accounts.can(account, name) and not closed
                             for name in accounts.PERMISSIONS},
+                "bar_closed": closed,
                 # El nombre de arriba es el de la empresa, también para un
                 # usuario suyo: es la cuenta en la que está trabajando.
                 "bar_company": (current_workspace() or {}).get("company_name", "")}
     except Exception:  # noqa: BLE001 - the page is worth more than the menu
         return {"bar_account": None, "bar_admin": False, "bar_can": {},
-                "bar_company": ""}
+                "bar_closed": False, "bar_company": ""}
 
 
 def landing(account: dict | None) -> str:
@@ -403,6 +411,18 @@ def home_for(account: dict | None) -> str:
     return url_for("auth.settings", section="security")
 
 
+def is_closed(account: dict | None) -> bool:
+    """Si quien mira es de una empresa que todavía no se abrió.
+
+    Se pregunta por la empresa y no por la persona: un usuario de una cuenta
+    abierta entra aunque su propio documento no diga nada. Un administrador no
+    tiene empresa que abrir, y sin sesión no hay nada que cerrar.
+    """
+    if account is None or accounts.is_admin(account):
+        return False
+    return not accounts.is_open(current_workspace())
+
+
 def needs(account: dict | None, permission: str):
     """Un redirect si esta cuenta no puede abrir esa pantalla.
 
@@ -410,9 +430,16 @@ def needs(account: dict | None, permission: str):
     esconder una fila no es un permiso. Quien no la tiene cae en la primera que
     sí pueda abrir, no en una pantalla de error.
 
+    Antes que el permiso va la empresa: una que todavía no se abrió, ni con la
+    demostración ni con el pago, cae en su bienvenida, que es donde la pide. Las
+    cuatro pantallas de cliente pasan por aquí, así que una nueva hereda la
+    puerta sin que nadie se acuerde de ponérsela.
+
     Devuelve None cuando no hay nada que hacer, para poder escribir
     `answer = needs(account, ...)` sin envolver cada vista en un decorador.
     """
+    if is_closed(account):
+        return redirect(url_for("auth.welcome"))
     if accounts.can(account, permission):
         return None
     return redirect(home_for(account))
@@ -625,10 +652,11 @@ def send_confirmation(db, account: dict) -> None:
 def send_welcome(db, account: dict) -> None:
     """The message that closes a registration.
 
-    Says the two things nobody guesses: that the account exists and can already
-    buy a plan, and that the first campaign is looked at before it goes out.
+    Says what nobody guesses: that the account exists but opens one of two
+    ways, with the demo or with a plan, and what the demo brings. The button
+    goes to the welcome screen, which is where the demo is asked for.
     """
-    panel = f"{Config.APP_BASE_URL}{url_for('auth.panel')}"
+    panel = f"{Config.APP_BASE_URL}{url_for('auth.welcome')}"
     mailer.send(
         to=account["email"],
         subject=t("mail_welcome_subject"),
@@ -1519,6 +1547,10 @@ def welcome():
     darse: son para después, porque esta dirección queda en el historial y se
     puede escribir a mano. A quien ya contrató no tiene nada que decirle, y un
     administrador vuelve a `/admin` como en cualquier pantalla de cliente.
+
+    **Mientras la cuenta siga cerrada es la pantalla de la demostración**: lo
+    que incluye, el formulario para pedirla y el otro camino, que es contratar.
+    Es a donde la devuelven las cuatro pantallas de cliente (`needs()`).
     """
     account = current_account()
     if account is None:
@@ -1529,7 +1561,77 @@ def welcome():
     if accounts.plan_of(account):
         return redirect(url_for("auth.panel"))
 
-    return render_template("welcome.html", account=account)
+    if not is_closed(account):
+        return render_template("welcome.html", account=account, closed=False)
+    return demo_screen(account)
+
+
+def demo_screen(account: dict, *, errors: dict | None = None,
+                form: dict | None = None):
+    """La bienvenida de una cuenta cerrada, con lo que ya pidió si lo pidió.
+
+    El número y el RUC salen escritos: el número del registro, donde era
+    opcional, y los dos si ya pidió la demostración una vez. Corregirlos es
+    volver a pedirla.
+    """
+    company = current_workspace() or account
+    return render_template(
+        "welcome.html", account=account, closed=True, errors=errors or {},
+        form=form or {"phone": company.get("phone", ""),
+                      "tax_id": accounts.tax_id_of(company)},
+        # Lo que quedó guardado, no lo que se acaba de escribir mal.
+        asked=company.get("demo_requested_at"),
+        asked_phone=company.get("phone", ""))
+
+
+@bp.route("/welcome/demo", methods=["POST"])
+def request_demo():
+    """Pedir la demostración: el WhatsApp al que se le escribe para agendarla, y
+    el RUC o la cédula, que el administrador comprueba antes de abrir la cuenta.
+
+    Solo el dueño, y con el correo confirmado como para comprar: es a donde va
+    el aviso de que se abrió, y un registro sin confirmar se borra a las 24
+    horas. Se puede pedir otra vez, para corregir los datos o porque nadie
+    escribió, con un tope al día para que no sirva para llenarle el buzón a
+    quien administra.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    # Una cuenta abierta no tiene nada que pedir.
+    if not is_closed(account):
+        return redirect(url_for("auth.welcome"))
+
+    db = get_db()
+    form = {"phone": request.form.get("phone", "").strip()[:40],
+            "tax_id": request.form.get("tax_id", "").strip()[:80]}
+    errors: dict[str, str] = {}
+    if not csrf_ok(request.form.get("csrf_token")):
+        errors["form"] = t("error_csrf")
+    elif not accounts.is_confirmed(account):
+        errors["form"] = t("demo_needs_email")
+    else:
+        phone = accounts.clean_phone(form["phone"])
+        tax_id = accounts.clean_tax_id(form["tax_id"])
+        if not phone:
+            errors["phone"] = t("error_phone")
+        if not tax_id:
+            errors["tax_id"] = t("error_tax_id")
+        # Después de comprobar los datos: un número mal escrito no gasta
+        # ninguno de los tres avisos del día.
+        if not errors and not rate_limit(db, f"demo:account:{account['_id']}",
+                                         *DEMO_PER_ACCOUNT):
+            errors["form"] = t("demo_too_many")
+        if not errors:
+            accounts.request_demo(db, account["_id"], phone=phone, tax_id=tax_id)
+            # A quien administra, con el número y el RUC dentro. No puede romper
+            # una petición que ya quedó guardada: se traga lo suyo.
+            notices.demo_to_admins(db, accounts.by_id(db, account["_id"]))
+            return redirect(url_for("auth.welcome", demo="sent"))
+    return demo_screen(account, errors=errors, form=form)
 
 
 @bp.route("/dashboard")
@@ -1807,7 +1909,9 @@ def checkout(plan: str):
         # pagar de ninguna forma.
         soon=[one for one in payments.ALL if one not in ready_methods()],
         current=accounts.plan_of(account),
-        plan_until=accounts.plan_until(account))
+        plan_until=accounts.plan_until(account),
+        # El RUC o la cédula, si ya lo dejó en la demostración o en otro pago.
+        tax_id=accounts.tax_id_of(account))
 
 
 @bp.route("/settings/billing/invoice/<raw>")
@@ -1879,6 +1983,18 @@ def start_payment():
     # vigente solo se mejora (`upgrade.refused()`).
     if upgrade.refused(account, plan, cycle):
         return redirect(url_for("auth.checkout", plan=plan))
+    # Quien entra pagando deja también su RUC o su cédula, como quien pide la
+    # demostración: así queda registro de todas las empresas, entren por donde
+    # entren, y es lo que pide la factura. Quien ya lo dejó lo puede corregir
+    # aquí; en blanco se queda el que tenía.
+    typed = request.form.get("tax_id", "").strip()[:80]
+    if typed or not accounts.tax_id_of(account):
+        tax_id = accounts.clean_tax_id(typed)
+        if not tax_id:
+            return redirect(url_for("auth.checkout", plan=plan, cycle=cycle,
+                                    error="tax_id"))
+        if tax_id != accounts.tax_id_of(account):
+            accounts.set_tax_id(db, account["_id"], tax_id)
     # El total con el descuento por los correos sin usar, calculado aquí y
     # guardado en el intento: es lo que se compara al cobrar.
     quote = upgrade.quote(account, plan, cycle)

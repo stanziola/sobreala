@@ -1,4 +1,4 @@
-"""Los avisos de la cuenta: el plan, la habilitación de envío y la suspensión.
+"""Los avisos de la cuenta: el plan, la cuenta abierta y la suspensión.
 
 Aquí se compone y se manda todo lo que le llega a un cliente **por algo que le
 pasó a su cuenta** y no por su propia seguridad. Los de seguridad —el código de
@@ -108,19 +108,13 @@ def paid(account, *, plan: str, until, renewed: bool, charged: str = "",
         paragraphs.append(
             t("mail_plan_charged_credit", amount=charged, credit=credit)
             if credit and credit != "0.00" else t("mail_plan_charged", amount=charged))
-    note = None
-    if not accounts.can_send(account):
-        # Lo que nadie adivina: pagar no habilita el envío, eso es la otra
-        # puerta. Mejor decirlo aquí que en el momento de intentarlo.
-        note = {"title": t("mail_plan_note_title"),
-                "text": t("mail_plan_note_text")}
     return deliver(
         account, purpose=mail_log.PLAN_PAID,
         subject=t(f"mail_plan_{which}_subject", plan=name),
         heading=t(f"mail_plan_{which}_heading", plan=name),
         paragraphs=paragraphs,
         button={"href": panel_url(), "label": t("mail_plan_button")},
-        note=note, foot=switch_off_hint())
+        foot=switch_off_hint())
 
 
 def invited(member, *, company: str, link: str, days: int) -> bool:
@@ -294,17 +288,21 @@ def email_changed(account, *, old: str, new: str) -> bool:
 
 # --------------------------------------------------- el estado de la cuenta
 
-def sending_cleared(account) -> bool:
-    """Que ya puede enviar. No se puede apagar: pasa una vez y es la respuesta
-    a la única espera que le pedimos a un cliente."""
+def opened(account) -> bool:
+    """Que su cuenta quedó abierta después de la demostración. No se puede
+    apagar: pasa una vez y es la respuesta a la única espera que le pedimos.
+
+    El botón va a Contactos y no a Estadísticas, que sin un solo envío es un
+    cuadro vacío: lo primero que se hace con la cuenta abierta es subir la
+    lista.
+    """
     return deliver(
-        account, purpose=mail_log.SENDING_CLEARED,
-        subject=t("mail_cleared_subject"),
-        heading=t("mail_cleared_heading"),
-        paragraphs=[t("mail_cleared_body")],
-        button={"href": panel_url(), "label": t("mail_cleared_button")},
-        note={"title": t("mail_cleared_note_title"),
-              "text": t("mail_cleared_note_text")})
+        account, purpose=mail_log.OPENED,
+        subject=t("mail_opened_subject"),
+        heading=t("mail_opened_heading"),
+        paragraphs=[t("mail_opened_body")],
+        button={"href": f"{Config.APP_BASE_URL}{url_for('contacts.index')}",
+                "label": t("mail_opened_button")})
 
 
 def suspended(account) -> bool:
@@ -381,6 +379,32 @@ def signup_to_admins(db, client) -> bool:
     return ok
 
 
+def demo_to_admins(db, client) -> bool:
+    """Avisarle a quien administra que una cuenta pidió la demostración.
+
+    Lleva lo que hace falta para escribirle y para comprobar que la empresa
+    existe antes de abrirle la cuenta: el WhatsApp y el RUC o la cédula. Sin
+    esto, enterarse de que alguien espera obliga a entrar a mirar.
+    """
+    todos = admins_who_want(db, accounts.ADMIN_DEMO)
+    ok = True
+    for admin in todos:
+        ok = deliver(
+            admin, purpose=mail_log.ADMIN_DEMO,
+            subject=t("mail_admin_demo_subject", company=about(client)),
+            heading=t("mail_admin_demo_heading", company=about(client)),
+            paragraphs=[t("mail_admin_demo_body", company=about(client),
+                          name=client.get("contact_name", ""),
+                          email=client.get("email", "")),
+                        t("mail_admin_demo_data",
+                          phone=client.get("phone", ""),
+                          tax_id=accounts.tax_id_of(client))],
+            button={"href": file_of(client),
+                    "label": t("mail_admin_demo_button")},
+            foot=switch_off_hint()) and ok
+    return ok
+
+
 def plan_end_to_admins(db, client, *, plan: str, until) -> bool:
     """Avisarle a quien administra que a un cliente se le venció el plan.
 
@@ -406,15 +430,14 @@ def plan_end_to_admins(db, client, *, plan: str, until) -> bool:
 
 
 def payment_to_admins(db, client, *, plan: str) -> int:
-    """Avisarle a quien administra que alguien pagó y espera habilitación.
+    """Avisarle a quien administra que alguien pagó un plan.
 
-    Va a todas las cuentas con el rol que lo quieran. Sin esto, para enterarte
-    de que una cooperativa pagó y está esperando hay que entrar a mirar, y
-    quien espera es un cliente que ya pagó.
+    Va a todas las cuentas con el rol que lo quieran. Ya no hay nada que hacer
+    después: pagar abre la cuenta y deja enviar, sin esperar a nadie. Es para
+    enterarse sin tener que entrar a mirar.
     """
     ficha = file_of(client)
     company = about(client)
-    waiting = not accounts.can_send(client)
     sent = 0
     for admin in admins_who_want(db, accounts.ADMIN_PAYMENT):
         if deliver(
@@ -424,9 +447,7 @@ def payment_to_admins(db, client, *, plan: str) -> int:
                 heading=t("mail_admin_payment_heading", company=company),
                 paragraphs=[t("mail_admin_payment_body", company=company,
                               email=client.get("email", ""),
-                              plan=plan_name(plan)),
-                            t("mail_admin_payment_waiting" if waiting
-                              else "mail_admin_payment_cleared")],
+                              plan=plan_name(plan))],
                 button={"href": ficha, "label": t("mail_admin_payment_button")},
                 foot=switch_off_hint()):
             sent += 1

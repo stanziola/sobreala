@@ -39,6 +39,16 @@
     {% else %}
     {# El panel va primero porque es a lo que se dedica la empresa: lo demás son
        ajustes de la cuenta, y se buscan cuando hace falta. #}
+    {# Una empresa que todavía no se abrió (ni demostración ni pago) no tiene
+       ninguna de las cuatro: tiene su demostración, en el mismo sitio. Las
+       rutas la devuelven ahí igual, porque esconder una fila no es un permiso.
+       El menú del sitio público lleva la misma fila. #}
+    {% if bar_closed %}
+    <a class="menu__item" href="{{ url_for('auth.welcome') }}">
+      <span class="menu__icons">{% include "_icon-chart.svg" %}</span>
+      <span>{{ t('menu_demo') }}</span>
+    </a>
+    {% endif %}
     {# Un usuario de la cuenta ve solo lo que su empresa le dio. #}
     {% if bar_can.stats %}
     <a class="menu__item" href="{{ url_for('auth.panel') }}">

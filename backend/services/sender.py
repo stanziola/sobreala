@@ -232,8 +232,6 @@ def blocked(account: dict[str, Any]) -> list[str]:
         why.append("plan")
     elif accounts.quota_left(account) <= 0:
         why.append("quota")
-    if not accounts.can_send(account):
-        why.append("cleared")
     # Sin la dirección de la empresa no sale: la ley la pide al pie.
     if not accounts.postal_of(account):
         why.append("postal")

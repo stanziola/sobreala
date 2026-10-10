@@ -62,6 +62,9 @@ PANEL = {
     "designs_label": "Plantillas",
     "settings_label": "Configuración",
     "panel_label": "Estadísticas",
+    # La de una cuenta que todavía no se abrió (ni demostración ni pago), en
+    # lugar de las cuatro de cliente. La misma fila que el menú del panel.
+    "demo_label": "Tu demostración",
     # Solo la ve quien tiene el rol, y quien lo decide es la galleta que deja
     # el panel: este sitio es estático y no sabe quién mira.
     "admin_label": "Administración",
@@ -282,9 +285,10 @@ HOME = {
             {
                 "q": "¿Cómo empiezo?",
                 "a": (
-                    "Creas tu cuenta, confirmas tu correo, subes tu lista y eliges "
-                    "plan. Antes de tu primer envío revisamos contigo de dónde salió "
-                    "esa lista: es lo que cuida que los correos de todos lleguen."
+                    "Creas tu cuenta y nos pides una demostración. En ella abrimos "
+                    "tu cuenta y, contigo, recorremos el panel, vemos de dónde sale "
+                    "tu lista, la importamos y armamos tu primer correo. Si ya sabes "
+                    "qué plan quieres, lo contratas y empiezas enseguida."
                 ),
             },
             {
@@ -1139,8 +1143,9 @@ PRIVACY = {
             "title": "Qué datos tratamos",
             "items": [
                 "**De tu cuenta:** nombre del negocio, nombre de contacto, "
-                "correo y teléfono. La contraseña no se guarda: solo un hash "
-                "del que no se puede volver atrás.",
+                "correo, teléfono y el RUC o la cédula que nos das al abrirla. "
+                "La contraseña no se guarda: solo un hash del que no se puede "
+                "volver atrás.",
                 "**De tus contactos:** las direcciones de correo y las "
                 "etiquetas que subes, junto con las bajas y los rebotes de esa "
                 "lista.",
@@ -1164,6 +1169,8 @@ PRIVACY = {
             "items": [
                 "Crear tu cuenta, confirmar que la dirección es tuya y dejarte "
                 "entrar.",
+                "Agendar contigo la demostración y comprobar que tu empresa "
+                "existe antes de abrir tu cuenta.",
                 "Enviar las campañas que tú prepares, a la lista que tú elijas.",
                 "Cobrar el plan y llevar la cuenta de tu cuota.",
                 "Proteger la entregabilidad de todos: como el dominio de envío "
@@ -1346,11 +1353,10 @@ TERMS = {
                 "ser uno al que tengas acceso.",
                 "La contraseña es tuya y respondes por lo que ocurra con tu "
                 "cuenta. Avísanos si crees que alguien más entró.",
-                "Una cuenta nueva queda **registrada**: puedes explorar el "
-                "panel, subir contactos y preparar campañas, pero no comprar ni "
-                "enviar. Antes de habilitar el envío hablamos contigo; es como "
-                "cuidamos que la plataforma no se use para correo no "
-                "solicitado.",
+                "Una cuenta nueva queda **registrada**: el panel se abre después "
+                "de una demostración, o al contratar un plan, y para abrirlo te "
+                "pedimos tu RUC o tu cédula. Es como cuidamos que la plataforma "
+                "no se use para correo no solicitado.",
                 "Podemos suspender una cuenta que incumpla estas reglas.",
             ],
         },
@@ -1407,8 +1413,6 @@ TERMS = {
         {
             "title": "6. Envíos, límites y pausas automáticas",
             "items": [
-                "Tu primera campaña la revisamos contigo antes de que salga, "
-                "una sola vez. Después la cuenta queda habilitada.",
                 "Las primeras 48 horas de una cuenta nueva llevan un tope de "
                 "envío reducido, sea cual sea el plan.",
                 "**Si los rebotes pasan del 3% o las quejas del 0.05%, el envío "

@@ -62,6 +62,15 @@
     <input type="hidden" name="plan" value="{{ plan }}">
     <input type="hidden" name="cycle" value="{{ cycle }}">
 
+    {# Quien entra pagando deja su RUC o su cédula, como quien pide la
+       demostración: así queda registro de todas las empresas. Si ya lo dejó,
+       sale escrito y se puede corregir. #}
+    <label for="tax_id">{{ t('tax_id_label') }}</label>
+    <input id="tax_id" name="tax_id" value="{{ tax_id }}"{% if not tax_id %} required{% endif %}
+           aria-describedby="tax-id-hint">
+    <p class="hint" id="tax-id-hint">{{ t('tax_id_hint') }}</p>
+    {% if request.args.get('error') == 'tax_id' %}<p class="error">{{ t('error_tax_id') }}</p>{% endif %}
+
     {% if methods|length > 1 or soon %}
     <p class="field-label">{{ t('pay_method_title') }}</p>
     {#- Cada método son sus logos, sin título: se entiende solo. El nombre va en
