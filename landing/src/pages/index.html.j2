@@ -3,10 +3,10 @@
 
 {% block main %}
 
-{#- Todo el sitio en una página, en este orden: Inicio (con los usos), Planes,
-    Cómo funciona, Nosotros y las preguntas. Cada parte lleva el ancla a la que
-    baja su botón de la barra o su enlace del pie; las páginas que había antes
-    llevan aquí (redirect.html.j2). Contacto es el pie (#contacto). -#}
+{#- Todo el sitio en una página, en este orden: Inicio (con «Haz crecer tu
+    negocio»), Planes, Cómo funciona y las preguntas. Cada parte lleva el ancla a
+    la que baja su botón de la barra o su enlace del pie; las páginas que había
+    antes llevan aquí (redirect.html.j2). Contacto es el pie (#contacto). -#}
 {% set home = page %}
 <div class="page-part" id="inicio">
 
@@ -131,8 +131,6 @@
 {% with page = pricing %}{% include "sections/planes.html.j2" %}{% endwith %}
 
 {% with page = how %}{% include "sections/como-funciona.html.j2" %}{% endwith %}
-
-{% with page = about %}{% include "sections/nosotros.html.j2" %}{% endwith %}
 
 {% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
 

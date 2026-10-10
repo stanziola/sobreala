@@ -15,9 +15,8 @@ def test_cada_boton_de_la_barra_tiene_su_seccion():
     for ancla in ("inicio", "planes", "como-funciona"):
         assert f'href="/#{ancla}"' in barra, ancla
         assert f'id="{ancla}"' in html, ancla
-    # Nosotros no está arriba: se llega desde el pie, y su sección sigue.
-    assert 'href="/#nosotros"' not in barra
-    assert 'href="/#nosotros"' in html[html.index("<footer"):]
+    # Nosotros se quitó (octubre de 2026): ni sección ni enlace en el pie.
+    assert 'id="nosotros"' not in html and "/#nosotros" not in html
     # Contacto es el pie: «Hablemos de tu lista» se quitó, y con ella el id
     # repetido.
     assert html.count('id="contacto"') == 1
@@ -25,15 +24,19 @@ def test_cada_boton_de_la_barra_tiene_su_seccion():
     assert "Hablemos de tu lista" not in html
     # En este orden, que es el que se pidió.
     orden = [html.index(f'id="{a}"') for a in
-             ("inicio", "planes", "como-funciona", "nosotros", "preguntas", "contacto")]
+             ("inicio", "planes", "como-funciona", "preguntas", "contacto")]
     assert orden == sorted(orden)
-    # Features abre Cómo funciona.
-    assert html.index('id="como-funciona"') < html.index('class="tour"') < html.index('id="tutorials"')
+    # Cómo funciona: Features, los tutoriales, la tira de plantillas (sin su
+    # botón, que llevaba a los tutoriales) y el envío.
+    assert (html.index('id="como-funciona"') < html.index('class="tour"')
+            < html.index('id="tutorials"') < html.index('id="pasos-title"')
+            < html.index('id="envio-title"'))
+    assert "Ver tutorial" not in html
 
 
 def test_las_direcciones_de_antes_llevan_a_su_seccion():
     for pagina, ancla in (("pricing", "planes"), ("how-it-works", "como-funciona"),
-                          ("about", "nosotros"), ("contact", "contacto")):
+                          ("about", "inicio"), ("contact", "contacto")):
         html = (LANDING / pagina / "index.html").read_text(encoding="utf-8")
         assert f'content="0; url=/#{ancla}"' in html, pagina
         assert 'name="robots" content="noindex"' in html, pagina
@@ -93,3 +96,15 @@ def test_features_trae_sus_dibujos_y_su_lista():
     assert html.count("En todos los planes, sin excepción") == 1
     assert "Reglas que funcionan solas" not in html
     assert "envíate una prueba" not in html
+
+
+def test_planes_sin_glosario_y_con_la_tabla_corta():
+    """«Qué significa cada fila» se quitó, y la tabla dejó de publicar tres
+    filas que siguen en docs/pricing.md."""
+    html = (LANDING / "index.html").read_text(encoding="utf-8")
+    assert "Qué significa cada fila" not in html
+    tabla = html[html.index('id="tabla-title"'):html.index("</table>")]
+    filas = [f.strip() for f in re.findall(r'<th scope="row">([^<]+)', tabla)]
+    assert filas == ["Precio mensual", "Precio anual", "Contactos", "Correos por mes",
+                     "Etiquetas", "Columnas de datos", "Correos sin marca de agua",
+                     "Usuarios de la cuenta"], filas

@@ -39,7 +39,7 @@ CONTACT = {
     "instagram_url": "https://instagram.com/sobreala",
 }
 
-# Nosotros no está arriba: se llega desde el pie, y su sección sigue en la página.
+# Contacto es el pie. «Nosotros» se quitó en octubre de 2026.
 NAV = [
     {"label": "Inicio", "url": "/#inicio"},
     {"label": "Planes", "url": "/#planes"},
@@ -330,16 +330,15 @@ HOME = {
             ],
         },
     },
-    # La tira de plantillas de muestra, donde estaban los cuatro pasos: los
-    # pasos siguen enteros en los tutoriales, justo debajo, que es a donde lleva
-    # el botón.
+    # La tira de plantillas de muestra, donde estaban los cuatro pasos. Va
+    # debajo de los tutoriales, que llevan los pasos enteros, y por eso ya no
+    # lleva botón: el tutorial se acaba de ver.
     "steps": {
         "eyebrow": "Cómo funciona",
         "title": "¿Aún no sabes por dónde empezar?",
         "intro": "Prueba nuestras plantillas personalizadas.",
         # Lo que dice cada tarjeta a un lector de pantalla, con su nombre.
         "open": "Abrir la plantilla {name} en el editor",
-        "cta": {"label": "Ver tutorial", "url": "#tutorials"},
     },
     "faq": {
         "eyebrow": "Preguntas frecuentes",
@@ -852,189 +851,20 @@ PRICING = {
         # construyendo. Los números son los del plan; la función no está.
         "soon": "Pronto",
     },
-    # Lo que la tabla no dice sola. Una fila que se llama «Etiquetas» y dice
-    # «4» no significa nada para quien no conoce el producto, y hay una que no
-    # se puede adivinar de ninguna forma: que el correo puede salir distinto
-    # para cada persona en vez de ser el mismo para toda la lista.
-    "glossary": {
-        "eyebrow": "En detalle",
-        "title": "Qué significa cada fila",
-        "intro": (
-            "Lo que hay detrás de los números de la tabla, para que sepas qué "
-            "estás eligiendo."
-        ),
-        "items": [
-            {
-                "title": "Contactos",
-                "text": (
-                    "Las personas que tienes guardadas. Tienes una sola lista "
-                    "y cada dirección está en ella una sola vez, aunque le "
-                    "pongas varias etiquetas. Quien anula su suscripción "
-                    "deja de ocupar lugar: si tu plan son 3,000 contactos, son "
-                    "3,000 personas a las que puedes escribirle."
-                ),
-            },
-            {
-                "title": "Etiquetas",
-                "text": (
-                    "No manejas listas separadas: es una sola lista y las "
-                    "etiquetas son las que la dividen. A cada contacto le "
-                    "pones las que quieras (colaborador, empleado, junta "
-                    "directiva, estudiante, profesor). Al enviar un correo "
-                    "eliges toda la lista o las etiquetas que quieras, y quien "
-                    "lleve más de una de las marcadas recibe un solo correo. "
-                    "El número dice cuántas etiquetas distintas puedes crear."
-                ),
-            },
-            {
-                "title": "Columnas de datos",
-                "text": (
-                    "Lo que guardas de cada persona además de su correo y su "
-                    "nombre: su ciudad, su número de socio, cuánto debe, "
-                    "cuándo vence. Las creas tú, con el nombre que quieras, y "
-                    "el número de la tabla indica cuántas columnas adicionales "
-                    "puedes guardar en tu base."
-                ),
-            },
-            {
-                "title": "Crear plantillas en el editor",
-                "text": (
-                    "Armas tu correo como una diapositiva: pones textos, "
-                    "botones e imágenes donde quieras, con tus colores y tus "
-                    "fuentes. Las imágenes van de fondo y el texto encima, "
-                    "que es como llega igual a Gmail, a Outlook y al "
-                    "teléfono. Va en todos los planes, y cada plantilla se "
-                    "guarda para usarla las veces que quieras."
-                ),
-            },
-            {
-                "title": "Exportar a CSV y PDF",
-                "text": (
-                    "Puedes descargar tus estadísticas y tu base de datos "
-                    "como CSV y PDF, cuando quieras."
-                ),
-            },
-            {
-                "title": "Usuarios de la cuenta",
-                "text": (
-                    "Cuántas personas de tu empresa entran, cada una con su "
-                    "correo y su contraseña, y el dueño cuenta. Él puede todo: "
-                    "el plan, el pago y los datos de la cuenta. A cada persona "
-                    "le marcas lo suyo: ver las cifras, subir contactos, armar "
-                    "plantillas o mandar campañas."
-                ),
-            },
-        ],
-    },
+    # «Qué significa cada fila», el glosario de debajo de la tabla, se quitó
+    # en octubre de 2026.
     # «En todos los planes, sin excepción» se juntó con Features (octubre de
     # 2026), en la lista de debajo del carrusel.
 }
 
 # --------------------------------------------------------------------------- about
 
+# «Nosotros» se quitó de la portada en octubre de 2026. /about/ sigue
+# respondiendo, porque puede haber enlaces guardados, y lleva al inicio: esto es
+# lo único que usa esa página de paso.
 ABOUT = {
-    "meta_title": "Nosotros · Sobreala",
-    "meta_description": (
-        "Qué es Sobreala, para quién lo estamos construyendo y por qué una "
-        "plataforma de email marketing pensada para listas que ya existen."
-    ),
-    "hero": {
-        "eyebrow": "Nosotros",
-        "title": "Quiénes somos y por qué hacemos esto",
-        "subtitle": (
-            "Sobreala se construye para negocios y organizaciones que ya tienen una "
-            "lista de correos guardada en alguna parte y no tienen cómo usarla."
-        ),
-    },
-    "sections": [
-        {
-            "title": "¿Qué es Sobreala?",
-            "paragraphs": [
-                (
-                    "Sobreala es una plataforma de email marketing: un panel donde una "
-                    "empresa sube sus contactos, arma un correo y lo envía a toda su "
-                    "lista de una vez. Ofertas, recordatorios, convocatorias, boletines."
-                ),
-            ],
-        },
-        {
-            "title": "¿Para quién?",
-            "paragraphs": [
-                (
-                    "Sobre todo para organizaciones que ya juntaron una lista por otra "
-                    "razón: cooperativas de ahorro y crédito con sus socios, colegios "
-                    "privados con los padres, gremios con sus miembros, universidades "
-                    "con sus estudiantes. También comercios y PyMEs que llevan tiempo "
-                    "anotando correos de clientes."
-                ),
-                (
-                    "Si todavía no tienes lista, eso también nos interesa: ayudarte a "
-                    "construirla es parte del trabajo."
-                ),
-            ],
-        },
-        {
-            "title": "¿Por qué?",
-            "paragraphs": [
-                (
-                    "Una organización con dos mil correos guardados en una hoja de "
-                    "cálculo tiene, sin saberlo, su canal más directo. No depende de un "
-                    "algoritmo, no se pierde entre publicaciones y llega a quien ya "
-                    "levantó la mano."
-                ),
-                (
-                    "Lo que falta casi nunca es la lista. Es una forma sencilla de "
-                    "escribirle sin terminar en spam ni pasar la tarde copiando y "
-                    "pegando."
-                ),
-            ],
-        },
-        {
-            "title": "¿Cómo lo hacemos?",
-            "paragraphs": [
-                (
-                    "Tus correos no salen de un servidor de correo cualquiera ni de una "
-                    "cuenta de empresa. Salen por Amazon SES, la infraestructura de "
-                    "envío masivo de Amazon, a través de su API. Un servidor propio se "
-                    "topa con unos 2,000 correos diarios y quema la reputación del "
-                    "dominio en la primera campaña grande."
-                ),
-                (
-                    "El dominio desde el que sales va firmado con SPF, DKIM y DMARC, "
-                    "que es lo que Gmail y Outlook revisan antes de decidir si tu "
-                    "correo entra a la bandeja o al spam. Tú no configuras nada de eso: "
-                    "si no tienes dominio propio, envías desde un subdominio nuestro ya "
-                    "autenticado."
-                ),
-                (
-                    "Cada cuenta va aislada de las demás. Los envíos se separan por "
-                    "cliente, así que los rebotes de uno no arrastran la entregabilidad "
-                    "del resto, y la lista de bajas es tuya y no global: si alguien se "
-                    "da de baja de un colegio, sigue recibiendo los correos de su "
-                    "cooperativa."
-                ),
-                (
-                    "Las reglas que cuidan tu reputación vienen activadas de fábrica. "
-                    "Cada correo lleva su enlace de baja, los contactos no se duplican, "
-                    "y quien rebota o marca tu correo como spam queda fuera de tus "
-                    "envíos. Si una cuenta pasa del 3% de rebotes o del 0.05% de "
-                    "quejas, su envío se pausa solo antes de que el problema crezca. "
-                    "Nada de eso se configura ni se puede apagar."
-                ),
-            ],
-        },
-        {
-            "title": "¿En qué punto estamos?",
-            "paragraphs": [
-                (
-                    "Sobreala está en construcción. Este sitio presenta el proyecto y "
-                    "los planes. La plataforma se está desarrollando y las primeras "
-                    "cuentas se abrirán poco a poco, acompañando a cada cliente en su "
-                    "primera campaña."
-                ),
-            ],
-        },
-    ],
+    "meta_title": "Sobreala",
+    "hero": {"title": "Sobreala"},
 }
 
 # --------------------------------------------------------------------------- contact
@@ -1517,12 +1347,6 @@ FOOTER = {
             "links": [
                 {"label": "Planes", "url": "/#planes"},
                 {"label": "Cómo funciona", "url": "/#como-funciona"},
-            ],
-        },
-        {
-            "title": "Empresa",
-            "links": [
-                {"label": "Nosotros", "url": "/#nosotros"},
             ],
         },
         {

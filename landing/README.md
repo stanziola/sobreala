@@ -1,14 +1,14 @@
 # Sitio público de Sobreala
 
-Una sola página que presenta Sobreala (Inicio, Planes, Cómo funciona,
-Nosotros y las preguntas; Contacto es el pie), más las dos legales. Se despliegan tal cual
+Una sola página que presenta Sobreala (Inicio, Planes, Cómo funciona y las
+preguntas; Contacto es el pie), más las dos legales. Se despliegan tal cual
 en Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
 
 | Ruta | Archivo |
 |------|---------|
 | `/` | `index.html`, la página única |
 | `/privacy/`, `/terms/` | `privacy/index.html`, `terms/index.html` |
-| `/pricing/`, `/how-it-works/`, `/about/`, `/contact/` | páginas de paso que llevan a su sección (`#planes`, `#como-funciona`, `#nosotros`, `#contacto`) |
+| `/pricing/`, `/how-it-works/`, `/about/`, `/contact/` | páginas de paso que llevan a su sección (`#planes`, `#como-funciona`, `#inicio`, `#contacto`) |
 
 El detalle de cómo está armada está en `docs/sitio.md`.
 
@@ -31,7 +31,7 @@ landing/
 │   ├── partials/        # cta-band, faq, feature-icons, los dibujos de Features
 │   │                    # (feature-*.svg.j2), iconos de correo y chat
 │   ├── pages/           # index (la página única) y legal
-│   ├── sections/        # planes, como-funciona, nosotros: partes de index
+│   ├── sections/        # planes, como-funciona: partes de index
 │   ├── redirect.html.j2 # las páginas de paso de las direcciones viejas
 │   └── site.css         # estilos (sin ningún HEX: usa las variables de brand/colors.css)
 ├── assets/

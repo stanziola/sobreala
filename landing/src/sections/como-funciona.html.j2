@@ -1,12 +1,13 @@
 {#- Cómo funciona: lo que era /how-it-works, ahora una sección de la portada.
-    Abre con Features, sigue la tira de plantillas y después los tutoriales,
-    que es a donde baja el botón de la tira. -#}
+    Abre con Features, siguen los tutoriales, después la tira de plantillas
+    («¿Aún no sabes por dónde empezar?») y al final el envío. Los fondos
+    alternan: gris, blanco, gris y blanco. -#}
 <div class="page-part" id="como-funciona">
 
 {#- Sigue al tema como el resto de la página: hubo una banda que se invertía,
     y existía solo porque las capturas del panel eran siempre oscuras. Ahora
     son dibujos que siguen al tema, así que no hace falta. -#}
-<section class="section" aria-labelledby="como-funciona-title">
+<section class="section section--alt" aria-labelledby="como-funciona-title">
   <div class="shell">
     <div class="section__head">
       <p class="eyebrow">{{ page.hero.eyebrow }}</p>
@@ -62,45 +63,6 @@
         {% endfor %}
       </ul>
     </div>
-  </div>
-</section>
-
-<section class="section section--alt" aria-labelledby="pasos-title">
-  <div class="shell">
-    <div class="section__head">
-      <p class="eyebrow">{{ home.steps.eyebrow }}</p>
-      <h2 class="section__title" id="pasos-title">{{ home.steps.title }}</h2>
-      <p class="section__intro">{{ home.steps.intro }}</p>
-    </div>
-  </div>
-  {#- La tira corre de lado a lado, fuera del shell. Va tres veces seguidas para
-      que el bucle no se note: con cuatro plantillas una lista mide menos que
-      una pantalla ancha, y con dos se vería su final. Las copias van escondidas
-      del lector de pantalla y del tabulador, así cada plantilla se recorre una
-      sola vez. Solo CSS. -#}
-  <div class="samples">
-    <div class="samples__track">
-      {% for copy in (0, 1, 2) %}
-      <ul class="samples__list"{% if copy %} aria-hidden="true"{% endif %}>
-        {% for one in samples %}
-        <li>
-          <a class="sample" href="{{ panel.base_url }}/templates/sample/{{ one.slug }}"
-             aria-label="{{ home.steps.open | replace('{name}', one.name) }}"
-             {%- if copy %} tabindex="-1"{% endif %}>
-            <img class="sample__picture" src="{{ one.image }}" alt=""
-                 width="{{ one.size[0] }}" height="{{ one.size[1] }}" loading="lazy">
-            <span class="sample__name">{{ one.name }}</span>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-      {% endfor %}
-    </div>
-  </div>
-  <div class="shell">
-    <p class="section__actions">
-      <a class="btn btn--primary btn--lg" href="{{ home.steps.cta.url }}">{{ home.steps.cta.label }}</a>
-    </p>
   </div>
 </section>
 
@@ -192,7 +154,41 @@
   </div>
 </section>
 
-<section class="section section--alt" aria-labelledby="envio-title">
+<section class="section section--alt" aria-labelledby="pasos-title">
+  <div class="shell">
+    <div class="section__head">
+      <p class="eyebrow">{{ home.steps.eyebrow }}</p>
+      <h2 class="section__title" id="pasos-title">{{ home.steps.title }}</h2>
+      <p class="section__intro">{{ home.steps.intro }}</p>
+    </div>
+  </div>
+  {#- La tira corre de lado a lado, fuera del shell. Va tres veces seguidas para
+      que el bucle no se note: con cuatro plantillas una lista mide menos que
+      una pantalla ancha, y con dos se vería su final. Las copias van escondidas
+      del lector de pantalla y del tabulador, así cada plantilla se recorre una
+      sola vez. Solo CSS. -#}
+  <div class="samples">
+    <div class="samples__track">
+      {% for copy in (0, 1, 2) %}
+      <ul class="samples__list"{% if copy %} aria-hidden="true"{% endif %}>
+        {% for one in samples %}
+        <li>
+          <a class="sample" href="{{ panel.base_url }}/templates/sample/{{ one.slug }}"
+             aria-label="{{ home.steps.open | replace('{name}', one.name) }}"
+             {%- if copy %} tabindex="-1"{% endif %}>
+            <img class="sample__picture" src="{{ one.image }}" alt=""
+                 width="{{ one.size[0] }}" height="{{ one.size[1] }}" loading="lazy">
+            <span class="sample__name">{{ one.name }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="envio-title">
   <div class="shell split">
     <div class="split__text">
       <p class="eyebrow">{{ page.sending.eyebrow }}</p>

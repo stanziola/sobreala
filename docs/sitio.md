@@ -13,9 +13,8 @@ van en este orden, cada una con el ancla a la que baja su botón de la barra:
 | Ancla | Qué lleva | Plantilla |
 |---|---|---|
 | `#inicio` | La portada, «¿Sigues enviando correos masivos…?» y «Haz crecer tu negocio» | `src/pages/index.html.j2` |
-| `#planes` | Interruptor y tarjetas, la tabla y el glosario | `src/sections/planes.html.j2` |
-| `#como-funciona` | Features con su lista, la tira de plantillas, los tutoriales y el envío | `src/sections/como-funciona.html.j2` |
-| `#nosotros` | Quiénes somos | `src/sections/nosotros.html.j2` |
+| `#planes` | Interruptor y tarjetas, y la tabla | `src/sections/planes.html.j2` |
+| `#como-funciona` | Features con su lista, los tutoriales, la tira de plantillas y el envío | `src/sections/como-funciona.html.j2` |
 | `#preguntas` | Una sola lista: las generales y las de facturación | `src/partials/faq.html.j2` |
 
 **Contacto es el pie** (`id="contacto"` en `base.html.j2`): WhatsApp, correo e
@@ -23,23 +22,29 @@ Instagram. Hubo una sección «Hablemos de tu lista» antes de las preguntas, y 
 quitó en octubre de 2026 porque repetía el pie; `/contact/` y `/#contacto`
 aterrizan ahí. Con ella se fue el `id` repetido que había entre las dos.
 
+**En octubre de 2026 salieron dos secciones más:**
+- **«Qué significa cada fila»**, el glosario de debajo de la tabla de Planes;
+- **«Nosotros»**, con su columna «Empresa» del pie, que solo lo enlazaba.
+
+`/about/` sigue respondiendo y lleva al inicio.
+
 - **Cada sección conserva sus textos en su diccionario de `content.py`**
-  (`PRICING`, `HOW`, `ABOUT`), y `index.html.j2` la incluye con
+  (`PRICING`, `HOW`), y `index.html.j2` la incluye con
   `{% with page = … %}`, así que dentro nada cambió de nombre. `CONTACT_PAGE`
-  solo guarda el título de la página de paso. El `hero` de
+  y `ABOUT` solo guardan el título de su página de paso. El `hero` de
   cada una es ahora la cabeza de su sección, con su `h2`: hay un solo `h1`.
-- **La barra lleva Inicio, Planes y Cómo funciona.** Nosotros está solo en el
-  pie (octubre de 2026), y su sección sigue en la página.
+- **La barra lleva Inicio, Planes y Cómo funciona.**
 - **Los botones de la barra solo desplazan** (`/#planes`, con la `/` para que
   sirvan también desde las legales). La barra fija no tapa el título:
   `scroll-margin-top` en `.page-part` y en las secciones con `id`. **El botón de
   la sección que se está leyendo se marca** con un `IntersectionObserver` en
-  `nav.js`, mirando una franja justo debajo de la barra; en Nosotros y en las
-  preguntas, que no tienen botón, se queda el último.
+  `nav.js`, mirando una franja justo debajo de la barra; en las preguntas,
+  que no tienen botón, se queda el último.
 - **Las direcciones de antes siguen respondiendo**: `/pricing/`,
   `/how-it-works/`, `/about/` y `/contact/` son páginas de paso
   (`src/redirect.html.j2`, tabla `REDIRECTS` de `build_site.py`) con
-  `noindex`, que mandan a su ancla y conservan el `#` que traigan, así
+  `noindex`, que mandan a su ancla (`/about/`, al inicio) y conservan el `#`
+  que traigan, así
   `/how-it-works/#templates` sigue abriendo su tutorial. El panel ya enlaza
   directo a `/#planes`. `sitemap.xml` y las tarjetas para compartir son solo de
   `/` y las legales.
@@ -204,10 +209,12 @@ típico. **La florista va primera**, como se pidió.
 | `socios.webp` | Pavel Danilyuk | https://www.pexels.com/photo/a-man-speaking-in-front-of-the-people-sitting-inside-the-conference-room-8761330/ |
 | `familias.webp` | Tiger Lily | https://www.pexels.com/photo/a-mother-and-her-daughter-looking-at-a-laptop-8260185/ |
 
-**En «Cómo funciona», debajo de Features, va una tira de plantillas que corre
-sola** (septiembre de 2026). Lleva el título «¿Aún no sabes por dónde
-empezar?», las plantillas de `SAMPLES` y el botón «Ver tutorial», que baja a
-los tutoriales, justo debajo (ver «Los tutoriales», más abajo).
+**En «Cómo funciona», debajo de los tutoriales, va una tira de plantillas que
+corre sola** (septiembre de 2026). Lleva el título «¿Aún no sabes por dónde
+empezar?» y las plantillas de `SAMPLES`. Iba entre Features y los tutoriales,
+con un botón «Ver tutorial» que bajaba a ellos. En octubre de 2026 los
+tutoriales subieron por encima de la tira y el botón se quitó: llevaba hacia
+atrás.
 - **Es solo CSS**, sin guion:
   - la lista va tres veces seguidas y cada una avanza su propio ancho, así que
     el salto no se ve;
@@ -353,13 +360,13 @@ invertía, oscura de día y blanca de noche, porque las capturas de entonces era
 siempre del panel en oscuro; con ella se fueron las variables `--color-flip*` y
 las clases `.section--flip` y `.section--deep`. **Los fondos alternan de arriba
 abajo**: azul (la portada) · gris («¿Sigues enviando…?») · blanco (los usos) ·
-gris (las tarjetas de Planes) · blanco (la tabla) · gris (el glosario) · blanco
-(Features) · gris (la tira) · blanco (los tutoriales) · gris (el envío) ·
-blanco (Nosotros) · gris (las preguntas) · azul (el pie). En oscuro, los mismos
-escalones.
+gris (las tarjetas de Planes) · blanco (la tabla) · gris (Features) · blanco
+(los tutoriales) · gris (la tira) · blanco (el envío) · gris (las preguntas) ·
+azul (el pie). En oscuro, los mismos escalones.
 
 **El pie es un solo azul** (octubre de 2026). Abajo, dentro del mismo azul, va
 el «© Sobreala» en pequeño, con una raya fina encima (`--color-footer-edge`).
+Lleva tres columnas: Producto, Legal y Contacto.
 - **Se quitaron los logos de pago** (Yappy, PayPal, Visa y Mastercard), que iban
   en una franja del color de la página debajo del azul. De noche el final de la
   página se leía negro, azul y negro otra vez, y de los cuatro medios hoy solo

@@ -135,26 +135,8 @@
   </div>
 </section>
 
-{#- La tabla de arriba no se explica sola: una fila que dice «4» no cuenta
-    nada a quien no conoce el producto. Aquí va lo que hay detrás de las que no
-    se adivinan, con el mismo patrón de tarjetas de Cómo funciona. -#}
-<section class="section section--alt" aria-labelledby="detalle-title">
-  <div class="shell">
-    <div class="section__head">
-      <p class="eyebrow">{{ page.glossary.eyebrow }}</p>
-      <h2 class="section__title" id="detalle-title">{{ page.glossary.title }}</h2>
-      <p class="section__intro">{{ page.glossary.intro }}</p>
-    </div>
-    <ul class="grid grid--2">
-      {% for item in page.glossary['items'] %}
-      <li class="note-card">
-        <h3 class="note-card__title">{{ item.title }}</h3>
-        <p>{{ item.text }}</p>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-</section>
+{#- Aquí iba «Qué significa cada fila», el glosario de la tabla; se quitó en
+    octubre de 2026. -#}
 
 {#- Lo que va en todos los planes se juntó con Features (octubre de 2026): ahí
     está su lista, debajo del carrusel. -#}

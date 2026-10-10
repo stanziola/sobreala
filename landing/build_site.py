@@ -56,12 +56,12 @@ PUBLIC_ROWS = [
     ("Correos por mes", "Correos por mes"),
     ("Etiquetas", "Etiquetas"),
     ("Columnas propias del contacto", "Columnas de datos"),
-    ("Crear plantillas en el editor", "Crear plantillas en el editor"),
     ("Correos sin marca de agua", "Correos sin marca de agua"),
-    ("Analytics completo", "Estadísticas de cada campaña"),
-    ("Exportar CSV y PDF", "Exportar a CSV y PDF"),
     ("Usuarios", "Usuarios de la cuenta"),
 ]
+# Las filas de docs/pricing.md que el sitio ya no publica (octubre de 2026):
+# «Crear plantillas en el editor», «Analytics completo» y «Exportar CSV y
+# PDF». Siguen en ese documento, que es la fuente de verdad de los planes.
 
 # Filas cuyo número es el del plan pero cuya función todavía se está
 # construyendo. Se dibujan con su marca al lado, para que nadie contrate
@@ -509,7 +509,8 @@ PAGES = [
 REDIRECTS = [
     ("pricing/index.html", "/pricing/", "planes", content.PRICING),
     ("how-it-works/index.html", "/how-it-works/", "como-funciona", content.HOW),
-    ("about/index.html", "/about/", "nosotros", content.ABOUT),
+    # Nosotros se quitó (octubre de 2026): la dirección vieja lleva al inicio.
+    ("about/index.html", "/about/", "inicio", content.ABOUT),
     ("contact/index.html", "/contact/", "contacto", content.CONTACT_PAGE),
 ]
 
@@ -590,7 +591,6 @@ def build() -> list[Path]:
         # The other sections of the home page, each with its own words.
         "pricing": content.PRICING,
         "how": content.HOW,
-        "about": content.ABOUT,
         "font_faces": faces,
         "social_icons": social,
         "wing_svg": Markup(read_wing_svg()),  # trusted: our own generated SVG
