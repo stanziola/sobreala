@@ -6,20 +6,30 @@
    teclado y se ve igual de bien. Lo de aquí es un añadido: pasar al siguiente
    solo.
 
+   **El reloj es la barra del pie de la tarjeta abierta**, una animación de CSS
+   que dura --trouble-every (site.css). Este archivo no cuenta el tiempo: espera
+   a que la barra se llene (`animationend`) y abre el siguiente, así que la
+   barra y el cambio no se pueden separar. Lo que hace es poner dos clases en el
+   bloque: `is-playing`, con el paso automático encendido (y la barra a la
+   vista), e `is-paused`, cuando se detiene un momento (la barra se queda donde
+   iba y sigue desde ahí). Hubo otra barra en septiembre de 2026 que corría
+   aparte de un `setInterval` de aquí: con el ratón encima el cambio se pausaba
+   y ella seguía llenándose.
+
    **Si alguien lo cambia a mano, deja de pasar solo** para el resto de la
-   visita: quien pulsa un punto está leyendo a su ritmo, y que se le cambie
-   luego por su cuenta es quitarle lo que eligió. Es distinto de Features, donde
-   se pidió que volviera a andar al quitar el ratón.
+   visita, y la barra desaparece: quien pulsa un punto está leyendo a su ritmo,
+   y que se le cambie luego por su cuenta es quitarle lo que eligió. Es
+   distinto de Features, donde se pidió que volviera a andar al quitar el ratón.
 
    Mientras nadie lo toque, se detiene con el ratón encima o con el foco dentro
    y vuelve a andar al quitarlo, no corre fuera de la pantalla ni con la pestaña
    escondida, y con «reducir movimiento» puesto no existe: quien lo pide no
    quiere que la página se mueva mientras lee.
 
-   Estas pausas son las mismas que las del carrusel de Features y las de
-   stories.js, y están repetidas a propósito: cada archivo se lee por su
-   cuenta y tocar uno no puede romper los otros. Si algún día molesta, el sitio donde juntarlas es una función
-   `autoplay()` que usen los dos. */
+   Estas pausas son las mismas que las de stories.js y las del carrusel de
+   Features, y están repetidas a propósito: cada archivo se lee por su cuenta y
+   tocar uno no puede romper los otros. Si algún día molesta, el sitio donde
+   juntarlas es una función `autoplay()` que usen los tres. */
 (function () {
   "use strict";
 
@@ -44,24 +54,22 @@
 
   /* --------------------------------------------------- el paso automático */
 
-  /* Quince segundos: cada punto trae unas 50 a 60 palabras entre el título, la
-     línea corta y el párrafo, y hay que poder leerlas enteras. */
-  var EVERY = 15000;
-  var timer = null;
   var seen = !window.IntersectionObserver;   // sin observador, se da por visto
   var over = false;                          // el ratón o el foco, dentro
   var away = false;                          // la pestaña, escondida
   var mine = false;                          // alguien lo movió a mano
 
   function sync() {
-    var run = !mine && seen && !over && !away && !quiet.matches;
-    if (run && !timer) {
-      timer = window.setInterval(function () { open(current() + 1); }, EVERY);
-    } else if (!run && timer) {
-      window.clearInterval(timer);
-      timer = null;
-    }
+    var on = !mine && !quiet.matches;
+    block.classList.toggle("is-playing", on);
+    block.classList.toggle("is-paused", !(on && seen && !over && !away));
   }
+
+  /* La barra se llenó: toca el siguiente. La suya empieza de cero sola, porque
+     la animación solo la lleva la tarjeta abierta. */
+  block.addEventListener("animationend", function (event) {
+    if (event.animationName === "trouble-fill") open(current() + 1);
+  });
 
   function inside(yes) {
     return function () { over = yes; sync(); };

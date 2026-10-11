@@ -4,9 +4,9 @@
 {% block main %}
 
 {#- Todo el sitio en una página, en este orden: Inicio (con «Haz crecer tu
-    negocio»), Planes, Cómo funciona y las preguntas. Cada parte lleva el ancla a
-    la que baja su botón de la barra o su enlace del pie; las páginas que había
-    antes llevan aquí (redirect.html.j2). Contacto es el pie (#contacto). -#}
+    negocio»), Planes y Cómo funciona. Cada parte lleva el ancla a la que baja
+    su botón de la barra o su enlace del pie; las páginas que había antes llevan
+    aquí (redirect.html.j2). Contacto es el pie (#contacto). -#}
 {% set home = page %}
 <div class="page-part" id="inicio">
 
@@ -41,7 +41,8 @@
     {#- Los cuatro puntos, con el que estás viendo marcado. Lo que abre cada uno
         son botones de radio, como el carrusel de Features: así funciona entero
         sin JavaScript y las flechas del teclado lo mueven solas. trouble.js
-        solo agrega el paso automático. -#}
+        solo agrega el paso automático, y la barra del pie de cada tarjeta es
+        su reloj: solo se ve mientras corre. -#}
     <div class="trouble" data-trouble>
       {% for item in page.problem['items'] %}
       <input class="trouble__pick" type="radio" name="trouble"
@@ -52,13 +53,13 @@
         <li>
           <label class="trouble__step" for="pain-{{ loop.index }}">
             <span class="trouble__mark" aria-hidden="true">
-              <span class="trouble__n">{{ loop.index }}</span>
               {%- include "partials/icon-check.svg.j2" -%}
             </span>
             <span class="trouble__said">
               <span class="trouble__title">{{ item.title }}</span>
               <span class="trouble__lead">{{ item.lead }}</span>
             </span>
+            <span class="trouble__bar" aria-hidden="true"><span class="trouble__fill"></span></span>
           </label>
         </li>
         {% endfor %}
@@ -88,8 +89,9 @@
     con licencia libre (los autores, en docs/sitio.md), y no hay cifras ni
     testimonios: nadie aparece como cliente.
     Lo que abre cada uno son botones de radio, como «¿Sigues enviando…?»: así
-    funciona sin JavaScript y con las flechas del teclado. Los puntos de abajo
-    son sus etiquetas, y stories.js solo agrega el paso automático. -#}
+    funciona sin JavaScript y con las flechas del teclado. Las barras de abajo
+    son sus etiquetas, y la del abierto se llena mientras corre el paso
+    automático. stories.js agrega ese paso y las dos flechas de los lados. -#}
 <section class="section" aria-labelledby="usos-title">
   <div class="shell">
     <div class="section__head">
@@ -117,11 +119,19 @@
         </article>
         {% endfor %}
       </div>
-      <p class="stories__dots">
-        {% for use in page.uses['items'] %}
-        <label class="stories__dot" for="uso-{{ loop.index }}"><span class="visually-hidden">{{ use.title }}</span></label>
-        {% endfor %}
-      </p>
+      <div class="stories__nav">
+        <button class="stories__arrow" type="button" data-stories-back
+                aria-label="{{ page.uses.back }}">
+          {%- include "partials/icon-caret.svg.j2" -%}</button>
+        <p class="stories__dots">
+          {% for use in page.uses['items'] %}
+          <label class="stories__dot" for="uso-{{ loop.index }}"><span class="stories__bar" aria-hidden="true"><span class="stories__fill"></span></span><span class="visually-hidden">{{ use.title }}</span></label>
+          {% endfor %}
+        </p>
+        <button class="stories__arrow" type="button" data-stories-next
+                aria-label="{{ page.uses.next }}">
+          {%- include "partials/icon-caret.svg.j2" -%}</button>
+      </div>
     </div>
   </div>
 </section>
@@ -132,7 +142,7 @@
 
 {% with page = how %}{% include "sections/como-funciona.html.j2" %}{% endwith %}
 
-{% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
+{#- Las preguntas frecuentes se quitaron en octubre de 2026. -#}
 
 {% endblock %}
 

@@ -628,11 +628,16 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    viendo marcado con un ganchito, y al otro su ilustración y su párrafo.
    Lo que abre cada uno son cuatro botones de radio, así que esto funciona
    entero sin JavaScript y las flechas del teclado lo mueven solas; trouble.js
-   solo agrega el paso automático, y lleva su propio tiempo.
+   solo agrega el paso automático, y su reloj es la barra del pie de la tarjeta
+   abierta (más abajo).
    Las reglas nombran los cuatro por su id (#pain-1 … #pain-4). El estado del
    punto abierto viaja a sus hijos en variables, así que una sola lista de
-   cuatro pinta la tarjeta, el círculo, el número y el ganchito a la vez. */
+   cuatro pinta la tarjeta, el círculo, el ganchito y la barra a la vez. */
 .trouble {
+  /* Lo que tarda en llenarse la barra, y por tanto en pasar al siguiente:
+     cada punto trae unas 50 a 60 palabras entre el título, la línea corta y el
+     párrafo, y hay que poder leerlas enteras. */
+  --trouble-every: 15s;
   position: relative;
   display: grid; gap: clamp(24px, 4vw, 40px);
 }
@@ -652,11 +657,13 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .trouble__list > li {
   --card: transparent; --edge: transparent; --shade: none;
   --mark-bg: transparent; --mark-line: var(--color-border); --mark-ink: var(--color-ink-soft);
-  --lift: 1; --n: 1; --tick: 0;
+  --lift: 1; --tick: 0; --bar: none; --run: none;
 }
+/* Abajo deja sitio para la barra, siempre el mismo: si solo lo dejara con
+   barra, la tarjeta daría un salto al apagarse el paso automático. */
 .trouble__step {
   position: relative; display: flex; gap: 16px; align-items: flex-start;
-  padding: 16px 18px; cursor: pointer;
+  padding: 16px 18px 24px; cursor: pointer;
   border-radius: var(--radius); border: 1px solid var(--edge);
   background: var(--card); box-shadow: var(--shade);
   transition: background var(--normal) var(--ease), border-color var(--normal) var(--ease),
@@ -666,18 +673,39 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   flex: none; display: grid; place-items: center;
   width: 38px; height: 38px; border-radius: 50%;
   border: 2px solid var(--mark-line); background: var(--mark-bg); color: var(--mark-ink);
-  font-weight: 800; font-size: .95rem; transform: scale(var(--lift));
+  transform: scale(var(--lift));
   transition: background var(--normal) var(--ease), border-color var(--normal) var(--ease),
               color var(--normal) var(--ease), transform var(--normal) var(--ease);
 }
-/* El número y el ganchito comparten celda y se cambian con la opacidad, así que
-   el círculo no da un salto al pasar de uno a otro. */
-.trouble__n, .trouble__mark .icon { grid-area: 1 / 1; transition: opacity var(--fast) var(--ease); }
-.trouble__n { opacity: var(--n); }
-.trouble__mark .icon { width: 19px; height: 19px; opacity: var(--tick); }
+/* El círculo cerrado va vacío y el abierto lleva el ganchito, que entra con la
+   opacidad. Hubo un número dentro de cada uno y se quitó en octubre de 2026. */
+.trouble__mark .icon { width: 19px; height: 19px; opacity: var(--tick); transition: opacity var(--fast) var(--ease); }
 .trouble__said { display: grid; gap: 5px; min-width: 0; }
 .trouble__title { font-size: 1.05rem; font-weight: 700; line-height: 1.3; color: var(--color-ink); }
 .trouble__lead { font-size: .95rem; line-height: 1.5; color: var(--color-ink-soft); }
+
+/* La barra del pie de la tarjeta abierta: el azul la llena en --trouble-every
+   y, llena, pasa al siguiente. Es el reloj del paso automático: trouble.js no
+   cuenta el tiempo, espera a que termine (animationend), así que la barra y el
+   cambio no se pueden separar. Pausar es pausar la animación (.is-paused), y
+   al seguir arranca donde iba.
+   Solo existe mientras el paso automático corre (.is-playing, que pone el
+   guion): sin guion, con «reducir movimiento» o después de un cambio a mano no
+   lleva a ninguna parte, y no se dibuja. Hubo otra en septiembre de 2026 que
+   corría aparte del guion: con el ratón encima el cambio se pausaba y ella
+   seguía llenándose. */
+.trouble__bar {
+  display: none; position: absolute; left: 18px; right: 18px; bottom: 10px;
+  height: 4px; border-radius: 99px; overflow: hidden; background: var(--color-border);
+}
+.trouble.is-playing .trouble__bar { display: var(--bar); }
+.trouble__fill {
+  display: block; height: 100%; border-radius: inherit; background: var(--color-accent);
+  transform: translateX(-100%);
+  animation: var(--run) var(--trouble-every) linear forwards;
+}
+.trouble.is-paused .trouble__fill { animation-play-state: paused; }
+@keyframes trouble-fill { from { transform: translateX(-100%); } to { transform: none; } }
 
 /* Las cuatro ilustraciones comparten una celda y los cuatro párrafos otra, así
    que el bloque mide siempre lo que el más largo y no salta al cambiar. El que
@@ -695,15 +723,15 @@ a.usermenu__item:hover, button.usermenu__item:hover {
               visibility var(--normal);
 }
 
-/* Las tres listas: encender el punto abierto, enseñar su ilustración con su
-   párrafo, y marcar el foco. */
+/* Las tres listas: encender el punto abierto (con su barra), enseñar su
+   ilustración con su párrafo, y marcar el foco. */
 #pain-1:checked ~ .trouble__list > li:nth-child(1),
 #pain-2:checked ~ .trouble__list > li:nth-child(2),
 #pain-3:checked ~ .trouble__list > li:nth-child(3),
 #pain-4:checked ~ .trouble__list > li:nth-child(4) {
   --card: var(--color-surface); --edge: var(--color-border); --shade: var(--shadow-sm);
   --mark-bg: var(--color-accent); --mark-line: var(--color-accent); --mark-ink: var(--color-on-accent);
-  --lift: 1.08; --n: 0; --tick: 1;
+  --lift: 1.08; --tick: 1; --bar: block; --run: trouble-fill;
 }
 #pain-1:checked ~ .trouble__art .trouble__one:nth-child(1),
 #pain-2:checked ~ .trouble__art .trouble__one:nth-child(2),
@@ -788,6 +816,11 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    que lo saca también del lector de pantalla y del tabulador.
    Lo que abre cada uno son botones de radio y las reglas nombran los cuatro
    ids: si algún día son otros, estas listas crecen con ellos. */
+.stories {
+  /* Lo que tarda en llenarse la barra del abierto, y en pasar al siguiente:
+     cada caso es una foto, un título y una línea. */
+  --stories-every: 8s;
+}
 .stories__pick { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .stories__frame { display: grid; grid-template-columns: minmax(0, 1fr); }
 .story {
@@ -826,30 +859,61 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   .story { grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); }
 }
 
-/* Los puntos: una barra por caso, la del abierto más larga y más oscura. La
-   etiqueta mide 24 px de alto para que se pueda tocar; la barra es su ::after. */
-.stories__dots { display: flex; justify-content: center; gap: 6px; margin-top: 18px; }
+/* Debajo de la tarjeta, todo centrado: la flecha de atrás, las barras y la de
+   adelante. Las flechas las pone el guion (.is-ready): un botón que no hace
+   nada es peor que no tenerlo, como en Features. Se ven en todos los anchos. */
+.stories__nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 18px; }
+.stories__arrow {
+  display: none; flex: none; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+  background: transparent; color: var(--color-ink);
+  border: 1px solid var(--color-border);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.stories.is-ready .stories__arrow { display: inline-flex; }
+.stories__arrow:hover { background: var(--color-hover); border-color: var(--color-field); }
+.stories__arrow .icon { width: 18px; height: 18px; }
+[data-stories-back] .icon { transform: rotate(90deg); }
+[data-stories-next] .icon { transform: rotate(-90deg); }
+
+/* Las barras: una por caso, la del abierto más larga y azul. La etiqueta mide
+   24 px de alto para que se pueda tocar, y la barra va en medio.
+   Mientras corre el paso automático (.is-playing), la del abierto es gris y el
+   azul la llena en --stories-every; llena, pasa al siguiente. Es el reloj,
+   como en «¿Sigues enviando…?»: stories.js espera a que termine
+   (animationend), y pausar es pausar la animación (.is-paused). Parada
+   (después de un cambio a mano, con «reducir movimiento» o sin guion) se queda
+   azul y llena. Lo que cambia del abierto viaja en variables. */
+.stories__dots { display: flex; gap: 6px; }
 .stories__dot {
+  --run: none; --fill: translateX(-100%);
   position: relative; display: block; width: 30px; height: 24px; cursor: pointer;
   transition: width var(--normal) var(--ease);
 }
-.stories__dot::after {
-  content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 6px; margin-top: -3px;
-  border-radius: 3px; background: var(--color-border); transition: background var(--fast) var(--ease);
+.stories__bar {
+  position: absolute; left: 4px; right: 4px; top: 50%; height: 6px; margin-top: -3px;
+  border-radius: 3px; overflow: hidden; background: var(--color-border);
+  transition: background var(--fast) var(--ease);
 }
-.stories__dot:hover::after { background: var(--color-field); }
-#uso-1:checked ~ .stories__dots .stories__dot:nth-child(1),
-#uso-2:checked ~ .stories__dots .stories__dot:nth-child(2),
-#uso-3:checked ~ .stories__dots .stories__dot:nth-child(3),
-#uso-4:checked ~ .stories__dots .stories__dot:nth-child(4) { width: 46px; }
-#uso-1:checked ~ .stories__dots .stories__dot:nth-child(1)::after,
-#uso-2:checked ~ .stories__dots .stories__dot:nth-child(2)::after,
-#uso-3:checked ~ .stories__dots .stories__dot:nth-child(3)::after,
-#uso-4:checked ~ .stories__dots .stories__dot:nth-child(4)::after { background: var(--color-ink-soft); }
-#uso-1:focus-visible ~ .stories__dots .stories__dot:nth-child(1),
-#uso-2:focus-visible ~ .stories__dots .stories__dot:nth-child(2),
-#uso-3:focus-visible ~ .stories__dots .stories__dot:nth-child(3),
-#uso-4:focus-visible ~ .stories__dots .stories__dot:nth-child(4) {
+.stories__dot:hover .stories__bar { background: var(--color-field); }
+.stories__fill {
+  display: block; height: 100%; border-radius: inherit; background: var(--color-accent);
+  transform: var(--fill);
+  animation: none var(--stories-every) linear forwards;
+}
+.stories.is-playing .stories__fill { animation-name: var(--run); }
+.stories.is-paused .stories__fill { animation-play-state: paused; }
+@keyframes stories-fill { from { transform: translateX(-100%); } to { transform: none; } }
+#uso-1:checked ~ .stories__nav .stories__dot:nth-child(1),
+#uso-2:checked ~ .stories__nav .stories__dot:nth-child(2),
+#uso-3:checked ~ .stories__nav .stories__dot:nth-child(3),
+#uso-4:checked ~ .stories__nav .stories__dot:nth-child(4) {
+  width: 64px; --run: stories-fill; --fill: none;
+}
+#uso-1:focus-visible ~ .stories__nav .stories__dot:nth-child(1),
+#uso-2:focus-visible ~ .stories__nav .stories__dot:nth-child(2),
+#uso-3:focus-visible ~ .stories__nav .stories__dot:nth-child(3),
+#uso-4:focus-visible ~ .stories__nav .stories__dot:nth-child(4) {
   outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 6px;
 }
 
@@ -1296,40 +1360,6 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 }
 .compare .yes { color: var(--color-accent-strong); font-weight: 800; font-size: 1.1rem; }
 .compare .no { color: var(--color-ink-soft); }
-
-.included { padding: 26px; border-radius: var(--radius-lg); background: var(--color-deep); color: var(--color-on-dark); }
-.included__title { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; }
-.included__list { display: grid; gap: 12px; }
-.included__list li { position: relative; padding-left: 28px; color: var(--color-on-dark-soft); }
-.included__list li strong { color: var(--color-on-dark); font-weight: 700; }
-.included__list li::before {
-  content: "✓"; position: absolute; left: 0; top: 0; width: 20px; text-align: center;
-  color: var(--color-accent); font-weight: 800;
-}
-/* La lista de debajo del carrusel de Features: lo que no tiene dibujo. Era la
-   caja de «En todos los planes»; con cuatro puntos, de dos en dos en lo ancho. */
-.included--features { margin-top: clamp(28px, 4vw, 40px); }
-@media (min-width: 760px) { .included--features .included__list { grid-template-columns: 1fr 1fr; gap: 14px 32px; } }
-
-/* ------------------------------------------------------------------ FAQ */
-.faq { display: grid; gap: 10px; margin-top: 8px; }
-.faq__item details { border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
-.faq__item details:hover { border-color: var(--color-accent); }
-.faq__item details[open] { border-color: var(--color-accent); box-shadow: var(--shadow-sm); }
-.faq__q {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 18px 20px; cursor: pointer; list-style: none; font-weight: 600; font-size: 1.05rem;
-}
-.faq__q::-webkit-details-marker { display: none; }
-.faq__mark { position: relative; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--color-accent-soft); }
-.faq__mark::before, .faq__mark::after {
-  content: ""; position: absolute; left: 50%; top: 50%; background: var(--color-accent-strong);
-  transition: transform var(--normal) var(--ease);
-}
-.faq__mark::before { width: 10px; height: 2px; transform: translate(-50%, -50%); }
-.faq__mark::after { width: 2px; height: 10px; transform: translate(-50%, -50%); }
-details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg); }
-.faq__a { padding: 0 20px 20px; color: var(--color-ink-soft); }
 
 /* ------------------------------------------------------------------ prose (las legales) */
 .prose { display: grid; gap: clamp(32px, 5vw, 52px); }

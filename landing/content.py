@@ -1,7 +1,7 @@
 """All the copy of the public site, in one place.
 
 Everything a non-developer might want to reword lives here: headlines, section
-text, cards, steps, FAQ, footer links and contact details. The templates only
+text, cards, steps, footer links and contact details. The templates only
 lay it out.
 
 Prices are NOT here. They are read from docs/pricing.md at build time by
@@ -185,6 +185,9 @@ HOME = {
     # insinúa que respalden Sobreala. La florista va primera, como se pidió.
     "uses": {
         "title": "Haz crecer tu negocio",
+        # Las flechas, a los lados de las barras. Solo las dibuja el guion.
+        "back": "Ver el caso anterior",
+        "next": "Ver el caso siguiente",
         "items": [
             {
                 "photo": "clientes",
@@ -208,16 +211,15 @@ HOME = {
                 "alt": "Un hombre presenta frente a un grupo sentado en una sala "
                        "de reuniones.",
                 "title": "Convoca a tus socios",
-                "text": "Asambleas, recordatorios y estados de cuenta, cada uno "
-                        "con su nombre y su monto.",
+                "text": "Asambleas, recordatorios y estados de cuenta.",
             },
             {
                 "photo": "familias",
                 "label": "Colegios",
                 "alt": "Una madre y su hija miran juntas un portátil en casa.",
-                "title": "Mantén informadas a las familias",
-                "text": "Circulares, eventos y el calendario del colegio, en el "
-                        "correo de cada familia.",
+                "title": "Mantén a todos informados",
+                "text": "Circulares, eventos y el calendario del colegio para toda "
+                        "la comunidad educativa.",
             },
         ],
     },
@@ -237,7 +239,8 @@ HOME = {
         # una sola cosa; las palabras que lleva dentro van en `words`, y `alt` es
         # lo que dice a un lector de pantalla. Aquí se juntaron también «Reglas
         # que funcionan solas» y «En todos los planes» (octubre de 2026): lo que
-        # repetían va en estos textos y lo demás en la lista de abajo.
+        # repetían va en estos textos. Lo demás fue una lista debajo del
+        # carrusel, que se quitó ese mismo mes.
         "items": [
             {
                 "art": "contacts",
@@ -313,22 +316,6 @@ HOME = {
                 ),
             },
         ],
-        # Lo que no tiene dibujo: lo de «Reglas que funcionan solas» y «En todos
-        # los planes» que los cinco de arriba no cuentan ya.
-        "more": {
-            "title": "En todos los planes, sin excepción",
-            "items": [
-                {"title": "Rebotes y quejas fuera.",
-                 "text": ("Las direcciones que rebotan o marcan tu correo como "
-                          "spam salen de tus envíos para siempre, y reimportarlas "
-                          "no las reactiva.")},
-                {"title": "Sin sorpresas al llegar al límite.",
-                 "text": ("Si se acaban tus correos a mitad de campaña, se detiene "
-                          "en vez de fallar, y la sigues desde donde quedó.")},
-                {"title": "Acompañamiento en tu primera campaña.", "text": ""},
-                {"title": "Sin permanencia mínima.", "text": "Cancelas cuando quieras."},
-            ],
-        },
     },
     # La tira de plantillas de muestra, donde estaban los cuatro pasos. Va
     # debajo de los tutoriales, que llevan los pasos enteros, y por eso ya no
@@ -340,98 +327,7 @@ HOME = {
         # Lo que dice cada tarjeta a un lector de pantalla, con su nombre.
         "open": "Abrir la plantilla {name} en el editor",
     },
-    "faq": {
-        "eyebrow": "Preguntas frecuentes",
-        "title": "Lo que suelen preguntarnos",
-        "items": [
-            {
-                "q": "¿Cómo empiezo?",
-                "a": (
-                    "Creas tu cuenta y nos pides una demostración. En ella abrimos "
-                    "tu cuenta y, contigo, recorremos el panel, vemos de dónde sale "
-                    "tu lista, la importamos y armamos tu primer correo. Si ya sabes "
-                    "qué plan quieres, lo contratas y empiezas enseguida."
-                ),
-            },
-            {
-                "q": "¿Necesito tener un dominio propio?",
-                "a": (
-                    "No. Los correos salen desde un subdominio de Sobreala con el "
-                    "nombre de tu negocio como remitente y tu correo para respuestas. "
-                    "Si tienes dominio propio, lo configuramos contigo durante la "
-                    "activación."
-                ),
-            },
-            {
-                "q": "¿Puedo subir la lista que ya tengo?",
-                "a": (
-                    "Sí, desde un archivo CSV. Al importar te decimos cuántos contactos "
-                    "entraron y cuántos estaban dados de baja y no recibirán correos."
-                ),
-            },
-            {
-                "q": "¿Qué pasa si alguien no quiere recibir más correos?",
-                "a": (
-                    "Todos los correos llevan un enlace de baja de un click, en todos "
-                    "los planes, y no se puede quitar. Quien se da de baja queda fuera "
-                    "de tus envíos automáticamente."
-                ),
-            },
-            {
-                "q": "¿Cómo se paga?",
-                "a": (
-                    "Al contratar eliges con qué pagar. Los datos de la tarjeta se "
-                    "manejan siempre en el sitio del proveedor de pago, nunca en "
-                    "Sobreala."
-                ),
-            },
-            {
-                "q": "¿Ustedes me diseñan el correo?",
-                "a": (
-                    "No hace falta: la armas tú en el editor, con tu logo, tus "
-                    "colores y tus fotos. Y si alguien te la prepara, te pasa el "
-                    "archivo y la sigues editando tú."
-                ),
-            },
-            {
-                "q": "¿Qué pasa si no uso todos mis correos del mes?",
-                "a": (
-                    "Los correos que no uses pasan al mes siguiente y vencen ahí. Al "
-                    "enviar se gastan primero los acumulados, para que no se pierdan."
-                ),
-            },
-            {
-                "q": "¿Puedo cambiar de plan después?",
-                "a": (
-                    "Sí. Puedes subir o bajar de plan según cómo crezca tu lista. Al "
-                    "subir de plan, la marca de agua del plan Básico desaparece sola."
-                ),
-            },
-            {
-                "q": "¿Qué es la marca de agua del plan Básico?",
-                "a": (
-                    "Una línea discreta al pie del correo que dice que fue enviado con "
-                    "Sobreala. Solo aparece en el plan Básico. Es distinta del enlace "
-                    "de baja, que va en todos los planes."
-                ),
-            },
-            {
-                "q": "¿Hay permanencia o penalización por cancelar?",
-                "a": (
-                    "No hay permanencia mínima y puedes cancelar cuando quieras. El "
-                    "saldo de correos acumulados se pierde al cancelar."
-                ),
-            },
-            {
-                "q": "¿El cobro es automático cada mes?",
-                "a": (
-                    "Depende del medio de pago que elijas. Con algunos el cobro se "
-                    "renueva solo; con otros te enviamos el enlace de pago antes de cada "
-                    "vencimiento. Te lo confirmamos al activar tu cuenta."
-                ),
-            },
-        ],
-    },
+    # Las preguntas frecuentes se quitaron de la portada en octubre de 2026.
 }
 
 # The sample templates of the home page strip. Each slug is a ZIP in
@@ -450,12 +346,10 @@ SAMPLES = [
 # words live here. Each step says what to press ("do") and what for ("why"),
 # and a test checks that every step of tutorials.py has its words here.
 TUTORIALS = {
-    "eyebrow": "Tutoriales",
-    "title": "Aprende a usar el panel, pulsando",
-    "intro": (
-        "Estas son las pantallas de verdad. Pulsa el punto que late y avanzas, como "
-        "si estuvieras dentro de tu cuenta."
-    ),
+    # Arriba va solo el título (octubre de 2026). «Tutoriales» se quedó como lo
+    # que oye un lector de pantalla al llegar a las pestañas.
+    "label": "Tutoriales",
+    "title": "Aprende a usar el panel",
     # Lo que dice el reproductor.
     "step": "Paso {n} de {total}",
     "back": "Atrás",
@@ -786,7 +680,7 @@ HOW = {
         ),
     },
     # «Reglas que funcionan solas» se juntó con Features (octubre de 2026): lo
-    # que decía está en sus textos y en su lista de «En todos los planes».
+    # que decía está en sus textos.
 }
 
 # --------------------------------------------------------------------------- pricing
@@ -854,7 +748,7 @@ PRICING = {
     # «Qué significa cada fila», el glosario de debajo de la tabla, se quitó
     # en octubre de 2026.
     # «En todos los planes, sin excepción» se juntó con Features (octubre de
-    # 2026), en la lista de debajo del carrusel.
+    # 2026), en una lista debajo del carrusel que se quitó ese mismo mes.
 }
 
 # --------------------------------------------------------------------------- about

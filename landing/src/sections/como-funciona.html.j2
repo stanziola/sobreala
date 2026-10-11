@@ -51,18 +51,8 @@
           {%- include "partials/icon-caret.svg.j2" -%}</button>
       </p>
     </div>
-
-    {#- Lo que no tiene dibujo. Era la mitad de «Reglas que funcionan solas» y
-        de «En todos los planes»; la otra mitad la cuentan los cinco de arriba. -#}
-    {% set more = home.features.more %}
-    <div class="included included--features">
-      <h4 class="included__title">{{ more.title }}</h4>
-      <ul class="included__list">
-        {% for one in more['items'] %}
-        <li><strong>{{ one.title }}</strong>{% if one.text %} {{ one.text }}{% endif %}</li>
-        {% endfor %}
-      </ul>
-    </div>
+    {#- Debajo iba la lista «En todos los planes, sin excepción», con lo que no
+        tenía dibujo; se quitó en octubre de 2026. -#}
   </div>
 </section>
 
@@ -71,18 +61,17 @@
     y lo que hay que hacer. Sin JavaScript se leen como una lista: todos los
     pasos, uno debajo del otro. tutorial.js los vuelve un reproductor: un paso a
     la vez, y pulsar el anillo pasa al siguiente. Las capturas y los anillos los
-    hace landing/tutorials.py; los textos están en content.py. -#}
+    hace landing/tutorials.py; los textos están en content.py. Arriba va solo
+    el título, sin etiqueta ni entradilla. -#}
 {% set tut = tutorials %}
 <section class="section" id="tutorials" aria-labelledby="tutoriales-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow">{{ tut.eyebrow }}</p>
       <h2 class="section__title" id="tutoriales-title">{{ tut.title }}</h2>
-      <p class="section__intro">{{ tut.intro }}</p>
     </div>
 
     <div class="tutorial" data-tutorial>
-      <nav class="tutorial__tabs" aria-label="{{ tut.eyebrow }}">
+      <nav class="tutorial__tabs" aria-label="{{ tut.label }}">
         {% for tour in tutorial_tours %}
         <a class="tutorial__tab" href="#{{ tour.id }}" data-tab="{{ tour.id }}">{{ tour.name }}</a>
         {% endfor %}

@@ -1,7 +1,7 @@
 # Sitio público de Sobreala
 
-Una sola página que presenta Sobreala (Inicio, Planes, Cómo funciona y las
-preguntas; Contacto es el pie), más las dos legales. Se despliegan tal cual
+Una sola página que presenta Sobreala (Inicio, Planes y Cómo funciona;
+Contacto es el pie), más las dos legales. Se despliegan tal cual
 en Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
 
 | Ruta | Archivo |
@@ -28,7 +28,7 @@ landing/
 ├── content.py           # TODOS los textos, en español
 ├── src/
 │   ├── base.html.j2     # <head>, header, footer, SEO
-│   ├── partials/        # cta-band, faq, feature-icons, los dibujos de Features
+│   ├── partials/        # cta-band, feature-icons, los dibujos de Features
 │   │                    # (feature-*.svg.j2), iconos de correo y chat
 │   ├── pages/           # index (la página única) y legal
 │   ├── sections/        # planes, como-funciona: partes de index
@@ -53,7 +53,7 @@ De dónde sale cada cosa:
 
 | Qué                         | Fuente de verdad                | Se edita en |
 |-----------------------------|---------------------------------|-------------|
-| Textos, enlaces, FAQ, contacto | `landing/content.py`         | ese archivo |
+| Textos, enlaces, contacto   | `landing/content.py`            | ese archivo |
 | Planes, límites y precios   | `docs/pricing.md`               | ese archivo; el build lee sus tablas |
 | Colores, tema claro         | `brand/colors.css`              | ese archivo |
 | Colores, tema oscuro        | `brand/colors-dark.css`         | ese archivo |
@@ -72,7 +72,7 @@ Features son cinco dibujos sencillos en SVG (`src/partials/feature-*.svg.j2`),
 dentro de la página y pintados con las variables del tema; las palabras que
 llevan están en `content.py`. Hasta octubre de 2026 eran capturas del panel que
 hacía `shots.py`, y se quitaron. Las fotos de los usos se agregan a mano, en
-WebP de 800 × 600; quién hizo cada una y con qué licencia está en
+WebP de 1280 × 800; quién hizo cada una y con qué licencia está en
 `docs/sitio.md`.
 
 ## Precios sin duplicar

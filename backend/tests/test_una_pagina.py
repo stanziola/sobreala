@@ -24,8 +24,10 @@ def test_cada_boton_de_la_barra_tiene_su_seccion():
     assert "Hablemos de tu lista" not in html
     # En este orden, que es el que se pidió.
     orden = [html.index(f'id="{a}"') for a in
-             ("inicio", "planes", "como-funciona", "preguntas", "contacto")]
+             ("inicio", "planes", "como-funciona", "contacto")]
     assert orden == sorted(orden)
+    # Las preguntas frecuentes se quitaron (octubre de 2026).
+    assert 'id="preguntas"' not in html and "Lo que suelen preguntarnos" not in html
     # Cómo funciona: Features, los tutoriales, la tira de plantillas (sin su
     # botón, que llevaba a los tutoriales) y el envío.
     assert (html.index('id="como-funciona"') < html.index('class="tour"')
@@ -58,9 +60,21 @@ def test_la_portada_dice_menos():
     assert 'href="/#planes">Ver planes</a>' in portada
 
 
+def test_el_problema_sin_numeros_y_con_su_barra():
+    """Los cuatro puntos ya no llevan número, y cada tarjeta trae la barra que
+    se llena mientras corre el paso automático."""
+    html = (LANDING / "index.html").read_text(encoding="utf-8")
+    seccion = html[html.index('id="problema-title"'):html.index('id="usos-title"')]
+    assert seccion.count('name="trouble"') == 4
+    assert 'class="trouble__n"' not in seccion
+    assert seccion.count('<span class="trouble__bar" aria-hidden="true">'
+                         '<span class="trouble__fill"></span></span>') == 4
+    assert '<script src="/assets/js/trouble.js" defer></script>' in html
+
+
 def test_haz_crecer_tu_negocio_va_debajo_del_problema():
     """Cuatro casos, uno a la vez y con la florista primero, sin el encabezado
-    de antes y con su paso automático."""
+    de antes, con su paso automático y las flechas a los lados de las barras."""
     from PIL import Image
 
     html = (LANDING / "index.html").read_text(encoding="utf-8")
@@ -71,6 +85,20 @@ def test_haz_crecer_tu_negocio_va_debajo_del_problema():
     seccion = html[html.index('id="usos-title"'):html.index('id="planes"')]
     assert seccion.count('name="usos"') == 4 and 'id="uso-1" checked' in seccion
     assert seccion.count('class="stories__dot"') == 4
+    assert seccion.count('<span class="stories__fill"></span>') == 4
+    # ‹, las barras y ›, en ese orden.
+    nav = seccion[seccion.index('class="stories__nav"'):]
+    assert (nav.index('data-stories-back') < nav.index('class="stories__dots"')
+            < nav.index('data-stories-next'))
+    assert 'aria-label="Ver el caso anterior"' in nav
+    assert 'aria-label="Ver el caso siguiente"' in nav
+    # Los textos de octubre de 2026.
+    assert "Asambleas, recordatorios y estados de cuenta.</p>" in seccion
+    assert "cada uno con su nombre y su monto" not in html
+    assert 'id="uso-title-4">Mantén a todos informados</h3>' in seccion
+    assert ("Circulares, eventos y el calendario del colegio para toda la "
+            "comunidad educativa.") in seccion
+    assert "cada familia" not in html
     fotos = re.findall(r'src="/assets/img/usos/(\w+)\.webp"', seccion)
     assert fotos == ["clientes", "equipo", "socios", "familias"]
     assert seccion.count('width="1280" height="800"') == 4
@@ -81,21 +109,32 @@ def test_haz_crecer_tu_negocio_va_debajo_del_problema():
     assert (LANDING / "assets" / "js" / "stories.js").exists()
 
 
-def test_features_trae_sus_dibujos_y_su_lista():
-    """Cinco dibujos en vez de capturas del panel, y debajo la lista que juntó
-    «Reglas que funcionan solas» y «En todos los planes»."""
+def test_features_trae_sus_dibujos():
+    """Cinco dibujos en vez de capturas del panel. La lista de debajo, que juntó
+    «Reglas que funcionan solas» y «En todos los planes», se quitó."""
     html = (LANDING / "index.html").read_text(encoding="utf-8")
     tira = html[html.index('class="tour"'):html.index('id="tutorials"')]
     assert tira.count('<svg class="tour__art"') == 5
     assert "/assets/img/panel/" not in html
-    for punto in ("En todos los planes, sin excepción", "Rebotes y quejas fuera.",
+    for punto in ("En todos los planes", "Rebotes y quejas fuera.",
                   "Sin sorpresas al llegar al límite.",
                   "Acompañamiento en tu primera campaña.", "Sin permanencia mínima."):
-        assert punto in tira, punto
-    # Lo que se juntó no sale dos veces, y lo que no existe no se promete.
-    assert html.count("En todos los planes, sin excepción") == 1
+        assert punto not in html, punto
+    assert 'class="included' not in html
+    # Lo que no existe no se promete.
     assert "Reglas que funcionan solas" not in html
     assert "envíate una prueba" not in html
+
+
+def test_los_tutoriales_llevan_solo_su_titulo():
+    """Sin la etiqueta «Tutoriales» ni la entradilla; «Tutoriales» queda como
+    el nombre de las pestañas para un lector de pantalla."""
+    html = (LANDING / "index.html").read_text(encoding="utf-8")
+    cabeza = html[html.index('id="tutorials"'):html.index('class="tutorial"')]
+    assert 'id="tutoriales-title">Aprende a usar el panel</h2>' in cabeza
+    assert 'class="eyebrow"' not in cabeza and 'class="section__intro"' not in cabeza
+    assert "Pulsa el punto que late" not in html
+    assert '<nav class="tutorial__tabs" aria-label="Tutoriales">' in html
 
 
 def test_planes_sin_glosario_y_con_la_tabla_corta():

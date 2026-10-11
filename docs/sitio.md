@@ -14,17 +14,18 @@ van en este orden, cada una con el ancla a la que baja su botón de la barra:
 |---|---|---|
 | `#inicio` | La portada, «¿Sigues enviando correos masivos…?» y «Haz crecer tu negocio» | `src/pages/index.html.j2` |
 | `#planes` | Interruptor y tarjetas, y la tabla | `src/sections/planes.html.j2` |
-| `#como-funciona` | Features con su lista, los tutoriales, la tira de plantillas y el envío | `src/sections/como-funciona.html.j2` |
-| `#preguntas` | Una sola lista: las generales y las de facturación | `src/partials/faq.html.j2` |
+| `#como-funciona` | Features, los tutoriales, la tira de plantillas y el envío | `src/sections/como-funciona.html.j2` |
 
 **Contacto es el pie** (`id="contacto"` en `base.html.j2`): WhatsApp, correo e
 Instagram. Hubo una sección «Hablemos de tu lista» antes de las preguntas, y se
 quitó en octubre de 2026 porque repetía el pie; `/contact/` y `/#contacto`
 aterrizan ahí. Con ella se fue el `id` repetido que había entre las dos.
 
-**En octubre de 2026 salieron dos secciones más:**
+**En octubre de 2026 salieron tres secciones más:**
 - **«Qué significa cada fila»**, el glosario de debajo de la tabla de Planes;
-- **«Nosotros»**, con su columna «Empresa» del pie, que solo lo enlazaba.
+- **«Nosotros»**, con su columna «Empresa» del pie, que solo lo enlazaba;
+- **las preguntas frecuentes** («Lo que suelen preguntarnos»), que iban entre
+  Cómo funciona y el pie, con su `src/partials/faq.html.j2`.
 
 `/about/` sigue respondiendo y lleva al inicio.
 
@@ -38,8 +39,7 @@ aterrizan ahí. Con ella se fue el `id` repetido que había entre las dos.
   sirvan también desde las legales). La barra fija no tapa el título:
   `scroll-margin-top` en `.page-part` y en las secciones con `id`. **El botón de
   la sección que se está leyendo se marca** con un `IntersectionObserver` en
-  `nav.js`, mirando una franja justo debajo de la barra; en las preguntas,
-  que no tienen botón, se queda el último.
+  `nav.js`, mirando una franja justo debajo de la barra.
 - **Las direcciones de antes siguen respondiendo**: `/pricing/`,
   `/how-it-works/`, `/about/` y `/contact/` son páginas de paso
   (`src/redirect.html.j2`, tabla `REDIRECTS` de `build_site.py`) con
@@ -48,10 +48,10 @@ aterrizan ahí. Con ella se fue el `id` repetido que había entre las dos.
   `/how-it-works/#templates` sigue abriendo su tutorial. El panel ya enlaza
   directo a `/#planes`. `sitemap.xml` y las tarjetas para compartir son solo de
   `/` y las legales.
-- **La página carga los cuatro guiones**: `trouble.js`, `carousel.js`,
-  `plans.js` y `tutorial.js`. Las pestañas de los tutoriales usan `contacts`,
-  `templates`, `campaigns`, `stats` y `settings`, que no chocan con las anclas
-  de las secciones.
+- **La página carga cinco guiones**: `trouble.js`, `stories.js`,
+  `carousel.js`, `plans.js` y `tutorial.js`. Las pestañas de los tutoriales
+  usan `contacts`, `templates`, `campaigns`, `stats` y `settings`, que no
+  chocan con las anclas de las secciones.
 
 ## La portada
 
@@ -70,7 +70,8 @@ tus contactos con un solo click») y la nota de «Escríbenos y te acompañamos�
 
 **«¿Sigues enviando correos masivos desde Gmail o Outlook?» son cuatro puntos
 que se recorren**: a un lado la lista, con el que estás viendo marcado con un
-ganchito y los otros tres con su número, y al otro su ilustración y su párrafo.
+ganchito y los otros tres con el círculo vacío, y al otro su ilustración y su
+párrafo. Cada círculo llevaba su número, y se quitó en octubre de 2026.
 Fueron tres tarjetas sueltas en una rejilla, que se leían de un vistazo y no se
 quedaban. La sección no lleva etiqueta de arriba ni entradilla: la pregunta lo
 dice todo.
@@ -84,13 +85,29 @@ el foco dentro, fuera de la pantalla y con la pestaña escondida, y no existe co
 «reducir movimiento». **Si alguien lo cambia a mano, deja de pasar solo** para el
 resto de la visita, a diferencia de Features, donde se pidió que volviera a
 andar al quitar el ratón: lo detecta el evento `change` de los radios, que solo
-salta cuando los cambia una persona y nunca cuando los marca el guion. **No hay
-cuenta atrás**: hubo una barra bajo el punto abierto y se quitó.
+salta cuando los cambia una persona y nunca cuando los marca el guion.
+
+**Una barrita azul al pie de la tarjeta abierta se llena en esos quince
+segundos** (octubre de 2026) y, llena, pasa al siguiente.
+- **La barra es el reloj.** Es una animación de CSS (`--trouble-every`, en
+  `site.css`), y `trouble.js` no cuenta el tiempo: espera su `animationend` y
+  abre el siguiente, así que la barra y el cambio no se pueden separar. Pausar
+  es pausar la animación (`animation-play-state`), y al seguir arranca donde
+  iba.
+- **El guion pone dos clases en el bloque:** `is-playing`, con el paso
+  automático encendido, e `is-paused`, cuando se detiene un momento.
+- **Solo se dibuja mientras el paso automático corre:** sin guion, con
+  «reducir movimiento» o después de un cambio a mano no lleva a ninguna parte.
+- **Hubo otra en septiembre de 2026 y se quitó.** Corría aparte de un
+  `setInterval` del guion: con el ratón encima el cambio se pausaba y ella
+  seguía llenándose.
+- La tarjeta deja abajo siempre el mismo sitio, para no dar un salto cuando la
+  barra se va.
 
 **El estado del punto abierto viaja a sus hijos en variables** (`--card`,
-`--mark-bg`, `--tick`…), de modo que una sola lista de cuatro selectores pinta a
-la vez la tarjeta, el círculo, el número y el ganchito. Sin eso harían falta una
-lista por declaración.
+`--mark-bg`, `--tick`, `--bar`…), de modo que una sola lista de cuatro
+selectores pinta a la vez la tarjeta, el círculo, el ganchito y la barra. Sin
+eso harían falta una lista por declaración.
 
 **Con el ratón encima, los otros tres se asoman**, para que se vea que también
 se abren: la tarjeta sin su sombra y el círculo con el borde de acento. Es menos
@@ -169,28 +186,42 @@ noche, el resplandor claro de la primera).
 
 **Debajo de «¿Sigues enviando…?», «Haz crecer tu negocio»: cuatro casos, uno a
 la vez, en una tarjeta grande** (octubre de 2026). Son Llega a más clientes,
-Comunícate con tu equipo, Convoca a tus socios y Mantén informadas a las
-familias, para comercios, empresas, cooperativas y colegios, que son el cliente
-típico. **La florista va primera**, como se pidió.
+Comunícate con tu equipo, Convoca a tus socios y Mantén a todos informados, para
+comercios, empresas, cooperativas y colegios, que son el cliente típico. **La
+florista va primera**, como se pidió. El texto de los socios perdió «cada uno
+con su nombre y su monto», que contaba una función donde no tocaba, y el de los
+colegios dejó «el correo de cada familia» por «toda la comunidad educativa».
 - **Sigue la referencia que se dio**, el carrusel de casos de Mailchimp:
   - la foto ocupa unos 2/3 de la tarjeta, con el rótulo y el título encima, abajo
     a la izquierda, sobre un degradado oscuro que los deja leer en cualquier
     foto;
   - al lado va un panel con la descripción, y en el teléfono el panel queda
     debajo;
-  - abajo hay un punto por caso, y el del abierto es más largo.
+  - abajo hay una barra por caso, y la del abierto es más larga.
   Fue antes una rejilla de cuatro tarjetas pequeñas con el encabezado «Ejemplos /
   Lo que puedes enviar con Sobreala».
 - **El panel lleva solo la descripción.** La referencia trae cifras, el nombre
   de un cliente y un enlace a su caso, y aquí serían inventados.
 - **Funciona como «¿Sigues enviando…?»**: lo que abre cada caso son botones de
-  radio, y los puntos son sus etiquetas, así que va sin JavaScript y con las
-  flechas del teclado. `assets/js/stories.js` agrega el paso automático:
-  - pasa cada 8 s;
+  radio, y las barras son sus etiquetas, así que va sin JavaScript y con las
+  flechas del teclado. `assets/js/stories.js` agrega las flechas y el paso
+  automático:
+  - **la barra del abierto es el reloj**, como en «¿Sigues enviando…?»: el azul
+    la llena en 8 s (`--stories-every`) y, llena, pasa al siguiente;
   - se para con el ratón encima, con el foco dentro, fuera de la pantalla y con
-    la pestaña escondida;
-  - si alguien pulsa un punto, deja de pasar solo el resto de la visita;
+    la pestaña escondida, y la barra se queda donde iba;
+  - si alguien pulsa una barra o una flecha, deja de pasar solo el resto de la
+    visita;
   - con «reducir movimiento», no existe.
+- **La barra del abierto mide 64 px**, para que se vea llenarse (eran 46).
+  Mientras corre es gris y la llena el azul; parada (sin guion, con «reducir
+  movimiento» o después de un cambio a mano) queda azul y llena. Antes era
+  gris oscuro.
+- **Las flechas van a los lados de las barras** (octubre de 2026), todo
+  centrado bajo la tarjeta y en todos los anchos. Son círculos de 40 px como los
+  de Features, solo las dibuja el guion (`is-ready`) y dan la vuelta al final.
+  Lo que dicen a un lector de pantalla está en `HOME["uses"]` (`back` y
+  `next`).
 - **Las fotos son de Pexels, con su licencia**: uso comercial sin pedir permiso
   ni citar al autor. Lo que no deja es venderlas tal cual ni dar a entender que
   quien sale respalda algo, y por eso **nadie aparece como cliente ni dice
@@ -270,6 +301,9 @@ no avanza: el anillo late otra vez.
   fija. **En el teléfono va debajo, y la captura se agranda al doble** y se
   corre hasta dejar el anillo en medio: entera no se leía nada.
 - **Con «reducir movimiento»** no late ni se funde.
+- **Arriba lleva solo el título**, «Aprende a usar el panel» (octubre de 2026):
+  se quitaron la etiqueta «Tutoriales» y la entradilla. «Tutoriales» sigue
+  siendo lo que oye un lector de pantalla en las pestañas (`TUTORIALS["label"]`).
 
 **«Features» son cinco dibujos sencillos** (octubre de 2026), en un carrusel
 que aprieta: el abierto ocupa su sitio y los otros cuatro quedan en listones.
@@ -342,18 +376,18 @@ Las reglas del carrusel nombran los cinco por su id (`#tour-1` … `#tour-5`), q
 es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otros,
 esas listas de `landing/src/site.css` crecen con ellos.
 
-**Debajo del carrusel, la lista «En todos los planes, sin excepción»** (octubre
-de 2026): rebotes y quejas fuera, sin sorpresas al llegar al límite,
-acompañamiento en la primera campaña y sin permanencia mínima.
-- **Aquí se juntaron tres bloques**: Features, «Reglas que funcionan solas», que
-  cerraba Cómo funciona, y la lista «En todos los planes» del final de Planes.
-  Lo que repetían lo cuentan ahora los textos de los cinco dibujos, y lo demás
-  va en esta lista. La tabla comparativa de Planes se quedó.
-- Usa la caja de la lista de Planes (`.included`, en el gris casi negro de
-  `--color-deep`), de dos en dos en lo ancho.
-- **De paso salieron dos frases que prometían algo que no existe**: «envíate una
-  prueba», porque ese envío de prueba no está hecho, y el aviso al 80 % de la
-  cuota, por lo mismo.
+**Debajo del carrusel hubo una lista, «En todos los planes, sin excepción»**
+(octubre de 2026), y se quitó ese mismo mes: rebotes y quejas fuera, sin
+sorpresas al llegar al límite, acompañamiento en la primera campaña y sin
+permanencia mínima.
+- **Ahí se habían juntado tres bloques**: Features, «Reglas que funcionan
+  solas», que cerraba Cómo funciona, y la lista «En todos los planes» del final
+  de Planes. Lo que repetían lo cuentan los textos de los cinco dibujos. La
+  tabla comparativa de Planes se quedó.
+- Con la lista se fue su caja (`.included`).
+- **Al juntarlos salieron dos frases que prometían algo que no existe**:
+  «envíate una prueba», porque ese envío de prueba no está hecho, y el aviso al
+  80 % de la cuota, por lo mismo.
 
 **La sección sigue al tema, como el resto de la página.** Hubo una banda que se
 invertía, oscura de día y blanca de noche, porque las capturas de entonces eran
@@ -361,8 +395,8 @@ siempre del panel en oscuro; con ella se fueron las variables `--color-flip*` y
 las clases `.section--flip` y `.section--deep`. **Los fondos alternan de arriba
 abajo**: azul (la portada) · gris («¿Sigues enviando…?») · blanco (los usos) ·
 gris (las tarjetas de Planes) · blanco (la tabla) · gris (Features) · blanco
-(los tutoriales) · gris (la tira) · blanco (el envío) · gris (las preguntas) ·
-azul (el pie). En oscuro, los mismos escalones.
+(los tutoriales) · gris (la tira) · blanco (el envío) · azul (el pie). En
+oscuro, los mismos escalones.
 
 **El pie es un solo azul** (octubre de 2026). Abajo, dentro del mismo azul, va
 el «© Sobreala» en pequeño, con una raya fina encima (`--color-footer-edge`).
@@ -376,5 +410,3 @@ Lleva tres columnas: Producto, Legal y Contacto.
   `assets/img/payments/`. El kit sigue en `brand/payments/`, y el panel tiene su
   propia copia para el pago (`backend/build_assets.py`, recortada con
   `brand/payments/viewbox.json`), que no cambió.
-- **«¿Cómo se paga?» ya no dice «los que ves al pie»**: dice que al contratar
-  se elige con qué pagar.
