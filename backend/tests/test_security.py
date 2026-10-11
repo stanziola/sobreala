@@ -55,7 +55,12 @@ def test_an_operator_is_stored_as_text_not_as_a_query(client, database):
         "company_name": '{"$ne": null}',
         "contact_name": "Ana",
         "email": "ana@ejemplo.com",
-        "phone": '{"$gt": ""}',
+        "phone_country": "PA",
+        "phone": "60000000",
+        # La dirección se guarda tal cual, así que es la que lleva el operador
+        # (el teléfono ya no: uno que no son dígitos no se acepta).
+        "address": '{"$gt": "una calle cualquiera"}',
+        "tax_id": "8-123-456",
         "password": "Contrasena-Larga1",
     }
     client.post("/signup", data=data)
@@ -63,7 +68,8 @@ def test_an_operator_is_stored_as_text_not_as_a_query(client, database):
     account = accounts.by_email(database, "ana@ejemplo.com")
     assert isinstance(account["company_name"], str)
     assert account["company_name"] == '{"$ne": null}'
-    assert isinstance(account["phone"], str)
+    assert isinstance(account["postal_address"], str)
+    assert account["postal_address"] == '{"$gt": "una calle cualquiera"}'
 
 
 def test_a_forged_address_header_cannot_write_whatever_it_likes(client, database):

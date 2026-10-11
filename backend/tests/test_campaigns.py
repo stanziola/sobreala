@@ -50,6 +50,11 @@ def ready(client, database, *, email="ana@ejemplo.com", plan="basico",
         accounts.set_plan(database, account["_id"], plan)
     if postal:
         accounts.set_postal(database, account["_id"], postal)
+    else:
+        # Sin dirección: una cuenta de antes de octubre de 2026, cuando el
+        # registro todavía no la pedía.
+        database.accounts.update_one({"_id": account["_id"]},
+                                     {"$unset": {"postal_address": ""}})
     if handle:
         # Su usuario de envío: sin él una campaña no sale de ningún sitio.
         accounts.set_handle(database, account["_id"], "c" + str(account["_id"])[-8:])

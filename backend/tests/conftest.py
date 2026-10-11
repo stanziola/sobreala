@@ -58,9 +58,10 @@ def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1", *,
              abierta=True):
     """Fill the registration form the way a browser would, CSRF included.
 
-    La cuenta queda abierta y con su RUC, como si ya hubiera tenido su
-    demostración: casi todas las pruebas son de lo que se hace dentro del panel,
-    no de la puerta. Las que prueban la puerta piden `abierta=False`.
+    La cuenta queda abierta, como si ya hubiera tenido su demostración: casi
+    todas las pruebas son de lo que se hace dentro del panel, no de la puerta.
+    Las que prueban la puerta piden `abierta=False`. Desde octubre de 2026 el
+    registro trae el teléfono, la dirección y la identificación personal.
     """
     client.get("/signup")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
@@ -70,7 +71,10 @@ def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1", *,
         "company_name": "Cooperativa Ejemplo",
         "contact_name": "Ana",
         "email": email,
+        "phone_country": "PA",
         "phone": "60000000",
+        "address": "Calle 10, Santiago de Veraguas",
+        "tax_id": "8-123-456",
         "password": password,
     })
     if abierta:

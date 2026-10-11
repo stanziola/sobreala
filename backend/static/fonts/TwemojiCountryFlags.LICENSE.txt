@@ -1,0 +1,12 @@
+TwemojiCountryFlags.woff2
+
+Una fuente que solo trae las banderas de los países, para que el selector de
+código de país las dibuje en Windows, que no tiene banderas emoji. Se usa solo
+para esos caracteres (unicode-range en _panel.src.css).
+
+Sale del paquete country-flag-emoji-polyfill 0.1.8 de TalkJS
+(https://github.com/talkjs/country-flag-emoji-polyfill), licencia MIT.
+
+Los dibujos son de Twemoji, de Twitter, Inc y otros colaboradores, con licencia
+CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/):
+https://github.com/twitter/twemoji

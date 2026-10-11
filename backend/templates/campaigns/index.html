@@ -22,6 +22,7 @@
   {% if 'plan' in blocked %}<a href="{{ site_url }}/#planes">{{ t('welcome_plans') }}</a>{% endif %}
   {% if 'postal' in blocked %}<a href="{{ url_for('auth.settings', section='account') }}#address">{{ t('send_blocked_postal_link') }}</a>{% endif %}
   {% if 'sender' in blocked %}<a href="{{ url_for('campaigns.sender_page') }}#handle">{{ t('send_blocked_sender_link') }}</a>{% endif %}
+  {% if 'limited' in blocked %}<a href="{{ url_for('auth.settings', section='account') }}#verificaciones">{{ t('send_blocked_limited_link') }}</a>{% endif %}
 </p>
 {% endif %}
 

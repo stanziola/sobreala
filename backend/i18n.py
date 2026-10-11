@@ -44,7 +44,16 @@ TEXTS = {
     "register_company": "Nombre de tu negocio u organización",
     "register_contact": "Tu nombre",
     "register_email": "Correo electrónico",
-    "register_phone": "Teléfono (opcional)",
+    "register_phone": "Tu teléfono",
+    "register_phone_hint": "Es al que te escribimos para agendar tu demostración.",
+    "register_company_phones": "Teléfonos de tu empresa (opcional)",
+    "register_address": "Dirección",
+    "register_address_hint": "La de tu negocio. Sale al pie de tus campañas, "
+                             "porque la ley la pide, y la verificamos con un "
+                             "documento.",
+    # El selector del país de un teléfono, y el botón de agregar otro.
+    "phone_country": "País",
+    "phone_add": "Agregar otro número",
     "register_password": "Contraseña",
     "register_submit": "Crear cuenta",
     # Partido en tres porque dos de los pedazos son enlaces. Todo el español
@@ -124,17 +133,11 @@ TEXTS = {
     # Arriba, si llegó desde una de las cuatro pantallas, cuál quería abrir.
     "welcome_gate": "Para entrar a {section}, contrata un plan o pide la "
                     "demostración.",
-    "welcome_closed_lead": "Hay dos formas de empezar: pides una demostración y "
-                           "te enseñamos el panel, o contratas un plan y "
-                           "empiezas enseguida.",
-    "welcome_demo_includes": "En la demostración abrimos tu cuenta y, juntos:",
-    "welcome_demo_tour": "recorremos el panel y cómo sale una campaña;",
-    "welcome_demo_list": "vemos de dónde sale tu lista;",
-    "welcome_demo_import": "la importamos;",
-    "welcome_demo_piece": "y armamos tu primera plantilla.",
-    "welcome_demo_after": "Desde ahí tienes lo del plan Básico para preparar "
-                          "todo. Para enviar, eliges tu plan.",
-    "welcome_demo_phone": "Tu WhatsApp",
+    # Lo que se pregunta al pedirla (octubre de 2026). Antes había aquí un
+    # párrafo con las dos formas de empezar y la lista de lo que se hace en la
+    # demostración, y se pedían el WhatsApp y el RUC o la cédula.
+    "welcome_demo_business": "¿A qué se dedica tu negocio?",
+    "welcome_demo_purpose": "¿Para qué usarás Sobreala?",
     "welcome_demo_ask": "Pedir la demostración",
     "welcome_demo_again": "Avisar de nuevo",
     "welcome_demo_sent": "Listo. Te escribimos al {phone} para agendarla.",
@@ -148,9 +151,10 @@ TEXTS = {
                      "es urgente, escríbenos a info@sobreala.com.",
     # El RUC o la cédula, que se pide al abrir la cuenta por cualquiera de los
     # dos caminos: al pedir la demostración y al pagar.
-    "tax_id_label": "RUC o cédula",
-    "tax_id_hint": "Si tu negocio es de fuera de Panamá, escribe tu "
-                   "identificación fiscal.",
+    # Se llamó «RUC o cédula» hasta octubre de 2026.
+    "tax_id_label": "Identificación personal",
+    "tax_id_hint": "Tu cédula o pasaporte. Si eres de fuera de Panamá, tu "
+                   "documento de identidad.",
 
     # --- cambiar el correo de la cuenta ------------------------------------
     "email_change_title": "Cambiar tu correo",
@@ -380,11 +384,47 @@ TEXTS = {
                                      "verdad hace falta uno.",
     "settings_account_closed_hint": "Tu cuenta se abre con la demostración o "
                                     "al contratar un plan.",
-    # El aviso amarillo de arriba de Cuenta, mientras la cuenta siga cerrada.
+    # El aviso amarillo de arriba de Cuenta, mientras falte verificar algo.
     "settings_pending_title": "Pendiente de verificación:",
-    "settings_pending_text": "tu dirección y tus datos de identidad (RUC o "
-                             "cédula) se verifican en la demostración.",
-    "settings_pending_link": "Pedir la demostración",
+    "settings_pending_text": "tu identificación personal y tu dirección. Sube "
+                             "sus documentos aquí abajo.",
+    "settings_pending_link": "Ir a las verificaciones",
+    # La cuenta limitada por el administrador: entra, pero no envía.
+    "settings_limited_title": "Tu cuenta está limitada.",
+    "settings_limited_verification": "Para enviar necesitamos verificar tu "
+                                     "identificación y tu dirección.",
+    "settings_limited_link": "Subir los documentos",
+    # Los teléfonos y la identificación, que se cambian aquí.
+    "settings_phones": "Teléfonos",
+    "settings_phones_hint": "El tuyo, que es al que te escribimos, y los de tu "
+                            "empresa.",
+    "settings_phones_done": "Listo, tus teléfonos quedaron guardados.",
+    "settings_tax_id_done": "Listo, tu identificación quedó guardada. Si ya "
+                            "estaba verificada, sube otra vez su documento.",
+    # Las verificaciones: la identificación y la dirección, cada una con su
+    # documento, que mira una persona de Sobreala.
+    "verify_title": "Verificaciones",
+    "verify_lead": "Comprobamos quién está detrás de cada cuenta. Sube un "
+                   "documento de cada cosa; lo revisamos y lo borramos en "
+                   "cuanto decidimos.",
+    "verify_name_identity": "Identificación personal",
+    "verify_name_address": "Dirección",
+    "verify_hint_identity": "Foto o PDF de tu cédula o pasaporte.",
+    "verify_hint_address": "Un recibo de luz, agua o teléfono, tu aviso de "
+                           "operación, o un documento legal que certifique tu "
+                           "dirección si tu empresa no está constituida.",
+    "verify_what_identity": "identificación personal",
+    "verify_what_address": "dirección",
+    "verify_status_missing": "Falta el documento",
+    "verify_status_review": "En revisión",
+    "verify_status_verified": "Verificada",
+    "verify_status_rejected": "Rechazada",
+    "verify_rejected_reason": "Motivo: {reason}. Sube otro documento.",
+    "verify_file": "Documento",
+    "verify_upload": "Subir documento",
+    "verify_upload_again": "Cambiar documento",
+    "verify_sent": "Recibimos tu documento. Te avisamos si hay que cambiar algo.",
+    "verify_bad": "Tiene que ser un PDF, JPG o PNG de hasta {mb} MB.",
     "settings_account_plans": "Ver los planes",
 
     "settings_security_lead": "Todo lo que decide quién puede entrar a tu "
@@ -1532,6 +1572,9 @@ TEXTS = {
     "send_blocked_quota": "Se acabaron los correos de tu plan este mes.",
     "send_blocked_sender": "Falta elegir desde qué dirección salen tus campañas.",
     "send_blocked_sender_link": "Elegirla en Remitente",
+    "send_blocked_limited": "Tu cuenta está limitada: necesitamos verificar tu "
+                            "identificación y tu dirección.",
+    "send_blocked_limited_link": "Subir los documentos en Configuración",
     # Remitente: de quién salen las campañas y a dónde vuelven las respuestas.
     "sender_title": "Remitente",
     "sender_back": "Volver a Enviar correos",
@@ -1842,6 +1885,38 @@ TEXTS = {
     "admin_demo_closed": "Cerrada",
     "admin_demo_open": "Abrir la cuenta",
     "admin_tax_id_missing": "Todavía no lo deja",
+    "admin_phone_missing": "No lo dejó",
+    "admin_company_phones": "De la empresa",
+
+    # Las verificaciones de la ficha: ver el documento, y verificarlo o
+    # rechazarlo. Las dos cosas lo borran.
+    "admin_verify_when": "Desde {when}.",
+    "admin_verify_see": "Ver documento",
+    "admin_verify_reason": "Motivo (obligatorio para rechazar)",
+    "admin_verify_ok": "Verificar",
+    "admin_verify_no": "Rechazar",
+    "admin_verify_reason_ok": "Documento revisado y correcto.",
+    "admin_filter_review": "Por verificar",
+    "admin_history_verify": "{what}: {status}",
+    "admin_history_limit": "Se limitó la cuenta",
+    "admin_history_unlimit": "Se quitó el límite",
+
+    # Limitar: entra y prepara, pero no envía. No es suspender.
+    "admin_limit_title": "Limitar la cuenta",
+    "admin_limit_hint": "Una cuenta limitada entra, prepara todo y puede pagar, "
+                        "pero no envía. Le llega un correo con el motivo y el "
+                        "enlace a sus documentos.",
+    "admin_limit_reason": "Motivo",
+    "admin_limit_reason_verification": "Falta verificar la identificación y la "
+                                       "dirección",
+    "admin_limit_note": "Nota para el registro (opcional)",
+    "admin_limit_do": "Limitar la cuenta",
+    "admin_limit_now": "Limitada {when}: {reason}.",
+    "admin_limit_note_was": "Nota: {note}",
+    "admin_limit_lift": "Quitar el límite",
+    "admin_limit_lifted": "Se quitó el límite.",
+    "admin_limit_lifted_auto": "Se quitó solo al quedar verificadas la "
+                               "identificación y la dirección.",
 
     "admin_two_step_needed": "Para entrar a administración activa antes la "
                              "autenticación de múltiples factores. Es la "
@@ -1850,9 +1925,9 @@ TEXTS = {
 
     # --- errors ------------------------------------------------------------
     "error_required": "Completa este campo.",
-    "error_phone": "Escribe un número de WhatsApp. Si no es de Panamá, con su "
-                   "código de país.",
-    "error_tax_id": "Escribe tu RUC o tu cédula, como aparece en tus documentos.",
+    "error_phone": "Ese número no parece válido. Revisa el país y los dígitos.",
+    "error_tax_id": "Escribe tu identificación como aparece en tu documento.",
+    "error_demo_answer": "Cuéntanos un poco más: entre {min} y {max} caracteres.",
     "error_email_invalid": "Ese correo no parece válido.",
     "error_email_taken": "Ya existe una cuenta con ese correo.",
     "error_password_short": "La contraseña debe tener al menos 10 caracteres.",
@@ -2087,6 +2162,25 @@ TEXTS = {
     "mail_reinstated_body": "Ya puedes entrar y seguir donde estabas.",
     "mail_reinstated_button": "Entrar al panel",
 
+    # La cuenta quedó limitada: entra y prepara, pero no envía.
+    "mail_limited_subject": "Necesitamos verificar tu cuenta de Sobreala",
+    "mail_limited_heading": "Tu cuenta está limitada",
+    "mail_limited_body_verification": "Para seguir enviando necesitamos "
+                                      "verificar tu identificación y tu "
+                                      "dirección. Sube los documentos desde "
+                                      "Configuración y los revisamos.",
+    "mail_limited_kept": "Mientras tanto puedes entrar y preparar todo: tus "
+                         "contactos, tus plantillas y tus campañas siguen ahí.",
+    "mail_limited_button": "Subir los documentos",
+
+    # Un documento de verificación que no sirvió.
+    "mail_doc_rejected_subject": "Hay que cambiar un documento de tu cuenta",
+    "mail_doc_rejected_heading": "No pudimos verificar tu {what}",
+    "mail_doc_rejected_body": "Motivo: {reason}",
+    "mail_doc_rejected_again": "Sube otro desde Configuración y lo volvemos a "
+                               "revisar.",
+    "mail_doc_rejected_button": "Subir otro documento",
+
     # Este va a quien administra, no a un cliente.
     "mail_admin_payment_subject": "{company} contrató el plan {plan}",
     "mail_admin_payment_heading": "Un cliente pagó",
@@ -2103,7 +2197,9 @@ TEXTS = {
     "mail_admin_demo_subject": "{company} pidió una demostración",
     "mail_admin_demo_heading": "{company} quiere una demostración",
     "mail_admin_demo_body": "{name} ({email}) la pidió desde su bienvenida.",
-    "mail_admin_demo_data": "WhatsApp: {phone}. RUC o cédula: {tax_id}.",
+    "mail_admin_demo_data": "Teléfono: {phone}. Identificación personal: {tax_id}.",
+    "mail_admin_demo_business": "A qué se dedica: {answer}",
+    "mail_admin_demo_purpose": "Para qué usará Sobreala: {answer}",
     "mail_admin_demo_button": "Ver la ficha",
 
     "mail_admin_plan_end_subject": "Se le venció el plan a {company}",

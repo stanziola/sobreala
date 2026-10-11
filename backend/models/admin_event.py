@@ -23,6 +23,8 @@ ROLE = "role"            # se dio o se quitó el rol de administrador
 SENDING = "sending"
 OPEN = "open"            # se abrió la cuenta después de la demostración
 INVOICE = "invoice"      # se subió o se reemplazó la factura de un pago
+VERIFY = "verify"        # se verificó o se rechazó la identificación o la dirección
+LIMIT = "limit"          # se limitó la cuenta, o se le quitó el límite
 
 
 def now() -> datetime:

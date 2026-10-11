@@ -93,21 +93,25 @@ def test_la_direccion_se_guarda_y_sale_en_el_correo(client, database, outbox,
 
 
 def test_una_direccion_vacia_o_larga_no_se_guarda(client, database, outbox):
+    """La que trae del registro se queda: una mala no la pisa."""
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    antes = accounts.postal_of(cuenta)
+    assert antes
     for mala in ("", "corta", "x" * 201):
         pantalla = browser.post("/settings/account", data={
             "csrf_token": csrf(browser, "/settings/account"),
             "address": mala}).get_data(as_text=True)
         assert "entre 10 y 200 caracteres" in pantalla
-    assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == ""
+    assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == antes
 
 
 def test_sin_testigo_no_se_guarda(client, database, outbox):
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    antes = accounts.postal_of(cuenta)
     browser.post("/settings/account", data={"address": "Calle 50, Panamá"})
-    assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == ""
+    assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == antes
 
 
 # ------------------------------------------------------ mensual y anual

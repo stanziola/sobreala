@@ -239,6 +239,10 @@ def blocked(account: dict[str, Any]) -> list[str]:
     # sistema es justo lo que no se hace.
     if not sender_email(account):
         why.append("sender")
+    # La limitó el administrador desde la ficha. Entra, prepara y paga, pero no
+    # envía hasta que se le quite (ver «el límite» en models/account.py).
+    if accounts.limited_of(account):
+        why.append("limited")
     return why
 
 

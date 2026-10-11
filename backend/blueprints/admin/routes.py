@@ -39,6 +39,7 @@ from models import mail_log
 from models import payment as payments
 from models import session as sessions
 from models import suppression as suppressions
+from models import verification_doc as verification_docs
 from services import notices
 from services import plans
 from services import sender
@@ -53,6 +54,8 @@ PER_PAGE = 100
 # de las que pidieron la demostración. No es un estado de la cuenta, así que no
 # puede estar en STATUSES; es una vista más de la misma lista.
 DEMO_FILTER = "demo"
+# Lo mismo para las que subieron un documento y esperan que alguien lo mire.
+REVIEW_FILTER = "review"
 
 
 def only_admins(view):
@@ -231,14 +234,16 @@ def accounts_list(account):
     # La cola de las demostraciones es un filtro más y no una pantalla aparte:
     # sigue siendo la lista de lo que pide acción, pero vive donde están todas.
     demo = request.args.get("status") == DEMO_FILTER
+    review = request.args.get("status") == REVIEW_FILTER
     rows, total = accounts.search(db, status=status, text=text, demo=demo,
-                                  limit=PER_PAGE, skip=skip)
+                                  review=review, limit=PER_PAGE, skip=skip)
     return render_template("admin/accounts.html", section="cuentas",
                            admin=account, rows=rows, total=total,
-                           status=DEMO_FILTER if demo else status,
+                           status=(DEMO_FILTER if demo else
+                                   REVIEW_FILTER if review else status),
                            search=text, skip=skip, per_page=PER_PAGE,
                            statuses=accounts.STATUSES,
-                           demo_filter=DEMO_FILTER)
+                           demo_filter=DEMO_FILTER, review_filter=REVIEW_FILTER)
 
 
 @bp.route("/accounts/<raw>")
@@ -275,7 +280,15 @@ def account_page(account, raw):
         paid=payments.for_account(db, client["_id"], only_paid=True, limit=50),
         invoices=invoices.paid_with_invoice(db, client["_id"]),
         invoices_shown=invoices.SHOWN,
-        invoice_mb=invoices.MAX_BYTES // (1024 * 1024))
+        invoice_mb=invoices.MAX_BYTES // (1024 * 1024),
+        company_whatsapp=[(one, accounts.whatsapp_url(one))
+                          for one in client.get("company_phones") or []],
+        verifications={kind: accounts.verification_of(client, kind)
+                       for kind in accounts.VERIFY_KINDS},
+        verify_kinds=accounts.VERIFY_KINDS,
+        documents=verification_docs.present(db, client["_id"]),
+        limited=accounts.limited_of(client),
+        limit_reasons=accounts.LIMIT_REASONS)
 
 
 @bp.route("/accounts/<raw>/update", methods=["POST"])
@@ -436,6 +449,114 @@ def upload_invoice(account, raw):
     if first:
         notices.invoice_ready(client, paid_at=paid.get("completed_at"))
     return redirect(url_for("admin.account_page", raw=raw, invoice="ok") + "#invoices")
+
+
+# ------------------------------------------------------- las verificaciones
+
+@bp.route("/accounts/<raw>/document/<kind>")
+@only_admins
+def document_file(account, raw, kind):
+    """Bajar el documento que subió el cliente para una verificación.
+
+    Se descarga, nunca se dibuja dentro del panel: es el documento de otro, y la
+    sesión abierta es la de administración. Con su tipo de verdad (el que se
+    leyó al subirlo) y sin que el navegador adivine otro.
+    """
+    client = wanted(raw)
+    if kind not in accounts.VERIFY_KINDS:
+        abort(404)
+    found = verification_docs.of(get_db(), client["_id"], kind)
+    if found is None:
+        abort(404)
+    name = "%s-%s.%s" % (kind, client["_id"], found.get("ext", "bin"))
+    return Response(
+        bytes(found["data"]),
+        mimetype=found.get("mime", "application/octet-stream"),
+        headers={"Content-Disposition": 'attachment; filename="%s"' % name,
+                 "X-Content-Type-Options": "nosniff",
+                 "Cache-Control": "no-store"})
+
+
+@bp.route("/accounts/<raw>/verify/<kind>", methods=["POST"])
+@only_admins
+def verify(account, raw, kind):
+    """Verificar o rechazar la identificación o la dirección de una cuenta.
+
+    Las dos cosas **borran el documento**: de la cédula de alguien o de su
+    recibo no hace falta guardar más que el resultado. Rechazar pide un motivo,
+    que el cliente lee en su Configuración y en el correo, porque es lo que le
+    dice qué subir. Si la cuenta estaba limitada por falta de verificación y con
+    esta quedan las dos, el límite se levanta solo.
+    """
+    db = get_db()
+    client = wanted(raw)
+    back = url_for("admin.account_page", raw=raw) + "#verificaciones"
+    if kind not in accounts.VERIFY_KINDS or not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    decision = request.form.get("decision", "")
+    reason = request.form.get("reason", "").strip()
+    if decision not in ("verified", "rejected"):
+        return redirect(back)
+    if decision == "rejected" and not reason:
+        return redirect(url_for("admin.account_page", raw=raw, missing="reason")
+                        + "#verificaciones")
+    before = accounts.verification_of(client, kind)["status"]
+    status = accounts.VERIFIED if decision == "verified" else accounts.REJECTED
+    accounts.set_verification(db, client["_id"], kind, status, by=account["_id"],
+                              reason=reason if status == accounts.REJECTED else "")
+    verification_docs.remove(db, client["_id"], kind)
+    decisions.record(db, kind=decisions.VERIFY, admin_id=account["_id"],
+                     account_id=client["_id"], before="%s:%s" % (kind, before),
+                     after="%s:%s" % (kind, status),
+                     reason=reason or t("admin_verify_reason_ok"))
+    if status == accounts.REJECTED:
+        notices.doc_rejected(client, kind=kind, reason=reason)
+    else:
+        fresh = accounts.by_id(db, client["_id"])
+        shown = accounts.limited_of(fresh)
+        if (shown and shown.get("reason") == accounts.LIMIT_VERIFICATION
+                and accounts.all_verified(fresh)
+                and accounts.unlimit(db, client["_id"])):
+            decisions.record(db, kind=decisions.LIMIT, admin_id=account["_id"],
+                             account_id=client["_id"], before=shown.get("reason"),
+                             after=None, reason=t("admin_limit_lifted_auto"))
+    return redirect(url_for("admin.account_page", raw=raw, done=1)
+                    + "#verificaciones")
+
+
+@bp.route("/accounts/<raw>/limit", methods=["POST"])
+@only_admins
+def limit_account(account, raw):
+    """Limitar la cuenta, o quitarle el límite.
+
+    Limitar no es suspender: entra, prepara todo y paga, y lo único que no
+    puede es enviar (`sender.blocked()` dice `limited`). Se elige el motivo de
+    una lista, que es lo que lee el cliente, y se deja una nota, que es para el
+    registro. Al limitarla le llega un correo con el enlace a sus documentos.
+    """
+    db = get_db()
+    client = wanted(raw)
+    back = url_for("admin.account_page", raw=raw) + "#limite"
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    shown = accounts.limited_of(client)
+    note = request.form.get("note", "").strip()
+    if request.form.get("lift"):
+        if shown and accounts.unlimit(db, client["_id"]):
+            decisions.record(db, kind=decisions.LIMIT, admin_id=account["_id"],
+                             account_id=client["_id"], before=shown.get("reason"),
+                             after=None, reason=note or t("admin_limit_lifted"))
+        return redirect(url_for("admin.account_page", raw=raw, done=1) + "#limite")
+    reason = request.form.get("reason", "")
+    if shown or reason not in accounts.LIMIT_REASONS:
+        return redirect(back)
+    if accounts.limit(db, client["_id"], reason=reason, admin_id=account["_id"],
+                      note=note):
+        decisions.record(db, kind=decisions.LIMIT, admin_id=account["_id"],
+                         account_id=client["_id"], before=None, after=reason,
+                         reason=note or t("admin_limit_reason_" + reason))
+        notices.limited(client, reason=reason)
+    return redirect(url_for("admin.account_page", raw=raw, done=1) + "#limite")
 
 
 # ---------------------------------------------------- las plantillas subidas

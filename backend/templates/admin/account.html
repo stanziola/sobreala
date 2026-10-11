@@ -23,8 +23,30 @@
   </div>
 </div>
 
-{# Lo que dejó al abrir la cuenta, por la demostración o al pagar: es lo que
-   dice quién es la empresa. Se mira, no se edita. #}
+{# Los teléfonos que dejó al registrarse: el personal, que es al que se le
+   escribe por la demostración, y los de la empresa. Se miran, no se editan. #}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('settings_phones') }}</h3>
+    {% if company_whatsapp %}
+    <p class="setting__desc">{{ t('admin_company_phones') }}:
+      {% for number, link in company_whatsapp %}
+      <a href="{{ link }}" target="_blank" rel="noopener">{{ number }}</a>{% if not loop.last %} · {% endif %}
+      {% endfor %}</p>
+    {% endif %}
+  </div>
+  <div class="setting__action">
+    {% if client.phone %}
+    <a class="setting__value" href="{{ whatsapp }}" target="_blank" rel="noopener">{{ client.phone }}</a>
+    {% else %}
+    <span class="tag tag--quiet">{{ t('admin_phone_missing') }}</span>
+    {% endif %}
+  </div>
+</div>
+
+{# La identificación personal que escribió al registrarse (en las cuentas de
+   antes, la que dejó al pedir la demostración o al pagar). Se mira, no se
+   edita; su documento está en «Verificaciones», más abajo. #}
 <div class="setting">
   <div class="setting__text">
     <h3 class="setting__title">{{ t('tax_id_label') }}</h3>
@@ -103,6 +125,8 @@
       {% if client.demo_requested_at %}
       {{ t('admin_demo_asked', when=client.demo_requested_at|ago) }}
       {% if whatsapp %}<a href="{{ whatsapp }}" target="_blank" rel="noopener">{{ t('admin_demo_whatsapp', phone=client.phone) }}</a>{% endif %}
+      {% if client.demo_business %}<br><strong>{{ t('welcome_demo_business') }}</strong> {{ client.demo_business }}{% endif %}
+      {% if client.demo_purpose %}<br><strong>{{ t('welcome_demo_purpose') }}</strong> {{ client.demo_purpose }}{% endif %}
       {% else %}
       {{ t('admin_demo_not_asked') }}
       {% endif %}
@@ -130,6 +154,77 @@
   <input id="motivo-demo" name="reason" type="text" maxlength="300" required
          autocomplete="off">
   <button class="btn" type="submit">{{ t('admin_demo_open') }}</button>
+</form>
+{% endif %}
+
+{# Las verificaciones: la identificación personal y la dirección, cada una con
+   el documento que subió el cliente. Se baja como archivo, nunca se abre aquí
+   dentro, y verificar o rechazar lo borra. Rechazar pide un motivo, que el
+   cliente lee. #}
+<h3 class="settings__subtitle" id="verificaciones">{{ t('verify_title') }}</h3>
+{% for kind in verify_kinds %}
+{% set state = verifications[kind] %}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('verify_name_' + kind) }}</h3>
+    <p class="setting__desc">
+      {% if state.status == 'rejected' %}{{ t('verify_rejected_reason', reason=state.reason) }}
+      {% elif state.at %}{{ t('admin_verify_when', when=state.at|ago) }}{% endif %}</p>
+  </div>
+  <div class="setting__action">
+    {% if state.status == 'verified' %}
+    <span class="tag tag--on">{{ t('verify_status_verified') }}</span>
+    {% elif state.status == 'review' %}
+    <span class="tag tag--warn">{{ t('verify_status_review') }}</span>
+    {% elif state.status == 'rejected' %}
+    <span class="tag tag--quiet">{{ t('verify_status_rejected') }}</span>
+    {% else %}
+    <span class="tag tag--quiet">{{ t('verify_status_missing') }}</span>
+    {% endif %}
+    {% if kind in documents %}
+    <a class="btn btn--small btn--outline"
+       href="{{ url_for('admin.document_file', raw=client._id, kind=kind) }}">{{ t('admin_verify_see') }}</a>
+    {% endif %}
+  </div>
+</div>
+{% if kind in documents %}
+<form class="row" method="post" action="{{ url_for('admin.verify', raw=client._id, kind=kind) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="visually-hidden" for="motivo-{{ kind }}">{{ t('admin_verify_reason') }}</label>
+  <input id="motivo-{{ kind }}" name="reason" type="text" maxlength="300" autocomplete="off"
+         placeholder="{{ t('admin_verify_reason') }}">
+  <button class="btn btn--small" type="submit" name="decision" value="verified">{{ t('admin_verify_ok') }}</button>
+  <button class="btn btn--small btn--outline" type="submit" name="decision" value="rejected">{{ t('admin_verify_no') }}</button>
+</form>
+{% endif %}
+{% endfor %}
+
+{# Limitar no es suspender: entra, prepara y paga, pero no envía. El motivo es
+   lo que lee el cliente; la nota, lo que queda en el registro. Si el motivo es
+   la verificación, se levanta sola al verificar las dos. #}
+<h3 class="settings__subtitle" id="limite">{{ t('admin_limit_title') }}</h3>
+{% if limited %}
+<p class="settings__lead">{{ t('admin_limit_now', reason=t('admin_limit_reason_' + limited.reason), when=limited.at|ago) }}
+  {% if limited.note %}<br>{{ t('admin_limit_note_was', note=limited.note) }}{% endif %}</p>
+<form method="post" action="{{ url_for('admin.limit_account', raw=client._id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="nota-quitar">{{ t('admin_limit_note') }}</label>
+  <input id="nota-quitar" name="note" type="text" maxlength="300" autocomplete="off">
+  <button class="btn btn--outline" type="submit" name="lift" value="1">{{ t('admin_limit_lift') }}</button>
+</form>
+{% else %}
+<p class="settings__lead">{{ t('admin_limit_hint') }}</p>
+<form method="post" action="{{ url_for('admin.limit_account', raw=client._id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="motivo-limite">{{ t('admin_limit_reason') }}</label>
+  <select id="motivo-limite" name="reason">
+    {% for one in limit_reasons %}
+    <option value="{{ one }}">{{ t('admin_limit_reason_' + one) }}</option>
+    {% endfor %}
+  </select>
+  <label for="nota-limite">{{ t('admin_limit_note') }}</label>
+  <input id="nota-limite" name="note" type="text" maxlength="300" autocomplete="off">
+  <button class="btn" type="submit">{{ t('admin_limit_do') }}</button>
 </form>
 {% endif %}
 
@@ -338,6 +433,12 @@
             {# La habilitación ya no se toma; las de antes se siguen leyendo. #}
             {% elif row.kind == 'sending' %}
             {{ t('admin_history_sending') }}
+            {% elif row.kind == 'verify' %}
+            {% set what, result = (row.after or ':').split(':', 1) %}
+            {{ t('admin_history_verify', what=t('verify_name_' + what) if what else '',
+                  status=t('verify_status_' + result) if result else '') }}
+            {% elif row.kind == 'limit' %}
+            {{ t('admin_history_limit') if row.after else t('admin_history_unlimit') }}
             {% else %}
             {{ t('admin_history_plan', before=row.before or t('admin_no_plan'),
                   after=row.after or t('admin_no_plan')) }}

@@ -74,8 +74,8 @@ permanencia.
 demo» y «Ver planes». Se quitaron la frase de debajo («Envía un correo a todos
 tus contactos con un solo click») y la nota de «Escríbenos y te acompañamos».
 - **«Solicitar demo» lleva a crear la cuenta** (`/signup` del panel), porque la
-  demostración se pide desde la bienvenida, con el WhatsApp y el RUC o la
-  cédula. Con sesión, `nav.js` le cambia la dirección por `/welcome`
+  demostración se pide desde la bienvenida, contando a qué se dedica el negocio
+  y para qué usará Sobreala. Con sesión, `nav.js` le cambia la dirección por `/welcome`
   (`data-signed-href`), y al administrador se le esconde, como los botones de
   los planes.
 - **«Ver planes» baja a `#planes`.** Los dos viven en `CTA_PRIMARY` y

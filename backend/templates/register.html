@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_phone.html" import phone, company_phones with context %}
 {% block title %}{{ t('register_title') }}{% endblock %}
 {% block content %}
 {# «Iniciar sesión», en el pie y en el aviso de un correo que ya tiene cuenta.
@@ -36,8 +37,32 @@
       · <a href="{{ url_for('auth.recover') }}">{{ t('login_forgot') }}</a></p>
     {% endif %}
 
+    {# Lo que después se verifica va desde el registro (octubre de 2026): el
+       teléfono personal, la dirección y la identificación personal. Los
+       números de la empresa son opcionales. #}
     <label for="phone">{{ t('register_phone') }}</label>
-    <input id="phone" name="phone" type="tel" value="{{ form.phone }}" autocomplete="tel">
+    {{ phone('phone', 'phone', form.phone_country, form.phone, phone_options,
+             label=t('register_phone'), required=True,
+             describedby='phone-hint') }}
+    <p class="hint" id="phone-hint">{{ t('register_phone_hint') }}</p>
+    {% if errors.phone %}<p class="error">{{ errors.phone }}</p>{% endif %}
+
+    <label for="company-phone-1">{{ t('register_company_phones') }}</label>
+    {{ company_phones(company, phone_options, company_max) }}
+    {% if errors.company_phones %}<p class="error">{{ errors.company_phones }}</p>{% endif %}
+
+    <label for="address">{{ t('register_address') }}</label>
+    <input id="address" name="address" value="{{ form.address }}" required
+           maxlength="{{ postal_max }}" autocomplete="street-address"
+           aria-describedby="address-hint">
+    <p class="hint" id="address-hint">{{ t('register_address_hint') }}</p>
+    {% if errors.address %}<p class="error">{{ errors.address }}</p>{% endif %}
+
+    <label for="tax_id">{{ t('tax_id_label') }}</label>
+    <input id="tax_id" name="tax_id" value="{{ form.tax_id }}" required
+           aria-describedby="tax-id-hint">
+    <p class="hint" id="tax-id-hint">{{ t('tax_id_hint') }}</p>
+    {% if errors.tax_id %}<p class="error">{{ errors.tax_id }}</p>{% endif %}
 
     <label for="password">{{ t('register_password') }}</label>
     <div class="field">

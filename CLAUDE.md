@@ -225,9 +225,14 @@ cosa está como está, y lo que ya se probó y se quitó.
 - **Una cuenta nueva nace cerrada** (`accounts.is_open()`): ve su bienvenida y
   Configuración, y puede pagar. Se abre **con la demostración**, que pide desde
   `/welcome` y abre el administrador en la ficha (y queda con lo del Básico sin
-  enviar), **o con el pago**, que la abre con todo, envío incluido. Las dos piden
-  el RUC o la cédula (`tax_id`). La puerta está en `needs()`. La habilitación
-  antes del primer envío se quitó en octubre de 2026.
+  enviar), **o con el pago**, que la abre con todo, envío incluido. La puerta
+  está en `needs()`. La habilitación antes del primer envío se quitó en octubre
+  de 2026.
+- **El registro pide teléfono personal (con su país), los de la empresa, la
+  dirección y la identificación personal** (`tax_id`). La identificación y la
+  dirección **se verifican a mano** con un documento que se borra al decidir
+  (`verification_docs`). El administrador puede **limitar** una cuenta: entra,
+  pero no envía (`sender.blocked()` dice `limited`).
 - `role` vale `client` o `admin` en todas las cuentas. `/admin` responde 404 a
   quien no lo es y exige doble factor; un administrador solo administra.
 - **Los usuarios de una empresa son documentos de `accounts`** con `owner_id`

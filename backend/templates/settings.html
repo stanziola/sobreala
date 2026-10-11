@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_phone.html" import phone, company_phones with context %}
 {% block title %}{{ t('settings_title') }}{% endblock %}
 {% block wrap_class %}wrap--wide{% endblock %}
 
@@ -51,13 +52,22 @@
     {# ------------------------------------------------------------ cuenta #}
     {% if section == 'account' %}
     <h2 class="settings__title">{{ t('settings_section_account') }}</h2>
-    {# Mientras la cuenta no se abra, nadie ha mirado su dirección ni su RUC o
-       cédula: se verifican en la demostración. Amarillo, porque no impide nada
-       de esta pantalla pero es lo que falta. #}
-    {% if bar_closed %}
+    {# Limitada por el administrador: entra y prepara, pero no envía hasta que
+       verifiquemos lo de abajo. Va primero, porque es lo que la detiene. #}
+    {% if limited %}
+    <div class="notice">
+      <p><strong>{{ t('settings_limited_title') }}</strong>
+        {{ t('settings_limited_' + limited.reason) }}</p>
+      <p><a href="#verificaciones">{{ t('settings_limited_link') }}</a></p>
+    </div>
+    {% endif %}
+    {# Mientras falte verificar la identificación o la dirección. Amarillo,
+       porque no impide nada de esta pantalla pero es lo que falta. Hasta
+       octubre de 2026 decía que se verificaban en la demostración. #}
+    {% if verifications and not all_verified %}
     <div class="notice notice--pending">
       <p><strong>{{ t('settings_pending_title') }}</strong> {{ t('settings_pending_text') }}</p>
-      <p><a href="{{ url_for('auth.welcome') }}">{{ t('settings_pending_link') }}</a></p>
+      <p><a href="#verificaciones">{{ t('settings_pending_link') }}</a></p>
     </div>
     {% endif %}
     <hr class="settings__rule">
@@ -98,6 +108,80 @@
       {% if postal_error %}<p class="error">{{ postal_error }}</p>{% endif %}
     </form>
     {% endcall %}
+
+    {% if verifications %}
+    {# Los teléfonos: el personal, que es al que se le escribe, y los de la
+       empresa, hasta tres. Se guardan juntos. #}
+    {% if request.args.get('phones') %}
+    <p class="notice notice--ok">{{ t('settings_phones_done') }}</p>
+    {% endif %}
+    {% call row(t('settings_phones'), t('settings_phones_hint'), id='phones') %}
+    <form class="setting__form setting__form--wide" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="what" value="phones">
+      {{ phone('telefono-personal', 'phone', phone_country, phone_number,
+               phone_options, label=t('register_phone'), required=True) }}
+      <p class="hint">{{ t('register_company_phones') }}</p>
+      {{ company_phones(company, phone_options, company_max) }}
+      <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
+      {% if account_errors.phones %}<p class="error">{{ account_errors.phones }}</p>{% endif %}
+    </form>
+    {% endcall %}
+
+    {% if request.args.get('tax') %}
+    <p class="notice notice--ok">{{ t('settings_tax_id_done') }}</p>
+    {% endif %}
+    {% call row(t('tax_id_label'), t('tax_id_hint'), id='tax-id') %}
+    <form class="setting__form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="what" value="tax_id">
+      <label class="visually-hidden" for="identificacion-campo">{{ t('tax_id_label') }}</label>
+      <input id="identificacion-campo" name="tax_id" type="text" maxlength="40"
+             value="{{ request.form.get('tax_id', tax_id) if account_errors.tax_id else tax_id }}">
+      <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
+      {% if account_errors.tax_id %}<p class="error">{{ account_errors.tax_id }}</p>{% endif %}
+    </form>
+    {% endcall %}
+
+    {# Las verificaciones: la identificación personal y la dirección, cada una
+       con su documento. Las mira una persona de Sobreala y el archivo se borra
+       al decidir. Cambiar el dato de arriba la vuelve a abrir. #}
+    <h3 class="settings__subtitle" id="verificaciones">{{ t('verify_title') }}</h3>
+    <p class="setting__desc">{{ t('verify_lead') }}</p>
+    {% if request.args.get('doc') == 'ok' %}
+    <p class="notice notice--ok">{{ t('verify_sent') }}</p>
+    {% elif request.args.get('doc') == 'bad' %}
+    <p class="notice">{{ t('verify_bad', mb=verify_mb) }}</p>
+    {% endif %}
+    {% for kind in verify_kinds %}
+    {% set state = verifications[kind] %}
+    {% call row(t('verify_name_' + kind), t('verify_hint_' + kind)) %}
+    {% if state.status == 'verified' %}
+    <span class="tag tag--on">{{ t('verify_status_verified') }}</span>
+    {% else %}
+    <div class="verify__form">
+      {% if state.status == 'review' %}
+      <span class="tag tag--quiet">{{ t('verify_status_review') }}</span>
+      {% elif state.status == 'rejected' %}
+      <span class="tag tag--warn">{{ t('verify_status_rejected') }}</span>
+      <p class="setting__desc">{{ t('verify_rejected_reason', reason=state.reason) }}</p>
+      {% else %}
+      <span class="tag tag--warn">{{ t('verify_status_missing') }}</span>
+      {% endif %}
+      <form class="verify__form" method="post" enctype="multipart/form-data"
+            action="{{ url_for('auth.upload_document', kind=kind) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="visually-hidden" for="documento-{{ kind }}">{{ t('verify_file') }}: {{ t('verify_name_' + kind) }}</label>
+        <input id="documento-{{ kind }}" name="archivo" type="file"
+               accept="application/pdf,image/jpeg,image/png" required>
+        <button class="btn btn--small" type="submit">
+          {{ t('verify_upload_again') if state.status == 'review' else t('verify_upload') }}</button>
+      </form>
+    </div>
+    {% endif %}
+    {% endcall %}
+    {% endfor %}
+    {% endif %}
 
     {% call row(t('settings_account_status'), '') %}
     <span class="setting__value">{{ t('status_short_' + status_of(account)) }}</span>

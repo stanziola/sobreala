@@ -20,6 +20,9 @@
        pantalla aparte. #}
     <option value="{{ demo_filter }}"{% if status == demo_filter %} selected{% endif %}>
       {{ t('admin_filter_demo') }}</option>
+    {# Las que subieron un documento y esperan que alguien lo mire. #}
+    <option value="{{ review_filter }}"{% if status == review_filter %} selected{% endif %}>
+      {{ t('admin_filter_review') }}</option>
   </select>
 
   <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_search_action') }}</button>

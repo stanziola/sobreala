@@ -323,6 +323,39 @@ def suspended(account) -> bool:
                     t("mail_suspended_write", email=Config.SYSTEM_FROM_EMAIL)])
 
 
+def limited(account, *, reason: str) -> bool:
+    """Que la cuenta quedó limitada: entra y prepara, pero no envía.
+
+    Sin interruptor, como la suspensión: cambia lo que puede hacer. Lleva el
+    motivo de la lista (no la nota del administrador, que es para el registro)
+    y el enlace a donde se arregla.
+    """
+    return deliver(
+        account, purpose=mail_log.LIMITED,
+        subject=t("mail_limited_subject"),
+        heading=t("mail_limited_heading"),
+        paragraphs=[t("mail_limited_body_" + reason), t("mail_limited_kept")],
+        button={"href": verifications_url(), "label": t("mail_limited_button")})
+
+
+def doc_rejected(account, *, kind: str, reason: str) -> bool:
+    """Que un documento de verificación no sirvió, con el motivo, para que suba
+    otro. Sin interruptor: si no se entera, no puede arreglarlo."""
+    return deliver(
+        account, purpose=mail_log.DOC_REJECTED,
+        subject=t("mail_doc_rejected_subject"),
+        heading=t("mail_doc_rejected_heading", what=t("verify_what_" + kind)),
+        paragraphs=[t("mail_doc_rejected_body", reason=reason),
+                    t("mail_doc_rejected_again")],
+        button={"href": verifications_url(),
+                "label": t("mail_doc_rejected_button")})
+
+
+def verifications_url() -> str:
+    return (f"{Config.APP_BASE_URL}"
+            f"{url_for('auth.settings', section='account')}#verificaciones")
+
+
 def reinstated(account) -> bool:
     return deliver(
         account, purpose=mail_log.REINSTATED,
@@ -382,9 +415,10 @@ def signup_to_admins(db, client) -> bool:
 def demo_to_admins(db, client) -> bool:
     """Avisarle a quien administra que una cuenta pidió la demostración.
 
-    Lleva lo que hace falta para escribirle y para comprobar que la empresa
-    existe antes de abrirle la cuenta: el WhatsApp y el RUC o la cédula. Sin
-    esto, enterarse de que alguien espera obliga a entrar a mirar.
+    Lleva lo que hace falta para escribirle y preparar la llamada: el teléfono
+    personal, la identificación y las dos respuestas (a qué se dedica y para qué
+    usará Sobreala). Sin esto, enterarse de que alguien espera obliga a entrar a
+    mirar.
     """
     todos = admins_who_want(db, accounts.ADMIN_DEMO)
     ok = True
@@ -398,7 +432,11 @@ def demo_to_admins(db, client) -> bool:
                           email=client.get("email", "")),
                         t("mail_admin_demo_data",
                           phone=client.get("phone", ""),
-                          tax_id=accounts.tax_id_of(client))],
+                          tax_id=accounts.tax_id_of(client)),
+                        t("mail_admin_demo_business",
+                          answer=client.get("demo_business", "")),
+                        t("mail_admin_demo_purpose",
+                          answer=client.get("demo_purpose", ""))],
             button={"href": file_of(client),
                     "label": t("mail_admin_demo_button")},
             foot=switch_off_hint()) and ok

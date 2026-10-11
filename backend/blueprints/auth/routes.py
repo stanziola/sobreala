@@ -38,6 +38,8 @@ from models import invoice as invoices
 from models import payment as payments
 from models import session as sessions
 from models import token as tokens
+from models import verification_doc as verification_docs
+from services import countries
 from services import mailer
 from services import notices
 from services import paguelofacil
@@ -802,12 +804,15 @@ def register():
         else:
             session.pop(ADDING, None)
 
-    form = {"company_name": "", "contact_name": "", "email": "", "phone": ""}
+    form = {"company_name": "", "contact_name": "", "email": "", "phone": "",
+            "phone_country": countries.DEFAULT, "address": "", "tax_id": ""}
+    company: list[dict[str, str]] = []
     errors: dict[str, str] = {}
 
     if request.method == "POST":
         db = get_db()
         form = {k: request.form.get(k, "").strip() for k in form}
+        company = typed_company_phones()
         password = request.form.get("password", "")
 
         if not csrf_ok(request.form.get("csrf_token")):
@@ -828,6 +833,26 @@ def register():
             elif not email:
                 errors["email"] = t("error_email_invalid")
 
+            # Desde octubre de 2026 el registro trae lo que después se verifica:
+            # el teléfono personal, la dirección y la identificación personal. Los
+            # números de la empresa son opcionales.
+            phone = accounts.clean_phone(form["phone"], form["phone_country"])
+            if not form["phone"]:
+                errors["phone"] = t("error_required")
+            elif not phone:
+                errors["phone"] = t("error_phone")
+            company_phones, bad_phone = accounts.clean_phones(
+                [one["number"] for one in company], [one["country"] for one in company])
+            if bad_phone:
+                errors["company_phones"] = t("error_phone")
+            address = accounts.clean_postal(form["address"])
+            if address is None:
+                errors["address"] = t("settings_postal_bad", min=accounts.POSTAL_MIN,
+                                      max=accounts.POSTAL_MAX)
+            tax_id = accounts.clean_tax_id(form["tax_id"])
+            if tax_id is None:
+                errors["tax_id"] = t("error_tax_id")
+
             problem = password_problem(password)
             if problem:
                 errors["password"] = t(PASSWORD_MESSAGES[problem])
@@ -841,7 +866,10 @@ def register():
                     contact_name=form["contact_name"],
                     email=email,
                     password=password,
-                    phone=form["phone"],
+                    phone=phone,
+                    company_phones=company_phones,
+                    postal_address=address,
+                    tax_id=tax_id,
                 )
                 if created:
                     log_auth(db, events.REGISTER, events.CREATED, email=email,
@@ -853,8 +881,7 @@ def register():
                         tokens.discard(db, created["_id"])
                         accounts.delete(db, created["_id"])
                         errors["form"] = t("error_mail_failed")
-                        return render_template("register.html", form=form,
-                                               errors=errors, adding=adding)
+                        return register_screen(form, errors, adding, company)
                     await_code(created["_id"])
                 else:
                     # The address is taken, and the screen says so. Rule 7 in
@@ -874,12 +901,29 @@ def register():
                         deliver(db, send_already_registered, existing,
                                 kind=events.REGISTER)
                     errors["email"] = t("error_email_taken")
-                    return render_template("register.html", form=form,
-                                           errors=errors, adding=adding)
+                    return register_screen(form, errors, adding, company)
                 return redirect(url_for("auth.confirm"))
 
+    return register_screen(form, errors, adding, company)
+
+
+def typed_company_phones() -> list[dict[str, str]]:
+    """Los números de la empresa tal como llegaron del formulario, hasta tres,
+    para limpiarlos y para volver a dibujarlos si algo falló."""
+    numbers = request.form.getlist("company_phone")
+    chosen = request.form.getlist("company_phone_country")
+    return [{"number": number.strip()[:40],
+             "country": (chosen[i] if i < len(chosen) else countries.DEFAULT)}
+            for i, number in enumerate(numbers[:accounts.COMPANY_PHONES_MAX])]
+
+
+def register_screen(form: dict, errors: dict, adding: bool,
+                    company: list[dict[str, str]]):
     return render_template("register.html", form=form, errors=errors,
-                           adding=adding)
+                           adding=adding, company=company,
+                           phone_options=countries.options(),
+                           company_max=accounts.COMPANY_PHONES_MAX,
+                           postal_max=accounts.POSTAL_MAX)
 
 
 # -------------------------------------------------------------------- confirm
@@ -1582,9 +1626,9 @@ def demo_screen(account: dict, *, errors: dict | None = None,
                 form: dict | None = None):
     """La bienvenida de una cuenta cerrada, con lo que ya pidió si lo pidió.
 
-    El número y el RUC salen escritos: el número del registro, donde era
-    opcional, y los dos si ya pidió la demostración una vez. Corregirlos es
-    volver a pedirla.
+    Las dos respuestas salen escritas si ya pidió la demostración una vez.
+    Corregirlas es volver a pedirla. El número al que se le escribe es el
+    teléfono personal del registro.
 
     Si llegó desde una de las cuatro pantallas, arriba dice cuál quería abrir y
     que se abre contratando o con la demostración. Un valor que no es una
@@ -1594,8 +1638,8 @@ def demo_screen(account: dict, *, errors: dict | None = None,
     wanted = GATE_NAMES.get(request.args.get("para", ""))
     return render_template(
         "welcome.html", account=account, closed=True, errors=errors or {},
-        form=form or {"phone": company.get("phone", ""),
-                      "tax_id": accounts.tax_id_of(company)},
+        form=form or {"business": company.get("demo_business", ""),
+                      "purpose": company.get("demo_purpose", "")},
         # Lo que quedó guardado, no lo que se acaba de escribir mal.
         asked=company.get("demo_requested_at"),
         asked_phone=company.get("phone", ""),
@@ -1604,8 +1648,10 @@ def demo_screen(account: dict, *, errors: dict | None = None,
 
 @bp.route("/welcome/demo", methods=["POST"])
 def request_demo():
-    """Pedir la demostración: el WhatsApp al que se le escribe para agendarla, y
-    el RUC o la cédula, que el administrador comprueba antes de abrir la cuenta.
+    """Pedir la demostración: a qué se dedica el negocio y para qué usará
+    Sobreala. Se le escribe al teléfono personal del registro; hasta octubre de
+    2026 se pedían aquí un WhatsApp, que era el mismo número, y el RUC o la
+    cédula, que ahora se escribe al registrarse.
 
     Solo el dueño, y con el correo confirmado como para comprar: es a donde va
     el aviso de que se abrió, y un registro sin confirmar se borra a las 24
@@ -1624,29 +1670,30 @@ def request_demo():
         return redirect(url_for("auth.welcome"))
 
     db = get_db()
-    form = {"phone": request.form.get("phone", "").strip()[:40],
-            "tax_id": request.form.get("tax_id", "").strip()[:80]}
+    form = {"business": request.form.get("business", "")[:1000],
+            "purpose": request.form.get("purpose", "")[:1000]}
     errors: dict[str, str] = {}
     if not csrf_ok(request.form.get("csrf_token")):
         errors["form"] = t("error_csrf")
     elif not accounts.is_confirmed(account):
         errors["form"] = t("demo_needs_email")
     else:
-        phone = accounts.clean_phone(form["phone"])
-        tax_id = accounts.clean_tax_id(form["tax_id"])
-        if not phone:
-            errors["phone"] = t("error_phone")
-        if not tax_id:
-            errors["tax_id"] = t("error_tax_id")
-        # Después de comprobar los datos: un número mal escrito no gasta
-        # ninguno de los tres avisos del día.
+        business = accounts.clean_answer(form["business"])
+        purpose = accounts.clean_answer(form["purpose"])
+        for name, answer in (("business", business), ("purpose", purpose)):
+            if answer is None:
+                errors[name] = t("error_demo_answer", min=accounts.DEMO_ANSWER[0],
+                                 max=accounts.DEMO_ANSWER[1])
+        # Después de comprobar las respuestas: una vacía no gasta ninguno de los
+        # tres avisos del día.
         if not errors and not rate_limit(db, f"demo:account:{account['_id']}",
                                          *DEMO_PER_ACCOUNT):
             errors["form"] = t("demo_too_many")
         if not errors:
-            accounts.request_demo(db, account["_id"], phone=phone, tax_id=tax_id)
-            # A quien administra, con el número y el RUC dentro. No puede romper
-            # una petición que ya quedó guardada: se traga lo suyo.
+            accounts.request_demo(db, account["_id"], business=business,
+                                  purpose=purpose)
+            # A quien administra, con el teléfono y las respuestas dentro. No
+            # puede romper una petición que ya quedó guardada: se traga lo suyo.
             notices.demo_to_admins(db, accounts.by_id(db, account["_id"]))
             return redirect(url_for("auth.welcome", demo="sent"))
     return demo_screen(account, errors=errors, form=form)
@@ -1736,17 +1783,45 @@ def settings(section: str = "account"):
 
     db = get_db()
     postal_error = ""
+    account_errors: dict[str, str] = {}
+    company: list[dict[str, str]] | None = None
     if request.method == "POST" and section == "account":
-        # La dirección postal, lo único que se escribe en Cuenta.
+        # Lo que se escribe en Cuenta: la dirección, los teléfonos y la
+        # identificación personal, cada uno con su propio formulario (`what`).
         if not csrf_ok(request.form.get("csrf_token")):
             return redirect(url_for("auth.settings", section="account"))
-        address = accounts.clean_postal(request.form.get("address", ""))
-        if address is not None:
-            accounts.set_postal(db, account["_id"], address)
-            return redirect(url_for("auth.settings", section="account",
-                                    address=1) + "#address")
-        postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
-                         max=accounts.POSTAL_MAX)
+        what = request.form.get("what", "address")
+        if what == "phones":
+            phone = accounts.clean_phone(request.form.get("phone", ""),
+                                         request.form.get("phone_country", ""))
+            company = typed_company_phones()
+            company_phones, bad = accounts.clean_phones(
+                [one["number"] for one in company], [one["country"] for one in company])
+            if phone and not bad:
+                accounts.set_phones(db, account["_id"], phone=phone,
+                                    company_phones=company_phones)
+                return redirect(url_for("auth.settings", section="account",
+                                        phones=1) + "#phones")
+            account_errors["phones"] = t("error_phone")
+        elif what == "tax_id":
+            tax_id = accounts.clean_tax_id(request.form.get("tax_id", ""))
+            if tax_id is not None:
+                if tax_id != accounts.tax_id_of(account):
+                    accounts.set_tax_id(db, account["_id"], tax_id)
+                    changed_verified(db, account, accounts.IDENTITY)
+                return redirect(url_for("auth.settings", section="account",
+                                        tax=1) + "#tax-id")
+            account_errors["tax_id"] = t("error_tax_id")
+        else:
+            address = accounts.clean_postal(request.form.get("address", ""))
+            if address is not None:
+                if address != accounts.postal_of(account):
+                    accounts.set_postal(db, account["_id"], address)
+                    changed_verified(db, account, accounts.ADDRESS)
+                return redirect(url_for("auth.settings", section="account",
+                                        address=1) + "#address")
+            postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
+                             max=accounts.POSTAL_MAX)
     elif request.method == "POST":
         if section != "notifications":
             return redirect(url_for("auth.settings", section=section))
@@ -1792,12 +1867,84 @@ def settings(section: str = "account"):
                 else accounts.postal_of(account)),
         postal_error=postal_error,
         postal_max=accounts.POSTAL_MAX,
+        account_errors=account_errors,
+        **account_screen(db, account, company),
         # Los usuarios de la cuenta, en Seguridad. Un usuario no los ve: esta
         # pantalla es suya para su contraseña y su segundo factor.
         is_member=accounts.is_member(account),
         **({} if accounts.is_member(account) or accounts.is_admin(account)
            else users_screen(db, account)),
     )
+
+
+def changed_verified(db, account: dict, kind: str) -> None:
+    """El dato de una verificación cambió: lo que se miró era el de antes, así
+    que vuelve a faltar el documento, y el que esperaba revisión ya no sirve."""
+    if accounts.verification_of(account, kind)["status"] != accounts.MISSING:
+        accounts.forget_verification(db, account["_id"], kind)
+        verification_docs.remove(db, account["_id"], kind)
+
+
+def account_screen(db, account: dict, company: list[dict[str, str]] | None) -> dict:
+    """Lo que dibuja Cuenta además de lo de siempre: los teléfonos, las
+    verificaciones y el límite. Para un administrador o un usuario, nada: esa
+    sección no es suya."""
+    if accounts.is_admin(account) or accounts.is_member(account):
+        return {}
+    country, number = countries.split(account.get("phone", ""))
+    if company is None:
+        company = []
+        for stored in account.get("company_phones") or []:
+            iso, digits = countries.split(stored)
+            company.append({"country": iso, "number": digits})
+    return {
+        "phone_options": countries.options(),
+        "phone_country": country, "phone_number": number,
+        "company": company, "company_max": accounts.COMPANY_PHONES_MAX,
+        "tax_id": accounts.tax_id_of(account),
+        "verifications": {kind: accounts.verification_of(account, kind)
+                          for kind in accounts.VERIFY_KINDS},
+        "verify_kinds": accounts.VERIFY_KINDS,
+        "all_verified": accounts.all_verified(account),
+        "verify_mb": verification_docs.MAX_BYTES // (1024 * 1024),
+        "limited": accounts.limited_of(account),
+    }
+
+
+@bp.route("/settings/account/document/<kind>", methods=["POST"])
+def upload_document(kind: str):
+    """Subir el documento de una verificación: la foto de la identificación o
+    el que certifica la dirección.
+
+    Solo el dueño. PDF, JPG o PNG de hasta 5 MB, reconocidos por cómo empiezan.
+    Subir otro reemplaza el anterior, y la verificación pasa a «en revisión»
+    hasta que el administrador la mire. Una ya verificada no se vuelve a subir:
+    cambiar el dato es lo que la reabre.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    back = url_for("auth.settings", section="account")
+    if kind not in accounts.VERIFY_KINDS or not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back + "#verificaciones")
+    if accounts.verification_of(account, kind)["status"] == accounts.VERIFIED:
+        return redirect(back + "#verificaciones")
+
+    archivo = request.files.get("archivo")
+    raw = archivo.read(verification_docs.MAX_BYTES + 1) if archivo else b""
+    found = verification_docs.file_type(raw) if raw else None
+    if not raw or len(raw) > verification_docs.MAX_BYTES or found is None:
+        return redirect(url_for("auth.settings", section="account", doc="bad",
+                                kind=kind) + "#verificaciones")
+    db = get_db()
+    mime, ext = found
+    verification_docs.save(db, account["_id"], kind, data=raw, mime=mime, ext=ext)
+    accounts.set_verification(db, account["_id"], kind, accounts.REVIEW)
+    return redirect(url_for("auth.settings", section="account", doc="ok",
+                            kind=kind) + "#verificaciones")
 
 
 # ---------------------------------------------------------------- devices

@@ -11,16 +11,8 @@
      las dos formas de seguir: pedir la demostración, o contratar. Si llegó
      desde una de ellas, primero se dice cuál quería abrir. #}
   {% if gate %}<p class="notice">{{ t('welcome_gate', section=gate) }}</p>{% endif %}
-  <p class="lead">{{ t('welcome_closed_lead') }}</p>
-
-  <p>{{ t('welcome_demo_includes') }}</p>
-  <ul class="steps">
-    <li>{{ t('welcome_demo_tour') }}</li>
-    <li>{{ t('welcome_demo_list') }}</li>
-    <li>{{ t('welcome_demo_import') }}</li>
-    <li>{{ t('welcome_demo_piece') }}</li>
-  </ul>
-  <p class="hint">{{ t('welcome_demo_after') }}</p>
+  {#- Hubo aquí un párrafo con las dos formas de empezar y la lista de lo que
+      se hace en la demostración; se quitaron en octubre de 2026. -#}
 
   {% if request.args.get('demo') == 'sent' %}
   <p class="notice notice--ok">{{ t('welcome_demo_sent', phone=asked_phone) }}</p>
@@ -34,16 +26,15 @@
   <form method="post" action="{{ url_for('auth.request_demo') }}" novalidate data-once>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <label for="phone">{{ t('welcome_demo_phone') }}</label>
-    <input id="phone" name="phone" type="tel" value="{{ form.phone }}"
-           autocomplete="tel" required>
-    {% if errors.phone %}<p class="error">{{ errors.phone }}</p>{% endif %}
+    {#- Lo que se pregunta para preparar la llamada. El teléfono al que se le
+        escribe es el personal del registro, así que aquí ya no se pide. -#}
+    <label for="business">{{ t('welcome_demo_business') }}</label>
+    <textarea id="business" name="business" rows="3" maxlength="500" required>{{ form.business }}</textarea>
+    {% if errors.business %}<p class="error">{{ errors.business }}</p>{% endif %}
 
-    <label for="tax_id">{{ t('tax_id_label') }}</label>
-    <input id="tax_id" name="tax_id" value="{{ form.tax_id }}" required
-           aria-describedby="tax-id-hint">
-    <p class="hint" id="tax-id-hint">{{ t('tax_id_hint') }}</p>
-    {% if errors.tax_id %}<p class="error">{{ errors.tax_id }}</p>{% endif %}
+    <label for="purpose">{{ t('welcome_demo_purpose') }}</label>
+    <textarea id="purpose" name="purpose" rows="3" maxlength="500" required>{{ form.purpose }}</textarea>
+    {% if errors.purpose %}<p class="error">{{ errors.purpose }}</p>{% endif %}
 
     <button class="btn" type="submit">
       {{ t('welcome_demo_again') if asked else t('welcome_demo_ask') }}</button>

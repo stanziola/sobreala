@@ -1,0 +1,42 @@
+{# El teléfono con su país: un selector con la bandera, el prefijo y el nombre
+   («🇵🇦 +507 Panamá»; el prefijo antes, para que en un teléfono se corte el
+   nombre y no él), y el número al lado. Un <select> de verdad, así que
+   funciona sin JavaScript y con el teclado. La bandera son letras que el
+   sistema dibuja; en Windows las dibuja la fuente TwemojiCountryFlags (ver
+   _panel.src.css).
+
+   `options` sale de services/countries.py (`phone_options` en la vista). Se
+   importa con `with context`, porque necesita t(). #}
+{% macro phone(id, name, country, number, options, label='', required=False,
+               describedby='') %}
+<div class="phone">
+  <label class="visually-hidden" for="{{ id }}-pais">{{ t('phone_country') }}{% if label %}: {{ label }}{% endif %}</label>
+  <select class="phone__country" id="{{ id }}-pais" name="{{ name }}_country"
+          autocomplete="tel-country-code">
+    {% for one in options %}
+    <option value="{{ one.iso }}"{% if one.iso == country %} selected{% endif %}>{{ one.label }}</option>
+    {% endfor %}
+  </select>
+  <input class="phone__number" id="{{ id }}" name="{{ name }}" type="tel"
+         value="{{ number }}" autocomplete="tel-national" inputmode="tel"
+         {%- if required %} required{% endif %}
+         {%- if describedby %} aria-describedby="{{ describedby }}"{% endif %}>
+</div>
+{% endmacro %}
+
+{# Los números de la empresa: hasta tres, todos opcionales. Sin JavaScript se
+   ven los tres campos; con él, solo los que tienen algo y uno vacío, más
+   «Agregar otro número» (panel.js, `data-more`). #}
+{% macro company_phones(entries, options, max_count) %}
+<div class="phones" data-more>
+  {% for i in range(max_count) %}
+  {% set entry = entries[i] if i < entries|length else {'country': 'PA', 'number': ''} %}
+  <div class="phones__row" data-more-row>
+    {{ phone('company-phone-' ~ (i + 1), 'company_phone', entry.country, entry.number,
+             options, label=t('register_company_phones') ~ ' ' ~ (i + 1)) }}
+  </div>
+  {% endfor %}
+  <button class="btn btn--small btn--outline phones__add" type="button" hidden
+          data-more-add>{{ t('phone_add') }}</button>
+</div>
+{% endmacro %}

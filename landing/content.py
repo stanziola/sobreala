@@ -88,8 +88,9 @@ PLAN_BUTTONS = {
     "yearly_only": "Solo en anual",
 }
 
-# Los dos botones de la portada. La demostración se pide desde la cuenta, con su
-# WhatsApp y su RUC, así que el botón lleva a crearla; a quien ya tiene sesión,
+# Los dos botones de la portada. La demostración se pide desde la cuenta (el
+# teléfono y la identificación vienen del registro), así que el botón lleva a
+# crearla; a quien ya tiene sesión,
 # nav.js lo manda a su bienvenida, que es donde se pide. Las dos direcciones son
 # del panel.
 CTA_PRIMARY = {"label": "Solicitar demo", "path": "/signup", "signed_path": "/welcome"}
@@ -922,9 +923,11 @@ def holder_line() -> str:
         quien += f", {LEGAL_HOLDER['identifier']}"
     return f"{quien}, en {LEGAL_HOLDER['place']}."
 
-UPDATED = "15 de septiembre de 2026"
-# Los términos cambiaron solos: dejaron de ofrecer el diseño como servicio.
-TERMS_UPDATED = "18 de septiembre de 2026"
+# Las dos cambiaron el 11 de octubre de 2026: el registro pide teléfono,
+# dirección e identificación personal, que se verifican con un documento que se
+# borra al revisarlo, y una cuenta puede quedar limitada hasta verificarse.
+UPDATED = "11 de octubre de 2026"
+TERMS_UPDATED = "11 de octubre de 2026"
 
 PRIVACY = {
     "meta_title": "Política de privacidad · Sobreala",
@@ -972,9 +975,15 @@ PRIVACY = {
             "title": "Qué datos tratamos",
             "items": [
                 "**De tu cuenta:** nombre del negocio, nombre de contacto, "
-                "correo, teléfono y el RUC o la cédula que nos das al abrirla. "
-                "La contraseña no se guarda: solo un hash del que no se puede "
-                "volver atrás.",
+                "correo, tu teléfono y los de tu empresa, la dirección y tu "
+                "identificación personal (cédula o pasaporte), que nos das al "
+                "registrarte. La contraseña no se guarda: solo un hash del que "
+                "no se puede volver atrás.",
+                "**Para verificar tu cuenta:** la foto o el PDF de tu "
+                "identificación y un documento que certifique tu dirección (un "
+                "recibo, tu aviso de operación o un documento legal). Los mira "
+                "una persona de Sobreala y **se borran en cuanto decide**; de "
+                "ellos solo queda si se verificaron o no.",
                 "**De tus contactos:** las direcciones de correo y las "
                 "etiquetas que subes, junto con las bajas y los rebotes de esa "
                 "lista.",
@@ -998,8 +1007,8 @@ PRIVACY = {
             "items": [
                 "Crear tu cuenta, confirmar que la dirección es tuya y dejarte "
                 "entrar.",
-                "Agendar contigo la demostración y comprobar que tu empresa "
-                "existe antes de abrir tu cuenta.",
+                "Agendar contigo la demostración y comprobar quién está detrás "
+                "de cada cuenta, con tu identificación y tu dirección.",
                 "Enviar las campañas que tú prepares, a la lista que tú elijas.",
                 "Cobrar el plan y llevar la cuenta de tu cuota.",
                 "Proteger la entregabilidad de todos: como el dominio de envío "
@@ -1052,6 +1061,8 @@ PRIVACY = {
             "items": [
                 "**Datos de la cuenta:** mientras la cuenta exista, y después "
                 "lo que exijan las obligaciones contables y fiscales.",
+                "**Documentos de verificación:** solo hasta que los revisamos. "
+                "Al verificarlos o rechazarlos se borran.",
                 "**Contactos:** hasta que los borres o cierres la cuenta.",
                 "**Bajas y supresiones:** de forma permanente y a propósito. Es "
                 "justamente lo que impide volver a escribirle a quien pidió no "
@@ -1182,10 +1193,15 @@ TERMS = {
                 "ser uno al que tengas acceso.",
                 "La contraseña es tuya y respondes por lo que ocurra con tu "
                 "cuenta. Avísanos si crees que alguien más entró.",
-                "Una cuenta nueva queda **registrada**: el panel se abre después "
-                "de una demostración, o al contratar un plan, y para abrirlo te "
-                "pedimos tu RUC o tu cédula. Es como cuidamos que la plataforma "
-                "no se use para correo no solicitado.",
+                "Al registrarte nos das tu teléfono, tu dirección y tu "
+                "identificación personal, y después nos envías un documento de "
+                "cada una para verificarlas. Una cuenta nueva queda "
+                "**registrada**: el panel se abre después de una demostración, o "
+                "al contratar un plan. Es como cuidamos que la plataforma no se "
+                "use para correo no solicitado.",
+                "Podemos **limitar** una cuenta mientras no verifiquemos su "
+                "identificación y su dirección: puedes entrar y preparar todo, "
+                "pero no enviar campañas hasta que quede verificada.",
                 "Podemos suspender una cuenta que incumpla estas reglas.",
             ],
         },

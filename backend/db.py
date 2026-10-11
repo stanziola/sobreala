@@ -229,6 +229,11 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.images.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
                            name="ttl_expires_at")
 
+    # Los documentos de las verificaciones: uno por cuenta y por clase, y se
+    # borran al verificarse o rechazarse (models/verification_doc.py).
+    db.verification_docs.create_index([("account_id", ASCENDING), ("kind", ASCENDING)],
+                                      unique=True, name="by_account_kind")
+
 
 def indexes_ready() -> bool:
     return _indexes_ready

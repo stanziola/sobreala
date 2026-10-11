@@ -82,17 +82,23 @@ def now() -> datetime:
 
 
 def create(db, *, company_name: str, contact_name: str, email: str,
-           password: str, phone: str = "") -> dict[str, Any] | None:
+           password: str, phone: str = "", company_phones: list[str] | None = None,
+           postal_address: str = "", tax_id: str = "") -> dict[str, Any] | None:
     """Insert a new account. Returns None if the address is already taken.
 
     The caller must not tell the visitor which of the two happened: both cases
     lead to the same screen, so the site does not reveal who has an account.
+
+    Desde octubre de 2026 el registro trae también el teléfono personal, los de
+    la empresa, la dirección y la identificación personal, ya limpios: es lo que
+    después se verifica.
     """
     moment = now()
     doc = {
         "company_name": company_name.strip(),
         "contact_name": contact_name.strip(),
         "phone": phone.strip(),
+        "company_phones": list(company_phones or []),
         "email": email.strip(),
         "email_normalized": normalize_email(email),
         "password_hash": hash_password(password),
@@ -110,6 +116,10 @@ def create(db, *, company_name: str, contact_name: str, email: str,
         # the field, and what has no field is never swept.
         "purge_at": moment + timedelta(hours=Config.UNCONFIRMED_HOURS),
     }
+    if postal_address:
+        doc["postal_address"] = postal_address
+    if tax_id:
+        doc["tax_id"] = tax_id
     try:
         result = db.accounts.insert_one(doc)
     except DuplicateKeyError:
@@ -620,25 +630,69 @@ def open_account(db, account_id, admin_id=None) -> bool:
     return result.modified_count == 1
 
 
-# El WhatsApp de la demostración: de 7 dígitos, un fijo sin código, a 15, que es
-# lo más largo que mide un número internacional.
-PHONE_DIGITS = (7, 15)
+# Los teléfonos: el personal, que es al que se le escribe por la demostración,
+# y los de la empresa. El número sin su prefijo mide de 4 a 14 dígitos, y con él
+# no más de 15, que es lo más largo que mide un número internacional.
+NATIONAL_DIGITS = (4, 14)
+PHONE_DIGITS = 15
+# Cuántos números de la empresa caben, además del personal.
+COMPANY_PHONES_MAX = 3
 
 
-def clean_phone(raw: str) -> str | None:
-    """El número como se guarda, o None si no es un teléfono.
+def clean_phone(raw: str, country: str = "PA") -> str | None:
+    """El número como se guarda, con su prefijo («+50760807972»), o None si no
+    es un teléfono.
 
-    Se aceptan los separadores que la gente escribe (espacios, guiones,
-    paréntesis y puntos) y un `+` delante. Se guarda sin ellos, que es lo que
-    hace falta para armar el enlace de WhatsApp.
+    `country` es el código ISO que se eligió en el selector; si el número ya
+    viene con `+`, manda lo escrito. Se aceptan los separadores que la gente
+    escribe (espacios, guiones, paréntesis y puntos). El 0 con que se marca
+    dentro de muchos países no va en el número internacional, así que se quita
+    (menos en Italia, donde sí va).
     """
+    from services import countries
+
     text = (raw or "").strip()
     if not re.fullmatch(r"\+?[\d\s\-().]+", text):
         return None
     digits = re.sub(r"\D", "", text)
-    if not PHONE_DIGITS[0] <= len(digits) <= PHONE_DIGITS[1]:
+    if text.startswith("+"):
+        full = digits
+    else:
+        dial = countries.dial_of(country)
+        if dial is None:
+            return None
+        if country.upper() != "IT":
+            digits = digits.lstrip("0")
+        if not NATIONAL_DIGITS[0] <= len(digits) <= NATIONAL_DIGITS[1]:
+            return None
+        full = dial + digits
+    if not 7 <= len(full) <= PHONE_DIGITS:
         return None
-    return ("+" if text.startswith("+") else "") + digits
+    return "+" + full
+
+
+def clean_phones(numbers: list[str], countries_chosen: list[str]) -> tuple[list[str], bool]:
+    """Los números de la empresa: los que se escribieron, limpios, hasta tres.
+
+    Un campo vacío no cuenta. Devuelve la lista y si alguno estaba mal escrito,
+    para que la pantalla lo diga en lugar de perderlo en silencio.
+    """
+    kept: list[str] = []
+    bad = False
+    for number, country in zip(numbers, countries_chosen):
+        if not (number or "").strip():
+            continue
+        clean = clean_phone(number, country)
+        if clean is None:
+            bad = True
+        elif clean not in kept:
+            kept.append(clean)
+    return kept[:COMPANY_PHONES_MAX], bad
+
+
+def set_phones(db, account_id, *, phone: str, company_phones: list[str]) -> None:
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "phone": phone, "company_phones": company_phones, "updated_at": now()}})
 
 
 def whatsapp_url(phone: str | None) -> str:
@@ -656,15 +710,16 @@ def whatsapp_url(phone: str | None) -> str:
     return f"https://wa.me/{digits}"
 
 
-# El RUC o la cédula. No se exige un formato: en Panamá hay varios (el de una
-# sociedad, el de una persona natural, el de un extranjero), y un negocio de
-# fuera trae su propia identificación fiscal. Lo comprueba una persona en la
-# demostración; al pagar queda escrito, que es lo que pide la factura.
+# La identificación personal (el campo se llama `tax_id` porque empezó siendo
+# «RUC o cédula»; desde octubre de 2026 es la cédula o el pasaporte de quien
+# registra la cuenta). No se exige un formato: en Panamá hay varios, y alguien
+# de fuera trae su propio documento. Se escribe al registrarse y la comprueba
+# una persona con la foto del documento (ver «Las verificaciones», más abajo).
 TAX_ID_LENGTH = (4, 40)
 
 
 def clean_tax_id(raw: str) -> str | None:
-    """El RUC o la cédula en una sola línea, o None si no parece uno."""
+    """La identificación en una sola línea, o None si no parece una."""
     text = " ".join((raw or "").split())
     if not TAX_ID_LENGTH[0] <= len(text) <= TAX_ID_LENGTH[1]:
         return None
@@ -684,17 +739,31 @@ def set_tax_id(db, account_id, tax_id: str) -> None:
                            {"$set": {"tax_id": tax_id, "updated_at": now()}})
 
 
-def request_demo(db, account_id, *, phone: str, tax_id: str) -> None:
-    """Dejar pedida la demostración, con el WhatsApp al que se le escribe y el
-    RUC o la cédula que se comprueba antes de abrirle la cuenta.
+# Las dos respuestas de la demostración: a qué se dedica y para qué la usará.
+DEMO_ANSWER = (10, 500)
 
-    El número va al mismo `phone` del registro, donde era opcional: es el mismo
-    dato, y dos campos para lo mismo acabarían diciendo cosas distintas. Pedirla
-    otra vez corrige los datos y mueve la fecha.
+
+def clean_answer(raw: str) -> str | None:
+    """Una respuesta de la demostración, sin espacios de sobra, o None si es
+    muy corta o muy larga. Los saltos de línea se respetan."""
+    text = "\n".join(" ".join(line.split()) for line in str(raw or "").splitlines())
+    text = text.strip()
+    if not DEMO_ANSWER[0] <= len(text) <= DEMO_ANSWER[1]:
+        return None
+    return text
+
+
+def request_demo(db, account_id, *, business: str, purpose: str) -> None:
+    """Dejar pedida la demostración, con a qué se dedica el negocio y para qué
+    usará Sobreala.
+
+    Se le escribe al teléfono personal del registro: hasta octubre de 2026 se
+    pedía aquí un WhatsApp, que era el mismo número. Pedirla otra vez corrige
+    las respuestas y mueve la fecha.
     """
     db.accounts.update_one({"_id": account_id}, {"$set": {
-        "phone": phone, "tax_id": tax_id, "demo_requested_at": now(),
-        "updated_at": now()}})
+        "demo_business": business, "demo_purpose": purpose,
+        "demo_requested_at": now(), "updated_at": now()}})
 
 
 # La dirección postal de la empresa, que va al pie de sus campañas.
@@ -723,6 +792,95 @@ def clean_postal(raw: str) -> str | None:
 def set_postal(db, account_id, address: str) -> None:
     db.accounts.update_one({"_id": account_id},
                            {"$set": {"postal_address": address, "updated_at": now()}})
+
+
+# --------------------------------------------------------- las verificaciones
+#
+# Dos cosas que una persona de Sobreala comprueba a mano: la identificación
+# personal y la dirección. El cliente sube un documento de cada una (la foto de
+# su cédula o pasaporte; un recibo, su aviso de operación o un documento legal
+# que certifique la dirección si la empresa no está constituida) y el
+# administrador lo mira en la ficha y la da por verificada o la rechaza. El
+# archivo vive en `verification_docs` y se borra al decidir: queda solo el
+# resultado.
+#
+# Lo que no está escrito es `missing`. Cambiar el dato después de verificado
+# vuelve a `missing`: lo que se miró era el de antes.
+
+IDENTITY = "identity"
+ADDRESS = "address"
+VERIFY_KINDS = (IDENTITY, ADDRESS)
+
+MISSING = "missing"      # falta el documento
+REVIEW = "review"        # subió el documento y espera
+VERIFIED = "verified"
+REJECTED = "rejected"    # se rechazó, con su motivo; sube otro
+
+
+def verification_of(account: dict[str, Any] | None, kind: str) -> dict[str, Any]:
+    """El estado de una verificación, con su fecha, quién la decidió y el
+    motivo si se rechazó. Lo que no está escrito es `missing`."""
+    found = ((account or {}).get("verifications") or {}).get(kind) or {}
+    return {"status": MISSING, **found}
+
+
+def all_verified(account: dict[str, Any] | None) -> bool:
+    return all(verification_of(account, kind)["status"] == VERIFIED
+               for kind in VERIFY_KINDS)
+
+
+def set_verification(db, account_id, kind: str, status: str, *, by=None,
+                     reason: str = "") -> None:
+    if kind not in VERIFY_KINDS:
+        return
+    value: dict[str, Any] = {"status": status, "at": now()}
+    if by is not None:
+        value["by"] = by
+    if reason:
+        value["reason"] = reason.strip()[:300]
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        f"verifications.{kind}": value, "updated_at": now()}})
+
+
+def forget_verification(db, account_id, kind: str) -> None:
+    """Volver a `missing` porque el dato cambió: lo verificado era el de antes."""
+    db.accounts.update_one({"_id": account_id}, {"$unset": {
+        f"verifications.{kind}": ""}, "$set": {"updated_at": now()}})
+
+
+# --------------------------------------------------------------- el límite
+#
+# Limitar una cuenta no es suspenderla. Una cuenta limitada entra, prepara todo y
+# puede pagar; lo único que no puede es enviar (`sender.blocked()` dice
+# `limited`). Lo decide el administrador desde la ficha, con un motivo de esta
+# lista y una nota, y queda en `admin_events`.
+
+LIMIT_VERIFICATION = "verification"   # falta verificar la identidad y la dirección
+LIMIT_REASONS = (LIMIT_VERIFICATION,)
+
+
+def limited_of(account: dict[str, Any] | None) -> dict[str, Any] | None:
+    """El límite de la cuenta (`reason`, `at`, `by`, `note`), o None."""
+    return (account or {}).get("limited") or None
+
+
+def limit(db, account_id, *, reason: str, admin_id, note: str = "") -> bool:
+    """Limitar la cuenta. False si el motivo no es de la lista."""
+    if reason not in LIMIT_REASONS:
+        return False
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "limited": {"reason": reason, "at": now(), "by": admin_id,
+                    "note": note.strip()[:300]},
+        "updated_at": now()}})
+    return True
+
+
+def unlimit(db, account_id) -> bool:
+    """Quitar el límite. False si no estaba limitada."""
+    result = db.accounts.update_one(
+        {"_id": account_id, "limited": {"$exists": True}},
+        {"$unset": {"limited": ""}, "$set": {"updated_at": now()}})
+    return result.modified_count == 1
 
 
 # --------------------------------------------------------------- remitente
@@ -995,7 +1153,8 @@ def by_status(db) -> dict[str, int]:
 
 
 def search(db, *, status: str = "", text: str = "", demo: bool = False,
-           limit: int = 100, skip: int = 0) -> tuple[list[dict[str, Any]], int]:
+           review: bool = False, limit: int = 100,
+           skip: int = 0) -> tuple[list[dict[str, Any]], int]:
     """The admin table: filter by state, search by address or company.
 
     Nunca trae cuentas de administrador: no son clientes, no compran ni envían,
@@ -1020,12 +1179,19 @@ def search(db, *, status: str = "", text: str = "", demo: bool = False,
         # None encuentra también a las que no tienen el campo.
         query["plan"] = None
         query["sending_cleared_at"] = {"$exists": False}
+    clauses: list[dict[str, Any]] = []
+    if review:
+        # «Por verificar»: un documento subido que espera que alguien lo mire.
+        clauses.append({"$or": [{f"verifications.{kind}.status": REVIEW}
+                                for kind in VERIFY_KINDS]})
     if text:
         safe = re.escape(text.strip())
-        query["$or"] = [
+        clauses.append({"$or": [
             {"email_normalized": {"$regex": f"^{re.escape(normalize_email(text))}"}},
             {"company_name": {"$regex": safe, "$options": "i"}},
-        ]
+        ]})
+    if clauses:
+        query["$and"] = clauses
     total = db.accounts.count_documents(query)
     found = list(db.accounts.find(query).sort("created_at", -1)
                  .skip(skip).limit(limit))

@@ -1435,3 +1435,38 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 @media (prefers-reduced-motion: reduce) {
   .receipt__ring, .receipt__tick { stroke-dashoffset: 0; }
 }
+
+/* ------------------------------------------------------------ el teléfono
+   El país y el número, uno al lado del otro. La bandera del selector son
+   letras que el sistema dibuja como bandera; Windows no las dibuja, y para eso
+   va TwemojiCountryFlags, solo para esos caracteres (`unicode-range`): el resto
+   del texto sigue en la letra del panel. */
+@font-face {
+  font-family: "Twemoji Country Flags";
+  src: url("/static/fonts/TwemojiCountryFlags.woff2") format("woff2");
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067,
+                 U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+  font-display: swap;
+}
+.phone { display: flex; gap: 8px; }
+.phone__country {
+  flex: 0 0 auto; width: min(46%, 220px);
+  font-family: "Twemoji Country Flags", var(--font-body);
+}
+.phone__number { flex: 1 1 auto; min-width: 0; }
+.phones { display: grid; gap: 8px; }
+.phones__add { justify-self: start; margin-top: 2px; }
+/* Los teléfonos en Configuración ocupan la fila entera: el país y el número no
+   caben en la columna de la derecha. */
+.setting__action:has(.setting__form--wide) { flex: 1 1 100%; }
+.setting__form--wide { flex: 1 1 100%; justify-content: flex-start; }
+.setting__form--wide .phone, .setting__form--wide .phones { flex: 1 1 100%; }
+.setting__form--wide .hint { flex: 1 1 100%; margin: 4px 0 0; }
+
+/* Las verificaciones de Configuración → Cuenta: cada una con su estado y su
+   formulario para subir el documento. */
+.verify__state { display: inline-block; margin-top: 4px; }
+.verify__form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+                justify-content: flex-end; }
+.verify__form input[type="file"] { width: min(300px, 100%); margin: 0; }
+.verify__form .error { flex: 1 1 100%; margin: 0; text-align: right; }

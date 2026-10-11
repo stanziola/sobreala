@@ -2,9 +2,10 @@
 
 Lo que se fija aquí es la puerta. Que una cuenta que nadie revisó no guarde
 nada, porque cualquiera puede registrarse y las imágenes viven en la base. Que la
-demostración se pida con lo que hace falta para comprobar la empresa: su
-WhatsApp y su RUC o cédula. Y que pagar abra la cuenta con todo y sin esperar a
-nadie, porque la habilitación antes del primer envío se quitó.
+demostración se pida contando a qué se dedica el negocio y para qué usará
+Sobreala (el teléfono y la identificación ya vienen del registro). Y que pagar
+abra la cuenta con todo y sin esperar a nadie, porque la habilitación antes del
+primer envío se quitó.
 """
 
 from __future__ import annotations
@@ -47,11 +48,15 @@ def cerrada(client, database, email=CLIENTA, *, confirmada=True):
     return browser, accounts.by_email(database, email)
 
 
-def pedir(browser, *, phone="6000-0000", tax_id="8-123-456"):
+NEGOCIO = "Una cooperativa de ahorro y crédito en Santiago."
+PARA_QUE = "Avisos de asambleas y estados de cuenta a los socios."
+
+
+def pedir(browser, *, business=NEGOCIO, purpose=PARA_QUE):
     """Pedir la demostración como lo hace la bienvenida."""
     return browser.post("/welcome/demo", data={
-        "csrf_token": csrf(browser, "/welcome"), "phone": phone,
-        "tax_id": tax_id})
+        "csrf_token": csrf(browser, "/welcome"), "business": business,
+        "purpose": purpose})
 
 
 def avisos(database, purpose):
@@ -118,54 +123,70 @@ def test_el_menu_ensena_las_cuatro_filas_y_cada_una_lleva_a_la_demo(
         assert "Para entrar a" not in browser.get(url).get_data(as_text=True)
 
 
-def test_configuracion_avisa_en_amarillo_mientras_esta_cerrada(client, database,
-                                                               outbox):
-    """Su dirección y su RUC o cédula se verifican en la demostración: hasta
-    entonces, Cuenta lo dice. Abierta, el aviso se va solo."""
+def test_configuracion_avisa_en_amarillo_mientras_falte_verificar(client, database,
+                                                                   outbox):
+    """Mientras falte verificar la identificación o la dirección, Cuenta lo dice
+    y lleva a sus documentos. Abrir la cuenta no lo quita: lo quita verificar
+    las dos (octubre de 2026; antes se verificaban en la demostración)."""
     admin, _ = make_admin(client, database)
     browser, cuenta = cerrada(client, database)
 
     cerrada_ = browser.get("/settings").get_data(as_text=True)
     assert "notice--pending" in cerrada_
     assert "Pendiente de verificación:" in cerrada_
-    assert "se verifican en la demostración" in cerrada_
+    assert 'href="#verificaciones"' in cerrada_
+    assert "se verifican en la demostración" not in cerrada_
 
     open_account(admin, cuenta)
-    abierta = browser.get("/settings").get_data(as_text=True)
-    assert "notice--pending" not in abierta
-    assert "Pendiente de verificación:" not in abierta
+    assert "notice--pending" in browser.get("/settings").get_data(as_text=True)
+
+    for kind in accounts.VERIFY_KINDS:
+        accounts.set_verification(database, cuenta["_id"], kind, accounts.VERIFIED)
+    verificada = browser.get("/settings").get_data(as_text=True)
+    assert "notice--pending" not in verificada
+    assert "Pendiente de verificación:" not in verificada
 
 
 # ---------------------------------------------------------- pedir la demo
 
-def test_pedir_la_demo_pide_whatsapp_y_ruc_y_te_avisa(client, database, outbox):
+def test_pedir_la_demo_pregunta_a_que_se_dedica_y_para_que(client, database,
+                                                          outbox):
+    """Ya no pide el WhatsApp ni la identificación: vienen del registro."""
     make_admin(client, database)
     browser, cuenta = cerrada(client, database)
 
-    sin_numero = pedir(browser, phone="")
-    assert "Escribe un número de WhatsApp" in sin_numero.get_data(as_text=True)
-    sin_ruc = pedir(browser, tax_id="x")
-    assert "Escribe tu RUC o tu cédula" in sin_ruc.get_data(as_text=True)
+    pantalla = browser.get("/welcome").get_data(as_text=True)
+    assert "¿A qué se dedica tu negocio?" in pantalla
+    assert "¿Para qué usarás Sobreala?" in pantalla
+    assert 'name="phone"' not in pantalla and 'name="tax_id"' not in pantalla
+    # El texto de las dos formas de empezar y la lista de la demo se quitaron.
+    assert "Hay dos formas de empezar" not in pantalla
+    assert "En la demostración abrimos tu cuenta" not in pantalla
+    assert "Desde ahí tienes lo del plan Básico" not in pantalla
+
+    corta = pedir(browser, business="Tienda")
+    assert "Cuéntanos un poco más" in corta.get_data(as_text=True)
     assert avisos(database, mail_log.ADMIN_DEMO) == []
     assert "demo_requested_at" not in accounts.by_id(database, cuenta["_id"])
 
-    respuesta = pedir(browser, phone="6000-0000", tax_id="155612345-2-2015")
+    respuesta = pedir(browser)
     assert respuesta.headers["Location"].endswith("/welcome?demo=sent")
 
     despues = accounts.by_id(database, cuenta["_id"])
     assert despues["demo_requested_at"]
-    assert despues["phone"] == "60000000"
-    assert despues["tax_id"] == "155612345-2-2015"
+    assert despues["demo_business"] == NEGOCIO
+    assert despues["demo_purpose"] == PARA_QUE
     # Pedirla no la abre: eso lo decide una persona.
     assert not accounts.is_open(despues)
 
     aviso, = avisos(database, mail_log.ADMIN_DEMO)
     assert aviso["to"] == "jefe@ejemplo.com"
-    assert "60000000" in aviso["text"]
-    assert "155612345-2-2015" in aviso["text"]
+    assert "+50760000000" in aviso["text"]
+    assert "8-123-456" in aviso["text"]
+    assert NEGOCIO in aviso["text"] and PARA_QUE in aviso["text"]
 
     pantalla = browser.get("/welcome?demo=sent").get_data(as_text=True)
-    assert "Te escribimos al 60000000" in pantalla
+    assert "Te escribimos al +50760000000" in pantalla
 
 
 def test_sin_el_correo_confirmado_no_se_pide(client, database, outbox):
@@ -178,8 +199,8 @@ def test_sin_el_correo_confirmado_no_se_pide(client, database, outbox):
 
 
 def test_un_cuarto_aviso_en_el_dia_se_frena(client, database, outbox):
-    """Se puede pedir otra vez, para corregir el número, pero no tanto que
-    sirva para llenarle el buzón a quien administra."""
+    """Se puede pedir otra vez, para corregir las respuestas, pero no tanto
+    que sirva para llenarle el buzón a quien administra."""
     make_admin(client, database)
     browser, _ = cerrada(client, database)
 
@@ -191,11 +212,20 @@ def test_un_cuarto_aviso_en_el_dia_se_frena(client, database, outbox):
     assert len(avisos(database, mail_log.ADMIN_DEMO)) == 3
 
 
-def test_que_acepta_como_whatsapp_y_como_ruc():
-    assert accounts.clean_phone("+507 6000-0000") == "+50760000000"
-    assert accounts.clean_phone("(507) 6000.0000") == "50760000000"
-    assert accounts.clean_phone("seis mil") is None
-    assert accounts.clean_phone("123") is None
+def test_que_acepta_como_telefono_y_como_identificacion():
+    # El país del selector pone el prefijo; un «+» escrito manda.
+    assert accounts.clean_phone("6000-0000", "PA") == "+50760000000"
+    assert accounts.clean_phone("+507 6000-0000", "US") == "+50760000000"
+    assert accounts.clean_phone("(305) 555-0101", "US") == "+13055550101"
+    # El 0 de marcar dentro del país no va en el número internacional.
+    assert accounts.clean_phone("07911 123456", "GB") == "+447911123456"
+    assert accounts.clean_phone("seis mil", "PA") is None
+    assert accounts.clean_phone("123", "PA") is None
+    assert accounts.clean_phone("60000000", "XX") is None
+    # Los de la empresa: los vacíos no cuentan, y uno malo se dice.
+    assert accounts.clean_phones(["6000-0001", "", "6000-0002"], ["PA", "PA", "PA"]) == (
+        ["+50760000001", "+50760000002"], False)
+    assert accounts.clean_phones(["abc"], ["PA"]) == ([], True)
     # De Panamá sin código, o de fuera con el suyo.
     assert accounts.whatsapp_url("60000000") == "https://wa.me/50760000000"
     assert accounts.whatsapp_url("+13055550101") == "https://wa.me/13055550101"
@@ -264,14 +294,16 @@ def test_el_filtro_trae_a_quien_pidio_la_demo_y_sigue_cerrada(client, database,
     assert CLIENTA not in admin.get(cola).get_data(as_text=True)
 
 
-def test_la_ficha_ensena_su_whatsapp_y_su_ruc(client, database, outbox):
+def test_la_ficha_ensena_su_telefono_su_identificacion_y_sus_respuestas(
+        client, database, outbox):
     admin, _ = make_admin(client, database)
     browser, cuenta = cerrada(client, database)
-    pedir(browser, phone="6000-0000", tax_id="8-123-456")
+    pedir(browser)
 
     ficha = admin.get(f"/admin/accounts/{cuenta['_id']}").get_data(as_text=True)
     assert "https://wa.me/50760000000" in ficha
     assert "8-123-456" in ficha
+    assert NEGOCIO in ficha and PARA_QUE in ficha
     assert "Abrir la cuenta" in ficha
 
     open_account(admin, cuenta)
@@ -282,11 +314,15 @@ def test_la_ficha_ensena_su_whatsapp_y_su_ruc(client, database, outbox):
 
 # ---------------------------------------------------------- o pagar
 
-def test_pagar_pide_el_ruc_y_abre_la_cuenta_con_todo(client, database, outbox,
-                                                     monkeypatch):
+def test_pagar_pide_la_identificacion_si_falta_y_abre_la_cuenta_con_todo(
+        client, database, outbox, monkeypatch):
     fake_paypal(monkeypatch)
     browser, cuenta = cerrada(client, database)
 
+    # Desde octubre de 2026 viene del registro, así que al pagar ya sale escrita.
+    assert 'value="8-123-456"' in browser.get("/checkout/basico").get_data(as_text=True)
+    # Una cuenta de antes, que no la dejó, la escribe al pagar.
+    database.accounts.update_one({"_id": cuenta["_id"]}, {"$unset": {"tax_id": ""}})
     assert 'name="tax_id"' in browser.get("/checkout/basico").get_data(as_text=True)
 
     sin_ruc = browser.post("/settings/billing/checkout", data={

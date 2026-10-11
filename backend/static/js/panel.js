@@ -616,3 +616,33 @@
     });
   });
 })();
+
+/* Los teléfonos de la empresa: hasta tres. Sin este guion se ven los tres
+   campos; con él, solo los que tienen algo y uno vacío, y «Agregar otro número»
+   enseña el siguiente. Un campo vacío no se guarda, así que esconderlo no
+   pierde nada. */
+(function () {
+  Array.prototype.forEach.call(document.querySelectorAll("[data-more]"), function (box) {
+    var rows = Array.prototype.slice.call(box.querySelectorAll("[data-more-row]"));
+    var add = box.querySelector("[data-more-add]");
+    if (!rows.length || !add) return;
+    function filled(row) { return row.querySelector("input").value.trim() !== ""; }
+    var shownEmpty = false;
+    rows.forEach(function (row) {
+      if (filled(row)) return;
+      if (!shownEmpty) { shownEmpty = true; return; }
+      row.hidden = true;
+    });
+    function refresh() {
+      add.hidden = !rows.some(function (row) { return row.hidden; });
+    }
+    add.addEventListener("click", function () {
+      var next = rows.filter(function (row) { return row.hidden; })[0];
+      if (!next) return;
+      next.hidden = false;
+      next.querySelector("input").focus();
+      refresh();
+    });
+    refresh();
+  });
+})();

@@ -106,10 +106,10 @@ Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
   en el sitio, y se quitó (octubre de 2026): escondía lo que trae Sobreala, y
   las cuatro filas ya llevan a la demostración. La migaja de una cuenta
   cerrada es `1`, como la de cualquiera sin plan.
-- **En Configuración → Cuenta sale un aviso amarillo** (`.notice--pending`,
-  solo con `bar_closed`): su dirección y sus datos de identidad (RUC o cédula)
-  están pendientes de verificar, y se verifican en la demostración, con el
-  enlace para pedirla. Se va solo al abrir la cuenta.
+- **En Configuración → Cuenta sale un aviso amarillo** (`.notice--pending`)
+  mientras falte verificar la identificación o la dirección, con el enlace a
+  «Verificaciones». Ya no depende de que la cuenta esté abierta: se va al
+  quedar verificadas las dos (ver «El registro y las verificaciones»).
 
 **Se abre por uno de dos caminos, y son independientes** (`accounts.is_open()`):
 
@@ -118,26 +118,96 @@ Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
 | La demostración | El administrador, con «Abrir la cuenta» en la ficha y un motivo (`opened_by`, `admin_events`) | Lo del Básico sin enviar y sin vencimiento: 1,000 contactos, 1 etiqueta, 1 columna, 20 imágenes y campañas armadas. Para enviar, contrata |
 | El pago | `activate_plan()`, sola y sin `opened_by` | Todo lo de su plan desde el primer momento, envío incluido |
 
-- **La demostración se pide desde la bienvenida** (`POST /welcome/demo`), con
-  su WhatsApp (el `phone` del registro, donde era opcional) y su **RUC o
-  cédula** (`tax_id`). Solo el dueño, con el correo confirmado y hasta tres
-  avisos al día. A quien administra le llega «{empresa} pidió una
-  demostración» (`admin_demo`, con interruptor), y la cuenta sale en el filtro
-  «Piden demostración» de Cuentas.
+- **La demostración se pide desde la bienvenida** (`POST /welcome/demo`)
+  contestando dos preguntas: **«¿A qué se dedica tu negocio?»** y **«¿Para qué
+  usarás Sobreala?»** (`demo_business`, `demo_purpose`, de 10 a 500
+  caracteres). Se le escribe al teléfono personal del registro. Solo el dueño,
+  con el correo confirmado y hasta tres avisos al día. A quien administra le
+  llega «{empresa} pidió una demostración» (`admin_demo`, con interruptor), con
+  el teléfono, la identificación y las dos respuestas, y la cuenta sale en el
+  filtro «Piden demostración» de Cuentas.
+- **Hasta octubre de 2026 se pedían aquí el WhatsApp y el RUC o la cédula.** El
+  WhatsApp era el mismo número del registro, y la identificación pasó al
+  registro. Con ellos se fue el texto de la bienvenida que contaba las dos
+  formas de empezar y lo que se hace en la demostración.
 - **En la llamada se abre la cuenta al empezar** y, juntos, se recorre el
   panel, se mira de dónde sale su lista, se importa y se arma su primera
   plantilla. Al abrirla le llega «Tu cuenta de Sobreala está abierta», que no
   se puede apagar.
-- **El RUC o la cédula se pide también al pagar** (`/checkout`) si todavía no
-  lo dejó: así queda registro de todas las empresas, entren por donde entren, y
-  es lo que pide la factura. No se exige un formato (`clean_tax_id()`): hay
-  varios, y un negocio de fuera trae su propia identificación fiscal. **El
-  aviso de operación no se pide**: dejaría fuera a cooperativas, gremios,
-  asociaciones y negocios pequeños, que no siempre lo tienen.
+- **La identificación se pide también al pagar** (`/checkout`) si no está,
+  que solo pasa con las cuentas de antes de octubre de 2026: las nuevas la
+  escriben al registrarse. No se exige un formato (`clean_tax_id()`): hay
+  varios, y alguien de fuera trae su propio documento. **El aviso de operación
+  no se exige**: dejaría fuera a cooperativas, gremios, asociaciones y negocios
+  pequeños; es uno de los documentos que sirven para verificar la dirección.
 - **No hubo nada que migrar**: `is_open()` cuenta también `plan` y
   `sending_cleared_at`, así que las cuentas que ya habían pagado o se habían
   habilitado siguen abiertas. Las registradas sin plan quedaron cerradas hasta
   que alguien las abra.
+
+### El registro y las verificaciones (octubre de 2026)
+
+**El registro pide lo que después se verifica**, además de empresa, nombre,
+correo y contraseña:
+- **el teléfono personal**, obligatorio: es al que se le escribe por la
+  demostración (`phone`);
+- **los de la empresa**, opcionales y hasta tres (`company_phones`), con
+  «Agregar otro número»;
+- **la dirección** (`postal_address`, la misma que sale al pie de las
+  campañas);
+- **la identificación personal** (`tax_id`; el campo empezó siendo «RUC o
+  cédula» y se quedó con ese nombre): la cédula o el pasaporte de quien
+  registra.
+
+**Los teléfonos llevan su país.** Un `<select>` con bandera, prefijo y nombre
+(«🇵🇦 +507 Panamá»; el prefijo antes, para que en un teléfono se corte el
+nombre y no él), Panamá primero y elegido, de `services/countries.py`
+(unos 240). La bandera son las dos letras del código ISO como indicadores
+regionales; Windows no las dibuja, y para eso va la fuente
+`static/fonts/TwemojiCountryFlags.woff2` (MIT, con los dibujos de Twemoji en
+CC-BY 4.0; ver su LICENSE), solo para esos caracteres. Se guardan con su
+prefijo, `+50760000000` (`clean_phone(número, país)`); el 0 de marcar dentro del
+país se quita, menos en Italia. Se cambian en Configuración → Cuenta, con el
+mismo selector (`templates/_phone.html`).
+
+**Se verifican dos cosas, a mano**: la identificación personal y la dirección
+(`accounts.verifications.{identity,address}`).
+- **El cliente sube un documento de cada una** en Configuración → Cuenta →
+  Verificaciones (`POST /settings/account/document/<clase>`, solo el dueño):
+  - la identificación, con la foto o el PDF de su cédula o pasaporte;
+  - la dirección, con un recibo de luz, agua o teléfono, el aviso de
+    operación, o un documento legal que la certifique si la empresa no está
+    constituida.
+- **PDF, JPG o PNG de hasta 5 MB**, reconocidos por cómo empiezan
+  (`models/verification_doc.py`, colección `verification_docs`, uno por cuenta
+  y clase). Subirlo deja la verificación **en revisión**.
+- **El administrador lo mira en la ficha**: lo baja como archivo, nunca
+  dibujado dentro del panel, y la **verifica** o la **rechaza** con un motivo
+  que el cliente lee en su Configuración y en el correo «Hay que cambiar un
+  documento». **Las dos cosas borran el archivo**: de la cédula de alguien o de
+  su recibo solo hace falta el resultado. Queda en `admin_events` (`verify`).
+- **Cambiar el dato después reabre la verificación**: editar la identificación
+  o la dirección la devuelve a «falta el documento» y borra el que esperaba,
+  porque lo que se miró era el de antes.
+- **Cuentas tiene un filtro «Por verificar»**: las que tienen un documento en
+  revisión.
+
+### Limitar una cuenta (octubre de 2026)
+
+**Limitar no es suspender.** Una cuenta limitada entra, prepara todo y puede
+pagar; lo único que no puede es enviar: `sender.blocked()` dice `limited`, y
+Enviar correos lo explica con el enlace a sus documentos. Suspender sigue
+cerrando la entrada.
+- **Lo decide el administrador en la ficha** («Limitar la cuenta»), con un
+  motivo de una lista (`accounts.LIMIT_REASONS`; hoy solo `verification`,
+  «Falta verificar la identificación y la dirección») y una nota que queda en
+  el registro. El motivo es lo que lee el cliente; la nota no.
+- **Al cliente le llega «Necesitamos verificar tu cuenta»**, sin interruptor,
+  con el enlace a sus documentos. Si solo se enterara al intentar enviar,
+  podría enterarse tarde.
+- **Se levanta solo** cuando el motivo es `verification` y el administrador deja
+  verificadas las dos cosas, y **a mano** con «Quitar el límite». Las dos
+  cosas quedan en `admin_events` (`limit`).
 
 **Hubo una habilitación para enviar, y se quitó** (octubre de 2026).
 `sending_cleared_at` era una mirada a mano antes de la primera campaña: de dónde
@@ -293,7 +363,7 @@ usado.
 
 ## Los avisos de la cuenta
 
-`services/notices.py` es el único sitio que los compone, y son trece:
+`services/notices.py` es el único sitio que los compone, y son quince:
 
 | Correo | Cuándo sale | ¿Se puede apagar? |
 |---|---|---|
@@ -304,17 +374,21 @@ usado.
 | Tu cuenta está abierta | Al abrirla desde la ficha, después de la demostración | No |
 | Tu cuenta fue suspendida | Al suspenderla | No |
 | Tu cuenta está activa otra vez | Al levantar la suspensión | No |
+| Necesitamos verificar tu cuenta | Al limitarla desde la ficha, con el motivo y el enlace a sus documentos | No |
+| Hay que cambiar un documento | Al rechazar un documento de verificación, con el motivo | No |
 | Tu código para cambiar el correo | Al pedirlo, **a la dirección nueva** | No |
 | Tu cuenta cambió de correo | Al terminar, **a la dirección vieja** | No |
 | Alguien pagó un plan | Al cobrar | Sí, «Alguien pagó un plan» |
 | Se registró una cuenta nueva | Al confirmar el correo | Sí, «Se registró una cuenta nueva» |
-| Alguien pidió una demostración | Al pedirla desde la bienvenida, con su WhatsApp y su RUC o cédula | Sí, «Alguien pidió una demostración» |
+| Alguien pidió una demostración | Al pedirla desde la bienvenida, con su teléfono, su identificación y sus dos respuestas | Sí, «Alguien pidió una demostración» |
 | A un cliente se le venció el plan | Cuando ese cliente entra al panel | Sí, «A un cliente se le venció el plan» |
 
 **Los cuatro últimos van a quien administra**, no a un cliente, y hablan de lo
 que pasa en las cuentas de los demás.
 
-**Los tres del medio no llevan interruptor, y no por descuido.** «Tu cuenta
+**Los cinco del medio no llevan interruptor, y no por descuido.** El límite y
+el documento rechazado cambian lo que la cuenta puede hacer, y sin enterarse no
+lo puede arreglar. «Tu cuenta
 está abierta» pasa una vez por cuenta y es la respuesta a la única espera que se
 le pide a un cliente, la de la demostración. Hubo uno igual, «Ya puedes
 enviar», que respondía a la habilitación, y se fue con ella. Los dos de la

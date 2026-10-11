@@ -194,8 +194,10 @@ recibió. El que manda es el POST. Es el mismo reparto que exportar contactos, y
 aquí pesa más: un correo que salió no se puede recoger.
 
 **Para mandar hace falta un plan con cuota del mes por gastar**, además de la
-dirección postal y el remitente (`sender.blocked()`, que lo mira antes de armar
-un solo correo). Hubo una segunda puerta, la habilitación de envío a mano, y se
+dirección postal y el remitente, y **no estar limitada** (`sender.blocked()`,
+que lo mira antes de armar un solo correo; `limited` lo pone el administrador
+mientras falte verificar la identificación y la dirección, ver «Limitar una
+cuenta» en `docs/cuenta.md`). Hubo una segunda puerta, la habilitación de envío a mano, y se
 quitó en octubre de 2026: quien paga entra con todo y envía de una vez, y la
 mirada de una persona pasó a la demostración que abre la cuenta.
 

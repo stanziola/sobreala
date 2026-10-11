@@ -290,11 +290,15 @@ no paga nunca se quedaban en «registrada» para siempre, que es lo que hacía q
 la columna de estado se leyera mal. Su filtro de estado tiene una entrada más,
 **«piden demostración»**, que no es un estado sino la cola que pide acción: la
 pidieron y su cuenta sigue cerrada. Hasta octubre de 2026 era «esperando
-habilitación», y se fue con la habilitación.
+habilitación», y se fue con la habilitación. Desde ese mes tiene otra,
+**«Por verificar»**: las que subieron un documento que espera revisión.
 
 Arriba del todo de la ficha está lo único que espera una decisión: **la
-demostración**, con cuándo la pidió, su WhatsApp como enlace y el botón «Abrir la
-cuenta», que pide un motivo. Junto a los datos de contacto, su RUC o cédula.
+demostración**, con cuándo la pidió, su teléfono como enlace de WhatsApp, sus
+dos respuestas y el botón «Abrir la cuenta», que pide un motivo. Junto a los
+datos de contacto, sus teléfonos y su identificación personal. Debajo de la
+demostración, **las verificaciones** (ver el documento, verificar o rechazar) y
+**limitar la cuenta** (ver `docs/cuenta.md`).
 Debajo, **un solo formulario** —plan, ciclo, suspensión y un motivo—: si
 cambian dos cosas se anotan dos líneas en `admin_events` con el mismo motivo,
 porque guardar una por cosa cambiada es lo que las hace legibles meses después.
