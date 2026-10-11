@@ -147,3 +147,41 @@ def test_planes_sin_glosario_y_con_la_tabla_corta():
     assert filas == ["Precio mensual", "Precio anual", "Contactos", "Correos por mes",
                      "Etiquetas", "Columnas de datos", "Correos sin marca de agua",
                      "Usuarios de la cuenta"], filas
+
+
+def test_las_cabezas_llevan_solo_su_titulo():
+    """Planes, Funciones (lo que era «Cómo funciona» más «Features») y la tira
+    de plantillas, sin etiqueta ni entradilla (octubre de 2026)."""
+    html = (LANDING / "index.html").read_text(encoding="utf-8")
+
+    def cabeza(ancla):
+        desde = html.index(ancla)
+        return html[html.rindex('<div class="section__head">', 0, desde):
+                    html.index("</div>", desde)]
+
+    assert cabeza('id="planes-title"').count("<p") == 0
+    assert 'id="planes-title">Planes</h2>' in html
+    assert "Se ajustan a lo que necesites" not in html
+    assert cabeza('id="como-funciona-title"').count("<p") == 0
+    assert 'id="como-funciona-title">Funciones</h2>' in html
+    for viejo in ("De tu base de datos", "Así vas a usar", ">Features<",
+                  "Lo que puedes hacer con Sobreala"):
+        assert viejo not in html, viejo
+    assert '<p class="eyebrow">Cómo funciona</p>' not in html
+    assert cabeza('id="pasos-title"').count('class="eyebrow"') == 0
+    # La barra sigue diciendo «Cómo funciona» y bajando a su sección.
+    assert 'href="/#como-funciona"' in html
+
+
+def test_dominio_personalizado():
+    """Lo que era «El envío»: cómo se conecta y sus dos ventajas, sin prometer
+    que lo configuramos nosotros (el cliente lo conecta solo)."""
+    html = (LANDING / "index.html").read_text(encoding="utf-8")
+    seccion = html[html.index('id="envio-title"'):html.index("</section>",
+                                                            html.index('id="envio-title"'))]
+    assert 'id="envio-title">Dominio personalizado</h2>' in html
+    assert "tres registros" in seccion
+    assert seccion.count("<li><strong>") == 2
+    assert "Reputación propia:" in seccion and "Más confianza:" in seccion
+    assert "Tu Empresa &lt;boletin@tuempresa.com&gt;" in seccion
+    assert "El envío" not in html and "lo configuramos contigo" not in html

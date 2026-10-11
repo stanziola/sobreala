@@ -14,7 +14,7 @@ van en este orden, cada una con el ancla a la que baja su botón de la barra:
 |---|---|---|
 | `#inicio` | La portada, «¿Sigues enviando correos masivos…?» y «Haz crecer tu negocio» | `src/pages/index.html.j2` |
 | `#planes` | Interruptor y tarjetas, y la tabla | `src/sections/planes.html.j2` |
-| `#como-funciona` | Features, los tutoriales, la tira de plantillas y el envío | `src/sections/como-funciona.html.j2` |
+| `#como-funciona` | Funciones (Features), los tutoriales, la tira de plantillas y el dominio personalizado | `src/sections/como-funciona.html.j2` |
 
 **Contacto es el pie** (`id="contacto"` en `base.html.j2`): WhatsApp, correo e
 Instagram. Hubo una sección «Hablemos de tu lista» antes de las preguntas, y se
@@ -35,6 +35,13 @@ aterrizan ahí. Con ella se fue el `id` repetido que había entre las dos.
   y `ABOUT` solo guardan el título de su página de paso. El `hero` de
   cada una es ahora la cabeza de su sección, con su `h2`: hay un solo `h1`.
 - **La barra lleva Inicio, Planes y Cómo funciona.**
+- **Las cabezas llevan solo su título** (octubre de 2026): «Planes», sin la
+  etiqueta «Precios» ni la entradilla; «Funciones», que reemplazó a «Cómo
+  funciona / De tu base de datos…» y a «Features» con las suyas; y «¿Aún no
+  sabes por dónde empezar?», sin la etiqueta «Cómo funciona». El botón de la
+  barra sigue diciendo «Cómo funciona». `HOW["hero"]["title"]` («Cómo
+  funciona») y `PRICING["hero"]["title"]` solo siguen ahí para el enlace de su
+  página de paso.
 - **Los botones de la barra solo desplazan** (`/#planes`, con la `/` para que
   sirvan también desde las legales). La barra fija no tapa el título:
   `scroll-margin-top` en `.page-part` y en las secciones con `id`. **El botón de
@@ -80,12 +87,15 @@ dice todo.
 Features, así que funciona entero sin JavaScript y las flechas del teclado lo
 mueven solas. `assets/js/trouble.js` agrega una sola cosa: pasar al siguiente
 solo, **cada quince segundos**, que es lo que tarda en leerse un punto entero
-(unas 50 a 60 palabras); con seis no daba tiempo. Se para con el ratón encima o
-el foco dentro, fuera de la pantalla y con la pestaña escondida, y no existe con
-«reducir movimiento». **Si alguien lo cambia a mano, deja de pasar solo** para el
-resto de la visita, a diferencia de Features, donde se pidió que volviera a
-andar al quitar el ratón: lo detecta el evento `change` de los radios, que solo
-salta cuando los cambia una persona y nunca cuando los marca el guion.
+(unas 50 a 60 palabras); con seis no daba tiempo. Se para fuera de la pantalla y
+con la pestaña escondida, y no existe con «reducir movimiento». **Si alguien lo
+cambia a mano, espera tres segundos** en el punto elegido, con la barra vacía, y
+sigue solo desde ahí; otro cambio antes de tiempo vuelve a empezar la espera. Lo
+detecta el evento `change` de los radios, que solo salta cuando los cambia una
+persona y nunca cuando los marca el guion.
+- **Hasta octubre de 2026 un cambio a mano lo apagaba** para el resto de la
+  visita, y el ratón encima o el foco dentro lo pausaban. Se quitaron las dos
+  cosas: al pulsar, el ratón se queda encima, y no volvía a andar nunca.
 
 **Una barrita azul al pie de la tarjeta abierta se llena en esos quince
 segundos** (octubre de 2026) y, llena, pasa al siguiente.
@@ -96,8 +106,10 @@ segundos** (octubre de 2026) y, llena, pasa al siguiente.
   iba.
 - **El guion pone dos clases en el bloque:** `is-playing`, con el paso
   automático encendido, e `is-paused`, cuando se detiene un momento.
-- **Solo se dibuja mientras el paso automático corre:** sin guion, con
-  «reducir movimiento» o después de un cambio a mano no lleva a ninguna parte.
+- **Tras un cambio a mano**, `trouble.js` la deja en pausa tres segundos: el
+  punto nuevo estrena su animación, así que se ve vacía.
+- **Solo se dibuja mientras el paso automático corre:** sin guion o con
+  «reducir movimiento» no lleva a ninguna parte.
 - **Hubo otra en septiembre de 2026 y se quitó.** Corría aparte de un
   `setInterval` del guion: con el ratón encima el cambio se pausaba y ella
   seguía llenándose.
@@ -208,15 +220,18 @@ colegios dejó «el correo de cada familia» por «toda la comunidad educativa»
   automático:
   - **la barra del abierto es el reloj**, como en «¿Sigues enviando…?»: el azul
     la llena en 8 s (`--stories-every`) y, llena, pasa al siguiente;
-  - se para con el ratón encima, con el foco dentro, fuera de la pantalla y con
-    la pestaña escondida, y la barra se queda donde iba;
-  - si alguien pulsa una barra o una flecha, deja de pasar solo el resto de la
-    visita;
+  - se para fuera de la pantalla y con la pestaña escondida, y la barra se
+    queda donde iba;
+  - **si alguien pulsa una barra o una flecha, espera un segundo** con la barra
+    del caso nuevo gris, y después el azul empieza a llenarla otra vez; otro
+    cambio antes de tiempo vuelve a empezar la espera;
   - con «reducir movimiento», no existe.
+  Hasta octubre de 2026 un cambio a mano lo apagaba, con la barra azul y llena,
+  y el ratón encima o el foco dentro lo pausaban. Se quitaron, como en
+  «¿Sigues enviando…?».
 - **La barra del abierto mide 64 px**, para que se vea llenarse (eran 46).
-  Mientras corre es gris y la llena el azul; parada (sin guion, con «reducir
-  movimiento» o después de un cambio a mano) queda azul y llena. Antes era
-  gris oscuro.
+  Mientras corre es gris y la llena el azul; parada (sin guion o con «reducir
+  movimiento») queda azul y llena. Antes era gris oscuro.
 - **Las flechas van a los lados de las barras** (octubre de 2026), todo
   centrado bajo la tarjeta y en todos los anchos. Son círculos de 40 px como los
   de Features, solo las dibuja el guion (`is-ready`) y dan la vuelta al final.
@@ -307,8 +322,8 @@ no avanza: el anillo late otra vez.
 
 **«Features» son cinco dibujos sencillos** (octubre de 2026), en un carrusel
 que aprieta: el abierto ocupa su sitio y los otros cuatro quedan en listones.
-Debajo, el texto del que esté abierto. La sección no lleva etiqueta de arriba,
-a diferencia de las demás: el titular ya es la etiqueta.
+Debajo, el texto del que esté abierto. En la página se llama **«Funciones»** y
+es el único título de Cómo funciona; en el código sigue siendo `features`.
 
 **Cada dibujo cuenta una sola cosa:**
 
@@ -389,14 +404,29 @@ permanencia mínima.
   «envíate una prueba», porque ese envío de prueba no está hecho, y el aviso al
   80 % de la cuota, por lo mismo.
 
+**Al final de Cómo funciona va «Dominio personalizado»** (octubre de 2026),
+donde estaba «El envío / Los correos salen con el nombre y el correo de tu
+empresa». Cuenta cómo se conecta y por qué conviene, en `HOW["sending"]`:
+- un párrafo: el dominio se conecta desde el panel con tres registros para su
+  DNS, y al verificarse los correos salen con su nombre;
+- dos ventajas (`benefits`): la reputación propia y la firma con su dominio;
+- una nota para quien no tiene dominio: sale desde `envios.sobreala.com` con el
+  nombre de su negocio;
+- al lado, la tarjeta con «De: Tu Empresa <boletin@tuempresa.com>».
+- **Dice lo que hace el panel de verdad** (ver «Remitente» en
+  `docs/envios.md`): los tres CNAME con Easy DKIM y «Comprobar ahora». Salió la
+  nota de antes, «lo configuramos contigo durante la activación», que ya no era
+  cierta. La reputación propia es la del dominio; las IP siguen siendo las
+  compartidas de SES, así que no se habla de ellas.
+
 **La sección sigue al tema, como el resto de la página.** Hubo una banda que se
 invertía, oscura de día y blanca de noche, porque las capturas de entonces eran
 siempre del panel en oscuro; con ella se fueron las variables `--color-flip*` y
 las clases `.section--flip` y `.section--deep`. **Los fondos alternan de arriba
 abajo**: azul (la portada) · gris («¿Sigues enviando…?») · blanco (los usos) ·
-gris (las tarjetas de Planes) · blanco (la tabla) · gris (Features) · blanco
-(los tutoriales) · gris (la tira) · blanco (el envío) · azul (el pie). En
-oscuro, los mismos escalones.
+gris (las tarjetas de Planes) · blanco (la tabla) · gris (Funciones) · blanco
+(los tutoriales) · gris (la tira) · blanco (el dominio personalizado) · azul
+(el pie). En oscuro, los mismos escalones.
 
 **El pie es un solo azul** (octubre de 2026). Abajo, dentro del mismo azul, va
 el «© Sobreala» en pequeño, con una raya fina encima (`--color-footer-edge`).

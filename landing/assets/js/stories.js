@@ -14,17 +14,19 @@
    `is-playing`, con el paso automático encendido (y la barra llenándose); e
    `is-paused`, cuando se detiene un momento (la barra se queda donde iba).
 
-   **Si alguien pulsa una barra o una flecha, deja de pasar solo** para el
-   resto de la visita, como en «¿Sigues enviando…?», y la barra del abierto
-   queda llena: quien elige un caso lo está mirando a su ritmo.
+   **Si alguien pulsa una barra o una flecha, espera un segundo** con la barra
+   del caso nuevo gris, y después el azul empieza a llenarla otra vez. Otro
+   cambio antes de tiempo vuelve a empezar la espera. Hasta octubre de 2026 un
+   cambio a mano lo apagaba con la barra azul y llena, y el ratón encima o el
+   foco dentro lo pausaban: al pulsar, el ratón se queda encima y no volvía a
+   andar nunca.
 
-   Mientras nadie lo toque, se detiene con el ratón encima o con el foco dentro
-   y vuelve a andar al quitarlo, no corre fuera de la pantalla ni con la pestaña
-   escondida, y con «reducir movimiento» puesto no existe. Las flechas, sí.
+   No corre fuera de la pantalla ni con la pestaña escondida, y con «reducir
+   movimiento» puesto no existe. Las flechas, sí.
 
-   Estas pausas son las mismas que las de trouble.js y están escritas otra vez
-   a propósito: cada archivo se lee por su cuenta y tocar uno no puede romper
-   el otro. */
+   Estas reglas son las mismas que las de trouble.js, con su propia espera, y
+   están escritas otra vez a propósito: cada archivo se lee por su cuenta y
+   tocar uno no puede romper el otro. */
 (function () {
   "use strict";
 
@@ -54,15 +56,24 @@
 
   /* --------------------------------------------------- el paso automático */
 
+  /* Lo que espera después de un cambio a mano, con la barra gris. */
+  var WAIT = 1000;
   var seen = !window.IntersectionObserver;   // sin observador, se da por visto
-  var over = false;                          // el ratón o el foco, dentro
   var away = false;                          // la pestaña, escondida
-  var mine = false;                          // alguien lo movió a mano
+  var hold = null;                           // la espera tras un cambio a mano
 
   function sync() {
-    var on = !mine && !quiet.matches;
+    var on = !quiet.matches;
     block.classList.toggle("is-playing", on);
-    block.classList.toggle("is-paused", !(on && seen && !over && !away));
+    block.classList.toggle("is-paused", !(on && seen && !away && !hold));
+  }
+
+  /* El caso nuevo estrena su animación, así que en pausa su barra queda gris;
+     al acabar la espera empieza a llenarse desde cero. */
+  function wait() {
+    window.clearTimeout(hold);
+    hold = window.setTimeout(function () { hold = null; sync(); }, WAIT);
+    sync();
   }
 
   /* La barra se llenó: toca el siguiente. La suya empieza de cero sola, porque
@@ -71,19 +82,10 @@
     if (event.animationName === "stories-fill") open(current() + 1);
   });
 
-  function inside(yes) {
-    return function () { over = yes; sync(); };
-  }
-
-  block.addEventListener("pointerenter", inside(true));
-  block.addEventListener("pointerleave", inside(false));
-  block.addEventListener("focusin", inside(true));
-  block.addEventListener("focusout", inside(false));
-
   /* `change` solo salta cuando el radio lo cambia una persona (pulsando una
      barra o con las flechas del teclado), nunca cuando lo marca este guion. */
   picks.forEach(function (pick) {
-    pick.addEventListener("change", function () { mine = true; sync(); });
+    pick.addEventListener("change", wait);
   });
 
   document.addEventListener("visibilitychange", function () {
@@ -102,13 +104,12 @@
 
   /* -------------------------------------------------------------- las flechas */
 
-  /* Marcan el radio desde aquí, así que no salta `change`: el cambio a mano lo
-     apuntan ellas. Dan la vuelta: después del último viene el primero. */
+  /* Marcan el radio desde aquí, así que no salta `change`: la espera la
+     arrancan ellas. Dan la vuelta: después del último viene el primero. */
   function go(by) {
     return function () {
-      mine = true;
       open(current() + by);
-      sync();
+      wait();
     };
   }
 

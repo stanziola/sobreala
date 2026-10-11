@@ -224,16 +224,12 @@ HOME = {
         ],
     },
     "features": {
-        # Sin etiqueta de arriba, a diferencia de las demás secciones: el
-        # titular ya es la etiqueta.
-        "title": "Features",
+        # El único título de Cómo funciona (octubre de 2026): sin etiqueta ni
+        # entradilla. Fue «Features», en inglés.
+        "title": "Funciones",
         # Las flechas del carrusel. Solo las dibuja el guion.
         "back": "Ver la anterior",
         "next": "Ver la siguiente",
-        "intro": (
-            "Lo que puedes hacer con Sobreala, de tu lista al resultado de cada "
-            "correo."
-        ),
         # Cinco dibujos sencillos (src/partials/feature-*.svg.j2) en vez de
         # capturas del panel, que enseñaban demasiado de golpe. Cada uno cuenta
         # una sola cosa; las palabras que lleva dentro van en `words`, y `alt` es
@@ -321,7 +317,6 @@ HOME = {
     # debajo de los tutoriales, que llevan los pasos enteros, y por eso ya no
     # lleva botón: el tutorial se acaba de ver.
     "steps": {
-        "eyebrow": "Cómo funciona",
         "title": "¿Aún no sabes por dónde empezar?",
         "intro": "Prueba nuestras plantillas personalizadas.",
         # Lo que dice cada tarjeta a un lector de pantalla, con su nombre.
@@ -651,32 +646,40 @@ HOW = {
         "Tutoriales del panel de Sobreala: contactos, plantillas, envíos, "
         "estadísticas y configuración, paso a paso y pulsando."
     ),
+    # La sección ya no lleva cabeza propia: abre con «Funciones». Este título
+    # solo es el texto del enlace de la página de paso /how-it-works/.
     "hero": {
-        "eyebrow": "Cómo funciona",
-        "title": "De tu base de datos al correo de tus clientes",
-        "subtitle": (
-            "Así vas a usar Sobreala, paso a paso. Sin instalar nada y sin pelear con "
-            "configuraciones técnicas."
-        ),
+        "title": "Cómo funciona",
     },
+    # Dominio personalizado (octubre de 2026; antes «El envío»). Dice lo que
+    # hace el panel: el cliente lo conecta solo con tres registros CNAME y
+    # «Comprobar ahora» (docs/envios.md). La reputación propia es la del
+    # dominio; las IP siguen siendo las compartidas de SES.
     "sending": {
-        "eyebrow": "El envío",
-        "title": "Los correos salen con el nombre y el correo de tu empresa",
+        "title": "Dominio personalizado",
         "text": (
-            "Muchos negocios no tienen dominio propio, así que no te pedimos uno. Tus "
-            "correos salen desde un subdominio de Sobreala, pero quien los recibe ve "
-            "el nombre de tu negocio como remitente, y si responde, la respuesta llega "
-            "a tu correo de siempre."
+            "Tus campañas pueden salir desde tu propio dominio, como "
+            "boletin@tuempresa.com. Lo conectas desde el panel: te damos tres "
+            "registros para el DNS de tu dominio y, en cuanto se verifican, tus "
+            "correos salen con tu nombre."
         ),
+        "benefits": [
+            {"title": "Reputación propia:",
+             "text": ("la de tu dominio depende solo de tus envíos, no de los de "
+                      "otros negocios.")},
+            {"title": "Más confianza:",
+             "text": ("quien lo recibe ve tu dominio, y el correo va firmado con "
+                      "él, lo que ayuda a que llegue a la bandeja de entrada.")},
+        ],
         "example": {
             "from_label": "De",
-            "from_value": "Tu Empresa <tuempresa@envios.sobreala.com>",
+            "from_value": "Tu Empresa <boletin@tuempresa.com>",
             "reply_label": "Responder a",
             "reply_value": "tuempresa@gmail.com",
         },
         "note": (
-            "Si ya tienes dominio propio, lo configuramos contigo durante la activación "
-            "para que los correos salgan desde él."
+            "Si no tienes dominio, tus correos salen desde envios.sobreala.com con "
+            "el nombre de tu negocio, y las respuestas llegan a tu correo de siempre."
         ),
     },
     # «Reglas que funcionan solas» se juntó con Features (octubre de 2026): lo
@@ -691,14 +694,10 @@ PRICING = {
         "Planes de Sobreala desde $15 al mes, con contactos, correos mensuales y "
         "soporte que responde. Plan anual con 20% de descuento."
     ),
+    # Solo el título (octubre de 2026): salieron la etiqueta «Precios» y la
+    # entradilla.
     "hero": {
-        "eyebrow": "Precios",
         "title": "Planes",
-        "subtitle": (
-            "Se ajustan a lo que necesites. Eliges por la cantidad de contactos que "
-            "tengas, y cada plan te da cinco correos por contacto al mes: suficiente "
-            "para escribirle a toda tu lista cinco veces."
-        ),
     },
     # Public presentation of each plan. Prices, contact and email limits are read
     # from docs/pricing.md; only the positioning text lives here.

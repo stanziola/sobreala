@@ -1,7 +1,8 @@
 {#- Cómo funciona: lo que era /how-it-works, ahora una sección de la portada.
-    Abre con Features, siguen los tutoriales, después la tira de plantillas
-    («¿Aún no sabes por dónde empezar?») y al final el envío. Los fondos
-    alternan: gris, blanco, gris y blanco. -#}
+    Abre con Features (que en la página se llama «Funciones»), siguen los
+    tutoriales, después la tira de plantillas («¿Aún no sabes por dónde
+    empezar?») y al final el dominio personalizado. Los fondos alternan: gris,
+    blanco, gris y blanco. -#}
 <div class="page-part" id="como-funciona">
 
 {#- Sigue al tema como el resto de la página: hubo una banda que se invertía,
@@ -9,14 +10,10 @@
     son dibujos que siguen al tema, así que no hace falta. -#}
 <section class="section section--alt" aria-labelledby="como-funciona-title">
   <div class="shell">
+    {#- Solo el título (octubre de 2026). Hubo encima «Cómo funciona» con su
+        titular y su entradilla, y debajo «Features» con la suya. -#}
     <div class="section__head">
-      <p class="eyebrow">{{ page.hero.eyebrow }}</p>
-      <h2 class="section__title" id="como-funciona-title">{{ page.hero.title }}</h2>
-      <p class="section__intro">{{ page.hero.subtitle }}</p>
-    </div>
-    <div class="section__sub">
-      <h3 class="section__subtitle" id="features-title">{{ home.features.title }}</h3>
-      <p>{{ home.features.intro }}</p>
+      <h2 class="section__title" id="como-funciona-title">{{ home.features.title }}</h2>
     </div>
     {#- Cinco dibujos sencillos, uno por cosa (partials/feature-*.svg.j2), en vez
         de capturas del panel. Los botones de radio son los que abren cada uno,
@@ -146,7 +143,6 @@
 <section class="section section--alt" aria-labelledby="pasos-title">
   <div class="shell">
     <div class="section__head">
-      <p class="eyebrow">{{ home.steps.eyebrow }}</p>
       <h2 class="section__title" id="pasos-title">{{ home.steps.title }}</h2>
       <p class="section__intro">{{ home.steps.intro }}</p>
     </div>
@@ -177,12 +173,20 @@
   </div>
 </section>
 
+{#- El dominio personalizado (octubre de 2026; antes era «El envío»): cómo se
+    conecta y por qué conviene. Dice lo que hace el panel de verdad (los tres
+    registros y su comprobación, ver docs/envios.md); la reputación propia es la
+    del dominio, no la de las IP, que siguen siendo las compartidas de SES. -#}
 <section class="section" aria-labelledby="envio-title">
   <div class="shell split">
     <div class="split__text">
-      <p class="eyebrow">{{ page.sending.eyebrow }}</p>
       <h2 class="section__title" id="envio-title">{{ page.sending.title }}</h2>
       <p class="section__intro">{{ page.sending.text }}</p>
+      <ul class="benefits">
+        {% for one in page.sending.benefits %}
+        <li><strong>{{ one.title }}</strong> {{ one.text }}</li>
+        {% endfor %}
+      </ul>
       <p class="note">{{ page.sending.note }}</p>
     </div>
     <div class="split__aside">

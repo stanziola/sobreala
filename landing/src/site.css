@@ -89,10 +89,6 @@ button { font: inherit; color: inherit; }
   font-size: 1.12rem; font-weight: 500; line-height: 1.55;
 }
 .section__actions { margin-top: clamp(28px, 5vw, 44px); }
-/* Un bloque dentro de una sección que ya tiene su título: Features, al abrir
-   Cómo funciona. */
-.section__sub { max-width: 680px; margin-bottom: clamp(20px, 3vw, 28px); color: var(--color-ink-soft); }
-.section__subtitle { margin-bottom: 6px; font-size: 1.25rem; font-weight: 700; color: var(--color-ink); }
 /* El sitio es una sola página: cada botón de la barra baja a su parte, y la
    barra fija no tiene que taparle el título al llegar. */
 .page-part, .section[id] { scroll-margin-top: var(--header-h); }
@@ -480,9 +476,10 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    cuenta el tiempo, espera a que termine (animationend), así que la barra y el
    cambio no se pueden separar. Pausar es pausar la animación (.is-paused), y
    al seguir arranca donde iba.
+   Tras un cambio a mano, trouble.js la deja vacía y en pausa tres segundos.
    Solo existe mientras el paso automático corre (.is-playing, que pone el
-   guion): sin guion, con «reducir movimiento» o después de un cambio a mano no
-   lleva a ninguna parte, y no se dibuja. Hubo otra en septiembre de 2026 que
+   guion): sin guion o con «reducir movimiento» no lleva a ninguna parte, y no
+   se dibuja. Hubo otra en septiembre de 2026 que
    corría aparte del guion: con el ratón encima el cambio se pausaba y ella
    seguía llenándose. */
 .trouble__bar {
@@ -672,9 +669,10 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    Mientras corre el paso automático (.is-playing), la del abierto es gris y el
    azul la llena en --stories-every; llena, pasa al siguiente. Es el reloj,
    como en «¿Sigues enviando…?»: stories.js espera a que termine
-   (animationend), y pausar es pausar la animación (.is-paused). Parada
-   (después de un cambio a mano, con «reducir movimiento» o sin guion) se queda
-   azul y llena. Lo que cambia del abierto viaja en variables. */
+   (animationend), y pausar es pausar la animación (.is-paused). Tras un cambio
+   a mano, stories.js deja la del caso nuevo gris y en pausa un segundo. Parada
+   (con «reducir movimiento» o sin guion) se queda azul y llena. Lo que cambia
+   del abierto viaja en variables. */
 .stories__dots { display: flex; gap: 6px; }
 .stories__dot {
   --run: none; --fill: translateX(-100%);
@@ -1009,6 +1007,14 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .mail-card__row + .mail-card__row { border-top: 1px solid var(--color-border); }
 .mail-card__label { font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-soft); }
 .mail-card__value { font-weight: 500; overflow-wrap: anywhere; }
+/* Las ventajas del dominio personalizado, debajo de su párrafo. */
+.benefits { display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+.benefits li { position: relative; padding-left: 18px; color: var(--color-ink-soft); line-height: 1.55; }
+.benefits li::before {
+  content: ""; position: absolute; left: 0; top: .6em; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--color-accent);
+}
+.benefits strong { color: var(--color-ink); font-weight: 700; }
 
 /* ------------------------------------------------------------------ plans (precios) */
 /* minmax(0, 1fr) y no 1fr a secas: `1fr` reparte el sobrante pero no deja que

@@ -16,20 +16,19 @@
    aparte de un `setInterval` de aquí: con el ratón encima el cambio se pausaba
    y ella seguía llenándose.
 
-   **Si alguien lo cambia a mano, deja de pasar solo** para el resto de la
-   visita, y la barra desaparece: quien pulsa un punto está leyendo a su ritmo,
-   y que se le cambie luego por su cuenta es quitarle lo que eligió. Es
-   distinto de Features, donde se pidió que volviera a andar al quitar el ratón.
+   **Si alguien lo cambia a mano, espera tres segundos** en el punto que eligió,
+   con su barra vacía, y después sigue solo desde ahí. Otro cambio antes de
+   tiempo vuelve a empezar la espera. Hasta octubre de 2026 un cambio a mano lo
+   apagaba para el resto de la visita, y el ratón encima o el foco dentro lo
+   pausaban: al pulsar, el ratón se queda encima y no volvía a andar nunca.
 
-   Mientras nadie lo toque, se detiene con el ratón encima o con el foco dentro
-   y vuelve a andar al quitarlo, no corre fuera de la pantalla ni con la pestaña
-   escondida, y con «reducir movimiento» puesto no existe: quien lo pide no
-   quiere que la página se mueva mientras lee.
+   No corre fuera de la pantalla ni con la pestaña escondida, y con «reducir
+   movimiento» puesto no existe: quien lo pide no quiere que la página se mueva
+   mientras lee.
 
-   Estas pausas son las mismas que las de stories.js y las del carrusel de
-   Features, y están repetidas a propósito: cada archivo se lee por su cuenta y
-   tocar uno no puede romper los otros. Si algún día molesta, el sitio donde
-   juntarlas es una función `autoplay()` que usen los tres. */
+   Estas reglas son las mismas que las de stories.js, con su propia espera, y
+   están repetidas a propósito: cada archivo se lee por su cuenta y tocar uno no
+   puede romper el otro. */
 (function () {
   "use strict";
 
@@ -54,15 +53,24 @@
 
   /* --------------------------------------------------- el paso automático */
 
+  /* Lo que espera después de un cambio a mano, con la barra vacía. */
+  var WAIT = 3000;
   var seen = !window.IntersectionObserver;   // sin observador, se da por visto
-  var over = false;                          // el ratón o el foco, dentro
   var away = false;                          // la pestaña, escondida
-  var mine = false;                          // alguien lo movió a mano
+  var hold = null;                           // la espera tras un cambio a mano
 
   function sync() {
-    var on = !mine && !quiet.matches;
+    var on = !quiet.matches;
     block.classList.toggle("is-playing", on);
-    block.classList.toggle("is-paused", !(on && seen && !over && !away));
+    block.classList.toggle("is-paused", !(on && seen && !away && !hold));
+  }
+
+  /* El punto nuevo estrena su animación, así que en pausa su barra queda vacía;
+     al acabar la espera empieza a llenarse desde cero. */
+  function wait() {
+    window.clearTimeout(hold);
+    hold = window.setTimeout(function () { hold = null; sync(); }, WAIT);
+    sync();
   }
 
   /* La barra se llenó: toca el siguiente. La suya empieza de cero sola, porque
@@ -71,20 +79,11 @@
     if (event.animationName === "trouble-fill") open(current() + 1);
   });
 
-  function inside(yes) {
-    return function () { over = yes; sync(); };
-  }
-
-  block.addEventListener("pointerenter", inside(true));
-  block.addEventListener("pointerleave", inside(false));
-  block.addEventListener("focusin", inside(true));
-  block.addEventListener("focusout", inside(false));
-
   /* `change` solo salta cuando el radio lo cambia una persona (pulsando un
      punto o con las flechas del teclado), nunca cuando lo marca este guion: así
      se distingue un cambio a mano de uno automático sin llevar la cuenta. */
   picks.forEach(function (pick) {
-    pick.addEventListener("change", function () { mine = true; sync(); });
+    pick.addEventListener("change", wait);
   });
 
   document.addEventListener("visibilitychange", function () {
