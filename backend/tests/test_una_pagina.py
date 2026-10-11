@@ -24,10 +24,10 @@ def test_cada_boton_de_la_barra_tiene_su_seccion():
     assert "Hablemos de tu lista" not in html
     # En este orden, que es el que se pidió.
     orden = [html.index(f'id="{a}"') for a in
-             ("inicio", "planes", "como-funciona", "contacto")]
+             ("inicio", "planes", "como-funciona", "preguntas", "contacto")]
     assert orden == sorted(orden)
-    # Las preguntas frecuentes se quitaron (octubre de 2026).
-    assert 'id="preguntas"' not in html and "Lo que suelen preguntarnos" not in html
+    # Las preguntas no tienen botón en la barra.
+    assert 'href="/#preguntas"' not in barra
     # Cómo funciona: Features, los tutoriales, la tira de plantillas (sin su
     # botón, que llevaba a los tutoriales) y el envío.
     assert (html.index('id="como-funciona"') < html.index('class="tour"')
@@ -204,6 +204,19 @@ def test_dominio_personalizado():
         "Con tu dominio", "Sin dominio"]
     assert "tuempresa@envios.sobreala.com" in seccion
     assert "El envío" not in html and "lo configuramos contigo" not in html
+
+
+def test_preguntas_frecuentes_cortas():
+    """Volvieron al final (octubre de 2026): seis, la primera abierta, y sin las
+    frases de antes que ya no eran ciertas."""
+    html = (LANDING / "index.html").read_text(encoding="utf-8")
+    preguntas = html[html.index('id="preguntas"'):html.index("<footer")]
+    assert 'id="faq-title">Lo que suelen preguntarnos</h2>' in preguntas
+    assert preguntas.count('class="faq__item"') == 6
+    assert preguntas.count("<details open>") == 1
+    assert preguntas.index("<details open>") < preguntas.index("¿Cómo empiezo?")
+    for vieja in ("lo configuramos contigo", "subir o bajar de plan"):
+        assert vieja not in html, vieja
 
 
 def test_el_pie_no_lleva_frase():

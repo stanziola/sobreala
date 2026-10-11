@@ -313,9 +313,9 @@ cosa está como está, y lo que ya se probó y se quitó.
 
 ### El sitio público (`docs/sitio.md`)
 
-- **Es una sola página**: Inicio, Planes y Cómo funciona, en ese orden, y
-  Contacto es el pie. La barra lleva esas tres, y solo baja a su sección.
-  Privacidad y Términos son aparte.
+- **Es una sola página**: Inicio, Planes, Cómo funciona y Preguntas, en ese
+  orden, y Contacto es el pie. La barra lleva las tres primeras, y solo baja a
+  su sección. Privacidad y Términos son aparte.
 - `/pricing/`, `/how-it-works/`, `/about/` y `/contact/` siguen existiendo como
   páginas de paso que llevan a su ancla (`REDIRECTS` en `build_site.py`).
 - Los textos viven en `landing/content.py`. Los tutoriales y las miniaturas de

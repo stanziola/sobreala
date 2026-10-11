@@ -390,7 +390,64 @@ HOME = {
         # Lo que dice cada tarjeta a un lector de pantalla, con su nombre.
         "open": "Abrir la plantilla {name} en el editor",
     },
-    # Las preguntas frecuentes se quitaron de la portada en octubre de 2026.
+    # Las preguntas frecuentes, al final de la portada. Se quitaron en octubre
+    # de 2026 y volvieron ese mismo mes, con seis y no once, y cada respuesta
+    # revisada contra docs/: las de antes decían que el dominio «lo
+    # configuramos contigo» y que se podía bajar de plan en cualquier momento.
+    "faq": {
+        "eyebrow": "Preguntas frecuentes",
+        "title": "Lo que suelen preguntarnos",
+        "items": [
+            {
+                "q": "¿Cómo empiezo?",
+                "a": (
+                    "Creas tu cuenta y nos pides una demostración: en ella abrimos "
+                    "tu cuenta y, contigo, recorremos el panel, importamos tu lista y "
+                    "armamos tu primer correo. Si ya sabes qué plan quieres, lo "
+                    "contratas y empiezas enseguida."
+                ),
+            },
+            {
+                "q": "¿Necesito un dominio propio?",
+                "a": (
+                    "No. Sin dominio, tus correos salen desde envios.sobreala.com con "
+                    "el nombre de tu negocio. Si tienes uno, lo conectas tú desde el "
+                    "panel con tres registros DNS."
+                ),
+            },
+            {
+                "q": "¿Cómo se paga?",
+                "a": (
+                    "Pagas un mes o un año por adelantado desde el panel, hoy con "
+                    "PayPal, y no se renueva solo: te avisamos antes de que venza. Los "
+                    "datos de tu tarjeta los maneja el proveedor de pago, nunca "
+                    "Sobreala, y los precios incluyen el ITBMS."
+                ),
+            },
+            {
+                "q": "¿Qué pasa si no uso todos mis correos del mes?",
+                "a": (
+                    "Pasan al mes siguiente y vencen ahí. Al enviar se gastan primero "
+                    "los acumulados, para que no se pierdan."
+                ),
+            },
+            {
+                "q": "¿Puedo cambiar de plan?",
+                "a": (
+                    "Puedes mejorarlo cuando quieras: los correos que no usaste se "
+                    "descuentan del precio nuevo y tu mes empieza de nuevo. Para pasar "
+                    "a uno menor, lo eliges cuando venza el tuyo."
+                ),
+            },
+            {
+                "q": "¿Hay permanencia?",
+                "a": (
+                    "No. Pagas por mes o por año y puedes dejarlo cuando quieras, sin "
+                    "penalización. Los correos acumulados se pierden al cancelar."
+                ),
+            },
+        ],
+    },
 }
 
 # The sample templates of the home page strip. Each slug is a ZIP in

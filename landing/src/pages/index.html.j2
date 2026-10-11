@@ -4,9 +4,10 @@
 {% block main %}
 
 {#- Todo el sitio en una página, en este orden: Inicio (con «Haz crecer tu
-    negocio»), Planes y Cómo funciona. Cada parte lleva el ancla a la que baja
-    su botón de la barra o su enlace del pie; las páginas que había antes llevan
-    aquí (redirect.html.j2). Contacto es el pie (#contacto). -#}
+    negocio»), Planes, Cómo funciona y las preguntas. Cada parte lleva el ancla
+    a la que baja su botón de la barra o su enlace del pie; las páginas que
+    había antes llevan aquí (redirect.html.j2). Contacto es el pie
+    (#contacto). -#}
 {% set home = page %}
 <div class="page-part" id="inicio">
 
@@ -142,7 +143,9 @@
 
 {% with page = how %}{% include "sections/como-funciona.html.j2" %}{% endwith %}
 
-{#- Las preguntas frecuentes se quitaron en octubre de 2026. -#}
+{#- Las preguntas frecuentes: se quitaron en octubre de 2026 y volvieron ese
+    mismo mes, con seis. La barra de arriba no lleva botón para ellas. -#}
+{% with faq = page.faq %}{% include "partials/faq.html.j2" %}{% endwith %}
 
 {% endblock %}
 

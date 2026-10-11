@@ -15,17 +15,25 @@ van en este orden, cada una con el ancla a la que baja su botón de la barra:
 | `#inicio` | La portada, «¿Sigues enviando correos masivos…?» y «Haz crecer tu negocio» | `src/pages/index.html.j2` |
 | `#planes` | Interruptor y tarjetas, y la tabla | `src/sections/planes.html.j2` |
 | `#como-funciona` | Funciones (Features), los tutoriales, la tira de plantillas y el dominio personalizado | `src/sections/como-funciona.html.j2` |
+| `#preguntas` | Seis preguntas frecuentes, sin botón en la barra | `src/partials/faq.html.j2` |
 
 **Contacto es el pie** (`id="contacto"` en `base.html.j2`): WhatsApp, correo e
 Instagram. Hubo una sección «Hablemos de tu lista» antes de las preguntas, y se
 quitó en octubre de 2026 porque repetía el pie; `/contact/` y `/#contacto`
 aterrizan ahí. Con ella se fue el `id` repetido que había entre las dos.
 
-**En octubre de 2026 salieron tres secciones más:**
+**En octubre de 2026 salieron dos secciones más:**
 - **«Qué significa cada fila»**, el glosario de debajo de la tabla de Planes;
-- **«Nosotros»**, con su columna «Empresa» del pie, que solo lo enlazaba;
-- **las preguntas frecuentes** («Lo que suelen preguntarnos»), que iban entre
-  Cómo funciona y el pie, con su `src/partials/faq.html.j2`.
+- **«Nosotros»**, con su columna «Empresa» del pie, que solo lo enlazaba.
+
+**Las preguntas frecuentes se quitaron y volvieron ese mismo mes, más cortas:**
+seis en vez de once (`HOME["faq"]`), entre Cómo funciona y el pie, cada una en
+un `details` que se abre sin JavaScript y con la primera abierta. Cada respuesta
+se revisó contra `docs/`: las de antes decían que el dominio «lo configuramos
+contigo», cuando el cliente lo conecta solo, y que se podía bajar de plan en
+cualquier momento, cuando con un plan vigente solo se mejora. Son: cómo empiezo,
+si necesito dominio, cómo se paga, los correos que no uso, cambiar de plan y la
+permanencia.
 
 `/about/` sigue respondiendo y lleva al inicio.
 
@@ -449,8 +457,8 @@ siempre del panel en oscuro; con ella se fueron las variables `--color-flip*` y
 las clases `.section--flip` y `.section--deep`. **Los fondos alternan de arriba
 abajo**: azul (la portada) · gris («¿Sigues enviando…?») · blanco (los usos) ·
 gris (las tarjetas de Planes) · blanco (la tabla) · gris (Funciones) · blanco
-(los tutoriales) · gris (la tira) · blanco (el dominio personalizado) · azul
-(el pie). En oscuro, los mismos escalones.
+(los tutoriales) · gris (la tira) · blanco (el dominio personalizado) · gris
+(las preguntas) · azul (el pie). En oscuro, los mismos escalones.
 
 **El pie es un solo azul** (octubre de 2026). Abajo, dentro del mismo azul, va
 el «© Sobreala» en pequeño, con una raya fina encima (`--color-footer-edge`).
