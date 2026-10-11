@@ -230,16 +230,34 @@ HOME = {
         # Las flechas del carrusel. Solo las dibuja el guion.
         "back": "Ver la anterior",
         "next": "Ver la siguiente",
-        # Cinco dibujos sencillos (src/partials/feature-*.svg.j2) en vez de
+        # Nueve dibujos sencillos (src/partials/feature-*.svg.j2) en vez de
         # capturas del panel, que enseñaban demasiado de golpe. Cada uno cuenta
         # una sola cosa; las palabras que lleva dentro van en `words`, y `alt` es
         # lo que dice a un lector de pantalla. Aquí se juntaron también «Reglas
         # que funcionan solas» y «En todos los planes» (octubre de 2026): lo que
         # repetían va en estos textos. Lo demás fue una lista debajo del
-        # carrusel, que se quitó ese mismo mes.
+        # carrusel, que se quitó ese mismo mes. Fueron cinco; en octubre de 2026
+        # contactos se hizo más general y entraron etiquetas, campos, rebotes y
+        # usuarios, todo lo que el panel ya hace.
         "items": [
             {
                 "art": "contacts",
+                "alt": (
+                    "Un archivo CSV que entra a la lista de contactos: tres "
+                    "direcciones, 3 de 1000."
+                ),
+                "words": {"badge": "CSV", "file": "lista.csv", "title": "Contactos",
+                          "count": "3", "limit": " / 1000",
+                          "emails": ["ana@coop.com", "luis@coop.com", "sofia@coop.com"]},
+                "title": "Administra tus contactos",
+                "text": (
+                    "Importa tu lista desde un archivo CSV, agrega o edita contactos "
+                    "uno por uno y descárgala cuando quieras. Cada dirección existe "
+                    "una sola vez en tu cuenta."
+                ),
+            },
+            {
+                "art": "tags",
                 "alt": (
                     "Dos contactos con la misma dirección, uno con la etiqueta "
                     "Socios y otro con Junta, que cuentan como uno solo: 1 de 1000."
@@ -247,11 +265,26 @@ HOME = {
                 "words": {"email": "ana@coop.com", "tag_a": "Socios",
                           "tag_b": "Junta", "count": "1", "limit": " / 1000",
                           "unit": "contactos"},
-                "title": "Contactos sin duplicados",
+                "title": "Organiza con etiquetas",
                 "text": (
-                    "Cada dirección existe una sola vez en tu cuenta. Si una persona "
-                    "lleva varias etiquetas y la campaña va a más de una, recibe una "
-                    "sola copia y gasta un solo envío."
+                    "Agrupa tus contactos en clientes, socios o boletín, y envía a uno "
+                    "o a varios grupos. Quien está en dos recibe una sola copia y "
+                    "gasta un solo envío."
+                ),
+            },
+            {
+                "art": "fields",
+                "alt": (
+                    "Un correo con los campos nombre y saldo, y el mismo correo como "
+                    "le llega a Ana: Hola, Ana. Tu saldo: $250.00."
+                ),
+                "words": {"greet": "Hola, ", "name_tag": "*|NOMBRE|*", "name": "Ana",
+                          "balance_label": "Tu saldo: ", "balance_tag": "*|SALDO|*",
+                          "balance": "$250.00"},
+                "title": "Campos personalizados",
+                "text": (
+                    "Crea tus propias columnas, como nombre, saldo o fecha, y úsalas en "
+                    "el correo: cada persona recibe el suyo con sus datos."
                 ),
             },
             {
@@ -296,6 +329,23 @@ HOME = {
                 ),
             },
             {
+                "art": "bounces",
+                "alt": (
+                    "Un correo que rebotó, y la lista de lo que ya no recibe: una "
+                    "dirección por rebote y otra por marcar spam."
+                ),
+                # La última cifra de cada fila es lo que mide la raya que tacha la
+                # dirección, en unidades del dibujo.
+                "words": {"title": "Fuera de tus envíos",
+                          "rows": [("pepe@viejo.com", "Rebote", "art-red", 100),
+                                   ("maria@correo.com", "Spam", "art-amber", 114)]},
+                "title": "Rebotes y quejas fuera",
+                "text": (
+                    "Las direcciones que rebotan o te marcan como spam salen solas de "
+                    "tus envíos, no gastan cuota y reimportarlas no las reactiva."
+                ),
+            },
+            {
                 "art": "unsubscribe",
                 "alt": (
                     "El enlace para anular la suscripción al pie de un correo, y el "
@@ -309,6 +359,24 @@ HOME = {
                     "Todos los correos llevan el botón para anular la suscripción, "
                     "único para cada persona y en todos los planes. No se puede "
                     "quitar, y quien lo usa deja de recibir al momento."
+                ),
+            },
+            {
+                "art": "users",
+                "alt": (
+                    "Los usuarios de una cuenta: Ana, la dueña, y Luis, invitado, "
+                    "que puede ver estadísticas y enviar campañas, pero no tocar "
+                    "contactos ni plantillas."
+                ),
+                "words": {"title": "Usuarios", "owner": "Ana", "owner_role": "Dueña",
+                          "guest": "Luis", "guest_role": "Invitado", "can": "Luis puede:",
+                          "permissions": [("Ver estadísticas", True),
+                                          ("Enviar campañas", True),
+                                          ("Contactos", False), ("Plantillas", False)]},
+                "title": "Usuarios de la cuenta",
+                "text": (
+                    "Invita a tu equipo, cada quien con su acceso, y elige qué puede "
+                    "hacer: ver estadísticas, enviar, manejar contactos o plantillas."
                 ),
             },
         ],
@@ -657,29 +725,31 @@ HOW = {
     # dominio; las IP siguen siendo las compartidas de SES.
     "sending": {
         "title": "Dominio personalizado",
+        # Primero quien tiene dominio, después quien no (octubre de 2026). Que
+        # envios.sobreala.com comparte reputación entre todos los que no tienen
+        # dominio propio lo dice docs/envios.md.
         "text": (
-            "Tus campañas pueden salir desde tu propio dominio, como "
-            "boletin@tuempresa.com. Lo conectas desde el panel: te damos tres "
-            "registros para el DNS de tu dominio y, en cuanto se verifican, tus "
-            "correos salen con tu nombre."
+            "Si tienes un dominio, agrégalo desde el panel: te damos tres registros "
+            "DNS para ponerlos donde lo administras y, en cuanto se verifican, tus "
+            "campañas salen desde tu dominio, como boletin@tuempresa.com."
         ),
         "benefits": [
             {"title": "Reputación propia:",
-             "text": ("la de tu dominio depende solo de tus envíos, no de los de "
-                      "otros negocios.")},
+             "text": "la de tu dominio depende solo de tus envíos."},
             {"title": "Más confianza:",
-             "text": ("quien lo recibe ve tu dominio, y el correo va firmado con "
-                      "él, lo que ayuda a que llegue a la bandeja de entrada.")},
+             "text": "quien lo recibe ve tu dominio, y el correo va firmado con él."},
         ],
+        # La tarjeta compara las dos direcciones de salida.
         "example": {
-            "from_label": "De",
-            "from_value": "Tu Empresa <boletin@tuempresa.com>",
-            "reply_label": "Responder a",
-            "reply_value": "tuempresa@gmail.com",
+            "own_label": "Con tu dominio",
+            "own_value": "boletin@tuempresa.com",
+            "shared_label": "Sin dominio",
+            "shared_value": "tuempresa@envios.sobreala.com",
         },
         "note": (
-            "Si no tienes dominio, tus correos salen desde envios.sobreala.com con "
-            "el nombre de tu negocio, y las respuestas llegan a tu correo de siempre."
+            "Sin dominio propio, tus correos salen desde envios.sobreala.com con el "
+            "nombre de tu negocio. Ese dominio lo comparten todos los negocios que "
+            "envían sin dominio propio, y con él su reputación."
         ),
     },
     # «Reglas que funcionan solas» se juntó con Features (octubre de 2026): lo
@@ -1233,7 +1303,7 @@ TERMS = {
 # --------------------------------------------------------------------------- footer
 
 FOOTER = {
-    "description": "Envía campañas de correo a toda tu lista desde un solo panel.",
+    # Debajo del logo no va ninguna frase (octubre de 2026).
     "columns": [
         {
             "title": "Producto",

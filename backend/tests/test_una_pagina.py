@@ -110,14 +110,27 @@ def test_haz_crecer_tu_negocio_va_debajo_del_problema():
 
 
 def test_features_trae_sus_dibujos():
-    """Cinco dibujos en vez de capturas del panel. La lista de debajo, que juntó
-    «Reglas que funcionan solas» y «En todos los planes», se quitó."""
+    """Nueve dibujos en vez de capturas del panel, cada uno con su barra. La
+    lista de debajo, que juntó «Reglas que funcionan solas» y «En todos los
+    planes», se quitó."""
     html = (LANDING / "index.html").read_text(encoding="utf-8")
     tira = html[html.index('class="tour"'):html.index('id="tutorials"')]
-    assert tira.count('<svg class="tour__art"') == 5
+    assert tira.count('<svg class="tour__art"') == 9
+    assert tira.count('name="tour"') == 9
+    assert tira.count('<span class="tour__fill"></span>') == 9
+    titulos = re.findall(r'<h3 class="tour__title">([^<]+)</h3>', tira)
+    assert titulos == [
+        "Administra tus contactos", "Organiza con etiquetas", "Campos personalizados",
+        "Campañas creadas en el editor", "Envío inmediato o programado",
+        "Resultados de cada campaña", "Rebotes y quejas fuera",
+        "Cada persona puede anular su suscripción cuando quiera",
+        "Usuarios de la cuenta"], titulos
+    # Las barras van antes que las flechas, debajo del texto.
+    nav = tira[tira.index('class="tour__nav"'):]
+    assert (nav.index('class="tour__dots"') < nav.index("data-tour-back")
+            < nav.index("data-tour-next"))
     assert "/assets/img/panel/" not in html
-    for punto in ("En todos los planes", "Rebotes y quejas fuera.",
-                  "Sin sorpresas al llegar al límite.",
+    for punto in ("En todos los planes", "Sin sorpresas al llegar al límite.",
                   "Acompañamiento en tu primera campaña.", "Sin permanencia mínima."):
         assert punto not in html, punto
     assert 'class="included' not in html
@@ -183,5 +196,20 @@ def test_dominio_personalizado():
     assert "tres registros" in seccion
     assert seccion.count("<li><strong>") == 2
     assert "Reputación propia:" in seccion and "Más confianza:" in seccion
-    assert "Tu Empresa &lt;boletin@tuempresa.com&gt;" in seccion
+    assert seccion.index("Si tienes un dominio") < seccion.index("Sin dominio propio")
+    assert ("Ese dominio lo comparten todos los negocios que envían sin dominio "
+            "propio, y con él su reputación.") in seccion
+    # La tarjeta compara las dos direcciones de salida.
+    assert re.findall(r'class="mail-card__label">([^<]+)<', seccion) == [
+        "Con tu dominio", "Sin dominio"]
+    assert "tuempresa@envios.sobreala.com" in seccion
     assert "El envío" not in html and "lo configuramos contigo" not in html
+
+
+def test_el_pie_no_lleva_frase():
+    """Debajo del logo del pie ya no va «Envía campañas de correo…»."""
+    for pagina in ("index.html", "privacy/index.html", "terms/index.html"):
+        html = (LANDING / pagina).read_text(encoding="utf-8")
+        pie = html[html.index('<footer class="site-footer"'):]
+        assert "Envía campañas de correo a toda tu lista" not in pie, pagina
+        assert "site-footer__desc" not in pie, pagina

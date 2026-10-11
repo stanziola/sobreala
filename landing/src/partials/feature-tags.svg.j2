@@ -1,0 +1,49 @@
+{#- Etiquetas: la misma dirección dos veces, con una etiqueta distinta cada
+    una, se junta en un solo contacto y el contador dice 1 de mil. Fue el dibujo
+    de «Contactos sin duplicados» hasta octubre de 2026.
+    Las palabras salen de content.py (`words`) y los colores de las clases
+    .art-*, así que de noche es el mismo dibujo. Lo que cuenta va en el centro:
+    cerrado en la tira, el listón enseña el centro. -#}
+{% set w = item.words %}
+<svg class="tour__art" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid slice"
+     role="img" aria-label="{{ item.alt }}" focusable="false">
+  <defs>
+    <filter id="ft-drop" x="-20%" y="-40%" width="140%" height="190%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" class="art-drop"/>
+    </filter>
+  </defs>
+  <rect class="art-stage" width="480" height="270"/>
+
+  {#- las dos filas con la misma dirección, cada una con su etiqueta. En Sora
+      la dirección mide unas 114 unidades: la etiqueta empieza 12 después. El
+      muñeco va en el color de la tarjeta sobre el azul, que se lee en los dos
+      temas (de noche, el azul claro del fondo se lo comía). -#}
+  {% for top, tag, color in [(66, w.tag_a, "art-green"), (148, w.tag_b, "art-purple")] %}
+  <g filter="url(#ft-drop)">
+    <rect class="art-card" x="24" y="{{ top }}" width="262" height="56" rx="14"/>
+  </g>
+  <circle class="art-blue" cx="50" cy="{{ top + 28 }}" r="13"/>
+  <circle class="art-card" cx="50" cy="{{ top + 24 }}" r="4.5"/>
+  <path class="art-card" d="M42.5 {{ top + 36 }}a7.5 6 0 0 1 15 0z"/>
+  <text class="art-ink" x="74" y="{{ top + 33 }}" font-size="14" font-weight="600">{{ w.email }}</text>
+  <rect class="{{ color }}" x="200" y="{{ top + 17 }}" width="72" height="22" rx="11"/>
+  <text x="236" y="{{ top + 32 }}" font-size="11" font-weight="700" fill="white"
+        text-anchor="middle">{{ tag }}</text>
+  {% endfor %}
+
+  {#- las dos se juntan en una -#}
+  <path class="art-s-dash" d="M294 94C316 94 316 135 336 135M294 176C316 176 316 135 336 135"
+        fill="none" stroke-width="2.6" stroke-dasharray="5 6" stroke-linecap="round"/>
+  <path class="art-s-dash" d="m330 128 8 7-8 7" fill="none" stroke-width="2.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  {#- y cuentan como un solo contacto -#}
+  <g filter="url(#ft-drop)">
+    <rect class="art-card" x="348" y="88" width="110" height="94" rx="16"/>
+  </g>
+  <text x="403" y="136" text-anchor="middle" font-weight="800">
+    <tspan class="art-blue" font-size="34">{{ w.count }}</tspan><tspan class="art-ink" font-size="19" font-weight="600">{{ w.limit }}</tspan>
+  </text>
+  <text class="art-ink" x="403" y="160" text-anchor="middle" font-size="12.5"
+        opacity=".72">{{ w.unit }}</text>
+</svg>

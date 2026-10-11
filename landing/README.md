@@ -68,7 +68,7 @@ Después de cambiar cualquiera de ellos, regenerar y commitear también lo gener
 
 ## Features y los usos
 
-Features son cinco dibujos sencillos en SVG (`src/partials/feature-*.svg.j2`),
+Features (en la página, «Funciones») son nueve dibujos sencillos en SVG (`src/partials/feature-*.svg.j2`),
 dentro de la página y pintados con las variables del tema; las palabras que
 llevan están en `content.py`. Hasta octubre de 2026 eran capturas del panel que
 hacía `shots.py`, y se quitaron. Las fotos de los usos se agregan a mano, en

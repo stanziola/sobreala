@@ -1,17 +1,32 @@
-/* El carrusel de Features. Sin dependencias, como nav.js.
+/* El carrusel de Features, que en la página se llama «Funciones». Sin
+   dependencias, como nav.js.
 
    La sección funciona entera sin este archivo: lo que abre cada dibujo son
-   botones de radio, así que se pulsa con el ratón, se mueve con las flechas
-   del teclado y en el teléfono se ven los cinco con su texto. Lo de aquí son
-   dos añadidos, y ninguno existe sin este archivo: los botones de anterior y
-   siguiente, y el paso automático (que se detiene con el ratón encima y vuelve
-   a andar al quitarlo).
+   botones de radio y las barras de debajo son sus etiquetas, así que se pulsa
+   con el ratón, se mueve con las flechas del teclado y en el teléfono se ven
+   las nueve con su texto. Lo de aquí son dos añadidos, y ninguno existe sin
+   este archivo: las flechas de anterior y siguiente, y el paso automático.
 
-   Hubo además una ventana para ver una captura en grande, y se quitó con las
-   capturas: los dibujos de ahora se leen enteros en su sitio.
+   **El reloj es la barra de la función abierta**, una animación de CSS que dura
+   --tour-every (site.css), como en «Haz crecer tu negocio»: este archivo espera
+   a que se llene (`animationend`) y abre la siguiente. Pone tres clases en el
+   bloque: `is-ready`, porque corrió (y con ella se ven las flechas);
+   `is-playing`, con el paso automático encendido; e `is-paused`, cuando se
+   detiene un momento (la barra se queda donde iba). En el teléfono las barras
+   no se dibujan, así que tampoco pasa sola: ahí se ven todas a la vez.
 
-   Con «reducir movimiento» puesto no pasa sola: quien lo pide no quiere que
-   la página se mueva mientras lee. */
+   **Si alguien pulsa una barra o una flecha, espera un segundo** con la barra
+   de la nueva gris, y después el azul empieza a llenarla otra vez. Otro cambio
+   antes de tiempo vuelve a empezar la espera. Hasta octubre de 2026 pasaba
+   cada cuatro segundos con un `setInterval`, sin barra, y el ratón encima o el
+   foco dentro lo pausaban.
+
+   No corre fuera de la pantalla ni con la pestaña escondida, y con «reducir
+   movimiento» puesto no existe. Las flechas, sí.
+
+   Estas reglas son las mismas que las de stories.js y trouble.js, y están
+   escritas otra vez a propósito: cada archivo se lee por su cuenta y tocar uno
+   no puede romper los otros. */
 (function () {
   "use strict";
 
@@ -19,10 +34,9 @@
   if (!tour) return;
 
   var picks = Array.prototype.slice.call(tour.querySelectorAll(".tour__pick"));
-  var strip = tour.querySelector(".tour__strip");
   var back = tour.querySelector("[data-tour-back]");
   var next = tour.querySelector("[data-tour-next]");
-  if (picks.length < 2 || !strip || !back || !next) return;
+  if (picks.length < 2 || !back || !next) return;
 
   var quiet = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -30,8 +44,7 @@
   tour.classList.add("is-ready");
 
   function open(which) {
-    var to = (which + picks.length) % picks.length;
-    picks[to].checked = true;
+    picks[(which + picks.length) % picks.length].checked = true;
   }
 
   function current() {
@@ -41,50 +54,39 @@
     return 0;
   }
 
-  /* ------------------------------------------------------ el paso automático */
+  /* --------------------------------------------------- el paso automático */
 
-  /* Cuatro segundos: lo que se tarda en mirar un dibujo. Con cinco, la vuelta
-     entera dura veinte. */
-  var EVERY = 4000;
-  var timer = null;
-
-  /* Tres interruptores y un solo sitio que decide. Antes cada uno llamaba a
-     `play()` por su cuenta y el ratón podía arrancarlo con la sección fuera de
-     la pantalla. */
+  /* Lo que espera después de un cambio a mano, con la barra gris. */
+  var WAIT = 1000;
   var seen = !window.IntersectionObserver;   // sin observador, se da por vista
-  var over = false;                          // el ratón o el foco, dentro
   var away = false;                          // la pestaña, escondida
+  var hold = null;                           // la espera tras un cambio a mano
 
   function sync() {
-    // Quien pidió no ver movimiento no lo ve: ahí no pasa sola nunca.
-    var run = seen && !over && !away && !quiet.matches;
-    if (run && !timer) {
-      timer = window.setInterval(function () { open(current() + 1); }, EVERY);
-    } else if (!run && timer) {
-      window.clearInterval(timer);
-      timer = null;
-    }
+    var on = !quiet.matches;
+    tour.classList.toggle("is-playing", on);
+    tour.classList.toggle("is-paused", !(on && seen && !away && !hold));
   }
 
-  /* Elegir una a mano **no lo apaga**: solo vuelve a empezar la cuenta, para
-     que la que se acaba de pulsar no se cambie medio segundo después. */
-  function restart() {
-    if (!timer) return;
-    window.clearInterval(timer);
-    timer = null;
+  /* La función nueva estrena su animación, así que en pausa su barra queda
+     gris; al acabar la espera el azul empieza a llenarla desde cero. */
+  function wait() {
+    window.clearTimeout(hold);
+    hold = window.setTimeout(function () { hold = null; sync(); }, WAIT);
     sync();
   }
 
-  function inside(yes) {
-    return function () { over = yes; sync(); };
-  }
+  /* La barra se llenó: toca la siguiente. La suya empieza de cero sola, porque
+     la animación solo la lleva la barra de la abierta. */
+  tour.addEventListener("animationend", function (event) {
+    if (event.animationName === "tour-fill") open(current() + 1);
+  });
 
-  tour.addEventListener("pointerenter", inside(true));
-  tour.addEventListener("pointerleave", inside(false));
-  tour.addEventListener("focusin", inside(true));
-  tour.addEventListener("focusout", inside(false));
+  /* `change` solo salta cuando el radio lo cambia una persona (pulsando un
+     dibujo o una barra, o con las flechas del teclado), nunca cuando lo marca
+     este guion. */
   picks.forEach(function (pick) {
-    pick.addEventListener("change", restart);
+    pick.addEventListener("change", wait);
   });
 
   document.addEventListener("visibilitychange", function () {
@@ -103,10 +105,15 @@
 
   /* -------------------------------------------------------------- las flechas */
 
-  back.addEventListener("click", function () {
-    open(current() - 1);
-  });
-  next.addEventListener("click", function () {
-    open(current() + 1);
-  });
+  /* Marcan el radio desde aquí, así que no salta `change`: la espera la
+     arrancan ellas. Dan la vuelta: después de la última viene la primera. */
+  function go(by) {
+    return function () {
+      open(current() + by);
+      wait();
+    };
+  }
+
+  back.addEventListener("click", go(-1));
+  next.addEventListener("click", go(1));
 })();

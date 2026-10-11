@@ -320,20 +320,34 @@ no avanza: el anillo late otra vez.
   se quitaron la etiqueta «Tutoriales» y la entradilla. «Tutoriales» sigue
   siendo lo que oye un lector de pantalla en las pestañas (`TUTORIALS["label"]`).
 
-**«Features» son cinco dibujos sencillos** (octubre de 2026), en un carrusel
-que aprieta: el abierto ocupa su sitio y los otros cuatro quedan en listones.
-Debajo, el texto del que esté abierto. En la página se llama **«Funciones»** y
+**«Features» son nueve dibujos sencillos** (octubre de 2026), en un carrusel
+que aprieta: el abierto ocupa su sitio y los otros ocho quedan en listones.
+Debajo, el texto del que esté abierto, y debajo de él una barra por función con
+las flechas a la derecha. Fueron cinco: ese mismo mes «Contactos sin
+duplicados» se hizo más general («Administra tus contactos») y entraron
+etiquetas, campos personalizados, rebotes y quejas, y usuarios de la cuenta,
+todo lo que el panel ya hace. En la página se llama **«Funciones»** y
 es el único título de Cómo funciona; en el código sigue siendo `features`.
 
 **Cada dibujo cuenta una sola cosa:**
 
 | `art` | Lo que se ve |
 |---|---|
-| `contacts` | Dos filas con la misma dirección, cada una con su etiqueta, que se juntan en una: el contador dice «1 / 1000» |
+| `contacts` | Un archivo CSV que entra a la lista: tres direcciones y «3 / 1000» |
+| `tags` | Dos filas con la misma dirección, cada una con su etiqueta, que se juntan en una: el contador dice «1 / 1000». Era el dibujo de contactos |
+| `fields` | El correo con «*\|NOMBRE\|*» y «*\|SALDO\|*», y el mismo como le llega a Ana |
 | `editor` | Una hoja con un título elegido (con sus tiradores), una foto y un botón |
 | `schedule` | «Enviar ahora» y «Programar», con el segundo marcado y su fecha |
 | `results` | Tres cifras grandes (entregados, aperturas y clics) y «CSV · PDF» |
+| `bounces` | Un sobre con su aviso de rebote, y «Fuera de tus envíos» con una dirección por rebote y otra por spam, tachadas |
 | `unsubscribe` | El enlace al pie de un correo y el «Listo, ya no recibirás estos correos» |
+| `users` | Ana, la dueña, y Luis, invitado, con las casillas de lo que Luis puede hacer |
+
+- **Lo que cuentan existe en el panel:** contactos nuevos, editar, exportar e
+  importar; etiquetas; columnas propias con `*|CAMPO|*`; supresiones; y los
+  permisos de `models/account.py`. Rebotes y quejas los anula el aviso de SES,
+  que está escrito pero todavía no conectado (ver «Antes de la primera campaña
+  real» en `CLAUDE.md`).
 
 - **Fueron cinco capturas del panel**, en un juego por tema que hacía
   `shots.py`, con una ventana para verlas en grande. Enseñaban demasiado de
@@ -343,8 +357,9 @@ es el único título de Cómo funciona; en el código sigue siendo `features`.
 - **Son SVG dentro de la página**, en `src/partials/feature-*.svg.j2`, que la
   plantilla incluye por el `art` de cada uno. Se pintan con las clases `.art-*`
   de las ilustraciones de arriba, así que el mismo dibujo sirve de día y de
-  noche. Los `id` llevan el prefijo de su dibujo (`fc-`, `fe-`, `fs-`, `fr-`,
-  `fu-`), por lo mismo que los de las ilustraciones.
+  noche. Los `id` llevan el prefijo de su dibujo (`fc-`, `ft-`, `ff-`, `fe-`,
+  `fs-`, `fr-`, `fb-`, `fu-` y `fus-`), por lo mismo que los de las
+  ilustraciones.
 - **Las palabras que llevan dentro viven en `content.py`** (`words`), como todo
   el español del sitio. `alt` es lo que oye un lector de pantalla
   (`aria-label` del SVG): el listón es la etiqueta de su botón de radio, y sin
@@ -369,25 +384,31 @@ es el único título de Cómo funciona; en el código sigue siendo `features`.
 debajo para que se leyeran encima de la captura; el velo tapaba justo lo que la
 sección viene a enseñar. Sin rótulo no hace falta ninguno de los dos.
 
-**Lo que abre cada dibujo son cinco botones de radio**, no un guion. Por eso la
+**Lo que abre cada dibujo son nueve botones de radio**, no un guion. Por eso la
 sección funciona entera sin JavaScript y las flechas del teclado la mueven
-solas, que es lo que se consigue gratis con un grupo de radios.
+solas, que es lo que se consigue gratis con un grupo de radios. Las barras de
+debajo del texto son sus etiquetas, así que también se ven sin guion.
 `assets/js/carousel.js` agrega dos cosas y nada más, y ninguna existe sin él
 (como el interruptor de Planes): los botones de anterior y siguiente, y el paso
-automático cada cuatro segundos. Ese paso **se detiene con el ratón encima o
-con el foco dentro y vuelve a andar al quitarlo**, no corre fuera de la
-pantalla ni con la pestaña escondida, y no existe con «reducir movimiento»
-puesto. **Elegir uno a mano no lo apaga**: solo reinicia la cuenta, para que el
-que se acaba de pulsar no se cambie medio segundo después. Lo deciden tres
-interruptores y un solo `sync()`; antes cada uno llamaba a `play()` por su
-cuenta y el ratón podía arrancarlo con la sección fuera de la vista.
+automático.
+- **La barra de la abierta es el reloj** (octubre de 2026), como en «Haz crecer
+  tu negocio»: el azul la llena en 8 s (`--tour-every`) y, llena, pasa a la
+  siguiente (`animationend`).
+- **Un cambio a mano** (una barra, un dibujo, el teclado o una flecha) espera
+  un segundo con la barra de la nueva gris, y luego el azul empieza a llenarla.
+- Se pausa fuera de la pantalla y con la pestaña escondida, y con «reducir
+  movimiento» no existe; parada, la barra de la abierta queda azul y llena.
+- **Hasta octubre de 2026 pasaba cada cuatro segundos** con un `setInterval`,
+  sin barra, y el ratón encima o el foco dentro lo pausaban; elegir uno a mano
+  reiniciaba la cuenta. Se igualó con las otras dos secciones.
 
 **En el teléfono no hay apretujón**: los dos contenedores se vuelven
 transparentes (`display: contents`) y cada dibujo queda encima de su texto, con
-los cinco a la vista. El apretujón necesita ancho para significar algo, y ahí
-no lo hay.
+los nueve a la vista. El apretujón necesita ancho para significar algo, y ahí
+no lo hay. Tampoco hay barras ni flechas, y como sin barra no hay reloj, ahí no
+pasa sola.
 
-Las reglas del carrusel nombran los cinco por su id (`#tour-1` … `#tour-5`), que
+Las reglas del carrusel nombran los nueve por su id (`#tour-1` … `#tour-9`), que
 es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otros,
 esas listas de `landing/src/site.css` crecen con ellos.
 
@@ -397,7 +418,7 @@ sorpresas al llegar al límite, acompañamiento en la primera campaña y sin
 permanencia mínima.
 - **Ahí se habían juntado tres bloques**: Features, «Reglas que funcionan
   solas», que cerraba Cómo funciona, y la lista «En todos los planes» del final
-  de Planes. Lo que repetían lo cuentan los textos de los cinco dibujos. La
+  de Planes. Lo que repetían lo cuentan los textos de los dibujos. La
   tabla comparativa de Planes se quedó.
 - Con la lista se fue su caja (`.included`).
 - **Al juntarlos salieron dos frases que prometían algo que no existe**:
@@ -407,12 +428,15 @@ permanencia mínima.
 **Al final de Cómo funciona va «Dominio personalizado»** (octubre de 2026),
 donde estaba «El envío / Los correos salen con el nombre y el correo de tu
 empresa». Cuenta cómo se conecta y por qué conviene, en `HOW["sending"]`:
-- un párrafo: el dominio se conecta desde el panel con tres registros para su
-  DNS, y al verificarse los correos salen con su nombre;
+- primero quien tiene dominio: «Si tienes un dominio, agrégalo desde el
+  panel», con los tres registros DNS y, al verificarse, sus campañas salen desde
+  él;
 - dos ventajas (`benefits`): la reputación propia y la firma con su dominio;
-- una nota para quien no tiene dominio: sale desde `envios.sobreala.com` con el
-  nombre de su negocio;
-- al lado, la tarjeta con «De: Tu Empresa <boletin@tuempresa.com>».
+- después quien no tiene: sale desde `envios.sobreala.com` con el nombre de su
+  negocio, y **ese dominio lo comparten todos los que envían sin dominio
+  propio, y con él su reputación** (lo dice «Remitente» en `docs/envios.md`);
+- al lado, la tarjeta compara las dos direcciones: «Con tu dominio» y «Sin
+  dominio».
 - **Dice lo que hace el panel de verdad** (ver «Remitente» en
   `docs/envios.md`): los tres CNAME con Easy DKIM y «Comprobar ahora». Salió la
   nota de antes, «lo configuramos contigo durante la activación», que ya no era
@@ -430,7 +454,9 @@ gris (las tarjetas de Planes) · blanco (la tabla) · gris (Funciones) · blanco
 
 **El pie es un solo azul** (octubre de 2026). Abajo, dentro del mismo azul, va
 el «© Sobreala» en pequeño, con una raya fina encima (`--color-footer-edge`).
-Lleva tres columnas: Producto, Legal y Contacto.
+Lleva tres columnas: Producto, Legal y Contacto. Debajo del logo no va ninguna
+frase: «Envía campañas de correo a toda tu lista desde un solo panel.» se quitó
+en octubre de 2026.
 - **Se quitaron los logos de pago** (Yappy, PayPal, Visa y Mastercard), que iban
   en una franja del color de la página debajo del azul. De noche el final de la
   página se leía negro, azul y negro otra vez, y de los cuatro medios hoy solo

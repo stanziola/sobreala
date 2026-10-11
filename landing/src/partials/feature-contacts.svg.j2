@@ -1,48 +1,48 @@
-{#- Contactos sin duplicados: la misma dirección dos veces, con una etiqueta
-    distinta cada una, se junta en un solo contacto y el contador dice 1 de mil.
-    Las palabras salen de content.py (`words`) y los colores de las clases
-    .art-*, así que de noche es el mismo dibujo. Lo que cuenta va en el centro:
-    cerrado en la tira, el listón enseña el centro. -#}
+{#- Administra tus contactos: un archivo CSV que entra a la lista, con sus tres
+    filas y el contador. Palabras de content.py y colores de las clases .art-*,
+    como los demás dibujos de Features; lo que cuenta va en el centro. -#}
 {% set w = item.words %}
 <svg class="tour__art" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid slice"
      role="img" aria-label="{{ item.alt }}" focusable="false">
   <defs>
-    <filter id="fc-drop" x="-20%" y="-40%" width="140%" height="190%">
+    <filter id="fc-drop" x="-20%" y="-20%" width="140%" height="150%">
       <feDropShadow dx="0" dy="4" stdDeviation="6" class="art-drop"/>
     </filter>
   </defs>
   <rect class="art-stage" width="480" height="270"/>
 
-  {#- las dos filas con la misma dirección, cada una con su etiqueta. En Sora
-      la dirección mide unas 114 unidades: la etiqueta empieza 12 después. El
-      muñeco va en el color de la tarjeta sobre el azul, que se lee en los dos
-      temas (de noche, el azul claro del fondo se lo comía). -#}
-  {% for top, tag, color in [(66, w.tag_a, "art-green"), (148, w.tag_b, "art-purple")] %}
+  {#- el archivo, con la esquina doblada, su sello y unas filas -#}
   <g filter="url(#fc-drop)">
-    <rect class="art-card" x="24" y="{{ top }}" width="262" height="56" rx="14"/>
+    <path class="art-card" d="M46 62h70l28 28v106a12 12 0 0 1-12 12H46a12 12 0 0 1-12-12V74a12 12 0 0 1 12-12z"/>
   </g>
-  <circle class="art-blue" cx="50" cy="{{ top + 28 }}" r="13"/>
-  <circle class="art-card" cx="50" cy="{{ top + 24 }}" r="4.5"/>
-  <path class="art-card" d="M42.5 {{ top + 36 }}a7.5 6 0 0 1 15 0z"/>
-  <text class="art-ink" x="74" y="{{ top + 33 }}" font-size="14" font-weight="600">{{ w.email }}</text>
-  <rect class="{{ color }}" x="200" y="{{ top + 17 }}" width="72" height="22" rx="11"/>
-  <text x="236" y="{{ top + 32 }}" font-size="11" font-weight="700" fill="white"
-        text-anchor="middle">{{ tag }}</text>
+  <path class="art-card-edge" d="M116 62v16a12 12 0 0 0 12 12h16z"/>
+  <rect class="art-green" x="50" y="98" width="48" height="22" rx="6"/>
+  <text x="74" y="113.5" text-anchor="middle" font-size="11.5" font-weight="800" fill="white">{{ w.badge }}</text>
+  {% for top, width in [(134, 78), (150, 62), (166, 74), (182, 54)] %}
+  <rect class="art-line" x="50" y="{{ top }}" width="{{ width }}" height="7" rx="3.5"/>
   {% endfor %}
+  <text class="art-ink" x="89" y="232" text-anchor="middle" font-size="12" opacity=".72">{{ w.file }}</text>
 
-  {#- las dos se juntan en una -#}
-  <path class="art-s-dash" d="M294 94C316 94 316 135 336 135M294 176C316 176 316 135 336 135"
-        fill="none" stroke-width="2.6" stroke-dasharray="5 6" stroke-linecap="round"/>
-  <path class="art-s-dash" d="m330 128 8 7-8 7" fill="none" stroke-width="2.6"
+  {#- entra a la lista -#}
+  <path class="art-s-dash" d="M154 135H190" fill="none" stroke-width="2.6"
+        stroke-dasharray="5 6" stroke-linecap="round"/>
+  <path class="art-s-dash" d="m184 128 8 7-8 7" fill="none" stroke-width="2.6"
         stroke-linecap="round" stroke-linejoin="round"/>
 
-  {#- y cuentan como un solo contacto -#}
+  {#- la lista: su título, el contador y tres filas -#}
   <g filter="url(#fc-drop)">
-    <rect class="art-card" x="348" y="88" width="110" height="94" rx="16"/>
+    <rect class="art-card" x="204" y="44" width="252" height="182" rx="16"/>
   </g>
-  <text x="403" y="136" text-anchor="middle" font-weight="800">
-    <tspan class="art-blue" font-size="34">{{ w.count }}</tspan><tspan class="art-ink" font-size="19" font-weight="600">{{ w.limit }}</tspan>
+  <text class="art-ink" x="224" y="76" font-size="14" font-weight="700">{{ w.title }}</text>
+  <text x="436" y="76" text-anchor="end" font-weight="800">
+    <tspan class="art-blue" font-size="16">{{ w.count }}</tspan><tspan class="art-ink" font-size="12.5" font-weight="600" opacity=".72">{{ w.limit }}</tspan>
   </text>
-  <text class="art-ink" x="403" y="160" text-anchor="middle" font-size="12.5"
-        opacity=".72">{{ w.unit }}</text>
+  {% for email in w.emails %}
+  {% set top = 92 + loop.index0 * 42 %}
+  <rect class="art-card-edge" x="224" y="{{ top }}" width="212" height="1.5"/>
+  <circle class="art-blue" cx="238" cy="{{ top + 21 }}" r="11"/>
+  <circle class="art-card" cx="238" cy="{{ top + 18 }}" r="3.8"/>
+  <path class="art-card" d="M231.6 {{ top + 28 }}a6.4 5 0 0 1 12.8 0z"/>
+  <text class="art-ink" x="258" y="{{ top + 25.5 }}" font-size="12.5" font-weight="600">{{ email }}</text>
+  {% endfor %}
 </svg>

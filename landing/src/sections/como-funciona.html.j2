@@ -15,7 +15,7 @@
     <div class="section__head">
       <h2 class="section__title" id="como-funciona-title">{{ home.features.title }}</h2>
     </div>
-    {#- Cinco dibujos sencillos, uno por cosa (partials/feature-*.svg.j2), en vez
+    {#- Nueve dibujos sencillos, uno por cosa (partials/feature-*.svg.j2), en vez
         de capturas del panel. Los botones de radio son los que abren cada uno,
         así que esto funciona entero sin JavaScript y con el teclado;
         carousel.js solo agrega las flechas y el paso automático. -#}
@@ -39,14 +39,24 @@
         </div>
         {% endfor %}
       </div>
-      <p class="tour__nav">
-        <button class="tour__arrow" type="button" data-tour-back
-                aria-label="{{ home.features.back }}">
-          {%- include "partials/icon-caret.svg.j2" -%}</button>
-        <button class="tour__arrow" type="button" data-tour-next
-                aria-label="{{ home.features.next }}">
-          {%- include "partials/icon-caret.svg.j2" -%}</button>
-      </p>
+      {#- Debajo del texto, una barra por función (las etiquetas de los radios:
+          la de la abierta se llena mientras corre el paso automático) y, a la
+          derecha, las flechas, que solo dibuja el guion. -#}
+      <div class="tour__nav">
+        <p class="tour__dots">
+          {% for item in home.features['items'] %}
+          <label class="tour__dot" for="tour-{{ loop.index }}"><span class="tour__bar" aria-hidden="true"><span class="tour__fill"></span></span><span class="visually-hidden">{{ item.title }}</span></label>
+          {% endfor %}
+        </p>
+        <span class="tour__arrows">
+          <button class="tour__arrow" type="button" data-tour-back
+                  aria-label="{{ home.features.back }}">
+            {%- include "partials/icon-caret.svg.j2" -%}</button>
+          <button class="tour__arrow" type="button" data-tour-next
+                  aria-label="{{ home.features.next }}">
+            {%- include "partials/icon-caret.svg.j2" -%}</button>
+        </span>
+      </div>
     </div>
     {#- Debajo iba la lista «En todos los planes, sin excepción», con lo que no
         tenía dibujo; se quitó en octubre de 2026. -#}
@@ -192,12 +202,12 @@
     <div class="split__aside">
       <div class="mail-card">
         <p class="mail-card__row">
-          <span class="mail-card__label">{{ page.sending.example.from_label }}</span>
-          <span class="mail-card__value">{{ page.sending.example.from_value }}</span>
+          <span class="mail-card__label">{{ page.sending.example.own_label }}</span>
+          <span class="mail-card__value">{{ page.sending.example.own_value }}</span>
         </p>
         <p class="mail-card__row">
-          <span class="mail-card__label">{{ page.sending.example.reply_label }}</span>
-          <span class="mail-card__value">{{ page.sending.example.reply_value }}</span>
+          <span class="mail-card__label">{{ page.sending.example.shared_label }}</span>
+          <span class="mail-card__value">{{ page.sending.example.shared_value }}</span>
         </p>
       </div>
     </div>
