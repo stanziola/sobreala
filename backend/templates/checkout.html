@@ -100,6 +100,10 @@
     <input type="hidden" name="metodo" value="{{ methods[0] }}">
     {% endif %}
 
+    {% if saved_paypal %}
+    <p class="hint">{{ t('pay_saved_paypal', who=saved_paypal.payer) }}</p>
+    {% endif %}
+
     {# La renovación automática (octubre de 2026): una suscripción de PayPal que
        cobra sola cada periodo. Desmarcada, el pago suelto de siempre. #}
     {% if renew_option %}

@@ -195,7 +195,6 @@ def test_activarla_desde_facturacion_empieza_el_dia_que_vence(client, database,
     browser, cuenta, state = cuenta_pagada(client, database, monkeypatch)
     pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "Activar con PayPal" in pantalla
-    assert "Solo PayPal renueva solo" in pantalla
 
     respuesta = browser.post("/settings/billing/renewal", data={
         "csrf_token": csrf(browser)})
@@ -219,13 +218,14 @@ def test_activarla_desde_facturacion_empieza_el_dia_que_vence(client, database,
     assert "Cancelar renovación" in pantalla and "Próximo cobro" in pantalla
 
 
-def test_sin_el_aviso_montado_dice_pronto_y_no_hay_boton(client, database, outbox,
-                                                         monkeypatch):
+def test_sin_el_aviso_montado_no_sale_la_fila_ni_el_boton(client, database, outbox,
+                                                          monkeypatch):
     browser, cuenta, _ = cuenta_pagada(client, database, monkeypatch)
     monkeypatch.setattr(Config, "PAYPAL_WEBHOOK_ID", "")
 
     pantalla = browser.get("/settings/billing").get_data(as_text=True)
-    assert "Activar con PayPal" not in pantalla and "Renovación automática" in pantalla
+    assert "Activar con PayPal" not in pantalla
+    assert "Renovación automática" not in pantalla and "Próximamente" not in pantalla
     sin = browser.post("/settings/billing/renewal", data={"csrf_token": csrf(browser)})
     assert "/settings/billing" in sin.headers["Location"]
     assert accounts.subscription_of(accounts.by_id(database, cuenta["_id"])) is None

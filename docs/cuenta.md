@@ -118,14 +118,24 @@ Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
 | La demostración | El administrador, con «Abrir la cuenta» en la ficha y un motivo (`opened_by`, `admin_events`) | Lo del Básico sin enviar y sin vencimiento: 1,000 contactos, 1 etiqueta, 1 columna, 20 imágenes y campañas armadas. Para enviar, contrata |
 | El pago | `activate_plan()`, sola y sin `opened_by` | Todo lo de su plan desde el primer momento, envío incluido |
 
-- **La demostración se pide desde la bienvenida** (`POST /welcome/demo`)
-  contestando dos preguntas: **«¿A qué se dedica tu negocio?»** y **«¿Para qué
-  usarás Sobreala?»** (`demo_business`, `demo_purpose`, de 10 a 500
-  caracteres). Se le escribe al teléfono personal del registro. Solo el dueño,
-  con el correo confirmado y hasta tres avisos al día. A quien administra le
-  llega «{empresa} pidió una demostración» (`admin_demo`, con interruptor), con
-  el teléfono y las dos respuestas, y la cuenta sale en el
-  filtro «Piden demostración» de Cuentas.
+- **La demostración se pide desde la bienvenida** (`POST /welcome/demo`), **una
+  sola vez** (octubre de 2026). Pregunta **«¿A qué se dedica tu negocio?»** y
+  **«¿Para qué usarás Sobreala?»** (`demo_business`, `demo_purpose`, de 10 a 500
+  caracteres), **cuántos contactos tiene** (`demo_contacts`: menos de 500, 500 a
+  2,000, 2,000 a 10,000, más de 10,000) y **cómo los consiguió** (`demo_source`:
+  clientes o socios, alumnos, formulario, eventos, otra), y un **sitio web
+  opcional** (`demo_website`, de hasta 200 caracteres, con `https://` si no lo
+  trae). Los dos selectos dicen qué plan le conviene y si la lista es de fiar, que
+  es lo primero que revisa Amazon. Se le escribe al teléfono personal del
+  registro. Solo el dueño y con el correo confirmado.
+- **Con la solicitud hecha el formulario ya no sale**: queda un aviso verde con
+  su gancho («Tu solicitud ha sido recibida. Espera la aprobación»), y un segundo
+  envío no guarda nada ni vuelve a avisar. Antes se podía pedir otra vez, con un
+  tope de tres al día (`DEMO_PER_ACCOUNT`, ya quitado). Corregir una solicitud
+  enviada no se ofrece. A quien administra le llega «{empresa} pidió una
+  demostración» (`admin_demo`, con interruptor), con el teléfono y las respuestas,
+  y la cuenta sale en el filtro «Piden demostración» de Cuentas. La ficha enseña
+  las respuestas, con el sitio como enlace.
 - **Hasta octubre de 2026 se pedían aquí el WhatsApp y el RUC o la cédula.** El
   WhatsApp era el mismo número del registro, y la identificación pasó al
   registro. Con ellos se fue el texto de la bienvenida que contaba las dos
@@ -398,7 +408,7 @@ usado.
 | Tu cuenta cambió de correo | Al terminar, **a la dirección vieja** | No |
 | Alguien pagó un plan | Al cobrar | Sí, «Alguien pagó un plan» |
 | Se registró una cuenta nueva | Al confirmar el correo | Sí, «Se registró una cuenta nueva» |
-| Alguien pidió una demostración | Al pedirla desde la bienvenida, con su teléfono y sus dos respuestas | Sí, «Alguien pidió una demostración» |
+| Alguien pidió una demostración | Al pedirla desde la bienvenida, con su teléfono y sus respuestas | Sí, «Alguien pidió una demostración» |
 | A un cliente se le venció el plan | Cuando ese cliente entra al panel | Sí, «A un cliente se le venció el plan» |
 
 **Los cuatro últimos van a quien administra**, no a un cliente, y hablan de lo

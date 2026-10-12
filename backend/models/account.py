@@ -6,6 +6,7 @@ import re
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from urllib.parse import urlsplit
 
 from pymongo.errors import DuplicateKeyError
 
@@ -729,17 +730,45 @@ def clean_answer(raw: str) -> str | None:
     return text
 
 
-def request_demo(db, account_id, *, business: str, purpose: str) -> None:
-    """Dejar pedida la demostración, con a qué se dedica el negocio y para qué
-    usará Sobreala.
+# Cuántos contactos tiene y de dónde salieron: lo que se pregunta para saber qué
+# plan le conviene y si la lista es de fiar (es lo primero que revisa Amazon).
+DEMO_CONTACTS = ("lt500", "500_2k", "2k_10k", "gt10k")
+DEMO_SOURCES = ("customers", "students", "form", "events", "other")
+WEBSITE_MAX = 200
 
-    Se le escribe al teléfono personal del registro: hasta octubre de 2026 se
-    pedía aquí un WhatsApp, que era el mismo número. Pedirla otra vez corrige
-    las respuestas y mueve la fecha.
+
+def clean_website(raw: str) -> str | None:
+    """El sitio web de la demostración, que es opcional: "" si no lo escribió, la
+    dirección con su https:// si es válida, o None si no lo es."""
+    text = str(raw or "").strip()
+    if not text:
+        return ""
+    if "://" not in text:
+        text = "https://" + text
+    if len(text) > WEBSITE_MAX or any(ch.isspace() for ch in text):
+        return None
+    parts = urlsplit(text)
+    host = parts.hostname or ""
+    if parts.scheme not in ("http", "https") or "." not in host.strip("."):
+        return None
+    return text
+
+
+def request_demo(db, account_id, *, business: str, purpose: str, contacts: str,
+                 source: str, website: str = "") -> None:
+    """Dejar pedida la demostración: a qué se dedica el negocio, para qué usará
+    Sobreala, cuántos contactos tiene, de dónde salieron y su sitio web si lo dio.
+
+    Se pide una sola vez (la ruta no deja pedirla de nuevo). Se le escribe al
+    teléfono personal del registro: hasta octubre de 2026 se pedía aquí un
+    WhatsApp, que era el mismo número.
     """
-    db.accounts.update_one({"_id": account_id}, {"$set": {
-        "demo_business": business, "demo_purpose": purpose,
-        "demo_requested_at": now(), "updated_at": now()}})
+    fields = {"demo_business": business, "demo_purpose": purpose,
+              "demo_contacts": contacts, "demo_source": source,
+              "demo_requested_at": now(), "updated_at": now()}
+    if website:
+        fields["demo_website"] = website
+    db.accounts.update_one({"_id": account_id}, {"$set": fields})
 
 
 # La dirección postal de la empresa, que va al pie de sus campañas.
@@ -1154,6 +1183,35 @@ def start_subscription(db, account_id, *, sub_id: str, plan: str, cycle: str) ->
         "subscription": {"id": sub_id, "status": SUB_PENDING, "plan": plan,
                          "cycle": cycle, "created_at": now()},
         "updated_at": now()}})
+
+
+# La cuenta de PayPal guardada (octubre de 2026), en `paypal_vault`: `id` (el de
+# PayPal), `payer` (el correo de esa cuenta, para que el cliente la reconozca) y
+# `created_at`. Mientras el cliente la aprueba, `paypal_setup` guarda la petición
+# que se le hizo a PayPal, y la vuelta solo vale si trae esa. Ninguna tarjeta ni
+# clave: regla 9.
+
+def paypal_vault_of(account: dict[str, Any] | None) -> dict[str, Any] | None:
+    return (account or {}).get("paypal_vault") or None
+
+
+def start_paypal_setup(db, account_id, setup_id: str) -> None:
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "paypal_setup": {"id": setup_id, "created_at": now()},
+        "updated_at": now()}})
+
+
+def set_paypal_vault(db, account_id, *, token_id: str, payer: str) -> None:
+    db.accounts.update_one({"_id": account_id}, {
+        "$set": {"paypal_vault": {"id": token_id, "payer": payer,
+                                  "created_at": now()}, "updated_at": now()},
+        "$unset": {"paypal_setup": ""}})
+
+
+def clear_paypal_vault(db, account_id) -> None:
+    db.accounts.update_one({"_id": account_id}, {
+        "$set": {"updated_at": now()},
+        "$unset": {"paypal_vault": "", "paypal_setup": ""}})
 
 
 def by_subscription(db, sub_id: str) -> dict[str, Any] | None:

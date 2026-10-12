@@ -373,25 +373,44 @@
     {% endif %}
     {% endcall %}
 
-    {# ----- los métodos. PayPal es el único que renueva solo (octubre de 2026):
-       una suscripción que el cliente aprueba una vez y PayPal cobra cada
-       periodo. La tarjeta y Yappy se pagan en cada renovación. ----- #}
+    {# ----- los métodos: solo lo guardado (octubre de 2026). PayPal se entra una
+       vez y queda; la tarjeta y Yappy no se guardan, así que no salen. La
+       renovación automática (una suscripción de PayPal) sale cuando está
+       activa, o para quien tiene un plan vigente y puede activarla. ----- #}
     <h3 class="settings__subtitle" id="metodos">{{ t('billing_methods_title') }}</h3>
     {% if request.args.get('renewal') == 'on' %}
     <p class="notice notice--ok">{{ t('renewal_done_on') }}</p>
     {% elif request.args.get('renewal') == 'off' %}
     <p class="notice notice--ok">{{ t('renewal_done_off') }}</p>
     {% endif %}
-    {% call row(t('settings_payments_paypal'), t('settings_payments_paypal_desc')) %}
-    {% if paypal_ready %}
-    <span class="tag tag--quiet">{{ t('settings_payments_ready') }}</span>
-    {% else %}
-    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
+    {% if request.args.get('paypal') == 'saved' %}
+    <p class="notice notice--ok">{{ t('methods_paypal_saved') }}</p>
+    {% elif request.args.get('paypal') == 'removed' %}
+    <p class="notice notice--ok">{{ t('methods_paypal_removed') }}</p>
     {% endif %}
-    {% endcall %}
 
-    {# La renovación automática, con sus tres estados. Sin el aviso de PayPal
-       montado dice «pronto»: un botón que no puede cobrar es peor que ninguno. #}
+    {% if vault %}
+    {% call row(t('methods_paypal'), vault.payer) %}
+    <form method="post" action="{{ url_for('auth.remove_paypal') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--small btn--outline" type="submit">{{ t('methods_paypal_remove') }}</button>
+    </form>
+    {% endcall %}
+    {% elif vault_ready %}
+    {% call row(t('methods_paypal'), t('methods_paypal_desc')) %}
+    <form method="post" action="{{ url_for('auth.add_paypal') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--small" type="submit">{{ t('methods_paypal_add') }}</button>
+    </form>
+    {% endcall %}
+    {% else %}
+    <p class="hint">{{ t('methods_none') }}</p>
+    {% endif %}
+
+    {# La renovación automática, solo con su aviso montado: un botón que no puede
+       cobrar es peor que ninguno. #}
+    {% if renewal_on or (subscription and subscription.status == 'suspended')
+          or (renewals_ready and can_renew) %}
     {% call row(t('renewal_title'), t('renewal_desc'), id='renovacion') %}
     {% if renewal_on %}
     <span class="tag tag--on">{{ t('renewal_status_on') }}</span>
@@ -408,30 +427,14 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn--small btn--outline" type="submit">{{ t('renewal_cancel') }}</button>
     </form>
-    {% elif not renewals_ready %}
-    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
-    {% elif can_renew %}
+    {% else %}
     <form method="post" action="{{ url_for('auth.start_renewal') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn--small" type="submit">{{ t('renewal_activate') }}</button>
     </form>
-    {% else %}
-    <span class="setting__value setting__value--muted">{{ t('renewal_at_checkout') }}</span>
     {% endif %}
     {% endcall %}
-
-    {% call row(t('settings_payments_card'), t('settings_payments_card_desc')) %}
-    {% if card_ready %}
-    <span class="tag tag--quiet">{{ t('settings_payments_ready') }}</span>
-    {% else %}
-    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
     {% endif %}
-    {% endcall %}
-
-    {% call row(t('settings_payments_yappy'), t('settings_payments_yappy_desc')) %}
-    <span class="tag tag--quiet">{{ t('settings_soon_tag') }}</span>
-    {% endcall %}
-    <p class="hint">{{ t('renewal_only_paypal') }}</p>
 
     {# ----- lo que se ha comprado. La columna de la factura solo sale cuando
        las facturas se enciendan (`invoices.SHOWN`). ----- #}

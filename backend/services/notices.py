@@ -504,7 +504,15 @@ def demo_to_admins(db, client) -> bool:
                         t("mail_admin_demo_business",
                           answer=client.get("demo_business", "")),
                         t("mail_admin_demo_purpose",
-                          answer=client.get("demo_purpose", ""))],
+                          answer=client.get("demo_purpose", "")),
+                        t("mail_admin_demo_contacts", answer=t(
+                            "welcome_demo_contacts_" + client["demo_contacts"])
+                          if client.get("demo_contacts") else "-"),
+                        t("mail_admin_demo_source", answer=t(
+                            "welcome_demo_source_" + client["demo_source"])
+                          if client.get("demo_source") else "-")]
+                       + ([t("mail_admin_demo_website", answer=client["demo_website"])]
+                          if client.get("demo_website") else []),
             button={"href": file_of(client),
                     "label": t("mail_admin_demo_button")},
             foot=switch_off_hint()) and ok

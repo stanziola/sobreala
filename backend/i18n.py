@@ -139,10 +139,24 @@ TEXTS = {
     "welcome_demo_business": "¿A qué se dedica tu negocio?",
     "welcome_demo_purpose": "¿Para qué usarás Sobreala?",
     "welcome_demo_ask": "Pedir la demostración",
-    "welcome_demo_again": "Avisar de nuevo",
-    "welcome_demo_sent": "Listo. Te escribimos al {phone} para agendarla.",
-    "welcome_demo_asked": "La pediste {when}. Te escribimos al {phone}. Si "
-                          "quieres corregir algo, cámbialo y avísanos de nuevo.",
+    "welcome_demo_done_title": "Tu solicitud ha sido recibida",
+    "welcome_demo_done_text": "Espera la aprobación. Te escribimos al {phone} "
+                              "para agendar la demostración.",
+    "welcome_demo_contacts": "¿Cuántos contactos tienes?",
+    "welcome_demo_choose": "Elige una opción",
+    "welcome_demo_contacts_lt500": "Menos de 500",
+    "welcome_demo_contacts_500_2k": "De 500 a 2,000",
+    "welcome_demo_contacts_2k_10k": "De 2,000 a 10,000",
+    "welcome_demo_contacts_gt10k": "Más de 10,000",
+    "welcome_demo_source": "¿Cómo conseguiste esos contactos?",
+    "welcome_demo_source_customers": "Son mis clientes o socios",
+    "welcome_demo_source_students": "Son alumnos o familias de la matrícula",
+    "welcome_demo_source_form": "Se inscribieron en un formulario",
+    "welcome_demo_source_events": "Los recogí en eventos",
+    "welcome_demo_source_other": "Otra forma",
+    "welcome_demo_website": "Sitio web (opcional)",
+    "welcome_demo_website_ph": "minegocio.com",
+    "welcome_demo_website_label": "Sitio web",
     "welcome_buy_lead": "¿Ya sabes qué plan quieres? Al contratarlo empiezas "
                         "enseguida, sin esperar la demostración.",
     "demo_needs_email": "Para pedirla, confirma primero tu correo: es a donde te "
@@ -564,7 +578,6 @@ TEXTS = {
     "billing_plan_row": "Plan",
     "billing_until": "hasta el {when}",
     "billing_methods_title": "Métodos de pago",
-    "billing_used": "Lo has usado",
     "billing_paypal_used": "Has pagado con la cuenta de PayPal {who}.",
     "billing_paypal_used_plain": "Has pagado con tu cuenta de PayPal.",
     "billing_invoices_title": "Facturas",
@@ -574,16 +587,17 @@ TEXTS = {
     "billing_invoices_hint": "Te avisamos por correo cuando tu factura está "
                              "lista para descargar.",
     "billing_invoices_none": "Todavía no tienes pagos.",
-    "settings_payments_ready": "Disponible",
-    "settings_payments_paypal": "PayPal",
-    "settings_payments_paypal_desc": "Para pagar con tu cuenta de PayPal.",
-    "settings_payments_card": "Tarjeta de crédito o débito",
-    "settings_payments_card_desc": "Visa y Mastercard, sin necesidad de tener "
-                                   "cuenta de PayPal.",
-    "settings_payments_yappy": "Yappy",
-    "settings_payments_yappy_desc": "Para pagar desde tu banco en Panamá, sin "
-                                    "tarjeta.",
-    "settings_soon_tag": "Próximamente",
+    # Solo se enseña lo guardado (octubre de 2026).
+    "methods_none": "No tienes métodos de pago guardados.",
+    "methods_paypal": "PayPal",
+    "methods_paypal_desc": "Entras a PayPal una vez y queda guardada. Después "
+                           "pagas sin volver a iniciar sesión.",
+    "methods_paypal_add": "Agregar PayPal",
+    "methods_paypal_remove": "Eliminar",
+    "methods_paypal_saved": "Listo, guardamos tu cuenta de PayPal.",
+    "methods_paypal_removed": "Listo, quitamos tu cuenta de PayPal.",
+    "pay_saved_paypal": "Se cobra con tu PayPal guardado ({who}), sin volver a "
+                        "iniciar sesión.",
 
     # --- pagos -------------------------------------------------------------
     "pay_checkout_title": "Obtener Plan {plan}",
@@ -1934,6 +1948,8 @@ TEXTS = {
     "error_required": "Completa este campo.",
     "error_phone": "Ese número no parece válido. Revisa el país y los dígitos.",
     "error_demo_answer": "Cuéntanos un poco más: entre {min} y {max} caracteres.",
+    "error_demo_choose": "Elige una opción.",
+    "error_demo_website": "Escribe una dirección válida, como minegocio.com.",
     "error_email_invalid": "Ese correo no parece válido.",
     "error_email_taken": "Ya existe una cuenta con ese correo.",
     "error_password_short": "La contraseña debe tener al menos 10 caracteres.",
@@ -2193,12 +2209,9 @@ TEXTS = {
     "renewal_next": "Próximo cobro: {when}",
     "renewal_activate": "Activar con PayPal",
     "renewal_cancel": "Cancelar renovación",
-    "renewal_at_checkout": "Se activa al contratar un plan",
     "renewal_done_on": "Listo, tu plan se renovará solo con PayPal.",
     "renewal_done_off": "Listo, cancelaste la renovación automática. Tu plan "
                         "sigue hasta su fecha.",
-    "renewal_only_paypal": "La tarjeta y Yappy se pagan en cada renovación. Solo "
-                           "PayPal renueva solo.",
     "renewal_every_monthly": "cada mes",
     "renewal_every_yearly": "cada año",
     "mail_renewal_on_subject": "Activaste la renovación automática",
@@ -2252,6 +2265,9 @@ TEXTS = {
     "mail_admin_demo_data": "Teléfono: {phone}.",
     "mail_admin_demo_business": "A qué se dedica: {answer}",
     "mail_admin_demo_purpose": "Para qué usará Sobreala: {answer}",
+    "mail_admin_demo_contacts": "Contactos: {answer}",
+    "mail_admin_demo_source": "Cómo los consiguió: {answer}",
+    "mail_admin_demo_website": "Sitio web: {answer}",
     "mail_admin_demo_button": "Ver la ficha",
 
     "mail_admin_plan_end_subject": "Se le venció el plan a {company}",

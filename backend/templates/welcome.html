@@ -14,15 +14,19 @@
   {#- Hubo aquí un párrafo con las dos formas de empezar y la lista de lo que
       se hace en la demostración; se quitaron en octubre de 2026. -#}
 
-  {% if request.args.get('demo') == 'sent' %}
-  <p class="notice notice--ok">{{ t('welcome_demo_sent', phone=asked_phone) }}</p>
-  {% elif asked %}
-  <p class="notice">{{ t('welcome_demo_asked', when=asked|ago, phone=asked_phone) }}</p>
-  {% endif %}
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
-  {# Pedirla otra vez corrige los datos y vuelve a avisar: por eso el formulario
-     sigue ahí después de pedirla, con lo que ya dijo escrito. #}
+  {% if asked %}
+  {# Se pide una sola vez: con la solicitud hecha el formulario ya no sale, y
+     queda este aviso con su gancho verde hasta que se abra la cuenta. #}
+  <div class="notice notice--done" role="status">
+    <span class="notice__tick">{% include "_icon-check.svg" %}</span>
+    <div>
+      <strong>{{ t('welcome_demo_done_title') }}</strong>
+      <p>{{ t('welcome_demo_done_text', phone=asked_phone) }}</p>
+    </div>
+  </div>
+  {% else %}
   <form method="post" action="{{ url_for('auth.request_demo') }}" novalidate data-once>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -36,9 +40,33 @@
     <textarea id="purpose" name="purpose" rows="3" maxlength="500" required>{{ form.purpose }}</textarea>
     {% if errors.purpose %}<p class="error">{{ errors.purpose }}</p>{% endif %}
 
-    <button class="btn" type="submit">
-      {{ t('welcome_demo_again') if asked else t('welcome_demo_ask') }}</button>
+    <label for="contacts">{{ t('welcome_demo_contacts') }}</label>
+    <select id="contacts" name="contacts" required>
+      <option value="">{{ t('welcome_demo_choose') }}</option>
+      {% for one in contact_choices %}
+      <option value="{{ one }}"{% if form.contacts == one %} selected{% endif %}>{{ t('welcome_demo_contacts_' + one) }}</option>
+      {% endfor %}
+    </select>
+    {% if errors.contacts %}<p class="error">{{ errors.contacts }}</p>{% endif %}
+
+    <label for="source">{{ t('welcome_demo_source') }}</label>
+    <select id="source" name="source" required>
+      <option value="">{{ t('welcome_demo_choose') }}</option>
+      {% for one in source_choices %}
+      <option value="{{ one }}"{% if form.source == one %} selected{% endif %}>{{ t('welcome_demo_source_' + one) }}</option>
+      {% endfor %}
+    </select>
+    {% if errors.source %}<p class="error">{{ errors.source }}</p>{% endif %}
+
+    <label for="website">{{ t('welcome_demo_website') }}</label>
+    <input id="website" name="website" type="text" inputmode="url" maxlength="200"
+           autocomplete="url" placeholder="{{ t('welcome_demo_website_ph') }}"
+           value="{{ form.website }}">
+    {% if errors.website %}<p class="error">{{ errors.website }}</p>{% endif %}
+
+    <button class="btn" type="submit">{{ t('welcome_demo_ask') }}</button>
   </form>
+  {% endif %}
 
   {# El otro camino. Contratar abre la cuenta con todo de una vez, sin esperar
      la demostración. #}

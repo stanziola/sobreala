@@ -133,6 +133,11 @@ def capture(order_id: str) -> dict[str, str]:
     answer = _call(f"/v2/checkout/orders/{order_id}/capture",
                    headers={"Authorization": f"Bearer {token()}",
                             "PayPal-Request-Id": f"cap-{order_id}"})
+    return _paid(answer)
+
+
+def _paid(answer: dict[str, Any]) -> dict[str, str]:
+    """Lo que de verdad se cobró, según la respuesta de PayPal a una orden."""
     captured: dict[str, Any] = {}
     for unit in answer.get("purchase_units", []):
         for one in (unit.get("payments") or {}).get("captures", []):
@@ -146,6 +151,81 @@ def capture(order_id: str) -> dict[str, str]:
         # ha pagado. Es un correo, no un dato de tarjeta.
         "payer": ((answer.get("payer") or {}).get("email_address") or "")[:200],
     }
+
+
+# --------------------------------------------------------------- PayPal guardado
+#
+# Guardar la cuenta de PayPal (octubre de 2026): el cliente entra a PayPal una
+# vez, sin plan y sin cobro, y queda guardada (PayPal Vault, «payment method
+# tokens»). Lo que se guarda aquí es un identificador y el correo de esa cuenta:
+# ninguna tarjeta, ninguna clave (regla 9). Sirve para pagar sin volver a iniciar
+# sesión; quien decide que se cobró sigue siendo la respuesta de PayPal.
+
+def vault_ready() -> bool:
+    return configured()
+
+
+def create_setup_token(*, reference: str, return_url: str,
+                       cancel_url: str) -> tuple[str, str]:
+    """Pedir guardar una cuenta de PayPal. Devuelve (el id de la petición, la
+    dirección donde el cliente entra a PayPal y lo aprueba). `reference` es nuestro
+    identificador de la cuenta."""
+    answer = _call("/v3/vault/setup-tokens", body={
+        "customer": {"merchant_customer_id": reference[:64]},
+        "payment_source": {"paypal": {
+            "usage_type": "MERCHANT", "customer_type": "CONSUMER",
+            "experience_context": {
+                "brand_name": "Sobreala", "locale": "es-ES",
+                "shipping_preference": "NO_SHIPPING",
+                "return_url": return_url, "cancel_url": cancel_url},
+        }},
+    }, headers={**_auth(), "PayPal-Request-Id": f"vault-{reference}-{int(time.time())}"})
+    for link in answer.get("links", []):
+        if link.get("rel") in ("approve", "payer-action"):
+            return answer["id"], link["href"]
+    raise PayPalError("la petición no trajo dirección de aprobación")
+
+
+def save_payment_token(setup_id: str) -> dict[str, str]:
+    """Con la petición ya aprobada, guardar la cuenta. Devuelve su identificador y
+    el correo de la cuenta de PayPal, para que el cliente reconozca cuál es."""
+    answer = _call("/v3/vault/payment-tokens", body={
+        "payment_source": {"token": {"id": setup_id, "type": "SETUP_TOKEN"}},
+    }, headers={**_auth(), "PayPal-Request-Id": f"save-{setup_id}"})
+    wallet = (answer.get("payment_source") or {}).get("paypal") or {}
+    if not answer.get("id"):
+        raise PayPalError("no se pudo guardar la cuenta")
+    return {"id": answer["id"], "payer": (wallet.get("email_address") or "")[:200]}
+
+
+def delete_payment_token(token_id: str) -> None:
+    """Quitar la cuenta guardada. Si PayPal ya no la tiene (404), da igual."""
+    try:
+        _call(f"/v3/vault/payment-tokens/{token_id}", method="DELETE",
+              headers=_auth())
+    except PayPalError as exc:
+        if str(exc) != "paypal 404":
+            raise
+
+
+def pay_saved(*, vault_id: str, amount: str, currency: str, description: str,
+              reference: str) -> tuple[str, dict[str, str]]:
+    """Cobrar con la cuenta guardada, sin que el cliente vuelva a iniciar sesión.
+    Devuelve (el id de la orden, lo que se cobró). Igual que `capture()`: es la
+    respuesta de PayPal lo que prueba que se pagó, y quien llama compara el monto."""
+    answer = _call("/v2/checkout/orders", body={
+        "intent": "CAPTURE",
+        "purchase_units": [{
+            "amount": {"currency_code": currency, "value": amount},
+            "description": description[:127],
+            "custom_id": reference,
+        }],
+        "payment_source": {"paypal": {"vault_id": vault_id}},
+    }, headers={**_auth(), "PayPal-Request-Id": reference})
+    # Con una cuenta guardada la orden suele salir ya cobrada; si no, se cobra.
+    if answer.get("status") == "COMPLETED":
+        return answer["id"], _paid(answer)
+    return answer["id"], capture(answer["id"])
 
 
 # ---------------------------------------------------------------- suscripciones

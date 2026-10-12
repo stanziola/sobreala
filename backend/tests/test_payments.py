@@ -516,7 +516,8 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     assert "/settings/billing/checkout" not in pantalla
     # Y sí sigue diciendo qué tienes y qué se te ha cobrado.
     assert "PayPal" in pantalla
-    assert "Yappy" in pantalla
+    # Los métodos son solo los guardados: Yappy no se guarda, no sale.
+    assert "Yappy" not in pantalla and "Próximamente" not in pantalla
     assert "Facturación" in pantalla
 
 

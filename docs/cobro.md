@@ -233,10 +233,11 @@ plano, que el proyecto todavía no tiene. Todo lo de Sobreala está en
   **cancela** y hay que activarla otra vez para el plan nuevo.
 - **Se cancela** desde Facturación (o desde la cuenta de PayPal). Lo ya pagado
   sigue hasta `plan_until`.
-- **Lo ve el cliente en Facturación → Métodos de pago**: activa («Próximo cobro:
-  …»), sin activar, o «PayPal no pudo cobrar»; sin `PAYPAL_WEBHOOK_ID` dice
-  «pronto», y debajo: «La tarjeta y Yappy se pagan en cada renovación. Solo PayPal
-  renueva solo.»
+- **Lo ve el cliente en Facturación → Métodos de pago** como una fila más (ver
+  «Los métodos guardados», abajo): activa («Próximo cobro: …») o «PayPal no pudo
+  cobrar», o con el botón «Activar con PayPal» si tiene un plan vigente. Sin
+  `PAYPAL_WEBHOOK_ID` no sale la fila: un botón que no puede cobrar es peor que
+  ninguno.
 
 **Quién decide que se cobró** es la misma regla de siempre: **la respuesta de
 PayPal al servidor**, no el navegador ni el cuerpo de un aviso.
@@ -270,9 +271,38 @@ PayPal al servidor**, no el navegador ni el cuerpo de un aviso.
 `https://app.sobreala.com/webhooks/paypal` con los eventos de arriba; su id va en
 Railway como `PAYPAL_WEBHOOK_ID`.
 
-**Guardar la tarjeta o Yappy para próximos pagos no se puede hoy**: Paguélofácil no
-documenta cobros guardados y Yappy está anunciado. Si alguno lo permite, entra por
-el mismo sitio.
+## Los métodos guardados (octubre de 2026)
+
+**Facturación → Métodos de pago enseña solo lo guardado**: sin «Disponible» ni
+«Próximamente», y sin tarjeta ni Yappy mientras no se puedan guardar
+(Paguélofácil no documenta cobros guardados y Yappy está anunciado). Si alguno lo
+permite, entra por el mismo sitio. Sin nada guardado dice «No tienes métodos de
+pago guardados» y ofrece «Agregar PayPal».
+
+- **PayPal se guarda entrando una vez**, sin plan y sin cobro (PayPal Vault,
+  *payment method tokens*). `POST /settings/billing/paypal` crea la petición
+  (`/v3/vault/setup-tokens`), manda a PayPal, y la vuelta
+  (`/settings/billing/paypal/return`) la canjea (`/v3/vault/payment-tokens`).
+  Queda en `accounts.paypal_vault`: el identificador y **el correo de la cuenta**,
+  que se enseña para que el cliente la reconozca. Ninguna tarjeta ni clave
+  (regla 9).
+- **La vuelta no se fía de la dirección**: solo vale con la petición que se le hizo
+  a esa cuenta (`paypal_setup`), y lo que prueba que quedó guardada es la
+  respuesta de PayPal al servidor.
+- **Eliminar** (`POST /settings/billing/paypal/remove`) lo quita en PayPal y aquí;
+  si PayPal falla, aquí tampoco, para que no quede guardada sin que se vea. Si
+  PayPal ya no la tenía (404), se quita igual.
+- **Para qué sirve**: en `/checkout/<plan>` se cobra con ella sin volver a iniciar
+  sesión (`paypal.pay_saved()`, que crea la orden con el `vault_id`). Después es
+  lo mismo de siempre: `complete_paypal()` compara el monto y la moneda contra el
+  intento y solo entonces `settle()`. Con la casilla de renovar o sin PayPal
+  guardado, el pago es el de siempre.
+- **La renovación automática no depende de esto**: sigue siendo una suscripción de
+  PayPal (arriba). La fila de renovación sale activa, suspendida, o con su botón
+  para quien tiene un plan vigente.
+- **Hay que activar Vault en la aplicación de PayPal Developer.** No tiene variable
+  de entorno aparte: si no está activado, «Agregar PayPal» termina en el aviso de
+  que no se pudo hablar con PayPal.
 
 **El checkout ya no pide el RUC o la cédula** (octubre de 2026): la
 identificación es solo un documento que se verifica (ver `docs/cuenta.md`).

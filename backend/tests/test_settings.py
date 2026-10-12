@@ -210,8 +210,11 @@ def test_each_section_draws_its_own(client, database, outbox):
     assert 'name="password_changed"' not in notices
 
     payments = inside.get("/settings/billing").get_data(as_text=True)
-    assert "PayPal" in payments and "Yappy" in payments
-    assert "Próximamente" in payments
+    # Solo lo guardado: ni la tarjeta, ni Yappy, ni «Próximamente».
+    assert "Yappy" not in payments and "Próximamente" not in payments
+    assert "Tarjeta de crédito o débito" not in payments
+    assert "No tienes métodos de pago guardados" in payments or \
+        "Agregar PayPal" in payments
 
 
 def admin_inside(client, database, email="jefe@ejemplo.com"):

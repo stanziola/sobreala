@@ -124,6 +124,9 @@
       {% if whatsapp %}<a href="{{ whatsapp }}" target="_blank" rel="noopener">{{ t('admin_demo_whatsapp', phone=client.phone) }}</a>{% endif %}
       {% if client.demo_business %}<br><strong>{{ t('welcome_demo_business') }}</strong> {{ client.demo_business }}{% endif %}
       {% if client.demo_purpose %}<br><strong>{{ t('welcome_demo_purpose') }}</strong> {{ client.demo_purpose }}{% endif %}
+      {% if client.demo_contacts %}<br><strong>{{ t('welcome_demo_contacts') }}</strong> {{ t('welcome_demo_contacts_' + client.demo_contacts) }}{% endif %}
+      {% if client.demo_source %}<br><strong>{{ t('welcome_demo_source') }}</strong> {{ t('welcome_demo_source_' + client.demo_source) }}{% endif %}
+      {% if client.demo_website %}<br><strong>{{ t('welcome_demo_website_label') }}</strong> <a href="{{ client.demo_website }}" target="_blank" rel="noopener nofollow">{{ client.demo_website }}</a>{% endif %}
       {% else %}
       {{ t('admin_demo_not_asked') }}
       {% endif %}

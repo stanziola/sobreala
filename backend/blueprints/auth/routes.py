@@ -69,10 +69,6 @@ RECOVER_PER_EMAIL = (5, 3600)
 # per address, that is a way to fill a stranger's inbox from many machines, so
 # the notice has one of its own, separate from the per-IP budget.
 REGISTER_PER_EMAIL = (5, 3600)
-# Pedir la demostración avisa al administrador por correo. Se puede pedir otra
-# vez, para corregir el número o porque nadie escribió, pero no tanto que sirva
-# para llenarle el buzón.
-DEMO_PER_ACCOUNT = (3, 86400)
 
 # What to tell someone about their password. The rules themselves live in
 # services/security.py; this only names them in Spanish.
@@ -1620,11 +1616,12 @@ GATE_NAMES = {
 
 def demo_screen(account: dict, *, errors: dict | None = None,
                 form: dict | None = None):
-    """La bienvenida de una cuenta cerrada, con lo que ya pidió si lo pidió.
+    """La bienvenida de una cuenta cerrada.
 
-    Las dos respuestas salen escritas si ya pidió la demostración una vez.
-    Corregirlas es volver a pedirla. El número al que se le escribe es el
-    teléfono personal del registro.
+    Si ya pidió la demostración, en lugar del formulario sale el aviso de que
+    se recibió: se pide una sola vez. Si no, el formulario, con lo que acaba de
+    escribir si algo salió mal. El número al que se le escribe es el teléfono
+    personal del registro.
 
     Si llegó desde una de las cuatro pantallas, arriba dice cuál quería abrir y
     que se abre contratando o con la demostración. Un valor que no es una
@@ -1634,26 +1631,25 @@ def demo_screen(account: dict, *, errors: dict | None = None,
     wanted = GATE_NAMES.get(request.args.get("para", ""))
     return render_template(
         "welcome.html", account=account, closed=True, errors=errors or {},
-        form=form or {"business": company.get("demo_business", ""),
-                      "purpose": company.get("demo_purpose", "")},
+        form=form or {},
         # Lo que quedó guardado, no lo que se acaba de escribir mal.
         asked=company.get("demo_requested_at"),
         asked_phone=company.get("phone", ""),
+        contact_choices=accounts.DEMO_CONTACTS,
+        source_choices=accounts.DEMO_SOURCES,
         gate=t(wanted) if wanted else "")
 
 
 @bp.route("/welcome/demo", methods=["POST"])
 def request_demo():
-    """Pedir la demostración: a qué se dedica el negocio y para qué usará
-    Sobreala. Se le escribe al teléfono personal del registro; hasta octubre de
-    2026 se pedían aquí un WhatsApp, que era el mismo número, y el RUC o la
-    cédula, que ahora se escribe al registrarse.
+    """Pedir la demostración: a qué se dedica el negocio, para qué usará
+    Sobreala, cuántos contactos tiene, de dónde salieron y, si quiere, su sitio
+    web. Se le escribe al teléfono personal del registro.
 
     Solo el dueño, y con el correo confirmado como para comprar: es a donde va
     el aviso de que se abrió, y un registro sin confirmar se borra a las 24
-    horas. Se puede pedir otra vez, para corregir los datos o porque nadie
-    escribió, con un tope al día para que no sirva para llenarle el buzón a
-    quien administra.
+    horas. **Se pide una sola vez**: con una ya hecha no se guarda nada ni se
+    vuelve a avisar a quien administra, y se vuelve a la bienvenida.
     """
     account = current_account()
     if account is None:
@@ -1664,10 +1660,13 @@ def request_demo():
     # Una cuenta abierta no tiene nada que pedir.
     if not is_closed(account):
         return redirect(url_for("auth.welcome"))
+    company = current_workspace() or account
+    if company.get("demo_requested_at"):
+        return redirect(url_for("auth.welcome"))
 
     db = get_db()
-    form = {"business": request.form.get("business", "")[:1000],
-            "purpose": request.form.get("purpose", "")[:1000]}
+    form = {name: request.form.get(name, "")[:1000]
+            for name in ("business", "purpose", "contacts", "source", "website")}
     errors: dict[str, str] = {}
     if not csrf_ok(request.form.get("csrf_token")):
         errors["form"] = t("error_csrf")
@@ -1680,18 +1679,21 @@ def request_demo():
             if answer is None:
                 errors[name] = t("error_demo_answer", min=accounts.DEMO_ANSWER[0],
                                  max=accounts.DEMO_ANSWER[1])
-        # Después de comprobar las respuestas: una vacía no gasta ninguno de los
-        # tres avisos del día.
-        if not errors and not rate_limit(db, f"demo:account:{account['_id']}",
-                                         *DEMO_PER_ACCOUNT):
-            errors["form"] = t("demo_too_many")
+        if form["contacts"] not in accounts.DEMO_CONTACTS:
+            errors["contacts"] = t("error_demo_choose")
+        if form["source"] not in accounts.DEMO_SOURCES:
+            errors["source"] = t("error_demo_choose")
+        website = accounts.clean_website(form["website"])
+        if website is None:
+            errors["website"] = t("error_demo_website")
         if not errors:
-            accounts.request_demo(db, account["_id"], business=business,
-                                  purpose=purpose)
+            accounts.request_demo(
+                db, account["_id"], business=business, purpose=purpose,
+                contacts=form["contacts"], source=form["source"], website=website)
             # A quien administra, con el teléfono y las respuestas dentro. No
             # puede romper una petición que ya quedó guardada: se traga lo suyo.
             notices.demo_to_admins(db, accounts.by_id(db, account["_id"]))
-            return redirect(url_for("auth.welcome", demo="sent"))
+            return redirect(url_for("auth.welcome"))
     return demo_screen(account, errors=errors, form=form)
 
 
@@ -1848,8 +1850,6 @@ def settings(section: str = "account"):
     return render_template(
         "settings.html", section=section, sections=sections, account=account,
         plans=plans.PLANS, cycles=plans.CYCLES, currency=plans.CURRENCY,
-        paypal_ready=paypal.configured(),
-        card_ready=paguelofacil.configured(),
         plan_until=accounts.plan_until(account),
         # Solo lo cobrado: los intentos a medias se miran desde la ficha.
         payments=paid,
@@ -1871,6 +1871,8 @@ def settings(section: str = "account"):
         account_errors=account_errors,
         editing=editing,
         renewals_ready=paypal.renewals_ready(),
+        vault=accounts.paypal_vault_of(account),
+        vault_ready=paypal.vault_ready(),
         subscription=accounts.subscription_of(account),
         renewal_on=accounts.renewal_on(account),
         can_renew=bool(accounts.current_plan(account)) and accounts.can_buy(account),
@@ -2107,6 +2109,8 @@ def checkout(plan: str):
         soon=[one for one in payments.ALL if one not in ready_methods()],
         current=accounts.plan_of(account),
         plan_until=accounts.plan_until(account),
+        # La cuenta de PayPal guardada: con ella pagar es un clic.
+        saved_paypal=accounts.paypal_vault_of(account),
         # «Renovar solo con PayPal»: solo se ofrece si PayPal está entre los
         # métodos y el aviso está montado, y no en una mejora, que se paga suelta.
         renew_option=(paypal.renewals_ready() and payments.PAYPAL in ready_methods()
@@ -2229,6 +2233,24 @@ def start_payment():
                              method=method, price=f"{quote['price']:.2f}",
                              credit=f"{quote['credit']['amount']:.2f}",
                              upgrade=upgrading)
+    # Con la cuenta de PayPal guardada se cobra sin mandar al cliente a PayPal.
+    saved = accounts.paypal_vault_of(account)
+    if method == payments.PAYPAL and saved:
+        try:
+            order_id, result = paypal.pay_saved(
+                vault_id=saved["id"], amount=amount, currency=plans.CURRENCY,
+                description=f"Sobreala {plans.PLANS[plan]['name']}",
+                reference=str(attempt))
+        except paypal.PayPalError as exc:
+            payments.fail(db, attempt, str(exc))
+            return redirect(f"{back}?error=paypal")
+        payments.attach_order(db, attempt, order_id)
+        log_auth(db, events.PAYMENT, events.CREATED, email=account["email"],
+                 account_id=account["_id"])
+        return complete_paypal(db, account,
+                               payments.by_order(db, account["_id"], order_id),
+                               result, back)
+
     if method == payments.CARD:
         try:
             code, checkout_url = paguelofacil.create_link(
@@ -2345,6 +2367,81 @@ def cancel_renewal():
     return redirect(f"{back}?renewal=off")
 
 
+@bp.route("/settings/billing/paypal", methods=["POST"])
+def add_paypal():
+    """Guardar la cuenta de PayPal: se manda al cliente a entrar a PayPal una vez,
+    sin plan y sin cobro. Solo el dueño."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    back = url_for("auth.settings", section="billing")
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    if not paypal.vault_ready() or accounts.paypal_vault_of(account):
+        return redirect(back)
+    db = get_db()
+    try:
+        setup_id, approve = paypal.create_setup_token(
+            reference=str(account["_id"]),
+            return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_paypal')}",
+            cancel_url=f"{Config.APP_BASE_URL}{back}?error=cancelled")
+    except paypal.PayPalError:
+        return redirect(f"{back}?error=paypal")
+    accounts.start_paypal_setup(db, account["_id"], setup_id)
+    return redirect(approve)
+
+
+@bp.route("/settings/billing/paypal/return")
+def finish_paypal():
+    """La vuelta de PayPal después de aprobar. Lo que trae la dirección solo vale
+    si es la petición que se le hizo a esta cuenta; lo que prueba que la cuenta
+    quedó guardada es la respuesta de PayPal al servidor."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    back = url_for("auth.settings", section="billing")
+    setup_id = request.args.get("approval_token_id", "")[:64]
+    pending = (account.get("paypal_setup") or {}).get("id")
+    if not setup_id or setup_id != pending:
+        return redirect(f"{back}?error=cancelled")
+    try:
+        saved = paypal.save_payment_token(setup_id)
+    except paypal.PayPalError:
+        return redirect(f"{back}?error=paypal")
+    accounts.set_paypal_vault(get_db(), account["_id"], token_id=saved["id"],
+                              payer=saved["payer"])
+    return redirect(f"{back}?paypal=saved")
+
+
+@bp.route("/settings/billing/paypal/remove", methods=["POST"])
+def remove_paypal():
+    """Quitar la cuenta de PayPal guardada, en PayPal y aquí. Si PayPal no la
+    quitó, aquí tampoco: así no queda guardada sin que se vea."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    back = url_for("auth.settings", section="billing")
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    saved = accounts.paypal_vault_of(account)
+    if saved:
+        try:
+            paypal.delete_payment_token(saved["id"])
+        except paypal.PayPalError:
+            return redirect(f"{back}?error=paypal")
+        accounts.clear_paypal_vault(get_db(), account["_id"])
+    return redirect(f"{back}?paypal=removed")
+
+
 @bp.route("/settings/billing/return")
 def finish_payment():
     """La vuelta de PayPal: cobrar de verdad y, solo entonces, activar.
@@ -2377,6 +2474,13 @@ def finish_payment():
         payments.fail(db, attempt["_id"], str(exc))
         return redirect(f"{back}?error=paypal")
 
+    return complete_paypal(db, account, attempt, result, back)
+
+
+def complete_paypal(db, account, attempt, result: dict, back: str):
+    """Lo que responde PayPal al cobrar, comparado con lo que se pidió, y solo
+    entonces activar. La usan la vuelta de PayPal y el pago con la cuenta guardada,
+    así que las dos hacen exactamente lo mismo."""
     # Lo que se pidió cobrar, guardado en el intento: en una mejora ya lleva el
     # descuento. Los de antes no lo guardaban distinto del precio de lista.
     esperado = attempt.get("amount") or plans.amount(attempt["plan"], attempt["cycle"])

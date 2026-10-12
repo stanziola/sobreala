@@ -903,6 +903,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   background: rgba(245, 158, 11, .14); border-color: #F59E0B; color: #FDE68A;
 }
 :root[data-theme="dark"] .notice--pending a { color: #FCD34D; }
+/* La solicitud de la demostración ya recibida: verde, con su gancho. */
+.notice--done {
+  display: flex; gap: 14px; align-items: flex-start; border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 9%, transparent);
+}
+.notice--done p { margin-top: 4px; }
+.notice__tick {
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-success); color: #fff;
+}
+.notice__tick .icon { width: 16px; height: 16px; }
 .foot { margin-top: 20px; font-size: .95rem; color: var(--color-ink-soft); }
 /* Un botón que se lee como enlace. «Pedir otro código» manda un correo, así
    que es un POST y no un enlace, pero en la pantalla se ve como antes. */

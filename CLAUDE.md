@@ -224,7 +224,7 @@ cosa está como está, y lo que ya se probó y se quitó.
   cierra las sesiones.
 - **Una cuenta nueva nace cerrada** (`accounts.is_open()`): ve su bienvenida y
   Configuración, y puede pagar. Se abre **con la demostración**, que pide desde
-  `/welcome` y abre el administrador en la ficha (y queda con lo del Básico sin
+  `/welcome` **una sola vez** y abre el administrador en la ficha (y queda con lo del Básico sin
   enviar), **o con el pago**, que la abre con todo, envío incluido. La puerta
   está en `needs()`. La habilitación antes del primer envío se quitó en octubre
   de 2026.
@@ -314,6 +314,10 @@ cosa está como está, y lo que ya se probó y se quitó.
   PayPal cobra sola cada periodo (`services/renewals.py`). Cada cobro se anota
   una vez por su id (`by_transaction`), y se activa desde el pago o desde
   Facturación. La tarjeta y Yappy no guardan nada: se pagan en cada renovación.
+- **Facturación enseña solo lo guardado**: la cuenta de PayPal, que se guarda
+  entrando una vez (PayPal Vault, `accounts.paypal_vault`: identificador y
+  correo, nunca tarjeta) y sirve para pagar sin volver a iniciar sesión. Se
+  agrega y se elimina desde ahí.
 - `payments` se escribe antes de mandar a pagar. Pasar a `completed` es una
   escritura condicional: cobrar dos veces no da dos periodos. Todo termina en
   `settle()`.

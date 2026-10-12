@@ -52,11 +52,13 @@ NEGOCIO = "Una cooperativa de ahorro y crédito en Santiago."
 PARA_QUE = "Avisos de asambleas y estados de cuenta a los socios."
 
 
-def pedir(browser, *, business=NEGOCIO, purpose=PARA_QUE):
+def pedir(browser, *, business=NEGOCIO, purpose=PARA_QUE, contacts="500_2k",
+          source="customers", website="", token_from="/welcome"):
     """Pedir la demostración como lo hace la bienvenida."""
     return browser.post("/welcome/demo", data={
-        "csrf_token": csrf(browser, "/welcome"), "business": business,
-        "purpose": purpose})
+        "csrf_token": csrf(browser, token_from), "business": business,
+        "purpose": purpose, "contacts": contacts, "source": source,
+        "website": website})
 
 
 def avisos(database, purpose):
@@ -170,13 +172,16 @@ def test_pedir_la_demo_pregunta_a_que_se_dedica_y_para_que(client, database,
     assert avisos(database, mail_log.ADMIN_DEMO) == []
     assert "demo_requested_at" not in accounts.by_id(database, cuenta["_id"])
 
-    respuesta = pedir(browser)
-    assert respuesta.headers["Location"].endswith("/welcome?demo=sent")
+    respuesta = pedir(browser, website="minegocio.com")
+    assert respuesta.headers["Location"].endswith("/welcome")
 
     despues = accounts.by_id(database, cuenta["_id"])
     assert despues["demo_requested_at"]
     assert despues["demo_business"] == NEGOCIO
     assert despues["demo_purpose"] == PARA_QUE
+    assert despues["demo_contacts"] == "500_2k"
+    assert despues["demo_source"] == "customers"
+    assert despues["demo_website"] == "https://minegocio.com"
     # Pedirla no la abre: eso lo decide una persona.
     assert not accounts.is_open(despues)
 
@@ -185,8 +190,11 @@ def test_pedir_la_demo_pregunta_a_que_se_dedica_y_para_que(client, database,
     assert "+50760000000" in aviso["text"]
     assert "Identificación" not in aviso["text"]
     assert NEGOCIO in aviso["text"] and PARA_QUE in aviso["text"]
+    assert "De 500 a 2,000" in aviso["text"]
+    assert "Son mis clientes o socios" in aviso["text"]
+    assert "https://minegocio.com" in aviso["text"]
 
-    pantalla = browser.get("/welcome?demo=sent").get_data(as_text=True)
+    pantalla = browser.get("/welcome").get_data(as_text=True)
     assert "Te escribimos al +50760000000" in pantalla
 
 
@@ -199,18 +207,62 @@ def test_sin_el_correo_confirmado_no_se_pide(client, database, outbox):
     assert "demo_requested_at" not in accounts.by_id(database, cuenta["_id"])
 
 
-def test_un_cuarto_aviso_en_el_dia_se_frena(client, database, outbox):
-    """Se puede pedir otra vez, para corregir las respuestas, pero no tanto
-    que sirva para llenarle el buzón a quien administra."""
+def test_la_demo_se_pide_una_sola_vez(client, database, outbox):
+    """Con la solicitud hecha el formulario ya no sale: queda el aviso verde, y
+    un segundo envío no guarda nada ni vuelve a avisar a quien administra."""
     make_admin(client, database)
-    browser, _ = cerrada(client, database)
+    browser, cuenta = cerrada(client, database)
+    assert 'name="business"' in browser.get("/welcome").get_data(as_text=True)
+    assert "notice--done" not in browser.get("/welcome").get_data(as_text=True)
 
-    for _ in range(3):
-        assert pedir(browser).status_code == 302
-    cuarto = pedir(browser)
+    assert pedir(browser).status_code == 302
+    pantalla = browser.get("/welcome").get_data(as_text=True)
+    assert "notice--done" in pantalla
+    assert "Tu solicitud ha sido recibida" in pantalla
+    assert "Espera la aprobación" in pantalla
+    assert 'name="business"' not in pantalla
+    assert "Avisar de nuevo" not in pantalla
 
-    assert "Ya nos avisaste varias veces hoy" in cuarto.get_data(as_text=True)
-    assert len(avisos(database, mail_log.ADMIN_DEMO)) == 3
+    otra = pedir(browser, business="Otra cosa distinta del negocio.",
+                 token_from="/settings")
+    assert otra.status_code == 302
+    assert otra.headers["Location"].endswith("/welcome")
+    assert accounts.by_id(database, cuenta["_id"])["demo_business"] == NEGOCIO
+    assert len(avisos(database, mail_log.ADMIN_DEMO)) == 1
+
+
+def test_los_datos_nuevos_de_la_demo_se_piden_y_se_revisan(client, database, outbox):
+    make_admin(client, database)
+    browser, cuenta = cerrada(client, database)
+
+    pantalla = browser.get("/welcome").get_data(as_text=True)
+    assert "¿Cuántos contactos tienes?" in pantalla
+    assert "¿Cómo conseguiste esos contactos?" in pantalla
+    assert "Sitio web (opcional)" in pantalla
+
+    sin_contactos = pedir(browser, contacts="")
+    assert "Elige una opción" in sin_contactos.get_data(as_text=True)
+    sin_origen = pedir(browser, source="inventado")
+    assert "Elige una opción" in sin_origen.get_data(as_text=True)
+    mal_sitio = pedir(browser, website="no es un sitio")
+    assert "dirección válida" in mal_sitio.get_data(as_text=True)
+    assert "demo_requested_at" not in accounts.by_id(database, cuenta["_id"])
+    assert avisos(database, mail_log.ADMIN_DEMO) == []
+
+    # El sitio es opcional: vacío no se guarda.
+    assert pedir(browser).status_code == 302
+    assert "demo_website" not in accounts.by_id(database, cuenta["_id"])
+
+
+def test_que_acepta_como_sitio_web():
+    assert accounts.clean_website("") == ""
+    assert accounts.clean_website("  ") == ""
+    assert accounts.clean_website("minegocio.com") == "https://minegocio.com"
+    assert accounts.clean_website("http://x.org/a") == "http://x.org/a"
+    assert accounts.clean_website("nada") is None
+    assert accounts.clean_website("ftp://x.com") is None
+    assert accounts.clean_website("a b.com") is None
+    assert accounts.clean_website("x" * 200 + ".com") is None
 
 
 def test_que_acepta_como_telefono():
