@@ -45,6 +45,7 @@ from services import notices
 from services import paguelofacil
 from services import paypal
 from services import plans
+from services import renewals
 from services import stats
 from services import totp
 from services import upgrade
@@ -1838,6 +1839,11 @@ def settings(section: str = "account"):
                                 saved=1))
 
     here = current_session()
+    # La renovación automática: por si el aviso de PayPal no llegó, al abrir
+    # Facturación se le pregunta qué cobró. Un error de PayPal no la rompe.
+    if section == "billing" and accounts.renewal_on(account):
+        renewals.sync(db, account)
+        account = accounts.by_id(db, account["_id"]) or account
     paid = payments.for_account(db, account["_id"], only_paid=True, limit=100)
     return render_template(
         "settings.html", section=section, sections=sections, account=account,
@@ -1864,6 +1870,10 @@ def settings(section: str = "account"):
         postal_max=accounts.POSTAL_MAX,
         account_errors=account_errors,
         editing=editing,
+        renewals_ready=paypal.renewals_ready(),
+        subscription=accounts.subscription_of(account),
+        renewal_on=accounts.renewal_on(account),
+        can_renew=bool(accounts.current_plan(account)) and accounts.can_buy(account),
         **account_screen(db, account, company),
         # Los usuarios de la cuenta, en Seguridad. Un usuario no los ve: esta
         # pantalla es suya para su contraseña y su segundo factor.
@@ -2096,7 +2106,11 @@ def checkout(plan: str):
         # pagar de ninguna forma.
         soon=[one for one in payments.ALL if one not in ready_methods()],
         current=accounts.plan_of(account),
-        plan_until=accounts.plan_until(account))
+        plan_until=accounts.plan_until(account),
+        # «Renovar solo con PayPal»: solo se ofrece si PayPal está entre los
+        # métodos y el aviso está montado, y no en una mejora, que se paga suelta.
+        renew_option=(paypal.renewals_ready() and payments.PAYPAL in ready_methods()
+                      and not accounts.current_plan(account)))
 
 
 @bp.route("/settings/billing/invoice/<raw>")
@@ -2186,6 +2200,30 @@ def start_payment():
     if method not in ready:
         return redirect(url_for("auth.settings", section="billing", error="paypal"))
 
+    # Mejorar de plan con la renovación encendida: la suscripción cobraría el plan
+    # de antes, así que se cancela y la mejora se paga suelta, con su prorrateo.
+    # Al terminar se vuelve a activar para el plan nuevo, desde Facturación.
+    if upgrading and accounts.renewal_on(account):
+        if not renewals.cancel(db, account, "Mejora de plan"):
+            return redirect(url_for("auth.settings", section="billing", error="paypal"))
+
+    # «Renovar solo con PayPal»: en lugar de una orden suelta, una suscripción
+    # que cobra el primer periodo al aprobarla y los siguientes por su cuenta.
+    # Solo con PayPal, solo si el aviso está montado, y no en una mejora, que
+    # lleva prorrateo y se paga suelta (la renovación se activa después).
+    if (request.form.get("renovar") and method == payments.PAYPAL
+            and paypal.renewals_ready() and not upgrading):
+        try:
+            approve = renewals.start(
+                db, account, plan, cycle,
+                return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_renewal')}",
+                cancel_url=f"{Config.APP_BASE_URL}{back}?error=cancelled")
+        except paypal.PayPalError:
+            return redirect(url_for("auth.settings", section="billing", error="paypal"))
+        log_auth(db, events.PAYMENT, events.CREATED, email=account["email"],
+                 account_id=account["_id"])
+        return redirect(approve)
+
     attempt = payments.start(db, account["_id"], plan=plan, cycle=cycle,
                              amount=amount, currency=plans.CURRENCY,
                              method=method, price=f"{quote['price']:.2f}",
@@ -2221,6 +2259,90 @@ def start_payment():
     log_auth(db, events.PAYMENT, events.CREATED, email=account["email"],
              account_id=account["_id"])
     return redirect(approve)
+
+
+@bp.route("/settings/billing/renewal", methods=["POST"])
+def start_renewal():
+    """Activar la renovación automática desde Facturación, para quien ya pagó
+    suelto: la suscripción cobra **el día que vence lo que pagó**, no antes.
+
+    Solo el dueño, con un plan vigente (si no, se contrata en el pago, donde está
+    la misma casilla), y solo si el aviso de PayPal está montado.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    back = url_for("auth.settings", section="billing")
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    plan = accounts.current_plan(account)
+    if (not plan or not accounts.can_buy(account) or not paypal.renewals_ready()
+            or accounts.renewal_on(account)):
+        return redirect(back)
+    db = get_db()
+    try:
+        approve = renewals.start(
+            db, account, plan, accounts.plan_cycle(account),
+            first_charge=accounts.plan_until(account),
+            return_url=f"{Config.APP_BASE_URL}{url_for('auth.finish_renewal')}",
+            cancel_url=f"{Config.APP_BASE_URL}{back}?error=cancelled")
+    except paypal.PayPalError:
+        return redirect(f"{back}?error=paypal")
+    return redirect(approve)
+
+
+@bp.route("/settings/billing/renewal/return")
+def finish_renewal():
+    """La vuelta de PayPal después de aprobar la suscripción.
+
+    Lo que trae la dirección es el identificador de la suscripción y nada más:
+    se le pregunta a PayPal si es de esta cuenta y si está aprobada
+    (`renewals.confirm()`), y después se le piden sus cobros (`renewals.sync()`),
+    que es lo único que activa el plan. Quien paga por primera vez con la casilla
+    aterriza en su recibo."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    db = get_db()
+    back = url_for("auth.settings", section="billing")
+    sub_id = request.args.get("subscription_id", "")[:64]
+    if not renewals.confirm(db, account, sub_id):
+        return redirect(f"{back}?error=cancelled")
+    new = renewals.sync(db, accounts.by_id(db, account["_id"]))
+    fresh = accounts.by_id(db, account["_id"])
+    sub = accounts.subscription_of(fresh) or {}
+    until = accounts.plan_until(fresh)
+    if until and sub.get("plan"):
+        notices.renewal_on(fresh, plan=sub["plan"], cycle=sub["cycle"], when=until)
+    if not new:
+        # Quien la activó para cuando venza lo que ya pagó: todavía no cobra.
+        return redirect(f"{back}?renewal=on")
+    return redirect(url_for("auth.receipt", raw=new[0]))
+
+
+@bp.route("/settings/billing/renewal/cancel", methods=["POST"])
+def cancel_renewal():
+    """Cancelar la renovación automática. Lo ya pagado sigue hasta su fecha."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    back = url_for("auth.settings", section="billing")
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    mine = accounts.subscription_of(account) or {}
+    if mine.get("status") in (accounts.SUB_ACTIVE, accounts.SUB_SUSPENDED):
+        if not renewals.cancel(get_db(), account):
+            return redirect(f"{back}?error=paypal")
+    return redirect(f"{back}?renewal=off")
 
 
 @bp.route("/settings/billing/return")

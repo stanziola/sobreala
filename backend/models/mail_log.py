@@ -43,6 +43,8 @@ REINSTATED = "reinstated"
 # El límite de envío y el resultado de las verificaciones, que manda el
 # administrador cuando quiere.
 LIMITED = "limited"
+# Lo de la renovación automática: se enciende, se apaga o no se pudo cobrar.
+RENEWAL = "renewal"
 VERIFICATION_RESULT = "verification_result"
 ADMIN_PAYMENT = "admin_payment"
 ADMIN_SIGNUP = "admin_signup"

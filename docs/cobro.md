@@ -32,12 +32,11 @@ plan».
 
 ## Cobrar un plan
 
-Se contrata desde **Configuración → Opciones de pago**. Hoy es un **pago suelto**
-de un mes o un año, no una suscripción: PayPal, o Paguélofácil con tarjeta,
-cobra una vez y el plan queda activo por ese periodo. La renovación se avisa a mano, igual que ya estaba
-previsto para Yappy. La suscripción que se renueva sola pide crear un producto y
-un plan por cada uno de los nuestros en el panel de PayPal, y el webhook
-funcionando; es el paso siguiente, no este.
+Se contrata desde **Configuración → Opciones de pago**. Por omisión es un **pago
+suelto** de un mes o un año: PayPal, o Paguélofácil con tarjeta, cobra una vez y
+el plan queda activo por ese periodo. **Con PayPal hay además renovación
+automática**, opcional (ver «La renovación automática», más abajo); la tarjeta y
+Yappy se pagan en cada renovación.
 
 ```
 Contratar  →  el servidor crea la orden  →  el navegador va a PayPal
@@ -210,6 +209,70 @@ alargar nada. El comprobante por correo dice lo cobrado y el descuento, este
 con su ITBMS dentro. **Pagar abre la cuenta y deja enviar de una vez**
 (`activate_plan()`): hasta octubre de 2026 hacía falta además una habilitación a
 mano, y se quitó (ver «Abrir la cuenta» en `docs/cuenta.md`).
+
+## La renovación automática (octubre de 2026)
+
+**Solo con PayPal, y es opcional.** Una **suscripción de PayPal**
+(`/v1/billing/subscriptions`) por cuenta: el cliente la aprueba una vez y
+**PayPal cobra cada periodo por su cuenta**. No hace falta proceso en segundo
+plano, que el proyecto todavía no tiene. Todo lo de Sobreala está en
+`services/renewals.py`; las llamadas a PayPal, en `services/paypal.py`.
+
+- **Los planes de PayPal** (3 planes por mensual y anual) se crean solos la
+  primera vez que hacen falta (`renewals.plan_id_for()`) y se guardan en
+  `paypal_plans`. La clave lleva el monto: si cambia el precio en
+  `docs/pricing.md` sale otro plan, y las suscripciones ya aprobadas cobran lo
+  que aprobaron.
+- **Se activa de dos formas**, las dos con la casilla/botón que dice «PayPal»:
+  - **al pagar**, con la casilla «Renovar solo cada mes/año con PayPal» del
+    checkout: en lugar de una orden se crea la suscripción, que cobra el primer
+    periodo al aprobarla;
+  - **desde Facturación**, para quien ya pagó suelto: la suscripción empieza **el
+    día que vence lo que pagó**, no antes (`start_time = plan_until`).
+- **Mejorar de plan** lleva prorrateo y se paga suelto: si había renovación, se
+  **cancela** y hay que activarla otra vez para el plan nuevo.
+- **Se cancela** desde Facturación (o desde la cuenta de PayPal). Lo ya pagado
+  sigue hasta `plan_until`.
+- **Lo ve el cliente en Facturación → Métodos de pago**: activa («Próximo cobro:
+  …»), sin activar, o «PayPal no pudo cobrar»; sin `PAYPAL_WEBHOOK_ID` dice
+  «pronto», y debajo: «La tarjeta y Yappy se pagan en cada renovación. Solo PayPal
+  renueva solo.»
+
+**Quién decide que se cobró** es la misma regla de siempre: **la respuesta de
+PayPal al servidor**, no el navegador ni el cuerpo de un aviso.
+- **`renewals.sync()`** le pide a PayPal los cobros de la suscripción
+  (`.../transactions`) y liquida los que no estén escritos, comparando antes el
+  **monto y la moneda** contra lo que cuesta ese plan. Un cobro que no cuadra se
+  anota fallido y no activa nada.
+- **Cada cobro se anota con su id de PayPal** (`payments.record_charge()`) en un
+  índice único (`by_transaction`): el mismo cobro **no da dos periodos**, lo
+  traiga quien lo traiga. La renovación alarga desde el vencimiento
+  (`renews_from()`), no desde hoy.
+- **La llaman tres sitios, y hacen lo mismo:** la vuelta del navegador
+  (`/settings/billing/renewal/return`, que antes comprueba que la suscripción sea
+  la de esta cuenta y que PayPal diga que está aprobada, `renewals.confirm()`), el
+  **aviso** `POST /webhooks/paypal`, y **Facturación al abrirse**, por si el aviso
+  no llegó.
+- **El aviso verifica su firma** con PayPal
+  (`/v1/notifications/verify-webhook-signature`) y `PAYPAL_WEBHOOK_ID`: sin firma
+  buena (400) o sin el id puesto (404) no hace nada. Aun con ella, del cuerpo solo
+  se usa **de qué suscripción es**. Lo que no es nuestro o no se entiende, 200;
+  lo que no se pudo comprobar, 500, para que PayPal reintente.
+- **Eventos que se atienden:** `PAYMENT.SALE.COMPLETED` y los de la suscripción
+  (`ACTIVATED`, `PAYMENT.FAILED`, `SUSPENDED`, `CANCELLED`, `EXPIRED`). Si un cobro
+  falla, la cuenta se avisa y el plan sigue hasta su fecha.
+- **Correos:** «Activaste la renovación automática», «Cancelaste la renovación
+  automática» (los dos con el interruptor de «Pagos y plan») y «No pudimos cobrar
+  tu renovación» (sin interruptor). El de «Renovaste tu plan» es el de siempre.
+
+**Lo que hay que montar en PayPal Developer** (sandbox primero): activar
+**Subscriptions** en la aplicación y crear un **webhook** a
+`https://app.sobreala.com/webhooks/paypal` con los eventos de arriba; su id va en
+Railway como `PAYPAL_WEBHOOK_ID`.
+
+**Guardar la tarjeta o Yappy para próximos pagos no se puede hoy**: Paguélofácil no
+documenta cobros guardados y Yappy está anunciado. Si alguno lo permite, entra por
+el mismo sitio.
 
 **El checkout ya no pide el RUC o la cédula** (octubre de 2026): la
 identificación es solo un documento que se verifica (ver `docs/cuenta.md`).

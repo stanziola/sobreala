@@ -1117,6 +1117,52 @@ def renews_from(account: dict[str, Any] | None, plan: str):
     return now()
 
 
+# ------------------------------------------------- la renovación automática
+#
+# Una suscripción de PayPal por cuenta (octubre de 2026): el cliente la aprueba
+# una vez y PayPal cobra cada periodo. Se guarda en `subscription`:
+# `id` (el de PayPal), `status`, `plan`, `cycle`, `created_at` y, si ya se supo,
+# `next` (cuándo cobra la próxima). De PayPal no se guarda nada más que ese
+# identificador: ni tarjeta ni cuenta (regla 9).
+
+SUB_PENDING = "approval_pending"   # creada, el cliente todavía no la aprobó
+SUB_ACTIVE = "active"
+SUB_SUSPENDED = "suspended"        # PayPal la suspendió (cobros fallidos)
+SUB_CANCELLED = "cancelled"        # la canceló el cliente, PayPal o nosotros
+
+
+def subscription_of(account: dict[str, Any] | None) -> dict[str, Any] | None:
+    return (account or {}).get("subscription") or None
+
+
+def renewal_on(account: dict[str, Any] | None) -> bool:
+    """Si la renovación automática está encendida: aprobada y sin cancelar."""
+    one = subscription_of(account)
+    return bool(one and one.get("status") == SUB_ACTIVE)
+
+
+def set_subscription(db, account_id, **fields: Any) -> None:
+    """Escribir lo que cambie de la suscripción, sin tocar el resto."""
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        **{f"subscription.{key}": value for key, value in fields.items()},
+        "updated_at": now()}})
+
+
+def start_subscription(db, account_id, *, sub_id: str, plan: str, cycle: str) -> None:
+    """Dejar anotada una suscripción nueva, pendiente de que el cliente la apruebe."""
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "subscription": {"id": sub_id, "status": SUB_PENDING, "plan": plan,
+                         "cycle": cycle, "created_at": now()},
+        "updated_at": now()}})
+
+
+def by_subscription(db, sub_id: str) -> dict[str, Any] | None:
+    """La cuenta dueña de esa suscripción de PayPal."""
+    if not sub_id:
+        return None
+    return db.accounts.find_one({"subscription.id": sub_id})
+
+
 def by_status(db) -> dict[str, int]:
     """How many accounts sit in each state, for the admin front page."""
     counted = {name: 0 for name in STATUSES}

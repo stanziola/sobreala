@@ -2179,6 +2179,46 @@ TEXTS = {
                          "contactos, tus plantillas y tus campañas siguen ahí.",
     "mail_limited_button": "Subir los documentos",
 
+    # La renovación automática con PayPal.
+    # Facturación y el pago: la renovación automática con PayPal.
+    "pay_renew_label": "Renovar solo {every} con PayPal",
+    "pay_renew_hint": "PayPal cobra tu plan al vencer, sin que tengas que "
+                      "volver. Lo cancelas cuando quieras desde Facturación o "
+                      "desde tu cuenta de PayPal.",
+    "renewal_title": "Renovación automática",
+    "renewal_desc": "PayPal cobra tu plan solo cada mes o cada año. Lo cancelas "
+                    "cuando quieras.",
+    "renewal_status_on": "Activa",
+    "renewal_status_suspended": "PayPal no pudo cobrar",
+    "renewal_next": "Próximo cobro: {when}",
+    "renewal_activate": "Activar con PayPal",
+    "renewal_cancel": "Cancelar renovación",
+    "renewal_at_checkout": "Se activa al contratar un plan",
+    "renewal_done_on": "Listo, tu plan se renovará solo con PayPal.",
+    "renewal_done_off": "Listo, cancelaste la renovación automática. Tu plan "
+                        "sigue hasta su fecha.",
+    "renewal_only_paypal": "La tarjeta y Yappy se pagan en cada renovación. Solo "
+                           "PayPal renueva solo.",
+    "renewal_every_monthly": "cada mes",
+    "renewal_every_yearly": "cada año",
+    "mail_renewal_on_subject": "Activaste la renovación automática",
+    "mail_renewal_on_heading": "Tu plan se renovará solo",
+    "mail_renewal_on_body": "Tu plan {plan} se renueva {cycle} con PayPal, por "
+                            "$ {amount}. El primer cobro es el {when}.",
+    "mail_renewal_cancel": "La cancelas cuando quieras desde Facturación, o "
+                           "desde tu cuenta de PayPal.",
+    "mail_renewal_button": "Ir a Facturación",
+    "mail_renewal_off_subject": "Cancelaste la renovación automática",
+    "mail_renewal_off_heading": "Tu plan ya no se renueva solo",
+    "mail_renewal_off_body": "No volveremos a cobrarte con PayPal. Lo que ya "
+                             "pagaste sigue funcionando.",
+    "mail_renewal_off_until": "Tu plan sigue hasta el {until}.",
+    "mail_renewal_failed_subject": "No pudimos cobrar tu renovación",
+    "mail_renewal_failed_heading": "PayPal no pudo cobrar tu plan",
+    "mail_renewal_failed_body": "Intentamos renovar tu plan y PayPal no pudo "
+                                "hacer el cobro.",
+    "mail_renewal_failed_what": "Revisa tu método de pago en PayPal. Tu plan "
+                                "sigue hasta su fecha; si no se cobra, vence.",
     # El resultado de las verificaciones, que manda el administrador cuando
     # quiere. Una línea por cosa y un cierre según cómo quedó.
     "mail_result_subject": "El resultado de la verificación de tu cuenta",

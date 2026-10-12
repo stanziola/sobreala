@@ -328,7 +328,7 @@ no avanza: el anillo late otra vez.
   se quitaron la etiqueta «Tutoriales» y la entradilla. «Tutoriales» sigue
   siendo lo que oye un lector de pantalla en las pestañas (`TUTORIALS["label"]`).
 
-**«Features» son nueve dibujos sencillos** (octubre de 2026), en un carrusel
+**«Features» son diez dibujos sencillos** (octubre de 2026), en un carrusel
 que aprieta: el abierto ocupa su sitio y los otros ocho quedan en listones.
 Debajo, el texto del que esté abierto, y debajo de él una barra por función con
 las flechas a la derecha. Fueron cinco: ese mismo mes «Contactos sin
@@ -347,10 +347,20 @@ es el único título de Cómo funciona; en el código sigue siendo `features`.
 | `editor` | Una hoja con un título elegido (con sus tiradores), una foto y un botón |
 | `schedule` | «Enviar ahora» y «Programar», con el segundo marcado y su fecha |
 | `results` | Tres cifras grandes (entregados, aperturas y clics) y «CSV · PDF» |
+| `opens` | La lista de un envío, persona por persona, con un ojo (abrió) y un puntero (pulsó), encendidos en las que sí. Cuenta lo que ya hace «Detalles» de cada envío |
 | `bounces` | Un sobre con su aviso de rebote, y «Fuera de tus envíos» con una dirección por rebote y otra por spam, tachadas |
 | `unsubscribe` | El enlace al pie de un correo y el «Listo, ya no recibirás estos correos» |
 | `users` | Ana, la dueña, y Luis, invitado, con las casillas de lo que Luis puede hacer |
 
+- **Sin flechas punteadas** (octubre de 2026): los dibujos no llevan conector
+  entre sus partes, que quedan juntas y centradas. Donde hay una acción, la
+  señal es un mouse: anular suscripción lo lleva sobre su botón.
+- **«Mira quién abrió y quién pulsó» es legal en Panamá y ya está dicho**: la
+  política de privacidad cuenta que se mide si un correo se abrió o se pulsó, y
+  los términos (§8) piden a quien envía que avise a sus destinatarios y obtenga
+  su consentimiento donde se exija (la Unión Europea, por ejemplo). Las
+  aperturas son aproximadas, porque algunos buzones abren solos los correos
+  (`run_note` en el panel); los clics son más fiables.
 - **Lo que cuentan existe en el panel:** contactos nuevos, editar, exportar e
   importar; etiquetas; columnas propias con `*|CAMPO|*`; supresiones; y los
   permisos de `models/account.py`. Rebotes y quejas los anula el aviso de SES,
@@ -392,7 +402,7 @@ es el único título de Cómo funciona; en el código sigue siendo `features`.
 debajo para que se leyeran encima de la captura; el velo tapaba justo lo que la
 sección viene a enseñar. Sin rótulo no hace falta ninguno de los dos.
 
-**Lo que abre cada dibujo son nueve botones de radio**, no un guion. Por eso la
+**Lo que abre cada dibujo son diez botones de radio**, no un guion. Por eso la
 sección funciona entera sin JavaScript y las flechas del teclado la mueven
 solas, que es lo que se consigue gratis con un grupo de radios. Las barras de
 debajo del texto son sus etiquetas, así que también se ven sin guion.
@@ -412,11 +422,11 @@ automático.
 
 **En el teléfono no hay apretujón**: los dos contenedores se vuelven
 transparentes (`display: contents`) y cada dibujo queda encima de su texto, con
-los nueve a la vista. El apretujón necesita ancho para significar algo, y ahí
+los diez a la vista. El apretujón necesita ancho para significar algo, y ahí
 no lo hay. Tampoco hay barras ni flechas, y como sin barra no hay reloj, ahí no
 pasa sola.
 
-Las reglas del carrusel nombran los nueve por su id (`#tour-1` … `#tour-9`), que
+Las reglas del carrusel nombran los diez por su id (`#tour-1` … `#tour-10`), que
 es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otros,
 esas listas de `landing/src/site.css` crecen con ellos.
 

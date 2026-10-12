@@ -117,6 +117,55 @@ def paid(account, *, plan: str, until, renewed: bool, charged: str = "",
         foot=switch_off_hint())
 
 
+def renewal_on(account, *, plan: str, cycle: str, when) -> bool:
+    """Que la renovación automática quedó encendida: cuándo cobra la próxima y
+    cómo se cancela. Con el interruptor de «Pagos y plan»."""
+    if not accounts.wants(account, accounts.BILLING):
+        return False
+    return deliver(
+        account, purpose=mail_log.RENEWAL,
+        subject=t("mail_renewal_on_subject"),
+        heading=t("mail_renewal_on_heading"),
+        paragraphs=[t("mail_renewal_on_body", plan=plan_name(plan),
+                      cycle=t("renewal_every_" + cycle),
+                      amount=plans.amount(plan, cycle),
+                      when=on_date(when, clock.for_account(account))),
+                    t("mail_renewal_cancel")],
+        button={"href": billing_url(), "label": t("mail_renewal_button")},
+        foot=switch_off_hint())
+
+
+def renewal_off(account) -> bool:
+    """Que se canceló la renovación automática. El plan sigue hasta su fecha."""
+    if not accounts.wants(account, accounts.BILLING):
+        return False
+    until = accounts.plan_until(account)
+    return deliver(
+        account, purpose=mail_log.RENEWAL,
+        subject=t("mail_renewal_off_subject"),
+        heading=t("mail_renewal_off_heading"),
+        paragraphs=[t("mail_renewal_off_body")]
+        + ([t("mail_renewal_off_until", until=on_date(until, clock.for_account(account)))]
+           if until else []),
+        button={"href": billing_url(), "label": t("mail_renewal_button")},
+        foot=switch_off_hint())
+
+
+def renewal_failed(account) -> bool:
+    """Que PayPal no pudo cobrar la renovación. Sin interruptor: si no se entera,
+    el plan se vence sin que lo sepa."""
+    return deliver(
+        account, purpose=mail_log.RENEWAL,
+        subject=t("mail_renewal_failed_subject"),
+        heading=t("mail_renewal_failed_heading"),
+        paragraphs=[t("mail_renewal_failed_body"), t("mail_renewal_failed_what")],
+        button={"href": billing_url(), "label": t("mail_renewal_button")})
+
+
+def billing_url() -> str:
+    return f"{Config.APP_BASE_URL}{url_for('auth.settings', section='billing')}"
+
+
 def invited(member, *, company: str, link: str, days: int) -> bool:
     """La invitación a entrar como usuario de una cuenta.
 

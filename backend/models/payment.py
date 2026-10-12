@@ -138,6 +138,35 @@ def complete(db, payment_id, *, payer_email: str = "", last4: str = "",
     return result.modified_count == 1
 
 
+def record_charge(db, account_id, *, transaction_id: str, sub_id: str, plan: str,
+                  cycle: str, amount: str, currency: str, payer_email: str = "",
+                  status: str = COMPLETED, error: str = "") -> Any:
+    """Anotar un cobro de la suscripción de PayPal. Devuelve su id, o **None si
+    ese cobro ya estaba escrito**.
+
+    Cada cobro de PayPal trae su propio id, y el índice único sobre él
+    (`by_transaction`, en db.py) es lo que hace que el mismo cobro no dé dos
+    periodos, lo traiga la vuelta del navegador, el aviso o Facturación: quien
+    llega segundo choca con el primero y se va con las manos vacías. Es el
+    equivalente, para las renovaciones, a la escritura condicional de
+    `complete()`.
+    """
+    from pymongo.errors import DuplicateKeyError
+
+    try:
+        return db.payments.insert_one({
+            "account_id": account_id, "provider": PROVIDERS[PAYPAL],
+            "method": PAYPAL, "plan": plan, "cycle": cycle, "amount": amount,
+            "currency": currency, "order_id": transaction_id,
+            "transaction_id": transaction_id, "subscription_id": sub_id,
+            "payer_email": payer_email, "status": status, "error": error[:200],
+            "created_at": now(),
+            "completed_at": now() if status == COMPLETED else None,
+        }).inserted_id
+    except DuplicateKeyError:
+        return None
+
+
 def fail(db, payment_id, reason: str) -> None:
     db.payments.update_one({"_id": payment_id, "status": CREATED},
                            {"$set": {"status": FAILED, "error": reason[:200],

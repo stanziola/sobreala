@@ -146,3 +146,136 @@ def capture(order_id: str) -> dict[str, str]:
         # ha pagado. Es un correo, no un dato de tarjeta.
         "payer": ((answer.get("payer") or {}).get("email_address") or "")[:200],
     }
+
+
+# ---------------------------------------------------------------- suscripciones
+#
+# La renovación automática (octubre de 2026). PayPal tiene el reloj: el cliente
+# aprueba una suscripción una vez y PayPal cobra cada periodo por su cuenta, así
+# que no hace falta ningún proceso en segundo plano. Aquí solo se habla con él;
+# quién decide que algo se cobró sigue siendo quien llama, preguntando a PayPal
+# (`transactions()`) y comparando el monto, nunca lo que traiga el navegador.
+
+# Los periodos de PayPal para cada ciclo nuestro.
+UNITS = {"monthly": "MONTH", "yearly": "YEAR"}
+
+
+def renewals_ready() -> bool:
+    """La renovación automática necesita las credenciales y el webhook: sin él no
+    nos enteraríamos de las renovaciones hasta que el cliente entrara a mirar."""
+    return configured() and bool(Config.PAYPAL_WEBHOOK_ID)
+
+
+def _auth() -> dict[str, str]:
+    return {"Authorization": f"Bearer {token()}"}
+
+
+def create_product() -> str:
+    """El producto de Sobreala en PayPal, del que cuelgan los planes."""
+    answer = _call("/v1/catalogs/products", body={
+        "name": "Sobreala", "type": "SERVICE", "category": "SOFTWARE"},
+        headers={**_auth(), "PayPal-Request-Id": "sobreala-product"})
+    return answer["id"]
+
+
+def create_plan(*, product_id: str, name: str, cycle: str, amount: str,
+                currency: str, reference: str) -> str:
+    """Un plan de cobro de PayPal: el mismo monto, cada mes o cada año, hasta que
+    se cancele (`total_cycles` en 0). Si el primer cobro falla se cancela todo."""
+    answer = _call("/v1/billing/plans", body={
+        "product_id": product_id, "name": name[:127], "status": "ACTIVE",
+        "billing_cycles": [{
+            "frequency": {"interval_unit": UNITS[cycle], "interval_count": 1},
+            "tenure_type": "REGULAR", "sequence": 1, "total_cycles": 0,
+            "pricing_scheme": {"fixed_price": {"value": amount,
+                                               "currency_code": currency}},
+        }],
+        "payment_preferences": {
+            "auto_bill_outstanding": True,
+            "setup_fee_failure_action": "CANCEL",
+            "payment_failure_threshold": 3,
+        },
+    }, headers={**_auth(), "PayPal-Request-Id": reference})
+    return answer["id"]
+
+
+def create_subscription(*, plan_id: str, reference: str, return_url: str,
+                        cancel_url: str, start_time: str = "") -> tuple[str, str]:
+    """Crear la suscripción. Devuelve (su id, la dirección donde el cliente la
+    aprueba). `reference` es nuestro identificador y viaja como `custom_id`.
+    `start_time` (ISO, en UTC) es cuándo cobra el primer periodo: sin él, al
+    aprobarla."""
+    body: dict[str, Any] = {
+        "plan_id": plan_id, "custom_id": reference,
+        "application_context": {
+            "brand_name": "Sobreala", "locale": "es-ES",
+            "shipping_preference": "NO_SHIPPING", "user_action": "SUBSCRIBE_NOW",
+            "return_url": return_url, "cancel_url": cancel_url,
+        },
+    }
+    if start_time:
+        body["start_time"] = start_time
+    answer = _call("/v1/billing/subscriptions", body=body,
+                   headers={**_auth(), "PayPal-Request-Id": reference})
+    for link in answer.get("links", []):
+        if link.get("rel") == "approve":
+            return answer["id"], link["href"]
+    raise PayPalError("la suscripción no trajo dirección de aprobación")
+
+
+def get_subscription(subscription_id: str) -> dict[str, Any]:
+    """Cómo está la suscripción según PayPal: su estado, de quién es (`custom_id`)
+    y cuándo cobra la próxima."""
+    answer = _call(f"/v1/billing/subscriptions/{subscription_id}", method="GET",
+                   headers=_auth())
+    return {
+        "status": answer.get("status", ""),
+        "custom_id": answer.get("custom_id", ""),
+        "plan_id": answer.get("plan_id", ""),
+        "next": (answer.get("billing_info") or {}).get("next_billing_time", ""),
+        "payer": ((answer.get("subscriber") or {}).get("email_address") or "")[:200],
+    }
+
+
+def transactions(subscription_id: str, *, start: str, end: str) -> list[dict[str, str]]:
+    """Lo que PayPal cobró de esa suscripción entre dos fechas (ISO, UTC): una
+    por cobro, con su id, su estado, su monto y su moneda. Es lo que prueba que
+    un periodo se pagó."""
+    answer = _call(
+        f"/v1/billing/subscriptions/{subscription_id}/transactions"
+        f"?start_time={start}&end_time={end}", method="GET", headers=_auth())
+    found = []
+    for one in answer.get("transactions") or []:
+        gross = (one.get("amount_with_breakdown") or {}).get("gross_amount") or {}
+        found.append({
+            "id": one.get("id", ""), "status": one.get("status", ""),
+            "amount": gross.get("value", ""), "currency": gross.get("currency_code", ""),
+            "time": one.get("time", ""),
+            "payer": ((one.get("payer_email") or ""))[:200],
+        })
+    return found
+
+
+def cancel_subscription(subscription_id: str, reason: str) -> None:
+    _call(f"/v1/billing/subscriptions/{subscription_id}/cancel",
+          body={"reason": reason[:128]}, headers=_auth())
+
+
+def verify_webhook(headers: Any, event: dict[str, Any]) -> bool:
+    """Si un aviso lo mandó PayPal de verdad: se le pregunta a PayPal con la
+    firma que trae. Sin `PAYPAL_WEBHOOK_ID`, ninguno vale."""
+    if not Config.PAYPAL_WEBHOOK_ID:
+        return False
+    try:
+        answer = _call("/v1/notifications/verify-webhook-signature", body={
+            "auth_algo": headers.get("PAYPAL-AUTH-ALGO", ""),
+            "cert_url": headers.get("PAYPAL-CERT-URL", ""),
+            "transmission_id": headers.get("PAYPAL-TRANSMISSION-ID", ""),
+            "transmission_sig": headers.get("PAYPAL-TRANSMISSION-SIG", ""),
+            "transmission_time": headers.get("PAYPAL-TRANSMISSION-TIME", ""),
+            "webhook_id": Config.PAYPAL_WEBHOOK_ID,
+            "webhook_event": event,
+        }, headers=_auth())
+    except PayPalError:
+        return False
+    return answer.get("verification_status") == "SUCCESS"

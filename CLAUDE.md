@@ -310,6 +310,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Pago suelto de un mes o un año, por PayPal o tarjeta (Paguélofácil). **Decide
   la respuesta del proveedor al servidor**, nunca el navegador, y se compara el
   monto contra el intento.
+- **Renovación automática, opcional y solo con PayPal**: una suscripción que
+  PayPal cobra sola cada periodo (`services/renewals.py`). Cada cobro se anota
+  una vez por su id (`by_transaction`), y se activa desde el pago o desde
+  Facturación. La tarjeta y Yappy no guardan nada: se pagan en cada renovación.
 - `payments` se escribe antes de mandar a pagar. Pasar a `completed` es una
   escritura condicional: cobrar dos veces no da dos periodos. Todo termina en
   `settle()`.
@@ -380,7 +384,8 @@ PAYPAL_ENV                # sandbox | live; en producción, con llaves, tiene qu
                           # estar escrita: sin ella no arranca
 PAYPAL_CLIENT_ID
 PAYPAL_SECRET
-PAYPAL_WEBHOOK_ID         # para comprobar los avisos; todavía sin usar
+PAYPAL_WEBHOOK_ID         # firma de los avisos de la renovación automática; sin él,
+                          # esa renovación dice «pronto» y /webhooks/paypal da 404
 PAGUELOFACIL_ENV          # sandbox | live; en producción con sandbox no arranca
 PAGUELOFACIL_CCLW         # el código web del comercio: crea los enlaces de pago
 PAGUELOFACIL_TOKEN        # consulta las transacciones, que es lo que decide

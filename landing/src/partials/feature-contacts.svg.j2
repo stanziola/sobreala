@@ -11,6 +11,7 @@
   </defs>
   <rect class="art-stage" width="480" height="270"/>
 
+  <g transform="translate(8 0)">
   {#- el archivo, con la esquina doblada, su sello y unas filas -#}
   <g filter="url(#fc-drop)">
     <path class="art-card" d="M46 62h70l28 28v106a12 12 0 0 1-12 12H46a12 12 0 0 1-12-12V74a12 12 0 0 1 12-12z"/>
@@ -23,12 +24,10 @@
   {% endfor %}
   <text class="art-ink" x="89" y="232" text-anchor="middle" font-size="12" opacity=".72">{{ w.file }}</text>
 
-  {#- entra a la lista -#}
-  <path class="art-s-dash" d="M154 135H190" fill="none" stroke-width="2.6"
-        stroke-dasharray="5 6" stroke-linecap="round"/>
-  <path class="art-s-dash" d="m184 128 8 7-8 7" fill="none" stroke-width="2.6"
-        stroke-linecap="round" stroke-linejoin="round"/>
 
+  </g>
+
+  <g transform="translate(-18 0)">
   {#- la lista: su título, el contador y tres filas -#}
   <g filter="url(#fc-drop)">
     <rect class="art-card" x="204" y="44" width="252" height="182" rx="16"/>
@@ -45,4 +44,5 @@
   <path class="art-card" d="M231.6 {{ top + 28 }}a6.4 5 0 0 1 12.8 0z"/>
   <text class="art-ink" x="258" y="{{ top + 25.5 }}" font-size="12.5" font-weight="600">{{ email }}</text>
   {% endfor %}
+  </g>
 </svg>

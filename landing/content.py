@@ -330,6 +330,25 @@ HOME = {
                 ),
             },
             {
+                "art": "opens",
+                "alt": (
+                    "La lista de un envío, persona por persona: tres direcciones, "
+                    "cada una con un ojo si abrió el correo y un puntero si "
+                    "pulsó un enlace. Dos abrieron y una pulsó."
+                ),
+                "words": {"title": "Envío de octubre", "opened": "Abrió",
+                          "clicked": "Pulsó",
+                          "rows": [("ana@coop.com", True, True),
+                                   ("luis@coop.com", True, False),
+                                   ("sofia@coop.com", False, False)]},
+                "title": "Mira quién abrió y quién pulsó",
+                "text": (
+                    "En el detalle de cada envío ves, persona por persona, si le "
+                    "llegó, cuándo abrió el correo y si pulsó un enlace. Y filtras "
+                    "a quienes no lo abrieron."
+                ),
+            },
+            {
                 "art": "bounces",
                 "alt": (
                     "Un correo que rebotó, y la lista de lo que ya no recibe: una "
@@ -997,7 +1016,9 @@ PRIVACY = {
                 "servidor cuando alguien dice que no le llegó el código.",
                 "**De tus envíos:** por cada correo de campaña, si se entregó, "
                 "rebotó, generó una queja, se abrió o se hizo click.",
-                "**De pagos:** el plan, la fecha y el resultado del cobro. "
+                "**De pagos:** el plan, la fecha y el resultado del cobro, y si "
+                "activas la renovación automática, el identificador de tu "
+                "suscripción de PayPal. "
                 "**Nunca vemos ni guardamos datos de tarjeta:** el pago ocurre "
                 "en la página de PayPal o de Yappy, no en la nuestra.",
             ],
@@ -1222,6 +1243,11 @@ TERMS = {
                 "El cobro se hace por PayPal desde el panel, o por Yappy "
                 "coordinándolo con nosotros, y en ese caso activamos el plan a "
                 "mano. La tarjeta no pasa por nuestros servidores.",
+                "La renovación automática es opcional y solo es con PayPal. Si "
+                "la activas, PayPal cobra tu plan al final de cada periodo, "
+                "por el precio vigente cuando la activaste, hasta que la "
+                "canceles. La cancelas cuando quieras desde Facturación o desde "
+                "tu cuenta de PayPal, y lo ya pagado sigue hasta su fecha.",
                 "Los correos no usados en el mes pasan al siguiente y vencen "
                 "ahí; se consumen primero los acumulados.",
                 "El plan anual se paga por adelantado con un 20% de "
@@ -1294,6 +1320,11 @@ TERMS = {
                 "Garantizas que cada persona de tu lista te dio su correo y "
                 "podía esperar recibir mensajes tuyos, y que puedes demostrarlo "
                 "si alguien lo pregunta.",
+                "Medimos por persona si cada correo se entregó, se abrió y se "
+                "pulsó un enlace, y tú lo ves en el detalle de cada envío. Tú "
+                "avisas a esas personas de que se miden las aperturas y los "
+                "clics, y si alguna está en un país que pide su "
+                "consentimiento para ello, lo obtienes tú.",
                 "Usamos tu lista únicamente para tus envíos. No la mezclamos "
                 "con la de otros clientes, no la vendemos y no le ofrecemos "
                 "nada nuestro.",

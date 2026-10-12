@@ -4,7 +4,7 @@
    La sección funciona entera sin este archivo: lo que abre cada dibujo son
    botones de radio y las barras de debajo son sus etiquetas, así que se pulsa
    con el ratón, se mueve con las flechas del teclado y en el teléfono se ven
-   las nueve con su texto. Lo de aquí son dos añadidos, y ninguno existe sin
+   las diez con su texto. Lo de aquí son dos añadidos, y ninguno existe sin
    este archivo: las flechas de anterior y siguiente, y el paso automático.
 
    **El reloj es la barra de la función abierta**, una animación de CSS que dura

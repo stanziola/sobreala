@@ -171,6 +171,12 @@ def ensure_indexes(db: Database | None = None) -> None:
                               ("created_at", DESCENDING)],
                              name="by_account_created")
     db.payments.create_index([("order_id", ASCENDING)], name="by_order")
+    # Un cobro de la suscripción de PayPal se anota una sola vez: su id es único.
+    # Parcial, porque los pagos sueltos no lo llevan.
+    db.payments.create_index([("transaction_id", ASCENDING)], unique=True,
+                             partialFilterExpression={"transaction_id": {"$type": "string"}},
+                             name="by_transaction")
+    db.paypal_plans.create_index([("key", ASCENDING)], unique=True, name="by_key")
 
     # Un documento por evento de SES. Es lo que más crece: unos tres por correo
     # enviado. Todavía no lo llena nadie, pero el índice va puesto desde ya para

@@ -43,9 +43,12 @@ nuevo debe respetarla: permite 5 campañas mensuales a la lista completa.
 - Sin permanencia mínima. Cancelable desde el panel en cualquier momento.
 - El plan anual se paga por adelantado y lleva un 20% de descuento.
 - Métodos de pago: Yappy, PayPal y tarjeta vía PayPal.
-- **Pendiente de confirmar con Yappy**: si soporta cobros recurrentes. Si no,
-  el cobro recurrente va solo por PayPal y a los clientes de Yappy se les envía
-  un enlace de pago antes de cada vencimiento.
+- **Renovación automática, solo con PayPal** (octubre de 2026): opcional, con una
+  suscripción de PayPal que cobra cada periodo hasta que se cancele. La
+  tarjeta (Paguélofácil) y Yappy se pagan en cada renovación. Ver `docs/cobro.md`.
+- **Pendiente de confirmar con Yappy**: si soporta cobros recurrentes. Si no, a
+  los clientes de Yappy se les envía un enlace de pago antes de cada
+  vencimiento.
 
 ### Mejorar de plan (prorrateo)
 

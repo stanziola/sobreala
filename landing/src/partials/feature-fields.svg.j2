@@ -13,7 +13,7 @@
   <rect class="art-stage" width="480" height="270"/>
 
   {#- los dos correos: el de los campos y el de Ana. Lo que cambia va en azul. -#}
-  {% for left, name, balance in [(24, w.name_tag, w.balance_tag), (260, w.name, w.balance)] %}
+  {% for left, name, balance in [(34, w.name_tag, w.balance_tag), (250, w.name, w.balance)] %}
   <g filter="url(#ff-drop)">
     <rect class="art-card" x="{{ left }}" y="62" width="196" height="146" rx="16"/>
   </g>
@@ -24,9 +24,4 @@
   <rect class="art-line" x="{{ left + 18 }}" y="174" width="112" height="7" rx="3.5"/>
   {% endfor %}
 
-  {#- de uno a otro -#}
-  <path class="art-s-dash" d="M226 135H252" fill="none" stroke-width="2.6"
-        stroke-dasharray="5 6" stroke-linecap="round"/>
-  <path class="art-s-dash" d="m246 128 8 7-8 7" fill="none" stroke-width="2.6"
-        stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

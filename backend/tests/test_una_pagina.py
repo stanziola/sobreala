@@ -115,16 +115,21 @@ def test_features_trae_sus_dibujos():
     planes», se quitó."""
     html = (LANDING / "index.html").read_text(encoding="utf-8")
     tira = html[html.index('class="tour"'):html.index('id="tutorials"')]
-    assert tira.count('<svg class="tour__art"') == 9
-    assert tira.count('name="tour"') == 9
-    assert tira.count('<span class="tour__fill"></span>') == 9
+    assert tira.count('<svg class="tour__art"') == 10
+    assert tira.count('name="tour"') == 10
+    assert tira.count('<span class="tour__fill"></span>') == 10
     titulos = re.findall(r'<h3 class="tour__title">([^<]+)</h3>', tira)
     assert titulos == [
         "Administra tus contactos", "Organiza con etiquetas", "Campos personalizados",
         "Campañas creadas en el editor", "Envío inmediato o programado",
-        "Resultados de cada campaña", "Rebotes y quejas fuera",
+        "Resultados de cada campaña", "Mira quién abrió y quién pulsó",
+        "Rebotes y quejas fuera",
         "Cada persona puede anular su suscripción cuando quiera",
         "Usuarios de la cuenta"], titulos
+    # Sin flechas punteadas (octubre de 2026): los dibujos no las llevan, y
+    # anular suscripción trae un mouse sobre su botón.
+    # (La caja punteada del editor es la selección de un texto, no una flecha.)
+    assert "art-s-dash" not in tira
     # Las barras van antes que las flechas, debajo del texto.
     nav = tira[tira.index('class="tour__nav"'):]
     assert (nav.index('class="tour__dots"') < nav.index("data-tour-back")

@@ -100,6 +100,16 @@
     <input type="hidden" name="metodo" value="{{ methods[0] }}">
     {% endif %}
 
+    {# La renovación automática (octubre de 2026): una suscripción de PayPal que
+       cobra sola cada periodo. Desmarcada, el pago suelto de siempre. #}
+    {% if renew_option %}
+    <label class="check" for="renovar">
+      <input id="renovar" name="renovar" type="checkbox" value="1">
+      <span>{{ t('pay_renew_label', every=t('renewal_every_' + cycle)) }}</span>
+    </label>
+    <p class="hint">{{ t('pay_renew_hint') }}</p>
+    {% endif %}
+
     <button class="btn summary__pay" type="submit">{{ t('pay_button',
         amount='$%.2f'|format(quote.total)) }}</button>
   </form>

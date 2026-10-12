@@ -1,0 +1,44 @@
+{#- Quién abrió y quién pulsó: la lista de un envío, persona por persona, con un
+    ojo (abrió) y un puntero (pulsó), encendidos en las que sí y apagados en las
+    que no. Palabras de content.py y colores de las clases .art-*, como los
+    demás dibujos de Features. Prefijo de los id: fo-. -#}
+{% set w = item.words %}
+<svg class="tour__art" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid slice"
+     role="img" aria-label="{{ item.alt }}" focusable="false">
+  <defs>
+    <filter id="fo-drop" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" class="art-drop"/>
+    </filter>
+  </defs>
+  <rect class="art-stage" width="480" height="270"/>
+
+  <g filter="url(#fo-drop)">
+    <rect class="art-card" x="56" y="40" width="368" height="190" rx="16"/>
+  </g>
+  <text class="art-ink" x="78" y="72" font-size="14" font-weight="700">{{ w.title }}</text>
+  <text class="art-ink" x="334" y="72" text-anchor="middle" font-size="11" font-weight="600"
+        opacity=".62">{{ w.opened }}</text>
+  <text class="art-ink" x="388" y="72" text-anchor="middle" font-size="11" font-weight="600"
+        opacity=".62">{{ w.clicked }}</text>
+
+  {% for email, opened, clicked in w.rows %}
+  {% set top = 88 + loop.index0 * 44 %}
+  <rect class="art-card-edge" x="78" y="{{ top }}" width="324" height="1.5"/>
+  <circle class="art-blue" cx="92" cy="{{ top + 23 }}" r="11"/>
+  <circle class="art-card" cx="92" cy="{{ top + 20 }}" r="3.8"/>
+  <path class="art-card" d="M85.6 {{ top + 30 }}a6.4 5 0 0 1 12.8 0z"/>
+  <text class="art-ink" x="112" y="{{ top + 27.5 }}" font-size="12.5" font-weight="600">{{ email }}</text>
+
+  {#- el ojo: abrió -#}
+  <g transform="translate(334 {{ top + 23 }})">
+    <path d="M-10 0C-5.5-7 5.5-7 10 0C5.5 7-5.5 7-10 0z" fill="none" stroke-width="2"
+          stroke-linejoin="round" class="{{ 'art-s-green' if opened else 'art-s-line' }}"/>
+    <circle r="2.8" class="{{ 'art-green' if opened else 'art-line' }}"/>
+  </g>
+  {#- el puntero: pulsó -#}
+  <g transform="translate(382 {{ top + 14 }})">
+    <path d="M0 0v16l4.2-3.7 2.9 6.6 2.9-1.3-2.9-6.4h5.8z" stroke-width="1.2"
+          stroke-linejoin="round" class="{{ 'art-blue art-s-paper' if clicked else 'art-line' }}"/>
+  </g>
+  {% endfor %}
+</svg>

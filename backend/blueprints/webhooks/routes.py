@@ -158,3 +158,58 @@ def paguelofacil(secret: str):
            last4=checked["last4"], order_id=oper)
     print(f"  [paguelofacil] {oper}: cobrado", flush=True)
     return "", 200
+
+
+# Los avisos de PayPal que importan a la renovación automática. De cada uno solo
+# se usa de qué suscripción es: lo demás se le pregunta a PayPal.
+PAYPAL_EVENTS = (
+    "PAYMENT.SALE.COMPLETED",
+    "BILLING.SUBSCRIPTION.ACTIVATED",
+    "BILLING.SUBSCRIPTION.PAYMENT.FAILED",
+    "BILLING.SUBSCRIPTION.SUSPENDED",
+    "BILLING.SUBSCRIPTION.CANCELLED",
+    "BILLING.SUBSCRIPTION.EXPIRED",
+)
+
+
+@bp.route("/paypal", methods=["POST"])
+def paypal_events():
+    """El aviso de PayPal: una suscripción cobró, falló o cambió de estado.
+
+    Sirve para las renovaciones, que llegan cuando el cliente no está. **Se
+    verifica la firma** preguntándole a PayPal (`paypal.verify_webhook()`, con
+    `PAYPAL_WEBHOOK_ID`): un aviso sin firma buena no hace nada. Y aun con ella no
+    se cree lo que diga el cuerpo; solo se toma de qué suscripción es, y se le
+    pregunta a PayPal qué cobró (`renewals.sync()`).
+
+    Sin `PAYPAL_WEBHOOK_ID` esta dirección no existe (404). Lo que no se entiende
+    o no es nuestro se contesta 200, para que PayPal no lo reintente durante
+    días; lo que no se pudo comprobar, 500, para que sí.
+    """
+    if not Config.PAYPAL_WEBHOOK_ID:
+        abort(404)
+
+    from services import paypal, renewals
+
+    event = request.get_json(silent=True) or {}
+    if not isinstance(event, dict) or not event.get("event_type"):
+        return "", 200
+    try:
+        if not paypal.verify_webhook(request.headers, event):
+            print("  [paypal] aviso con firma que no vale", flush=True)
+            return "", 400
+    except Exception as exc:  # noqa: BLE001 - reported, not handled
+        print(f"  [paypal] no se pudo verificar el aviso: {type(exc).__name__}", flush=True)
+        return "", 500
+    if event["event_type"] not in PAYPAL_EVENTS:
+        return "", 200
+    resource = event.get("resource") or {}
+    if not isinstance(resource, dict):
+        return "", 200
+    try:
+        renewals.event(get_db(), event["event_type"], resource)
+    except Exception as exc:  # noqa: BLE001 - reported, not handled
+        print(f"  [paypal] no se pudo guardar el aviso: {type(exc).__name__}: "
+              f"{str(exc)[:160]}", flush=True)
+        return "", 500
+    return "", 200
