@@ -25,6 +25,7 @@ OPEN = "open"            # se abrió la cuenta después de la demostración
 INVOICE = "invoice"      # se subió o se reemplazó la factura de un pago
 VERIFY = "verify"        # se verificó o se rechazó la identificación o la dirección
 LIMIT = "limit"          # se limitó la cuenta, o se le quitó el límite
+NOTIFY = "notify"        # se le mandó al cliente el resultado de sus verificaciones
 
 
 def now() -> datetime:

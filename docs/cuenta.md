@@ -107,9 +107,9 @@ Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
   las cuatro filas ya llevan a la demostración. La migaja de una cuenta
   cerrada es `1`, como la de cualquiera sin plan.
 - **En Configuración → Cuenta sale un aviso amarillo** (`.notice--pending`)
-  mientras falte verificar la identificación o la dirección, con el enlace a
-  «Verificaciones». Ya no depende de que la cuenta esté abierta: se va al
-  quedar verificadas las dos (ver «El registro y las verificaciones»).
+  mientras falte enviar un documento, o haya uno rechazado, con el enlace al
+  formulario (`/verification`). Ya no depende de que la cuenta esté abierta: se
+  va al enviarlos (ver «El registro y las verificaciones»).
 
 **Se abre por uno de dos caminos, y son independientes** (`accounts.is_open()`):
 
@@ -124,7 +124,7 @@ Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
   caracteres). Se le escribe al teléfono personal del registro. Solo el dueño,
   con el correo confirmado y hasta tres avisos al día. A quien administra le
   llega «{empresa} pidió una demostración» (`admin_demo`, con interruptor), con
-  el teléfono, la identificación y las dos respuestas, y la cuenta sale en el
+  el teléfono y las dos respuestas, y la cuenta sale en el
   filtro «Piden demostración» de Cuentas.
 - **Hasta octubre de 2026 se pedían aquí el WhatsApp y el RUC o la cédula.** El
   WhatsApp era el mismo número del registro, y la identificación pasó al
@@ -134,12 +134,13 @@ Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
   panel, se mira de dónde sale su lista, se importa y se arma su primera
   plantilla. Al abrirla le llega «Tu cuenta de Sobreala está abierta», que no
   se puede apagar.
-- **La identificación se pide también al pagar** (`/checkout`) si no está,
-  que solo pasa con las cuentas de antes de octubre de 2026: las nuevas la
-  escriben al registrarse. No se exige un formato (`clean_tax_id()`): hay
-  varios, y alguien de fuera trae su propio documento. **El aviso de operación
-  no se exige**: dejaría fuera a cooperativas, gremios, asociaciones y negocios
-  pequeños; es uno de los documentos que sirven para verificar la dirección.
+- **El pago ya no pide la identificación** (octubre de 2026). Hasta entonces
+  el checkout pedía el RUC o la cédula si no estaba. Ahora la identificación es
+  solo el documento que se verifica, y las cuentas de antes conservan el
+  número que ya habían escrito (`tax_id`), que la ficha enseña si existe. **El
+  aviso de operación no se exige**: dejaría fuera a cooperativas, gremios,
+  asociaciones y negocios pequeños; es uno de los documentos que sirven para
+  verificar la dirección.
 - **No hubo nada que migrar**: `is_open()` cuenta también `plan` y
   `sending_cleared_at`, así que las cuentas que ya habían pagado o se habían
   habilitado siguen abiertas. Las registradas sin plan quedaron cerradas hasta
@@ -155,40 +156,57 @@ correo y contraseña:
   «Agregar otro número»;
 - **la dirección** (`postal_address`, la misma que sale al pie de las
   campañas);
-- **la identificación personal** (`tax_id`; el campo empezó siendo «RUC o
-  cédula» y se quedó con ese nombre): la cédula o el pasaporte de quien
-  registra.
 
-**Los teléfonos llevan su país.** Un `<select>` con bandera, prefijo y nombre
-(«🇵🇦 +507 Panamá»; el prefijo antes, para que en un teléfono se corte el
-nombre y no él), Panamá primero y elegido, de `services/countries.py`
+**La identificación personal no se escribe en ningún sitio**: es solo el
+documento (la foto o el PDF de la cédula o el pasaporte), que se envía después
+de registrarse. Hasta octubre de 2026 también se escribía su número (`tax_id`).
+
+**Los teléfonos llevan su país.** Un `<select>` con **solo la bandera y el
+prefijo** («🇵🇦 +507»; el nombre del país va en el `title` de cada opción y lo
+lee un lector de pantalla), Panamá primero y elegido, de `services/countries.py`
 (unos 240). La bandera son las dos letras del código ISO como indicadores
 regionales; Windows no las dibuja, y para eso va la fuente
 `static/fonts/TwemojiCountryFlags.woff2` (MIT, con los dibujos de Twemoji en
 CC-BY 4.0; ver su LICENSE), solo para esos caracteres. Se guardan con su
 prefijo, `+50760000000` (`clean_phone(número, país)`); el 0 de marcar dentro del
-país se quita, menos en Italia. Se cambian en Configuración → Cuenta, con el
-mismo selector (`templates/_phone.html`).
+país se quita, menos en Italia (`templates/_phone.html`).
+
+**Teléfonos y dirección se ven como texto y se cambian con «Editar»**
+(Configuración → Cuenta, solo el dueño): cada fila enseña su valor, y «Editar»
+abre su formulario (`?editar=phones` o `?editar=address`) con Guardar y
+Cancelar. Funciona sin JavaScript. Hasta octubre de 2026 eran campos con
+«Guardar» siempre a la vista.
 
 **Se verifican dos cosas, a mano**: la identificación personal y la dirección
 (`accounts.verifications.{identity,address}`).
-- **El cliente sube un documento de cada una** en Configuración → Cuenta →
-  Verificaciones (`POST /settings/account/document/<clase>`, solo el dueño):
+- **El cliente envía los dos documentos en un formulario aparte**
+  (`/verification`, solo el dueño), al que lo llevan el aviso amarillo de
+  Configuración, el de la cuenta limitada y Enviar correos. Hasta octubre de
+  2026 se subían dentro de Configuración → Cuenta.
   - la identificación, con la foto o el PDF de su cédula o pasaporte;
   - la dirección, con un recibo de luz, agua o teléfono, el aviso de
     operación, o un documento legal que la certifique si la empresa no está
     constituida.
+- **Pide los dos de una vez, en un solo envío**, y si uno no sirve no se guarda
+  ninguno. **Después no se ven ni se cambian desde la cuenta**: la pantalla
+  solo dice «Recibimos tus documentos». Solo vuelve a pedirse el que se rechaza,
+  con su motivo.
 - **PDF, JPG o PNG de hasta 5 MB**, reconocidos por cómo empiezan
   (`models/verification_doc.py`, colección `verification_docs`, uno por cuenta
-  y clase). Subirlo deja la verificación **en revisión**.
-- **El administrador lo mira en la ficha**: lo baja como archivo, nunca
-  dibujado dentro del panel, y la **verifica** o la **rechaza** con un motivo
-  que el cliente lee en su Configuración y en el correo «Hay que cambiar un
-  documento». **Las dos cosas borran el archivo**: de la cédula de alguien o de
-  su recibo solo hace falta el resultado. Queda en `admin_events` (`verify`).
-- **Cambiar el dato después reabre la verificación**: editar la identificación
-  o la dirección la devuelve a «falta el documento» y borra el que esperaba,
-  porque lo que se miró era el de antes.
+  y clase). Enviarlos deja la verificación **en revisión**.
+- **El administrador los mira en la ficha**: baja cada uno como archivo, nunca
+  dibujado dentro del panel, y lo **verifica** o lo **rechaza** con un motivo.
+  **Las dos cosas borran el archivo**: de la cédula de alguien o de su recibo
+  solo hace falta el resultado. Queda en `admin_events` (`verify`).
+- **Verificar y rechazar no mandan correo.** El administrador lo manda cuando
+  quiere con **«Enviar correo al cliente»** (`notify`), que cuenta qué quedó
+  verificado y qué se rechazó con su motivo; con un rechazo pide volver a
+  enviar ese documento, y con los dos verificados lo confirma.
+- **Rechazar limita la cuenta sola** (si no lo estaba): sin el documento no se
+  puede comprobar quién envía. El límite se levanta al verificar los dos.
+- **Cambiar el dato después reabre la verificación**: editar la dirección la
+  devuelve a «falta el documento» y borra el que esperaba, porque lo que se
+  miró era el de antes.
 - **Cuentas tiene un filtro «Por verificar»**: las que tienen un documento en
   revisión.
 
@@ -196,8 +214,8 @@ mismo selector (`templates/_phone.html`).
 
 **Limitar no es suspender.** Una cuenta limitada entra, prepara todo y puede
 pagar; lo único que no puede es enviar: `sender.blocked()` dice `limited`, y
-Enviar correos lo explica con el enlace a sus documentos. Suspender sigue
-cerrando la entrada.
+Enviar correos lo explica con el enlace al formulario de documentos.
+Suspender sigue cerrando la entrada.
 - **Lo decide el administrador en la ficha** («Limitar la cuenta»), con un
   motivo de una lista (`accounts.LIMIT_REASONS`; hoy solo `verification`,
   «Falta verificar la identificación y la dirección») y una nota que queda en
@@ -375,20 +393,20 @@ usado.
 | Tu cuenta fue suspendida | Al suspenderla | No |
 | Tu cuenta está activa otra vez | Al levantar la suspensión | No |
 | Necesitamos verificar tu cuenta | Al limitarla desde la ficha, con el motivo y el enlace a sus documentos | No |
-| Hay que cambiar un documento | Al rechazar un documento de verificación, con el motivo | No |
+| El resultado de la verificación | Cuando el administrador pulsa «Enviar correo al cliente»: qué quedó verificado y qué se rechazó, con su motivo | No |
 | Tu código para cambiar el correo | Al pedirlo, **a la dirección nueva** | No |
 | Tu cuenta cambió de correo | Al terminar, **a la dirección vieja** | No |
 | Alguien pagó un plan | Al cobrar | Sí, «Alguien pagó un plan» |
 | Se registró una cuenta nueva | Al confirmar el correo | Sí, «Se registró una cuenta nueva» |
-| Alguien pidió una demostración | Al pedirla desde la bienvenida, con su teléfono, su identificación y sus dos respuestas | Sí, «Alguien pidió una demostración» |
+| Alguien pidió una demostración | Al pedirla desde la bienvenida, con su teléfono y sus dos respuestas | Sí, «Alguien pidió una demostración» |
 | A un cliente se le venció el plan | Cuando ese cliente entra al panel | Sí, «A un cliente se le venció el plan» |
 
 **Los cuatro últimos van a quien administra**, no a un cliente, y hablan de lo
 que pasa en las cuentas de los demás.
 
 **Los cinco del medio no llevan interruptor, y no por descuido.** El límite y
-el documento rechazado cambian lo que la cuenta puede hacer, y sin enterarse no
-lo puede arreglar. «Tu cuenta
+el resultado de la verificación cambian lo que la cuenta puede hacer, y sin
+enterarse no lo puede arreglar. «Tu cuenta
 está abierta» pasa una vez por cuenta y es la respuesta a la única espera que se
 le pide a un cliente, la de la demostración. Hubo uno igual, «Ya puedes
 enviar», que respondía a la habilitación, y se fue con ella. Los dos de la

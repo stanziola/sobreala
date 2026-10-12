@@ -60,7 +60,6 @@ def test_an_operator_is_stored_as_text_not_as_a_query(client, database):
         # La dirección se guarda tal cual, así que es la que lleva el operador
         # (el teléfono ya no: uno que no son dígitos no se acepta).
         "address": '{"$gt": "una calle cualquiera"}',
-        "tax_id": "8-123-456",
         "password": "Contrasena-Larga1",
     }
     client.post("/signup", data=data)

@@ -484,9 +484,14 @@ def verify(account, raw, kind):
 
     Las dos cosas **borran el documento**: de la cédula de alguien o de su
     recibo no hace falta guardar más que el resultado. Rechazar pide un motivo,
-    que el cliente lee en su Configuración y en el correo, porque es lo que le
-    dice qué subir. Si la cuenta estaba limitada por falta de verificación y con
-    esta quedan las dos, el límite se levanta solo.
+    que el cliente lee en el formulario y en el correo, porque es lo que le dice
+    qué subir. **Ninguna de las dos manda correo**: eso lo decide el
+    administrador con «Enviar correo al cliente» (`notify`).
+
+    Rechazar **limita la cuenta sola**, si no lo estaba: sin el documento no se
+    puede comprobar quién envía. Si la cuenta estaba limitada por falta de
+    verificación y con esta quedan las dos verificadas, el límite se levanta
+    solo.
     """
     db = get_db()
     client = wanted(raw)
@@ -510,7 +515,15 @@ def verify(account, raw, kind):
                      after="%s:%s" % (kind, status),
                      reason=reason or t("admin_verify_reason_ok"))
     if status == accounts.REJECTED:
-        notices.doc_rejected(client, kind=kind, reason=reason)
+        fresh = accounts.by_id(db, client["_id"])
+        if (not accounts.limited_of(fresh)
+                and accounts.limit(db, client["_id"], reason=accounts.LIMIT_VERIFICATION,
+                                   admin_id=account["_id"],
+                                   note=t("admin_limit_note_rejected"))):
+            decisions.record(db, kind=decisions.LIMIT, admin_id=account["_id"],
+                             account_id=client["_id"], before=None,
+                             after=accounts.LIMIT_VERIFICATION,
+                             reason=t("admin_limit_note_rejected"))
     else:
         fresh = accounts.by_id(db, client["_id"])
         shown = accounts.limited_of(fresh)
@@ -521,6 +534,36 @@ def verify(account, raw, kind):
                              account_id=client["_id"], before=shown.get("reason"),
                              after=None, reason=t("admin_limit_lifted_auto"))
     return redirect(url_for("admin.account_page", raw=raw, done=1)
+                    + "#verificaciones")
+
+
+@bp.route("/accounts/<raw>/notify", methods=["POST"])
+@only_admins
+def notify_result(account, raw):
+    """Mandarle al cliente el resultado de sus verificaciones.
+
+    Lo pulsa el administrador cuando quiere (octubre de 2026): verificar y
+    rechazar solo anotan el resultado. El correo dice qué quedó verificado y qué
+    se rechazó, con el motivo, y si hay un rechazo pide volver a enviar ese
+    documento para poder seguir enviando campañas. Sin ningún resultado no hay
+    nada que contar, y no sale nada.
+    """
+    db = get_db()
+    client = wanted(raw)
+    back = url_for("admin.account_page", raw=raw) + "#verificaciones"
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    results = {kind: accounts.verification_of(client, kind)
+               for kind in accounts.VERIFY_KINDS}
+    if not any(one["status"] in (accounts.VERIFIED, accounts.REJECTED)
+               for one in results.values()):
+        return redirect(back)
+    notices.verification_result(client, results=results)
+    decisions.record(db, kind=decisions.NOTIFY, admin_id=account["_id"],
+                     account_id=client["_id"], before=None,
+                     after=",".join("%s:%s" % (k, v["status"]) for k, v in results.items()),
+                     reason=t("admin_notify_reason"))
+    return redirect(url_for("admin.account_page", raw=raw, notified=1)
                     + "#verificaciones")
 
 

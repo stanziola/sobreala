@@ -40,9 +40,10 @@ INVOICE = "invoice"
 OPENED = "opened"
 SUSPENDED = "suspended"
 REINSTATED = "reinstated"
-# El límite de envío y un documento de verificación rechazado.
+# El límite de envío y el resultado de las verificaciones, que manda el
+# administrador cuando quiere.
 LIMITED = "limited"
-DOC_REJECTED = "doc_rejected"
+VERIFICATION_RESULT = "verification_result"
 ADMIN_PAYMENT = "admin_payment"
 ADMIN_SIGNUP = "admin_signup"
 ADMIN_DEMO = "admin_demo"

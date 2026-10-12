@@ -338,22 +338,43 @@ def limited(account, *, reason: str) -> bool:
         button={"href": verifications_url(), "label": t("mail_limited_button")})
 
 
-def doc_rejected(account, *, kind: str, reason: str) -> bool:
-    """Que un documento de verificación no sirvió, con el motivo, para que suba
-    otro. Sin interruptor: si no se entera, no puede arreglarlo."""
+def verification_result(account, *, results: dict) -> bool:
+    """El resultado de las verificaciones, que manda el administrador cuando
+    quiere. Sin interruptor: cambia lo que la cuenta puede hacer.
+
+    Una línea por cosa (verificada, rechazada con su motivo, o todavía sin
+    resultado). Con algún rechazo pide volver a enviar ese documento y dice que
+    sin eso no se puede enviar; con las dos verificadas, lo confirma.
+    """
+    lines = []
+    for kind, one in results.items():
+        name = t("verify_name_" + kind)
+        if one["status"] == accounts.VERIFIED:
+            lines.append(t("mail_result_verified", what=name))
+        elif one["status"] == accounts.REJECTED:
+            lines.append(t("mail_result_rejected", what=name,
+                           reason=one.get("reason", "")))
+        else:
+            lines.append(t("mail_result_pending", what=name))
+    rejected = any(one["status"] == accounts.REJECTED for one in results.values())
+    everything = all(one["status"] == accounts.VERIFIED for one in results.values())
+    closing = (t("mail_result_again") if rejected
+               else t("mail_result_done") if everything
+               else t("mail_result_waiting"))
+    button = ({"href": verifications_url(), "label": t("mail_result_button")}
+              if rejected else {"href": panel_url(), "label": t("mail_reinstated_button")}
+              if everything else None)
     return deliver(
-        account, purpose=mail_log.DOC_REJECTED,
-        subject=t("mail_doc_rejected_subject"),
-        heading=t("mail_doc_rejected_heading", what=t("verify_what_" + kind)),
-        paragraphs=[t("mail_doc_rejected_body", reason=reason),
-                    t("mail_doc_rejected_again")],
-        button={"href": verifications_url(),
-                "label": t("mail_doc_rejected_button")})
+        account, purpose=mail_log.VERIFICATION_RESULT,
+        subject=t("mail_result_subject"),
+        heading=t("mail_result_heading"),
+        paragraphs=lines + [closing],
+        **({"button": button} if button else {}))
 
 
 def verifications_url() -> str:
-    return (f"{Config.APP_BASE_URL}"
-            f"{url_for('auth.settings', section='account')}#verificaciones")
+    """El formulario donde se envían los documentos."""
+    return f"{Config.APP_BASE_URL}{url_for('auth.verification')}"
 
 
 def reinstated(account) -> bool:
@@ -416,7 +437,7 @@ def demo_to_admins(db, client) -> bool:
     """Avisarle a quien administra que una cuenta pidió la demostración.
 
     Lleva lo que hace falta para escribirle y preparar la llamada: el teléfono
-    personal, la identificación y las dos respuestas (a qué se dedica y para qué
+    personal y las dos respuestas (a qué se dedica y para qué
     usará Sobreala). Sin esto, enterarse de que alguien espera obliga a entrar a
     mirar.
     """
@@ -430,9 +451,7 @@ def demo_to_admins(db, client) -> bool:
             paragraphs=[t("mail_admin_demo_body", company=about(client),
                           name=client.get("contact_name", ""),
                           email=client.get("email", "")),
-                        t("mail_admin_demo_data",
-                          phone=client.get("phone", ""),
-                          tax_id=accounts.tax_id_of(client)),
+                        t("mail_admin_demo_data", phone=client.get("phone", "")),
                         t("mail_admin_demo_business",
                           answer=client.get("demo_business", "")),
                         t("mail_admin_demo_purpose",

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ t('verification_title') }}{% endblock %}
+
+{% block content %}
+{# El formulario de los documentos: la identificación y la dirección, de una
+   vez. Después de enviarlos no se enseñan ni se cambian desde aquí: los mira
+   una persona de Sobreala y el archivo se borra al decidir. Solo se vuelve a
+   pedir el que se rechaza. #}
+<div class="card card--narrow">
+  <h1>{{ t('verification_title') }}</h1>
+
+  {% if limited %}
+  <p class="notice">{{ t('settings_limited_' + limited.reason) }}</p>
+  {% endif %}
+  {% if sent %}
+  <p class="notice notice--ok">{{ t('verify_sent') }}</p>
+  {% endif %}
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  <p class="lead">{{ t('verification_lead') }}</p>
+
+  {# Lo que ya no hay que enviar: en revisión o verificado. #}
+  {% for kind in kinds if kind not in due %}
+  <p class="status">
+    <strong>{{ t('verify_name_' + kind) }}</strong>
+    <span class="tag {{ 'tag--on' if states[kind].status == 'verified' else 'tag--quiet' }}">
+      {{ t('verify_status_' + states[kind].status) }}</span>
+  </p>
+  {% endfor %}
+
+  {% if due %}
+  <form method="post" enctype="multipart/form-data" novalidate data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for kind in due %}
+    <label for="documento-{{ kind }}">{{ t('verify_name_' + kind) }}</label>
+    <p class="hint" id="ayuda-{{ kind }}">{{ t('verify_hint_' + kind) }}</p>
+    {% if states[kind].status == 'rejected' %}
+    <p class="error">{{ t('verify_rejected_reason', reason=states[kind].reason) }}</p>
+    {% endif %}
+    <input id="documento-{{ kind }}" name="{{ kind }}" type="file" required
+           accept="application/pdf,image/jpeg,image/png"
+           aria-describedby="ayuda-{{ kind }}">
+    {% if errors[kind] %}<p class="error">{{ errors[kind] }}</p>{% endif %}
+    {% endfor %}
+    <button class="btn" type="submit">{{ t('verify_send') }}</button>
+  </form>
+  {% elif not sent %}
+  <p class="hint">{{ t('verify_nothing_due') }}</p>
+  {% endif %}
+
+  <p class="foot"><a href="{{ url_for('auth.settings', section='account') }}">{{ t('verify_back') }}</a></p>
+</div>
+{% endblock %}

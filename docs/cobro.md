@@ -211,9 +211,10 @@ con su ITBMS dentro. **Pagar abre la cuenta y deja enviar de una vez**
 (`activate_plan()`): hasta octubre de 2026 hacía falta además una habilitación a
 mano, y se quitó (ver «Abrir la cuenta» en `docs/cuenta.md`).
 
-**El checkout pide el RUC o la cédula** si la cuenta todavía no lo dejó al
-pedir la demostración: así queda registro de todas las empresas, y es lo que
-pide la factura. Si ya lo dejó sale escrito, y se puede corregir ahí mismo.
+**El checkout ya no pide el RUC o la cédula** (octubre de 2026): la
+identificación es solo un documento que se verifica (ver `docs/cuenta.md`).
+Hasta entonces se pedía aquí si faltaba, y es lo que pide la factura: **de dónde
+sale ese dato para facturar queda por decidir**.
 
 Del cobro salen **dos correos**: el comprobante al cliente y un aviso a quien
 administra, para enterarse sin tener que entrar a mirar. Los dos van después de

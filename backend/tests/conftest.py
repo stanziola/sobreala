@@ -61,7 +61,7 @@ def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1", *,
     La cuenta queda abierta, como si ya hubiera tenido su demostración: casi
     todas las pruebas son de lo que se hace dentro del panel, no de la puerta.
     Las que prueban la puerta piden `abierta=False`. Desde octubre de 2026 el
-    registro trae el teléfono, la dirección y la identificación personal.
+    registro trae el teléfono y la dirección.
     """
     client.get("/signup")  # seeds the CSRF value in the session
     with client.session_transaction() as sess:
@@ -74,7 +74,6 @@ def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1", *,
         "phone_country": "PA",
         "phone": "60000000",
         "address": "Calle 10, Santiago de Veraguas",
-        "tax_id": "8-123-456",
         "password": password,
     })
     if abierta:
@@ -83,8 +82,6 @@ def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1", *,
         found = accounts.by_email(database, email)
         if found is not None:
             accounts.open_account(database, found["_id"])
-            if not accounts.tax_id_of(found):
-                accounts.set_tax_id(database, found["_id"], "8-123-456")
     return response
 
 

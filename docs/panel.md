@@ -24,8 +24,8 @@ pasado nada: la peor primera pantalla posible.
 
 **Mientras la cuenta siga cerrada** (octubre de 2026, ver «Abrir la cuenta» en
 `docs/cuenta.md`), `/welcome` es la pantalla de la demostración: los dos caminos
-que la abren, lo que incluye la llamada, el formulario para pedirla (su
-WhatsApp y su RUC o cédula) y los botones de ver los planes y de Configuración.
+que la abren, lo que incluye la llamada, el formulario para pedirla (a qué
+se dedica el negocio y para qué usará Sobreala) y los botones de ver los planes y de Configuración.
 Las cuatro pantallas de cliente, que siguen en el menú, la devuelven ahí con
 `?para=`, y arriba dice a cuál quería entrar («Para entrar a Contactos, contrata
 un plan o pide la demostración»). **Ya abierta y sin plan**, dice que la cuenta
@@ -296,9 +296,10 @@ habilitación», y se fue con la habilitación. Desde ese mes tiene otra,
 Arriba del todo de la ficha está lo único que espera una decisión: **la
 demostración**, con cuándo la pidió, su teléfono como enlace de WhatsApp, sus
 dos respuestas y el botón «Abrir la cuenta», que pide un motivo. Junto a los
-datos de contacto, sus teléfonos y su identificación personal. Debajo de la
-demostración, **las verificaciones** (ver el documento, verificar o rechazar) y
-**limitar la cuenta** (ver `docs/cuenta.md`).
+datos de contacto, sus teléfonos (y el RUC o la cédula que escribieron las
+cuentas de antes). Debajo de la demostración, **las verificaciones** (ver el
+documento, verificar o rechazar, y «Enviar correo al cliente») y **limitar la
+cuenta** (ver `docs/cuenta.md`).
 Debajo, **un solo formulario** —plan, ciclo, suspensión y un motivo—: si
 cambian dos cosas se anotan dos líneas en `admin_events` con el mismo motivo,
 porque guardar una por cosa cambiada es lo que las hace legibles meses después.

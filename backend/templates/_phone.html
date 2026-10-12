@@ -1,6 +1,5 @@
-{# El teléfono con su país: un selector con la bandera, el prefijo y el nombre
-   («🇵🇦 +507 Panamá»; el prefijo antes, para que en un teléfono se corte el
-   nombre y no él), y el número al lado. Un <select> de verdad, así que
+{# El teléfono con su país: un selector con solo la bandera y el prefijo
+   («🇵🇦 +507»; el nombre va en el `title`), y el número al lado. Un <select> de verdad, así que
    funciona sin JavaScript y con el teclado. La bandera son letras que el
    sistema dibuja; en Windows las dibuja la fuente TwemojiCountryFlags (ver
    _panel.src.css).
@@ -14,7 +13,7 @@
   <select class="phone__country" id="{{ id }}-pais" name="{{ name }}_country"
           autocomplete="tel-country-code">
     {% for one in options %}
-    <option value="{{ one.iso }}"{% if one.iso == country %} selected{% endif %}>{{ one.label }}</option>
+    <option value="{{ one.iso }}" title="{{ one.name }}"{% if one.iso == country %} selected{% endif %}>{{ one.label }}</option>
     {% endfor %}
   </select>
   <input class="phone__number" id="{{ id }}" name="{{ name }}" type="tel"

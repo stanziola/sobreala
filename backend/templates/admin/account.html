@@ -44,21 +44,18 @@
   </div>
 </div>
 
-{# La identificación personal que escribió al registrarse (en las cuentas de
-   antes, la que dejó al pedir la demostración o al pagar). Se mira, no se
-   edita; su documento está en «Verificaciones», más abajo. #}
+{# Las cuentas de antes de octubre de 2026 escribieron su RUC o cédula; las
+   nuevas ya no (la identificación es solo el documento). Se mira, no se edita. #}
+{% if tax_id %}
 <div class="setting">
   <div class="setting__text">
     <h3 class="setting__title">{{ t('tax_id_label') }}</h3>
   </div>
   <div class="setting__action">
-    {% if tax_id %}
     <span class="setting__value">{{ tax_id }}</span>
-    {% else %}
-    <span class="tag tag--quiet">{{ t('admin_tax_id_missing') }}</span>
-    {% endif %}
   </div>
 </div>
+{% endif %}
 
 {# La dirección que va al pie de sus campañas. Se mira, no se edita: es del
    cliente, y la escribe en su Configuración. #}
@@ -162,6 +159,9 @@
    dentro, y verificar o rechazar lo borra. Rechazar pide un motivo, que el
    cliente lee. #}
 <h3 class="settings__subtitle" id="verificaciones">{{ t('verify_title') }}</h3>
+{% if request.args.get('notified') %}
+<p class="notice notice--ok">{{ t('admin_verify_notified') }}</p>
+{% endif %}
 {% for kind in verify_kinds %}
 {% set state = verifications[kind] %}
 <div class="setting">
@@ -198,6 +198,16 @@
 </form>
 {% endif %}
 {% endfor %}
+{# El correo con el resultado lo manda quien administra, cuando quiere: verificar
+   y rechazar solo anotan. Se puede pulsar cuando hay al menos un resultado. #}
+{% if verifications.identity.status in ('verified', 'rejected')
+      or verifications.address.status in ('verified', 'rejected') %}
+<form class="row" method="post" action="{{ url_for('admin.notify_result', raw=client._id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn btn--small btn--outline" type="submit">{{ t('admin_verify_notify') }}</button>
+  <span class="setting__desc">{{ t('admin_verify_notify_hint') }}</span>
+</form>
+{% endif %}
 
 {# Limitar no es suspender: entra, prepara y paga, pero no envía. El motivo es
    lo que lee el cliente; la nota, lo que queda en el registro. Si el motivo es
@@ -437,6 +447,8 @@
             {% set what, result = (row.after or ':').split(':', 1) %}
             {{ t('admin_history_verify', what=t('verify_name_' + what) if what else '',
                   status=t('verify_status_' + result) if result else '') }}
+            {% elif row.kind == 'notify' %}
+            {{ t('admin_history_notify') }}
             {% elif row.kind == 'limit' %}
             {{ t('admin_history_limit') if row.after else t('admin_history_unlimit') }}
             {% else %}

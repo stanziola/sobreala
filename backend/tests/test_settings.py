@@ -669,7 +669,7 @@ def register_another(browser, email, company="Otra Cooperativa"):
     return browser.post("/signup?add=1", data={
         "csrf_token": token, "company_name": company, "contact_name": "Bea",
         "email": email, "phone_country": "PA", "phone": "60000000",
-        "address": "Calle 10, Santiago de Veraguas", "tax_id": "8-123-456",
+        "address": "Calle 10, Santiago de Veraguas",
         "password": PASSWORD})
 
 

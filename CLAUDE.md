@@ -228,11 +228,13 @@ cosa está como está, y lo que ya se probó y se quitó.
   enviar), **o con el pago**, que la abre con todo, envío incluido. La puerta
   está en `needs()`. La habilitación antes del primer envío se quitó en octubre
   de 2026.
-- **El registro pide teléfono personal (con su país), los de la empresa, la
-  dirección y la identificación personal** (`tax_id`). La identificación y la
-  dirección **se verifican a mano** con un documento que se borra al decidir
-  (`verification_docs`). El administrador puede **limitar** una cuenta: entra,
-  pero no envía (`sender.blocked()` dice `limited`).
+- **El registro pide teléfono personal (con su país), los de la empresa y la
+  dirección**, que se cambian con «Editar». **La identificación no se escribe**:
+  se envía como documento, junto con el de la dirección, en `/verification`, y
+  **se verifican a mano**; el archivo se borra al decidir (`verification_docs`).
+  El administrador manda el resultado con un botón, y puede **limitar** una
+  cuenta (rechazar la limita sola): entra, pero no envía (`sender.blocked()`
+  dice `limited`).
 - `role` vale `client` o `admin` en todas las cuentas. `/admin` responde 404 a
   quien no lo es y exige doble factor; un administrador solo administra.
 - **Los usuarios de una empresa son documentos de `accounts`** con `owner_id`

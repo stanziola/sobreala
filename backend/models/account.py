@@ -83,15 +83,15 @@ def now() -> datetime:
 
 def create(db, *, company_name: str, contact_name: str, email: str,
            password: str, phone: str = "", company_phones: list[str] | None = None,
-           postal_address: str = "", tax_id: str = "") -> dict[str, Any] | None:
+           postal_address: str = "") -> dict[str, Any] | None:
     """Insert a new account. Returns None if the address is already taken.
 
     The caller must not tell the visitor which of the two happened: both cases
     lead to the same screen, so the site does not reveal who has an account.
 
     Desde octubre de 2026 el registro trae también el teléfono personal, los de
-    la empresa, la dirección y la identificación personal, ya limpios: es lo que
-    después se verifica.
+    la empresa y la dirección, ya limpios. La identificación personal no se
+    escribe: se sube como documento.
     """
     moment = now()
     doc = {
@@ -118,8 +118,6 @@ def create(db, *, company_name: str, contact_name: str, email: str,
     }
     if postal_address:
         doc["postal_address"] = postal_address
-    if tax_id:
-        doc["tax_id"] = tax_id
     try:
         result = db.accounts.insert_one(doc)
     except DuplicateKeyError:
@@ -710,33 +708,11 @@ def whatsapp_url(phone: str | None) -> str:
     return f"https://wa.me/{digits}"
 
 
-# La identificación personal (el campo se llama `tax_id` porque empezó siendo
-# «RUC o cédula»; desde octubre de 2026 es la cédula o el pasaporte de quien
-# registra la cuenta). No se exige un formato: en Panamá hay varios, y alguien
-# de fuera trae su propio documento. Se escribe al registrarse y la comprueba
-# una persona con la foto del documento (ver «Las verificaciones», más abajo).
-TAX_ID_LENGTH = (4, 40)
-
-
-def clean_tax_id(raw: str) -> str | None:
-    """La identificación en una sola línea, o None si no parece una."""
-    text = " ".join((raw or "").split())
-    if not TAX_ID_LENGTH[0] <= len(text) <= TAX_ID_LENGTH[1]:
-        return None
-    if not re.fullmatch(r"[0-9A-Za-z .\-/]+", text):
-        return None
-    if sum(ch.isdigit() for ch in text) < 3:
-        return None
-    return text
-
-
+# La identificación personal ya no se escribe (octubre de 2026): se sube como
+# documento y la comprueba una persona (ver «Las verificaciones», más abajo). El
+# `tax_id` de las cuentas de antes se conserva, y la ficha lo enseña si existe.
 def tax_id_of(account: dict[str, Any] | None) -> str:
     return str((account or {}).get("tax_id") or "")
-
-
-def set_tax_id(db, account_id, tax_id: str) -> None:
-    db.accounts.update_one({"_id": account_id},
-                           {"$set": {"tax_id": tax_id, "updated_at": now()}})
 
 
 # Las dos respuestas de la demostración: a qué se dedica y para qué la usará.

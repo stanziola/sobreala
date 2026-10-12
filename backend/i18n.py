@@ -153,8 +153,6 @@ TEXTS = {
     # dos caminos: al pedir la demostración y al pagar.
     # Se llamó «RUC o cédula» hasta octubre de 2026.
     "tax_id_label": "Identificación personal",
-    "tax_id_hint": "Tu cédula o pasaporte. Si eres de fuera de Panamá, tu "
-                   "documento de identidad.",
 
     # --- cambiar el correo de la cuenta ------------------------------------
     "email_change_title": "Cambiar tu correo",
@@ -386,27 +384,30 @@ TEXTS = {
                                     "al contratar un plan.",
     # El aviso amarillo de arriba de Cuenta, mientras falte verificar algo.
     "settings_pending_title": "Pendiente de verificación:",
-    "settings_pending_text": "tu identificación personal y tu dirección. Sube "
-                             "sus documentos aquí abajo.",
-    "settings_pending_link": "Ir a las verificaciones",
+    "settings_pending_text": "necesitamos un documento de tu identificación y "
+                             "otro de tu dirección.",
+    "settings_pending_link": "Enviar los documentos",
     # La cuenta limitada por el administrador: entra, pero no envía.
     "settings_limited_title": "Tu cuenta está limitada.",
     "settings_limited_verification": "Para enviar necesitamos verificar tu "
                                      "identificación y tu dirección.",
-    "settings_limited_link": "Subir los documentos",
+    "settings_limited_link": "Enviar los documentos",
+    # Las filas de Cuenta se ven como texto y se cambian con «Editar».
+    "settings_edit": "Editar",
+    "settings_cancel": "Cancelar",
+    "settings_postal_missing": "Falta",
     # Los teléfonos y la identificación, que se cambian aquí.
     "settings_phones": "Teléfonos",
     "settings_phones_hint": "El tuyo, que es al que te escribimos, y los de tu "
                             "empresa.",
     "settings_phones_done": "Listo, tus teléfonos quedaron guardados.",
-    "settings_tax_id_done": "Listo, tu identificación quedó guardada. Si ya "
-                            "estaba verificada, sube otra vez su documento.",
     # Las verificaciones: la identificación y la dirección, cada una con su
     # documento, que mira una persona de Sobreala.
+    "verification_title": "Verifica tu cuenta",
+    "verification_lead": "Para enviar campañas necesitamos comprobar quién está "
+                         "detrás de la cuenta. Sube un documento de cada cosa y "
+                         "los revisamos. Una vez revisados los borramos.",
     "verify_title": "Verificaciones",
-    "verify_lead": "Comprobamos quién está detrás de cada cuenta. Sube un "
-                   "documento de cada cosa; lo revisamos y lo borramos en "
-                   "cuanto decidimos.",
     "verify_name_identity": "Identificación personal",
     "verify_name_address": "Dirección",
     "verify_hint_identity": "Foto o PDF de tu cédula o pasaporte.",
@@ -420,10 +421,10 @@ TEXTS = {
     "verify_status_verified": "Verificada",
     "verify_status_rejected": "Rechazada",
     "verify_rejected_reason": "Motivo: {reason}. Sube otro documento.",
-    "verify_file": "Documento",
-    "verify_upload": "Subir documento",
-    "verify_upload_again": "Cambiar documento",
-    "verify_sent": "Recibimos tu documento. Te avisamos si hay que cambiar algo.",
+    "verify_send": "Enviar documentos",
+    "verify_sent": "Recibimos tus documentos. Te avisamos cuando los revisemos.",
+    "verify_nothing_due": "Ya enviaste todo lo que hacía falta.",
+    "verify_back": "Volver a Configuración",
     "verify_bad": "Tiene que ser un PDF, JPG o PNG de hasta {mb} MB.",
     "settings_account_plans": "Ver los planes",
 
@@ -1574,7 +1575,7 @@ TEXTS = {
     "send_blocked_sender_link": "Elegirla en Remitente",
     "send_blocked_limited": "Tu cuenta está limitada: necesitamos verificar tu "
                             "identificación y tu dirección.",
-    "send_blocked_limited_link": "Subir los documentos en Configuración",
+    "send_blocked_limited_link": "Enviar los documentos",
     # Remitente: de quién salen las campañas y a dónde vuelven las respuestas.
     "sender_title": "Remitente",
     "sender_back": "Volver a Enviar correos",
@@ -1884,7 +1885,6 @@ TEXTS = {
     "admin_demo_opened": "Abierta",
     "admin_demo_closed": "Cerrada",
     "admin_demo_open": "Abrir la cuenta",
-    "admin_tax_id_missing": "Todavía no lo deja",
     "admin_phone_missing": "No lo dejó",
     "admin_company_phones": "De la empresa",
 
@@ -1896,6 +1896,13 @@ TEXTS = {
     "admin_verify_ok": "Verificar",
     "admin_verify_no": "Rechazar",
     "admin_verify_reason_ok": "Documento revisado y correcto.",
+    "admin_verify_notify": "Enviar correo al cliente",
+    "admin_verify_notify_hint": "Le cuenta qué quedó verificado y qué se rechazó. "
+                                "Verificar y rechazar solo anotan el resultado.",
+    "admin_verify_notified": "Le enviamos el correo al cliente.",
+    "admin_notify_reason": "Se le mandó el resultado de sus verificaciones.",
+    "admin_limit_note_rejected": "Documento rechazado.",
+    "admin_history_notify": "Se le avisó el resultado de las verificaciones",
     "admin_filter_review": "Por verificar",
     "admin_history_verify": "{what}: {status}",
     "admin_history_limit": "Se limitó la cuenta",
@@ -1926,7 +1933,6 @@ TEXTS = {
     # --- errors ------------------------------------------------------------
     "error_required": "Completa este campo.",
     "error_phone": "Ese número no parece válido. Revisa el país y los dígitos.",
-    "error_tax_id": "Escribe tu identificación como aparece en tu documento.",
     "error_demo_answer": "Cuéntanos un poco más: entre {min} y {max} caracteres.",
     "error_email_invalid": "Ese correo no parece válido.",
     "error_email_taken": "Ya existe una cuenta con ese correo.",
@@ -2173,13 +2179,19 @@ TEXTS = {
                          "contactos, tus plantillas y tus campañas siguen ahí.",
     "mail_limited_button": "Subir los documentos",
 
-    # Un documento de verificación que no sirvió.
-    "mail_doc_rejected_subject": "Hay que cambiar un documento de tu cuenta",
-    "mail_doc_rejected_heading": "No pudimos verificar tu {what}",
-    "mail_doc_rejected_body": "Motivo: {reason}",
-    "mail_doc_rejected_again": "Sube otro desde Configuración y lo volvemos a "
-                               "revisar.",
-    "mail_doc_rejected_button": "Subir otro documento",
+    # El resultado de las verificaciones, que manda el administrador cuando
+    # quiere. Una línea por cosa y un cierre según cómo quedó.
+    "mail_result_subject": "El resultado de la verificación de tu cuenta",
+    "mail_result_heading": "Revisamos tus documentos",
+    "mail_result_verified": "{what}: verificada.",
+    "mail_result_rejected": "{what}: no pudimos verificarla. Motivo: {reason}",
+    "mail_result_pending": "{what}: todavía no la revisamos.",
+    "mail_result_again": "Envía otra vez lo que no pudimos verificar. Hasta que "
+                         "esté verificado no puedes enviar campañas.",
+    "mail_result_done": "Tu cuenta quedó verificada. Ya puedes enviar campañas, "
+                        "si tienes un plan.",
+    "mail_result_waiting": "Te avisamos cuando terminemos.",
+    "mail_result_button": "Enviar los documentos",
 
     # Este va a quien administra, no a un cliente.
     "mail_admin_payment_subject": "{company} contrató el plan {plan}",
@@ -2197,7 +2209,7 @@ TEXTS = {
     "mail_admin_demo_subject": "{company} pidió una demostración",
     "mail_admin_demo_heading": "{company} quiere una demostración",
     "mail_admin_demo_body": "{name} ({email}) la pidió desde su bienvenida.",
-    "mail_admin_demo_data": "Teléfono: {phone}. Identificación personal: {tax_id}.",
+    "mail_admin_demo_data": "Teléfono: {phone}.",
     "mail_admin_demo_business": "A qué se dedica: {answer}",
     "mail_admin_demo_purpose": "Para qué usará Sobreala: {answer}",
     "mail_admin_demo_button": "Ver la ficha",

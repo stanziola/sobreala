@@ -123,28 +123,28 @@ def test_el_menu_ensena_las_cuatro_filas_y_cada_una_lleva_a_la_demo(
         assert "Para entrar a" not in browser.get(url).get_data(as_text=True)
 
 
-def test_configuracion_avisa_en_amarillo_mientras_falte_verificar(client, database,
-                                                                   outbox):
-    """Mientras falte verificar la identificación o la dirección, Cuenta lo dice
-    y lleva a sus documentos. Abrir la cuenta no lo quita: lo quita verificar
-    las dos (octubre de 2026; antes se verificaban en la demostración)."""
+def test_configuracion_avisa_en_amarillo_mientras_falte_enviar_documentos(
+        client, database, outbox):
+    """Mientras falte enviar un documento, Cuenta lo dice y lleva al formulario.
+    Abrir la cuenta no lo quita: lo quita enviarlos (octubre de 2026; antes se
+    verificaban en la demostración)."""
     admin, _ = make_admin(client, database)
     browser, cuenta = cerrada(client, database)
 
     cerrada_ = browser.get("/settings").get_data(as_text=True)
     assert "notice--pending" in cerrada_
     assert "Pendiente de verificación:" in cerrada_
-    assert 'href="#verificaciones"' in cerrada_
+    assert 'href="/verification"' in cerrada_
     assert "se verifican en la demostración" not in cerrada_
 
     open_account(admin, cuenta)
     assert "notice--pending" in browser.get("/settings").get_data(as_text=True)
 
     for kind in accounts.VERIFY_KINDS:
-        accounts.set_verification(database, cuenta["_id"], kind, accounts.VERIFIED)
-    verificada = browser.get("/settings").get_data(as_text=True)
-    assert "notice--pending" not in verificada
-    assert "Pendiente de verificación:" not in verificada
+        accounts.set_verification(database, cuenta["_id"], kind, accounts.REVIEW)
+    enviados = browser.get("/settings").get_data(as_text=True)
+    assert "notice--pending" not in enviados
+    assert "Pendiente de verificación:" not in enviados
 
 
 # ---------------------------------------------------------- pedir la demo
@@ -159,6 +159,7 @@ def test_pedir_la_demo_pregunta_a_que_se_dedica_y_para_que(client, database,
     assert "¿A qué se dedica tu negocio?" in pantalla
     assert "¿Para qué usarás Sobreala?" in pantalla
     assert 'name="phone"' not in pantalla and 'name="tax_id"' not in pantalla
+    assert "Identificación personal" not in pantalla
     # El texto de las dos formas de empezar y la lista de la demo se quitaron.
     assert "Hay dos formas de empezar" not in pantalla
     assert "En la demostración abrimos tu cuenta" not in pantalla
@@ -182,7 +183,7 @@ def test_pedir_la_demo_pregunta_a_que_se_dedica_y_para_que(client, database,
     aviso, = avisos(database, mail_log.ADMIN_DEMO)
     assert aviso["to"] == "jefe@ejemplo.com"
     assert "+50760000000" in aviso["text"]
-    assert "8-123-456" in aviso["text"]
+    assert "Identificación" not in aviso["text"]
     assert NEGOCIO in aviso["text"] and PARA_QUE in aviso["text"]
 
     pantalla = browser.get("/welcome?demo=sent").get_data(as_text=True)
@@ -212,7 +213,7 @@ def test_un_cuarto_aviso_en_el_dia_se_frena(client, database, outbox):
     assert len(avisos(database, mail_log.ADMIN_DEMO)) == 3
 
 
-def test_que_acepta_como_telefono_y_como_identificacion():
+def test_que_acepta_como_telefono():
     # El país del selector pone el prefijo; un «+» escrito manda.
     assert accounts.clean_phone("6000-0000", "PA") == "+50760000000"
     assert accounts.clean_phone("+507 6000-0000", "US") == "+50760000000"
@@ -229,11 +230,6 @@ def test_que_acepta_como_telefono_y_como_identificacion():
     # De Panamá sin código, o de fuera con el suyo.
     assert accounts.whatsapp_url("60000000") == "https://wa.me/50760000000"
     assert accounts.whatsapp_url("+13055550101") == "https://wa.me/13055550101"
-    # Varios formatos, porque hay varios: no se exige ninguno.
-    for ruc in ("8-123-456", "155612345-2-2015 DV 12", "PE-12-345", "E-8-12345"):
-        assert accounts.clean_tax_id(ruc) == ruc
-    assert accounts.clean_tax_id("ninguno") is None
-    assert accounts.clean_tax_id("8-1") is None
 
 
 # ------------------------------------------------------- abrirla tú
@@ -294,15 +290,15 @@ def test_el_filtro_trae_a_quien_pidio_la_demo_y_sigue_cerrada(client, database,
     assert CLIENTA not in admin.get(cola).get_data(as_text=True)
 
 
-def test_la_ficha_ensena_su_telefono_su_identificacion_y_sus_respuestas(
-        client, database, outbox):
+def test_la_ficha_ensena_su_telefono_y_sus_respuestas(client, database, outbox):
     admin, _ = make_admin(client, database)
     browser, cuenta = cerrada(client, database)
     pedir(browser)
 
     ficha = admin.get(f"/admin/accounts/{cuenta['_id']}").get_data(as_text=True)
     assert "https://wa.me/50760000000" in ficha
-    assert "8-123-456" in ficha
+    # Una cuenta nueva no escribe su identificación: la ficha no la enseña.
+    assert "Identificación personal</h3>" not in ficha.split("Verificaciones")[0]
     assert NEGOCIO in ficha and PARA_QUE in ficha
     assert "Abrir la cuenta" in ficha
 
@@ -314,31 +310,22 @@ def test_la_ficha_ensena_su_telefono_su_identificacion_y_sus_respuestas(
 
 # ---------------------------------------------------------- o pagar
 
-def test_pagar_pide_la_identificacion_si_falta_y_abre_la_cuenta_con_todo(
+def test_pagar_ya_no_pide_la_identificacion_y_abre_la_cuenta_con_todo(
         client, database, outbox, monkeypatch):
     fake_paypal(monkeypatch)
     browser, cuenta = cerrada(client, database)
 
-    # Desde octubre de 2026 viene del registro, así que al pagar ya sale escrita.
-    assert 'value="8-123-456"' in browser.get("/checkout/basico").get_data(as_text=True)
-    # Una cuenta de antes, que no la dejó, la escribe al pagar.
-    database.accounts.update_one({"_id": cuenta["_id"]}, {"$unset": {"tax_id": ""}})
-    assert 'name="tax_id"' in browser.get("/checkout/basico").get_data(as_text=True)
-
-    sin_ruc = browser.post("/settings/billing/checkout", data={
+    # Desde octubre de 2026 la identificación es solo el documento: el pago ya
+    # no la pide, y pagar sin escribir nada funciona.
+    assert 'name="tax_id"' not in browser.get("/checkout/basico").get_data(as_text=True)
+    pago = browser.post("/settings/billing/checkout", data={
         "csrf_token": csrf(browser, "/checkout/basico"), "plan": "basico",
         "cycle": "monthly"})
-    assert "error=tax_id" in sin_ruc.headers["Location"]
-    assert database.payments.count_documents({}) == 0
-
-    con_ruc = browser.post("/settings/billing/checkout", data={
-        "csrf_token": csrf(browser, "/checkout/basico"), "plan": "basico",
-        "cycle": "monthly", "tax_id": "8-123-456"})
-    assert con_ruc.headers["Location"].startswith("https://sandbox.paypal.com/")
+    assert pago.headers["Location"].startswith("https://sandbox.paypal.com/")
     come_back(browser)
 
     pagada = accounts.by_id(database, cuenta["_id"])
-    assert pagada["tax_id"] == "8-123-456"
+    assert "tax_id" not in pagada
     assert accounts.is_open(pagada)
     # La abrió el pago, no una persona.
     assert pagada["opened_at"] and "opened_by" not in pagada

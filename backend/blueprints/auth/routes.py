@@ -805,7 +805,7 @@ def register():
             session.pop(ADDING, None)
 
     form = {"company_name": "", "contact_name": "", "email": "", "phone": "",
-            "phone_country": countries.DEFAULT, "address": "", "tax_id": ""}
+            "phone_country": countries.DEFAULT, "address": ""}
     company: list[dict[str, str]] = []
     errors: dict[str, str] = {}
 
@@ -849,10 +849,6 @@ def register():
             if address is None:
                 errors["address"] = t("settings_postal_bad", min=accounts.POSTAL_MIN,
                                       max=accounts.POSTAL_MAX)
-            tax_id = accounts.clean_tax_id(form["tax_id"])
-            if tax_id is None:
-                errors["tax_id"] = t("error_tax_id")
-
             problem = password_problem(password)
             if problem:
                 errors["password"] = t(PASSWORD_MESSAGES[problem])
@@ -869,7 +865,6 @@ def register():
                     phone=phone,
                     company_phones=company_phones,
                     postal_address=address,
-                    tax_id=tax_id,
                 )
                 if created:
                     log_auth(db, events.REGISTER, events.CREATED, email=email,
@@ -1785,9 +1780,16 @@ def settings(section: str = "account"):
     postal_error = ""
     account_errors: dict[str, str] = {}
     company: list[dict[str, str]] | None = None
+    # Qué fila se está editando: cada una se ve como texto y «Editar» la abre
+    # (octubre de 2026). Solo la ve el dueño.
+    editing = request.args.get("editar", "") if (
+        section == "account" and not accounts.is_admin(account)
+        and not accounts.is_member(account)) else ""
+    if editing not in ("address", "phones"):
+        editing = ""
     if request.method == "POST" and section == "account":
-        # Lo que se escribe en Cuenta: la dirección, los teléfonos y la
-        # identificación personal, cada uno con su propio formulario (`what`).
+        # Lo que se escribe en Cuenta: la dirección y los teléfonos, cada uno
+        # con su propio formulario (`what`).
         if not csrf_ok(request.form.get("csrf_token")):
             return redirect(url_for("auth.settings", section="account"))
         what = request.form.get("what", "address")
@@ -1803,15 +1805,7 @@ def settings(section: str = "account"):
                 return redirect(url_for("auth.settings", section="account",
                                         phones=1) + "#phones")
             account_errors["phones"] = t("error_phone")
-        elif what == "tax_id":
-            tax_id = accounts.clean_tax_id(request.form.get("tax_id", ""))
-            if tax_id is not None:
-                if tax_id != accounts.tax_id_of(account):
-                    accounts.set_tax_id(db, account["_id"], tax_id)
-                    changed_verified(db, account, accounts.IDENTITY)
-                return redirect(url_for("auth.settings", section="account",
-                                        tax=1) + "#tax-id")
-            account_errors["tax_id"] = t("error_tax_id")
+            editing = "phones"
         else:
             address = accounts.clean_postal(request.form.get("address", ""))
             if address is not None:
@@ -1822,6 +1816,7 @@ def settings(section: str = "account"):
                                         address=1) + "#address")
             postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
                              max=accounts.POSTAL_MAX)
+            editing = "address"
     elif request.method == "POST":
         if section != "notifications":
             return redirect(url_for("auth.settings", section=section))
@@ -1868,6 +1863,7 @@ def settings(section: str = "account"):
         postal_error=postal_error,
         postal_max=accounts.POSTAL_MAX,
         account_errors=account_errors,
+        editing=editing,
         **account_screen(db, account, company),
         # Los usuarios de la cuenta, en Seguridad. Un usuario no los ve: esta
         # pantalla es suya para su contraseña y su segundo factor.
@@ -1886,8 +1882,8 @@ def changed_verified(db, account: dict, kind: str) -> None:
 
 
 def account_screen(db, account: dict, company: list[dict[str, str]] | None) -> dict:
-    """Lo que dibuja Cuenta además de lo de siempre: los teléfonos, las
-    verificaciones y el límite. Para un administrador o un usuario, nada: esa
+    """Lo que dibuja Cuenta además de lo de siempre: los teléfonos, si faltan
+    documentos y el límite. Para un administrador o un usuario, nada: esa
     sección no es suya."""
     if accounts.is_admin(account) or accounts.is_member(account):
         return {}
@@ -1901,25 +1897,35 @@ def account_screen(db, account: dict, company: list[dict[str, str]] | None) -> d
         "phone_options": countries.options(),
         "phone_country": country, "phone_number": number,
         "company": company, "company_max": accounts.COMPANY_PHONES_MAX,
-        "tax_id": accounts.tax_id_of(account),
-        "verifications": {kind: accounts.verification_of(account, kind)
-                          for kind in accounts.VERIFY_KINDS},
-        "verify_kinds": accounts.VERIFY_KINDS,
-        "all_verified": accounts.all_verified(account),
-        "verify_mb": verification_docs.MAX_BYTES // (1024 * 1024),
+        # Lo que se ve cuando no se está editando: los números tal como se
+        # guardaron, el personal primero.
+        "phones_text": [one for one in [account.get("phone", "")]
+                        + list(account.get("company_phones") or []) if one],
+        "documents_due": bool(documents_due(account)),
         "limited": accounts.limited_of(account),
     }
 
 
-@bp.route("/settings/account/document/<kind>", methods=["POST"])
-def upload_document(kind: str):
-    """Subir el documento de una verificación: la foto de la identificación o
-    el que certifica la dirección.
+def documents_due(account: dict) -> list[str]:
+    """Los documentos que todavía hay que enviar: los que faltan y los que se
+    rechazaron. Los que están en revisión o verificados no."""
+    return [kind for kind in accounts.VERIFY_KINDS
+            if accounts.verification_of(account, kind)["status"]
+            in (accounts.MISSING, accounts.REJECTED)]
 
-    Solo el dueño. PDF, JPG o PNG de hasta 5 MB, reconocidos por cómo empiezan.
-    Subir otro reemplaza el anterior, y la verificación pasa a «en revisión»
-    hasta que el administrador la mire. Una ya verificada no se vuelve a subir:
-    cambiar el dato es lo que la reabre.
+
+@bp.route("/verification", methods=["GET", "POST"])
+def verification():
+    """El formulario donde se envían los documentos de la identificación y de la
+    dirección. Hasta octubre de 2026 se subían dentro de Configuración → Cuenta.
+
+    Pide **los dos de una vez**, en un solo envío, y después no los enseña: el
+    cliente no ve ni cambia lo que mandó, y solo vuelve a pedirse el que se
+    rechaza. Los mira una persona de Sobreala desde la ficha y el archivo se
+    borra al decidir. Solo el dueño; un usuario y un administrador no.
+
+    PDF, JPG o PNG de hasta 5 MB, reconocidos por cómo empiezan. Si uno de los
+    archivos no sirve no se guarda ninguno: así no queda uno solo a medias.
     """
     account = current_account()
     if account is None:
@@ -1927,24 +1933,40 @@ def upload_document(kind: str):
     answer = not_for_admins(account) or owner_only(account)
     if answer:
         return answer
-    back = url_for("auth.settings", section="account")
-    if kind not in accounts.VERIFY_KINDS or not csrf_ok(request.form.get("csrf_token")):
-        return redirect(back + "#verificaciones")
-    if accounts.verification_of(account, kind)["status"] == accounts.VERIFIED:
-        return redirect(back + "#verificaciones")
 
-    archivo = request.files.get("archivo")
-    raw = archivo.read(verification_docs.MAX_BYTES + 1) if archivo else b""
-    found = verification_docs.file_type(raw) if raw else None
-    if not raw or len(raw) > verification_docs.MAX_BYTES or found is None:
-        return redirect(url_for("auth.settings", section="account", doc="bad",
-                                kind=kind) + "#verificaciones")
     db = get_db()
-    mime, ext = found
-    verification_docs.save(db, account["_id"], kind, data=raw, mime=mime, ext=ext)
-    accounts.set_verification(db, account["_id"], kind, accounts.REVIEW)
-    return redirect(url_for("auth.settings", section="account", doc="ok",
-                            kind=kind) + "#verificaciones")
+    due = documents_due(account)
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif due:
+            read = {}
+            for kind in due:
+                archivo = request.files.get(kind)
+                raw = archivo.read(verification_docs.MAX_BYTES + 1) if archivo else b""
+                found = verification_docs.file_type(raw) if raw else None
+                if not raw or len(raw) > verification_docs.MAX_BYTES or found is None:
+                    errors[kind] = t("verify_bad",
+                                     mb=verification_docs.MAX_BYTES // (1024 * 1024))
+                else:
+                    read[kind] = (raw, found)
+            if not errors:
+                for kind, (raw, (mime, ext)) in read.items():
+                    verification_docs.save(db, account["_id"], kind, data=raw,
+                                           mime=mime, ext=ext)
+                    accounts.set_verification(db, account["_id"], kind,
+                                              accounts.REVIEW)
+                return redirect(url_for("auth.verification", sent=1))
+        else:
+            return redirect(url_for("auth.verification"))
+
+    return render_template(
+        "verification.html", account=account, due=due, errors=errors,
+        states={kind: accounts.verification_of(account, kind)
+                for kind in accounts.VERIFY_KINDS},
+        kinds=accounts.VERIFY_KINDS, sent=bool(request.args.get("sent")),
+        limited=accounts.limited_of(account))
 
 
 # ---------------------------------------------------------------- devices
@@ -2074,9 +2096,7 @@ def checkout(plan: str):
         # pagar de ninguna forma.
         soon=[one for one in payments.ALL if one not in ready_methods()],
         current=accounts.plan_of(account),
-        plan_until=accounts.plan_until(account),
-        # El RUC o la cédula, si ya lo dejó en la demostración o en otro pago.
-        tax_id=accounts.tax_id_of(account))
+        plan_until=accounts.plan_until(account))
 
 
 @bp.route("/settings/billing/invoice/<raw>")
@@ -2148,18 +2168,8 @@ def start_payment():
     # vigente solo se mejora (`upgrade.refused()`).
     if upgrade.refused(account, plan, cycle):
         return redirect(url_for("auth.checkout", plan=plan))
-    # Quien entra pagando deja también su RUC o su cédula, como quien pide la
-    # demostración: así queda registro de todas las empresas, entren por donde
-    # entren, y es lo que pide la factura. Quien ya lo dejó lo puede corregir
-    # aquí; en blanco se queda el que tenía.
-    typed = request.form.get("tax_id", "").strip()[:80]
-    if typed or not accounts.tax_id_of(account):
-        tax_id = accounts.clean_tax_id(typed)
-        if not tax_id:
-            return redirect(url_for("auth.checkout", plan=plan, cycle=cycle,
-                                    error="tax_id"))
-        if tax_id != accounts.tax_id_of(account):
-            accounts.set_tax_id(db, account["_id"], tax_id)
+    # Hasta octubre de 2026 aquí se pedía el RUC o la cédula. La identificación
+    # ya no se escribe: se verifica con un documento (ver `/verification`).
     # El total con el descuento por los correos sin usar, calculado aquí y
     # guardado en el intento: es lo que se compara al cobrar.
     quote = upgrade.quote(account, plan, cycle)

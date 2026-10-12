@@ -1450,7 +1450,7 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 }
 .phone { display: flex; gap: 8px; }
 .phone__country {
-  flex: 0 0 auto; width: min(46%, 220px);
+  flex: 0 0 auto; width: 7.5rem;
   font-family: "Twemoji Country Flags", var(--font-body);
 }
 .phone__number { flex: 1 1 auto; min-width: 0; }

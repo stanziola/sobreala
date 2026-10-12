@@ -975,15 +975,15 @@ PRIVACY = {
             "title": "Qué datos tratamos",
             "items": [
                 "**De tu cuenta:** nombre del negocio, nombre de contacto, "
-                "correo, tu teléfono y los de tu empresa, la dirección y tu "
-                "identificación personal (cédula o pasaporte), que nos das al "
-                "registrarte. La contraseña no se guarda: solo un hash del que "
-                "no se puede volver atrás.",
+                "correo, tu teléfono y los de tu empresa y la dirección, que "
+                "nos das al registrarte. La contraseña no se guarda: solo un "
+                "hash del que no se puede volver atrás.",
                 "**Para verificar tu cuenta:** la foto o el PDF de tu "
-                "identificación y un documento que certifique tu dirección (un "
-                "recibo, tu aviso de operación o un documento legal). Los mira "
-                "una persona de Sobreala y **se borran en cuanto decide**; de "
-                "ellos solo queda si se verificaron o no.",
+                "identificación personal (cédula o pasaporte) y un documento "
+                "que certifique tu dirección (un recibo, tu aviso de operación "
+                "o un documento legal), que nos envías después de registrarte. "
+                "Los mira una persona de Sobreala y **se borran en cuanto "
+                "decide**; de ellos solo queda si se verificaron o no.",
                 "**De tus contactos:** las direcciones de correo y las "
                 "etiquetas que subes, junto con las bajas y los rebotes de esa "
                 "lista.",
@@ -1193,9 +1193,9 @@ TERMS = {
                 "ser uno al que tengas acceso.",
                 "La contraseña es tuya y respondes por lo que ocurra con tu "
                 "cuenta. Avísanos si crees que alguien más entró.",
-                "Al registrarte nos das tu teléfono, tu dirección y tu "
-                "identificación personal, y después nos envías un documento de "
-                "cada una para verificarlas. Una cuenta nueva queda "
+                "Al registrarte nos das tu teléfono y tu dirección, y después nos "
+                "envías un documento de tu identificación y otro de tu "
+                "dirección para verificarlos. Una cuenta nueva queda "
                 "**registrada**: el panel se abre después de una demostración, o "
                 "al contratar un plan. Es como cuidamos que la plataforma no se "
                 "use para correo no solicitado.",

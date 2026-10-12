@@ -38,8 +38,8 @@
     {% endif %}
 
     {# Lo que después se verifica va desde el registro (octubre de 2026): el
-       teléfono personal, la dirección y la identificación personal. Los
-       números de la empresa son opcionales. #}
+       teléfono personal y la dirección. Los números de la empresa son
+       opcionales. La identificación no se escribe: se sube como documento. #}
     <label for="phone">{{ t('register_phone') }}</label>
     {{ phone('phone', 'phone', form.phone_country, form.phone, phone_options,
              label=t('register_phone'), required=True,
@@ -58,11 +58,6 @@
     <p class="hint" id="address-hint">{{ t('register_address_hint') }}</p>
     {% if errors.address %}<p class="error">{{ errors.address }}</p>{% endif %}
 
-    <label for="tax_id">{{ t('tax_id_label') }}</label>
-    <input id="tax_id" name="tax_id" value="{{ form.tax_id }}" required
-           aria-describedby="tax-id-hint">
-    <p class="hint" id="tax-id-hint">{{ t('tax_id_hint') }}</p>
-    {% if errors.tax_id %}<p class="error">{{ errors.tax_id }}</p>{% endif %}
 
     <label for="password">{{ t('register_password') }}</label>
     <div class="field">

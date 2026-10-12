@@ -123,11 +123,12 @@ SHARED_DIAL = {"1": "US", "7": "RU", "39": "IT", "262": "RE", "599": "CW"}
 
 
 def options() -> list[dict[str, str]]:
-    """Lo que dibuja el selector: «🇵🇦 +507 Panamá», con su código ISO.
+    """Lo que dibuja el selector: «🇵🇦 +507», con su código ISO.
 
-    El prefijo va antes del nombre: en un teléfono el selector es estrecho y
-    corta lo último, y lo que no se puede perder es el prefijo."""
-    return [{"iso": iso, "label": f"{flag(iso)} +{dial} {name}"}
+    Solo la bandera y el prefijo (octubre de 2026): con el nombre del país era
+    largo. El nombre va aparte, en `name`, para el `title` de cada opción, que
+    es lo que lee un lector de pantalla y lo que sale al pasar el ratón."""
+    return [{"iso": iso, "name": name, "label": f"{flag(iso)} +{dial}"}
             for iso, name, dial in COUNTRIES]
 
 
