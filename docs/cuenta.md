@@ -98,10 +98,12 @@ registrarse con solo confirmar un correo, y las imágenes viven en la base: unas
 Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
 - **El menú de los dos sitios enseña las cuatro filas de siempre**
   (Estadísticas, Enviar correos, Contactos y Plantillas), y cada pantalla la
-  devuelve a `/welcome?para=<permiso>`, que arriba dice «Para entrar a
-  Contactos, contrata un plan o pide la demostración» (`GATE_NAMES` en
-  `blueprints/auth/routes.py`). Lo decide `needs()`, por donde ya pasaban
-  todas, así que una pantalla nueva hereda la puerta.
+  devuelve a `/welcome?para=<permiso>`. Lo decide `needs()`, por donde ya
+  pasaban todas, así que una pantalla nueva hereda la puerta. Hasta octubre de
+  2026 la bienvenida decía arriba a cuál quería entrar («Para entrar a
+  Contactos, contrata un plan o pide la demostración», `GATE_NAMES`); se quitó
+  porque la bienvenida ya ofrece las dos formas de abrirla, y el `?para=` quedó
+  sin leer.
 - **Hubo en su lugar una sola fila, «Tu demostración»**, con su migaja `new`
   en el sitio, y se quitó (octubre de 2026): escondía lo que trae Sobreala, y
   las cuatro filas ya llevan a la demostración. La migaja de una cuenta
@@ -129,13 +131,21 @@ Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
   es lo primero que revisa Amazon. Se le escribe al teléfono personal del
   registro. Solo el dueño y con el correo confirmado.
 - **Con la solicitud hecha el formulario ya no sale**: queda un aviso verde con
-  su gancho («Tu solicitud ha sido recibida. Espera la aprobación»), y un segundo
+  su gancho que dice solo «Tu solicitud ha sido recibida» (sin la espera ni el
+  teléfono, que se quitaron en octubre de 2026), y un segundo
   envío no guarda nada ni vuelve a avisar. Antes se podía pedir otra vez, con un
   tope de tres al día (`DEMO_PER_ACCOUNT`, ya quitado). Corregir una solicitud
   enviada no se ofrece. A quien administra le llega «{empresa} pidió una
   demostración» (`admin_demo`, con interruptor), con el teléfono y las respuestas,
   y la cuenta sale en el filtro «Piden demostración» de Cuentas. La ficha enseña
   las respuestas, con el sitio como enlace.
+- **Configuración → Cuenta, con menos texto** (octubre de 2026): el correo se
+  llama «Correo» a secas; la dirección postal y los teléfonos van sin frase
+  debajo; y **no hay fila de estado**, que solo podía decir «Registrada» o
+  «Activa» (una suspendida no entra, y la limitada la dice el aviso de arriba).
+  El estado lo sigue viendo el administrador en la ficha y en Cuentas. En
+  Seguridad, Usuarios va sin frase, y cambiar la contraseña dice «Si la cambias,
+  se cierra la sesión en los demás dispositivos.»
 - **Hasta octubre de 2026 se pedían aquí el WhatsApp y el RUC o la cédula.** El
   WhatsApp era el mismo número del registro, y la identificación pasó al
   registro. Con ellos se fue el texto de la bienvenida que contaba las dos

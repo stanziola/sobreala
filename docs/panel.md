@@ -26,10 +26,17 @@ pasado nada: la peor primera pantalla posible.
 `docs/cuenta.md`), `/welcome` es la pantalla de la demostración: los dos caminos
 que la abren, lo que incluye la llamada, el formulario para pedirla (a qué
 se dedica el negocio y para qué usará Sobreala) y los botones de ver los planes y de Configuración.
-Las cuatro pantallas de cliente, que siguen en el menú, la devuelven ahí con
-`?para=`, y arriba dice a cuál quería entrar («Para entrar a Contactos, contrata
-un plan o pide la demostración»). **Ya abierta y sin plan**, dice que la cuenta
-está lista y lleva esos dos botones, como antes.
+Las cuatro pantallas de cliente, que siguen en el menú, la devuelven ahí (con
+`?para=`, que ya no se lee: el aviso de a cuál quería entrar se quitó en octubre
+de 2026). **Ya abierta y sin plan**, dice que la cuenta está lista y lleva esos
+dos botones, como antes.
+
+**Los enlaces no se subrayan** (octubre de 2026), en el panel ni en el sitio:
+quietos van en su azul (`--color-accent-strong`) y, al pasar el mouse, los de
+texto se ponen del azul de la marca (`--color-accent`). La regla es
+`a:not([class]):hover`: botones, menú y pestañas llevan clase y su propio
+efecto, y un botón azul con la letra azul no se leería. En el pie del sitio, que
+va sobre el azul de la marca, se ponen celeste (`--color-accent-light`).
 
 Esa dirección se queda en el historial, así que lleva dos guardas que **no son
 para el día del registro**, donde no pueden darse: con un plan ya contratado

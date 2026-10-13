@@ -99,7 +99,7 @@
 
     {# La dirección física de la empresa: va al pie de sus campañas, porque la
        ley la pide y es la de quien anuncia. Sin ella no se puede enviar. #}
-    {% call row(t('settings_postal'), t('settings_postal_hint'), id='address') %}
+    {% call row(t('settings_postal'), '', id='address') %}
     {% if editing == 'address' %}
     <form class="setting__form" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -125,7 +125,7 @@
     {% if request.args.get('phones') %}
     <p class="notice notice--ok">{{ t('settings_phones_done') }}</p>
     {% endif %}
-    {% call row(t('settings_phones'), t('settings_phones_hint'), id='phones') %}
+    {% call row(t('settings_phones'), '', id='phones') %}
     {% if editing == 'phones' %}
     <form class="setting__form setting__form--wide" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -145,10 +145,6 @@
     {% endif %}
     {% endcall %}
     {% endif %}
-
-    {% call row(t('settings_account_status'), '') %}
-    <span class="setting__value">{{ t('status_short_' + status_of(account)) }}</span>
-    {% endcall %}
 
     {# Nada escribe todavía el campo del plan, así que hoy todas las cuentas
        caen en la rama de abajo. Dicho con palabras y no con un espacio en
@@ -195,7 +191,6 @@
        y nada más. ----- #}
     {% if not is_member %}
     <h3 class="settings__subtitle" id="users">{{ t('users_title') }}</h3>
-    <p class="settings__lead">{{ t('users_lead') }}</p>
 
     {% if request.args.get('user') == 'invited' %}
     <p class="notice notice--ok">{{ t('users_invited_ok') }}</p>
@@ -390,12 +385,19 @@
     {% endif %}
 
     {% if vault %}
-    {% call row(t('methods_paypal'), vault.payer) %}
-    <form method="post" action="{{ url_for('auth.remove_paypal') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn--small btn--outline" type="submit">{{ t('methods_paypal_remove') }}</button>
-    </form>
-    {% endcall %}
+    {# Lo guardado se reconoce por su logo, con la cuenta debajo. #}
+    <div class="setting">
+      <div class="setting__text">
+        {% with name='paypal' %}{% include "_pay_logos.html" %}{% endwith %}
+        <p class="setting__desc">{{ vault.payer }}</p>
+      </div>
+      <div class="setting__action">
+        <form method="post" action="{{ url_for('auth.remove_paypal') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn--small btn--outline" type="submit">{{ t('methods_paypal_remove') }}</button>
+        </form>
+      </div>
+    </div>
     {% elif vault_ready %}
     {% call row(t('methods_paypal'), t('methods_paypal_desc')) %}
     <form method="post" action="{{ url_for('auth.add_paypal') }}">

@@ -243,7 +243,12 @@ body {
 }
 h1 { margin: 0 0 10px; font-size: 1.55rem; line-height: 1.2; letter-spacing: -.01em; }
 p { margin: 0; }
-a { color: var(--color-accent-strong); }
+/* Los enlaces no se subrayan (octubre de 2026): quietos en su azul, y los de
+   texto se ponen del azul de la marca al pasar el mouse. Solo los que no
+   llevan clase: botones, menú y pestañas tienen su propio efecto, y un botón
+   azul con la letra azul no se leería. */
+a { color: var(--color-accent-strong); text-decoration: none; }
+a:not([class]):hover { color: var(--color-accent); }
 /* Un solo anillo al enfocar. Antes se dibujaban dos: el borde del elemento
    cambiaba a azul y encima aparecía un contorno separado por un hueco de 3 px.
    Ahora el contorno se pega al borde y los dos son del mismo azul, así que se
@@ -905,10 +910,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 :root[data-theme="dark"] .notice--pending a { color: #FCD34D; }
 /* La solicitud de la demostración ya recibida: verde, con su gancho. */
 .notice--done {
-  display: flex; gap: 14px; align-items: flex-start; border-color: var(--color-success);
+  display: flex; gap: 14px; align-items: center; border-color: var(--color-success);
   background: color-mix(in srgb, var(--color-success) 9%, transparent);
 }
-.notice--done p { margin-top: 4px; }
 .notice__tick {
   flex: none; width: 28px; height: 28px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
@@ -921,8 +925,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .link-button {
   padding: 0; border: 0; background: none;
   font: inherit; color: var(--color-accent-strong);
-  text-decoration: underline; cursor: pointer;
+  text-decoration: none; cursor: pointer;
 }
+.link-button:hover { color: var(--color-accent); }
 
 /* --------------------------------------------------------------- plantillas
    Los dos caminos arriba, las notas, y la lista. */

@@ -186,8 +186,9 @@ sin descripción y sin fondo propio**: PayPal; Visa y Mastercard en la tarjeta;
 Yappy en el que dice «pronto» (`PAY_LOGOS` en las rutas, `_pay_logos.html`, y
 los archivos los copia `build_assets.py` de `brand/payments/` a
 `static/img/payments/`). El nombre del método va en el texto alternativo de sus
-logos y, escondido, en su «Usar este», para que un lector de pantalla no diga
-tres veces «Usar este» sin decir de qué. De noche descansan sobre la tarjeta
+logos y, escondido, junto a su botón de radio, que no lleva texto (el «Usar
+este» que había se quitó en octubre de 2026). Con PayPal guardado, su cuenta sale
+debajo del logo, para que quien lo elige sepa con cuál paga. De noche descansan sobre la tarjeta
 oscura tal cual: hubo una pastilla blanca y se quitó, sabiendo que PayPal, Visa
 y Yappy, que son azules, ahí se leen poco. Debajo, una sola frase: «Sobreala
 nunca guarda tus datos de pago.» Del cliente
@@ -285,15 +286,17 @@ pago guardados» y ofrece «Agregar PayPal».
   (`/settings/billing/paypal/return`) la canjea (`/v3/vault/payment-tokens`).
   Queda en `accounts.paypal_vault`: el identificador y **el correo de la cuenta**,
   que se enseña para que el cliente la reconozca. Ninguna tarjeta ni clave
-  (regla 9).
+  (regla 9). En Facturación, lo guardado se ve con **el logo de PayPal** y la
+  cuenta debajo (`_pay_logos.html`).
 - **La vuelta no se fía de la dirección**: solo vale con la petición que se le hizo
   a esa cuenta (`paypal_setup`), y lo que prueba que quedó guardada es la
   respuesta de PayPal al servidor.
 - **Eliminar** (`POST /settings/billing/paypal/remove`) lo quita en PayPal y aquí;
   si PayPal falla, aquí tampoco, para que no quede guardada sin que se vea. Si
   PayPal ya no la tenía (404), se quita igual.
-- **Para qué sirve**: en `/checkout/<plan>` se cobra con ella sin volver a iniciar
-  sesión (`paypal.pay_saved()`, que crea la orden con el `vault_id`). Después es
+- **Para qué sirve**: en `/checkout/<plan>` la cuenta sale debajo del logo de
+  PayPal, y con ese botón se cobra con ella sin volver a iniciar sesión
+  (`paypal.pay_saved()`, que crea la orden con el `vault_id`). Después es
   lo mismo de siempre: `complete_paypal()` compara el monto y la moneda contra el
   intento y solo entonces `settle()`. Con la casilla de renovar o sin PayPal
   guardado, el pago es el de siempre.

@@ -50,3 +50,14 @@ def test_planes_ya_no_vende_complementos():
         assert texto not in precios
         assert texto not in planes
     assert "al recargar" not in planes
+
+
+def test_los_enlaces_no_se_subrayan_en_el_panel_ni_en_el_sitio():
+    """Ni quietos ni al pasar el mouse (octubre de 2026): los de texto se
+    ponen del azul de la marca. En los dos sitios, que se ven igual."""
+    raiz = Path(__file__).resolve().parents[2]
+    for hoja in (raiz / "backend/static/css/_panel.src.css",
+                 raiz / "landing/src/site.css"):
+        texto = hoja.read_text(encoding="utf-8")
+        assert "text-decoration: underline" not in texto, hoja
+        assert "a:not([class]):hover { color: var(--color-accent); }" in texto, hoja

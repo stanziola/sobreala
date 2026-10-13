@@ -98,8 +98,10 @@ def test_cerrada_no_guarda_nada_aunque_escriba_el_formulario(client, database,
 def test_el_menu_ensena_las_cuatro_filas_y_cada_una_lleva_a_la_demo(
         client, database, outbox, monkeypatch):
     """Cerrada, el menú es el de siempre: las cuatro filas de cliente, y cada
-    una aterriza en la bienvenida diciendo a cuál quería entrar. La migaja es
-    la de cualquiera sin plan, así que el menú del sitio también las enseña."""
+    una aterriza en la bienvenida, que ya no dice a cuál quería entrar (se
+    quitó en octubre de 2026: la bienvenida ofrece las dos formas de abrirla).
+    La migaja es la de cualquiera sin plan, así que el menú del sitio también
+    las enseña."""
     monkeypatch.setattr(Config, "PUBLIC_SITE_URL", "http://localhost")
     browser, _ = cerrada(client, database)
 
@@ -116,11 +118,9 @@ def test_el_menu_ensena_las_cuatro_filas_y_cada_una_lleva_a_la_demo(
                          ("/contacts", "Contactos"), ("/templates", "Plantillas")):
         destino = browser.get(url).headers["Location"]
         bienvenida = browser.get(destino).get_data(as_text=True)
-        assert (f"Para entrar a {seccion}, contrata un plan o pide la "
-                "demostración.") in bienvenida, url
+        assert f"Para entrar a {seccion}" not in bienvenida, url
         assert "Pedir la demostración" in bienvenida, url
 
-    # Sin `para`, o con uno que no existe, no dice nada de más.
     for url in ("/welcome", "/welcome?para=otra"):
         assert "Para entrar a" not in browser.get(url).get_data(as_text=True)
 
@@ -195,7 +195,9 @@ def test_pedir_la_demo_pregunta_a_que_se_dedica_y_para_que(client, database,
     assert "https://minegocio.com" in aviso["text"]
 
     pantalla = browser.get("/welcome").get_data(as_text=True)
-    assert "Te escribimos al +50760000000" in pantalla
+    assert "Tu solicitud ha sido recibida" in pantalla
+    # Lo verde dice solo eso: ni la espera ni el teléfono.
+    assert "Te escribimos al" not in pantalla
 
 
 def test_sin_el_correo_confirmado_no_se_pide(client, database, outbox):
@@ -219,7 +221,8 @@ def test_la_demo_se_pide_una_sola_vez(client, database, outbox):
     pantalla = browser.get("/welcome").get_data(as_text=True)
     assert "notice--done" in pantalla
     assert "Tu solicitud ha sido recibida" in pantalla
-    assert "Espera la aprobación" in pantalla
+    assert "Espera la aprobación" not in pantalla
+    assert "Para entrar a" not in pantalla
     assert 'name="business"' not in pantalla
     assert "Avisar de nuevo" not in pantalla
 

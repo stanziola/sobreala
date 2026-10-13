@@ -1603,41 +1603,26 @@ def welcome():
     return demo_screen(account)
 
 
-# La pantalla que quería abrir una cuenta cerrada, con el nombre que lleva en el
-# menú: es lo que dice la bienvenida al recibirla (`?para=`, que pone `needs()`).
-GATE_NAMES = {
-    accounts.STATS: "nav_panel",
-    accounts.CAMPAIGNS: "menu_send",
-    accounts.SEND: "menu_send",
-    accounts.CONTACTS: "menu_contacts",
-    accounts.DESIGNS: "menu_designs",
-}
-
-
 def demo_screen(account: dict, *, errors: dict | None = None,
                 form: dict | None = None):
     """La bienvenida de una cuenta cerrada.
 
     Si ya pidió la demostración, en lugar del formulario sale el aviso de que
     se recibió: se pide una sola vez. Si no, el formulario, con lo que acaba de
-    escribir si algo salió mal. El número al que se le escribe es el teléfono
-    personal del registro.
+    escribir si algo salió mal.
 
-    Si llegó desde una de las cuatro pantallas, arriba dice cuál quería abrir y
-    que se abre contratando o con la demostración. Un valor que no es una
-    pantalla no dice nada: la dirección la escribe cualquiera.
+    Hasta octubre de 2026, si llegó desde una de las cuatro pantallas, arriba
+    decía cuál quería abrir («Para entrar a…»). Se quitó: la bienvenida ya
+    ofrece las dos formas de abrirla.
     """
     company = current_workspace() or account
-    wanted = GATE_NAMES.get(request.args.get("para", ""))
     return render_template(
         "welcome.html", account=account, closed=True, errors=errors or {},
         form=form or {},
         # Lo que quedó guardado, no lo que se acaba de escribir mal.
         asked=company.get("demo_requested_at"),
-        asked_phone=company.get("phone", ""),
         contact_choices=accounts.DEMO_CONTACTS,
-        source_choices=accounts.DEMO_SOURCES,
-        gate=t(wanted) if wanted else "")
+        source_choices=accounts.DEMO_SOURCES)
 
 
 @bp.route("/welcome/demo", methods=["POST"])
@@ -1873,6 +1858,7 @@ def settings(section: str = "account"):
         renewals_ready=paypal.renewals_ready(),
         vault=accounts.paypal_vault_of(account),
         vault_ready=paypal.vault_ready(),
+        pay_logos=PAY_LOGOS,
         subscription=accounts.subscription_of(account),
         renewal_on=accounts.renewal_on(account),
         can_renew=bool(accounts.current_plan(account)) and accounts.can_buy(account),

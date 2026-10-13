@@ -713,12 +713,13 @@ def test_un_estado_viejo_no_rompe_la_pantalla(client, database, outbox):
     assert ficha.status_code == 200
     assert "Registrada" in ficha.get_data(as_text=True)
 
-    # Y la del propio cliente, que enseña su estado en Configuración.
+    # Y la del propio cliente, que ya no enseña su estado en Configuración
+    # (octubre de 2026), pero tampoco revienta con el valor viejo.
     navegador = other(client)
     login(navegador, email="socia@ejemplo.com")
     suya = navegador.get("/settings/account")
     assert suya.status_code == 200
-    assert "Registrada" in suya.get_data(as_text=True)
+    assert "Estado de tu cuenta" not in suya.get_data(as_text=True)
 
 
 # ------------------------- el administrador tampoco contrata desde /pricing

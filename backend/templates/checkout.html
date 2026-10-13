@@ -64,20 +64,24 @@
 
     {% if methods|length > 1 or soon %}
     <p class="field-label">{{ t('pay_method_title') }}</p>
-    {#- Cada método son sus logos, sin título: se entiende solo. El nombre va en
-        el texto alternativo de los logos y, escondido, en el «Usar este», para
-        que un lector de pantalla diga de qué. -#}
+    {#- Cada método son sus logos, sin título: se entiende solo, y se elige con
+        su botón de radio, sin texto. El nombre va en el texto alternativo de los
+        logos y, escondido, junto al botón, para que un lector de pantalla diga
+        de qué. Con PayPal guardado, su cuenta sale debajo del logo: quien lo
+        elige sabe con cuál paga. -#}
     {% for name in methods %}
     <div class="setting">
       <div class="setting__text">
         {% include "_pay_logos.html" %}
+        {% if name == 'paypal' and saved_paypal %}
+        <p class="setting__desc">{{ saved_paypal.payer }}</p>
+        {% endif %}
       </div>
       <div class="setting__action">
         <label class="check">
           <input type="radio" name="metodo" value="{{ name }}"
                  {% if loop.first %}checked{% endif %}>
-          <span>{{ t('pay_method_use') }}<span class="visually-hidden">:
-            {{ t('pay_method_' + name) }}</span></span>
+          <span class="visually-hidden">{{ t('pay_method_' + name) }}</span>
         </label>
       </div>
     </div>
@@ -98,10 +102,6 @@
     {% endfor %}
     {% else %}
     <input type="hidden" name="metodo" value="{{ methods[0] }}">
-    {% endif %}
-
-    {% if saved_paypal %}
-    <p class="hint">{{ t('pay_saved_paypal', who=saved_paypal.payer) }}</p>
     {% endif %}
 
     {# La renovación automática (octubre de 2026): una suscripción de PayPal que

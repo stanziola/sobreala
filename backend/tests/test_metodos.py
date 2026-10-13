@@ -97,6 +97,9 @@ def test_agregar_manda_a_paypal_y_la_vuelta_la_guarda(client, database, monkeypa
     assert guardada["id"] == "VAULT-1" and guardada["payer"] == "ana@paypal.com"
     pantalla = browser.get("/settings/billing?paypal=saved").get_data(as_text=True)
     assert "ana@paypal.com" in pantalla and "Eliminar" in pantalla
+    # Lo guardado se reconoce por su logo.
+    guardado = pantalla.split('alt="PayPal"')[1]
+    assert "ana@paypal.com" in guardado.split("Eliminar")[0]
     assert "Agregar PayPal" not in pantalla
     assert "Listo, guardamos tu cuenta de PayPal" in pantalla
     # De PayPal no se guarda nada más que el identificador y el correo.
@@ -170,7 +173,12 @@ def test_el_checkout_cobra_con_la_cuenta_guardada_y_activa(client, database,
     guardar(browser)
 
     pantalla = browser.get("/checkout/negocio").get_data(as_text=True)
-    assert "PayPal guardado (ana@paypal.com)" in pantalla
+    # La cuenta guardada sale debajo del logo de PayPal, sin frase aparte, y
+    # cada método es solo su botón de radio.
+    paypal_fila = pantalla.split('alt="PayPal"')[1].split('name="metodo"')[0]
+    assert "ana@paypal.com" in paypal_fila
+    assert "Se cobra con tu PayPal guardado" not in pantalla
+    assert "Usar este" not in pantalla
 
     respuesta = browser.post("/settings/billing/checkout", data={
         "csrf_token": csrf(browser, "/checkout/negocio"), "plan": "negocio",

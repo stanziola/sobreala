@@ -130,9 +130,6 @@ TEXTS = {
     "welcome_settings": "Ir a configuración",
     # La misma pantalla con la cuenta todavía cerrada: los dos caminos que la
     # abren, la demostración y contratar, sin empujar hacia ninguno.
-    # Arriba, si llegó desde una de las cuatro pantallas, cuál quería abrir.
-    "welcome_gate": "Para entrar a {section}, contrata un plan o pide la "
-                    "demostración.",
     # Lo que se pregunta al pedirla (octubre de 2026). Antes había aquí un
     # párrafo con las dos formas de empezar y la lista de lo que se hace en la
     # demostración, y se pedían el WhatsApp y el RUC o la cédula.
@@ -140,8 +137,6 @@ TEXTS = {
     "welcome_demo_purpose": "¿Para qué usarás Sobreala?",
     "welcome_demo_ask": "Pedir la demostración",
     "welcome_demo_done_title": "Tu solicitud ha sido recibida",
-    "welcome_demo_done_text": "Espera la aprobación. Te escribimos al {phone} "
-                              "para agendar la demostración.",
     "welcome_demo_contacts": "¿Cuántos contactos tienes?",
     "welcome_demo_choose": "Elige una opción",
     "welcome_demo_contacts_lt500": "Menos de 500",
@@ -349,8 +344,8 @@ TEXTS = {
 
     # --- password ----------------------------------------------------------
     "password_title": "Cambiar tu contraseña",
-    "password_lead": "Al cambiarla cerramos la sesión en los demás "
-                     "dispositivos y te avisamos por correo.",
+    "password_lead": "Si la cambias, se cierra la sesión en los demás "
+                     "dispositivos.",
     "password_current": "Contraseña actual",
     "password_new": "Nueva contraseña",
     "password_repeat": "Repite la nueva contraseña",
@@ -367,25 +362,22 @@ TEXTS = {
 
     "settings_account_contact": "Tu nombre",
     "settings_account_company": "Empresa u organización",
-    "settings_account_email": "Correo de tu cuenta",
+    "settings_account_email": "Correo",
     "settings_account_email_pending": "Sin confirmar",
     "settings_account_email_change": "Cambiar",
     "settings_account_to_billing": "Ir a facturación",
     "settings_account_email_done": "Listo, tu correo cambió. Le avisamos a la "
                                    "dirección anterior.",
     "settings_postal": "Dirección postal",
-    "settings_postal_hint": "Sale al pie de tus campañas: la ley pide la "
-                            "dirección física de quien envía. Un apartado "
-                            "postal sirve.",
     "settings_postal_placeholder": "Calle, ciudad, provincia",
     "settings_postal_save": "Guardar",
     "settings_postal_done": "Listo, tu dirección quedó guardada.",
     "admin_postal_missing": "Todavía no la escribió",
     "settings_postal_bad": "Escribe una dirección de entre {min} y {max} "
                            "caracteres.",
-    "settings_account_status": "Estado de tu cuenta",
-    # La misma palabra que la etiqueta corta de la fila; la frase larga que la
-    # explica sigue siendo panel_status_*, que es la que ya se enseñaba.
+    # La palabra corta del estado, que enseña el administrador en la ficha y en
+    # Cuentas; la frase larga que la explica es panel_status_*. El cliente ya no
+    # la ve (octubre de 2026): solo podía decir «Registrada» o «Activa».
     "status_short_registered": "Registrada",
     "status_short_active": "Activa",
     "status_short_suspended": "Suspendida",
@@ -412,8 +404,6 @@ TEXTS = {
     "settings_postal_missing": "Falta",
     # Los teléfonos y la identificación, que se cambian aquí.
     "settings_phones": "Teléfonos",
-    "settings_phones_hint": "El tuyo, que es al que te escribimos, y los de tu "
-                            "empresa.",
     "settings_phones_done": "Listo, tus teléfonos quedaron guardados.",
     # Las verificaciones: la identificación y la dirección, cada una con su
     # documento, que mira una persona de Sobreala.
@@ -455,9 +445,6 @@ TEXTS = {
     # El dueño le da entrada a alguien de su equipo, con su propio correo y su
     # propia contraseña, y le marca lo que puede hacer.
     "users_title": "Usuarios",
-    "users_lead": "Personas de tu equipo que entran a esta cuenta, cada una con "
-                  "su correo y su contraseña. Tú decides lo que puede hacer "
-                  "cada una.",
     "users_seats": "{used} de {seats} usuarios",
     "users_seats_full": "Tu plan no permite más. Para agregar a alguien más, "
                         "sube de plan.",
@@ -596,8 +583,6 @@ TEXTS = {
     "methods_paypal_remove": "Eliminar",
     "methods_paypal_saved": "Listo, guardamos tu cuenta de PayPal.",
     "methods_paypal_removed": "Listo, quitamos tu cuenta de PayPal.",
-    "pay_saved_paypal": "Se cobra con tu PayPal guardado ({who}), sin volver a "
-                        "iniciar sesión.",
 
     # --- pagos -------------------------------------------------------------
     "pay_checkout_title": "Obtener Plan {plan}",
@@ -641,7 +626,6 @@ TEXTS = {
     # haría que quien no tiene PayPal cerrara la página creyendo que no puede
     # pagar de ninguna forma.
     "pay_method_title": "Cómo quieres pagar",
-    "pay_method_use": "Usar este",
     "pay_method_soon": "Pronto",
     "pay_method_paypal": "PayPal",
     "pay_method_card": "Tarjeta de crédito o débito",

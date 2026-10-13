@@ -40,8 +40,11 @@ body {
 img, svg { display: block; max-width: 100%; }
 h1, h2, h3, p, ul, ol { margin: 0; }
 ul, ol { padding: 0; list-style: none; }
+/* Los enlaces no se subrayan, ni al pasar el mouse (octubre de 2026): los de
+   texto se ponen del azul de la marca. Solo los que no llevan clase, igual que
+   en el panel: botones, barra y menú tienen su propio efecto. */
 a { color: var(--color-accent-strong); text-decoration: none; }
-a:hover { text-decoration: underline; text-underline-offset: .18em; }
+a:not([class]):hover { color: var(--color-accent); }
 button { font: inherit; color: inherit; }
 /* Un solo anillo al enfocar. Antes se dibujaban dos: el borde del elemento
    cambiaba a azul y encima aparecía un contorno separado por un hueco de 3 px.
@@ -1297,7 +1300,9 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 .site-footer__title { font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-on-dark-soft); margin-bottom: 14px; }
 .site-footer__col ul { display: grid; gap: 10px; }
 .site-footer__col a { color: var(--color-on-dark); }
-.site-footer__col a:hover { color: var(--color-on-dark-soft); }
+/* En el pie, sobre el azul de la marca, el azul de los enlaces sería ilegible:
+   ahí se ponen del celeste que la marca reserva para ese fondo. */
+.site-footer__col a:hover { color: var(--color-accent-light); }
 .site-footer__soon { display: grid; gap: 4px; justify-items: start; color: rgba(255, 255, 255, .62); }
 .site-footer__soon .tag { margin-left: 0; }
 .contact-list li { position: relative; display: grid; gap: 2px; }
@@ -1319,7 +1324,7 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
   font: inherit; text-align: left; cursor: pointer; max-width: 100%;
 }
 .copy-inline__text { min-width: 0; overflow-wrap: anywhere; }
-.copy-inline:hover .copy-inline__text { text-decoration: underline; text-underline-offset: .18em; }
+.copy-inline:hover .copy-inline__text { color: var(--color-accent-light); }
 .copy-inline__done {
   max-width: 0; margin-left: -8px; padding: 2px 0;
   border-radius: 999px; overflow: hidden; white-space: nowrap;

@@ -8,11 +8,10 @@
   {% if closed %}
   {# Una cuenta cerrada: todavía no la abrió ni la demostración ni un pago. Las
      cuatro pantallas de cliente la devuelven aquí, así que esta tiene que decir
-     las dos formas de seguir: pedir la demostración, o contratar. Si llegó
-     desde una de ellas, primero se dice cuál quería abrir. #}
-  {% if gate %}<p class="notice">{{ t('welcome_gate', section=gate) }}</p>{% endif %}
+     las dos formas de seguir: pedir la demostración, o contratar. #}
   {#- Hubo aquí un párrafo con las dos formas de empezar y la lista de lo que
-      se hace en la demostración; se quitaron en octubre de 2026. -#}
+      se hace en la demostración, y un aviso de qué pantalla quería abrir
+      («Para entrar a…»); se quitaron en octubre de 2026. -#}
 
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
@@ -21,10 +20,7 @@
      queda este aviso con su gancho verde hasta que se abra la cuenta. #}
   <div class="notice notice--done" role="status">
     <span class="notice__tick">{% include "_icon-check.svg" %}</span>
-    <div>
-      <strong>{{ t('welcome_demo_done_title') }}</strong>
-      <p>{{ t('welcome_demo_done_text', phone=asked_phone) }}</p>
-    </div>
+    <strong>{{ t('welcome_demo_done_title') }}</strong>
   </div>
   {% else %}
   <form method="post" action="{{ url_for('auth.request_demo') }}" novalidate data-once>

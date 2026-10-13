@@ -195,9 +195,18 @@ def test_each_section_draws_its_own(client, database, outbox):
     account = inside.get("/settings").get_data(as_text=True)
     assert "Cooperativa Ejemplo" in account
     assert "ana@ejemplo.com" in account
+    # Menos texto (octubre de 2026): «Correo» a secas, sin el estado de la
+    # cuenta y sin las frases debajo de la dirección y los teléfonos.
+    assert ">Correo<" in account and "Correo de tu cuenta" not in account
+    assert "Estado de tu cuenta" not in account
+    assert "Sale al pie de tus campañas" not in account
+    assert "El tuyo, que es al que te escribimos" not in account
 
     security = inside.get("/settings/security").get_data(as_text=True)
     assert "/change-password" in security
+    assert "Personas de tu equipo" not in security
+    cambiar = inside.get("/change-password").get_data(as_text=True)
+    assert "Si la cambias, se cierra la sesión en los demás dispositivos." in cambiar
     assert "/account/two-factor" in security
     assert "Tus dispositivos" in security
 
