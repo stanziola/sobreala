@@ -62,34 +62,27 @@
     <input type="hidden" name="plan" value="{{ plan }}">
     <input type="hidden" name="cycle" value="{{ cycle }}">
 
-    {% if methods|length > 1 or soon %}
-    <p class="field-label">{{ t('pay_method_title') }}</p>
     {#- Cada método son sus logos, sin título: se entiende solo, y se elige con
         su botón de radio, sin texto. El nombre va en el texto alternativo de los
         logos y, escondido, junto al botón, para que un lector de pantalla diga
-        de qué. Con PayPal guardado, su cuenta sale debajo del logo: quien lo
-        elige sabe con cuál paga. -#}
+        de qué. Los que faltan se enseñan igual y dicen que faltan: esconderlos
+        haría que quien no tiene PayPal cerrara la página creyendo que no puede
+        pagar. -#}
+    {% macro method_rows(first_checked) %}
     {% for name in methods %}
     <div class="setting">
       <div class="setting__text">
         {% include "_pay_logos.html" %}
-        {% if name == 'paypal' and saved_paypal %}
-        <p class="setting__desc">{{ saved_paypal.payer }}</p>
-        {% endif %}
       </div>
       <div class="setting__action">
         <label class="check">
           <input type="radio" name="metodo" value="{{ name }}"
-                 {% if loop.first %}checked{% endif %}>
+                 {% if first_checked and loop.first %}checked{% endif %}>
           <span class="visually-hidden">{{ t('pay_method_' + name) }}</span>
         </label>
       </div>
     </div>
     {% endfor %}
-
-    {# Los que faltan se enseñan igual y se dice que faltan. Esconderlos haría
-       que quien no tiene PayPal cerrara la página creyendo que no puede
-       pagar. #}
     {% for name in soon %}
     <div class="setting">
       <div class="setting__text">
@@ -100,6 +93,34 @@
       </div>
     </div>
     {% endfor %}
+    {% endmacro %}
+
+    {% if saved_paypals %}
+    {#- Lo guardado primero, cada cuenta con su correo debajo del logo: quien la
+        elige sabe con cuál paga. Lo demás, en un desplegable. -#}
+    <p class="field-label">{{ t('pay_method_title') }}</p>
+    {% for one in saved_paypals %}
+    <div class="setting">
+      <div class="setting__text">
+        {% with name='paypal' %}{% include "_pay_logos.html" %}{% endwith %}
+        <p class="setting__desc">{{ one.payer }}</p>
+      </div>
+      <div class="setting__action">
+        <label class="check">
+          <input type="radio" name="metodo" value="saved:{{ one.id }}"
+                 {% if loop.first %}checked{% endif %}>
+          <span class="visually-hidden">{{ t('pay_method_paypal') }} {{ one.payer }}</span>
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+    <details class="pay-other">
+      <summary>{{ t('pay_other_method') }}</summary>
+      {{ method_rows(false) }}
+    </details>
+    {% elif methods|length > 1 or soon %}
+    <p class="field-label">{{ t('pay_method_title') }}</p>
+    {{ method_rows(true) }}
     {% else %}
     <input type="hidden" name="metodo" value="{{ methods[0] }}">
     {% endif %}

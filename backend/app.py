@@ -16,6 +16,7 @@ from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, at_moment, on_date, t
 from models.account import (current_plan, is_admin, plan_cycle,
                             status_of as account_status_of)
+from services.plans import money
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
 
@@ -146,6 +147,8 @@ def create_app(overrides: dict | None = None) -> Flask:
     # Para lo que va a pasar, no para lo que pasó: «17 de septiembre a las 09:00».
     app.jinja_env.filters["at_moment"] = at_moment
     app.jinja_env.filters["on_date"] = on_date
+    # Un monto del historial: «USD 15».
+    app.jinja_env.filters["money"] = money
     # El nombre en español de un permiso de usuario, para la lista de Usuarios.
     app.jinja_env.filters["permission_name"] = lambda name: t("users_can_" + name)
 

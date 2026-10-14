@@ -187,8 +187,11 @@ Yappy en el que dice «pronto» (`PAY_LOGOS` en las rutas, `_pay_logos.html`, y
 los archivos los copia `build_assets.py` de `brand/payments/` a
 `static/img/payments/`). El nombre del método va en el texto alternativo de sus
 logos y, escondido, junto a su botón de radio, que no lleva texto (el «Usar
-este» que había se quitó en octubre de 2026). Con PayPal guardado, su cuenta sale
-debajo del logo, para que quien lo elige sepa con cuál paga. De noche descansan sobre la tarjeta
+este» que había se quitó en octubre de 2026). **Con cuentas de PayPal guardadas,
+salen primero**, una fila por cuenta con su correo debajo del logo y la primera
+marcada; lo demás queda en «Utilizar otra cuenta o método de pago», un
+`<details>` del mismo formulario. Ahí, `paypal` es PayPal iniciando sesión, y una
+guardada viaja como `saved:<id>`. De noche descansan sobre la tarjeta
 oscura tal cual: hubo una pastilla blanca y se quitó, sabiendo que PayPal, Visa
 y Yappy, que son azules, ahí se leen poco. Debajo, una sola frase: «Sobreala
 nunca guarda tus datos de pago.» Del cliente
@@ -274,38 +277,49 @@ Railway como `PAYPAL_WEBHOOK_ID`.
 
 ## Los métodos guardados (octubre de 2026)
 
-**Facturación → Métodos de pago enseña solo lo guardado**: sin «Disponible» ni
-«Próximamente», y sin tarjeta ni Yappy mientras no se puedan guardar
-(Paguélofácil no documenta cobros guardados y Yappy está anunciado). Si alguno lo
-permite, entra por el mismo sitio. Sin nada guardado dice «No tienes métodos de
-pago guardados» y ofrece «Agregar PayPal».
+**Facturación → Métodos de pago enseña solo lo guardado**, una fila por cuenta:
+el logo pegado a la izquierda, la cuenta al lado y «Eliminar». Debajo,
+**«Agregar método de pago»**, con o sin guardados (sin nada, primero «No tienes
+métodos de pago guardados»). Abre la lista en la misma pantalla (`?agregar=1`,
+como «Editar» en Cuenta): PayPal con su «Agregar», y **Visa/Mastercard y Yappy
+con «No disponible»**, porque no se pueden guardar (Paguélofácil no documenta
+cobros guardados y Yappy está anunciado). El día que se pueda, entran por ahí.
 
 - **PayPal se guarda entrando una vez**, sin plan y sin cobro (PayPal Vault,
   *payment method tokens*). `POST /settings/billing/paypal` crea la petición
   (`/v3/vault/setup-tokens`), manda a PayPal, y la vuelta
   (`/settings/billing/paypal/return`) la canjea (`/v3/vault/payment-tokens`).
-  Queda en `accounts.paypal_vault`: el identificador y **el correo de la cuenta**,
-  que se enseña para que el cliente la reconozca. Ninguna tarjeta ni clave
-  (regla 9). En Facturación, lo guardado se ve con **el logo de PayPal** y la
-  cuenta debajo (`_pay_logos.html`).
+  **Se guarda más de una**, en la lista `accounts.paypal_vaults`: de cada una, el
+  identificador y **el correo de la cuenta**, que se enseña para que el cliente
+  la reconozca. Ninguna tarjeta ni clave (regla 9). La misma cuenta de PayPal
+  guardada otra vez no se repite: la nueva reemplaza a la anterior, que se borra
+  en PayPal. Hubo una sola, en `paypal_vault`; la que quedó ahí se sigue leyendo
+  como la primera (`paypal_vaults_of()`).
 - **La vuelta no se fía de la dirección**: solo vale con la petición que se le hizo
   a esa cuenta (`paypal_setup`), y lo que prueba que quedó guardada es la
   respuesta de PayPal al servidor.
-- **Eliminar** (`POST /settings/billing/paypal/remove`) lo quita en PayPal y aquí;
-  si PayPal falla, aquí tampoco, para que no quede guardada sin que se vea. Si
-  PayPal ya no la tenía (404), se quita igual.
-- **Para qué sirve**: en `/checkout/<plan>` la cuenta sale debajo del logo de
-  PayPal, y con ese botón se cobra con ella sin volver a iniciar sesión
-  (`paypal.pay_saved()`, que crea la orden con el `vault_id`). Después es
-  lo mismo de siempre: `complete_paypal()` compara el monto y la moneda contra el
-  intento y solo entonces `settle()`. Con la casilla de renovar o sin PayPal
-  guardado, el pago es el de siempre.
+- **Eliminar** (`POST /settings/billing/paypal/remove`, con cuál en `token`)
+  quita una de esta cuenta, en PayPal y aquí; si PayPal falla, aquí tampoco,
+  para que no quede guardada sin que se vea. Si PayPal ya no la tenía (404), se
+  quita igual.
+- **Para qué sirve**: en `/checkout/<plan>` las guardadas salen primero (ver
+  arriba), y con una se cobra sin volver a iniciar sesión (`paypal.pay_saved()`,
+  que crea la orden con el `vault_id`). `saved:<id>` tiene que ser de esa
+  cuenta: una que no lo es vuelve al pago sin cobrar. Después es lo mismo de
+  siempre: `complete_paypal()` compara el monto y la moneda contra el intento y
+  solo entonces `settle()`. Con la casilla de renovar o sin nada guardado, el
+  pago es el de siempre.
 - **La renovación automática no depende de esto**: sigue siendo una suscripción de
   PayPal (arriba). La fila de renovación sale activa, suspendida, o con su botón
   para quien tiene un plan vigente.
 - **Hay que activar Vault en la aplicación de PayPal Developer.** No tiene variable
-  de entorno aparte: si no está activado, «Agregar PayPal» termina en el aviso de
-  que no se pudo hablar con PayPal.
+  de entorno aparte: si no está activado, «Agregar» termina en el aviso de que no
+  se pudo hablar con PayPal (un 403 `NOT_AUTHORIZED` en el registro).
+- **El plan dice «vence el …»** y **el historial de compras lleva encabezados**
+  (Fecha, Plan, Periodo, Método, Monto y, con facturas, Factura). El monto se
+  escribe «USD 15»: entero sin decimales, con centavos los dos («USD 38.33») y los
+  miles con coma (filtro `money`, en `services/plans.py`). Solo en el historial;
+  el pago y el recibo siguen con «$».
 
 **El checkout ya no pide el RUC o la cédula** (octubre de 2026): la
 identificación es solo un documento que se verifica (ver `docs/cuenta.md`).

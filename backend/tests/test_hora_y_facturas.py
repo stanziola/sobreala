@@ -213,7 +213,7 @@ def test_facturacion_ensena_la_fecha_exacta_y_la_factura_en_camino(
     assert "Facturación" in pantalla
     hasta = accounts.plan_until(accounts.by_email(database, "ana@ejemplo.com"))
     local = hasta.astimezone(PANAMA)
-    assert f"hasta el {local.day} de" in pantalla
+    assert f"vence el {local.day} de" in pantalla
     assert "Factura en camino" in pantalla
 
 

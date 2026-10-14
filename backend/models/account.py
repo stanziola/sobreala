@@ -1185,14 +1185,28 @@ def start_subscription(db, account_id, *, sub_id: str, plan: str, cycle: str) ->
         "updated_at": now()}})
 
 
-# La cuenta de PayPal guardada (octubre de 2026), en `paypal_vault`: `id` (el de
-# PayPal), `payer` (el correo de esa cuenta, para que el cliente la reconozca) y
-# `created_at`. Mientras el cliente la aprueba, `paypal_setup` guarda la petición
-# que se le hizo a PayPal, y la vuelta solo vale si trae esa. Ninguna tarjeta ni
-# clave: regla 9.
+# Las cuentas de PayPal guardadas (octubre de 2026), en la lista `paypal_vaults`:
+# cada una con `id` (el de PayPal), `payer` (el correo de esa cuenta, para que el
+# cliente la reconozca) y `created_at`. Hubo una sola, en `paypal_vault`; la que
+# quedó escrita ahí se sigue leyendo como la primera de la lista. Mientras el
+# cliente aprueba una nueva, `paypal_setup` guarda la petición que se le hizo a
+# PayPal, y la vuelta solo vale si trae esa. Ninguna tarjeta ni clave: regla 9.
 
-def paypal_vault_of(account: dict[str, Any] | None) -> dict[str, Any] | None:
-    return (account or {}).get("paypal_vault") or None
+def paypal_vaults_of(account: dict[str, Any] | None) -> list[dict[str, Any]]:
+    found = list((account or {}).get("paypal_vaults") or [])
+    old = (account or {}).get("paypal_vault")
+    if old and old.get("id") and all(one.get("id") != old["id"] for one in found):
+        found.insert(0, old)
+    return found
+
+
+def paypal_vault_by_id(account: dict[str, Any] | None,
+                       token_id: str) -> dict[str, Any] | None:
+    """Esa cuenta guardada, solo si es de esta cuenta de Sobreala."""
+    if not token_id:
+        return None
+    return next((one for one in paypal_vaults_of(account)
+                 if one.get("id") == token_id), None)
 
 
 def start_paypal_setup(db, account_id, setup_id: str) -> None:
@@ -1201,17 +1215,21 @@ def start_paypal_setup(db, account_id, setup_id: str) -> None:
         "updated_at": now()}})
 
 
-def set_paypal_vault(db, account_id, *, token_id: str, payer: str) -> None:
+def add_paypal_vault(db, account_id, *, token_id: str, payer: str) -> None:
     db.accounts.update_one({"_id": account_id}, {
-        "$set": {"paypal_vault": {"id": token_id, "payer": payer,
-                                  "created_at": now()}, "updated_at": now()},
+        "$push": {"paypal_vaults": {"id": token_id, "payer": payer,
+                                    "created_at": now()}},
+        "$set": {"updated_at": now()},
         "$unset": {"paypal_setup": ""}})
 
 
-def clear_paypal_vault(db, account_id) -> None:
+def remove_paypal_vault(db, account_id, token_id: str) -> None:
+    """Quitarla de la lista, o del campo de antes si estaba ahí."""
     db.accounts.update_one({"_id": account_id}, {
-        "$set": {"updated_at": now()},
-        "$unset": {"paypal_vault": "", "paypal_setup": ""}})
+        "$pull": {"paypal_vaults": {"id": token_id}},
+        "$set": {"updated_at": now()}})
+    db.accounts.update_one({"_id": account_id, "paypal_vault.id": token_id},
+                           {"$unset": {"paypal_vault": ""}})
 
 
 def by_subscription(db, sub_id: str) -> dict[str, Any] | None:

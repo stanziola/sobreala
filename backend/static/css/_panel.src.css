@@ -1210,6 +1210,21 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
    y de noche (así se decidió, aunque de noche PayPal, Visa y Yappy, que son
    azules, se lean con poco contraste). */
 .pay-logos { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
+/* Un método guardado en Facturación: el logo a la izquierda y la cuenta al lado. */
+.saved-method { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.saved-method__who { font-size: .92rem; color: var(--color-ink-soft); overflow-wrap: anywhere; }
+/* La lista para agregar otro, y su botón. */
+.method-picker { margin-top: 6px; }
+.method-picker > .btn { margin-top: 12px; }
+.method-add { margin-top: 12px; }
+/* En el pago, «Utilizar otra cuenta o método de pago» despliega lo demás. */
+.pay-other { margin-top: 12px; }
+.pay-other > summary {
+  display: inline-block; cursor: pointer; list-style: none;
+  color: var(--color-accent-strong); font-weight: 600; font-size: .95rem;
+}
+.pay-other > summary::-webkit-details-marker { display: none; }
+.pay-other > summary:hover { color: var(--color-accent); }
 .pay-logos__one { height: 22px; width: auto; }
 .summary__pay, .receipt__go { width: 100%; justify-content: center; margin-top: 18px; }
 

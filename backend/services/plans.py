@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -257,6 +257,18 @@ def is_downgrade(current: str | None, wanted: str) -> bool:
     eso suma al final de lo que quedaba.
     """
     return rank(wanted) < rank(current)
+
+
+def money(value: Any, currency: str = CURRENCY) -> str:
+    """Un monto como se lee en el historial: «USD 15», «USD 38.33», «USD 1,026».
+    Entero, sin decimales; con centavos, con los dos."""
+    try:
+        number = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return f"{currency} {value}"
+    if number == number.to_integral_value():
+        return f"{currency} {int(number):,}"
+    return f"{currency} {number:,.2f}"
 
 
 def amount(plan: str, cycle: str) -> str | None:

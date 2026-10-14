@@ -223,7 +223,7 @@ def test_each_section_draws_its_own(client, database, outbox):
     assert "Yappy" not in payments and "Próximamente" not in payments
     assert "Tarjeta de crédito o débito" not in payments
     assert "No tienes métodos de pago guardados" in payments or \
-        "Agregar PayPal" in payments
+        "Agregar método de pago" in payments
 
 
 def admin_inside(client, database, email="jefe@ejemplo.com"):

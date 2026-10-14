@@ -563,7 +563,7 @@ TEXTS = {
     "settings_payments_lead": "Tu plan, con qué has pagado y tus facturas. "
                               "Los planes se eligen en el sitio.",
     "billing_plan_row": "Plan",
-    "billing_until": "hasta el {when}",
+    "billing_until": "vence el {when}",
     "billing_methods_title": "Métodos de pago",
     "billing_paypal_used": "Has pagado con la cuenta de PayPal {who}.",
     "billing_paypal_used_plain": "Has pagado con tu cuenta de PayPal.",
@@ -576,10 +576,9 @@ TEXTS = {
     "billing_invoices_none": "Todavía no tienes pagos.",
     # Solo se enseña lo guardado (octubre de 2026).
     "methods_none": "No tienes métodos de pago guardados.",
-    "methods_paypal": "PayPal",
-    "methods_paypal_desc": "Entras a PayPal una vez y queda guardada. Después "
-                           "pagas sin volver a iniciar sesión.",
-    "methods_paypal_add": "Agregar PayPal",
+    "methods_add": "Agregar método de pago",
+    "methods_add_this": "Agregar",
+    "methods_unavailable": "No disponible",
     "methods_paypal_remove": "Eliminar",
     "methods_paypal_saved": "Listo, guardamos tu cuenta de PayPal.",
     "methods_paypal_removed": "Listo, quitamos tu cuenta de PayPal.",
@@ -627,6 +626,14 @@ TEXTS = {
     # pagar de ninguna forma.
     "pay_method_title": "Cómo quieres pagar",
     "pay_method_soon": "Pronto",
+    "pay_other_method": "Utilizar otra cuenta o método de pago",
+    # Las columnas del historial de compras.
+    "billing_col_date": "Fecha",
+    "billing_col_plan": "Plan",
+    "billing_col_cycle": "Periodo",
+    "billing_col_method": "Método",
+    "billing_col_amount": "Monto",
+    "billing_col_invoice": "Factura",
     "pay_method_paypal": "PayPal",
     "pay_method_card": "Tarjeta de crédito o débito",
     "pay_card_ending": "terminada en {last4}",

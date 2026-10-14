@@ -314,10 +314,11 @@ cosa está como está, y lo que ya se probó y se quitó.
   PayPal cobra sola cada periodo (`services/renewals.py`). Cada cobro se anota
   una vez por su id (`by_transaction`), y se activa desde el pago o desde
   Facturación. La tarjeta y Yappy no guardan nada: se pagan en cada renovación.
-- **Facturación enseña solo lo guardado**: la cuenta de PayPal, que se guarda
-  entrando una vez (PayPal Vault, `accounts.paypal_vault`: identificador y
-  correo, nunca tarjeta) y sirve para pagar sin volver a iniciar sesión. Se
-  agrega y se elimina desde ahí.
+- **Facturación enseña solo lo guardado**: cuentas de PayPal, una o varias, que
+  se guardan entrando una vez (PayPal Vault, `accounts.paypal_vaults`:
+  identificador y correo, nunca tarjeta) y sirven para pagar sin volver a
+  iniciar sesión; en el pago salen primero. Se agregan y se eliminan desde ahí,
+  y la tarjeta y Yappy dicen «No disponible».
 - `payments` se escribe antes de mandar a pagar. Pasar a `completed` es una
   escritura condicional: cobrar dos veces no da dos periodos. Todo termina en
   `settle()`.

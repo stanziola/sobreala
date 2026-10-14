@@ -384,29 +384,50 @@
     <p class="notice notice--ok">{{ t('methods_paypal_removed') }}</p>
     {% endif %}
 
-    {% if vault %}
-    {# Lo guardado se reconoce por su logo, con la cuenta debajo. #}
+    {# Cada cuenta guardada: su logo pegado a la izquierda y la cuenta al lado. #}
+    {% for one in vaults %}
     <div class="setting">
-      <div class="setting__text">
+      <div class="setting__text saved-method">
         {% with name='paypal' %}{% include "_pay_logos.html" %}{% endwith %}
-        <p class="setting__desc">{{ vault.payer }}</p>
+        <span class="saved-method__who">{{ one.payer }}</span>
       </div>
       <div class="setting__action">
         <form method="post" action="{{ url_for('auth.remove_paypal') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="token" value="{{ one.id }}">
           <button class="btn btn--small btn--outline" type="submit">{{ t('methods_paypal_remove') }}</button>
         </form>
       </div>
     </div>
-    {% elif vault_ready %}
-    {% call row(t('methods_paypal'), t('methods_paypal_desc')) %}
-    <form method="post" action="{{ url_for('auth.add_paypal') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn--small" type="submit">{{ t('methods_paypal_add') }}</button>
-    </form>
-    {% endcall %}
+    {% endfor %}
+
+    {# Agregar otro: la lista de métodos en la misma pantalla. Solo PayPal se
+       puede guardar hoy; la tarjeta y Yappy dicen «No disponible», y el día que
+       se puedan guardar entran por aquí. #}
+    {% if adding %}
+    <div class="method-picker" id="agregar">
+      {% for name in add_methods %}
+      <div class="setting">
+        <div class="setting__text">{% include "_pay_logos.html" %}</div>
+        <div class="setting__action">
+          {% if name == 'paypal' and vault_ready %}
+          <form method="post" action="{{ url_for('auth.add_paypal') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--small" type="submit">{{ t('methods_add_this') }}<span class="visually-hidden"> {{ t('pay_method_' + name) }}</span></button>
+          </form>
+          {% else %}
+          <span class="tag tag--quiet">{{ t('methods_unavailable') }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      <a class="btn btn--small btn--outline"
+         href="{{ url_for('auth.settings', section='billing') }}#metodos">{{ t('settings_cancel') }}</a>
+    </div>
     {% else %}
-    <p class="hint">{{ t('methods_none') }}</p>
+    {% if not vaults %}<p class="hint">{{ t('methods_none') }}</p>{% endif %}
+    <a class="btn btn--small btn--outline method-add"
+       href="{{ url_for('auth.settings', section='billing', agregar=1) }}#metodos">{{ t('methods_add') }}</a>
     {% endif %}
 
     {# La renovación automática, solo con su aviso montado: un botón que no puede
@@ -444,6 +465,16 @@
     {% if payments %}
     <div class="table-wrap">
       <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{{ t('billing_col_date') }}</th>
+            <th scope="col">{{ t('billing_col_plan') }}</th>
+            <th scope="col">{{ t('billing_col_cycle') }}</th>
+            <th scope="col">{{ t('billing_col_method') }}</th>
+            <th scope="col">{{ t('billing_col_amount') }}</th>
+            {% if invoices_shown %}<th scope="col">{{ t('billing_col_invoice') }}</th>{% endif %}
+          </tr>
+        </thead>
         <tbody>
           {% for one in payments %}
           <tr>
@@ -455,7 +486,7 @@
             <td class="table__quiet">{{ t('pay_method_' + (one.method or 'paypal')) }}
               {#- De la tarjeta, solo sus últimos cuatro números. -#}
               {% if one.card_last4 %} · {{ t('pay_card_ending', last4=one.card_last4) }}{% endif %}</td>
-            <td class="table__quiet">{{ one.currency }} {{ one.amount }}</td>
+            <td class="table__quiet">{{ one.amount|money(one.currency or 'USD') }}</td>
             {% if invoices_shown %}
             <td>
               {% if one._id in invoices %}

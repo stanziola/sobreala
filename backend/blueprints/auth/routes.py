@@ -1856,9 +1856,13 @@ def settings(section: str = "account"):
         account_errors=account_errors,
         editing=editing,
         renewals_ready=paypal.renewals_ready(),
-        vault=accounts.paypal_vault_of(account),
+        vaults=accounts.paypal_vaults_of(account),
         vault_ready=paypal.vault_ready(),
         pay_logos=PAY_LOGOS,
+        # «Agregar método de pago» abre la lista en la misma pantalla, como
+        # «Editar» en Cuenta. Los que no se pueden guardar dicen «No disponible».
+        adding=request.args.get("agregar") == "1",
+        add_methods=payments.ALL,
         subscription=accounts.subscription_of(account),
         renewal_on=accounts.renewal_on(account),
         can_renew=bool(accounts.current_plan(account)) and accounts.can_buy(account),
@@ -2095,8 +2099,9 @@ def checkout(plan: str):
         soon=[one for one in payments.ALL if one not in ready_methods()],
         current=accounts.plan_of(account),
         plan_until=accounts.plan_until(account),
-        # La cuenta de PayPal guardada: con ella pagar es un clic.
-        saved_paypal=accounts.paypal_vault_of(account),
+        # Las cuentas de PayPal guardadas, que salen primero: con ellas pagar es
+        # un clic. Lo demás queda en «Utilizar otra cuenta o método de pago».
+        saved_paypals=accounts.paypal_vaults_of(account),
         # «Renovar solo con PayPal»: solo se ofrece si PayPal está entre los
         # métodos y el aviso está montado, y no en una mejora, que se paga suelta.
         renew_option=(paypal.renewals_ready() and payments.PAYPAL in ready_methods()
@@ -2183,8 +2188,16 @@ def start_payment():
     # Con qué eligió pagar. Lo que no se pueda usar ahora mismo se lee como
     # PayPal: el formulario se puede escribir a mano, y Yappy (o la tarjeta sin
     # sus credenciales) está anunciado pero no cobra nada.
+    # Una cuenta de PayPal guardada llega como `saved:<id>`, y tiene que ser de
+    # esta cuenta: una que no lo es vuelve al pago sin cobrar nada.
     ready = ready_methods()
     method = request.form.get("metodo", "")
+    saved = None
+    if method.startswith("saved:"):
+        saved = accounts.paypal_vault_by_id(account, method[len("saved:"):][:64])
+        if saved is None:
+            return redirect(url_for("auth.checkout", plan=plan, cycle=cycle))
+        method = payments.PAYPAL
     if method not in ready:
         method = payments.PAYPAL
     if method not in ready:
@@ -2219,8 +2232,7 @@ def start_payment():
                              method=method, price=f"{quote['price']:.2f}",
                              credit=f"{quote['credit']['amount']:.2f}",
                              upgrade=upgrading)
-    # Con la cuenta de PayPal guardada se cobra sin mandar al cliente a PayPal.
-    saved = accounts.paypal_vault_of(account)
+    # Con una cuenta de PayPal guardada se cobra sin mandar al cliente a PayPal.
     if method == payments.PAYPAL and saved:
         try:
             order_id, result = paypal.pay_saved(
@@ -2366,7 +2378,8 @@ def add_paypal():
     back = url_for("auth.settings", section="billing")
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(back)
-    if not paypal.vault_ready() or accounts.paypal_vault_of(account):
+    # Con una ya guardada se puede agregar otra.
+    if not paypal.vault_ready():
         return redirect(back)
     db = get_db()
     try:
@@ -2400,15 +2413,27 @@ def finish_paypal():
         saved = paypal.save_payment_token(setup_id)
     except paypal.PayPalError:
         return redirect(f"{back}?error=paypal")
-    accounts.set_paypal_vault(get_db(), account["_id"], token_id=saved["id"],
+    db = get_db()
+    # La misma cuenta de PayPal guardada otra vez no se repite: la nueva
+    # reemplaza a la anterior, que se borra en PayPal si se puede.
+    for one in accounts.paypal_vaults_of(account):
+        if saved["payer"] and one.get("payer", "").lower() == saved["payer"].lower():
+            if one.get("id") != saved["id"]:
+                try:
+                    paypal.delete_payment_token(one["id"])
+                except paypal.PayPalError:
+                    pass
+            accounts.remove_paypal_vault(db, account["_id"], one["id"])
+    accounts.add_paypal_vault(db, account["_id"], token_id=saved["id"],
                               payer=saved["payer"])
     return redirect(f"{back}?paypal=saved")
 
 
 @bp.route("/settings/billing/paypal/remove", methods=["POST"])
 def remove_paypal():
-    """Quitar la cuenta de PayPal guardada, en PayPal y aquí. Si PayPal no la
-    quitó, aquí tampoco: así no queda guardada sin que se vea."""
+    """Quitar una cuenta de PayPal guardada (`token`), en PayPal y aquí. Solo
+    una de esta cuenta. Si PayPal no la quitó, aquí tampoco: así no queda
+    guardada sin que se vea."""
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
@@ -2418,13 +2443,14 @@ def remove_paypal():
     back = url_for("auth.settings", section="billing")
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(back)
-    saved = accounts.paypal_vault_of(account)
-    if saved:
-        try:
-            paypal.delete_payment_token(saved["id"])
-        except paypal.PayPalError:
-            return redirect(f"{back}?error=paypal")
-        accounts.clear_paypal_vault(get_db(), account["_id"])
+    saved = accounts.paypal_vault_by_id(account, request.form.get("token", "")[:64])
+    if saved is None:
+        return redirect(back)
+    try:
+        paypal.delete_payment_token(saved["id"])
+    except paypal.PayPalError:
+        return redirect(f"{back}?error=paypal")
+    accounts.remove_paypal_vault(get_db(), account["_id"], saved["id"])
     return redirect(f"{back}?paypal=removed")
 
 
