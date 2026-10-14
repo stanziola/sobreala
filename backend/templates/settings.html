@@ -37,7 +37,8 @@
     'account': 'settings_section_account',
     'security': 'settings_section_security',
     'notifications': 'settings_section_notifications',
-    'billing': 'settings_section_payments'} %}
+    'billing': 'settings_section_payments',
+    'backups': 'settings_section_backups'} %}
 
   <nav class="settings__nav" aria-label="{{ t('settings_title') }}">
     {% for slug in sections %}
@@ -529,6 +530,74 @@
     {% if invoices_shown %}<p class="hint">{{ t('billing_invoices_hint') }}</p>{% endif %}
     {% else %}
     <p class="hint">{{ t('billing_invoices_none') }}</p>
+    {% endif %}
+
+    {# --------------------------------------------------------- respaldos #}
+    {% elif section == 'backups' %}
+    <h2 class="settings__title">{{ t('settings_section_backups') }}</h2>
+    <p class="settings__lead">{{ t('backups_lead') }}</p>
+
+    {% if request.args.get('saved') %}<p class="notice notice--ok">{{ t('backups_saved') }}</p>{% endif %}
+    {% if request.args.get('done') %}<p class="notice notice--ok">{{ t('backups_done') }}</p>{% endif %}
+    {% if request.args.get('error') in ['wait', 'failed'] %}
+    <p class="notice">{{ t('backups_error_' + request.args.get('error')) }}</p>
+    {% endif %}
+
+    {% if not storage_ready %}
+    <p class="notice">{{ t('backups_unavailable') }}</p>
+    {% else %}
+    <hr class="settings__rule">
+    {% call row(t('backups_every'), t('backups_every_hint')) %}
+    <form class="setting__form" method="post" action="{{ url_for('auth.backup_every') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="visually-hidden" for="backup-every">{{ t('backups_every') }}</label>
+      <select id="backup-every" name="every">
+        {% for one in backup_choices %}
+        <option value="{{ one }}"{% if (backup.every or '') == one %} selected{% endif %}>{{ t('backups_every_' + (one or 'off')) }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn--small" type="submit">{{ t('backups_save') }}</button>
+    </form>
+    {% endcall %}
+
+    {% if backup.last_error %}
+    <p class="notice">{{ t('backups_last_failed', when=backup.last_try_at|on_date) }}</p>
+    {% endif %}
+
+    <h3 class="settings__subtitle">{{ t('backups_list_title') }}</h3>
+    {% if backup_list %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">{{ t('backups_col_date') }}</th>
+            <th scope="col">{{ t('backups_col_how') }}</th>
+            <th scope="col">{{ t('backups_col_size') }}</th>
+            <th scope="col"><span class="visually-hidden">{{ t('backups_download') }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for one in backup_list %}
+          <tr>
+            <td>{{ one.created_at|at_moment }}</td>
+            <td class="table__quiet">{{ t('backups_auto') if one.auto else t('backups_manual') }}</td>
+            <td class="table__quiet">{{ '%.1f'|format(one.size / 1048576) if one.size >= 104858 else '0.1' }} MB</td>
+            <td><a class="btn btn--small btn--outline"
+                   href="{{ url_for('auth.backup_file', raw=one._id) }}">{{ t('backups_download') }}</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="hint">{{ t('backups_none') }}</p>
+    {% endif %}
+
+    <form class="setting__form" method="post" action="{{ url_for('auth.backup_now') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--small btn--outline" type="submit">{{ t('backups_now') }}</button>
+    </form>
+    <p class="hint">{{ t('backups_keep_hint', n=keep) }}</p>
     {% endif %}
     {% endif %}
 

@@ -989,6 +989,14 @@ def canvas_html(raw):
     found = designs.by_id(db, account["_id"], design_id) if design_id else None
     if found is None or found.get("source") != designs.CANVAS:
         abort(404)
+    name, data = canvas_zip(db, account, found)
+    return Response(data, mimetype="application/zip", headers={
+        "Content-Disposition": f'attachment; filename="{name}"'})
+
+
+def canvas_zip(db, account, found) -> tuple[str, bytes]:
+    """El ZIP de una plantilla del lienzo y su nombre de archivo. Lo usan la
+    descarga y los respaldos (`services/backups.py`)."""
     if (found.get("canvas") or {}).get("v") != canvas.VERSION:
         # Guardada por diapositivas: sus imágenes eran de otra forma. Se
         # rehacen como antes del primer correo.
@@ -1026,8 +1034,7 @@ def canvas_html(raw):
             # Ya van comprimidas: guardarlas tal cual es más rápido e igual de
             # liviano.
             pack.writestr(path, data, compress_type=zipfile.ZIP_STORED)
-    return Response(out.getvalue(), mimetype="application/zip", headers={
-        "Content-Disposition": f'attachment; filename="{file_name(name, "zip")}"'})
+    return file_name(name, "zip"), out.getvalue()
 
 
 # Lo que puede ir en el nombre de un archivo sin romper la cabecera ni el disco

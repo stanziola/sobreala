@@ -324,6 +324,49 @@ def remove_suppressed():
     return redirect(url_for("contacts.index"))
 
 
+def csv_lines(account, rows, blocked):
+    """Los contactos como CSV, fila por fila: punto y coma y marca de orden de
+    bytes, que es lo que abre Excel en español y lo que nuestro importador
+    lee. Lo usan Exportar y los respaldos (`services/backups.py`)."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
+
+    def flush():
+        value = buffer.getvalue()
+        buffer.seek(0)
+        buffer.truncate(0)
+        return value
+
+    # Las columnas propias salen al final y con su nombre: así el
+    # archivo que baja se puede volver a subir y el importador las reconoce
+    # por el título, que es lo que hace que exportar sirva de copia.
+    mine = accounts.fields_of(account)
+
+    yield "\ufeff"
+    writer.writerow([t("contacts_col_email"), t("contacts_col_name"),
+                     t("contacts_col_tags"), t("contacts_col_how"),
+                     t("contacts_col_added"), t("contacts_col_status")]
+                    + [one["label"] for one in mine])
+    yield flush()
+    for row in rows:
+        how = row.get("added_by")
+        writer.writerow([
+            row.get("email", ""),
+            row.get("name", ""),
+            ", ".join(row.get("tags") or []),
+            t("contacts_how_" + how) if how else "",
+            (row.get("created_at").date().isoformat()
+             if row.get("created_at") else ""),
+            t("contacts_status_blocked")
+            if row["email_normalized"] in blocked
+            else t("contacts_status_active"),
+            *[columns.show(columns.values_of(row).get(one["key"], ""),
+                           one.get("type", columns.TEXT))
+              for one in mine],
+        ])
+        yield flush()
+
+
 @bp.route("/contacts/export", methods=["GET", "POST"])
 def export():
     """Bajar lo que enseña la tabla, respetando el buscador y el filtro.
@@ -359,49 +402,10 @@ def export():
                db.suppressions.find({"account_id": account["_id"]},
                                     {"email_normalized": 1})}
 
-    def lines():
-        buffer = io.StringIO()
-        writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
-
-        def flush():
-            value = buffer.getvalue()
-            buffer.seek(0)
-            buffer.truncate(0)
-            return value
-
-        # Las columnas propias salen al final y con su nombre: así el
-        # archivo que baja se puede volver a subir y el importador las reconoce
-        # por el título, que es lo que hace que exportar sirva de copia.
-        mine = accounts.fields_of(account)
-
-        yield "\ufeff"
-        writer.writerow([t("contacts_col_email"), t("contacts_col_name"),
-                         t("contacts_col_tags"), t("contacts_col_how"),
-                         t("contacts_col_added"), t("contacts_col_status")]
-                        + [one["label"] for one in mine])
-        yield flush()
-        for row in rows:
-            how = row.get("added_by")
-            writer.writerow([
-                row.get("email", ""),
-                row.get("name", ""),
-                ", ".join(row.get("tags") or []),
-                t("contacts_how_" + how) if how else "",
-                (row.get("created_at").date().isoformat()
-                 if row.get("created_at") else ""),
-                t("contacts_status_blocked")
-                if row["email_normalized"] in blocked
-                else t("contacts_status_active"),
-                *[columns.show(columns.values_of(row).get(one["key"], ""),
-                               one.get("type", columns.TEXT))
-                  for one in mine],
-            ])
-            yield flush()
-
     name = f"contactos-{date.today().isoformat()}.csv"
     # mimetype y no content_type: Flask le añade el charset, y ponerlo aquí
     # además lo dejaba escrito dos veces en la cabecera.
-    return Response(lines(), mimetype="text/csv",
+    return Response(csv_lines(account, rows, blocked), mimetype="text/csv",
                     headers={"Content-Disposition":
                              f'attachment; filename="{name}"'})
 

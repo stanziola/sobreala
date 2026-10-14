@@ -18,8 +18,9 @@ que se abre **con la demostración o con el pago**, el **panel de
 administración**, el
 **cobro de un plan con PayPal** y el **envío de campañas**, con su enlace de
 baja, y **el aviso de Amazon** que cuenta qué pasó con cada correo después de
-salir. Faltan la pausa automática por rebotes y quejas, y el proceso en segundo
-plano.
+salir. Faltan la pausa automática por rebotes y quejas. El primer proceso en
+segundo plano son **los respaldos** (`backend/backups.py`, servicio Cron de
+Railway cada hora).
 
 ---
 
@@ -308,6 +309,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   con su sesión de verdad. «Cerrar sesión» las cierra todas.
 - La ficha de administración enseña cifras y orígenes, **nunca la lista de
   direcciones de un cliente**.
+- **Respaldos** (Configuración → Respaldos): cada cliente elige cada cuánto, y
+  `backend/backups.py` (Cron de Railway, cada hora) los guarda en S3; se
+  conservan los últimos cinco y solo los baja el dueño.
 
 ### Cobro (`docs/cobro.md`)
 
@@ -389,6 +393,7 @@ SES_TRANSACTIONAL_CONFIGURATION_SET # correo del sistema, sin ellos
 SES_WEBHOOK_SECRET        # va en la dirección del aviso; sin él, 404
 SES_TOPIC_ARN             # opcional: descarta avisos de otro tema
 SENDING_DOMAIN            # opcional: por omisión envios.sobreala.com
+S3_BUCKET                 # respaldos de los clientes; sin él, no hay
 GOOGLE_CLIENT_ID          # entrar y registrarse con Google; sin los dos, no hay
 GOOGLE_CLIENT_SECRET      # botón y sus rutas dan 404
 PAYPAL_ENV                # sandbox | live; en producción, con llaves, tiene que

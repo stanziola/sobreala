@@ -1016,6 +1016,10 @@ PRIVACY = {
                 "servidor cuando alguien dice que no le llegó el código.",
                 "**De tus envíos:** por cada correo de campaña, si se entregó, "
                 "rebotó, generó una queja, se abrió o se hizo click.",
+                "**Respaldos, si los activas:** guardamos copias de tus "
+                "contactos, tus bajas, tus plantillas y tus campañas, cifradas, "
+                "con la frecuencia que elijas. Conservamos las últimas cinco y "
+                "solo tú puedes bajarlas desde tu cuenta.",
                 "**Si entras con Google:** Google nos da tu correo (ya "
                 "verificado), tu nombre y un identificador de tu cuenta de "
                 "Google, y nada más: ni tu contraseña, ni tus contactos, ni tus "
