@@ -18,18 +18,9 @@ from models import account as accounts
 from models import campaign as campaigns
 from models import campaign_run as runs
 from models import suppression as suppressions
-from services import attachments, storage
+from services import attachments
 
 PDF = b"%PDF-1.4\n% un documento de mentira\n%%EOF\n"
-
-
-@pytest.fixture
-def sin_s3(monkeypatch):
-    """El adjunto no pasa por S3: si algo intenta guardarlo o leerlo, falla."""
-    def no(*args, **kwargs):
-        raise AssertionError("el adjunto no se guarda")
-    monkeypatch.setattr(storage, "put", no)
-    monkeypatch.setattr(storage, "get", no)
 
 
 def escribir(browser, *, para="socio0@ejemplo.com", asunto="Tu estado de cuenta",
@@ -52,7 +43,7 @@ def test_la_pantalla_sale_en_enviar_correos(client, database, outbox):
 
 
 def test_sale_a_esa_persona_con_su_baja_y_su_detalle(client, database, outbox,
-                                                     monkeypatch, sin_s3):
+                                                     monkeypatch):
     browser, cuenta, _ = ready(client, database)
     salidos = catch(monkeypatch)
 
@@ -128,7 +119,7 @@ def test_a_quien_se_dio_de_baja_no_se_le_escribe(client, database, outbox, monke
 
 
 def test_un_archivo_de_otro_tipo_o_muy_grande_no_entra(client, database, outbox,
-                                                       monkeypatch, sin_s3):
+                                                       monkeypatch):
     browser, cuenta, _ = ready(client, database)
     salidos = catch(monkeypatch)
 

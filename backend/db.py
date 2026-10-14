@@ -177,9 +177,6 @@ def ensure_indexes(db: Database | None = None) -> None:
                              partialFilterExpression={"transaction_id": {"$type": "string"}},
                              name="by_transaction")
     db.paypal_plans.create_index([("key", ASCENDING)], unique=True, name="by_key")
-    # Los respaldos de cada cuenta, del más nuevo al más viejo.
-    db.backups.create_index([("account_id", ASCENDING), ("created_at", DESCENDING)],
-                            name="by_account")
 
     # Un documento por evento de SES. Es lo que más crece: unos tres por correo
     # enviado. Todavía no lo llena nadie, pero el índice va puesto desde ya para

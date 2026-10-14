@@ -1018,10 +1018,6 @@ PRIVACY = {
                 "rebotó, generó una queja, se abrió o se hizo click.",
                 "**Los archivos que adjuntas a un correo:** no los guardamos. "
                 "Salen con ese correo y no quedan en Sobreala.",
-                "**Respaldos, si los activas:** guardamos copias de tus "
-                "contactos, tus bajas, tus plantillas y tus campañas, cifradas, "
-                "con la frecuencia que elijas. Conservamos las últimas cinco y "
-                "solo tú puedes bajarlas desde tu cuenta.",
                 "**Si entras con Google:** Google nos da tu correo (ya "
                 "verificado), tu nombre y un identificador de tu cuenta de "
                 "Google, y nada más: ni tu contraseña, ni tus contactos, ni tus "

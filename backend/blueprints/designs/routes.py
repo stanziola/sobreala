@@ -995,8 +995,8 @@ def canvas_html(raw):
 
 
 def canvas_zip(db, account, found) -> tuple[str, bytes]:
-    """El ZIP de una plantilla del lienzo y su nombre de archivo. Lo usan la
-    descarga y los respaldos (`services/backups.py`)."""
+    """El ZIP de una plantilla del lienzo y su nombre de archivo. Lo usa la
+    descarga."""
     if (found.get("canvas") or {}).get("v") != canvas.VERSION:
         # Guardada por diapositivas: sus imágenes eran de otra forma. Se
         # rehacen como antes del primer correo.

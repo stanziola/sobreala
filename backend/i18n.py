@@ -382,46 +382,6 @@ TEXTS = {
     "settings_section_security": "Seguridad",
     "settings_section_notifications": "Notificaciones",
     "settings_section_payments": "Facturación",
-    "settings_section_backups": "Respaldos",
-    # Los respaldos que elige cada cliente (octubre de 2026).
-    "backups_lead": "Una copia de tus contactos, tus bajas, tus plantillas y tus "
-                    "campañas, en un archivo ZIP que puedes bajar.",
-    "backups_every": "Cada cuánto",
-    "backups_every_hint": "Los hacemos solos con la frecuencia que elijas.",
-    "backups_every_off": "Desactivado",
-    "backups_every_daily": "Cada día",
-    "backups_every_weekly": "Cada semana",
-    "backups_every_monthly": "Cada mes",
-    "backups_save": "Guardar",
-    "backups_saved": "Listo, guardamos la frecuencia de tus respaldos.",
-    "backups_done": "Listo, tu respaldo está hecho. Lo tienes en la lista.",
-    "backups_error_wait": "Ya hiciste un respaldo hace poco. Puedes hacer otro en "
-                          "una hora.",
-    "backups_error_failed": "No pudimos hacer el respaldo en este momento. Vuelve a "
-                            "intentarlo en unos minutos.",
-    "backups_unavailable": "Los respaldos todavía no están disponibles.",
-    "backups_last_failed": "El último respaldo automático falló el {when}. Lo "
-                           "volvemos a intentar en la próxima hora.",
-    "backups_list_title": "Tus respaldos",
-    "backups_col_date": "Fecha",
-    "backups_col_how": "Cómo",
-    "backups_col_size": "Tamaño",
-    "backups_auto": "Automático",
-    "backups_manual": "A mano",
-    "backups_download": "Descargar",
-    "backups_none": "Todavía no tienes respaldos.",
-    "backups_now": "Respaldar ahora",
-    "backups_keep_hint": "Guardamos los últimos {n}: al hacer uno nuevo, el más "
-                         "viejo se borra.",
-    # Las columnas de los CSV del respaldo.
-    "backup_col_email": "Correo",
-    "backup_col_reason": "Motivo",
-    "backup_col_date": "Fecha",
-    "backup_col_subject": "Asunto",
-    "backup_col_created": "Creada",
-    "backup_col_status": "Estado",
-    "backup_col_total": "Destinatarios",
-    "backup_col_sent": "Enviados",
 
     "settings_account_contact": "Tu nombre",
     "settings_account_company": "Empresa u organización",

@@ -327,7 +327,7 @@ def remove_suppressed():
 def csv_lines(account, rows, blocked):
     """Los contactos como CSV, fila por fila: punto y coma y marca de orden de
     bytes, que es lo que abre Excel en español y lo que nuestro importador
-    lee. Lo usan Exportar y los respaldos (`services/backups.py`)."""
+    lee. Lo usa Exportar."""
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
 

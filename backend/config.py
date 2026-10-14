@@ -134,9 +134,6 @@ class Config:
     # check() necesita distinguir «se dejó en sandbox a propósito» de «nadie lo
     # escribió».
     PAYPAL_ENV_SET = bool(os.getenv("PAYPAL_ENV", "").strip())
-    # El depósito de S3 de los respaldos (octubre de 2026). Sin él, Respaldos
-    # dice que no están disponibles.
-    S3_BUCKET = os.getenv("S3_BUCKET", "")
     # Entrar y registrarse con Google (octubre de 2026). Sin las dos, el botón no
     # sale y sus rutas dan 404.
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")

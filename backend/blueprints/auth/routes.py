@@ -40,10 +40,8 @@ from models import payment as payments
 from models import session as sessions
 from models import token as tokens
 from models import verification_doc as verification_docs
-from services import backups
 from services import countries
 from services import google_auth
-from services import storage
 from services import mailer
 from services import notices
 from services import paguelofacil
@@ -1358,72 +1356,6 @@ def google_signup():
                            postal_max=accounts.POSTAL_MAX)
 
 
-# --------------------------------------------------------------- respaldos
-
-# «Respaldar ahora»: uno por hora, que cada uno arma y sube un ZIP entero.
-BACKUP_NOW_PER_ACCOUNT = (1, 3600)
-
-
-@bp.route("/settings/backups/every", methods=["POST"])
-def backup_every():
-    """Elegir cada cuánto se respalda la cuenta. Solo el dueño."""
-    account = current_account()
-    if account is None:
-        return redirect(url_for("auth.login"))
-    answer = not_for_admins(account) or owner_only(account)
-    if answer:
-        return answer
-    back = url_for("auth.settings", section="backups")
-    if csrf_ok(request.form.get("csrf_token")):
-        backups.set_every(get_db(), account["_id"], request.form.get("every", ""))
-        return redirect(f"{back}?saved=1")
-    return redirect(back)
-
-
-@bp.route("/settings/backups/now", methods=["POST"])
-def backup_now():
-    """Hacer un respaldo ahora mismo, sin esperar a la tarea de cada hora."""
-    account = current_account()
-    if account is None:
-        return redirect(url_for("auth.login"))
-    answer = not_for_admins(account) or owner_only(account)
-    if answer:
-        return answer
-    back = url_for("auth.settings", section="backups")
-    if not csrf_ok(request.form.get("csrf_token")) or not storage.ready():
-        return redirect(back)
-    db = get_db()
-    if not rate_limit(db, f"backup:account:{account['_id']}", *BACKUP_NOW_PER_ACCOUNT):
-        return redirect(f"{back}?error=wait")
-    try:
-        backups.make(db, accounts.by_id(db, account["_id"]), auto=False)
-    except Exception:  # noqa: BLE001 - the screen says it failed; the log says why
-        return redirect(f"{back}?error=failed")
-    return redirect(f"{back}?done=1")
-
-
-@bp.route("/settings/backups/<raw>")
-def backup_file(raw):
-    """Bajar un respaldo. Solo el dueño, y solo uno de su cuenta; siempre como
-    archivo y sin guardarse en ningún caché."""
-    account = current_account()
-    if account is None:
-        return redirect(url_for("auth.login"))
-    answer = not_for_admins(account) or owner_only(account)
-    if answer:
-        return answer
-    try:
-        found = backups.fetch(get_db(), account["_id"], raw)
-    except storage.StorageError:
-        return redirect(url_for("auth.settings", section="backups", error="failed"))
-    if found is None:
-        abort(404)
-    name, data = found
-    return Response(data, mimetype="application/zip", headers={
-        "Content-Disposition": f'attachment; filename="{name}"',
-        "Cache-Control": "no-store"})
-
-
 @bp.route("/settings/google/disconnect", methods=["POST"])
 def google_disconnect():
     """Quitar Google de esta persona. Solo si tiene contraseña: sin ella se
@@ -1967,7 +1899,7 @@ def panel():
 
 # The four sections, in the order the sidebar lists them.
 MEMBER_SECTIONS = ("security",)
-SECTIONS = ("account", "security", "notifications", "billing", "backups")
+SECTIONS = ("account", "security", "notifications", "billing")
 
 # Del administrador dos. Cuenta y Pagos no significan nada en una cuenta que no
 # compra. Seguridad sí: es la cuenta que puede aprobar y suspender a todas las
@@ -2104,11 +2036,6 @@ def settings(section: str = "account"):
         editing=editing,
         renewals_ready=paypal.renewals_ready(),
         google_ready=google_auth.configured(),
-        backup=backups.setting(account),
-        backup_list=backups.list_for(db, account["_id"]) if section == "backups" else [],
-        backup_choices=backups.CHOICES,
-        keep=backups.KEEP,
-        storage_ready=storage.ready(),
         vaults=accounts.paypal_vaults_of(account),
         vault_ready=paypal.vault_ready(),
         pay_logos=PAY_LOGOS,

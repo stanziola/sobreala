@@ -362,23 +362,14 @@ qué cuenta, cuándo y **por qué**. El motivo no es opcional; la pantalla no de
 aplicar un cambio sin él, porque meses después esa frase es la única respuesta
 honesta a «por qué me suspendieron». Sin TTL, como `auth_events`.
 
-## Respaldos (octubre de 2026)
+## Respaldos: se hicieron y se quitaron (octubre de 2026)
 
-- **Configuración → Respaldos**, solo el dueño: cada cuánto (desactivado, cada
-  día, semana o mes), los últimos cinco con «Descargar», y «Respaldar ahora» (uno
-  por hora).
-- **Un respaldo es un ZIP con lo de esa cuenta** (`services/backups.py`):
-  `contactos.csv` (el mismo de Exportar, que se vuelve a importar), `bajas.csv`,
-  `campanas.csv` y `plantillas/`, cada plantilla del lienzo como su ZIP, que se
-  vuelve a cargar. Reutiliza `csv_lines()` de Contactos y `canvas_zip()` de
-  Plantillas.
-- **Se guarda en S3** (`S3_BUCKET`, `services/storage.py`), cifrado en reposo, en
-  `respaldos/<cuenta>/`. En la base queda una fila por respaldo (`backups`). Se
-  conservan los últimos `KEEP` (5): al hacer uno nuevo, el más viejo se borra.
-  Se baja siempre a través del panel, con la sesión y siendo el dueño.
-- **Los hace `backend/backups.py`**, un servicio Cron de Railway que corre cada
-  hora con el mismo código y variables que el panel. Respalda a quien le toca
-  (`backup.every`, `backup.last_at`, con diez minutos de margen) y una cuenta que
-  falla no frena a las demás: queda en `backup.last_error` y la pantalla lo dice.
-- **Lo que no cubre:** la base entera de Sobreala, que en Atlas gratis no tiene
-  respaldo. Eso es aparte.
+Hubo respaldos por cliente (Configuración → Respaldos): cada uno elegía cada
+cuánto, un servicio Cron de Railway armaba un ZIP con sus contactos, bajas,
+plantillas y campañas, y lo guardaba en S3. Se quitaron el mismo mes: el cliente
+ya baja sus contactos (Exportar) y cada plantilla del lienzo (su ZIP), y S3 no
+lo usaba nada más. El código está en el historial (`3a6b2a7`).
+
+Lo que sí falta es respaldar **la base entera** de Sobreala, y eso se hace en
+Atlas: el tier gratuito (M0) no tiene respaldos; Flex hace una copia diaria y
+M10 en adelante tiene Cloud Backup.
