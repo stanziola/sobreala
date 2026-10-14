@@ -160,6 +160,27 @@ una etiqueta que lo diga. **Los avisos de lo que todavía no existe
 medias. Sin interruptor valen «sí», así que el día que empiecen a salir llegan
 solos; ofrecerlos es sacarlos de esa tupla.
 
+### La búsqueda de la barra (octubre de 2026)
+
+Un campo en medio de la barra, **solo con sesión** (`blueprints/search/`), para
+moverse por el panel sin saber dónde está cada cosa.
+
+- **Qué encuentra**: las pantallas y acciones **que esa cuenta puede abrir**
+  (`CLIENT_PAGES` y `ADMIN_PAGES`, filtradas por `accounts.can()`; las
+  subsecciones de Configuración salen de `parts_for()`), por su nombre y por
+  palabras con que se piden («csv», «bajas», «dos pasos»); y **lo suyo por
+  nombre**: campañas, envíos, plantillas y etiquetas de su empresa, cinco de
+  cada una. Sin acentos ni mayúsculas, y cada palabra buscada tiene que estar al
+  principio de alguna del texto.
+- **Cómo**: `panel.js` pide `/search/suggest?q=` (JSON) mientras se escribe, con
+  una pausa corta y descartando respuestas viejas, y pinta con `textContent`
+  (los nombres los escribió el cliente). Flechas, Enter y Esc; «/» lleva al
+  campo. Sin JavaScript el campo manda a `/search`, que enseña lo mismo en una
+  página. Sin sesión, las dos dan 404.
+- En el teléfono es un ícono que abre el campo encima de la barra.
+- **No está en el sitio público**: sin sesión no hay nada que buscar. Es la
+  única excepción a «lo que existe en los dos sitios se cambia en los dos».
+
 ### La hora de quien mira
 
 **Todo se guarda en UTC y todo se escribe en la zona del dispositivo de quien

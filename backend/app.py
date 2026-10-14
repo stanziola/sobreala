@@ -100,6 +100,7 @@ def create_app(overrides: dict | None = None) -> Flask:
     from blueprints.media import bp as media_bp
     from blueprints.unsubscribe import bp as unsubscribe_bp
     from blueprints.downloads import bp as downloads_bp
+    from blueprints.search import bp as search_bp
     from blueprints.webhooks import bp as webhooks_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(contacts_bp)
@@ -115,6 +116,8 @@ def create_app(overrides: dict | None = None) -> Flask:
     app.register_blueprint(unsubscribe_bp)
     # El archivo de un correo individual: lo baja quien lo recibió, sin sesión.
     app.register_blueprint(downloads_bp)
+    # La búsqueda de la barra, con sesión.
+    app.register_blueprint(search_bp)
     # Los avisos de Amazon. Tampoco llevan sesion: quien llama es SNS, y lo que
     # lo autoriza es el secreto de la direccion.
     app.register_blueprint(webhooks_bp)

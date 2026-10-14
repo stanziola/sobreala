@@ -282,6 +282,78 @@ a:not([class]):hover { color: var(--color-accent); }
 .bar__wing .wing-shadow { fill: var(--color-shadow); }
 .bar__actions { display: flex; align-items: center; gap: 10px; }
 
+/* La búsqueda de la barra (octubre de 2026). En una pantalla ancha es un campo
+   en medio de la barra; en el teléfono, un ícono que lo abre encima de ella.
+   Las sugerencias cuelgan debajo, en una tarjeta como la del menú. */
+.search { position: relative; flex: 1 1 auto; max-width: 440px; margin: 0 auto 0 8px; }
+.search__toggle { display: none; }
+.search__box { position: relative; }
+.search__icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  display: inline-flex; color: rgba(255, 255, 255, .75); pointer-events: none;
+}
+.search__icon .icon { width: 18px; height: 18px; }
+.search__input {
+  width: 100%; min-height: 40px; margin: 0; padding: 8px 40px 8px 38px;
+  color: inherit; background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .35); border-radius: 11px;
+  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.search__input::placeholder { color: rgba(255, 255, 255, .75); }
+.search__input:focus {
+  outline: none; background: var(--color-surface); color: var(--color-ink);
+  border-color: var(--color-accent);
+}
+.search__box:focus-within .search__icon { color: var(--color-ink-soft); }
+.search__key {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  padding: 1px 7px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, .45);
+  font: inherit; font-size: .78rem; color: rgba(255, 255, 255, .8);
+}
+.search__box:focus-within .search__key { display: none; }
+.search__list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 70;
+  margin: 0; padding: 6px; list-style: none;
+  color: var(--color-ink); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  animation: search-in .16s var(--ease);
+}
+@keyframes search-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.search__option a {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 9px 12px; border-radius: 9px; color: var(--color-ink); text-decoration: none;
+}
+.search__option a:hover, .search__option.is-active a { background: var(--color-surface-alt); }
+.search__hint { font-size: .8rem; color: var(--color-ink-soft); white-space: nowrap; }
+.search__empty { padding: 9px 12px; color: var(--color-ink-soft); font-size: .92rem; }
+@media (max-width: 720px) {
+  .search { flex: 0 0 auto; max-width: none; margin: 0 0 0 auto; position: static; }
+  .search__toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 11px; color: inherit;
+    border: 1px solid rgba(255, 255, 255, .4);
+  }
+  .search__box { display: none; }
+  .search.is-open .search__box {
+    display: block; position: absolute; left: 12px; right: 12px; top: 12px; z-index: 80;
+  }
+  .search.is-open .search__toggle { visibility: hidden; }
+  .search__key { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .search__list { animation: none; } }
+/* En un teléfono angosto, con sesión, la barra lleva el ala, la lupa y el menú:
+   el nombre de la marca no cabe al lado, y el de la empresa se acorta. */
+@media (max-width: 480px) {
+  .bar:has(.search) .bar__name { display: none; }
+  .menu__who { max-width: 140px; }
+}
+/* La página de resultados, sin JavaScript. */
+.search-results { margin: 8px 0 0; padding: 0; list-style: none; }
+.search-results li { border-bottom: 1px solid var(--color-border); }
+.search-results a { display: block; padding: 12px 4px; text-decoration: none; color: var(--color-ink); }
+.search-results a:hover { background: var(--color-surface-alt); }
+
 /* The one control in the bar: a <details>, so it opens with no JavaScript.
    Signed in it wears the company's name; signed out, three lines. */
 .menu { position: relative; }

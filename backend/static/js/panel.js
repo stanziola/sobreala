@@ -666,3 +666,140 @@
     });
   });
 })();
+
+/* La búsqueda de la barra (octubre de 2026). Mientras se escribe, pide las
+   sugerencias al panel (`/search/suggest`) y las enseña debajo; las flechas
+   las recorren, Enter abre la marcada (sin marcar, el formulario manda a la
+   página de resultados, que es lo que pasa sin JavaScript) y Esc la cierra.
+   «/» lleva al campo desde cualquier parte que no sea otro campo. En el
+   teléfono, el ícono abre el campo encima de la barra. Lo que llega se pinta
+   con textContent: los nombres los escribió el cliente. */
+(function () {
+  var form = document.querySelector("form[data-search]");
+  if (!form || !window.fetch) return;
+  var input = form.querySelector(".search__input");
+  var list = form.querySelector(".search__list");
+  var opener = form.querySelector("[data-search-open]");
+  var url = form.getAttribute("data-suggest");
+  var timer = null;
+  var active = -1;
+  var asked = 0;
+
+  function options() { return list.querySelectorAll(".search__option"); }
+
+  function close() {
+    list.hidden = true;
+    list.innerHTML = "";
+    active = -1;
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+  }
+
+  function mark(index) {
+    var all = options();
+    Array.prototype.forEach.call(all, function (one, i) {
+      one.classList.toggle("is-active", i === index);
+      one.setAttribute("aria-selected", i === index ? "true" : "false");
+    });
+    active = index;
+    if (index >= 0 && all[index]) {
+      input.setAttribute("aria-activedescendant", all[index].id);
+    } else {
+      input.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  function draw(items) {
+    list.innerHTML = "";
+    if (!items.length) {
+      var none = document.createElement("li");
+      none.className = "search__empty";
+      none.textContent = form.getAttribute("data-none") || "Nada coincide.";
+      list.appendChild(none);
+    }
+    items.forEach(function (item, i) {
+      var li = document.createElement("li");
+      li.className = "search__option";
+      li.id = "buscar-opcion-" + i;
+      li.setAttribute("role", "option");
+      var link = document.createElement("a");
+      link.href = item.url;
+      var label = document.createElement("span");
+      label.textContent = item.label;
+      link.appendChild(label);
+      if (item.hint) {
+        var hint = document.createElement("span");
+        hint.className = "search__hint";
+        hint.textContent = item.hint;
+        link.appendChild(hint);
+      }
+      li.appendChild(link);
+      list.appendChild(li);
+    });
+    list.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    mark(-1);
+  }
+
+  function ask() {
+    var q = input.value.trim();
+    if (!q) { close(); return; }
+    var mine = ++asked;
+    fetch(url + "?q=" + encodeURIComponent(q), {
+      credentials: "same-origin", headers: { "Accept": "application/json" }
+    })
+      .then(function (answer) { return answer.ok ? answer.json() : { items: [] }; })
+      .then(function (data) {
+        // Solo la última pregunta: una respuesta lenta no pisa a una nueva.
+        if (mine === asked && input.value.trim()) draw(data.items || []);
+      })
+      .catch(function () {});
+  }
+
+  input.addEventListener("input", function () {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(ask, 140);
+  });
+
+  input.addEventListener("keydown", function (e) {
+    var all = options();
+    if (e.key === "ArrowDown" && all.length) {
+      e.preventDefault();
+      mark(active + 1 < all.length ? active + 1 : 0);
+    } else if (e.key === "ArrowUp" && all.length) {
+      e.preventDefault();
+      mark(active > 0 ? active - 1 : all.length - 1);
+    } else if (e.key === "Enter" && active >= 0 && all[active]) {
+      e.preventDefault();
+      window.location.href = all[active].querySelector("a").href;
+    } else if (e.key === "Escape") {
+      close();
+      form.classList.remove("is-open");
+      input.blur();
+    }
+  });
+
+  document.addEventListener("click", function (e) {
+    if (!form.contains(e.target)) {
+      close();
+      form.classList.remove("is-open");
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || document.activeElement.isContentEditable) return;
+    e.preventDefault();
+    form.classList.add("is-open");
+    input.focus();
+  });
+
+  if (opener) {
+    opener.addEventListener("click", function (e) {
+      e.preventDefault();
+      form.classList.add("is-open");
+      input.focus();
+    });
+  }
+})();

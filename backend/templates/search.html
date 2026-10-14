@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t('search_title') }}{% endblock %}
+{% block content %}
+{# Lo que hace el campo de la barra sin JavaScript: los mismos resultados que
+   las sugerencias, en una página. #}
+<h1 class="settings__heading">{{ t('search_title') }}</h1>
+<form class="filters" method="get" action="{{ url_for('search.page') }}" role="search">
+  <label class="visually-hidden" for="buscar-pagina">{{ t('search_label') }}</label>
+  <input id="buscar-pagina" name="q" type="search" value="{{ query }}"
+         placeholder="{{ t('search_placeholder') }}" autocomplete="off">
+  <button class="btn btn--small btn--outline" type="submit">{{ t('search_label') }}</button>
+</form>
+{% if query %}
+{% if found %}
+<ul class="search-results">
+  {% for one in found %}
+  <li><a href="{{ one.url }}"><b>{{ one.label }}</b>
+    {% if one.hint %}<span class="table__quiet"> · {{ one.hint }}</span>{% endif %}</a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="lead">{{ t('search_none', q=query) }}</p>
+{% endif %}
+{% endif %}
+{% endblock %}

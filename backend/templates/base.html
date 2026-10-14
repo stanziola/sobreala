@@ -55,6 +55,30 @@
     <span class="bar__name">{{ t('brand') }}</span>
   </a>
 
+  {# La búsqueda (octubre de 2026): solo con sesión, porque sin ella no hay
+     nada que buscar. Sin JavaScript manda a /search; con él sugiere mientras
+     se escribe (`panel.js`, data-search). En el teléfono es un ícono que abre
+     el campo. Es lo único de la barra que no tiene el sitio público. #}
+  {% if bar_account %}
+  <form class="search" role="search" method="get" action="{{ url_for('search.page') }}"
+        data-search data-suggest="{{ url_for('search.suggest') }}"
+        data-none="{{ t('search_nothing') }}">
+    <a class="search__toggle" href="{{ url_for('search.page') }}" data-search-open
+       aria-label="{{ t('search_label') }}">{% include "_icon-search.svg" %}</a>
+    <div class="search__box">
+      <span class="search__icon">{% include "_icon-search.svg" %}</span>
+      <label class="visually-hidden" for="buscar">{{ t('search_label') }}</label>
+      <input class="search__input" id="buscar" name="q" type="search"
+             placeholder="{{ t('search_placeholder') }}" autocomplete="off"
+             role="combobox" aria-autocomplete="list" aria-expanded="false"
+             aria-controls="buscar-sugerencias">
+      <kbd class="search__key" aria-hidden="true">/</kbd>
+      <ul class="search__list" id="buscar-sugerencias" role="listbox"
+          aria-label="{{ t('search_suggestions') }}" hidden></ul>
+    </div>
+  </form>
+  {% endif %}
+
   <div class="bar__actions">
     {% block bar_actions %}{% endblock %}
     {% include "_menu.html" %}
