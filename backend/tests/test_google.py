@@ -90,6 +90,24 @@ def test_con_el_cliente_sale_en_entrar_y_en_registrarse(client, database, monkey
         assert "Continuar con Google" in pantalla and 'href="/login/google"' in pantalla
 
 
+def test_el_boton_sigue_cuando_entrar_dice_que_no(client, database, outbox, monkeypatch):
+    # Las dos veces que entrar vuelve a la pantalla por su cuenta (suspendida, y
+    # agregar una que ya está abierta) el botón tiene que seguir ahí.
+    register(client)
+    login(client, EMAIL)
+    assert esta_dentro(client)
+    fake_google(monkeypatch)
+    pantalla = client.post("/login?add=1", data={
+        "csrf_token": csrf(client, "/login?add=1"), "email": EMAIL,
+        "password": "Contrasena-Larga1"}).get_data(as_text=True)
+    assert "Continuar con Google" in pantalla and 'href="/login/google?add=1"' in pantalla
+
+    database.accounts.update_one({"email_normalized": EMAIL},
+                                 {"$set": {"status": accounts.SUSPENDED}})
+    pantalla = login(other(client), EMAIL).get_data(as_text=True)
+    assert "Continuar con Google" in pantalla
+
+
 # ------------------------------------------------------------- con cuenta
 
 def test_entra_con_su_cuenta_y_queda_enlazada(client, database, outbox, monkeypatch):

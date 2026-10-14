@@ -1129,7 +1129,8 @@ def login():
                 errors["form"] = t("login_already_open")
                 return render_template("login.html", errors=errors,
                                        email=email_value, remember=remember,
-                                       adding=adding)
+                                       adding=adding,
+                                       google_ready=google_auth.configured())
             # Called even when there is no account, so a wrong address and a
             # wrong password take a similar amount of time.
             if verify_password(password, account and account.get("password_hash")):
@@ -1146,7 +1147,8 @@ def login():
                              email=email_value, account_id=account["_id"])
                     return render_template("login.html", errors=errors,
                                            email=email_value, remember=remember,
-                                           adding=adding)
+                                           adding=adding,
+                                           google_ready=google_auth.configured())
                 remember = bool(request.form.get("remember"))
                 return finish_sign_in(db, account, remember=remember,
                                       email=email_value)
