@@ -640,7 +640,7 @@
             {% if invoices_shown %}
             <td>
               {% if one._id in invoices %}
-              <a class="btn btn--small btn--outline"
+              <a class="btn btn--small btn--outline" data-download
                  href="{{ url_for('auth.invoice_file', raw=one._id) }}">{{ t('billing_download') }}</a>
               {% else %}
               <span class="tag tag--quiet">{{ t('billing_invoice_pending') }}</span>

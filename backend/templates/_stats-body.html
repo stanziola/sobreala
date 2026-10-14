@@ -50,8 +50,8 @@
     decisión. -#}
 {% if not pick %}
 <p class="filters__export">
-  <a class="btn btn--small btn--outline" href="{{ url_for('analytics.as_csv', period=period, tag=tag, campaign=campaign) }}">{{ t('export_csv') }}</a>
-  <a class="btn btn--small btn--outline" href="{{ url_for('analytics.as_pdf', period=period, tag=tag, campaign=campaign) }}">{{ t('export_pdf') }}</a>
+  <a class="btn btn--small btn--outline" data-download href="{{ url_for('analytics.as_csv', period=period, tag=tag, campaign=campaign) }}">{{ t('export_csv') }}</a>
+  <a class="btn btn--small btn--outline" data-download href="{{ url_for('analytics.as_pdf', period=period, tag=tag, campaign=campaign) }}">{{ t('export_pdf') }}</a>
 </p>
 {% endif %}
 

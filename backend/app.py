@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import secrets
 from datetime import timedelta
 from pathlib import Path
@@ -12,6 +13,9 @@ from pymongo.errors import PyMongoError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
+
+# La ficha que manda un botón de descarga (`_download_arrived`).
+DOWNLOAD_TOKEN = re.compile(r"[A-Za-z0-9]{8,32}")
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, at_moment, on_date, t
 from models.account import (current_plan, is_admin, plan_cycle,
@@ -168,6 +172,27 @@ def create_app(overrides: dict | None = None) -> Flask:
     @app.context_processor
     def _expose_nonce():
         return {"csp_nonce": g.get("csp_nonce", "")}
+
+    @app.after_request
+    def _download_arrived(response):
+        """Avisarle al botón que pidió una descarga que el archivo ya llegó.
+
+        Una descarga no cambia de página, así que el botón que gira no tiene
+        cómo enterarse (octubre de 2026). El botón manda una ficha al azar
+        (`dl`), y la respuesta que trae el archivo la devuelve en una galleta
+        corta que `panel.js` mira cada poco. Solo la ficha: ni qué se bajó ni
+        de quién.
+        """
+        # Primero si es un archivo: solo entonces se lee el formulario. Leerlo
+        # en cualquier otra respuesta volvería a pasar por el cuerpo, y en una
+        # que Flask ya cortó por grande (413) eso rompería la respuesta.
+        if not response.headers.get("Content-Disposition", "").startswith("attachment"):
+            return response
+        token = request.args.get("dl") or (request.form.get("dl") if request.method == "POST" else "")
+        if token and DOWNLOAD_TOKEN.fullmatch(token):
+            response.set_cookie("sa_dl", token, max_age=60, path="/", samesite="Lax",
+                                secure=request.is_secure)
+        return response
 
     @app.after_request
     def _session_hint(response):

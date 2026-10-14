@@ -91,6 +91,12 @@
 {% block content %}{% endblock %}
 </main>
 
+{# Los dos íconos de los botones que trabajan (octubre de 2026): el que gira
+   mientras se guarda o se baja algo, y la palomita cuando termina. Son de
+   Iconify, «line-md» (licencia MIT). `panel.js` los copia de aquí. #}
+<template id="icono-cargando">{% include "_icon-loading.svg" %}</template>
+<template id="icono-listo">{% include "_icon-confirm.svg" %}</template>
+
 <script src="/static/js/panel.js?v={{ asset_version }}"></script>
 {% block scripts %}{% endblock %}
 </body>

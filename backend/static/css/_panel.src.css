@@ -410,6 +410,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .tag--on { color: var(--color-on-accent); background: var(--color-accent); }
 .tag--warn { color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .notice--ok { border-color: var(--color-accent); }
+/* La palomita que dibuja un aviso verde al aparecer (`panel.js`). */
+.notice__check { display: inline-flex; vertical-align: -4px; margin-right: 8px;
+                 color: var(--color-accent-strong); }
+/* Un botón que trabaja: conserva su ancho, gira mientras tanto y dibuja la
+   palomita al terminar (octubre de 2026, `panel.js`). No se puede pulsar dos
+   veces. */
+.btn.is-busy, .btn.is-done {
+  display: inline-flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.btn.is-busy { cursor: progress; }
+.btn.is-busy .icon, .btn.is-done .icon { width: 18px; height: 18px; flex: none; }
 /* Un aviso que no impide nada, pero que conviene leer. */
 .notice--warn { border-color: #D97706; }
 

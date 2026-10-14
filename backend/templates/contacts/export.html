@@ -20,7 +20,7 @@
 <div class="row">
   {# El filtro vuelve en campos escondidos: lo que se descarga es lo que esta
      pantalla acaba de decir, no lo que quedó en la dirección de otra. #}
-  <form method="post" action="{{ url_for('contacts.export') }}">
+  <form method="post" action="{{ url_for('contacts.export') }}" data-download>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="q" value="{{ search }}">
     <input type="hidden" name="tag" value="{{ tag }}">

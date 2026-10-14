@@ -181,6 +181,34 @@ moverse por el panel sin saber dónde está cada cosa.
 - **No está en el sitio público**: sin sesión no hay nada que buscar. Es la
   única excepción a «lo que existe en los dos sitios se cambia en los dos».
 
+### Los botones que trabajan (octubre de 2026)
+
+Para que guardar, enviar, importar o bajar algo se sienta vivo (`panel.js` y
+`_panel.src.css`):
+
+- **Al mandar un formulario POST**, el botón pulsado se queda con su ancho,
+  cambia su texto por el ícono que gira (el texto sigue para el lector de
+  pantalla) y no se puede pulsar dos veces. Se marca un instante después de
+  que el navegador lee el botón, porque su nombre y su valor viajan con el
+  formulario. No se tocan los formularios con `target` (la vista previa del
+  lienzo) ni los marcados `data-no-busy`; atrás con el navegador lo deja como
+  estaba.
+- **Los avisos verdes** (`.notice--ok`) dibujan el círculo y la palomita al
+  aparecer.
+- **Las descargas no cambian de página**: el botón (`data-download`, en un
+  enlace o en un formulario) manda una ficha al azar (`dl`), y la respuesta
+  que trae el archivo la devuelve en la galleta `sa_dl` (`_download_arrived`
+  en `app.py`, solo si es un `attachment` y la ficha es de 8 a 32 letras y
+  números). El botón la mira cada cuarto de segundo, dibuja la palomita y
+  vuelve a ser el de antes; a los 20 segundos se rinde. Lo llevan el CSV y el
+  PDF de Estadísticas, la exportación de contactos, los registros del dominio
+  y las facturas. El PDF y el ZIP del lienzo todavía no.
+- **Los dos íconos** son los que mandó el dueño: «loading-loop» y
+  «confirm-circle» de Iconify, colección «line-md» (licencia MIT), en
+  `_icon-loading.svg` y `_icon-confirm.svg`. Van en `<template>` al final de
+  `base.html` y el script los copia; su animación es SMIL, así que cada copia
+  se reinicia al entrar. Con «reducir movimiento» salen quietos.
+
 ### La hora de quien mira
 
 **Todo se guarda en UTC y todo se escribe en la zona del dispositivo de quien

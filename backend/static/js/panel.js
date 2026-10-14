@@ -803,3 +803,146 @@
     });
   }
 })();
+
+/* Los botones que trabajan (octubre de 2026). Al mandar un formulario, el botón
+   pulsado se queda con su ancho y cambia su texto por el ícono que gira (el
+   texto sigue ahí para quien escucha la pantalla); no se puede pulsar dos
+   veces. Al volver la página con su aviso verde, el aviso dibuja el círculo y
+   la palomita. Una descarga no cambia de página: el botón manda una ficha
+   (`dl`), el servidor la devuelve en la galleta `sa_dl` cuando el archivo sale,
+   y el botón dibuja la palomita un momento y vuelve a ser el de antes. Con
+   «reducir movimiento», los íconos salen quietos. */
+(function () {
+  var spin = document.getElementById("icono-cargando");
+  var check = document.getElementById("icono-listo");
+  if (!spin || !check) return;
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function icon(template, end) {
+    var svg = template.content.firstElementChild.cloneNode(true);
+    // Cada copia empieza su animación al entrar en la página; quieta, se
+    // queda en su último cuadro.
+    window.requestAnimationFrame(function () {
+      if (!svg.setCurrentTime) return;
+      if (still) { svg.pauseAnimations(); svg.setCurrentTime(end); }
+      else svg.setCurrentTime(0);
+    });
+    return svg;
+  }
+
+  function busy(btn) {
+    if (btn.classList.contains("is-busy")) return;
+    btn.setAttribute("data-label", btn.innerHTML);
+    btn.style.width = btn.getBoundingClientRect().width + "px";
+    var label = document.createElement("span");
+    label.className = "visually-hidden";
+    label.textContent = btn.textContent.trim();
+    btn.innerHTML = "";
+    btn.appendChild(icon(spin, 0.4));
+    btn.appendChild(label);
+    btn.classList.add("is-busy");
+    btn.setAttribute("aria-busy", "true");
+  }
+
+  function restore(btn) {
+    if (!btn.hasAttribute("data-label")) return;
+    btn.innerHTML = btn.getAttribute("data-label");
+    btn.removeAttribute("data-label");
+    btn.style.width = "";
+    btn.classList.remove("is-busy", "is-done");
+    btn.removeAttribute("aria-busy");
+  }
+
+  function done(btn) {
+    var label = btn.querySelector(".visually-hidden");
+    btn.innerHTML = "";
+    btn.appendChild(icon(check, 1));
+    if (label) btn.appendChild(label);
+    btn.classList.remove("is-busy");
+    btn.classList.add("is-done");
+    btn.removeAttribute("aria-busy");
+    window.setTimeout(function () { restore(btn); }, 1600);
+  }
+
+  function token() {
+    var out = "";
+    var chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    for (var i = 0; i < 16; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+    return out;
+  }
+
+  function arrived(value) {
+    return document.cookie.split(/;\s*/).indexOf("sa_dl=" + value) !== -1;
+  }
+
+  function watch(btn, value) {
+    var started = Date.now();
+    var timer = window.setInterval(function () {
+      if (arrived(value)) {
+        window.clearInterval(timer);
+        document.cookie = "sa_dl=; path=/; max-age=0";
+        done(btn);
+      } else if (Date.now() - started > 20000) {
+        window.clearInterval(timer);
+        restore(btn);
+      }
+    }, 250);
+  }
+
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (e.defaultPrevented || !form || (form.method || "").toLowerCase() !== "post") return;
+    if (form.hasAttribute("target") || form.hasAttribute("data-no-busy")) return;
+    if (form.hasAttribute("data-busy-sent")) { e.preventDefault(); return; }
+    var btn = e.submitter;
+    if (!btn || !btn.classList || !btn.classList.contains("btn")) return;
+    if (form.hasAttribute("data-download")) {
+      var value = token();
+      var field = form.querySelector('input[name="dl"]');
+      if (!field) {
+        field = document.createElement("input");
+        field.type = "hidden";
+        field.name = "dl";
+        form.appendChild(field);
+      }
+      field.value = value;
+      busy(btn);
+      watch(btn, value);
+      return;
+    }
+    form.setAttribute("data-busy-sent", "");
+    // Se marca después de que el navegador lea el botón: su nombre y su valor
+    // viajan con el formulario («Usar gmail.com», «Quitar el límite»).
+    window.setTimeout(function () { busy(btn); }, 0);
+  });
+
+  document.addEventListener("click", function (e) {
+    var link = e.target.closest ? e.target.closest("a[data-download]") : null;
+    if (!link || link.classList.contains("is-busy")) return;
+    var value = token();
+    var href = link.getAttribute("href");
+    link.setAttribute("href", href.replace(/([?&])dl=[^&]*&?/, "$1") + (href.indexOf("?") === -1 ? "?" : "&") + "dl=" + value);
+    busy(link);
+    watch(link, value);
+  });
+
+  // Volver con «atrás» saca la página de la memoria tal como quedó, girando.
+  window.addEventListener("pageshow", function (e) {
+    if (!e.persisted) return;
+    Array.prototype.forEach.call(document.querySelectorAll(".is-busy"), restore);
+    Array.prototype.forEach.call(document.querySelectorAll("form[data-busy-sent]"), function (form) {
+      form.removeAttribute("data-busy-sent");
+    });
+  });
+
+  // Los avisos verdes dibujan su palomita al aparecer.
+  Array.prototype.forEach.call(document.querySelectorAll(".notice--ok"), function (note) {
+    if (note.querySelector(".notice__check")) return;
+    var holder = document.createElement("span");
+    holder.className = "notice__check";
+    holder.appendChild(icon(check, 1));
+    var first = note.firstElementChild && note.firstElementChild.tagName === "P"
+      ? note.firstElementChild : note;
+    first.insertBefore(holder, first.firstChild);
+  });
+})();
