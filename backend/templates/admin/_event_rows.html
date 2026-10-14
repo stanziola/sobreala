@@ -1,0 +1,12 @@
+{# Las filas de Eventos. Las usan la página y lo que pide cada pocos segundos
+   `admin-events.js`, para que una fila nueva sea igual a las de siempre.
+   `data-key` es lo que evita pintarla dos veces. Del destinatario, solo el
+   dominio. #}
+{% for row in rows %}
+<tr data-key="{{ row.key }}">
+  <td class="table__quiet num">{{ moment(row.at) }}</td>
+  <td><span class="level is-event-{{ level(row.kind) }}">{{ row.label }}</span></td>
+  <td>{% if row.company %}<a href="{{ url_for('admin.account_page', raw=row.account_id) }}">{{ row.company }}</a>{% else %}<span class="table__quiet">·</span>{% endif %}</td>
+  <td class="table__wrap">{{ row.detail }}{% if row.domain %} <span class="table__quiet">{{ t('activity_to', domain=row.domain) }}</span>{% endif %}</td>
+</tr>
+{% endfor %}

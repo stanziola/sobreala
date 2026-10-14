@@ -277,10 +277,31 @@ galleta de las que quedan.
 `/admin`, con verificación de rol. **No es donde se aterriza al entrar** —eso es
 el sitio público, para todos—: se llega desde el menú, que para esta cuenta
 enseña Administración de primera fila. Sí es a donde la devuelve
-`not_for_admins()` si abre una pantalla de cliente. Cinco pantallas:
-**Estadísticas · Cuentas · Clientes · Plantillas subidas · Correos del
-sistema**. **Cuentas es para hacer cosas** (aprobar, abrir, limitar) y
-**Clientes para vigilar**.
+`not_for_admins()` si abre una pantalla de cliente. Seis pantallas:
+**Estadísticas · Cuentas · Clientes · Eventos · Plantillas subidas · Correos
+del sistema**. **Cuentas es para hacer cosas** (aprobar, abrir, limitar),
+**Clientes para vigilar** y **Eventos cuenta lo que está pasando**.
+
+**Eventos** (`/admin/events`, octubre de 2026) es lo que está pasando, del más
+nuevo al más viejo (`services/activity.py`):
+
+- **De los correos**, lo que contó Amazon de cada campaña (`events`):
+  entregado, rebote (permanente o pasajero: lo dice si el aviso anuló la
+  dirección), queja, rechazo, apertura y clic, con la empresa, el asunto y
+  **solo el dominio del destinatario** («a gmail.com»), nunca la dirección.
+- **De las cuentas**: el registro (al confirmar el correo), la demostración
+  pedida, el pago cobrado, la pausa automática y los límites que se ponen o se
+  quitan (`accounts`, `payments`, `admin_events`).
+- Filtros: «Lo que pide atención» (el de siempre: rebotes, quejas, rechazos y
+  pausas), «Correos», «Cuentas» y «Todo», y una sola empresa.
+- **Se actualiza sola**: `static/js/admin-events.js` le pide a
+  `/admin/events/feed` lo nuevo cada 5 segundos, con la pestaña a la vista, y
+  lo pone arriba. El servidor devuelve las filas ya armadas con la misma
+  plantilla (`admin/_event_rows.html`). Pide con 10 minutos de margen hacia
+  atrás, porque un aviso de Amazon trae la hora de lo que pasó y puede llegar
+  después; cada fila lleva su `data-key` para no pintarse dos veces. Sin
+  JavaScript, la página enseña lo de los últimos 7 días y se recarga a mano.
+- La consulta de todas las cuentas juntas usa el índice `events.by_kind_created`.
 
 **Clientes** (`/admin/clients`, octubre de 2026) es la de vigilar cómo envía
 cada uno:

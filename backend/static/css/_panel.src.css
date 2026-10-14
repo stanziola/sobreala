@@ -628,6 +628,22 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 :root[data-theme="dark"] .level.is-state-paused { color: #FCA5A5; background: rgba(252, 165, 165, .14); }
 .rates__big.level.is-warn, .rates__big.level.is-over { padding: 0 10px; }
 
+/* Eventos: qué pasó, con el mismo color que en Clientes (rojo lo que pide
+   mirar, ámbar lo que conviene notar), y la fila que acaba de llegar se
+   ilumina un momento. */
+.level[class*="is-event-"] {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-weight: 700;
+  white-space: nowrap;
+}
+.level.is-event-bad { color: #B42318; background: rgba(180, 35, 24, .12); }
+.level.is-event-note { color: #92400E; background: rgba(217, 119, 6, .16); }
+.level.is-event-plain { color: var(--color-ink-soft); background: var(--color-surface-alt); }
+:root[data-theme="dark"] .level.is-event-bad { color: #FCA5A5; background: rgba(252, 165, 165, .14); }
+:root[data-theme="dark"] .level.is-event-note { color: #FCD34D; background: rgba(252, 211, 77, .14); }
+.table--events tr.is-new td { animation: arrived 2.4s ease-out; }
+@keyframes arrived { from { background: var(--color-accent-soft); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .table--events tr.is-new td { animation: none; } }
+
 .chart__key { display: inline-flex; align-items: center; gap: 7px; }
 .chart__key::before {
   content: ""; width: 12px; height: 12px; border-radius: 3px;

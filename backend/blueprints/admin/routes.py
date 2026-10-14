@@ -17,12 +17,13 @@ Dos decisiones que se notan en todo el archivo:
 
 from __future__ import annotations
 
+from datetime import datetime
 from functools import wraps
 
 from bson.errors import InvalidId
 from bson import ObjectId
-from flask import (Blueprint, Response, abort, redirect, render_template,
-                   request, url_for)
+from flask import (Blueprint, Response, abort, jsonify, redirect,
+                   render_template, request, url_for)
 
 from blueprints.auth.routes import current_account
 from db import get_db
@@ -40,6 +41,7 @@ from models import payment as payments
 from models import session as sessions
 from models import suppression as suppressions
 from models import verification_doc as verification_docs
+from services import activity as happening
 from services import notices
 from services import plans
 from services import reputation
@@ -314,6 +316,61 @@ def clients_list(account):
         window=reputation.WINDOW_DAYS, percent=reputation.percent,
         bounce_min=reputation.BOUNCE_MIN_SENT,
         complaint_min=reputation.COMPLAINT_MIN_SENT)
+
+
+# ------------------------------------------------------------- los eventos
+
+def activity_filters():
+    """El filtro de tipo y la empresa que pide la dirección, ya limpios."""
+    wanted = request.args.get("type", "")
+    if wanted not in happening.FILTERS:
+        wanted = happening.DEFAULT_FILTER
+    # Sin empresa, ninguna: `ObjectId(None)` no falla, inventa un id nuevo.
+    raw = request.args.get("account", "")
+    return wanted, as_id(raw) if raw else None
+
+
+@bp.route("/events")
+@only_admins
+def activity_page(account):
+    """Lo que está pasando: lo que cuenta Amazon de cada correo y lo que pasa en
+    las cuentas, del más nuevo al más viejo.
+
+    Se dibuja entera con lo de los últimos días, y `static/js/admin-events.js`
+    le pide a `activity_feed` lo nuevo cada pocos segundos. Sin JavaScript
+    funciona igual, recargando. Del destinatario, solo el dominio.
+    """
+    db = get_db()
+    wanted, whose = activity_filters()
+    rows = happening.latest(db, wanted=wanted, account_id=whose)
+    companies, _ = accounts.search(db, limit=CLIENTS_MAX)
+    newest = rows[0]["at"] if rows else happening.now()
+    return render_template(
+        "admin/events.html", section="eventos", admin=account, rows=rows,
+        wanted=wanted, whose=whose, filters=list(happening.FILTERS),
+        companies=companies, newest=newest.isoformat(),
+        moment=happening.moment, level=happening.level)
+
+
+@bp.route("/events/feed")
+@only_admins
+def activity_feed(account):
+    """Lo nuevo desde `after`, para la pantalla abierta: las filas ya armadas
+    (la misma plantilla que la página) y la hora de la más nueva."""
+    wanted, whose = activity_filters()
+    try:
+        after = happening.aware(datetime.fromisoformat(request.args.get("after", "")))
+    except ValueError:
+        after = None
+    rows = happening.latest(get_db(), wanted=wanted, account_id=whose, after=after)
+    newest = max([row["at"] for row in rows] + ([after] if after else [])
+                 or [happening.now()])
+    response = jsonify({
+        "html": render_template("admin/_event_rows.html", rows=rows,
+                                moment=happening.moment, level=happening.level),
+        "newest": newest.isoformat()})
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @bp.route("/accounts/<raw>")

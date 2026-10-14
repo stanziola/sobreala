@@ -610,7 +610,7 @@ def test_estadisticas_no_lleva_menu_de_secciones(client, database, outbox):
     pestanas = re.findall(r'class="settings__tab[^"]*"[^>]*>\s*([^<]+)',
                           con_pestanas)
     assert [p.strip() for p in pestanas] == [
-        "Cuentas", "Clientes", "Plantillas subidas", "Correos del sistema"]
+        "Cuentas", "Clientes", "Eventos", "Plantillas subidas", "Correos del sistema"]
 
 
 def test_su_menu_lleva_estadisticas_encima_de_administracion(client, database,

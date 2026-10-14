@@ -1854,6 +1854,39 @@ TEXTS = {
                           "enviados y las quejas desde {complaint_min}: antes, la "
                           "cifra sale en gris. Las aperturas son sobre los "
                           "entregados.",
+    # Eventos: lo que está pasando, y se actualiza solo (octubre de 2026).
+    "admin_tab_events": "Eventos",
+    "admin_events_lead": "Lo que está pasando: lo que cuenta Amazon de cada "
+                         "correo y lo que pasa en las cuentas. Del destinatario "
+                         "se ve solo el dominio.",
+    "admin_events_type": "Qué mirar",
+    "admin_events_filter_attention": "Lo que pide atención",
+    "admin_events_filter_mail": "Correos",
+    "admin_events_filter_accounts": "Cuentas",
+    "admin_events_filter_all": "Todo",
+    "admin_events_all_companies": "Todas las empresas",
+    "admin_events_live": "Se actualiza sola cada 5 segundos mientras la tienes "
+                         "abierta.",
+    "admin_events_refresh": "Actualizar",
+    "admin_events_col_when": "Cuándo",
+    "admin_events_col_what": "Qué pasó",
+    "admin_events_col_detail": "Detalle",
+    "admin_events_none": "No pasó nada de esto en los últimos {days} días.",
+    "activity_kind_delivery": "Entregado",
+    "activity_bounce_hard": "Rebote permanente",
+    "activity_bounce_soft": "Rebote pasajero",
+    "activity_kind_complaint": "Queja",
+    "activity_kind_reject": "Rechazado",
+    "activity_kind_open": "Abierto",
+    "activity_kind_click": "Clic",
+    "activity_kind_signup": "Registro",
+    "activity_kind_demo": "Pidió la demostración",
+    "activity_kind_payment": "Pago",
+    "activity_kind_pause": "Pausa automática",
+    "activity_kind_limit": "Cuenta limitada",
+    "activity_kind_unlimit": "Se quitó el límite",
+    "activity_payment_detail": "{plan}, {amount}",
+    "activity_to": "a {domain}",
     "admin_mail_title": "Correos del sistema",
     "admin_mail_lead": "Lo que el panel le mandó a una dirección (códigos, "
                        "avisos, bienvenidas) y qué dijo Amazon de cada uno. "

@@ -1,0 +1,49 @@
+{% extends "admin/_layout.html" %}
+{% block pane %}
+<h2 class="settings__title">{{ t('admin_tab_events') }}</h2>
+<p class="settings__lead">{{ t('admin_events_lead') }}</p>
+
+<form class="filters" method="get" action="{{ url_for('admin.activity_page') }}">
+  <label class="visually-hidden" for="tipo">{{ t('admin_events_type') }}</label>
+  <select id="tipo" name="type">
+    {% for name in filters %}
+    <option value="{{ name }}"{% if name == wanted %} selected{% endif %}>{{ t('admin_events_filter_' + name) }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="visually-hidden" for="empresa">{{ t('admin_events_all_companies') }}</label>
+  <select id="empresa" name="account">
+    <option value="">{{ t('admin_events_all_companies') }}</option>
+    {% for one in companies %}
+    <option value="{{ one._id }}"{% if one._id == whose %} selected{% endif %}>{{ one.company_name or one.email }}</option>
+    {% endfor %}
+  </select>
+
+  <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_search_action') }}</button>
+</form>
+
+<p class="hint">{{ t('admin_events_live') }}
+  <a href="{{ url_for('admin.activity_page', type=wanted, account=whose) }}">{{ t('admin_events_refresh') }}</a></p>
+
+<div class="table-wrap">
+  <table class="table table--events">
+    <thead>
+      <tr>
+        <th scope="col">{{ t('admin_events_col_when') }}</th>
+        <th scope="col">{{ t('admin_events_col_what') }}</th>
+        <th scope="col">{{ t('admin_col_company') }}</th>
+        <th scope="col">{{ t('admin_events_col_detail') }}</th>
+      </tr>
+    </thead>
+    <tbody data-feed="{{ url_for('admin.activity_feed', type=wanted, account=whose) }}"
+           data-newest="{{ newest }}">
+      {% include "admin/_event_rows.html" %}
+    </tbody>
+  </table>
+</div>
+<p class="hint" data-feed-empty{% if rows %} hidden{% endif %}>{{ t('admin_events_none', days=7) }}</p>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin-events.js?v={{ asset_version }}"></script>
+{% endblock %}
