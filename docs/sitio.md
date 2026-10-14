@@ -70,6 +70,22 @@ permanencia.
 
 ## La portada
 
+### Se va descubriendo al bajar (octubre de 2026)
+
+`assets/js/reveal.js` y el final de `src/site.css`. Al entrar en pantalla, los
+títulos (`.hero__title` y cada `.section__title`) salen **palabra por
+palabra**; la frase destacada del inicio (`.hero__title-accent`) se **subraya
+con un trazo** que se dibuja; las tarjetas (`.plan`, `.faq__item`,
+`.story__side`) **suben** con un retraso entre ellas; y los precios de los
+planes **cuentan hasta su número** (si `plans.js` los cambia a mitad, se deja de
+contar).
+
+**Nada queda escondido sin el script**: el CSS solo esconde lo que va a
+aparecer cuando `<html>` lleva `js-reveal`, y esa clase la pone el script justo
+antes de empezar a mirar. Con «reducir movimiento», o sin IntersectionObserver,
+no hace nada; al imprimir, todo a la vista. Los textos no cambian
+(`content.py`): el script solo envuelve sus palabras.
+
 **Arriba van el título y dos botones, nada más** (octubre de 2026): «Solicitar
 demo» y «Ver planes». Se quitaron la frase de debajo («Envía un correo a todos
 tus contactos con un solo click») y la nota de «Escríbenos y te acompañamos».

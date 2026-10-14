@@ -1554,3 +1554,33 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
   margin-top: clamp(28px, 5vw, 44px); border-top: 1px solid var(--color-footer-edge);
 }
 .site-footer__legal { padding-block: 18px; font-size: .85rem; color: var(--color-on-dark-soft); }
+
+/* ------------------------------------------------- la portada al bajar
+   (octubre de 2026, assets/js/reveal.js). Solo se esconde lo que va a
+   aparecer cuando <html> lleva `js-reveal`, que pone el script: sin él, o con
+   «reducir movimiento», todo se ve quieto y completo.
+   Los títulos salen palabra por palabra; la frase destacada del inicio se
+   subraya con un trazo que se dibuja; las tarjetas suben con un retraso entre
+   ellas. */
+.js-reveal .reveal-words .word {
+  display: inline-block; opacity: 0; transform: translateY(.45em);
+  transition: opacity .55s var(--ease), transform .7s var(--ease);
+  transition-delay: calc(var(--i, 0) * 55ms);
+}
+.js-reveal .reveal-words.is-revealed .word { opacity: 1; transform: none; }
+.js-reveal .hero__title-accent {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat; background-position: 0 92%;
+  background-size: 0% .08em;
+  transition: background-size .9s var(--ease) .55s;
+}
+.js-reveal .reveal-words.is-revealed .hero__title-accent { background-size: 100% .08em; }
+.js-reveal .reveal-rise {
+  opacity: 0; transform: translateY(22px);
+  transition: opacity .6s var(--ease), transform .7s var(--ease);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.js-reveal .reveal-rise.is-revealed { opacity: 1; transform: none; }
+@media print {
+  .js-reveal .reveal-words .word, .js-reveal .reveal-rise { opacity: 1; transform: none; }
+}
