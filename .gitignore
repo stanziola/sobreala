@@ -61,3 +61,7 @@ id_rsa*
 .claude/settings.local.json
 *.swp
 *~
+
+# Lo que se genera a pedido para revisarlo a mano: se queda en este disco, no en
+# el repositorio.
+entregas/

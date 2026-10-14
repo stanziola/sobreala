@@ -14,14 +14,6 @@
       "Bash(git config --get:*)",
       "Read(//c/Users/luisa/Downloads/**)"
     ],
-    "ask": [
-      "Edit(//c/Users/luisa/Downloads/**)",
-      "Edit(//c/Users/luisa/Documents/**)",
-      "Edit(//c/Users/luisa/Desktop/**)",
-      "Edit(//c/Users/luisa/Pictures/**)",
-      "Edit(//c/Users/luisa/OneDrive/Documents/**)",
-      "Edit(//c/Users/luisa/OneDrive/Pictures/**)"
-    ],
     "deny": [
       "Bash(git reset --hard:*)",
       "Bash(git push --force:*)",
@@ -36,13 +28,35 @@
       "PowerShell(git push -f:*)",
       "PowerShell(git rebase:*)",
       "PowerShell(git clean:*)",
-      "PowerShell(git filter-branch:*)"
+      "PowerShell(git filter-branch:*)",
+      "Edit(//c/Users/luisa/Downloads/**)",
+      "Edit(//c/Users/luisa/Documents/**)",
+      "Edit(//c/Users/luisa/Desktop/**)",
+      "Edit(//c/Users/luisa/Pictures/**)",
+      "Edit(//c/Users/luisa/OneDrive/Documents/**)",
+      "Edit(//c/Users/luisa/OneDrive/Pictures/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash|PowerShell|Monitor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": ["-I", "${CLAUDE_PROJECT_DIR}/.claude/hooks/solo_proyecto.py"],
+            "timeout": 15,
+            "onFailure": "block"
+          }
+        ]
+      }
     ]
   },
   "autoMode": {
     "soft_deny": [
       "$defaults",
-      "Creating, overwriting, moving or deleting files outside C:\\Users\\luisa\\OneDrive\\Desktop\\sobreala and the session scratchpad, including through shell or Python commands, without the user asking for that exact file"
+      "Creating, overwriting, moving or deleting files outside C:\\Users\\luisa\\OneDrive\\Desktop\\sobreala and Claude Code's temp folder for this project (C:\\Users\\luisa\\AppData\\Local\\Temp\\claude\\C--Users-luisa-OneDrive-Desktop-sobreala, where the session scratchpad lives), through any tool, shell or Python command, even when the file looks harmless. That includes the general temp folder ($TEMP, %TEMP%, $env:TEMP, /tmp), the rest of AppData and the home folder. Temporary work goes in the session scratchpad, by its full path, and deliverables in entregas/ inside the project."
     ]
   }
 }
