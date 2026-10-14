@@ -883,6 +883,10 @@ def forget_verification(db, account_id, kind: str) -> None:
 
 LIMIT_VERIFICATION = "verification"   # falta verificar la identidad y la dirección
 LIMIT_REASONS = (LIMIT_VERIFICATION,)
+# Los de la pausa automática, que pone el panel solo y no el administrador.
+PAUSE_BOUNCES = "bounces"             # rebotaron demasiados correos
+PAUSE_COMPLAINTS = "complaints"       # demasiados los marcaron como spam
+PAUSE_REASONS = (PAUSE_BOUNCES, PAUSE_COMPLAINTS)
 
 
 def limited_of(account: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -899,6 +903,30 @@ def limit(db, account_id, *, reason: str, admin_id, note: str = "") -> bool:
                     "note": note.strip()[:300]},
         "updated_at": now()}})
     return True
+
+
+def pause(db, account_id, *, reason: str, note: str) -> bool:
+    """La pausa automática por rebotes o quejas (`services/reputation.py`).
+
+    Es un límite más, con un motivo que pone el panel solo y que no sale en el
+    selector del administrador; se quita igual que cualquier límite, desde la
+    ficha. Pisa un límite de verificación, que es menos grave, pero no otra
+    pausa: así dos avisos de SES que llegan juntos pausan una sola vez. False
+    si ya estaba en pausa.
+    """
+    if reason not in PAUSE_REASONS:
+        return False
+    result = db.accounts.update_one(
+        {"_id": account_id, "limited.reason": {"$nin": list(PAUSE_REASONS)}},
+        {"$set": {"limited": {"reason": reason, "at": now(), "by": None,
+                              "note": note.strip()[:300]},
+                  "updated_at": now()}})
+    return result.modified_count == 1
+
+
+def is_paused(account: dict[str, Any] | None) -> bool:
+    """Si la cuenta está en la pausa automática, y no en otro límite."""
+    return (limited_of(account) or {}).get("reason") in PAUSE_REASONS
 
 
 def unlimit(db, account_id) -> bool:
@@ -1347,7 +1375,9 @@ ADMIN_PAYMENT = "admin_payment"
 ADMIN_SIGNUP = "admin_signup"
 ADMIN_DEMO = "admin_demo"
 ADMIN_PLAN_END = "admin_plan_end"
-ADMIN_NOTICES = (ADMIN_PAYMENT, ADMIN_SIGNUP, ADMIN_DEMO, ADMIN_PLAN_END)
+ADMIN_PAUSE = "admin_pause"
+ADMIN_NOTICES = (ADMIN_PAYMENT, ADMIN_SIGNUP, ADMIN_DEMO, ADMIN_PLAN_END,
+                 ADMIN_PAUSE)
 
 # Los dos avisos del estado del plan, que se mandan una sola vez cada uno.
 EXPIRING = "expiring"

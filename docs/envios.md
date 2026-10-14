@@ -24,7 +24,7 @@ campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
 - **`SENDING_DOMAIN`** (por omisión `envios.sobreala.com`) es el subdominio de
   quien no tiene dominio propio. Lo comparten todos ellos, y con él su
   reputación ante Gmail; los protegen la demostración o el pago que abren cada
-  cuenta, y la pausa automática, que todavía no existe. Hubo además una
+  cuenta, y la pausa automática (abajo). Hubo además una
   habilitación a mano antes del primer envío, y se quitó en octubre de 2026
   (ver «Abrir la cuenta» en `docs/cuenta.md`).
 - **El usuario es único entre cuentas**, y el dominio también: lo garantizan dos
@@ -50,11 +50,44 @@ son su protección:
 
 | Métrica de una cuenta | Acción automática |
 |---|---|
-| Rebotes > 3% | Pausa de envío y aviso (AWS actúa a 5%) |
-| Quejas > 0.05% | Pausa de envío (Gmail y Yahoo actúan a 0.1%) |
+| Rebotes permanentes > 3 %, desde 100 enviados | Pausa de envío y aviso (AWS revisa a 5 %) |
+| Quejas > 0.1 %, desde 1,000 enviados | Pausa de envío y aviso (AWS revisa a 0.1 %) |
 | Primera campaña | Tope reducido las primeras 48h, sin importar el plan |
 
-Usar **tenants de SES** para aislar reputación y supresión por cliente.
+### La pausa automática (octubre de 2026)
+
+`services/reputation.py`. **Amazon mide la cuenta entera de Sobreala**: con 5 %
+de rebotes la pone en revisión, y con eso se para el envío de todos. El panel
+mide a cada cliente por su lado y lo pausa antes.
+
+- **Qué cuenta:** los últimos 30 días de esa cuenta. Enviados son los eventos
+  `sent`; rebotes y quejas, las supresiones que puso el aviso de SES
+  (`source="ses"`, `hard_bounce` o `complaint`), así que cuentan personas, y un
+  rebote pasajero (buzón lleno) no pausa a nadie.
+- **El volumen mínimo** es para que un envío chico no se pause por una sola
+  persona: con veinte correos, un rebote ya es un 5 %. Por eso las quejas
+  empiezan a contar desde 1,000 y no desde 100: una sola persona que pulsa «es
+  spam» en un envío de 500 sería un 0.2 %. Se decidió en octubre de 2026 en vez
+  del 0.05 % que estaba escrito, que pausaba por una queja en 2,000.
+- **Cuándo se mira:** el aviso de SES llama a `check()` después de cada rebote
+  permanente o queja nueva. No hay proceso que lo mire solo, y no hace falta: lo
+  que mueve la cifra es justo ese aviso.
+- **Qué hace:** es un límite más (`accounts.pause()`, motivos `bounces` y
+  `complaints`): entra, prepara y paga, pero no envía (`sender.blocked()` dice
+  `paused`). Una campaña a medias para en la tanda siguiente. La nota del límite
+  guarda las cifras que lo dispararon, y queda en `admin_events` sin
+  administrador. Pisa un límite de verificación, pero no otra pausa: los rebotes
+  siguen llegando de a uno y solo el primero que pasa el umbral pausa y avisa.
+- **Avisa** al cliente (`notices.paused()`, sin interruptor: qué pasó, con sus
+  cifras, qué revisar y a quién escribir) y a quien administra
+  (`notices.pause_to_admins()`, con su interruptor «El panel pausó a un
+  cliente»).
+- **Solo la quita el administrador**, desde la ficha («Quitar el límite»), con
+  su nota. Aprobar la verificación no la levanta: eso solo quita el límite de
+  verificación.
+
+Los **tenants de SES** (reputación y supresión aisladas por cliente ante
+Amazon) quedaron para más adelante: ver «Pendientes de decisión» en `CLAUDE.md`.
 
 Requisitos de remitente masivo que aplican a Sobreala (no a sus clientes), al
 pasar de 5,000 correos diarios sumando todos: DMARC publicado en
@@ -243,8 +276,9 @@ responda por cada destinatario se guarda en la campaña y la pantalla lo enseña
 
 ### Lo que todavía no hace
 
-Pausar sola una cuenta que pasa de los umbrales, reanudar sola una campaña, y
-acumular los correos no usados al mes siguiente.
+Reanudar sola una campaña, y acumular los correos no usados al mes siguiente.
+(Pausar sola una cuenta que pasa de los umbrales ya lo hace: ver «La pausa
+automática».)
 
 ## Lo que cuenta Amazon
 
@@ -292,8 +326,8 @@ después lo mandó a spam o a cuarentena no se lo cuenta a nadie, y Microsoft 36
 (la UTP) pone en cuarentena sin rebotar. Las pantallas lo dicen, para que nadie
 lea «entregado» como «lo vio».
 
-**La pausa automática por umbrales no está.** Se decidió esperar a tener cifras
-reales antes de poner el corte.
+**Cada rebote permanente o queja nueva mira si la cuenta pasó el umbral** de la
+pausa automática (`reputation.check()`, ver «La pausa automática»).
 
 ## El correo individual (octubre de 2026)
 

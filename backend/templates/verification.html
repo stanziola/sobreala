@@ -9,7 +9,7 @@
 <div class="card card--narrow">
   <h1>{{ t('verification_title') }}</h1>
 
-  {% if limited %}
+  {% if limited and limited.reason == 'verification' %}
   <p class="notice">{{ t('settings_limited_' + limited.reason) }}</p>
   {% endif %}
   {% if sent %}

@@ -28,6 +28,7 @@ from bson.errors import InvalidId
 from models import event as events
 from models import mail_log
 from models import suppression as suppressions
+from services import reputation
 
 # Los nombres que usa SES en `eventType` (conjuntos de configuración) o en
 # `notificationType` (avisos de identidad), y el tipo de evento nuestro.
@@ -115,6 +116,7 @@ def _campaign(db, message, kind, ours, account_id, campaign_id, run_id,
     # La dirección que pulsó, que solo viene en los avisos de clic. Se guarda
     # dentro del mismo evento: el clic sigue siendo uno por persona.
     link = (message.get("click") or {}).get("link") or "" if kind == "Click" else ""
+    added = False
     for one in people:
         if not one["email"]:
             continue
@@ -125,11 +127,18 @@ def _campaign(db, message, kind, ours, account_id, campaign_id, run_id,
         # y no se pueden levantar. Un rebote pasajero (buzón lleno, servidor
         # caído) no anula a nadie.
         if permanent:
-            suppressions.add(db, account_id, one["email"],
-                             reason=suppressions.HARD_BOUNCE, source="ses")
+            added = suppressions.add(db, account_id, one["email"],
+                                     reason=suppressions.HARD_BOUNCE,
+                                     source="ses") or added
         elif kind == "Complaint":
-            suppressions.add(db, account_id, one["email"],
-                             reason=suppressions.COMPLAINT, source="ses")
+            added = suppressions.add(db, account_id, one["email"],
+                                     reason=suppressions.COMPLAINT,
+                                     source="ses") or added
+    # Cada rebote permanente o queja nueva puede ser la que pasa el umbral.
+    if added:
+        paused = reputation.check(db, account_id)
+        if paused:
+            return f"campaña: {ours} x{len(people)}, cuenta en pausa ({paused})"
     return f"campaña: {ours} x{len(people)}"
 
 

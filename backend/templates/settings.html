@@ -52,13 +52,19 @@
     {# ------------------------------------------------------------ cuenta #}
     {% if section == 'account' %}
     <h2 class="settings__title">{{ t('settings_section_account') }}</h2>
-    {# Limitada por el administrador: entra y prepara, pero no envía hasta que
-       verifiquemos sus documentos. Va primero, porque es lo que la detiene. #}
+    {# Limitada por el administrador, o en la pausa automática por rebotes o
+       quejas: entra y prepara, pero no envía. Va primero, porque es lo que la
+       detiene. Solo el límite de verificación se arregla subiendo documentos. #}
     {% if limited %}
     <div class="notice">
+      {% if limited.reason == 'verification' %}
       <p><strong>{{ t('settings_limited_title') }}</strong>
         {{ t('settings_limited_' + limited.reason) }}</p>
       <p><a href="{{ url_for('auth.verification') }}">{{ t('settings_limited_link') }}</a></p>
+      {% else %}
+      <p><strong>{{ t('settings_paused_title') }}</strong>
+        {{ t('settings_limited_' + limited.reason) }}</p>
+      {% endif %}
     </div>
     {% endif %}
     {# Mientras falte enviar un documento, o haya uno rechazado. Amarillo, porque

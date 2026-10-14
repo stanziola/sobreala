@@ -17,9 +17,9 @@ y las cargadas en HTML y las prediseñadas que quedaron de antes—, la cuenta
 que se abre **con la demostración o con el pago**, el **panel de
 administración**, el
 **cobro de un plan con PayPal** y el **envío de campañas**, con su enlace de
-baja, y **el aviso de Amazon** que cuenta qué pasó con cada correo después de
-salir. Faltan la pausa automática por rebotes y quejas, y el proceso en segundo
-plano.
+baja, **el aviso de Amazon** que cuenta qué pasó con cada correo después de
+salir, y **la pausa automática** de quien pasa del umbral de rebotes o quejas.
+Falta el proceso en segundo plano.
 
 ---
 
@@ -294,7 +294,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - **El aviso de SES** (`/webhooks/ses/<secreto>`) sabe de quién es cada correo
   por sus etiquetas, nunca por la dirección. Rebote permanente y queja anulan en
   esa cuenta.
-- Falta la pausa automática por rebotes (> 3 %) y quejas (> 0.05 %).
+- **La pausa automática** (`services/reputation.py`): en los últimos 30 días,
+  rebotes permanentes > 3 % desde 100 enviados, o quejas > 0.1 % desde 1,000.
+  Es un límite (`accounts.pause()`): no envía, avisa al cliente y al
+  administrador, y solo la quita el administrador desde la ficha.
 - **El correo individual** (`/campaigns/write`) es una campaña de una persona,
   con un adjunto opcional que va directo en el correo y **no se guarda**: lleva
   la baja, la cuota y sus cifras como todas.
@@ -435,25 +438,23 @@ no se descubra el día del lanzamiento.
   Panamá se le factura como exportación de servicios sin que cambie lo que paga.
   Lo que falta de esto es **pedirle sus datos de facturación al cliente**: el
   panel no guarda su RUC en ningún sitio, y una factura en Panamá lo necesita.
-- **Conectar el aviso de SES** siguiendo `docs/ses.md`. El código está y
-  anula solo lo que rebota o se queja, pero hasta que el tema de SNS y los
-  conjuntos de configuración existan no le llega nada. Es lo primero que AWS
-  revisa si algo va mal.
-- **La pausa automática por rebotes y quejas**, la de la tabla de «Envío». Hoy
-  depende de mirar las cifras a mano.
-- **Verificar `envios.sobreala.com`** como identidad aparte en SES, con su
-  propio configuration set. El correo del sistema sale por `sobreala.com`
-  (MAIL FROM `mail.sobreala.com`); separar los dos es lo que
-  impide que la reputación de las campañas arrastre a los códigos de
-  confirmación.
-- **Tenants de SES por cliente**, para aislar reputación y supresión. Ya está
-  decidido más arriba; el momento de montarlo es este.
+- ~~**Conectar el aviso de SES** siguiendo `docs/ses.md`.~~ Hecho (octubre de
+  2026): el tema de SNS, la suscripción y los dos conjuntos de configuración
+  existen, y los correos del sistema ya dicen «Entregado» en Administración.
+- ~~**La pausa automática por rebotes y quejas.**~~ Hecha (octubre de 2026):
+  ver «Envío» y «La pausa automática» en `docs/envios.md`.
+- ~~**Verificar `envios.sobreala.com`** como identidad aparte en SES.~~ Hecho
+  (octubre de 2026). El correo del sistema sale por `sobreala.com` (MAIL FROM
+  `mail.sobreala.com`); separar los dos es lo que impide que la reputación de
+  las campañas arrastre a los códigos de confirmación. El permiso de IAM para
+  los dominios de los clientes también está: uno de prueba ya envía.
 - **Registro de consentimiento por contacto.** Guardar de dónde salió cada
   dirección y cuándo, en el propio documento del contacto. Hoy el importador no
   lo pide, y es exactamente lo que hay que enseñar cuando alguien reclame.
-- **Pedir la producción de SES en la cuenta nueva de Sobreala**, que empieza en
-  sandbox: lo que se prometa ahí sobre bajas, supresiones y umbrales tiene que
-  estar funcionando de verdad cuando empiecen las campañas.
+- ~~**Pedir la producción de SES en la cuenta nueva de Sobreala.**~~ Hecho
+  (octubre de 2026). Lo que se le prometió a Amazon sobre bajas, supresiones y
+  umbrales tiene que estar funcionando cuando empiecen las campañas: por eso la
+  pausa automática va antes de la primera.
 - **Contrato de encargo para clientes grandes.** El tratamiento de datos de
   terceros ya está pactado en los términos públicos (§8), que se aceptan al
   registrarse. Una cooperativa grande puede pedir además un documento firmado;
@@ -465,11 +466,15 @@ no se descubra el día del lanzamiento.
 - Confirmar con Yappy (yappy@bgeneral.com / 800-5000) si soporta cobros
   recurrentes. Si no, el recurrente va solo por PayPal y a los de Yappy se les
   envía enlace de pago antes de cada vencimiento.
-- Pedir acceso a producción de SES al empezar a desarrollar, no al lanzar: las
-  cuentas nuevas arrancan en sandbox (200 correos/día, solo a direcciones
-  verificadas) y la aprobación tarda ~24h.
 - Presupuestar el salto de MongoDB Atlas: los eventos llenan los 512 MB del
   tier gratuito en unos 7 meses con 6 Básico + 3 Negocio + 1 Empresa.
 - Respaldar la base entera en Atlas: el tier gratuito no tiene respaldos; Flex
   hace una copia diaria y M10 en adelante tiene Cloud Backup. Los respaldos por
   cliente en S3 se hicieron y se quitaron en octubre de 2026 (`docs/panel.md`).
+- Tenants de SES por cliente: Amazon llevaría la reputación y las bajas de cada
+  cliente aparte, y si tuviera que pausar, pausaría solo a ese cliente y no a
+  Sobreala entera. Se dejó para cuando haya más clientes (octubre de 2026): la
+  pausa automática ya frena al 3 %, antes que Amazon. Cuesta $0.005 por cada
+  1,000 correos (los primeros 1,000 tenants no se cobran), pide pasar
+  `sender.deliver()` a la API v2 (`send_email` con `TenantName`) y un permiso de
+  IAM.

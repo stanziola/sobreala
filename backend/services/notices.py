@@ -387,6 +387,23 @@ def limited(account, *, reason: str) -> bool:
         button={"href": verifications_url(), "label": t("mail_limited_button")})
 
 
+def paused(account, *, reason: str, note: str) -> bool:
+    """Que el panel pausó sus envíos solo, por rebotes o por quejas.
+
+    Sin interruptor, como el límite: cambia lo que puede hacer. Lleva las cifras
+    que lo dispararon, qué hacer con su lista y a quién escribir, porque la
+    pausa solo la quita el administrador.
+    """
+    return deliver(
+        account, purpose=mail_log.PAUSED,
+        subject=t("mail_paused_subject"),
+        heading=t("mail_paused_heading"),
+        paragraphs=[t("mail_paused_body_" + reason, note=note),
+                    t("mail_paused_fix_" + reason),
+                    t("mail_paused_write", email=Config.SYSTEM_FROM_EMAIL),
+                    t("mail_limited_kept")])
+
+
 def verification_result(account, *, results: dict) -> bool:
     """El resultado de las verificaciones, que manda el administrador cuando
     quiere. Sin interruptor: cambia lo que la cuenta puede hacer.
@@ -563,6 +580,29 @@ def payment_to_admins(db, client, *, plan: str) -> int:
                               email=client.get("email", ""),
                               plan=plan_name(plan))],
                 button={"href": ficha, "label": t("mail_admin_payment_button")},
+                foot=switch_off_hint()):
+            sent += 1
+    return sent
+
+
+def pause_to_admins(db, client, *, reason: str, note: str) -> int:
+    """Avisarle a quien administra que el panel pausó a un cliente solo.
+
+    Es lo único de estos avisos que pide hacer algo: la pausa solo la quita el
+    administrador, desde la ficha, después de hablar con el cliente.
+    """
+    company = about(client)
+    sent = 0
+    for admin in admins_who_want(db, accounts.ADMIN_PAUSE):
+        if deliver(
+                admin, purpose=mail_log.ADMIN_PAUSE,
+                subject=t("mail_admin_pause_subject", company=company),
+                heading=t("mail_admin_pause_heading", company=company),
+                paragraphs=[t("mail_admin_pause_body_" + reason, company=company,
+                              note=note),
+                            t("mail_admin_pause_lift")],
+                button={"href": file_of(client) + "#limite",
+                        "label": t("mail_admin_pause_button")},
                 foot=switch_off_hint()):
             sent += 1
     return sent

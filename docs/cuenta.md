@@ -256,8 +256,9 @@ miraba pasó a la demostración. El campo queda en las cuentas viejas, que
 `is_open()` lee, y sus decisiones se siguen leyendo en la actividad de la ficha.
 
 **Lo que se pierde con eso**: nadie mira la lista real antes del primer envío de
-quien entra pagando. Hasta que exista la pausa automática por rebotes y quejas,
-eso se vigila en las cifras.
+quien entra pagando. Lo cubre la pausa automática por rebotes y quejas (octubre
+de 2026, `docs/envios.md`): una lista mala se detiene sola en cuanto sus
+rebotes pasan el umbral.
 
 **`role` está en todas las cuentas** y vale `client` o `admin`; un campo que a
 veces está y a veces no es difícil de leer y fácil de equivocar en una consulta.

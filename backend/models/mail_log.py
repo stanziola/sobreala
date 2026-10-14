@@ -43,6 +43,9 @@ REINSTATED = "reinstated"
 # El límite de envío y el resultado de las verificaciones, que manda el
 # administrador cuando quiere.
 LIMITED = "limited"
+# La pausa automática por rebotes o quejas, al cliente y a quien administra.
+PAUSED = "paused"
+ADMIN_PAUSE = "admin_pause"
 # Lo de la renovación automática: se enciende, se apaga o no se pudo cobrar.
 RENEWAL = "renewal"
 VERIFICATION_RESULT = "verification_result"

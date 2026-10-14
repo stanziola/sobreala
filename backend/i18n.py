@@ -421,6 +421,15 @@ TEXTS = {
     "settings_limited_verification": "Para enviar necesitamos verificar tu "
                                      "identificación y tu dirección.",
     "settings_limited_link": "Enviar los documentos",
+    # La pausa automática por rebotes o quejas: tampoco envía.
+    "settings_paused_title": "Tus envíos están en pausa.",
+    "settings_limited_bounces": "Demasiados de tus correos rebotaron porque esas "
+                                "direcciones no existen. Te escribimos con el "
+                                "detalle, y lo revisamos contigo antes de volver "
+                                "a enviar.",
+    "settings_limited_complaints": "Varias personas marcaron tus correos como "
+                                   "spam. Te escribimos con el detalle, y lo "
+                                   "revisamos contigo antes de volver a enviar.",
     # Las filas de Cuenta se ven como texto y se cambian con «Editar».
     "settings_edit": "Editar",
     "settings_cancel": "Cancelar",
@@ -556,6 +565,10 @@ TEXTS = {
                                            "panel, así que de quien no vuelve a "
                                            "entrar no se entera nadie hasta que "
                                            "exista el proceso automático.",
+    "settings_notice_admin_pause": "El panel pausó a un cliente",
+    "settings_notice_admin_pause_desc": "Por rebotes o quejas por encima del "
+                                        "umbral. La pausa solo la quitas tú, "
+                                        "desde su ficha.",
     "settings_fixed_codes": "Códigos de confirmación y de recuperación",
     "settings_fixed_password": "Tu contraseña cambió",
     "settings_fixed_two_step": "Se activó o se desactivó la autenticación de "
@@ -1627,6 +1640,9 @@ TEXTS = {
     "send_blocked_limited": "Tu cuenta está limitada: necesitamos verificar tu "
                             "identificación y tu dirección.",
     "send_blocked_limited_link": "Enviar los documentos",
+    "send_blocked_paused": "Tus envíos están en pausa: rebotaron o se marcaron "
+                           "como spam demasiados de tus correos. Te escribimos "
+                           "con el detalle.",
     # Remitente: de quién salen las campañas y a dónde vuelven las respuestas.
     "sender_title": "Remitente",
     "sender_back": "Volver a Enviar correos",
@@ -1972,6 +1988,14 @@ TEXTS = {
     "admin_limit_reason": "Motivo",
     "admin_limit_reason_verification": "Falta verificar la identificación y la "
                                        "dirección",
+    # La pausa automática (services/reputation.py): no sale en el selector.
+    "admin_limit_reason_bounces": "Pausa automática por rebotes",
+    "admin_limit_reason_complaints": "Pausa automática por quejas",
+    "pause_note_bounces": "Rebotes: {rate} ({n} de {sent} enviados en {days} "
+                          "días)",
+    "pause_note_complaints": "Quejas: {rate} ({n} de {sent} enviados en {days} "
+                             "días)",
+    "pause_auto_reason": "Pausa automática. {note}",
     "admin_limit_note": "Nota para el registro (opcional)",
     "admin_limit_do": "Limitar la cuenta",
     "admin_limit_now": "Limitada {when}: {reason}.",
@@ -2237,6 +2261,30 @@ TEXTS = {
                          "contactos, tus plantillas y tus campañas siguen ahí.",
     "mail_limited_button": "Subir los documentos",
 
+    # La pausa automática por rebotes o quejas (services/reputation.py).
+    "mail_paused_subject": "Pausamos los envíos de tu cuenta de Sobreala",
+    "mail_paused_heading": "Tus envíos están en pausa",
+    "mail_paused_body_bounces": "Demasiados de tus correos rebotaron porque esas "
+                                "direcciones no existen. {note}. Con tantos "
+                                "rebotes, los proveedores de correo empiezan a "
+                                "desconfiar de todo lo que envías, así que "
+                                "pausamos tus envíos antes de que eso pase.",
+    "mail_paused_body_complaints": "Varias personas marcaron tus correos como "
+                                   "spam. {note}. Si sigue pasando, los "
+                                   "proveedores de correo mandan a spam todo lo "
+                                   "que envías, así que pausamos tus envíos "
+                                   "antes de que eso pase.",
+    "mail_paused_fix_bounces": "Lo más común es una lista vieja o copiada de otro "
+                               "sistema. A las direcciones que rebotaron ya no se "
+                               "les va a enviar nada; revisa de dónde salió el "
+                               "resto antes de volver a enviar.",
+    "mail_paused_fix_complaints": "Lo más común es escribirle a gente que no "
+                                  "pidió tus correos o que no te reconoce. "
+                                  "Revisa de dónde salió tu lista, y que cada "
+                                  "correo diga claramente quién eres.",
+    "mail_paused_write": "Para volver a enviar, escríbenos a {email} y lo "
+                         "revisamos contigo.",
+
     # La renovación automática con PayPal.
     # Facturación y el pago: la renovación automática con PayPal.
     "pay_renew_label": "Renovar solo {every} con PayPal",
@@ -2320,6 +2368,16 @@ TEXTS = {
                                 "plantillas siguen ahí, y vuelven a servir en "
                                 "cuanto renueve.",
     "mail_admin_plan_end_button": "Ver la ficha",
+    "mail_admin_pause_subject": "Pausamos los envíos de {company}",
+    "mail_admin_pause_heading": "{company} quedó en pausa",
+    "mail_admin_pause_body_bounces": "El panel pausó los envíos de {company} "
+                                     "por rebotes. {note}.",
+    "mail_admin_pause_body_complaints": "El panel pausó los envíos de {company} "
+                                        "por quejas. {note}.",
+    "mail_admin_pause_lift": "Ya le llegó un correo con el detalle. Cuando haya "
+                             "revisado su lista, quita la pausa desde su ficha, "
+                             "en «Limitar la cuenta».",
+    "mail_admin_pause_button": "Ver la ficha",
     "mail_invoice_subject": "Ya está tu factura",
     "mail_invoice_heading": "Tu factura está lista",
     "mail_invoice_body": "La factura de tu pago del {when} ya está lista. La "
