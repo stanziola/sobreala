@@ -21,7 +21,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
-from pymongo import UpdateOne
+from pymongo import UpdateMany, UpdateOne
 from pymongo.errors import DuplicateKeyError
 
 from models.account import normalize_email
@@ -106,6 +106,39 @@ def delete_suppressed(db, account_id) -> int:
     result = db.contacts.delete_many({"account_id": account_id,
                                       "email_normalized": {"$in": blocked}})
     return result.deleted_count
+
+
+# ------------------------------------------------------ direcciones inválidas
+#
+# Las de un dominio que no recibe correo (`services/address_check.py`, octubre
+# de 2026). Entran marcadas con `invalid` y se ven en la lista, pero al enviar
+# se saltan como un suprimido: un rebote seguro no gasta cuota. Se borran de una
+# vez desde Contactos.
+
+INVALID_DOMAIN = "domain"
+
+
+def mark_invalid(db, account_id, emails_normalized: list[str], *,
+                 reason: str = INVALID_DOMAIN) -> int:
+    """Marcar esas direcciones de la cuenta. Devuelve cuántas son. Una sola
+    escritura en lote, como toda escritura de contactos (regla 10)."""
+    if not emails_normalized:
+        return 0
+    result = db.contacts.bulk_write([UpdateMany(
+        {"account_id": account_id, "email_normalized": {"$in": emails_normalized}},
+        {"$set": {"invalid": {"reason": reason, "at": now()}}})])
+    return result.matched_count
+
+
+def invalid_count(db, account_id) -> int:
+    return db.contacts.count_documents({"account_id": account_id,
+                                        "invalid": {"$exists": True}})
+
+
+def delete_invalid(db, account_id) -> int:
+    """Borrar los contactos con una dirección inválida. No toca supresiones."""
+    return db.contacts.delete_many({"account_id": account_id,
+                                    "invalid": {"$exists": True}}).deleted_count
 
 
 def _complete(definitions: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -263,7 +296,8 @@ def count_by_tag(db, account_id,
 
 
 def page(db, account_id, *, search: str = "", tag: str = "",
-         limit: int = 50, skip: int = 0) -> tuple[list[dict], int]:
+         limit: int = 50, skip: int = 0,
+         invalid_only: bool = False) -> tuple[list[dict], int]:
     """One screenful of contacts, and how many match in total.
 
     The search is a plain prefix on the normalised address, which the unique
@@ -279,6 +313,8 @@ def page(db, account_id, *, search: str = "", tag: str = "",
     if search:
         cleaned = normalize_email(search)
         query["email_normalized"] = {"$regex": f"^{_escape(cleaned)}"}
+    if invalid_only:
+        query["invalid"] = {"$exists": True}
 
     stages = [{"$match": query}] + _drop_suppressed()
     counted = list(db.contacts.aggregate(stages + [{"$count": "n"}]))

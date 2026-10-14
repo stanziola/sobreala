@@ -953,6 +953,20 @@ TEXTS = {
     "contacts_status_active": "Activo",
     "contacts_status_blocked": "Anulado",
     "contacts_status_incomplete": "Incompleto",
+    "contacts_status_invalid": "Dirección inválida",
+    "contacts_invalid_why": "Su dominio no recibe correo. No se le envía nada y "
+                            "no gasta correos de tu plan.",
+    "contacts_invalid_notice": "Tienes {n} contactos con una dirección inválida "
+                               "(su dominio no recibe correo).",
+    "contacts_invalid_see": "Verlas",
+    "contacts_invalid_lead": "Estas {n} direcciones son de un dominio que no "
+                             "recibe correo: cualquier envío rebotaría. No "
+                             "sabemos si un buzón existe en un dominio bueno; "
+                             "eso solo lo dice el rebote, que las anula solo.",
+    "contacts_invalid_delete": "Borrar las {n}",
+    "contacts_invalid_back": "Volver a todos",
+    "contacts_undeliverable": "{domain} no recibe correo, así que esa dirección "
+                              "rebotaría. Revisa cómo está escrita.",
     "contacts_counter_incomplete": "{n} sin completar, que no reciben correos.",
     "contacts_counter_incomplete_one": "Uno sin completar, que no recibe "
                                        "correos.",
@@ -1096,6 +1110,15 @@ TEXTS = {
     "import_suppressed": "De los importados, están suprimidos",
     "import_suppressed_hint": "Se guardan igual, pero no van a recibir nada "
                              "hasta que dejen de estar suprimidos.",
+    # La revisión de direcciones (services/address_check.py).
+    "import_undeliverable": "De un dominio que no recibe correo",
+    "import_undeliverable_hint": "Entraron marcadas como inválidas: al enviar se "
+                                 "saltan y no gastan correos de tu plan. Lo mejor "
+                                 "es borrarlas.",
+    "import_typos": "Parecen mal escritas",
+    "import_typos_hint": "Entraron como están; revísalas por si les falta o les "
+                         "sobra una letra:",
+    "import_typo_maybe": "¿{better}?",
     "import_stopped": "Llegaste al límite de contactos de tu plan, así que la "
                       "importación se detuvo ahí. Lo que ya había entrado se "
                       "quedó.",
@@ -1574,6 +1597,11 @@ TEXTS = {
                         "PNG, Word o Excel.",
     "single_send": "Enviar",
     "single_bad_address": "Esa no es una dirección de correo.",
+    "single_undeliverable": "{domain} no recibe correo, así que esa dirección "
+                            "rebotaría. Revisa cómo está escrita.",
+    "single_typo": "¿Quisiste decir {better}?",
+    "single_typo_use": "Usar {better}",
+    "single_typo_keep": "Mandar a la que escribí",
     # La página del enlace de descarga, que abre quien recibió el correo.
     "download_title": "Bajar el archivo",
     "download_lead": "{company} te mandó este archivo.",

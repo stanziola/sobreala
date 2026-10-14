@@ -11,6 +11,21 @@
 {% if request.args.get('suppressed') %}
 <p class="notice">{{ t('contacts_added_blocked') }}</p>
 {% endif %}
+{# Las de un dominio que no recibe correo. No gastan cuota (se saltan al
+   enviar), pero conviene borrarlas: se dice cuántas y se llega a ellas. #}
+{% if invalid_total and not invalid_only %}
+<p class="notice notice--warn">{{ t('contacts_invalid_notice', n=invalid_total) }}
+  <a href="{{ url_for('contacts.index', estado='invalidas') }}">{{ t('contacts_invalid_see') }}</a></p>
+{% endif %}
+{% if invalid_only %}
+<div class="notice notice--warn">
+  <p>{{ t('contacts_invalid_lead', n=invalid_total) }}</p>
+  <div class="row">
+    {% if invalid_total %}<a class="btn btn--small btn--danger" href="{{ url_for('contacts.remove_invalid') }}">{{ t('contacts_invalid_delete', n=invalid_total) }}</a>{% endif %}
+    <a class="btn btn--small btn--outline" href="{{ url_for('contacts.index') }}">{{ t('contacts_invalid_back') }}</a>
+  </div>
+</div>
+{% endif %}
 
 {# Las dos formas de meter contactos, arriba y a la vista. Cada una tiene su
    pantalla; desde aquí solo se llega. #}
@@ -84,7 +99,9 @@
         <td>
           {# Los anulados no llegan hasta aquí: la consulta los deja fuera y se
              miran en Supresiones, que es su pantalla. #}
-          {% if fields and missing(row, fields) %}
+          {% if row.invalid %}
+          <span class="tag tag--warn" title="{{ t('contacts_invalid_why') }}">{{ t('contacts_status_invalid') }}</span>
+          {% elif fields and missing(row, fields) %}
           {# Sin todas sus columnas no recibe correos, así que se ve aquí y no
              al descubrir que la campaña salió a menos gente. #}
           <span class="tag tag--warn"

@@ -91,6 +91,38 @@ sitio (ver «Abrir la cuenta» en `docs/cuenta.md`). Hasta octubre de 2026 eran
 500 (`CONTACTS_FREE_LIMIT`), para que el Básico valiera la pena; sin plan no
 sale ningún correo, así que el Básico ya vale la pena solo.
 
+### Direcciones inválidas (octubre de 2026)
+
+`services/address_check.py` revisa lo que se puede saber gratis y sin mandar
+nada:
+
+- **Que el dominio reciba correo**: que tenga MX, o A si no tiene MX, con
+  `email-validator` (que ya estaba instalado y trae dnspython). Es **una
+  consulta por dominio** y no por dirección, guardada mientras el proceso vive,
+  y como mucho 400 dominios distintos por importación. Lo que no se pudo
+  averiguar (el DNS no contestó) cuenta como bueno. Sin `MAIL_BACKEND=ses` no
+  se consulta nada, como el resto del envío.
+- **Los errores de dedo** contra una lista corta de dominios comunes en Panamá
+  (gmail, hotmail, outlook, yahoo, icloud, cwpanama, cableonda, utp, up…), solo
+  si el largo cambia poco: así `yahoo.com.mx` no se «corrige».
+
+Al **importar**, una dirección de un dominio que no recibe correo entra igual,
+pero marcada (`invalid: {reason: "domain", at}`, `contacts.mark_invalid()`, en
+lote). El resultado dice cuántas fueron, y cuántas parecen mal escritas, con las
+primeras cinco y su sugerencia. Las mal escritas entran como están: la
+sugerencia es solo eso. **Al enviar**, una marcada se salta como un suprimido y
+no gasta cuota. **En Contactos** sale con la pastilla «Dirección inválida», un
+aviso dice cuántas hay, `?estado=invalidas` las enseña solas, y «Borrar las N»
+(`/contacts/invalid/delete`) las borra de una vez, sin tocar supresiones. **A
+mano** no entra una de un dominio que no recibe correo.
+
+Lo que **no** se puede saber es si un buzón concreto existe en un dominio bueno.
+Preguntárselo al servidor del otro lado (el «RCPT TO» sin enviar) no sirve:
+Gmail y Outlook dicen que sí a todo, y hacerlo seguido manda la IP a las listas
+negras. Eso lo dice el rebote, que ya anula la dirección. Amazon tiene una
+validación propia desde diciembre de 2025, pero cobra $0.01 por dirección; no se
+usa.
+
 ### `suppressions`
 Correos que una cuenta no puede volver a contactar. **Colección aparte; el
 cliente no la puede borrar.** Índice sobre `{account_id, email}` — nunca global:

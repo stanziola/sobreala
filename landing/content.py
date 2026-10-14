@@ -1016,6 +1016,10 @@ PRIVACY = {
                 "servidor cuando alguien dice que no le llegó el código.",
                 "**De tus envíos:** por cada correo de campaña, si se entregó, "
                 "rebotó, generó una queja, se abrió o se hizo click.",
+                "**Revisamos tus direcciones:** comprobamos que el dominio de "
+                "cada una reciba correo, preguntándole al DNS público, sin "
+                "escribirle a nadie. Así una dirección que rebotaría no gasta "
+                "correos de tu plan.",
                 "**Los archivos que mandas en un correo individual:** los "
                 "guardamos 30 días para que quien lo recibe pueda bajarlo desde "
                 "su enlace, y anotamos si lo bajó y cuándo. Después se borran "

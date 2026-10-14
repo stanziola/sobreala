@@ -19,6 +19,17 @@
          autocomplete="off" required aria-describedby="para-hint">
   <p class="hint" id="para-hint">{{ t('single_to_hint') }}</p>
   {% if errors.para %}<p class="error">{{ errors.para }}</p>{% endif %}
+  {# Un error de dedo probable: las dos salidas, con el resto del formulario
+     tal como está. El archivo hay que volver a elegirlo: el navegador no lo
+     guarda entre una página y otra. #}
+  {% if errors.typo %}
+  <div class="row">
+    <button class="btn btn--small" type="submit" name="corregir" value="{{ errors.typo }}">
+      {{ t('single_typo_use', better=errors.typo) }}</button>
+    <button class="btn btn--small btn--outline" type="submit" name="confirmado" value="1">
+      {{ t('single_typo_keep') }}</button>
+  </div>
+  {% endif %}
 
   <label for="asunto">{{ t('send_subject') }}</label>
   <input id="asunto" name="asunto" type="text" maxlength="150"

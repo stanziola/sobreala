@@ -25,6 +25,7 @@ from email_validator import EmailNotValidError, validate_email
 from models import contact as contacts
 from models import suppression as suppressions
 from models.account import normalize_email
+from services import address_check
 from services import fields as columns_of
 
 # What a column of addresses tends to be called, and what a column of names
@@ -206,7 +207,12 @@ def run(db, account_id, stream: Any, *, tags: list[str],
     invites them to move up a plan.
     """
     counts = {"read": 0, "added": 0, "updated": 0, "invalid": 0,
-              "suppressed": 0, "incomplete": 0}
+              "suppressed": 0, "incomplete": 0,
+              # Revisadas antes de enviar (`services/address_check.py`): las de
+              # un dominio que no recibe correo entran marcadas, y los errores
+              # de dedo se cuentan con su sugerencia (las primeras cinco).
+              "undeliverable": 0, "typos": 0, "typos_sample": []}
+    domains_seen: set[str] = set()
     # Las columnas de la cuenta. Un contacto **nuevo** solo entra con todas
     # llenas: sin ellas no podría recibir nada, así que entrar sería entrar de
     # peso muerto. A uno que ya existe se le actualiza lo que venga.
@@ -253,6 +259,15 @@ def run(db, account_id, stream: Any, *, tags: list[str],
                                               tags=tags, consent=consent)
         counts["added"] += added
         counts["updated"] += updated
+        bad = address_check.undeliverable([one[0] for one in fits], seen=domains_seen)
+        counts["undeliverable"] += contacts.mark_invalid(
+            db, account_id, [normalize_email(one) for one in bad])
+        for one in fits:
+            better = address_check.suggestion(one[0])
+            if better and one[0] not in bad:
+                counts["typos"] += 1
+                if len(counts["typos_sample"]) < 5:
+                    counts["typos_sample"].append([one[0], better])
         batch.clear()
         seen.clear()
         return full

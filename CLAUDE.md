@@ -265,6 +265,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - La importación corre dentro del request, en streaming; hay que mudarla antes
   del primer cliente con más de unas 5,000 filas. `consent` guarda de dónde
   salió cada contacto.
+- **Las direcciones se revisan** (`services/address_check.py`): un dominio que
+  no recibe correo entra marcado (`invalid`), se salta al enviar sin gastar
+  cuota y se borra de una vez; los errores de dedo se sugieren. Si un buzón
+  existe no se puede saber sin enviar.
 
 ### Plantillas (`docs/plantillas.md`)
 

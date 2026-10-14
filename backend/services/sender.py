@@ -345,8 +345,11 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     errors: list[dict[str, str]] = []
 
     for one in people:
-        # Regla 1: el suprimido se salta y no gasta cuota.
-        if one["email"] in among or one.get("email_normalized") in among:
+        # Regla 1: el suprimido se salta y no gasta cuota. Lo mismo una
+        # dirección de un dominio que no recibe correo: es un rebote seguro
+        # (`services/address_check.py`).
+        if (one["email"] in among or one.get("email_normalized") in among
+                or one.get("invalid")):
             skipped += 1
             continue
         try:

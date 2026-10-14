@@ -43,7 +43,7 @@ from models import download as downloads_model
 from models import event as events
 from models import token as tokens
 from models import suppression as suppressions
-from services import attachments, importer, notices, render, sender, ses_identity
+from services import address_check, attachments, importer, notices, render, sender, ses_identity
 from services import clock
 from services.security import csrf_ok, rate_limit
 
@@ -255,7 +255,8 @@ def send_single(db, account):
     if not csrf_ok(request.form.get("csrf_token")):
         return {"form": t("error_csrf")}
     errors: dict[str, str] = {}
-    raw_to = " ".join(request.form.get("para", "").split())[:254]
+    # «Usar gmail.com» trae la dirección corregida en su propio botón.
+    raw_to = " ".join((request.form.get("corregir") or request.form.get("para", "")).split())[:254]
     to = (importer.clean(raw_to) or "").lower() if raw_to else ""
     subject = campaigns.clean_subject(request.form.get("asunto", ""))
     body = request.form.get("mensaje", "").strip()
@@ -266,6 +267,15 @@ def send_single(db, account):
         errors["para"] = t("single_bad_address")
     elif suppressions.among(db, account["_id"], [to]):
         errors["para"] = t("single_suppressed")
+    elif (found or {}).get("invalid") or not address_check.domain_receives(
+            address_check.domain_of(to)):
+        errors["para"] = t("single_undeliverable", domain=address_check.domain_of(to))
+    elif (address_check.suggestion(to) and not request.form.get("confirmado")
+          and not found):
+        # Un error de dedo probable: se pregunta una vez. Si escribe la misma
+        # dirección y confirma, sale como la escribió.
+        errors["para"] = t("single_typo", better=address_check.suggestion(to))
+        errors["typo"] = address_check.suggestion(to)
     if not subject:
         errors["asunto"] = t("error_required")
     if not body:

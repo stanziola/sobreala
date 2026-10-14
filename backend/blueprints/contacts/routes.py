@@ -32,6 +32,7 @@ from models import auth_event as events
 from models import contact as contacts
 from models import import_job as imports
 from models import suppression as suppressions
+from services import address_check
 from services import fields as columns
 from services import importer
 from services import plans
@@ -123,6 +124,9 @@ def shared(db, account, **extra):
         "blocked_total": total - active,
         "left": max(0, limit - active),
         "suppressed_total": suppressions.count(db, account["_id"]),
+        # Las de un dominio que no recibe correo: se ven en la lista y se
+        # borran de una vez (`services/address_check.py`).
+        "invalid_total": contacts.invalid_count(db, account["_id"]),
         # Los que no tienen todas sus columnas llenas. No reciben correos, así
         # que la cifra va donde se cuentan los contactos y no escondida.
         "incomplete_total": contacts.incomplete_count(
@@ -158,6 +162,7 @@ def index():
     db = get_db()
     search = request.args.get("q", "").strip()[:120]
     tag = request.args.get("tag", "").strip()[:40]
+    invalid_only = request.args.get("estado") == "invalidas"
     try:
         skip = max(0, int(request.args.get("since", "0")))
     except ValueError:
@@ -166,12 +171,14 @@ def index():
     # Los anulados no salen: la consulta los deja fuera, así que esta pantalla
     # ya no tiene que preguntar cuáles lo están.
     found, matching = contacts.page(db, account["_id"], search=search, tag=tag,
-                                    limit=PER_PAGE, skip=skip)
+                                    limit=PER_PAGE, skip=skip,
+                                    invalid_only=invalid_only)
 
     return render_template(
         "contacts/list.html", section="lista",
         **shared(db, account, rows=found, matching=matching,
-                 search=search, tag=tag, skip=skip, per_page=PER_PAGE))
+                 search=search, tag=tag, skip=skip, per_page=PER_PAGE,
+                 invalid_only=invalid_only))
 
 
 @bp.route("/contacts/new", methods=["GET", "POST"])
@@ -199,6 +206,9 @@ def add_one():
             errors["form"] = t("error_csrf")
         elif not address:
             errors["email"] = t("error_contact_email")
+        elif not address_check.domain_receives(address_check.domain_of(address)):
+            errors["email"] = t("contacts_undeliverable",
+                                domain=address_check.domain_of(address))
         elif source not in contacts.SOURCES:
             errors["source"] = t("error_required")
         elif contacts.active_count(db, account["_id"]) >= accounts.contact_limit(account):
@@ -299,6 +309,27 @@ def remove():
         # baja somebody asked for.
         contacts.delete(get_db(), account["_id"], request.form.get("email", ""))
     return redirect(request.form.get("volver") or url_for("contacts.index"))
+
+
+@bp.route("/contacts/invalid/delete", methods=["GET", "POST"])
+def remove_invalid():
+    """Borrar de una vez los contactos con una dirección inválida (de un dominio
+    que no recibe correo). El GET dice cuántos y pregunta; el POST borra."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    if request.method == "GET":
+        db = get_db()
+        context = shared(db, account)
+        return render_template(
+            "contacts/remove.html", section="lista",
+            going=context["invalid_total"], rows=[], blocked=False,
+            action=url_for("contacts.remove_invalid"),
+            back=url_for("contacts.index", estado="invalidas"), **context)
+
+    if csrf_ok(request.form.get("csrf_token")):
+        contacts.delete_invalid(get_db(), account["_id"])
+    return redirect(url_for("contacts.index", saved=1))
 
 
 @bp.route("/contacts/suppressed/delete", methods=["GET", "POST"])

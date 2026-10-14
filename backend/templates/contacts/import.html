@@ -22,7 +22,25 @@
     {% if result.counts.suppressed %}
     <li><span>{{ t('import_suppressed') }}</span> <b>{{ result.counts.suppressed }}</b></li>
     {% endif %}
+    {% if result.counts.undeliverable %}
+    <li><span>{{ t('import_undeliverable') }}</span> <b>{{ result.counts.undeliverable }}</b></li>
+    {% endif %}
+    {% if result.counts.typos %}
+    <li><span>{{ t('import_typos') }}</span> <b>{{ result.counts.typos }}</b></li>
+    {% endif %}
   </ul>
+  {% if result.counts.undeliverable %}
+  <p class="hint">{{ t('import_undeliverable_hint') }}
+    <a href="{{ url_for('contacts.index', estado='invalidas') }}">{{ t('contacts_invalid_see') }}</a></p>
+  {% endif %}
+  {% if result.counts.typos %}
+  <p class="hint">{{ t('import_typos_hint') }}</p>
+  <ul class="counts">
+    {% for wrong, right in result.counts.typos_sample %}
+    <li><span>{{ wrong }}</span> <span class="table__quiet">{{ t('import_typo_maybe', better=right) }}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
   {% if result.counts.suppressed %}
   <p class="hint">{{ t('import_suppressed_hint') }}</p>
   {% endif %}
