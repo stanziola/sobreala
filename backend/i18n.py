@@ -1818,6 +1818,42 @@ TEXTS = {
     "admin_title": "Administración",
     "admin_filter_demo": "Piden demostración",
     "admin_tab_accounts": "Cuentas",
+    # Clientes: vigilar cómo envía cada uno (octubre de 2026).
+    "admin_tab_clients": "Clientes",
+    "admin_clients_lead": "Para vigilar cómo envía cada cliente. Las cifras son "
+                          "de los últimos {days} días; para hacer algo con una "
+                          "cuenta, ábrela desde aquí o desde Cuentas.",
+    "admin_health_title": "Tu cuenta de Amazon",
+    "admin_health_day": "Últimas 24 horas",
+    "admin_health_month": "Últimos {days} días",
+    "admin_health_sent": "correos de campaña enviados",
+    "admin_health_bounces": "Rebotes",
+    "admin_health_complaints": "Quejas",
+    "admin_health_of": "{n} en total. Amazon revisa la cuenta desde {limit}.",
+    "admin_health_note": "Amazon mide la cuenta entera de Sobreala, sumando a "
+                         "todos los clientes: si pasa sus umbrales, se para el "
+                         "envío de todos. Solo cuentan los rebotes permanentes, y "
+                         "los correos del sistema no entran aquí.",
+    "admin_clients_title": "Por cliente",
+    "admin_clients_all_plans": "Todos los planes",
+    "admin_clients_col_sent": "Enviados",
+    "admin_clients_col_delivered": "Entregados",
+    "admin_clients_col_bounces": "Rebotes",
+    "admin_clients_col_complaints": "Quejas",
+    "admin_clients_col_opens": "Aperturas",
+    "admin_clients_col_contacts": "Contactos",
+    "admin_clients_col_last": "Último envío",
+    "admin_clients_state_paused": "En pausa",
+    "admin_clients_state_limited": "Limitada",
+    "admin_clients_state_near": "Cerca del límite",
+    "admin_clients_state_ok": "Bien",
+    "admin_clients_few": "Todavía no envió lo suficiente para que esta cifra "
+                         "diga algo.",
+    "admin_clients_note": "En ámbar, cerca del umbral de la pausa automática; en "
+                          "rojo, pasado. Los rebotes cuentan desde {bounce_min} "
+                          "enviados y las quejas desde {complaint_min}: antes, la "
+                          "cifra sale en gris. Las aperturas son sobre los "
+                          "entregados.",
     "admin_mail_title": "Correos del sistema",
     "admin_mail_lead": "Lo que el panel le mandó a una dirección (códigos, "
                        "avisos, bienvenidas) y qué dijo Amazon de cada uno. "

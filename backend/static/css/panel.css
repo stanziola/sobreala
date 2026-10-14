@@ -554,11 +554,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
    The shape of YouTube's settings screen —sections down the left, rows of
    "what it is / what you can do" on the right— in this project's colours. */
 .settings__heading { margin-bottom: 18px; }
-.settings { display: grid; gap: 22px; align-items: start; }
+/* `minmax(0, 1fr)` y no `1fr` a secas: sin el 0, la columna crece hasta lo que
+   mide la tabla más ancha y la página se va de lado en el teléfono, en vez de
+   que la tabla se deslice dentro de su caja. */
+.settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px;
+            align-items: start; }
 /* El menú, pegado a la izquierda y estrecho: lo que gana de ancho se lo lleva
    el contenido, que es a lo que se viene. Por debajo de 780 px cae en
    horizontal, que es lo que lo hace usable en un teléfono. */
-@media (min-width: 780px) { .settings { grid-template-columns: 190px 1fr; gap: 24px; } }
+@media (min-width: 780px) { .settings { grid-template-columns: 190px minmax(0, 1fr); gap: 24px; } }
 
 .settings__nav { display: flex; gap: 6px; overflow-x: auto; }
 @media (min-width: 780px) {
@@ -804,6 +808,34 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 
 /* Una dirección larga parte donde haga falta en vez de estirar la tabla. */
 .table__wrap { overflow-wrap: anywhere; max-width: 520px; }
+
+/* ------------------------------------------------------------ clientes
+   La tabla de cifras de administración: los números a la derecha y con el
+   mismo ancho, los títulos ordenan, y cada porcentaje dice con su color si va
+   bien (sin color), cerca del umbral (ámbar) o pasado (rojo). Los mismos rojo y
+   verde de `.trend`, y el ámbar de `.notice--warn`. */
+.table--figures .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table--figures th { text-align: right; }
+.table--figures th:first-child, .table--figures th:nth-child(2),
+.table--figures th:nth-last-child(-n+2) { text-align: left; }
+.sort { color: inherit; text-decoration: none; }
+.sort:hover, .sort.is-current { color: var(--color-ink); }
+.level { font-variant-numeric: tabular-nums; }
+.level.is-few { color: var(--color-ink-soft); }
+.level.is-warn, .level.is-over, .level[class*="is-state-"] {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-weight: 700;
+}
+.level.is-warn, .level.is-state-near, .level.is-state-limited {
+  color: #92400E; background: rgba(217, 119, 6, .16);
+}
+.level.is-over, .level.is-state-paused { color: #B42318; background: rgba(180, 35, 24, .12); }
+.level.is-state-ok { color: var(--color-ink-soft); background: var(--color-surface-alt); }
+:root[data-theme="dark"] .level.is-warn,
+:root[data-theme="dark"] .level.is-state-near,
+:root[data-theme="dark"] .level.is-state-limited { color: #FCD34D; background: rgba(252, 211, 77, .14); }
+:root[data-theme="dark"] .level.is-over,
+:root[data-theme="dark"] .level.is-state-paused { color: #FCA5A5; background: rgba(252, 165, 165, .14); }
+.rates__big.level.is-warn, .rates__big.level.is-over { padding: 0 10px; }
 
 .chart__key { display: inline-flex; align-items: center; gap: 7px; }
 .chart__key::before {

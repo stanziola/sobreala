@@ -314,6 +314,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   con su sesión de verdad. «Cerrar sesión» las cierra todas.
 - La ficha de administración enseña cifras y orígenes, **nunca la lista de
   direcciones de un cliente**.
+- En administración, **Cuentas es para hacer cosas y Clientes para vigilar**:
+  `/admin/clients` enseña la salud de la cuenta de Amazon y una fila por empresa
+  con sus cifras de 30 días, en ámbar o rojo según el umbral de la pausa.
 
 ### Cobro (`docs/cobro.md`)
 

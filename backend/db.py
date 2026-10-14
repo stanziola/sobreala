@@ -190,6 +190,10 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.events.create_index([("account_id", ASCENDING), ("kind", ASCENDING),
                             ("created_at", DESCENDING)],
                            name="by_account_kind_created")
+    # Lo de todas las cuentas juntas, en administración: la salud de la cuenta
+    # de Amazon en Clientes, y lo último que pasó en Eventos.
+    db.events.create_index([("kind", ASCENDING), ("created_at", DESCENDING)],
+                           name="by_kind_created")
     # Uno por envío, persona y tipo (`events.record()`), y el detalle de un
     # envío, que agrupa por persona.
     db.events.create_index([("account_id", ASCENDING), ("run_id", ASCENDING),

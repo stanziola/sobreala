@@ -42,6 +42,7 @@ from models import suppression as suppressions
 from models import verification_doc as verification_docs
 from services import notices
 from services import plans
+from services import reputation
 from services import sender
 from services import stats
 from services.security import csrf_ok
@@ -244,6 +245,75 @@ def accounts_list(account):
                            search=text, skip=skip, per_page=PER_PAGE,
                            statuses=accounts.STATUSES,
                            demo_filter=DEMO_FILTER, review_filter=REVIEW_FILTER)
+
+
+# ------------------------------------------------------------- los clientes
+
+# Hasta cuántas empresas lee la tabla de Clientes. Se calcula y se ordena entera
+# en memoria: con unos cientos de clientes es nada, y ordenar por un porcentaje
+# que no está guardado no se puede pedir a la base.
+CLIENTS_MAX = 2000
+
+# Cómo se ordena cada columna. El estado va de lo más grave a lo menos.
+CLIENT_SORTS = {
+    "company": lambda one: (one["account"].get("company_name") or "").lower(),
+    "plan": lambda one: one["account"].get("plan") or "",
+    "sent": lambda one: one["sent"],
+    "delivered": lambda one: one["delivered_rate"],
+    "bounces": lambda one: one["bounce"],
+    "complaints": lambda one: one["complaint"],
+    "opens": lambda one: one["open_rate"],
+    "contacts": lambda one: one["contacts"],
+    "last": lambda one: one["last_sent"].timestamp() if one["last_sent"] else 0,
+    "state": lambda one: reputation.STATES.index(one["state"]),
+}
+# Lo que se lee primero sin elegir nada: lo más grave arriba, y entre iguales
+# el que más envía.
+CLIENT_DEFAULT_SORT = "state"
+
+
+@bp.route("/clients")
+@only_admins
+def clients_list(account):
+    """Vigilar a los clientes: cuánto envía cada uno y cómo le va.
+
+    Cuentas es para hacer cosas (aprobar, abrir, limitar); esta pantalla es
+    para mirar. Arriba, la salud de la cuenta entera ante Amazon, que es la
+    cifra que mira él; debajo, una fila por empresa con los últimos 30 días, en
+    ámbar cuando se acerca al umbral de la pausa automática y en rojo cuando lo
+    pasa. Cifras, nunca direcciones de contactos.
+    """
+    db = get_db()
+    text = request.args.get("q", "").strip()[:120]
+    plan = request.args.get("plan", "")
+    state = request.args.get("state", "")
+    sort = request.args.get("sort", "")
+    sort = sort if sort in CLIENT_SORTS else CLIENT_DEFAULT_SORT
+    # Lo de mayor a menor es lo que se quiere ver primero en las cifras; el
+    # nombre y el estado se leen de arriba abajo.
+    ascending_first = sort in ("company", "plan", "state")
+    raw_dir = request.args.get("dir", "")
+    ascending = raw_dir == "asc" if raw_dir in ("asc", "desc") else ascending_first
+
+    rows, _ = accounts.search(db, text=text, limit=CLIENTS_MAX)
+    if plan in plans.PLANS:
+        rows = [row for row in rows if row.get("plan") == plan]
+    table = reputation.table(db, rows)
+    if state in reputation.STATES:
+        table = [one for one in table if one["state"] == state]
+    table.sort(key=lambda one: one["sent"], reverse=True)
+    table.sort(key=CLIENT_SORTS[sort], reverse=not ascending)
+
+    return render_template(
+        "admin/clients.html", section="clientes", admin=account, rows=table,
+        search=text, plan=plan, state=state, sort=sort, ascending=ascending,
+        plan_names=list(plans.PLANS), states=reputation.STATES,
+        plan_name=lambda name: plans.PLANS.get(name or "", {}).get("name", ""),
+        day=reputation.overall(db, days=1),
+        month=reputation.overall(db),
+        window=reputation.WINDOW_DAYS, percent=reputation.percent,
+        bounce_min=reputation.BOUNCE_MIN_SENT,
+        complaint_min=reputation.COMPLAINT_MIN_SENT)
 
 
 @bp.route("/accounts/<raw>")

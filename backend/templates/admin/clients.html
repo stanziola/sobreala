@@ -1,0 +1,118 @@
+{% extends "admin/_layout.html" %}
+
+{# El título de una columna que ordena. Pulsar la que ya ordena le da la vuelta;
+   pulsar otra la ordena en su sentido natural (las cifras, de mayor a menor). #}
+{% macro head(key, label) -%}
+<th scope="col"{% if sort == key %} aria-sort="{{ 'ascending' if ascending else 'descending' }}"{% endif %}>
+  <a class="sort{% if sort == key %} is-current{% endif %}"
+     href="{{ url_for('admin.clients_list', q=search or None, plan=plan or None,
+                      state=state or None, sort=key,
+                      dir=(('desc' if ascending else 'asc') if sort == key else None)) }}">
+    {{- label -}}
+    {%- if sort == key %}<span aria-hidden="true">{{ ' ↑' if ascending else ' ↓' }}</span>{% endif -%}
+  </a>
+</th>
+{%- endmacro %}
+
+{# Un porcentaje con su color: gris sin volumen para decir nada, ámbar cerca del
+   umbral, rojo pasado. #}
+{% macro rate(value, lvl, digits=1) -%}
+<span class="level is-{{ lvl }}"{% if lvl == 'few' %} title="{{ t('admin_clients_few') }}"{% endif %}>
+  {{- percent(value, digits) -}}</span>
+{%- endmacro %}
+
+{% block pane %}
+<h2 class="settings__title">{{ t('admin_tab_clients') }}</h2>
+<p class="settings__lead">{{ t('admin_clients_lead', days=window) }}</p>
+
+{# ------------------------------------------- la cuenta entera ante Amazon #}
+<h3 class="settings__subtitle">{{ t('admin_health_title') }}</h3>
+<ul class="rates">
+  {% for label, one in [(t('admin_health_day'), day), (t('admin_health_month', days=window), month)] %}
+  <li class="rates__one">
+    <span class="rates__name">{{ label }}</span>
+    <span class="rates__line"><b class="rates__big">{{ '{:,}'.format(one.sent) }}</b></span>
+    <span class="rates__of">{{ t('admin_health_sent') }}</span>
+  </li>
+  <li class="rates__one">
+    <span class="rates__name">{{ t('admin_health_bounces') }} · {{ label|lower }}</span>
+    <span class="rates__line"><b class="rates__big level is-{{ one.bounce_level }}">{{ one.bounce_rate }}</b></span>
+    <span class="rates__of">{{ t('admin_health_of', n='{:,}'.format(one.bounces), limit='5 %') }}</span>
+  </li>
+  <li class="rates__one">
+    <span class="rates__name">{{ t('admin_health_complaints') }} · {{ label|lower }}</span>
+    <span class="rates__line"><b class="rates__big level is-{{ one.complaint_level }}">{{ one.complaint_rate }}</b></span>
+    <span class="rates__of">{{ t('admin_health_of', n='{:,}'.format(one.complaints), limit='0.1 %') }}</span>
+  </li>
+  {% endfor %}
+</ul>
+<p class="hint">{{ t('admin_health_note') }}</p>
+
+{# ------------------------------------------------------------- la tabla #}
+<h3 class="settings__subtitle">{{ t('admin_clients_title') }}</h3>
+<form class="filters" method="get" action="{{ url_for('admin.clients_list') }}">
+  <label class="visually-hidden" for="q">{{ t('admin_search') }}</label>
+  <input id="q" name="q" type="search" value="{{ search }}"
+         placeholder="{{ t('admin_search') }}" autocomplete="off">
+
+  <label class="visually-hidden" for="plan">{{ t('admin_clients_all_plans') }}</label>
+  <select id="plan" name="plan">
+    <option value="">{{ t('admin_clients_all_plans') }}</option>
+    {% for name in plan_names %}
+    <option value="{{ name }}"{% if name == plan %} selected{% endif %}>{{ plan_name(name) }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="visually-hidden" for="state">{{ t('admin_all_states') }}</label>
+  <select id="state" name="state">
+    <option value="">{{ t('admin_all_states') }}</option>
+    {% for name in states %}
+    <option value="{{ name }}"{% if name == state %} selected{% endif %}>{{ t('admin_clients_state_' + name) }}</option>
+    {% endfor %}
+  </select>
+
+  {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+  <button class="btn btn--small btn--outline" type="submit">{{ t('contacts_search_action') }}</button>
+</form>
+
+{% if rows %}
+<div class="table-wrap">
+  <table class="table table--figures">
+    <thead>
+      <tr>
+        {{ head('company', t('admin_col_company')) }}
+        {{ head('plan', t('admin_col_plan')) }}
+        {{ head('sent', t('admin_clients_col_sent')) }}
+        {{ head('delivered', t('admin_clients_col_delivered')) }}
+        {{ head('bounces', t('admin_clients_col_bounces')) }}
+        {{ head('complaints', t('admin_clients_col_complaints')) }}
+        {{ head('opens', t('admin_clients_col_opens')) }}
+        {{ head('contacts', t('admin_clients_col_contacts')) }}
+        {{ head('last', t('admin_clients_col_last')) }}
+        {{ head('state', t('admin_col_status')) }}
+      </tr>
+    </thead>
+    <tbody>
+      {% for one in rows %}
+      <tr>
+        <td><a href="{{ url_for('admin.account_page', raw=one.account._id) }}"><b>{{ one.account.company_name }}</b></a><br>
+          <span class="table__quiet">{{ one.account.email }}</span></td>
+        <td class="table__quiet">{{ plan_name(one.account.plan) or t('admin_no_plan') }}</td>
+        <td class="num">{{ '{:,}'.format(one.sent) }}</td>
+        <td class="num">{{ percent(one.delivered_rate) if one.sent else '·' }}</td>
+        <td class="num">{{ rate(one.bounce, one.bounce_level) if one.sent else '·' }}</td>
+        <td class="num">{{ rate(one.complaint, one.complaint_level, 2) if one.sent else '·' }}</td>
+        <td class="num">{{ percent(one.open_rate) if one.delivered else '·' }}</td>
+        <td class="num">{{ '{:,}'.format(one.contacts) }}</td>
+        <td class="table__quiet">{{ one.last_sent|ago if one.last_sent else t('admin_never') }}</td>
+        <td><span class="level is-state-{{ one.state }}">{{ t('admin_clients_state_' + one.state) }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="hint">{{ t('admin_clients_note', bounce_min='{:,}'.format(bounce_min), complaint_min='{:,}'.format(complaint_min)) }}</p>
+{% else %}
+<p class="lead">{{ t('admin_none_found') }}</p>
+{% endif %}
+{% endblock %}

@@ -277,8 +277,29 @@ galleta de las que quedan.
 `/admin`, con verificación de rol. **No es donde se aterriza al entrar** —eso es
 el sitio público, para todos—: se llega desde el menú, que para esta cuenta
 enseña Administración de primera fila. Sí es a donde la devuelve
-`not_for_admins()` si abre una pantalla de cliente. Cuatro pantallas:
-**Estadísticas · Cuentas · Plantillas subidas · Correos del sistema**.
+`not_for_admins()` si abre una pantalla de cliente. Cinco pantallas:
+**Estadísticas · Cuentas · Clientes · Plantillas subidas · Correos del
+sistema**. **Cuentas es para hacer cosas** (aprobar, abrir, limitar) y
+**Clientes para vigilar**.
+
+**Clientes** (`/admin/clients`, octubre de 2026) es la de vigilar cómo envía
+cada uno:
+
+- **Arriba, la salud de la cuenta de Amazon**: enviados, % de rebotes
+  permanentes y % de quejas de todo Sobreala en 24 horas y en 30 días, junto a
+  los umbrales con que Amazon revisa la cuenta (5 % y 0.1 %). Es la cifra que
+  mira Amazon, y si la pasa se para el envío de todos. Solo campañas.
+- **Debajo, una fila por empresa** con sus últimos 30 días: enviados, %
+  entregados, % rebotes, % quejas, % aperturas (sobre los entregados, como en
+  Estadísticas), contactos, último envío y estado (en pausa, limitada, cerca del
+  límite o bien). Los porcentajes de rebotes y quejas van **en ámbar** desde
+  dos tercios del umbral de la pausa automática y **en rojo** pasado; por
+  debajo del volumen mínimo, en gris.
+- Buscar, filtrar por plan y por estado, y ordenar por cualquier columna. Sin
+  elegir nada, lo más grave arriba. Cada fila lleva a la ficha.
+- Lo calcula `services/reputation.py` (`table()` y `overall()`), lo mismo que
+  usa la pausa: cuatro consultas para todas las filas, nunca una por cliente, y
+  se ordena en memoria (hasta 2,000 empresas). Cifras, nunca direcciones.
 
 **Correos del sistema** (`/admin/emails`) es la del «no me llegó el código»: se
 escribe una dirección y sale cada correo que el panel le mandó, cuándo, cuál
@@ -344,17 +365,16 @@ dibujaría ceros y habría que rehacerla cuando se sepa qué forma tienen los
 eventos de verdad. Sigue valiendo la regla de arriba: cifras agregadas sí, la
 lista de direcciones de sus contactos no.
 
-Pendiente además: revisar rebotes por cliente.
+Revisar rebotes por cliente, y la tasa de rebotes y quejas de Sobreala entera,
+ya están: son la tabla y la salud de **Clientes**.
 
 Además:
 
-1. **Tasa de rebotes y quejas agregada en la portada** — la de Sobreala, no la
-   de cada cliente. Es la métrica que puede cerrar el negocio.
-2. Estado de pagos y renovaciones (Yappy puede requerir cobro manual).
-3. Envíos en curso, pausados y fallidos.
-4. Ver el panel como el cliente, para soporte. Queda registrado.
-5. Registro de actividad: aprobaciones, cambios de plan, pausas, con motivo.
-6. Buscador global de direcciones, para suprimir a quien escriba pidiendo la baja.
+1. Estado de pagos y renovaciones (Yappy puede requerir cobro manual).
+2. Envíos en curso, pausados y fallidos.
+3. Ver el panel como el cliente, para soporte. Queda registrado.
+4. Registro de actividad: aprobaciones, cambios de plan, pausas, con motivo.
+5. Buscador global de direcciones, para suprimir a quien escriba pidiendo la baja.
 
 ### `admin_events`
 Un documento por decisión de un administrador: qué cambió, de qué a qué, sobre

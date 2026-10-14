@@ -136,3 +136,98 @@ def check(db, account_id) -> str | None:
     notices.paused(account, reason=reason, note=note)
     notices.pause_to_admins(db, account, reason=reason, note=note)
     return reason
+
+
+# --------------------------------------------------- la pantalla de Clientes
+
+def overall(db, *, days: int = WINDOW_DAYS,
+            since: datetime | None = None) -> dict[str, Any]:
+    """Lo mismo que `figures()`, pero de todo Sobreala junto: la cifra que mira
+    Amazon. Solo campañas; el correo del sistema no cuenta aquí."""
+    since = since or now() - timedelta(days=days)
+    numbers = dict(EMPTY)
+    numbers["sent"] = db.events.count_documents(
+        {"kind": events.SENT, "created_at": {"$gte": since}})
+    numbers["bounces"] = db.suppressions.count_documents(
+        {"source": "ses", "reason": suppressions.HARD_BOUNCE,
+         "created_at": {"$gte": since}})
+    numbers["complaints"] = db.suppressions.count_documents(
+        {"source": "ses", "reason": suppressions.COMPLAINT,
+         "created_at": {"$gte": since}})
+    return {**numbers,
+            "bounce_rate": percent(rate(numbers["bounces"], numbers["sent"])),
+            "complaint_rate": percent(rate(numbers["complaints"], numbers["sent"]), 2),
+            "bounce_level": level(rate(numbers["bounces"], numbers["sent"]),
+                                  numbers["sent"] > 0, AMAZON_BOUNCE_WARN,
+                                  AMAZON_BOUNCE_REVIEW),
+            "complaint_level": level(rate(numbers["complaints"], numbers["sent"]),
+                                     numbers["sent"] > 0, AMAZON_COMPLAINT_WARN,
+                                     AMAZON_COMPLAINT_REVIEW)}
+
+
+# Los umbrales de Amazon para la cuenta entera, que es lo que enseña la salud.
+AMAZON_BOUNCE_REVIEW = 0.05
+AMAZON_COMPLAINT_REVIEW = 0.001
+AMAZON_BOUNCE_WARN = 0.02
+AMAZON_COMPLAINT_WARN = 0.0005
+
+# Qué tan bien va una cifra: sin volumen para decir nada, bien, cerca del
+# umbral o pasada.
+FEW, OK, WARN, OVER = "few", "ok", "warn", "over"
+
+# El estado de un cliente en la tabla, de lo más grave a lo menos.
+STATES = ("paused", "limited", "near", "ok")
+
+
+def level(value: float, enough: bool, warn: float, limit: float) -> str:
+    if not enough:
+        return FEW
+    if value > limit:
+        return OVER
+    if value >= warn:
+        return WARN
+    return OK
+
+
+def table(db, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Una fila por empresa, con sus cifras de los últimos 30 días.
+
+    Cuatro consultas para todas las filas juntas (eventos, supresiones,
+    contactos y último envío), nunca una por cliente.
+    """
+    ids = [row["_id"] for row in rows]
+    numbers = figures(db, ids)
+    contacts = {one["_id"]: one["n"] for one in db.contacts.aggregate([
+        {"$match": {"account_id": {"$in": ids}}},
+        {"$group": {"_id": "$account_id", "n": {"$sum": 1}}}])}
+    last = {one["_id"]: one["at"] for one in db.campaign_runs.aggregate([
+        {"$match": {"account_id": {"$in": ids}}},
+        {"$group": {"_id": "$account_id", "at": {"$max": "$finished_at"}}}])}
+    out = []
+    for row in rows:
+        mine = numbers[row["_id"]]
+        sent = mine["sent"]
+        bounce = rate(mine["bounces"], sent)
+        complaint = rate(mine["complaints"], sent)
+        levels = (level(bounce, sent >= BOUNCE_MIN_SENT, BOUNCE_WARN, BOUNCE_LIMIT),
+                  level(complaint, sent >= COMPLAINT_MIN_SENT, COMPLAINT_WARN,
+                        COMPLAINT_LIMIT))
+        if accounts.is_paused(row):
+            state = "paused"
+        elif accounts.limited_of(row):
+            state = "limited"
+        elif WARN in levels or OVER in levels:
+            state = "near"
+        else:
+            state = "ok"
+        out.append({
+            "account": row, **mine, "state": state,
+            "bounce": bounce, "complaint": complaint,
+            "delivered_rate": rate(mine["delivered"], sent),
+            # Las aperturas, sobre los entregados, como en Estadísticas.
+            "open_rate": rate(mine["opened"], mine["delivered"]),
+            "bounce_level": levels[0], "complaint_level": levels[1],
+            "contacts": contacts.get(row["_id"], 0),
+            "last_sent": last.get(row["_id"]),
+        })
+    return out
