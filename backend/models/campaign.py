@@ -77,7 +77,10 @@ BODY_MAX = 20000
 
 
 def create_single(db, account_id, *, subject: str, body: str, contact_id, to: str) -> Any:
-    """Dejar listo un correo a una persona, para salir ya. Devuelve su id."""
+    """Dejar listo un correo a una persona, para salir ya. Devuelve su id.
+
+    `to` es la dirección, que puede no estar en Contactos (octubre de 2026):
+    entonces `contact_id` va en None y no se guarda ningún contacto."""
     return db.campaigns.insert_one({
         "account_id": account_id,
         "kind": SINGLE,
@@ -86,6 +89,9 @@ def create_single(db, account_id, *, subject: str, body: str, contact_id, to: st
         "design_id": None,
         "contact_id": contact_id,
         "to": to,
+        # El archivo, si lleva: `models/download.py`. Se pone después de crear
+        # la campaña, porque el archivo guarda a qué correo pertenece.
+        "download_id": None,
         "tags": [],
         "scheduled_at": now(),
         "status": SCHEDULED,
@@ -259,3 +265,9 @@ def restart(db, account_id, campaign_id, *, when: datetime) -> bool:
 
 def count(db, account_id) -> int:
     return db.campaigns.count_documents({"account_id": account_id})
+
+
+def attach_download(db, account_id, campaign_id, download_id) -> None:
+    """Atar el archivo guardado a su correo individual."""
+    db.campaigns.update_one({"_id": campaign_id, "account_id": account_id},
+                            {"$set": {"download_id": download_id, "updated_at": now()}})

@@ -177,6 +177,10 @@ def ensure_indexes(db: Database | None = None) -> None:
                              partialFilterExpression={"transaction_id": {"$type": "string"}},
                              name="by_transaction")
     db.paypal_plans.create_index([("key", ASCENDING)], unique=True, name="by_key")
+    # El archivo de un correo individual: Atlas lo borra solo a los 30 días
+    # (`models/download.py`).
+    db.downloads.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
+                              name="ttl_expires")
 
     # Un documento por evento de SES. Es lo que más crece: unos tres por correo
     # enviado. Todavía no lo llena nadie, pero el índice va puesto desde ya para

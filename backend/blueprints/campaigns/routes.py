@@ -39,10 +39,11 @@ from models import campaign as campaigns
 from models import campaign_run as runs
 from models import contact as contacts
 from models import design as designs
+from models import download as downloads_model
 from models import event as events
 from models import token as tokens
 from models import suppression as suppressions
-from services import attachments, notices, render, sender, ses_identity
+from services import attachments, importer, notices, render, sender, ses_identity
 from services import clock
 from services.security import csrf_ok, rate_limit
 
@@ -223,8 +224,10 @@ def write():
     """Escribir un correo a una persona, como uno normal: para, asunto, texto y
     un archivo si hace falta. Sale ya, por el mismo camino que una campaña.
 
-    La persona tiene que estar en Contactos: es lo que dice de dónde salió su
-    dirección, si se dio de baja y qué pasó con lo que se le mandó."""
+    Desde octubre de 2026 va **a cualquier dirección**, esté o no en Contactos,
+    y sin guardarla; y **sin baja ni marca de agua**, porque no es una campaña.
+    A quien se dio de baja o rebotó en esta cuenta igual no le sale (regla 1).
+    El archivo va como enlace de descarga, para saber si lo bajó."""
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
@@ -243,7 +246,8 @@ def write():
     return render_template(
         "campaigns/write.html", section="envios", account=account, errors=errors,
         form=form, accept=attachments.ACCEPT,
-        max_mb=attachments.MAX_BYTES // (1024 * 1024), body_max=campaigns.BODY_MAX)
+        max_mb=attachments.MAX_BYTES // (1024 * 1024), body_max=campaigns.BODY_MAX,
+        keep_days=downloads_model.KEEP_DAYS)
 
 
 def send_single(db, account):
@@ -251,14 +255,15 @@ def send_single(db, account):
     if not csrf_ok(request.form.get("csrf_token")):
         return {"form": t("error_csrf")}
     errors: dict[str, str] = {}
-    to = " ".join(request.form.get("para", "").split()).lower()[:254]
+    raw_to = " ".join(request.form.get("para", "").split())[:254]
+    to = (importer.clean(raw_to) or "").lower() if raw_to else ""
     subject = campaigns.clean_subject(request.form.get("asunto", ""))
     body = request.form.get("mensaje", "").strip()
     found = contacts.by_emails(db, account["_id"], [to]).get(to) if to else None
-    if not to:
+    if not raw_to:
         errors["para"] = t("error_required")
-    elif found is None:
-        errors["para"] = t("single_not_contact")
+    elif not to:
+        errors["para"] = t("single_bad_address")
     elif suppressions.among(db, account["_id"], [to]):
         errors["para"] = t("single_suppressed")
     if not subject:
@@ -279,8 +284,8 @@ def send_single(db, account):
             errors["archivo"] = t("single_file_kind")
         else:
             maintype, subtype, ext = kind
-            attachment = (attachments.safe_name(upload.filename, ext), maintype, subtype,
-                          data)
+            attachment = (attachments.safe_name(upload.filename, ext),
+                          f"{maintype}/{subtype}", data)
     if errors:
         return errors
 
@@ -288,14 +293,18 @@ def send_single(db, account):
     if why:
         return {"form": t("single_blocked")}
 
-    # El archivo va directo en el correo, que sale ahora mismo, y no se guarda
-    # en ningún sitio: después no sirve para nada, y la copia de un documento
-    # privado sería algo más que cuidar.
     campaign_id = campaigns.create_single(
-        db, account["_id"], subject=subject, body=body, contact_id=found["_id"],
-        to=found.get("email", to))
-    result = sender.run(db, account, campaigns.by_id(db, account["_id"], campaign_id),
-                        attachment=attachment)
+        db, account["_id"], subject=subject, body=body,
+        contact_id=found["_id"] if found else None,
+        to=found.get("email", to) if found else to)
+    # El archivo se guarda 30 días y el correo lleva su enlace de descarga: es
+    # lo que deja saber si la persona lo bajó (`models/download.py`).
+    if attachment:
+        name, content_type, data = attachment
+        campaigns.attach_download(db, account["_id"], campaign_id, downloads_model.save(
+            db, account["_id"], campaign_id, name=name, content_type=content_type,
+            data=data))
+    result = sender.run(db, account, campaigns.by_id(db, account["_id"], campaign_id))
     done = campaigns.by_id(db, account["_id"], campaign_id) or {}
     if result.get("sent") and done.get("run_id"):
         return url_for("campaigns.run_detail", raw=done["run_id"])
@@ -387,7 +396,10 @@ def run_detail(raw):
         pages=max(1, -(-total // PER_PAGE)), tag=tag, tags=known, search=search,
         outcome=outcome, outcomes=list(events.OUTCOMES),
         seen=events.counts_by_run(db, account["_id"], [found["_id"]]).get(found["_id"]),
-        everyone=t("send_all_contacts"))
+        everyone=t("send_all_contacts"),
+        # El correo individual con archivo: una columna más, si lo bajó.
+        has_file=bool((campaigns.by_id(db, account["_id"], found["campaign_id"])
+                       or {}).get("download_id")))
 
 
 @bp.route("/campaigns/<raw>/delete", methods=["POST"])

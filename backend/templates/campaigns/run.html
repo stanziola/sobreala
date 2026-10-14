@@ -59,6 +59,7 @@
         <th>{{ t('run_reached') }}</th>
         <th>{{ t('run_opened') }}</th>
         <th>{{ t('run_clicked') }}</th>
+        {% if has_file %}<th>{{ t('run_downloaded') }}</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -67,7 +68,7 @@
         <td>{{ one.contact.email if one.contact else one.email }}</td>
         <td>
           {% if one.contact %}{{ one.contact.name or '' }}
-          {% else %}<span class="table__quiet">{{ t('run_gone') }}</span>{% endif %}
+          {% else %}<span class="table__quiet">{{ t('run_not_contact') if run.to else t('run_gone') }}</span>{% endif %}
         </td>
         <td>
           {% for name in (one.contact.tags if one.contact else []) %}<span class="tag tag--quiet">{{ name }}</span>{% endfor %}
@@ -78,6 +79,7 @@
         </td>
         <td class="table__quiet">{{ one.at.open|ago if one.at.open else '—' }}</td>
         <td class="table__quiet">{{ one.at.click|ago if one.at.click else '—' }}</td>
+        {% if has_file %}<td class="table__quiet">{{ one.at.download|ago if one.at.download else '—' }}</td>{% endif %}
       </tr>
       {% endfor %}
     </tbody>

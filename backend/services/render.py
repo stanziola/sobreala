@@ -164,7 +164,7 @@ def text_to_html(text: str) -> str:
 
 def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
                     preview: bool = False, style: str = "", postal: str = "",
-                    bare: bool = False) -> str:
+                    bare: bool = False, watermark: bool | None = None) -> str:
     """Un correo a partir de un cuerpo ya armado por nosotros, como el del
     lienzo: el mismo sobre que las prediseñadas, con la baja, la dirección
     postal y la marca de agua por fuera.
@@ -175,17 +175,28 @@ def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
     Con `bare` sale **sin el pie**: es el HTML que se baja para volver a
     cargarlo, y al cargarlo `email_from_html()` le pone el pie al enviar. Con
     el pie dentro saldría dos veces, y uno con una baja que no hace nada.
+
+    El correo individual pasa `unsubscribe=""` y `watermark=False`: sale sin
+    baja y sin marca de agua (octubre de 2026). Sin decir nada, la marca la
+    decide el plan, como siempre.
     """
     return _env.get_template("_wrap.html").render(
         cuerpo=Markup(body),
         estilo=Markup(style),
         unsubscribe=unsubscribe,
         preview=preview,
-        watermark=plans.has_watermark(plan),
+        watermark=plans.has_watermark(plan) if watermark is None else watermark,
         logo=LOGO_URL,
         postal=postal,
         sin_pie=bare,
     )
+
+
+def download_button(*, url: str, name: str, size: str) -> str:
+    """El botón «Descargar» del archivo de un correo individual, en tablas
+    como todo lo demás del correo. Lleva `ses:no-track`: el clic que importa lo
+    anota la página de la descarga, no el contador de SES."""
+    return _env.get_template("_download.html").render(url=url, name=name, size=size)
 
 
 def foot(*, plan: str | None, unsubscribe: str = "#",

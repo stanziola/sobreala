@@ -333,23 +333,42 @@ pausa automática (`reputation.check()`, ver «La pausa automática»).
 
 - **«Escribir un correo»** en Enviar correos (`/campaigns/write`): para, asunto,
   mensaje y un archivo opcional. Solo quien puede enviar.
-- **Es una campaña de una persona** (`kind: single`, `contact_id`, `to`, `body`),
-  y sale ya por `sender.run()`: la supresión (regla 1), la cuota
-  (cuenta uno), la baja y `List-Unsubscribe` (regla 3), la marca de agua del
-  Básico (regla 4), la dirección postal y las etiquetas de SES. Por eso su
-  detalle dice si le llegó, si lo abrió y si pulsó, y al enviarlo se aterriza
-  ahí. No sale en «Tus campañas» (no se edita ni se vuelve a mandar), sí en lo
-  que ya salió, como «Individual · persona».
-- **La persona tiene que estar en Contactos**: es lo que dice de dónde salió su
-  dirección. Una dada de baja o que rebotó no se puede elegir.
+- **Es una campaña de una persona** (`kind: single`, `to`, `contact_id` si
+  está en Contactos, `body`, `download_id`), y sale ya por `sender.run()`: la
+  supresión (regla 1), la cuota (cuenta uno), la dirección postal y las
+  etiquetas de SES. Por eso su detalle dice si le llegó, si lo abrió, si pulsó
+  y si bajó el archivo, y al enviarlo se aterriza ahí. No sale en «Tus
+  campañas» (no se edita ni se vuelve a mandar), sí en lo que ya salió, como
+  «Individual · persona».
+- **Sin baja y sin marca de agua** (octubre de 2026): no es una campaña, es un
+  correo de una persona a otra. `build()` no le pone el pie de baja ni
+  `List-Unsubscribe`, y `email_from_body(..., unsubscribe="", watermark=False)`
+  no le pone la marca ni en el Básico. Las reglas 3 y 4 de `CLAUDE.md` lo
+  dicen. **El riesgo** es que se use para mandar publicidad de uno en uno; lo
+  frena la cuota, y si hiciera falta se le pone un tope por hora.
+- **A cualquier dirección** (octubre de 2026), esté o no en Contactos, **y sin
+  guardarla**: la que no está sale solo con su dirección (`run()` arma el
+  destinatario con `to`), y el detalle dice «No está en tus contactos». Una
+  dada de baja o que rebotó **en esa cuenta** no sale igual (regla 1). Hasta ese
+  mes tenía que estar en Contactos.
 - **El texto** lo arma `render.text_to_html()`: escapado, un párrafo por línea en
   blanco, con el mismo sobre y pie que todo (`email_from_body`).
-- **El adjunto**: uno, de hasta 5 MB, PDF, JPG, PNG, Word o Excel, **reconocido
-  por su contenido** (`services/attachments.py`). **No se guarda**: llega del
-  formulario a `sender.run(..., attachment=...)`, `build()` lo pega con
-  `add_attachment` y el correo sale en ese momento. En la base no queda ni el
-  archivo ni su nombre, y por eso no necesita S3. Se probó guardarlo en S3 y se
-  quitó antes de subirlo (octubre de 2026): después de salir el correo no servía
-  para nada y era la copia de un documento privado. Si un día hace falta ver en
-  el detalle qué se mandó, o programar un correo con archivo, se guarda con
-  vencimiento.
+- **El archivo**: uno, de hasta 5 MB, PDF, JPG, PNG, Word o Excel, **reconocido
+  por su contenido** (`services/attachments.py`). **No va adjunto: va como un
+  botón para bajarlo** (octubre de 2026), que es lo único que deja saber si la
+  persona lo bajó; un adjunto se abre en su buzón y nadie se entera.
+  - Se guarda en `downloads` (`models/download.py`), con el contenido dentro y
+    **TTL de 30 días**: Atlas lo borra solo. Ocupa espacio en la base mientras
+    tanto.
+  - El enlace (`/d/<testigo>`, `services/downloads.py`) va firmado con la llave
+    del servidor, como el de la baja, y no guarda nada por enlace.
+  - **Abrir el enlace no lo baja**: abre una página con el nombre, el tamaño y
+    el botón «Descargar» (`blueprints/downloads/`). Los escáneres de correo
+    abren los enlaces de lo que revisan; si bastara con abrirlo, casi todos
+    dirían que se bajó. Pulsar el botón entrega el archivo y anota el evento
+    `download`, uno por envío y persona, que sale en el detalle («Bajó el
+    archivo») y en Eventos.
+  - Vencido o borrado, la página dice que ya no está (410). Con la firma mala,
+    404.
+  - Hasta octubre de 2026 iba adjunto y no se guardaba; antes de eso se probó
+    guardarlo en S3 y se quitó.

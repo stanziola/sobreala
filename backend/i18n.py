@@ -1559,18 +1559,29 @@ TEXTS = {
     # El correo individual (octubre de 2026).
     "single_title": "Escribir un correo",
     "single_lead": "Un correo a una persona, con un archivo si hace falta. Sabrás "
-                   "si le llegó, si lo abrió y si pulsó un enlace.",
+                   "si le llegó, si lo abrió, si pulsó un enlace y si bajó el "
+                   "archivo.",
     "single_to": "Para",
-    "single_to_hint": "Tiene que estar en tus contactos.",
+    "single_to_hint": "Cualquier dirección, esté o no en tus contactos. Si no "
+                      "está, no se agrega.",
     "single_body": "Mensaje",
-    "single_file": "Archivo adjunto (opcional)",
-    "single_file_hint": "Uno, de hasta {mb} MB: PDF, JPG, PNG, Word o Excel.",
+    "single_file": "Archivo (opcional)",
+    "single_file_hint": "Uno, de hasta {mb} MB: PDF, JPG, PNG, Word o Excel. Va "
+                        "como un botón para bajarlo, así sabes si lo bajó; lo "
+                        "guardamos {days} días.",
     "single_file_big": "El archivo pasa de {mb} MB.",
     "single_file_kind": "Ese tipo de archivo no se puede adjuntar. Usa PDF, JPG, "
                         "PNG, Word o Excel.",
     "single_send": "Enviar",
-    "single_not_contact": "Esa dirección no está en tus contactos. Agrégala "
-                          "primero en Contactos.",
+    "single_bad_address": "Esa no es una dirección de correo.",
+    # La página del enlace de descarga, que abre quien recibió el correo.
+    "download_title": "Bajar el archivo",
+    "download_lead": "{company} te mandó este archivo.",
+    "download_lead_plain": "Te mandaron este archivo.",
+    "download_submit": "Descargar",
+    "download_gone_title": "Este archivo ya no está",
+    "download_gone_lead": "Los archivos se guardan {days} días. Si todavía lo "
+                          "necesitas, pídeselo de nuevo a quien te lo mandó.",
     "single_suppressed": "Esa persona se dio de baja o su correo rebotó. No se le "
                          "puede escribir.",
     "single_body_long": "El mensaje pasa de {n} caracteres.",
@@ -1781,12 +1792,15 @@ TEXTS = {
     "run_reached": "Llegó",
     "run_opened": "Abrió",
     "run_clicked": "Pulsó",
+    "run_downloaded": "Bajó el archivo",
     "run_reached_sent": "Enviado",
     "run_reached_delivery": "Entregado",
     "run_reached_bounce": "Rebotó",
     "run_reached_reject": "Rechazado",
     "run_reached_complaint": "Lo marcó como spam",
     "run_gone": "Ya no está en tus contactos",
+    # El correo individual a una dirección que no está en Contactos.
+    "run_not_contact": "No está en tus contactos",
     "run_none": "Nadie coincide con ese filtro.",
     "run_empty": "Todavía no hay nada que contar de este envío.",
     "run_count": "{n} personas",
@@ -1879,6 +1893,7 @@ TEXTS = {
     "activity_kind_reject": "Rechazado",
     "activity_kind_open": "Abierto",
     "activity_kind_click": "Clic",
+    "activity_kind_download": "Bajó el archivo",
     "activity_kind_signup": "Registro",
     "activity_kind_demo": "Pidió la demostración",
     "activity_kind_payment": "Pago",

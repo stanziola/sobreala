@@ -1,0 +1,17 @@
+{#- El botón del archivo de un correo individual (octubre de 2026). Lleva al
+    enlace de descarga, que abre una página con el botón «Descargar»: así se
+    sabe si la persona lo bajó. `ses:no-track` porque esa descarga la anota la
+    página, no el contador de clics de SES.
+
+    Espera: url, name y size. Lo llena `render.download_button()`. -#}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"
+       style="margin:0 24px 28px;">
+  <tr><td style="border:1px solid #C9D7EA;border-radius:10px;padding:14px 18px;
+                 font-family:Arial,Helvetica,sans-serif;">
+    <div style="font-size:14px;color:#1f2933;font-weight:bold;">{{ name }}</div>
+    <div style="font-size:12px;color:#7692B3;padding:2px 0 12px;">{{ size }}</div>
+    <a href="{{ url }}" ses:no-track
+       style="display:inline-block;background:#3166A7;color:#FFFFFF;font-size:14px;
+              font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:8px;">Descargar el archivo</a>
+  </td></tr>
+</table>

@@ -5,8 +5,9 @@ cualquier buzón sin riesgo: PDF, JPG, PNG, Word y Excel. **El tipo se reconoce
 por el contenido, no por el nombre**: un `.pdf` que por dentro es otra cosa no
 entra, como pasa con las imágenes de las plantillas.
 
-**No se guarda**: llega del formulario, `services/sender.py` lo pega al armar el
-correo, que sale en ese momento, y después no queda en ningún sitio.
+Desde octubre de 2026 no va adjunto: se guarda 30 días (`models/download.py`)
+y el correo lleva un botón para bajarlo, que es lo que deja saber si la persona
+lo bajó.
 """
 
 from __future__ import annotations

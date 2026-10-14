@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ t('download_gone_title') }}{% endblock %}
+
+{% block content %}
+<div class="card card--narrow">
+  <h1>{{ t('download_gone_title') }}</h1>
+  <p class="lead">{{ t('download_gone_lead', days=30) }}</p>
+</div>
+{% endblock %}

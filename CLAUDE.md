@@ -299,8 +299,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   Es un límite (`accounts.pause()`): no envía, avisa al cliente y al
   administrador, y solo la quita el administrador desde la ficha.
 - **El correo individual** (`/campaigns/write`) es una campaña de una persona,
-  con un adjunto opcional que va directo en el correo y **no se guarda**: lleva
-  la baja, la cuota y sus cifras como todas.
+  **a cualquier dirección** (no la guarda en Contactos) y **sin baja ni marca
+  de agua**. Lleva la cuota, la supresión y sus cifras como todas. Su archivo va
+  como enlace de descarga (`downloads`, 30 días), que dice si lo bajó.
 
 ### El panel (`docs/panel.md`)
 
@@ -362,12 +363,15 @@ cosa está como está, y lo que ya se probó y se quitó.
 2. **Borrar un contacto no borra su supresión.** Reimportarlo no lo reactiva.
 3. **El enlace de baja se inyecta al enviar, no al guardar el HTML** — así el
    cliente no lo puede quitar. Es único por destinatario (con token). Va en
-   todos los planes, sin excepción, más la cabecera `List-Unsubscribe`.
+   todos los planes, sin excepción, más la cabecera `List-Unsubscribe`, en
+   **toda campaña**. La única excepción es el correo individual (octubre de
+   2026), que no es una campaña: un correo de una persona a otra.
 4. **La marca de agua "Enviado con Sobreala" se inyecta al enviar, solo en el
    plan Básico**, con el ala de la marca al lado (`static/img/email-logo.png`,
    que genera `build_assets.py` desde `brand/logo/logo.png`, en PNG porque Gmail
    y Outlook no dibujan SVG). Al subir de plan desaparece sola, y Negocio y
    Empresa no llevan ninguna mención. No la exige ninguna ley: es publicidad.
+   El correo individual no la lleva en ningún plan (octubre de 2026).
 5. **Los contactos no se duplican.** Toda importación es un upsert sobre
    `{account_id, email_normalized}`.
 6. **De los tokens de correo solo se guarda su hash**, nunca el valor que va

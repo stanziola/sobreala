@@ -37,11 +37,12 @@ from models import account as accounts
 from models import campaign as campaigns
 from models import contact as contacts
 from models import design as designs
+from models import download as downloads_model
 from models import event as events
 from models import image as images
 from models import suppression as suppressions
 from services import fields as columns
-from services import canvas, imaging, render, unsubscribe
+from services import canvas, downloads, imaging, render, unsubscribe
 
 # Cuántos destinatarios por vuelta. El tope existe porque esto corre dentro de
 # una petición y Railway la corta: mejor mandar cien y decir que faltan que
@@ -67,10 +68,15 @@ class Piece:
 
     def html(self, *, plan: str | None, unsubscribe_url: str, postal: str = "") -> str:
         if self.design.get("source") == campaigns.SINGLE:
-            # El correo individual: su texto, con el mismo pie que todos.
-            return render.email_from_body(
-                render.text_to_html(self.design.get("body", "")), plan=plan,
-                unsubscribe=unsubscribe_url, postal=postal)
+            # El correo individual: su texto y, si lleva archivo, el botón para
+            # bajarlo. **Sin baja ni marca de agua** (octubre de 2026): es un
+            # correo de una persona a otra, no una campaña. La dirección postal
+            # sí va.
+            body = render.text_to_html(self.design.get("body", ""))
+            if self.design.get("download"):
+                body += render.download_button(**self.design["download"])
+            return render.email_from_body(body, plan=plan, unsubscribe="",
+                                          postal=postal, watermark=False)
         if self.design.get("source") == designs.CANVAS:
             # Lo arma el mismo código que la vista previa del lienzo, así que
             # lo que se vio es lo que sale.
@@ -155,8 +161,7 @@ def reply_to(account: dict[str, Any]) -> str:
 
 def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
           contact: dict[str, Any],
-          fields: list[dict[str, Any]] | None = None,
-          attachment: tuple[str, str, str, bytes] | None = None) -> EmailMessage:
+          fields: list[dict[str, Any]] | None = None) -> EmailMessage:
     """El correo de un destinatario, entero, con sus cabeceras.
 
     Aquí es donde el correo deja de ser el mismo para todos: las marcas de la
@@ -169,7 +174,10 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     anularla en las tres por el rebote de una sería anular por cuenta ajena.
     """
     fields = fields or []
-    url = unsubscribe.link(contact["_id"])
+    single = campaign.get("kind") == campaigns.SINGLE
+    # El individual no lleva baja: puede ir a alguien que no está en Contactos,
+    # y no es una campaña.
+    url = "" if single else unsubscribe.link(contact["_id"])
     html = piece.html(plan=accounts.plan_of(account), unsubscribe_url=url,
                       postal=accounts.postal_of(account))
     html = columns.fill(html, contact, fields)
@@ -186,8 +194,9 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     # Las dos cabeceras de la baja de un clic. La segunda es la que hace que
     # Gmail y Outlook enseñen su propio botón: sin ella, el enlace del pie es
     # lo único que hay.
-    message["List-Unsubscribe"] = f"<{url}>"
-    message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
+    if url:
+        message["List-Unsubscribe"] = f"<{url}>"
+        message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
     # La cabecera que SES convierte en etiquetas del mensaje y quita antes de
     # entregarlo. Los valores son identificadores de Mongo, que solo llevan
     # letras y números, que es lo que SES acepta ahí.
@@ -197,11 +206,6 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
         f"{name}={value}" for name, value in tags if value)
     message.set_content(plain_text(html))
     message.add_alternative(html, subtype="html")
-    # El adjunto del correo individual: (nombre, tipo, subtipo, contenido).
-    if attachment:
-        name, maintype, subtype, data = attachment
-        message.add_attachment(data, maintype=maintype, subtype=subtype,
-                               filename=name)
     return message
 
 
@@ -230,6 +234,18 @@ def deliver(message: EmailMessage) -> str:
     if Config.SES_CONFIGURATION_SET:
         kwargs["ConfigurationSetName"] = Config.SES_CONFIGURATION_SET
     return client.send_raw_email(**kwargs)["MessageId"]
+
+
+def download_of(db, campaign: dict[str, Any]) -> dict[str, str] | None:
+    """El botón del archivo de un correo individual: su enlace, su nombre y su
+    tamaño. None si no lleva archivo o ya no está."""
+    if not campaign.get("download_id"):
+        return None
+    found = downloads_model.by_id(db, campaign["download_id"])
+    if found is None:
+        return None
+    return {"url": downloads.link(found["_id"]), "name": found["name"],
+            "size": downloads.size_label(found["size"])}
 
 
 def blocked(account: dict[str, Any]) -> list[str]:
@@ -262,16 +278,12 @@ def blocked(account: dict[str, Any]) -> list[str]:
 
 
 def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
-        limit: int | None = None,
-        attachment: tuple[str, str, str, bytes] | None = None) -> dict[str, Any]:
+        limit: int | None = None) -> dict[str, Any]:
     """Mandar una tanda. Devuelve qué pasó y si queda algo pendiente.
 
     El tope se lee aquí y no en la firma: así se puede cambiar el de arriba y
     esta función obedece, que es lo que hace falta para probarla con tandas de
     dos y para ajustarlo el día que se sepa cuánto aguanta el servidor.
-
-    `attachment` es el archivo del correo individual (nombre, tipo, subtipo y
-    contenido). Llega aquí desde el formulario y no se guarda en ningún sitio.
     """
     limit = BATCH if limit is None else limit
     account_id = account["_id"]
@@ -281,8 +293,10 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
 
     single = campaign.get("kind") == campaigns.SINGLE
     if single:
-        # El correo individual no tiene pieza guardada: es su propio texto.
-        piece = {"source": campaigns.SINGLE, "body": campaign.get("body", "")}
+        # El correo individual no tiene pieza guardada: es su propio texto, y
+        # el botón de su archivo si lo lleva.
+        piece = {"source": campaigns.SINGLE, "body": campaign.get("body", ""),
+                 "download": download_of(db, campaign)}
     else:
         piece = designs.by_id(db, account_id, campaign["design_id"])
     if piece is None:
@@ -308,16 +322,17 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     # La cuota manda sobre el tope de la tanda: no se arma lo que no puede salir.
     room = min(limit, accounts.quota_left(account))
     if single:
-        who = contacts.by_id(db, account_id, campaign.get("contact_id"))
+        # A cualquier dirección: si está en Contactos sale con lo suyo (sus
+        # columnas); si no, solo con su dirección, sin guardarla.
+        who = (contacts.by_id(db, account_id, campaign["contact_id"])
+               if campaign.get("contact_id") else None)
+        to = campaign.get("to", "")
+        who = who or ({"_id": None, "email": to, "email_normalized": to} if to else None)
         people = [who] if who and position == 0 and room > 0 else []
     else:
         people = contacts.batch_for_sending(db, account_id, tags=wanted,
                                             complete=fields,
                                             skip=position, limit=room)
-    if not single:
-        # Solo el correo individual lleva archivo.
-        attachment = None
-
     if (piece.get("source") == designs.CANVAS
             and (piece.get("canvas") or {}).get("v") != canvas.VERSION):
         # Guardada cuando el lienzo iba por diapositivas: sus imágenes son de
@@ -335,7 +350,7 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
             skipped += 1
             continue
         try:
-            deliver(build(account, campaign, ready, one, fields, attachment))
+            deliver(build(account, campaign, ready, one, fields))
         except Exception as exc:  # noqa: BLE001 - se anota y se sigue
             failed += 1
             errors.append({"email": one["email"],

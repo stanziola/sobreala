@@ -27,7 +27,9 @@ COMPLAINT = "complaint"
 OPEN = "open"
 CLICK = "click"
 REJECT = "reject"
-KINDS = (SENT, DELIVERED, BOUNCE, COMPLAINT, OPEN, CLICK, REJECT)
+# El archivo de un correo individual, bajado desde su enlace (no viene de SES).
+DOWNLOAD = "download"
+KINDS = (SENT, DELIVERED, BOUNCE, COMPLAINT, OPEN, CLICK, REJECT, DOWNLOAD)
 
 # Lo que se cuenta de un envío, en personas y no en eventos: quien abre tres
 # veces cuenta una.
