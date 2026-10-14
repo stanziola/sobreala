@@ -277,10 +277,11 @@ galleta de las que quedan.
 `/admin`, con verificación de rol. **No es donde se aterriza al entrar** —eso es
 el sitio público, para todos—: se llega desde el menú, que para esta cuenta
 enseña Administración de primera fila. Sí es a donde la devuelve
-`not_for_admins()` si abre una pantalla de cliente. Seis pantallas:
-**Estadísticas · Cuentas · Clientes · Eventos · Plantillas subidas · Correos
-del sistema**. **Cuentas es para hacer cosas** (aprobar, abrir, limitar),
-**Clientes para vigilar** y **Eventos cuenta lo que está pasando**.
+`not_for_admins()` si abre una pantalla de cliente. Cinco pantallas:
+**Estadísticas · Cuentas · Clientes · Eventos · Correos del sistema**.
+**Cuentas es para hacer cosas** (aprobar, abrir, limitar), **Clientes para
+vigilar** y **Eventos cuenta lo que está pasando**. Hubo una más, **Plantillas
+subidas**, y se quitó en octubre de 2026 (ver `docs/plantillas.md`).
 
 **Eventos** (`/admin/events`, octubre de 2026) es lo que está pasando, del más
 nuevo al más viejo (`services/activity.py`):

@@ -86,16 +86,6 @@ def update(admin, database, cliente, *, plan="", ciclo="monthly",
     return admin.post(f"/admin/accounts/{cliente['_id']}/update", data=data)
 
 
-def upload_piece(database, cliente, nombre="Boletín"):
-    """Una pieza HTML de las que subían los clientes. Ya no se suben, pero las
-    que existen siguen en la lista del administrador."""
-    from models import design as designs
-
-    return designs.save(database, cliente["_id"], name=nombre,
-                        html="<html><body><h1>Hola</h1></body></html>",
-                        uploaded_by=cliente["_id"])
-
-
 def open_account(admin, cliente, motivo="hicimos la demo, el RUC existe"):
     """Abrir la cuenta después de la demostración, que es la única aprobación
     que queda."""
@@ -531,41 +521,14 @@ def test_aterrizar_en_el_sitio_no_le_abre_las_pantallas_de_cliente(
     assert respuesta.headers["Location"].endswith("/admin/")
 
 
-# ----------------------------------------------------- la cola de plantillas
+# ----------------------------------------------- las plantillas subidas
 
-def test_la_lista_ensena_de_quien_es_cada_pieza(client, database, outbox):
-    """Ya no es una cola: nadie aprueba una pieza a mano."""
+def test_plantillas_subidas_ya_no_existe(client, database, outbox):
+    """Se quitó en octubre de 2026: desde que el HTML propio no se carga solo
+    enseñaba piezas viejas, que siguen editándose y enviándose como siempre."""
     admin, _ = make_admin(client, database)
-    navegador, cliente = make_client_account(client, database)
-    upload_piece(database, cliente)
-
-    lista = admin.get("/admin/templates").get_data(as_text=True)
-    assert accounts.by_id(database, cliente["_id"])["company_name"] in lista
-    assert "Boletín" in lista
-    # Y no hay nada que pulsar para aprobarla o rechazarla.
-    assert "Aprobar" not in lista
-    assert "Rechazar" not in lista
-
-
-def test_el_archivo_no_se_sirve_como_html(client, database, outbox):
-    """Bajarlo, no dibujarlo: es el documento de otro y esta sesión es la que
-    puede abrir y suspender las cuentas de todo el mundo."""
-    from models import design as designs
-
-    admin, _ = make_admin(client, database)
-    navegador, cliente = make_client_account(client, database)
-    upload_piece(database, cliente)
-    subida = designs.for_account(database, cliente["_id"])[0]
-
-    respuesta = admin.get(f"/admin/templates/{subida['_id']}/file")
-    assert respuesta.mimetype == "text/plain"
-    assert "attachment" in respuesta.headers["Content-Disposition"]
-
-
-def test_la_cola_no_existe_para_quien_no_es_administrador(client, database,
-                                                          outbox):
-    navegador, _ = make_client_account(client, database)
-    assert navegador.get("/admin/templates").status_code == 404
+    assert admin.get("/admin/templates").status_code == 404
+    assert "Plantillas subidas" not in admin.get("/admin/accounts").get_data(as_text=True)
 
 
 # ------------------------------------ el administrador solo administra
@@ -610,7 +573,7 @@ def test_estadisticas_no_lleva_menu_de_secciones(client, database, outbox):
     pestanas = re.findall(r'class="settings__tab[^"]*"[^>]*>\s*([^<]+)',
                           con_pestanas)
     assert [p.strip() for p in pestanas] == [
-        "Cuentas", "Clientes", "Eventos", "Plantillas subidas", "Correos del sistema"]
+        "Cuentas", "Clientes", "Eventos", "Correos del sistema"]
 
 
 def test_su_menu_lleva_estadisticas_encima_de_administracion(client, database,

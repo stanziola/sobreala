@@ -2007,14 +2007,6 @@ TEXTS = {
     "admin_act_only_imports": "Contactos",
     "admin_act_only_decisions": "Decisiones",
 
-    "admin_designs_title": "Plantillas subidas",
-    "admin_designs_lead": "El HTML que subió cada cliente cuando se podía: ya "
-                          "no se sube. Lo peligroso lo rechaza solo el "
-                          "validador al guardarlo; esto es para poder mirarlo "
-                          "cuando haga falta.",
-    "admin_designs_empty": "Ningún cliente ha subido nada todavía.",
-    "admin_designs_download": "Ver el archivo",
-
     # La única puerta con una persona detrás; la otra forma de pasarla es pagar.
     "admin_demo_title": "Demostración",
     "admin_demo_asked": "La pidió {when}.",

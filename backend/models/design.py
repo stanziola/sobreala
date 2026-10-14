@@ -210,16 +210,6 @@ def count(db, account_id) -> int:
     return db.designs.count_documents({"account_id": account_id})
 
 
-def latest(db, *, limit: int = 100) -> list[dict[str, Any]]:
-    """El HTML que ha subido cualquier cliente. Lo lee el administrador.
-
-    Las prediseñadas llenas no salen: son nuestras plantillas con el texto de
-    alguien dentro, y no hay ningún archivo ajeno que mirar.
-    """
-    return list(db.designs.find({"source": UPLOAD})
-                .sort("created_at", -1).limit(limit))
-
-
 def remove(db, account_id, design_id) -> dict[str, Any] | None:
     """El cliente borra la suya, y devuelve lo que borró.
 

@@ -55,10 +55,11 @@ imagen de fuera**: la sube quien la tiene.
 validador al guardarla, y eso es mecánico, no un juicio. La mirada de una persona
 ocurre una sola vez por cuenta, en la demostración que la abre, y es sobre la
 empresa y su lista, no sobre el archivo. Tener las dos serían dos revisiones
-manuales para la misma decisión. `/admin/templates` lista lo que subieron los
-clientes cuando se podía, para poder abrir una cuando haga falta; las prediseñadas llenas no
-salen ahí, porque son nuestras plantillas con el texto de alguien dentro y no hay
-ningún archivo ajeno que mirar.
+manuales para la misma decisión. Hubo una pantalla en administración,
+**Plantillas subidas** (`/admin/templates`), que listaba el HTML que subieron
+los clientes cuando se podía y dejaba bajarlo como texto. Se quitó en octubre de
+2026: solo enseñaba piezas viejas. Esas piezas siguen editándose y enviándose
+como siempre.
 
 **El HTML de un cliente se dibuja solo para él, y solo en un marco aislado.**
 Es lo que deja editarlo viendo cómo queda (`/templates/html/<id>`): el código a

@@ -33,7 +33,6 @@ from models import admin_event as decisions
 from models import auth_event as events
 from models import campaign_run as sendings
 from models import contact as contacts
-from models import design as designs
 from models import import_job as imports
 from models import invoice as invoices
 from models import mail_log
@@ -727,41 +726,3 @@ def limit_account(account, raw):
                          reason=note or t("admin_limit_reason_" + reason))
         notices.limited(client, reason=reason)
     return redirect(url_for("admin.account_page", raw=raw, done=1) + "#limite")
-
-
-# ---------------------------------------------------- las plantillas subidas
-
-@bp.route("/templates")
-@only_admins
-def designs_queue(account):
-    """El HTML que han subido los clientes.
-
-    Ya no es una cola: lo peligroso —`<script>`, un atributo de evento, más de
-    102 KB— lo rechaza solo el validador en el momento de subirlo, y la única
-    mirada humana que queda está en habilitar el envío de la cuenta. Esto es
-    para poder abrir una pieza cuando haga falta.
-    """
-    db = get_db()
-    rows = designs.latest(db)
-    return render_template(
-        "admin/designs.html", section="plantillas", admin=account, rows=rows,
-        named=accounts.names_of(db, [row["account_id"] for row in rows]))
-
-
-@bp.route("/templates/<raw>/file")
-@only_admins
-def design_file(account, raw):
-    """Bajar el HTML tal como lo subió el cliente, para poder mirarlo.
-
-    Se descarga, no se dibuja: enseñarlo dentro del panel sería meter el
-    documento de otro en una página nuestra con la sesión de administrador
-    abierta. Y se sirve como texto plano, para que ni el navegador lo ejecute
-    si alguien abre el archivo desde ahí.
-    """
-    design_id = as_id(raw)
-    found = get_db().designs.find_one({"_id": design_id}) if design_id else None
-    if found is None:
-        abort(404)
-    return Response(found["html"], mimetype="text/plain",
-                    headers={"Content-Disposition":
-                             f'attachment; filename="plantilla-{raw}.html"'})
