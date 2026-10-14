@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_phone.html" import phone, company_phones with context %}
+{% block title %}{{ t('google_signup_title') }}{% endblock %}
+{% block content %}
+{# Quien entró con Google y no tenía cuenta: el correo y el nombre los dio
+   Google; aquí se pide lo mismo que en el registro, menos la contraseña. #}
+<div class="card">
+  <h1>{{ t('google_signup_title') }}</h1>
+  <p class="lead">{{ t('google_signup_lead', email=email) }}</p>
+
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  <form method="post" novalidate data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="company_name">{{ t('register_company') }}</label>
+    <input id="company_name" name="company_name" value="{{ form.company_name }}"
+           autocomplete="organization" required>
+    {% if errors.company_name %}<p class="error">{{ errors.company_name }}</p>{% endif %}
+
+    <label for="contact_name">{{ t('register_contact') }}</label>
+    <input id="contact_name" name="contact_name" value="{{ form.contact_name }}"
+           autocomplete="name" required>
+    {% if errors.contact_name %}<p class="error">{{ errors.contact_name }}</p>{% endif %}
+
+    <label for="phone">{{ t('register_phone') }}</label>
+    {{ phone('phone', 'phone', form.phone_country, form.phone, phone_options,
+             label=t('register_phone'), required=True,
+             describedby='phone-hint') }}
+    <p class="hint" id="phone-hint">{{ t('register_phone_hint') }}</p>
+    {% if errors.phone %}<p class="error">{{ errors.phone }}</p>{% endif %}
+
+    <label for="company-phone-1">{{ t('register_company_phones') }}</label>
+    {{ company_phones(company, phone_options, company_max) }}
+    {% if errors.company_phones %}<p class="error">{{ errors.company_phones }}</p>{% endif %}
+
+    <label for="address">{{ t('register_address') }}</label>
+    <input id="address" name="address" value="{{ form.address }}" required
+           maxlength="{{ postal_max }}" autocomplete="street-address"
+           aria-describedby="address-hint">
+    <p class="hint" id="address-hint">{{ t('register_address_hint') }}</p>
+    {% if errors.address %}<p class="error">{{ errors.address }}</p>{% endif %}
+
+    <button class="btn" type="submit">{{ t('register_submit') }}</button>
+
+    <p class="hint hint--legal">{{ t('register_legal') }}
+      <a href="{{ site_url }}/terms/" target="_blank" rel="noopener">{{ t('register_legal_terms') }}</a>
+      {{ t('register_legal_join') }}
+      <a href="{{ site_url }}/privacy/" target="_blank" rel="noopener">{{ t('register_legal_privacy') }}</a>.</p>
+  </form>
+</div>
+{% endblock %}

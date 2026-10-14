@@ -102,7 +102,9 @@ def create(db, *, company_name: str, contact_name: str, email: str,
         "company_phones": list(company_phones or []),
         "email": email.strip(),
         "email_normalized": normalize_email(email),
-        "password_hash": hash_password(password),
+        # Sin contraseña cuando se registra con Google: entra con Google, y si
+        # un día quiere una, la crea con «¿Olvidaste tu contraseña?».
+        "password_hash": hash_password(password) if password else "",
         "email_confirmed_at": None,
         "status": REGISTERED,
         "role": CLIENT,
@@ -135,6 +137,25 @@ def delete(db, account_id) -> None:
 
 def by_email(db, email: str) -> dict[str, Any] | None:
     return db.accounts.find_one({"email_normalized": normalize_email(email)})
+
+
+# Entrar con Google (octubre de 2026): `google_sub` es el identificador de la
+# cuenta de Google, que no cambia aunque cambie su correo. Nada más de Google se
+# guarda.
+def by_google(db, sub: str) -> dict[str, Any] | None:
+    if not sub:
+        return None
+    return db.accounts.find_one({"google_sub": sub})
+
+
+def link_google(db, account_id, sub: str) -> None:
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "google_sub": sub, "updated_at": now()}})
+
+
+def unlink_google(db, account_id) -> None:
+    db.accounts.update_one({"_id": account_id}, {
+        "$unset": {"google_sub": ""}, "$set": {"updated_at": now()}})
 
 
 def by_id(db, account_id) -> dict[str, Any] | None:

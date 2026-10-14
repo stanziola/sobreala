@@ -492,3 +492,32 @@ Las dos son internas, solo las lee el admin, y **ninguna tiene TTL**: el
 historial se conserva hasta que se decida otra cosa. `auth_events` registra la
 verdad, `already_registered` incluido; la regla 7 gobierna lo que se le dice al
 visitante, no lo que la plataforma sabe de su propio tráfico.
+
+## Entrar y registrarse con Google (octubre de 2026)
+
+- **Un solo botón, «Continuar con Google»**, en entrar y en el registro. Sale solo
+  con `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`; sin ellos, las rutas dan 404.
+- **OAuth 2.0 con código y PKCE, con `urllib`** (`services/google_auth.py`). El
+  `state` y el verificador viven en la sesión. **Quién es lo dice Google al
+  servidor**: el código se cambia por un token y con él se pide `sub`, `email`,
+  `email_verified` y `name`. Un correo sin verificar no entra. Se pide `openid
+  email profile` y nada más.
+- **Con cuenta:** se busca por `google_sub`, y si no, por el correo verificado;
+  la primera vez queda enlazada (`google_sub`) y, si estaba sin confirmar, queda
+  confirmada. Un correo enlazado a **otra** cuenta de Google no entra. Después
+  pasa lo mismo que tras la contraseña (`finish_sign_in()`): suspendida no
+  entra, el doble factor se pide si está puesto, aviso de dispositivo nuevo y
+  varias cuentas abiertas.
+- **Sin cuenta:** `/signup/google` pide lo que Google no da (empresa, teléfono
+  personal, los de la empresa y dirección). Nace **confirmada y sin contraseña**,
+  con la bienvenida y el aviso al administrador de siempre. Si un día quiere
+  contraseña, la crea con «¿Olvidaste tu contraseña?». Las pantallas que piden
+  la contraseña actual (cambiar el correo, apagar el doble factor) la piden
+  igual.
+- **Regla 7:** entrar con Google no busca por un correo escrito, solo por el que
+  Google confirma de quien está ahí.
+- **Seguridad** dice «Google: Conectado» con «Desconectar», que solo se deja con
+  contraseña puesta.
+- **Lo que hace falta en Google Cloud:** un cliente OAuth de tipo aplicación web,
+  la pantalla de consentimiento (nombre, logo, privacidad y términos) y la
+  dirección de vuelta `https://app.sobreala.com/login/google/return`.

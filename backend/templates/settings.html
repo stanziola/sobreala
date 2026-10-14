@@ -179,6 +179,30 @@
        href="{{ url_for('auth.change_password') }}">{{ t('settings_password_action') }}</a>
     {% endcall %}
 
+    {% if request.args.get('google') == 'off' %}
+    <p class="notice notice--ok">{{ t('google_done_off') }}</p>
+    {% elif request.args.get('google') == 'nopassword' %}
+    <p class="notice">{{ t('google_needs_password') }}</p>
+    {% endif %}
+    {# Google: conectado al entrar una vez con él. Desconectarlo pide tener
+       contraseña, para no quedarse sin forma de entrar. #}
+    {% if google_ready or account.google_sub %}
+    {% call row(t('google_title'), t('google_on_desc') if account.google_sub
+                else t('google_off_desc')) %}
+    {% if account.google_sub %}
+    <span class="tag tag--on">{{ t('google_on') }}</span>
+    {% if account.password_hash %}
+    <form method="post" action="{{ url_for('auth.google_disconnect') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--small btn--outline" type="submit">{{ t('google_disconnect') }}</button>
+    </form>
+    {% endif %}
+    {% else %}
+    <span class="tag tag--quiet">{{ t('google_off') }}</span>
+    {% endif %}
+    {% endcall %}
+    {% endif %}
+
     {% call row(t('two_step_title'), t('settings_two_step_desc')) %}
     <span class="tag {{ 'tag--on' if two_step else 'tag--quiet' }}">
       {{ t('panel_two_step_on') if two_step else t('panel_two_step_off') }}</span>

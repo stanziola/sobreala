@@ -11,6 +11,15 @@
 
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
+  {# Entrar o registrarse con Google (octubre de 2026): el mismo botón para
+     los dos. Solo sale con el cliente de Google puesto. #}
+  {% if google_ready %}
+  <a class="btn btn--google" href="{{ url_for('auth.google_start', add=1) if adding
+                                     else url_for('auth.google_start') }}">
+    {% include "_google-g.svg" %}<span>{{ t('google_button') }}</span></a>
+  <p class="or-line"><span>{{ t('google_or') }}</span></p>
+  {% endif %}
+
   {# Una sola vez: con un doble clic, la segunda respuesta decía que el correo
      ya tenía cuenta, justo la que acababa de crear la primera. #}
   <form method="post" novalidate data-once>

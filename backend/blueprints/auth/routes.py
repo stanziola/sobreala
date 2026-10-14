@@ -17,6 +17,7 @@ Four rules run through the whole file:
 from __future__ import annotations
 
 import re
+import secrets
 from datetime import datetime, timedelta
 from ipaddress import ip_address
 
@@ -40,6 +41,7 @@ from models import session as sessions
 from models import token as tokens
 from models import verification_doc as verification_docs
 from services import countries
+from services import google_auth
 from services import mailer
 from services import notices
 from services import paguelofacil
@@ -913,6 +915,7 @@ def register_screen(form: dict, errors: dict, adding: bool,
                     company: list[dict[str, str]]):
     return render_template("register.html", form=form, errors=errors,
                            adding=adding, company=company,
+                           google_ready=google_auth.configured(),
                            phone_options=countries.options(),
                            company_max=accounts.COMPANY_PHONES_MAX,
                            postal_max=accounts.POSTAL_MAX)
@@ -1145,37 +1148,8 @@ def login():
                                            email=email_value, remember=remember,
                                            adding=adding)
                 remember = bool(request.form.get("remember"))
-                # The password was right, and with two-step on that is not
-                # enough: nothing is opened until the code from the app is
-                # typed. Every time, on every device — un dispositivo que deja
-                # de preguntar durante un mes es un segundo candado abierto
-                # durante un mes.
-                if accounts.two_factor_on(account):
-                    session[PENDING_2FA] = str(account["_id"])
-                    session[PENDING_REMEMBER] = remember
-                    log_auth(db, events.LOGIN, events.SECOND_STEP,
-                             email=email_value, account_id=account["_id"])
-                    return redirect(url_for("auth.login_code"))
-
-                # Asked before opening the session: once it exists, this device
-                # is one this account has used.
-                first_time = not sessions.is_known_device(
-                    db, account["_id"], request.headers.get("User-Agent", ""))
-                sign_in(account, remember=remember,
-                        keep=bool(session.pop(ADDING, False)))
-                accounts.touch_login(db, account["_id"])
-                log_auth(db, events.LOGIN, events.OK, email=email_value,
-                         account_id=account["_id"])
-                if first_time and accounts.wants(account, accounts.NEW_LOGIN):
-                    # The one notice of the four security ones that can be
-                    # turned off, from Configuración → Notificaciones. A failure
-                    # here cannot keep anyone out of their own account: it is a
-                    # warning, not a gate.
-                    here = current_session()
-                    if here:
-                        deliver(db, lambda d, a: send_new_login(d, a, here),
-                                account, kind=events.LOGIN)
-                return redirect(after_sign_in(account))
+                return finish_sign_in(db, account, remember=remember,
+                                      email=email_value)
             errors["form"] = t("error_login_failed")
             # One outcome for both halves of the failure, because the visitor is
             # told one thing. The account_id is still filled in when the address
@@ -1187,10 +1161,215 @@ def login():
 
     return render_template("login.html", errors=errors, email=email_value,
                            remember=remember, adding=adding,
+                           google_ready=google_auth.configured(),
                            # Solo cuando no hay nada que corregir: un error de
                            # contraseña importa más que de dónde se venía.
                            switched=bool(request.args.get("change"))
                            and not errors)
+
+
+def finish_sign_in(db, account: dict, *, remember: bool, email: str):
+    """Lo que pasa cuando ya se sabe quién es, con su contraseña o con Google: el
+    segundo paso si lo tiene puesto, o la sesión, el aviso de dispositivo nuevo y
+    a dónde sigue. Es lo mismo para los dos caminos, a propósito."""
+    # The password (or Google) was right, and with two-step on that is not
+    # enough: nothing is opened until the code from the app is typed. Every
+    # time, on every device — un dispositivo que deja de preguntar durante un
+    # mes es un segundo candado abierto durante un mes.
+    if accounts.two_factor_on(account):
+        session[PENDING_2FA] = str(account["_id"])
+        session[PENDING_REMEMBER] = remember
+        log_auth(db, events.LOGIN, events.SECOND_STEP, email=email,
+                 account_id=account["_id"])
+        return redirect(url_for("auth.login_code"))
+
+    # Asked before opening the session: once it exists, this device is one
+    # this account has used.
+    first_time = not sessions.is_known_device(
+        db, account["_id"], request.headers.get("User-Agent", ""))
+    sign_in(account, remember=remember, keep=bool(session.pop(ADDING, False)))
+    accounts.touch_login(db, account["_id"])
+    log_auth(db, events.LOGIN, events.OK, email=email, account_id=account["_id"])
+    if first_time and accounts.wants(account, accounts.NEW_LOGIN):
+        # The one notice of the four security ones that can be turned off, from
+        # Configuración → Notificaciones. A failure here cannot keep anyone out
+        # of their own account: it is a warning, not a gate.
+        here = current_session()
+        if here:
+            deliver(db, lambda d, a: send_new_login(d, a, here),
+                    account, kind=events.LOGIN)
+    return redirect(after_sign_in(account))
+
+
+# ------------------------------------------------------------------ google
+#
+# Entrar y registrarse con Google (octubre de 2026). Quién es lo dice Google al
+# servidor (`google_auth.who()`), nunca la dirección de vuelta. Con una cuenta
+# que ya existe, pasa lo mismo que tras la contraseña (`finish_sign_in`); sin
+# ella, se piden los datos que Google no da y se crea, ya confirmada.
+
+GOOGLE_REQUEST = "google_request"
+GOOGLE_PENDING = "google_pending"
+
+
+def google_redirect_uri() -> str:
+    return f"{Config.APP_BASE_URL}{url_for('auth.google_return')}"
+
+
+def google_failed(message: str):
+    """Volver a la pantalla de entrar con el motivo, sin abrir nada."""
+    return render_template("login.html", errors={"form": message}, email="",
+                           remember=True, adding=bool(session.get(ADDING)),
+                           google_ready=google_auth.configured())
+
+
+@bp.route("/login/google")
+def google_start():
+    """Mandar a elegir la cuenta de Google. El `state` y el verificador de PKCE
+    se quedan en la sesión para comprobar la vuelta."""
+    if not google_auth.configured():
+        abort(404)
+    adding = bool(request.args.get("add"))
+    if current_session() and not adding:
+        return redirect(landing(current_account()))
+    if adding:
+        session[ADDING] = True
+    asked = google_auth.new_request()
+    session[GOOGLE_REQUEST] = {"state": asked["state"], "verifier": asked["verifier"]}
+    return redirect(google_auth.authorize_url(
+        state=asked["state"], challenge=asked["challenge"],
+        redirect_uri=google_redirect_uri()))
+
+
+@bp.route("/login/google/return")
+def google_return():
+    """La vuelta de Google. Solo vale con el `state` que se guardó al salir; el
+    código se cambia por la identidad hablando el servidor con Google."""
+    if not google_auth.configured():
+        abort(404)
+    db = get_db()
+    asked = session.pop(GOOGLE_REQUEST, None) or {}
+    state = request.args.get("state", "")
+    code = request.args.get("code", "")
+    if (not asked or not state or not code
+            or not secrets.compare_digest(state, asked.get("state", ""))):
+        return google_failed(t("google_cancelled"))
+    if not rate_limit(db, f"login:ip:{client_ip()}", *LOGIN_PER_IP):
+        return google_failed(t("error_too_many"))
+    try:
+        found = google_auth.who(code, verifier=asked["verifier"],
+                                redirect_uri=google_redirect_uri())
+    except google_auth.GoogleError:
+        return google_failed(t("google_error"))
+    if not found["email_verified"]:
+        return google_failed(t("google_unverified"))
+
+    account = accounts.by_google(db, found["sub"]) or accounts.by_email(db, found["email"])
+    if account is None:
+        # Nadie con ese correo: se crea, con lo que Google no da.
+        session[GOOGLE_PENDING] = {"sub": found["sub"], "email": found["email"],
+                                   "name": found["name"]}
+        return redirect(url_for("auth.google_signup"))
+    if account.get("google_sub") and account["google_sub"] != found["sub"]:
+        log_auth(db, events.LOGIN, events.BAD_CREDENTIALS, email=found["email"],
+                 account_id=account["_id"])
+        return google_failed(t("google_other"))
+    if accounts.is_suspended(account) or not member_may_enter(db, account):
+        log_auth(db, events.LOGIN, events.SUSPENDED, email=account["email"],
+                 account_id=account["_id"])
+        return google_failed(t("error_suspended"))
+    # La primera vez queda enlazada. Google ya comprobó el correo, así que uno
+    # registrado sin confirmar queda confirmado.
+    if not account.get("google_sub"):
+        accounts.link_google(db, account["_id"], found["sub"])
+    if not account.get("email_confirmed_at"):
+        accounts.confirm_email(db, account["_id"])
+    account = accounts.by_id(db, account["_id"])
+    return finish_sign_in(db, account, remember=True, email=account["email"])
+
+
+@bp.route("/signup/google", methods=["GET", "POST"])
+def google_signup():
+    """Crear la cuenta de quien entró con Google y no tenía: el correo y el
+    nombre ya los dio Google; faltan la empresa, los teléfonos y la dirección,
+    lo mismo que pide el registro. Nace confirmada y sin contraseña."""
+    if not google_auth.configured():
+        abort(404)
+    pending = session.get(GOOGLE_PENDING)
+    if not pending:
+        return redirect(url_for("auth.login"))
+
+    form = {"company_name": "", "contact_name": pending.get("name", ""),
+            "phone": "", "phone_country": countries.DEFAULT, "address": ""}
+    company: list[dict[str, str]] = []
+    errors: dict[str, str] = {}
+    if request.method == "POST":
+        db = get_db()
+        form = {k: request.form.get(k, "").strip() for k in form}
+        company = typed_company_phones()
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif not rate_limit(db, f"register:ip:{client_ip()}", *REGISTER_PER_IP):
+            errors["form"] = t("error_too_many")
+        else:
+            if not form["company_name"]:
+                errors["company_name"] = t("error_required")
+            if not form["contact_name"]:
+                errors["contact_name"] = t("error_required")
+            phone = accounts.clean_phone(form["phone"], form["phone_country"])
+            if not form["phone"]:
+                errors["phone"] = t("error_required")
+            elif not phone:
+                errors["phone"] = t("error_phone")
+            company_phones, bad_phone = accounts.clean_phones(
+                [one["number"] for one in company], [one["country"] for one in company])
+            if bad_phone:
+                errors["company_phones"] = t("error_phone")
+            address = accounts.clean_postal(form["address"])
+            if address is None:
+                errors["address"] = t("settings_postal_bad", min=accounts.POSTAL_MIN,
+                                      max=accounts.POSTAL_MAX)
+            if not errors:
+                created = accounts.create(
+                    db, company_name=form["company_name"],
+                    contact_name=form["contact_name"], email=pending["email"],
+                    password="", phone=phone, company_phones=company_phones,
+                    postal_address=address)
+                if created is None:
+                    # Alguien registró ese correo mientras tanto: que entre.
+                    session.pop(GOOGLE_PENDING, None)
+                    return google_failed(t("error_email_taken"))
+                accounts.link_google(db, created["_id"], pending["sub"])
+                accounts.confirm_email(db, created["_id"])
+                log_auth(db, events.REGISTER, events.CREATED, email=pending["email"],
+                         account_id=created["_id"])
+                account = accounts.by_id(db, created["_id"])
+                deliver(db, send_welcome, account, kind=events.CONFIRM)
+                notices.signup_to_admins(db, account)
+                session.pop(GOOGLE_PENDING, None)
+                sign_in(account, keep=bool(session.pop(ADDING, False)))
+                return redirect(url_for("auth.welcome"))
+    return render_template("register-google.html", form=form, errors=errors,
+                           email=pending["email"], company=company,
+                           phone_options=countries.options(),
+                           company_max=accounts.COMPANY_PHONES_MAX,
+                           postal_max=accounts.POSTAL_MAX)
+
+
+@bp.route("/settings/google/disconnect", methods=["POST"])
+def google_disconnect():
+    """Quitar Google de esta persona. Solo si tiene contraseña: sin ella se
+    quedaría sin forma de entrar."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    back = url_for("auth.settings", section="security")
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    if not account.get("password_hash"):
+        return redirect(f"{back}?google=nopassword")
+    accounts.unlink_google(get_db(), account["_id"])
+    return redirect(f"{back}?google=off")
 
 
 @bp.route("/login/code", methods=["GET", "POST"])
@@ -1856,6 +2035,7 @@ def settings(section: str = "account"):
         account_errors=account_errors,
         editing=editing,
         renewals_ready=paypal.renewals_ready(),
+        google_ready=google_auth.configured(),
         vaults=accounts.paypal_vaults_of(account),
         vault_ready=paypal.vault_ready(),
         pay_logos=PAY_LOGOS,

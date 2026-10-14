@@ -134,6 +134,10 @@ class Config:
     # check() necesita distinguir «se dejó en sandbox a propósito» de «nadie lo
     # escribió».
     PAYPAL_ENV_SET = bool(os.getenv("PAYPAL_ENV", "").strip())
+    # Entrar y registrarse con Google (octubre de 2026). Sin las dos, el botón no
+    # sale y sus rutas dan 404.
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
     PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
     PAYPAL_SECRET = os.getenv("PAYPAL_SECRET", "")
     # Sin esto no se puede comprobar que un aviso venga de PayPal, así que

@@ -226,6 +226,29 @@ TEXTS = {
     "login_email": "Correo electrónico",
     "login_password": "Contraseña",
     "login_submit": "Entrar",
+    # Entrar y registrarse con Google (octubre de 2026).
+    "google_button": "Continuar con Google",
+    "google_or": "o",
+    "google_cancelled": "No se completó la entrada con Google. Vuelve a intentarlo.",
+    "google_error": "No pudimos hablar con Google en este momento. Vuelve a "
+                    "intentarlo en unos minutos.",
+    "google_unverified": "Tu cuenta de Google no tiene el correo verificado. "
+                         "Entra con tu correo y tu contraseña.",
+    "google_other": "Ese correo ya está conectado a otra cuenta de Google. Entra "
+                    "con esa, o con tu correo y tu contraseña.",
+    "google_signup_title": "Completa tu cuenta",
+    "google_signup_lead": "Entraste con Google como {email}. Faltan estos datos "
+                          "para crear tu cuenta.",
+    "google_title": "Google",
+    "google_on_desc": "Entras con tu cuenta de Google.",
+    "google_off_desc": "Entra una vez con Google y quedará conectado.",
+    "google_on": "Conectado",
+    "google_off": "Sin conectar",
+    "google_disconnect": "Desconectar",
+    "google_done_off": "Listo, desconectaste Google. Entras con tu correo y tu "
+                       "contraseña.",
+    "google_needs_password": "Para desconectar Google, crea primero una "
+                             "contraseña con «¿Olvidaste tu contraseña?».",
     "login_remember": "Mantener mi sesión iniciada 30 días",
     "login_no_account": "¿Todavía no tienes cuenta?",
     # Estando dentro de una cuenta y agregando otra, «todavía no tienes cuenta»

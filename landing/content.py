@@ -945,7 +945,7 @@ def holder_line() -> str:
 # Las dos cambiaron el 11 de octubre de 2026: el registro pide teléfono,
 # dirección e identificación personal, que se verifican con un documento que se
 # borra al revisarlo, y una cuenta puede quedar limitada hasta verificarse.
-UPDATED = "11 de octubre de 2026"
+UPDATED = "14 de octubre de 2026"
 TERMS_UPDATED = "11 de octubre de 2026"
 
 PRIVACY = {
@@ -1016,6 +1016,10 @@ PRIVACY = {
                 "servidor cuando alguien dice que no le llegó el código.",
                 "**De tus envíos:** por cada correo de campaña, si se entregó, "
                 "rebotó, generó una queja, se abrió o se hizo click.",
+                "**Si entras con Google:** Google nos da tu correo (ya "
+                "verificado), tu nombre y un identificador de tu cuenta de "
+                "Google, y nada más: ni tu contraseña, ni tus contactos, ni tus "
+                "archivos. Lo usamos solo para dejarte entrar.",
                 "**De pagos:** el plan, la fecha y el resultado del cobro, y si "
                 "activas la renovación automática, el identificador de tu "
                 "suscripción de PayPal. "
