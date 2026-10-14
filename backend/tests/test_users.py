@@ -252,7 +252,7 @@ def test_los_sitios_los_dice_el_plan(client, database, outbox):
             plans.users("empresa"), plans.users(None)) == (1, 2, 3, 1)
 
     browser, empresa = owner(client, database, plan="basico")
-    pantalla = browser.get("/settings/security").get_data(as_text=True)
+    pantalla = browser.get("/settings/security/users").get_data(as_text=True)
     assert "1 de 1 usuarios" in pantalla
     assert "Crear usuario" not in pantalla
     # Y escrito a mano tampoco.

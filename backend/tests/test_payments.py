@@ -12,12 +12,20 @@ qué se activa— es nuestro y se ejerce tal cual.
 
 from __future__ import annotations
 
+import re
+
 from conftest import login, register
 
 from config import Config
 from models import account as accounts
 from models import payment as payments
 from services import paypal, plans
+
+
+def fuera_de_la_bandeja(html: str) -> str:
+    """La página sin la bandeja de agregar un método de pago: va escondida en
+    un `<dialog>` y solo se ve al pedirla (octubre de 2026)."""
+    return re.sub(r"<dialog.*?</dialog>", "", html, flags=re.S)
 
 PASSWORD = "Contrasena-Larga1"
 
@@ -512,7 +520,11 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     buy(browser)
     come_back(browser)
 
-    pantalla = browser.get("/settings/billing").get_data(as_text=True)
+    # Los métodos (sin la bandeja de agregar) y lo cobrado, que desde octubre de
+    # 2026 son dos subsecciones de Facturación.
+    pantalla = fuera_de_la_bandeja(
+        browser.get("/settings/billing/methods").get_data(as_text=True)
+        + browser.get("/settings/billing/history").get_data(as_text=True))
     assert "/settings/billing/checkout" not in pantalla
     # Y sí sigue diciendo qué tienes y qué se te ha cobrado.
     assert "PayPal" in pantalla
@@ -539,7 +551,7 @@ def test_tus_pagos_solo_ensena_lo_que_se_cobro(client, database, outbox,
     # Y otro que se queda a medias: se crea la orden y nadie vuelve de PayPal.
     buy(browser, plan="negocio")
 
-    pantalla = browser.get("/settings/billing").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing/history").get_data(as_text=True)
 
     # Una fila por pago cobrado, esperando su factura; el intento a medias no.
     assert pantalla.count("Factura en camino") == 1

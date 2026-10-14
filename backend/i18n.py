@@ -383,6 +383,26 @@ TEXTS = {
     "settings_section_notifications": "Notificaciones",
     "settings_section_payments": "Facturación",
     "settings_section_test": "Direcciones de prueba",
+    # Las subsecciones de cada sección (octubre de 2026): `settings_part_<sección>_<parte>`.
+    "settings_part_account_profile": "Perfil",
+    "settings_part_account_contact": "Dirección y teléfonos",
+    "settings_part_account_verification": "Verificación",
+    "settings_part_account_plan": "Tu plan",
+    "settings_part_security_two_step": "Autenticación de múltiples factores",
+    "settings_part_security_password": "Contraseña",
+    "settings_part_security_users": "Usuarios",
+    "settings_part_security_sessions": "Sesiones",
+    "settings_part_notifications_plan": "Plan y facturación",
+    "settings_part_notifications_security": "Seguridad",
+    "settings_part_notifications_clients": "Clientes",
+    "settings_part_billing_plan": "Tu plan",
+    "settings_part_billing_methods": "Métodos de pago",
+    "settings_part_billing_auto_renewal": "Renovación automática",
+    "settings_part_billing_history": "Historial de compras",
+    "settings_part_test_addresses": "Direcciones de prueba",
+    "settings_verify_lead": "Verificamos tu identificación y tu dirección una sola "
+                            "vez, con un documento de cada una. Los mira una "
+                            "persona de Sobreala y el archivo se borra al decidir.",
     "test_lead": "En la demostración puedes enviar campañas y correos de verdad, "
                  "pero solo a estas direcciones: hasta {n}, y {total} correos en "
                  "total. Así ves quién lo abrió y quién pulsó, como con tu lista. "
@@ -639,6 +659,8 @@ TEXTS = {
     "methods_none": "No tienes métodos de pago guardados.",
     "methods_add": "Agregar método de pago",
     "methods_add_this": "Agregar",
+    "methods_dialog_title": "Agregar un método de pago",
+    "methods_dialog_close": "Cerrar",
     "methods_unavailable": "No disponible",
     "methods_paypal_remove": "Eliminar",
     "methods_paypal_saved": "Listo, guardamos tu cuenta de PayPal.",
@@ -2445,6 +2467,11 @@ TEXTS = {
                       "volver. Lo cancelas cuando quieras desde Facturación o "
                       "desde tu cuenta de PayPal.",
     "renewal_title": "Renovación automática",
+    "renewal_unavailable_soon": "La renovación automática todavía no está "
+                                "disponible. Por ahora, cada periodo se paga desde "
+                                "aquí.",
+    "renewal_unavailable_plan": "Se activa cuando tienes un plan vigente: paga un "
+                                "periodo y vuelve aquí.",
     "renewal_desc": "PayPal cobra tu plan solo cada mes o cada año. Lo cancelas "
                     "cuando quieras.",
     "renewal_status_on": "Activa",

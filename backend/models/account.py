@@ -1481,8 +1481,10 @@ def set_notifications(db, account_id, wanted: dict[str, bool], *,
     else —a security notice, say— is dropped here rather than stored, so no
     request can invent a preference that turns one of them off.
     """
+    # Uno por uno y no el bloque entero: Notificaciones se parte en
+    # subsecciones (octubre de 2026), y guardar una no puede apagar las otras.
     db.accounts.update_one({"_id": account_id}, {"$set": {
-        "notifications": {name: bool(wanted.get(name)) for name in names},
+        **{f"notifications.{name}": bool(wanted.get(name)) for name in names},
         "updated_at": now(),
     }})
 

@@ -280,9 +280,11 @@ Railway como `PAYPAL_WEBHOOK_ID`.
 **Facturación → Métodos de pago enseña solo lo guardado**, una fila por cuenta:
 el logo pegado a la izquierda, la cuenta al lado y «Eliminar». Debajo,
 **«Agregar método de pago»**, con o sin guardados (sin nada, primero «No tienes
-métodos de pago guardados»). Abre la lista en la misma pantalla (`?agregar=1`,
-como «Editar» en Cuenta): PayPal con su «Agregar», y **Visa/Mastercard y Yappy
-con «No disponible»**, porque no se pueden guardar (Paguélofácil no documenta
+métodos de pago guardados»). **Abre la lista en una bandeja encima de
+Facturación**, sin cambiar de página (octubre de 2026: la misma `.drawer` de
+«Cargar plantilla», con `data-open-dialog`, que entra deslizándose); sin
+JavaScript, el enlace la abre en la misma pantalla (`?agregar=1`, como antes):
+PayPal con su «Agregar», y **Visa/Mastercard y Yappy con «No disponible»**, porque no se pueden guardar (Paguélofácil no documenta
 cobros guardados y Yappy está anunciado). El día que se pueda, entran por ahí.
 
 - **PayPal se guarda entrando una vez**, sin plan y sin cobro (PayPal Vault,

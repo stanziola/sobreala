@@ -368,6 +368,63 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .settings__tab:hover { background: var(--color-surface-alt); color: var(--color-ink); text-decoration: none; }
 .settings__tab.is-current { background: var(--color-accent-soft); color: var(--color-accent-strong); }
 
+/* ------------------------------------------------ el menú de Configuración
+   Cada sección con su ícono y, debajo, sus subsecciones (octubre de 2026). Se
+   despliegan con la altura (una fila de grid que pasa de 0fr a 1fr, que sí se
+   anima) y la flecha gira. En el teléfono el menú va en una fila y las
+   subsecciones de la abierta en otra (`.settings-subnav`): desplegar en
+   vertical empujaría la pantalla hacia abajo. */
+.settings-nav__head { display: flex; align-items: center; gap: 10px; white-space: normal; }
+.settings-nav__icon { display: inline-flex; flex: none; }
+.settings-nav__icon .icon { width: 18px; height: 18px; }
+.settings-nav__caret { display: none; margin-left: auto; flex: none;
+                       transition: transform .28s var(--ease); }
+.settings-nav__sub { display: none; }
+.settings-subnav { display: flex; gap: 6px; overflow-x: auto; margin-top: -10px; }
+.settings-subnav__item {
+  padding: 7px 12px; border-radius: 999px; border: 1px solid var(--color-border);
+  font-size: .88rem; font-weight: 600; color: var(--color-ink-soft);
+  text-decoration: none; white-space: nowrap;
+}
+.settings-subnav__item:hover { color: var(--color-ink); text-decoration: none; }
+.settings-subnav__item.is-current {
+  background: var(--color-accent-soft); color: var(--color-accent-strong);
+  border-color: transparent;
+}
+@media (min-width: 780px) {
+  .settings-subnav { display: none; }
+  .settings-nav__caret { display: inline-flex; }
+  .settings-nav__group.is-open .settings-nav__caret { transform: rotate(180deg); }
+  .settings-nav__sub {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows .28s var(--ease);
+  }
+  .settings-nav__group.is-open .settings-nav__sub { grid-template-rows: 1fr; }
+  .settings-nav__items {
+    min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column; gap: 2px; padding-left: 28px;
+  }
+  .settings-nav__item {
+    padding: 8px 12px; border-radius: 8px; font-size: .9rem; line-height: 1.3;
+    color: var(--color-ink-soft); text-decoration: none;
+    transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
+  }
+  .settings-nav__item:first-child { margin-top: 4px; }
+  .settings-nav__item:last-child { margin-bottom: 6px; }
+  .settings-nav__item:hover { background: var(--color-surface-alt); color: var(--color-ink); text-decoration: none; }
+  .settings-nav__item.is-current { color: var(--color-accent-strong); font-weight: 700; }
+  /* La sección abierta no se pinta entera: lo que se marca es la subsección. */
+  .settings-nav__group.is-open > .settings-nav__head.is-current { background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-nav__sub, .settings-nav__caret { transition: none; }
+}
+/* La sección arriba del título de la subsección, en chiquito. */
+.settings__eyebrow {
+  margin: 0 0 2px; font-size: .78rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--color-ink-soft);
+}
+
 .settings__pane {
   padding: clamp(20px, 3.5vw, 30px); border-radius: 16px;
   background: var(--color-surface); border: 1px solid var(--color-border);
@@ -864,6 +921,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   cursor: pointer;
 }
 .drawer__close:hover { background: var(--color-surface-alt); }
+/* La que entra deslizándose desde la derecha, con el fondo oscureciéndose
+   (agregar un método de pago, octubre de 2026). */
+.drawer--slide[open] { animation: drawer-in .28s var(--ease); }
+.drawer--slide[open]::backdrop { animation: backdrop-in .28s ease; }
+@keyframes drawer-in { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .drawer--slide[open], .drawer--slide[open]::backdrop { animation: none; }
+}
 
 /* El código de una pieza: se lee en monoespaciada y no se parte en renglones,
    que en HTML cambiaría lo que se ve al editarlo. Con su propia clase: se llamó

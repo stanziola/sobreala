@@ -1930,6 +1930,54 @@ def sections_for(account: dict | None) -> tuple[str, ...]:
     return SECTIONS
 
 
+# Las subsecciones de cada sección, en el orden del menú (octubre de 2026).
+# Cada una tiene su dirección, `/settings/<sección>/<parte>`, y enseña solo lo
+# suyo; el menú las despliega debajo de su sección. La primera es la de entrada.
+PARTS = {
+    "account": ("profile", "contact", "verification", "plan"),
+    "security": ("two-step", "password", "users", "sessions"),
+    "notifications": ("plan", "security"),
+    "billing": ("plan", "methods", "auto-renewal", "history"),
+    "test": ("addresses",),
+}
+# Los avisos que guarda cada subsección de Notificaciones. Cada formulario
+# escribe solo los suyos, así guardar una no apaga los de la otra.
+NOTICE_PARTS = {
+    "plan": (accounts.BILLING, accounts.PLAN_STATE),
+    "security": (accounts.NEW_LOGIN,),
+    "clients": accounts.ADMIN_NOTICES,
+}
+# A qué subsección vuelve una dirección que no la nombra, según lo que trae:
+# así las redirecciones de siempre («?user=invited», «?renewal=on») siguen
+# cayendo donde está lo que avisan.
+PART_HINTS = {
+    "account": (("editar", "contact"), ("address", "contact"),
+                ("phones", "contact"), ("email", "profile")),
+    "security": (("user", "users"), ("updated", "password"),
+                 ("google", "password"), ("dospasos", "two-step")),
+    "billing": (("agregar", "methods"), ("paypal", "methods"),
+                ("renewal", "auto-renewal")),
+}
+
+
+def parts_for(account: dict | None, section: str) -> tuple[str, ...]:
+    """Las subsecciones de esa sección que esa cuenta puede abrir."""
+    if section == "notifications" and accounts.is_admin(account):
+        return ("clients", "security")
+    found = PARTS.get(section, ())
+    if section == "security" and accounts.is_member(account):
+        # Los usuarios son de la empresa: un usuario no los ve.
+        found = tuple(one for one in found if one != "users")
+    return found
+
+
+def part_from_hints(section: str, parts: tuple[str, ...]) -> str:
+    for arg, part in PART_HINTS.get(section, ()):
+        if request.args.get(arg) and part in parts:
+            return part
+    return parts[0]
+
+
 # ---------------------------------------------- las direcciones de prueba
 
 # Cuántas confirmaciones se pueden mandar por hora: cada una es un correo a una
@@ -2000,7 +2048,8 @@ def test_address_confirm(raw):
 
 @bp.route("/settings", methods=["GET", "POST"])
 @bp.route("/settings/<section>", methods=["GET", "POST"])
-def settings(section: str = "account"):
+@bp.route("/settings/<section>/<part>", methods=["GET", "POST"])
+def settings(section: str = "account", part: str = ""):
     """The account's own settings: one view, one template, its sections.
 
     They differ in what they draw, not in what they need — each one wants the
@@ -2009,6 +2058,10 @@ def settings(section: str = "account"):
 
     Cuáles son depende de quién mira: un cliente tiene cuatro y un
     administrador solo Seguridad.
+
+    Desde octubre de 2026 cada sección se parte en subsecciones (`PARTS`), y
+    la pantalla enseña una sola. Sin `part`, se elige por lo que trae la
+    dirección (`PART_HINTS`) o la primera.
     """
     account = current_account()
     if account is None:
@@ -2018,6 +2071,14 @@ def settings(section: str = "account"):
         # Una que no le toca —o una inventada— lo deja en la primera suya, no
         # en una pantalla en blanco.
         return redirect(url_for("auth.settings", section=sections[0]))
+    parts = parts_for(account, section)
+    if part and part not in parts:
+        return redirect(url_for("auth.settings", section=section))
+    part = part or part_from_hints(section, parts)
+    if request.method == "POST" and section == "account":
+        # Lo que se escribe en Cuenta (la dirección y los teléfonos) vive en
+        # «Dirección y teléfonos»: si algo falla, ahí se vuelve a dibujar.
+        part = "contact"
 
     db = get_db()
     postal_error = ""
@@ -2046,7 +2107,7 @@ def settings(section: str = "account"):
                 accounts.set_phones(db, account["_id"], phone=phone,
                                     company_phones=company_phones)
                 return redirect(url_for("auth.settings", section="account",
-                                        phones=1) + "#phones")
+                                        part="contact", phones=1) + "#phones")
             account_errors["phones"] = t("error_phone")
             editing = "phones"
         else:
@@ -2056,7 +2117,7 @@ def settings(section: str = "account"):
                     accounts.set_postal(db, account["_id"], address)
                     changed_verified(db, account, accounts.ADDRESS)
                 return redirect(url_for("auth.settings", section="account",
-                                        address=1) + "#address")
+                                        part="contact", address=1) + "#address")
             postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
                              max=accounts.POSTAL_MAX)
             editing = "address"
@@ -2068,7 +2129,9 @@ def settings(section: str = "account"):
             # security notice is dropped here rather than written, so no form
             # —or anything pretending to be one— can turn the alarm off. Y las
             # que se leen son las suyas: un administrador tiene otra lista.
-            mine = accounts.notices_for(account)
+            # Y solo los de esta subsección: guardar una no toca la otra.
+            mine = tuple(name for name in NOTICE_PARTS.get(part, ())
+                         if name in accounts.notices_for(account))
             accounts.set_notifications(db, account["_id"], {
                 name: bool(request.form.get(name)) for name in mine},
                 names=mine)
@@ -2078,7 +2141,7 @@ def settings(section: str = "account"):
             log_auth(db, events.SETTINGS, events.CSRF_FAILED,
                      email=account["email"], account_id=account["_id"])
         return redirect(url_for("auth.settings", section="notifications",
-                                saved=1))
+                                part=part, saved=1))
 
     here = current_session()
     # La renovación automática: por si el aviso de PayPal no llegó, al abrir
@@ -2089,6 +2152,9 @@ def settings(section: str = "account"):
     paid = payments.for_account(db, account["_id"], only_paid=True, limit=100)
     return render_template(
         "settings.html", section=section, sections=sections, account=account,
+        part=part, parts_of={one: parts_for(account, one) for one in sections},
+        verifications=[(kind, accounts.verification_of(account, kind)["status"])
+                       for kind in accounts.VERIFY_KINDS],
         plans=plans.PLANS, cycles=plans.CYCLES, currency=plans.CURRENCY,
         plan_until=accounts.plan_until(account),
         # Solo lo cobrado: los intentos a medias se miran desde la ficha.
@@ -2275,7 +2341,7 @@ def close_device():
     if not csrf_ok(request.form.get("csrf_token")):
         log_auth(db, events.SESSION_CLOSED, events.CSRF_FAILED,
                  email=account["email"], account_id=account["_id"])
-        return redirect(url_for("auth.settings", section="security"))
+        return redirect(url_for("auth.settings", section="security", part="sessions"))
 
     here = current_session()
     wanted = request.form.get("session_id", "")
@@ -2297,7 +2363,7 @@ def close_device():
             if open_tokens():
                 return redirect(url_for("auth.switch_account"))
             return redirect(url_for("auth.login"))
-    return redirect(url_for("auth.settings", section="security"))
+    return redirect(url_for("auth.settings", section="security", part="sessions"))
 
 
 # ------------------------------------------------------------------- pagos
@@ -3041,7 +3107,7 @@ def user_state(raw):
         return answer
 
     db = get_db()
-    back = url_for("auth.settings", section="security") + "#users"
+    back = url_for("auth.settings", section="security", part="users")
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(back)
     member_id = as_object_id(raw)

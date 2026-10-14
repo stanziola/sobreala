@@ -646,3 +646,23 @@
     refresh();
   });
 })();
+
+/* El menú de Configuración (octubre de 2026): en una pantalla ancha, pulsar
+   una sección despliega o recoge sus subsecciones sin recargar; la animación
+   la hace el CSS. En el teléfono el enlace va a la sección, y sus subsecciones
+   salen en su propia fila. Sin JavaScript, el enlace abre la primera. */
+(function () {
+  var heads = document.querySelectorAll("[data-settings-toggle]");
+  if (!heads.length || !window.matchMedia) return;
+  var wide = window.matchMedia("(min-width: 780px)");
+  Array.prototype.forEach.call(heads, function (head) {
+    head.addEventListener("click", function (e) {
+      if (!wide.matches) return;
+      e.preventDefault();
+      var group = head.parentNode;
+      var open = !group.classList.contains("is-open");
+      group.classList.toggle("is-open", open);
+      head.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  });
+})();

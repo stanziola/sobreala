@@ -301,6 +301,42 @@ cuidar en la cuenta que puede abrir y suspender a todas las demás, y
 las cuentas de sus clientes. Las filas se esconden del menú
 **y las rutas la devuelven a `/admin`**: esconder un botón no es un permiso.
 
+### Configuración en subsecciones (octubre de 2026)
+
+El menú de Configuración lleva **un ícono por sección** y cada sección **se
+despliega** (la altura y la flecha, animadas; con «reducir movimiento», sin
+animar) en sus subsecciones, cada una con su dirección `/settings/<sección>/<parte>`
+y su pantalla (`PARTS` en `blueprints/auth/routes.py`):
+
+| Sección | Subsecciones |
+|---|---|
+| Cuenta | Perfil · Dirección y teléfonos · Verificación · Tu plan |
+| Seguridad | Autenticación de múltiples factores · Contraseña · Usuarios (solo el dueño) · Sesiones |
+| Notificaciones | Plan y facturación · Seguridad (un administrador: Clientes · Seguridad) |
+| Facturación | Tu plan · Métodos de pago · Renovación automática · Historial de compras |
+| Direcciones de prueba | (solo en la demostración, sin subsecciones) |
+
+- `/settings/<sección>` abre la primera, salvo que la dirección traiga algo que
+  diga otra cosa (`PART_HINTS`): `?user=invited` abre Usuarios, `?renewal=on`
+  la renovación, `?editar=address` Dirección y teléfonos. Así las redirecciones
+  de siempre siguen cayendo donde está lo que avisan. Una parte que no existe,
+  o que no le toca (Usuarios para un usuario), vuelve a la sección.
+- Con JavaScript, pulsar una sección la despliega sin recargar (`panel.js`,
+  `data-settings-toggle`); sin él, el enlace abre su primera subsección. En el
+  teléfono el menú va en una fila y las subsecciones de la abierta en otra
+  (`.settings-subnav`), porque desplegarlas en vertical empujaría la pantalla.
+- **Cada formulario de Notificaciones guarda solo lo suyo** (`NOTICE_PARTS`),
+  y `set_notifications()` escribe aviso por aviso: guardar «Plan y facturación»
+  no toca «Entrar desde un dispositivo nuevo». Los de un administrador se dibujan
+  todos en el orden de `ADMIN_NOTICES`: hasta octubre de 2026 faltaban «Alguien
+  pidió una demostración» y «El panel pausó a un cliente», y guardar esa pantalla
+  los apagaba sin que se viera.
+- **Google solo sale si la cuenta está conectada**, en Contraseña, con su
+  «Desconectar». Quien se registró sin Google no ve la fila; se conecta solo la
+  primera vez que entra con Google.
+- El aviso de la pausa o el límite sale arriba de toda Cuenta, y el de los
+  documentos pendientes en Perfil y en Verificación.
+
 **Un registro que no se confirma se borra a las 24 horas.** `create()` escribe
 `purge_at` y `confirm_email()` lo quita, así que Mongo barre solo lo que quedó a
 medias: una dirección escrita mal no queda ocupada para siempre, y nadie puede

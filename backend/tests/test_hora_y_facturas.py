@@ -209,7 +209,9 @@ def test_facturacion_ensena_la_fecha_exacta_y_la_factura_en_camino(
         client, database, outbox, monkeypatch):
     browser, cuenta, pago = pagado(client, database, monkeypatch)
     en_panama(browser)
-    pantalla = browser.get("/settings/billing").get_data(as_text=True)
+    # El plan y el historial están en subsecciones distintas (octubre de 2026).
+    pantalla = (browser.get("/settings/billing/plan").get_data(as_text=True)
+                + browser.get("/settings/billing/history").get_data(as_text=True))
     assert "Facturación" in pantalla
     hasta = accounts.plan_until(accounts.by_email(database, "ana@ejemplo.com"))
     local = hasta.astimezone(PANAMA)

@@ -26,36 +26,85 @@
 {% endcall %}
 {% endmacro %}
 
+{# El nombre de una subsección: `settings_part_<sección>_<parte>`. #}
+{% macro part_name(slug, one) -%}
+{{ t('settings_part_' ~ slug ~ '_' ~ one|replace('-', '_')) }}
+{%- endmacro %}
+
 {% block content %}
 <h1 class="settings__heading">{{ t('settings_title') }}</h1>
 
 <div class="settings">
   {# Cuáles se listan lo decide la vista, no esta plantilla: un cliente tiene
-     cuatro y un administrador solo Seguridad. Los slugs son las direcciones; el
-     español de al lado sale de i18n, como en todas partes. #}
+     cuatro (cinco en la demostración) y un administrador dos. Los slugs son
+     las direcciones; el español de al lado sale de i18n, como en todas partes.
+     Desde octubre de 2026 cada una lleva su ícono y se despliega en sus
+     subsecciones, con su propia dirección cada una. #}
   {% set label_of = {
     'account': 'settings_section_account',
     'security': 'settings_section_security',
     'notifications': 'settings_section_notifications',
     'billing': 'settings_section_payments',
     'test': 'settings_section_test'} %}
+  {% set icon_of = {
+    'account': '_icon-user.svg',
+    'security': '_icon-shield.svg',
+    'notifications': '_icon-bell.svg',
+    'billing': '_icon-card.svg',
+    'test': '_icon-send.svg'} %}
 
-  <nav class="settings__nav" aria-label="{{ t('settings_title') }}">
+  {# Con JavaScript, pulsar una sección la despliega sin recargar
+     (`panel.js`, `data-settings-toggle`); sin él, el enlace abre su primera
+     subsección. La abierta es la de la página en la que se está. #}
+  <nav class="settings__nav settings-nav" aria-label="{{ t('settings_title') }}">
     {% for slug in sections %}
-    <a class="settings__tab{% if slug == section %} is-current{% endif %}"
-       href="{{ url_for('auth.settings', section=slug) }}"
-       {%- if slug == section %} aria-current="page"{% endif %}>{{ t(label_of[slug]) }}</a>
+    {% set is_here = slug == section %}
+    {% set subs = parts_of[slug] %}
+    <div class="settings-nav__group{% if is_here %} is-open{% endif %}">
+      <a class="settings__tab settings-nav__head{% if is_here %} is-current{% endif %}"
+         href="{{ url_for('auth.settings', section=slug) }}"
+         {%- if subs|length > 1 %} data-settings-toggle aria-expanded="{{ 'true' if is_here else 'false' }}" aria-controls="sub-{{ slug }}"{% endif %}>
+        <span class="settings-nav__icon">{% include icon_of[slug] %}</span>
+        <span class="settings-nav__label">{{ t(label_of[slug]) }}</span>
+        {% if subs|length > 1 %}<span class="settings-nav__caret">{% include "_icon-caret.svg" %}</span>{% endif %}
+      </a>
+      {% if subs|length > 1 %}
+      <div class="settings-nav__sub" id="sub-{{ slug }}">
+        <div class="settings-nav__items">
+          {% for one in subs %}
+          <a class="settings-nav__item{% if is_here and one == part %} is-current{% endif %}"
+             href="{{ url_for('auth.settings', section=slug, part=one) }}"
+             {%- if is_here and one == part %} aria-current="page"{% endif %}>{{ part_name(slug, one) }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
     {% endfor %}
   </nav>
 
+  {# En el teléfono el menú va en una fila, y las subsecciones de la sección
+     abierta en otra debajo: desplegar en vertical empujaría la pantalla. #}
+  {% if parts_of[section]|length > 1 %}
+  <nav class="settings-subnav" aria-label="{{ t(label_of[section]) }}">
+    {% for one in parts_of[section] %}
+    <a class="settings-subnav__item{% if one == part %} is-current{% endif %}"
+       href="{{ url_for('auth.settings', section=section, part=one) }}"
+       {%- if one == part %} aria-current="page"{% endif %}>{{ part_name(section, one) }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+
   <div class="settings__pane">
+    <p class="settings__eyebrow">{{ t(label_of[section]) }}</p>
+    <h2 class="settings__title">{{ part_name(section, part) }}</h2>
 
     {# ------------------------------------------------------------ cuenta #}
     {% if section == 'account' %}
-    <h2 class="settings__title">{{ t('settings_section_account') }}</h2>
     {# Limitada por el administrador, o en la pausa automática por rebotes o
-       quejas: entra y prepara, pero no envía. Va primero, porque es lo que la
-       detiene. Solo el límite de verificación se arregla subiendo documentos. #}
+       quejas: entra y prepara, pero no envía. Va arriba de toda Cuenta,
+       porque es lo que la detiene. Solo el límite de verificación se arregla
+       subiendo documentos. #}
     {% if limited %}
     <div class="notice">
       {% if limited.reason == 'verification' %}
@@ -68,15 +117,19 @@
       {% endif %}
     </div>
     {% endif %}
+
     {# Mientras falte enviar un documento, o haya uno rechazado. Amarillo, porque
        no impide nada de esta pantalla pero es lo que falta; lleva al formulario
-       (octubre de 2026: antes se subían aquí abajo). Al enviarlos se va. #}
-    {% if documents_due %}
+       (octubre de 2026: antes se subían aquí abajo). Al enviarlos se va. Sale
+       en Perfil, que es lo primero que se abre, y en Verificación. #}
+    {% if documents_due and part in ('profile', 'verification') %}
     <div class="notice notice--pending">
       <p><strong>{{ t('settings_pending_title') }}</strong> {{ t('settings_pending_text') }}</p>
       <p><a href="{{ url_for('auth.verification') }}">{{ t('settings_pending_link') }}</a></p>
     </div>
     {% endif %}
+
+    {% if part == 'profile' %}
     <hr class="settings__rule">
 
     {% call row(t('settings_account_contact'), '') %}
@@ -98,6 +151,8 @@
        href="{{ url_for('auth.change_email') }}">{{ t('settings_account_email_change') }}</a>
     {% endcall %}
 
+    {% elif part == 'contact' %}
+    <hr class="settings__rule">
     {# Lo que se escribió al registrarse se ve como texto, y se cambia con
        «Editar» (octubre de 2026): antes eran campos con «Guardar» a la vista. #}
     {% if request.args.get('address') %}
@@ -115,14 +170,14 @@
              value="{{ postal }}" autocomplete="street-address"
              placeholder="{{ t('settings_postal_placeholder') }}">
       <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
-      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account') }}#address">{{ t('settings_cancel') }}</a>
+      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account', part='contact') }}#address">{{ t('settings_cancel') }}</a>
       {% if postal_error %}<p class="error">{{ postal_error }}</p>{% endif %}
     </form>
     {% else %}
     {% if postal %}<span class="setting__value">{{ postal }}</span>
     {% else %}<span class="tag tag--warn">{{ t('settings_postal_missing') }}</span>{% endif %}
     <a class="btn btn--small btn--outline"
-       href="{{ url_for('auth.settings', section='account', editar='address') }}#address">{{ t('settings_edit') }}</a>
+       href="{{ url_for('auth.settings', section='account', part='contact', editar='address') }}#address">{{ t('settings_edit') }}</a>
     {% endif %}
     {% endcall %}
 
@@ -142,20 +197,29 @@
       <p class="hint">{{ t('register_company_phones') }}</p>
       {{ company_phones(company, phone_options, company_max) }}
       <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
-      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account') }}#phones">{{ t('settings_cancel') }}</a>
+      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account', part='contact') }}#phones">{{ t('settings_cancel') }}</a>
       {% if account_errors.phones %}<p class="error">{{ account_errors.phones }}</p>{% endif %}
     </form>
     {% else %}
     <span class="setting__value">{{ phones_text|join(' · ') }}</span>
     <a class="btn btn--small btn--outline"
-       href="{{ url_for('auth.settings', section='account', editar='phones') }}#phones">{{ t('settings_edit') }}</a>
+       href="{{ url_for('auth.settings', section='account', part='contact', editar='phones') }}#phones">{{ t('settings_edit') }}</a>
     {% endif %}
     {% endcall %}
     {% endif %}
 
-    {# Nada escribe todavía el campo del plan, así que hoy todas las cuentas
-       caen en la rama de abajo. Dicho con palabras y no con un espacio en
-       blanco donde debería ir un plan. #}
+    {% elif part == 'verification' %}
+    <p class="settings__lead">{{ t('settings_verify_lead') }}</p>
+    <hr class="settings__rule">
+    {% for kind, status in verifications %}
+    {% call row(t('verify_name_' + kind), '') %}
+    <span class="tag {{ 'tag--on' if status == 'verified' else ('tag--warn' if status in ('missing', 'rejected') else 'tag--quiet') }}">
+      {{ t('verify_status_' + status) }}</span>
+    {% endcall %}
+    {% endfor %}
+
+    {% elif part == 'plan' %}
+    <hr class="settings__rule">
     {# Cerrada, la cuenta no prepara nada todavía: se dice cómo se abre. #}
     {% call row(t('settings_account_plan'),
                 '' if plan else (t('settings_account_closed_hint') if bar_closed
@@ -169,47 +233,16 @@
     <a class="btn btn--small btn--outline"
        href="{{ url_for('auth.settings', section='billing') }}">{{ t('settings_account_to_billing') }}</a>
     {% endcall %}
+    {% endif %}
 
     {# --------------------------------------------------------- seguridad #}
     {% elif section == 'security' %}
-    <h2 class="settings__title">{{ t('settings_section_security') }}</h2>
 
-    {% if request.args.get('updated') %}
-    <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
-    {% endif %}
+    {% if part == 'two-step' %}
     {% if request.args.get('dospasos') == 'off' %}
     <p class="notice notice--ok">{{ t('two_step_turned_off') }}</p>
     {% endif %}
-
-    {% call row(t('settings_password_row'), t('settings_password_desc')) %}
-    <a class="btn btn--small btn--outline"
-       href="{{ url_for('auth.change_password') }}">{{ t('settings_password_action') }}</a>
-    {% endcall %}
-
-    {% if request.args.get('google') == 'off' %}
-    <p class="notice notice--ok">{{ t('google_done_off') }}</p>
-    {% elif request.args.get('google') == 'nopassword' %}
-    <p class="notice">{{ t('google_needs_password') }}</p>
-    {% endif %}
-    {# Google: conectado al entrar una vez con él. Desconectarlo pide tener
-       contraseña, para no quedarse sin forma de entrar. #}
-    {% if google_ready or account.google_sub %}
-    {% call row(t('google_title'), t('google_on_desc') if account.google_sub
-                else t('google_off_desc')) %}
-    {% if account.google_sub %}
-    <span class="tag tag--on">{{ t('google_on') }}</span>
-    {% if account.password_hash %}
-    <form method="post" action="{{ url_for('auth.google_disconnect') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn--small btn--outline" type="submit">{{ t('google_disconnect') }}</button>
-    </form>
-    {% endif %}
-    {% else %}
-    <span class="tag tag--quiet">{{ t('google_off') }}</span>
-    {% endif %}
-    {% endcall %}
-    {% endif %}
-
+    <hr class="settings__rule">
     {% call row(t('two_step_title'), t('settings_two_step_desc')) %}
     <span class="tag {{ 'tag--on' if two_step else 'tag--quiet' }}">
       {{ t('panel_two_step_on') if two_step else t('panel_two_step_off') }}</span>
@@ -217,17 +250,48 @@
       {{ t('settings_two_step_manage') if two_step else t('settings_two_step_turn_on') }}</a>
     {% endcall %}
 
+    {% elif part == 'password' %}
+    {% if request.args.get('updated') %}
+    <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
+    {% endif %}
+    {% if request.args.get('google') == 'off' %}
+    <p class="notice notice--ok">{{ t('google_done_off') }}</p>
+    {% elif request.args.get('google') == 'nopassword' %}
+    <p class="notice">{{ t('google_needs_password') }}</p>
+    {% endif %}
+    <hr class="settings__rule">
+
+    {% call row(t('settings_password_row'), t('settings_password_desc')) %}
+    <a class="btn btn--small btn--outline"
+       href="{{ url_for('auth.change_password') }}">{{ t('settings_password_action') }}</a>
+    {% endcall %}
+
+    {# Google solo sale si la cuenta está conectada (octubre de 2026): quien se
+       registró sin él no tiene nada que ver aquí. Se conecta solo, la primera
+       vez que se entra con Google. Desconectarlo pide tener contraseña, para no
+       quedarse sin forma de entrar. #}
+    {% if account.google_sub %}
+    {% call row(t('google_title'), t('google_on_desc')) %}
+    <span class="tag tag--on">{{ t('google_on') }}</span>
+    {% if account.password_hash %}
+    <form method="post" action="{{ url_for('auth.google_disconnect') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--small btn--outline" type="submit">{{ t('google_disconnect') }}</button>
+    </form>
+    {% endif %}
+    {% endcall %}
+    {% endif %}
+
     {# ----- los usuarios de la cuenta. Solo los ve el dueño: un usuario tiene
        esta pantalla para su contraseña, su segundo factor y sus dispositivos,
        y nada más. ----- #}
-    {% if not is_member %}
-    <h3 class="settings__subtitle" id="users">{{ t('users_title') }}</h3>
-
+    {% elif part == 'users' and not is_member %}
     {% if request.args.get('user') == 'invited' %}
     <p class="notice notice--ok">{{ t('users_invited_ok') }}</p>
     {% elif request.args.get('user') == 'saved' %}
     <p class="notice notice--ok">{{ t('users_saved_ok') }}</p>
     {% endif %}
+    <hr class="settings__rule" id="users">
 
     {% call row(t('users_seats', used=seats_used, seats=seats),
                 '' if seats_left else t('users_seats_full')) %}
@@ -279,10 +343,9 @@
       </div>
     </div>
     {% endfor %}
-    {% endif %}
 
-    <h3 class="settings__subtitle">{{ t('devices_title') }}</h3>
-
+    {% elif part == 'sessions' %}
+    <p class="settings__lead">{{ t('devices_title') }}</p>
     <ul class="devices">
       {% for device in devices %}
       {% set who = describe(device.user_agent) %}
@@ -320,15 +383,17 @@
     {% else %}
     <p class="hint">{{ t('device_alone') }}</p>
     {% endif %}
+    {% endif %}
 
     {# ---------------------------------------------------- notificaciones #}
     {% elif section == 'notifications' %}
-    <h2 class="settings__title">{{ t('settings_section_notifications') }}</h2>
 
     {% if request.args.get('saved') %}
     <p class="notice notice--ok">{{ t('settings_notifications_saved') }}</p>
     {% endif %}
+    <hr class="settings__rule">
 
+    {% if part == 'security' %}
     {# Los de seguridad no se pueden apagar: su interruptor está encendido y
        bloqueado, así se ve de un vistazo que siempre salen, sin decirlo con
        palabras. No va dentro del formulario: no manda nada. #}
@@ -341,44 +406,43 @@
     </label>
     {% endcall %}
     {% endfor %}
-
-    <form method="post" action="{{ url_for('auth.settings', section='notifications') }}">
+    {% if not is_admin %}
+    <form method="post" action="{{ url_for('auth.settings', section='notifications', part='security') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-      {# La lista de quien administra es otra: habla de lo que hacen los
-         clientes. Los interruptores de un cliente no se le dibujan, porque no
-         recibiría ninguno de esos correos. #}
-      {% if is_admin %}
-      {{ toggle('admin_payment', t('settings_notice_admin_payment'),
-                t('settings_notice_admin_payment_desc'), notifications.admin_payment) }}
-      {{ toggle('admin_signup', t('settings_notice_admin_signup'),
-                t('settings_notice_admin_signup_desc'), notifications.admin_signup) }}
-      {{ toggle('admin_plan_end', t('settings_notice_admin_plan_end'),
-                t('settings_notice_admin_plan_end_desc'), notifications.admin_plan_end) }}
-
-      <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
-      {% else %}
-
       {{ toggle('new_login', t('settings_notice_new_login'),
                 t('settings_notice_new_login_desc'), notifications.new_login) }}
+      <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
+    </form>
+    {% endif %}
 
-      {# Estos dos ya avisan de algo, así que van arriba y no bajo el título de
-         lo que todavía no existe. #}
+    {# La lista de quien administra es otra: habla de lo que hacen los
+       clientes. Va entera y en el orden de `ADMIN_NOTICES`, así un aviso
+       nuevo sale solo y guardar nunca apaga uno que no se dibujó. #}
+    {% elif part == 'clients' and is_admin %}
+    <form method="post" action="{{ url_for('auth.settings', section='notifications', part='clients') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% for name in notifications %}
+      {{ toggle(name, t('settings_notice_' + name), t('settings_notice_' + name + '_desc'),
+                notifications[name]) }}
+      {% endfor %}
+      <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
+    </form>
+
+    {% elif part == 'plan' %}
+    <form method="post" action="{{ url_for('auth.settings', section='notifications', part='plan') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {{ toggle('billing', t('settings_notice_billing'),
                 t('settings_notice_billing_desc'), notifications.billing) }}
       {{ toggle('plan_state', t('settings_notice_plan_state'),
                 t('settings_notice_plan_state_desc'), notifications.plan_state) }}
-
       <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
-      {% endif %}
     </form>
+    {% endif %}
 
-    {# ------------------------------------------------------------- pagos #}
     {# ------------------------------------------- direcciones de prueba #}
     {# Solo en la demostración: las únicas a las que puede enviar. Cada una se
        confirma desde su propio buzón, como en el «sandbox» de Amazon. #}
     {% elif section == 'test' %}
-    <h2 class="settings__title">{{ t('settings_section_test') }}</h2>
     <p class="settings__lead">{{ t('test_lead', n=test_max, total=demo_total) }}</p>
     {% if request.args.get('sent') %}<p class="notice notice--ok">{{ t('test_sent') }}</p>{% endif %}
     {% if request.args.get('error') in ['email', 'wait', 'full'] %}
@@ -407,9 +471,10 @@
     </form>
     {% endif %}
 
+    {# ------------------------------------------------------------- pagos #}
     {% elif section == 'billing' %}
-    <h2 class="settings__title">{{ t('settings_section_payments') }}</h2>
 
+    {% if part == 'plan' %}
     {% if request.args.get('done') %}
     <p class="notice notice--ok">{{ t('pay_done') }}</p>
     {% endif %}
@@ -420,8 +485,7 @@
                           else t('pay_error_paypal') }}</p>
     {% endif %}
 
-    {# ----- tu plan: con su fecha, en la zona de quien mira. Sin botón para
-       cancelar: no hay cobro automático que cancelar. ----- #}
+    {# ----- tu plan: con su fecha, en la zona de quien mira. ----- #}
     <hr class="settings__rule">
     {% call row(t('billing_plan_row'), '') %}
     {% if plan %}
@@ -433,20 +497,16 @@
     {% endcall %}
 
     {# ----- los métodos: solo lo guardado (octubre de 2026). PayPal se entra una
-       vez y queda; la tarjeta y Yappy no se guardan, así que no salen. La
-       renovación automática (una suscripción de PayPal) sale cuando está
-       activa, o para quien tiene un plan vigente y puede activarla. ----- #}
-    <h3 class="settings__subtitle" id="metodos">{{ t('billing_methods_title') }}</h3>
-    {% if request.args.get('renewal') == 'on' %}
-    <p class="notice notice--ok">{{ t('renewal_done_on') }}</p>
-    {% elif request.args.get('renewal') == 'off' %}
-    <p class="notice notice--ok">{{ t('renewal_done_off') }}</p>
-    {% endif %}
+       vez y queda; la tarjeta y Yappy no se guardan, así que no salen. ----- #}
+    {% elif part == 'methods' %}
     {% if request.args.get('paypal') == 'saved' %}
     <p class="notice notice--ok">{{ t('methods_paypal_saved') }}</p>
     {% elif request.args.get('paypal') == 'removed' %}
     <p class="notice notice--ok">{{ t('methods_paypal_removed') }}</p>
+    {% elif request.args.get('error') %}
+    <p class="notice">{{ t('pay_error_paypal') }}</p>
     {% endif %}
+    <hr class="settings__rule" id="metodos">
 
     {# Cada cuenta guardada: su logo pegado a la izquierda y la cuenta al lado. #}
     {% for one in vaults %}
@@ -465,37 +525,61 @@
     </div>
     {% endfor %}
 
-    {# Agregar otro: la lista de métodos en la misma pantalla. Solo PayPal se
-       puede guardar hoy; la tarjeta y Yappy dicen «No disponible», y el día que
-       se puedan guardar entran por aquí. #}
+    {# Los métodos que se pueden agregar. Solo PayPal se puede guardar hoy; la
+       tarjeta y Yappy dicen «No disponible», y el día que se puedan guardar
+       entran por aquí. #}
+    {% macro method_list() %}
+    {% for name in add_methods %}
+    <div class="setting">
+      <div class="setting__text">{% include "_pay_logos.html" %}</div>
+      <div class="setting__action">
+        {% if name == 'paypal' and vault_ready %}
+        <form method="post" action="{{ url_for('auth.add_paypal') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn--small" type="submit">{{ t('methods_add_this') }}<span class="visually-hidden"> {{ t('pay_method_' + name) }}</span></button>
+        </form>
+        {% else %}
+        <span class="tag tag--quiet">{{ t('methods_unavailable') }}</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% endmacro %}
+
+    {# Agregar otro: con JavaScript la lista se abre **encima** de Facturación,
+       en un diálogo, sin cambiar de página (octubre de 2026). Sin él, el
+       enlace la abre en la misma pantalla, como antes. #}
     {% if adding %}
     <div class="method-picker" id="agregar">
-      {% for name in add_methods %}
-      <div class="setting">
-        <div class="setting__text">{% include "_pay_logos.html" %}</div>
-        <div class="setting__action">
-          {% if name == 'paypal' and vault_ready %}
-          <form method="post" action="{{ url_for('auth.add_paypal') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn--small" type="submit">{{ t('methods_add_this') }}<span class="visually-hidden"> {{ t('pay_method_' + name) }}</span></button>
-          </form>
-          {% else %}
-          <span class="tag tag--quiet">{{ t('methods_unavailable') }}</span>
-          {% endif %}
-        </div>
-      </div>
-      {% endfor %}
+      {{ method_list() }}
       <a class="btn btn--small btn--outline"
-         href="{{ url_for('auth.settings', section='billing') }}#metodos">{{ t('settings_cancel') }}</a>
+         href="{{ url_for('auth.settings', section='billing', part='methods') }}">{{ t('settings_cancel') }}</a>
     </div>
     {% else %}
     {% if not vaults %}<p class="hint">{{ t('methods_none') }}</p>{% endif %}
-    <a class="btn btn--small btn--outline method-add"
-       href="{{ url_for('auth.settings', section='billing', agregar=1) }}#metodos">{{ t('methods_add') }}</a>
+    <a class="btn btn--small btn--outline method-add" data-open-dialog="agregar-metodo"
+       href="{{ url_for('auth.settings', section='billing', part='methods', agregar=1) }}">{{ t('methods_add') }}</a>
+    {# La misma bandeja que «Cargar plantilla» (`panel.js`, data-open-dialog),
+       que entra deslizándose desde la derecha. #}
+    <dialog class="drawer drawer--slide" id="agregar-metodo" aria-labelledby="agregar-metodo-titulo">
+      <div class="drawer__head">
+        <h2 class="settings__subtitle" id="agregar-metodo-titulo">{{ t('methods_dialog_title') }}</h2>
+        <button class="drawer__close" type="button" data-close-dialog
+                aria-label="{{ t('methods_dialog_close') }}">×</button>
+      </div>
+      {{ method_list() }}
+    </dialog>
     {% endif %}
 
     {# La renovación automática, solo con su aviso montado: un botón que no puede
-       cobrar es peor que ninguno. #}
+       cobrar es peor que ninguno. Si no se puede, se dice por qué. #}
+    {% elif part == 'auto-renewal' %}
+    {% if request.args.get('renewal') == 'on' %}
+    <p class="notice notice--ok">{{ t('renewal_done_on') }}</p>
+    {% elif request.args.get('renewal') == 'off' %}
+    <p class="notice notice--ok">{{ t('renewal_done_off') }}</p>
+    {% endif %}
+    <hr class="settings__rule">
     {% if renewal_on or (subscription and subscription.status == 'suspended')
           or (renewals_ready and can_renew) %}
     {% call row(t('renewal_title'), t('renewal_desc'), id='renovacion') %}
@@ -521,11 +605,13 @@
     </form>
     {% endif %}
     {% endcall %}
+    {% else %}
+    <p class="hint">{{ t('renewal_unavailable_soon') if not renewals_ready else t('renewal_unavailable_plan') }}</p>
     {% endif %}
 
     {# ----- lo que se ha comprado. La columna de la factura solo sale cuando
        las facturas se enciendan (`invoices.SHOWN`). ----- #}
-    <h3 class="settings__subtitle">{{ t('billing_history_title') }}</h3>
+    {% elif part == 'history' %}
     {% if payments %}
     <div class="table-wrap">
       <table class="table">
@@ -569,6 +655,7 @@
     {% if invoices_shown %}<p class="hint">{{ t('billing_invoices_hint') }}</p>{% endif %}
     {% else %}
     <p class="hint">{{ t('billing_invoices_none') }}</p>
+    {% endif %}
     {% endif %}
     {% endif %}
 

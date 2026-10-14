@@ -144,7 +144,7 @@ def test_configuracion_enseña_texto_y_editar_abre_el_formulario(client, databas
     accounts.set_phones(database, cuenta["_id"], phone="+50761112222",
                         company_phones=["+5079980000"])
 
-    pantalla = browser.get("/settings").get_data(as_text=True)
+    pantalla = browser.get("/settings/account/contact").get_data(as_text=True)
     # Como texto, con su «Editar», y sin campos ni «Guardar» a la vista.
     assert "Calle 10, Santiago de Veraguas" in pantalla
     assert "+50761112222 · +5079980000" in pantalla

@@ -82,7 +82,7 @@ def test_the_settings_screen_lists_the_devices(client, database, outbox):
         "password": "Contrasena-Larga1", "remember": "1",
     }, headers={"User-Agent": "Mozilla/5.0 (iPhone) AppleWebKit Safari/605.1"})
 
-    body = navegador.get("/settings/security").get_data(as_text=True)
+    body = navegador.get("/settings/security/sessions").get_data(as_text=True)
     assert "Tus dispositivos" in body
     assert "Safari en iPhone" in body
     assert "Este dispositivo" in body
