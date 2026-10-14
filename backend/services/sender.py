@@ -255,7 +255,14 @@ def blocked(account: dict[str, Any]) -> list[str]:
     se lea igual en todas partes.
     """
     why: list[str] = []
-    if not accounts.plan_of(account):
+    if accounts.in_demo(account):
+        # La demostración envía sin plan, pero solo a sus direcciones de prueba
+        # confirmadas y hasta `DEMO_SENDS` correos (octubre de 2026).
+        if not accounts.confirmed_test_addresses(account):
+            why.append("demo_addresses")
+        elif accounts.demo_left(account) <= 0:
+            why.append("demo_used")
+    elif not accounts.plan_of(account):
         why.append("plan")
     elif accounts.quota_left(account) <= 0:
         why.append("quota")
@@ -320,7 +327,12 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
 
     position = int(campaign.get("position", 0))
     # La cuota manda sobre el tope de la tanda: no se arma lo que no puede salir.
-    room = min(limit, accounts.quota_left(account))
+    # En la demostración, la cuota son los correos de prueba que le quedan; la
+    # tanda se arma igual de larga, porque casi todos se van a saltar.
+    demo = accounts.in_demo(account)
+    testers = accounts.confirmed_test_addresses(account) if demo else set()
+    room = limit if demo and accounts.demo_left(account) > 0 else (
+        0 if demo else min(limit, accounts.quota_left(account)))
     if single:
         # A cualquier dirección: si está en Contactos sale con lo suyo (sus
         # columnas); si no, solo con su dirección, sin guardarla.
@@ -352,6 +364,12 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
                 or one.get("invalid")):
             skipped += 1
             continue
+        # En la demostración solo sale a las direcciones de prueba, y hasta lo
+        # que le queda.
+        if demo and ((one.get("email_normalized") or one["email"].lower()) not in testers
+                     or sent >= accounts.demo_left(account)):
+            skipped += 1
+            continue
         try:
             deliver(build(account, campaign, ready, one, fields))
         except Exception as exc:  # noqa: BLE001 - se anota y se sigue
@@ -376,6 +394,8 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     campaigns.advance(db, account_id, campaign["_id"], position=position,
                       sent=sent, skipped=skipped, failed=failed, errors=errors)
     accounts.add_sent(db, account_id, sent)
+    if demo:
+        accounts.add_demo_sent(db, account_id, sent)
 
     left = max(0, total - position)
     # Sin gente en la tanda no queda nada por hacer aunque el conteo diga otra

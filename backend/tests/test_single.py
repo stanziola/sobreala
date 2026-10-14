@@ -211,13 +211,15 @@ def test_un_archivo_de_otro_tipo_o_muy_grande_no_entra(client, database, outbox,
     assert database.downloads.count_documents({}) == 0
 
 
-def test_sin_plan_no_sale(client, database, outbox, monkeypatch):
+def test_sin_plan_solo_a_una_direccion_de_prueba(client, database, outbox, monkeypatch):
+    """Sin plan, la cuenta está en la demostración: el individual solo va a sus
+    direcciones de prueba confirmadas (`test_demo_envio.py` prueba el resto)."""
     browser, _, _ = ready(client, database, plan=None)
     salidos = catch(monkeypatch)
 
     pantalla = escribir(browser).get_data(as_text=True)
 
-    assert "Todavía no puedes enviar" in pantalla
+    assert "direcciones de prueba" in pantalla
     assert salidos == []
 
 

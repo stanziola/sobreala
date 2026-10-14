@@ -318,8 +318,8 @@ def test_abrirla_pide_motivo_y_deja_todo_escrito(client, database, outbox,
     assert browser.get_cookie("sa_in").value == "1"
 
 
-def test_abierta_por_la_demo_tiene_lo_del_basico_y_no_envia(client, database,
-                                                            outbox):
+def test_abierta_por_la_demo_tiene_lo_del_basico_y_envia_solo_a_prueba(client, database,
+                                                                       outbox):
     admin, _ = make_admin(client, database)
     browser, cuenta = cerrada(client, database)
     open_account(admin, cuenta)
@@ -327,8 +327,11 @@ def test_abierta_por_la_demo_tiene_lo_del_basico_y_no_envia(client, database,
     cuenta = accounts.by_id(database, cuenta["_id"])
     assert accounts.contact_limit(cuenta) == 1000
     assert "de 1000 contactos" in browser.get("/contacts").get_data(as_text=True)
-    # Lo único que le falta es enviar, y eso pide un plan.
-    assert "plan" in sender.blocked(cuenta)
+    # Envía, pero solo a sus direcciones de prueba (octubre de 2026): sin una
+    # confirmada no sale nada, y no se le pide un plan.
+    assert accounts.in_demo(cuenta)
+    assert sender.blocked(cuenta)[:1] == ["demo_addresses"]
+    assert "plan" not in sender.blocked(cuenta)
 
 
 def test_el_filtro_trae_a_quien_pidio_la_demo_y_sigue_cerrada(client, database,

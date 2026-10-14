@@ -635,6 +635,72 @@ def is_open(account: dict[str, Any] | None) -> bool:
                 or found.get("sending_cleared_at"))
 
 
+# ------------------------------------------------- la demostración que envía
+#
+# Desde octubre de 2026 una cuenta abierta por la demostración (sin plan) puede
+# enviar, como el «sandbox» de Amazon: **solo a sus direcciones de prueba**, que
+# confirma cada una con un enlace que le llega a esa dirección, y **hasta
+# `DEMO_SENDS` correos en total**, con la marca de agua y la baja de siempre.
+# Es lo que deja ver lo mejor del producto (quién abrió, quién pulsó) antes de
+# pagar, sin poder escribirle a una lista ajena.
+
+DEMO_SENDS = 50
+DEMO_ADDRESSES = 5
+
+
+def in_demo(account: dict[str, Any] | None) -> bool:
+    """Si la cuenta está en la demostración: abierta, sin plan, y no es un
+    administrador ni un usuario de una empresa."""
+    found = account or {}
+    return (bool(found.get("opened_at")) and not plan_of(found)
+            and not is_admin(found))
+
+
+def test_addresses_of(account: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Sus direcciones de prueba: `email`, `added_at` y `confirmed_at`."""
+    return list((account or {}).get("test_addresses") or [])
+
+
+def confirmed_test_addresses(account: dict[str, Any] | None) -> set[str]:
+    return {one["email"] for one in test_addresses_of(account) if one.get("confirmed_at")}
+
+
+def add_test_address(db, account_id, email: str) -> bool:
+    """Agregar una sin confirmar. False si ya está o si ya tiene todas."""
+    email = normalize_email(email)
+    result = db.accounts.update_one(
+        {"_id": account_id, "test_addresses.email": {"$ne": email},
+         f"test_addresses.{DEMO_ADDRESSES - 1}": {"$exists": False}},
+        {"$push": {"test_addresses": {"email": email, "added_at": now(),
+                                      "confirmed_at": None}},
+         "$set": {"updated_at": now()}})
+    return result.modified_count == 1
+
+
+def confirm_test_address(db, account_id, email: str) -> bool:
+    result = db.accounts.update_one(
+        {"_id": account_id, "test_addresses": {"$elemMatch": {
+            "email": normalize_email(email), "confirmed_at": None}}},
+        {"$set": {"test_addresses.$.confirmed_at": now(), "updated_at": now()}})
+    return result.modified_count == 1
+
+
+def remove_test_address(db, account_id, email: str) -> None:
+    db.accounts.update_one(
+        {"_id": account_id},
+        {"$pull": {"test_addresses": {"email": normalize_email(email)}},
+         "$set": {"updated_at": now()}})
+
+
+def demo_left(account: dict[str, Any] | None) -> int:
+    return max(0, DEMO_SENDS - int((account or {}).get("demo_sent", 0)))
+
+
+def add_demo_sent(db, account_id, many: int) -> None:
+    if many > 0:
+        db.accounts.update_one({"_id": account_id}, {"$inc": {"demo_sent": many}})
+
+
 def open_account(db, account_id, admin_id=None) -> bool:
     """Abrir la cuenta. False si ya lo estaba.
 

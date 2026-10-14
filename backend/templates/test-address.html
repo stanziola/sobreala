@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ t('test_page_title') }}{% endblock %}
+
+{% block content %}
+{# La abre quien recibió el enlace, con o sin sesión: confirma que esa
+   dirección acepta los correos de prueba de la demostración. #}
+<div class="card card--narrow">
+  <h1>{{ t('test_page_title') }}</h1>
+  {% if ok %}
+  <p class="lead">{{ t('test_page_ok', email=email, company=company) }}</p>
+  {% else %}
+  <p class="lead">{{ t('test_page_bad') }}</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -24,7 +24,14 @@
   {% if 'postal' in blocked %}<a href="{{ url_for('auth.settings', section='account') }}#address">{{ t('send_blocked_postal_link') }}</a>{% endif %}
   {% if 'sender' in blocked %}<a href="{{ url_for('campaigns.sender_page') }}#handle">{{ t('send_blocked_sender_link') }}</a>{% endif %}
   {% if 'limited' in blocked %}<a href="{{ url_for('auth.verification') }}">{{ t('send_blocked_limited_link') }}</a>{% endif %}
+  {% if 'demo_addresses' in blocked %}<a href="{{ url_for('auth.settings', section='test') }}">{{ t('send_blocked_demo_link') }}</a>{% endif %}
 </p>
+{% endif %}
+
+{# La demostración envía, pero solo a sus direcciones de prueba. #}
+{% if demo and not blocked %}
+<p class="notice">{{ t('send_demo_notice', n=demo.addresses, left=demo.left, total=demo.total) }}
+  <a href="{{ url_for('auth.settings', section='test') }}">{{ t('send_demo_link') }}</a></p>
 {% endif %}
 
 {# Quién firma y a dónde vuelven las respuestas, siempre a la vista. #}

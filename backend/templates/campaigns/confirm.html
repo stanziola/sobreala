@@ -39,6 +39,7 @@
   {% for why in blocked %}{{ t('send_blocked_' + why) }} {% endfor %}
   {% if 'plan' in blocked %}<a href="{{ site_url }}/#planes">{{ t('welcome_plans') }}</a>{% endif %}
   {% if 'limited' in blocked %}<a href="{{ url_for('auth.verification') }}">{{ t('send_blocked_limited_link') }}</a>{% endif %}
+  {% if 'demo_addresses' in blocked %}<a href="{{ url_for('auth.settings', section='test') }}">{{ t('send_blocked_demo_link') }}</a>{% endif %}
 </p>
 {% endif %}
 

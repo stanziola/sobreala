@@ -33,6 +33,7 @@ from config import Config
 from db import get_db
 from i18n import t
 from models import account as accounts
+from models import contact as contacts
 from models import auth_event as events
 from models import mail_log
 from models import invoice as invoices
@@ -41,6 +42,7 @@ from models import session as sessions
 from models import token as tokens
 from models import verification_doc as verification_docs
 from services import countries
+from services import importer
 from services import google_auth
 from services import mailer
 from services import notices
@@ -1921,7 +1923,79 @@ def sections_for(account: dict | None) -> tuple[str, ...]:
         return ADMIN_SECTIONS
     if accounts.is_member(account):
         return MEMBER_SECTIONS
+    # En la demostración, una más: las direcciones de prueba, que son las
+    # únicas a las que puede enviar (octubre de 2026).
+    if accounts.in_demo(account):
+        return SECTIONS + ("test",)
     return SECTIONS
+
+
+# ---------------------------------------------- las direcciones de prueba
+
+# Cuántas confirmaciones se pueden mandar por hora: cada una es un correo a una
+# dirección que no es la de la cuenta.
+TEST_ADDRESS_PER_HOUR = (10, 3600)
+TEST_ADDRESS_DAYS = 3
+
+
+@bp.route("/settings/test/add", methods=["POST"])
+def test_address_add():
+    """Agregar una dirección de prueba y mandarle su enlace de confirmación."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    back = url_for("auth.settings", section="test")
+    if not accounts.in_demo(account) or accounts.is_member(account):
+        return redirect(url_for("auth.settings"))
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+    db = get_db()
+    email = importer.clean(request.form.get("email", ""))
+    if not email:
+        return redirect(f"{back}?error=email")
+    if not rate_limit(db, f"test_address:{account['_id']}", *TEST_ADDRESS_PER_HOUR):
+        return redirect(f"{back}?error=wait")
+    email = accounts.normalize_email(email)
+    if not accounts.add_test_address(db, account["_id"], email):
+        return redirect(f"{back}?error=full")
+    raw = tokens.issue_link(db, account["_id"], tokens.TEST_ADDRESS, {"email": email},
+                            days=TEST_ADDRESS_DAYS)
+    notices.test_address(account, to=email,
+                         link=f"{Config.APP_BASE_URL}{url_for('auth.test_address_confirm', raw=raw)}",
+                         days=TEST_ADDRESS_DAYS)
+    return redirect(f"{back}?sent=1")
+
+
+@bp.route("/settings/test/remove", methods=["POST"])
+def test_address_remove():
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    if csrf_ok(request.form.get("csrf_token")) and accounts.in_demo(account):
+        accounts.remove_test_address(get_db(), account["_id"], request.form.get("email", ""))
+    return redirect(url_for("auth.settings", section="test"))
+
+
+@bp.route("/test-address/<raw>")
+def test_address_confirm(raw):
+    """Confirmar una dirección de prueba desde su enlace. Sin sesión: lo abre
+    quien recibe el correo, que puede no ser el dueño de la cuenta.
+
+    Al confirmarla entra a Contactos (si no estaba), para que las campañas de
+    prueba la encuentren.
+    """
+    db = get_db()
+    found = tokens.find_link(db, raw, tokens.TEST_ADDRESS)
+    if found is None or not tokens.spend(db, found):
+        return render_template("test-address.html", ok=False), 404
+    email = found["data"]["email"]
+    account = accounts.by_id(db, found["account_id"])
+    if account is None or not accounts.confirm_test_address(db, account["_id"], email):
+        return render_template("test-address.html", ok=False), 404
+    contacts.create(db, account["_id"], email=email,
+                    consent=contacts.consent_of(contacts.OTHER, t("test_address_consent")))
+    return render_template("test-address.html", ok=True, email=email,
+                           company=account.get("company_name", ""))
 
 
 @bp.route("/settings", methods=["GET", "POST"])
@@ -2038,6 +2112,9 @@ def settings(section: str = "account"):
         editing=editing,
         renewals_ready=paypal.renewals_ready(),
         google_ready=google_auth.configured(),
+        test_addresses=accounts.test_addresses_of(account),
+        test_max=accounts.DEMO_ADDRESSES, demo_total=accounts.DEMO_SENDS,
+        demo_left=accounts.demo_left(account),
         vaults=accounts.paypal_vaults_of(account),
         vault_ready=paypal.vault_ready(),
         pay_logos=PAY_LOGOS,

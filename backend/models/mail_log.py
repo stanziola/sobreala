@@ -45,6 +45,8 @@ REINSTATED = "reinstated"
 LIMITED = "limited"
 # La pausa automática por rebotes o quejas, al cliente y a quien administra.
 PAUSED = "paused"
+# El enlace que confirma una dirección de prueba de la demostración.
+TEST_ADDRESS = "test_address"
 ADMIN_PAUSE = "admin_pause"
 # Lo de la renovación automática: se enciende, se apaga o no se pudo cobrar.
 RENEWAL = "renewal"

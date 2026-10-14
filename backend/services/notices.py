@@ -404,6 +404,20 @@ def paused(account, *, reason: str, note: str) -> bool:
                     t("mail_limited_kept")])
 
 
+def test_address(account, *, to: str, link: str, days: int) -> bool:
+    """El enlace que confirma una dirección de prueba de la demostración. Va a
+    esa dirección, que puede no ser la de la cuenta, y sin interruptor."""
+    company = account.get("company_name", "")
+    return deliver(
+        account, to=to, purpose=mail_log.TEST_ADDRESS,
+        subject=t("mail_test_address_subject", company=company),
+        heading=t("mail_test_address_heading"),
+        paragraphs=[t("mail_test_address_body", company=company),
+                    t("mail_test_address_ignore")],
+        button={"href": link, "label": t("mail_test_address_button")},
+        foot=t("mail_test_address_expiry", days=days))
+
+
 def verification_result(account, *, results: dict) -> bool:
     """El resultado de las verificaciones, que manda el administrador cuando
     quiere. Sin interruptor: cambia lo que la cuenta puede hacer.

@@ -42,6 +42,10 @@ INVITE = "invite"
 # es lo que prueba que es de quien la escribió y no de un tercero que
 # recibiría las respuestas de toda una lista.
 REPLY_TO = "reply_to"
+# Confirmar una dirección de prueba de la demostración (octubre de 2026). Un
+# enlace a esa dirección: prueba que es de quien la puso, y que acepta recibir
+# los correos de prueba.
+TEST_ADDRESS = "test_address"
 
 # Why a code was refused, so the visitor gets a useful message instead of a
 # generic error. UNKNOWN is "there is no code waiting for this account"; INVALID

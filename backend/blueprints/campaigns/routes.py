@@ -150,6 +150,11 @@ def shared(db, account, **extra):
         "from_email": sender.sender_email(account),
         "reply": sender.reply_to(account),
         "quota": accounts.quota_left(account),
+        # La demostración envía solo a sus direcciones de prueba: se dice
+        # arriba, con cuántas tiene y cuántos correos le quedan.
+        "demo": ({"addresses": len(accounts.confirmed_test_addresses(account)),
+                  "left": accounts.demo_left(account), "total": accounts.DEMO_SENDS}
+                 if accounts.in_demo(account) else None),
         "editable": campaigns.editable,
         "due": campaigns.due,
         # Un usuario puede tener solo «ver las campañas»: entonces la pantalla
@@ -267,6 +272,9 @@ def send_single(db, account):
         errors["para"] = t("single_bad_address")
     elif suppressions.among(db, account["_id"], [to]):
         errors["para"] = t("single_suppressed")
+    elif accounts.in_demo(account) and to not in accounts.confirmed_test_addresses(account):
+        # En la demostración, solo a sus direcciones de prueba confirmadas.
+        errors["para"] = t("single_demo_only")
     elif (found or {}).get("invalid") or not address_check.domain_receives(
             address_check.domain_of(to)):
         errors["para"] = t("single_undeliverable", domain=address_check.domain_of(to))

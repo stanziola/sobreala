@@ -382,6 +382,31 @@ TEXTS = {
     "settings_section_security": "Seguridad",
     "settings_section_notifications": "Notificaciones",
     "settings_section_payments": "Facturación",
+    "settings_section_test": "Direcciones de prueba",
+    "test_lead": "En la demostración puedes enviar campañas y correos de verdad, "
+                 "pero solo a estas direcciones: hasta {n}, y {total} correos en "
+                 "total. Así ves quién lo abrió y quién pulsó, como con tu lista. "
+                 "Cada una se confirma con un enlace que le llega a ese buzón.",
+    "test_left": "Te quedan {left} de {total} correos de prueba.",
+    "test_sent": "Listo, le mandamos el enlace de confirmación. Cuando lo abra, "
+                 "ya le puedes enviar.",
+    "test_error_email": "Esa no es una dirección de correo.",
+    "test_error_wait": "Mandaste muchos enlaces seguidos. Espera un rato.",
+    "test_error_full": "Ya tienes esa dirección, o ya tienes las {n}.",
+    "test_confirmed": "Confirmada: recibe tus correos de prueba.",
+    "test_waiting": "Le mandamos el enlace; falta que lo abra.",
+    "test_state_on": "Confirmada",
+    "test_state_waiting": "Sin confirmar",
+    "test_remove": "Quitar",
+    "test_add_label": "Una dirección de prueba",
+    "test_add": "Agregar",
+    "test_address_consent": "Dirección de prueba de la demostración, confirmada "
+                            "desde su buzón.",
+    "test_page_title": "Dirección de prueba",
+    "test_page_ok": "Listo: {email} va a recibir los correos de prueba de "
+                    "{company} en Sobreala.",
+    "test_page_bad": "Este enlace ya se usó o venció. Pide uno nuevo desde "
+                     "Configuración.",
 
     "settings_account_contact": "Tu nombre",
     "settings_account_company": "Empresa u organización",
@@ -1679,6 +1704,19 @@ TEXTS = {
     "send_blocked_limited": "Tu cuenta está limitada: necesitamos verificar tu "
                             "identificación y tu dirección.",
     "send_blocked_limited_link": "Enviar los documentos",
+    # La demostración envía solo a sus direcciones de prueba (octubre de 2026).
+    "send_blocked_demo_addresses": "En la demostración solo envías a tus "
+                                   "direcciones de prueba, y todavía no tienes "
+                                   "ninguna confirmada.",
+    "send_blocked_demo_link": "Agregarlas en Configuración",
+    "send_blocked_demo_used": "Ya usaste los correos de prueba de la "
+                              "demostración. Para seguir, contrata un plan.",
+    "send_demo_notice": "Estás en la demostración: tus envíos salen solo a tus "
+                        "direcciones de prueba confirmadas ({n}), y te quedan "
+                        "{left} de {total} correos.",
+    "send_demo_link": "Ver tus direcciones de prueba",
+    "single_demo_only": "En la demostración solo puedes escribirle a tus "
+                        "direcciones de prueba confirmadas.",
     "send_blocked_paused": "Tus envíos están en pausa: rebotaron o se marcaron "
                            "como spam demasiados de tus correos. Te escribimos "
                            "con el detalle.",
@@ -2338,7 +2376,9 @@ TEXTS = {
     "mail_opened_heading": "Ya puedes empezar",
     "mail_opened_body": "Abrimos tu cuenta: ya puedes subir tus contactos y "
                         "armar tus plantillas y campañas, con lo del plan "
-                        "Básico. Para enviarlas, eliges tu plan.",
+                        "Básico, y mandarlas a tus direcciones de prueba "
+                        "(Configuración, Direcciones de prueba) para ver quién "
+                        "las abre. Para enviarlas a tu lista, eliges tu plan.",
     "mail_opened_button": "Ir a mis contactos",
 
     "mail_suspended_subject": "Tu cuenta de Sobreala quedó suspendida",
@@ -2366,6 +2406,15 @@ TEXTS = {
     "mail_limited_button": "Subir los documentos",
 
     # La pausa automática por rebotes o quejas (services/reputation.py).
+    "mail_test_address_subject": "Confirma tu dirección de prueba para {company}",
+    "mail_test_address_heading": "¿Recibes los correos de prueba?",
+    "mail_test_address_body": "{company} está probando Sobreala y quiere "
+                               "mandarte sus correos de prueba. Confirma que "
+                               "esta dirección es tuya y que los aceptas.",
+    "mail_test_address_ignore": "Si no sabes de qué se trata, no hagas nada: no "
+                                "te va a llegar ninguno.",
+    "mail_test_address_button": "Confirmar mi dirección",
+    "mail_test_address_expiry": "El enlace vence en {days} días.",
     "mail_paused_subject": "Pausamos los envíos de tu cuenta de Sobreala",
     "mail_paused_heading": "Tus envíos están en pausa",
     "mail_paused_body_bounces": "Demasiados de tus correos rebotaron porque esas "

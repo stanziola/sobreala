@@ -37,7 +37,8 @@
     'account': 'settings_section_account',
     'security': 'settings_section_security',
     'notifications': 'settings_section_notifications',
-    'billing': 'settings_section_payments'} %}
+    'billing': 'settings_section_payments',
+    'test': 'settings_section_test'} %}
 
   <nav class="settings__nav" aria-label="{{ t('settings_title') }}">
     {% for slug in sections %}
@@ -373,6 +374,39 @@
     </form>
 
     {# ------------------------------------------------------------- pagos #}
+    {# ------------------------------------------- direcciones de prueba #}
+    {# Solo en la demostración: las únicas a las que puede enviar. Cada una se
+       confirma desde su propio buzón, como en el «sandbox» de Amazon. #}
+    {% elif section == 'test' %}
+    <h2 class="settings__title">{{ t('settings_section_test') }}</h2>
+    <p class="settings__lead">{{ t('test_lead', n=test_max, total=demo_total) }}</p>
+    {% if request.args.get('sent') %}<p class="notice notice--ok">{{ t('test_sent') }}</p>{% endif %}
+    {% if request.args.get('error') in ['email', 'wait', 'full'] %}
+    <p class="notice">{{ t('test_error_' + request.args.get('error'), n=test_max) }}</p>
+    {% endif %}
+    <p class="hint">{{ t('test_left', left=demo_left, total=demo_total) }}</p>
+
+    {% for one in test_addresses %}
+    {% call row(one.email, t('test_confirmed') if one.confirmed_at else t('test_waiting')) %}
+    <span class="tag {{ 'tag--on' if one.confirmed_at else 'tag--quiet' }}">
+      {{ t('test_state_on') if one.confirmed_at else t('test_state_waiting') }}</span>
+    <form method="post" action="{{ url_for('auth.test_address_remove') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="email" value="{{ one.email }}">
+      <button class="btn btn--small btn--outline" type="submit">{{ t('test_remove') }}</button>
+    </form>
+    {% endcall %}
+    {% endfor %}
+
+    {% if test_addresses|length < test_max %}
+    <form class="setting__form" method="post" action="{{ url_for('auth.test_address_add') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="visually-hidden" for="prueba">{{ t('test_add_label') }}</label>
+      <input id="prueba" name="email" type="email" placeholder="{{ t('test_add_label') }}" autocomplete="off" required>
+      <button class="btn btn--small" type="submit">{{ t('test_add') }}</button>
+    </form>
+    {% endif %}
+
     {% elif section == 'billing' %}
     <h2 class="settings__title">{{ t('settings_section_payments') }}</h2>
 

@@ -117,8 +117,31 @@ Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
 
 | Camino | Quién la abre | Qué tiene después |
 |---|---|---|
-| La demostración | El administrador, con «Abrir la cuenta» en la ficha y un motivo (`opened_by`, `admin_events`) | Lo del Básico sin enviar y sin vencimiento: 1,000 contactos, 1 etiqueta, 1 columna, 20 imágenes y campañas armadas. Para enviar, contrata |
+| La demostración | El administrador, con «Abrir la cuenta» en la ficha y un motivo (`opened_by`, `admin_events`) | Lo del Básico sin vencimiento: 1,000 contactos, 1 etiqueta, 1 columna, 20 imágenes y campañas armadas. **Envía solo a sus direcciones de prueba**, hasta 50 correos (ver abajo). Para enviar a su lista, contrata |
 | El pago | `activate_plan()`, sola y sin `opened_by` | Todo lo de su plan desde el primer momento, envío incluido |
+
+### La demostración que envía (octubre de 2026)
+
+Hasta ese mes la demostración no enviaba nada, así que no enseñaba lo mejor
+(quién abrió, quién pulsó). Ahora envía **como el «sandbox» de Amazon**:
+
+- **Direcciones de prueba**: una sección de Configuración que solo existe en la
+  demostración (`accounts.in_demo()`: abierta, sin plan). Hasta
+  `DEMO_ADDRESSES` (5), en `accounts.test_addresses`.
+- **Cada una se confirma desde su propio buzón**: le llega un enlace
+  (`tokens.TEST_ADDRESS`, de un solo uso, con hash y 3 días; regla 6) que dice
+  de quién viene y que si no sabe de qué se trata no haga nada. Abrirlo
+  (`/test-address/<testigo>`, sin sesión) la confirma y **la agrega a
+  Contactos**, para que las campañas de prueba la encuentren. Se mandan hasta
+  10 enlaces por hora.
+- **Al enviar** (`sender.blocked()` y `run()`), en la demostración no se pide
+  plan: se pide al menos una dirección confirmada (`demo_addresses`) y que le
+  queden correos (`demo_used`). Campañas e individuales salen **solo** a las
+  confirmadas; el resto de la lista se salta sin gastar nada. **Hasta
+  `DEMO_SENDS` (50) correos en total** (`demo_sent`), con la marca de agua y la
+  baja de siempre. Enviar correos lo dice arriba, con cuántas tiene y cuántos le
+  quedan.
+- Con un plan pagado nada de esto aplica, y la sección desaparece.
 
 - **La demostración se pide desde la bienvenida** (`POST /welcome/demo`), **una
   sola vez** (octubre de 2026). Pregunta **«¿A qué se dedica tu negocio?»** y

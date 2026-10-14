@@ -224,8 +224,8 @@ cosa está como está, y lo que ya se probó y se quitó.
   cierra las sesiones.
 - **Una cuenta nueva nace cerrada** (`accounts.is_open()`): ve su bienvenida y
   Configuración, y puede pagar. Se abre **con la demostración**, que pide desde
-  `/welcome` **una sola vez** y abre el administrador en la ficha (y queda con lo del Básico sin
-  enviar), **o con el pago**, que la abre con todo, envío incluido. La puerta
+  `/welcome` **una sola vez** y abre el administrador en la ficha (y queda con lo del Básico,
+  **enviando solo a sus direcciones de prueba**, hasta 50 correos), **o con el pago**, que la abre con todo, envío incluido. La puerta
   está en `needs()`. La habilitación antes del primer envío se quitó en octubre
   de 2026.
 - **El registro pide teléfono personal (con su país), los de la empresa y la

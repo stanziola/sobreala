@@ -342,6 +342,8 @@ def test_la_cuota_del_mes_manda(client, database, outbox, monkeypatch):
 
 
 def test_sin_plan_no_sale_nada(client, database, outbox, monkeypatch):
+    """Sin plan, la cuenta está en la demostración: sin una dirección de prueba
+    confirmada no sale nada (`test_demo_envio.py` prueba el resto)."""
     salidos = catch(monkeypatch)
     browser, account, piece = ready(client, database, plan=None)
     make(browser, piece)
@@ -349,7 +351,8 @@ def test_sin_plan_no_sale_nada(client, database, outbox, monkeypatch):
     send_it(browser, database, account["_id"])
 
     assert salidos == []
-    assert "hace falta un plan" in browser.get("/campaigns").get_data(as_text=True)
+    assert "todavía no tienes ninguna confirmada" in browser.get(
+        "/campaigns").get_data(as_text=True)
 
 
 def test_solo_le_llega_a_la_lista_elegida(client, database, outbox, monkeypatch):
