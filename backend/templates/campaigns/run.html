@@ -9,7 +9,7 @@
 <h1 class="settings__heading">{{ run.subject }}</h1>
 <p class="settings__lead">
   {{ t('run_sent_on', when=run.finished_at|at_moment) }}
-  · {{ (run.tags or [])|join(' · ') or everyone }}
+  · {{ t('single_row', to=run.to) if run.to else ((run.tags or [])|join(' · ') or everyone) }}
   · {{ t('send_state_sent', n=run.sent or 0) }}
   {% if seen and seen.values()|sum %}
   · {{ t('send_seen', delivered=seen.delivery, bounced=seen.bounce,

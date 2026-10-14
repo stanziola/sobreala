@@ -1016,6 +1016,8 @@ PRIVACY = {
                 "servidor cuando alguien dice que no le llegó el código.",
                 "**De tus envíos:** por cada correo de campaña, si se entregó, "
                 "rebotó, generó una queja, se abrió o se hizo click.",
+                "**Los archivos que adjuntas a un correo:** no los guardamos. "
+                "Salen con ese correo y no quedan en Sobreala.",
                 "**Respaldos, si los activas:** guardamos copias de tus "
                 "contactos, tus bajas, tus plantillas y tus campañas, cifradas, "
                 "con la frecuencia que elijas. Conservamos las últimas cinco y "

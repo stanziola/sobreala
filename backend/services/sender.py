@@ -66,6 +66,11 @@ class Piece:
         self.built_in = design.get("source") == designs.BUILT_IN
 
     def html(self, *, plan: str | None, unsubscribe_url: str, postal: str = "") -> str:
+        if self.design.get("source") == campaigns.SINGLE:
+            # El correo individual: su texto, con el mismo pie que todos.
+            return render.email_from_body(
+                render.text_to_html(self.design.get("body", "")), plan=plan,
+                unsubscribe=unsubscribe_url, postal=postal)
         if self.design.get("source") == designs.CANVAS:
             # Lo arma el mismo código que la vista previa del lienzo, así que
             # lo que se vio es lo que sale.
@@ -150,7 +155,8 @@ def reply_to(account: dict[str, Any]) -> str:
 
 def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
           contact: dict[str, Any],
-          fields: list[dict[str, Any]] | None = None) -> EmailMessage:
+          fields: list[dict[str, Any]] | None = None,
+          attachment: tuple[str, str, str, bytes] | None = None) -> EmailMessage:
     """El correo de un destinatario, entero, con sus cabeceras.
 
     Aquí es donde el correo deja de ser el mismo para todos: las marcas de la
@@ -191,6 +197,11 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
         f"{name}={value}" for name, value in tags if value)
     message.set_content(plain_text(html))
     message.add_alternative(html, subtype="html")
+    # El adjunto del correo individual: (nombre, tipo, subtipo, contenido).
+    if attachment:
+        name, maintype, subtype, data = attachment
+        message.add_attachment(data, maintype=maintype, subtype=subtype,
+                               filename=name)
     return message
 
 
@@ -247,12 +258,16 @@ def blocked(account: dict[str, Any]) -> list[str]:
 
 
 def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
-        limit: int | None = None) -> dict[str, Any]:
+        limit: int | None = None,
+        attachment: tuple[str, str, str, bytes] | None = None) -> dict[str, Any]:
     """Mandar una tanda. Devuelve qué pasó y si queda algo pendiente.
 
     El tope se lee aquí y no en la firma: así se puede cambiar el de arriba y
     esta función obedece, que es lo que hace falta para probarla con tandas de
     dos y para ajustarlo el día que se sepa cuánto aguanta el servidor.
+
+    `attachment` es el archivo del correo individual (nombre, tipo, subtipo y
+    contenido). Llega aquí desde el formulario y no se guarda en ningún sitio.
     """
     limit = BATCH if limit is None else limit
     account_id = account["_id"]
@@ -260,7 +275,12 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     if why:
         return {"blocked": why, "sent": 0, "left": 0}
 
-    piece = designs.by_id(db, account_id, campaign["design_id"])
+    single = campaign.get("kind") == campaigns.SINGLE
+    if single:
+        # El correo individual no tiene pieza guardada: es su propio texto.
+        piece = {"source": campaigns.SINGLE, "body": campaign.get("body", "")}
+    else:
+        piece = designs.by_id(db, account_id, campaign["design_id"])
     if piece is None:
         # La pieza se borró después de programar la campaña.
         campaigns.finish(db, account_id, campaign["_id"])
@@ -270,8 +290,11 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     # A quien le falte una columna no se le manda nada, así que tampoco se
     # cuenta: el total y las tandas miran lo mismo.
     fields = accounts.fields_of(account)
-    total = contacts.matching_count(db, account_id, tags=wanted,
-                                    complete=fields)
+    if single:
+        total = 1
+    else:
+        total = contacts.matching_count(db, account_id, tags=wanted,
+                                        complete=fields)
     if campaign["status"] == campaigns.SCHEDULED:
         run_id = campaigns.start(db, account_id, campaign["_id"], total)
         # El envío tiene su id desde que arranca, y cada correo sale con él.
@@ -280,9 +303,16 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     position = int(campaign.get("position", 0))
     # La cuota manda sobre el tope de la tanda: no se arma lo que no puede salir.
     room = min(limit, accounts.quota_left(account))
-    people = contacts.batch_for_sending(db, account_id, tags=wanted,
-                                        complete=fields,
-                                        skip=position, limit=room)
+    if single:
+        who = contacts.by_id(db, account_id, campaign.get("contact_id"))
+        people = [who] if who and position == 0 and room > 0 else []
+    else:
+        people = contacts.batch_for_sending(db, account_id, tags=wanted,
+                                            complete=fields,
+                                            skip=position, limit=room)
+    if not single:
+        # Solo el correo individual lleva archivo.
+        attachment = None
 
     if (piece.get("source") == designs.CANVAS
             and (piece.get("canvas") or {}).get("v") != canvas.VERSION):
@@ -301,7 +331,7 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
             skipped += 1
             continue
         try:
-            deliver(build(account, campaign, ready, one, fields))
+            deliver(build(account, campaign, ready, one, fields, attachment))
         except Exception as exc:  # noqa: BLE001 - se anota y se sigue
             failed += 1
             errors.append({"email": one["email"],

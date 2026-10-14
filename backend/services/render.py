@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 from config import Config
 from services import imaging, plans
@@ -148,6 +148,18 @@ def email(key: str, filled: dict[str, str], *, plan: str | None,
         logo=LOGO_URL,
         postal=postal,
     )
+
+
+def text_to_html(text: str) -> str:
+    """El texto de un correo individual como cuerpo de correo: escapado, un
+    párrafo por cada línea en blanco y los saltos de línea respetados."""
+    blocks = [block.strip("\n") for block in
+              str(text or "").replace("\r\n", "\n").split("\n\n")]
+    paragraphs = "".join(
+        '<p style="margin:0 0 16px">' + str(escape(block)).replace("\n", "<br>") + "</p>"
+        for block in blocks if block.strip())
+    return ('<div style="padding:28px 24px;font-family:Arial,Helvetica,sans-serif;'
+            'font-size:15px;line-height:1.55;color:#1f2933">' + paragraphs + "</div>")
 
 
 def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ t('single_title') }}{% endblock %}
+{% block content %}
+<p class="foot"><a href="{{ url_for('campaigns.index') }}">{{ t('sender_back') }}</a></p>
+<h1 class="settings__heading">{{ t('single_title') }}</h1>
+<p class="settings__lead">{{ t('single_lead') }}</p>
+
+{% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+{# Un correo a una persona, como uno normal. Sale por el mismo camino que una
+   campaña (la baja, la marca de agua del Básico, la dirección postal, la
+   cuota), así que también se sabe si le llegó, si lo abrió y si pulsó. #}
+<form method="post" enctype="multipart/form-data" novalidate data-once>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label for="para">{{ t('single_to') }}</label>
+  <input id="para" name="para" type="email" value="{{ form.get('para', '') }}"
+         autocomplete="off" required aria-describedby="para-hint">
+  <p class="hint" id="para-hint">{{ t('single_to_hint') }}</p>
+  {% if errors.para %}<p class="error">{{ errors.para }}</p>{% endif %}
+
+  <label for="asunto">{{ t('send_subject') }}</label>
+  <input id="asunto" name="asunto" type="text" maxlength="150"
+         value="{{ form.get('asunto', '') }}" required>
+  {% if errors.asunto %}<p class="error">{{ errors.asunto }}</p>{% endif %}
+
+  <label for="mensaje">{{ t('single_body') }}</label>
+  <textarea id="mensaje" name="mensaje" rows="10" maxlength="{{ body_max }}"
+            required>{{ form.get('mensaje', '') }}</textarea>
+  {% if errors.mensaje %}<p class="error">{{ errors.mensaje }}</p>{% endif %}
+
+  <label for="archivo">{{ t('single_file') }}</label>
+  <input id="archivo" name="archivo" type="file" accept="{{ accept }}"
+         aria-describedby="archivo-hint">
+  <p class="hint" id="archivo-hint">{{ t('single_file_hint', mb=max_mb) }}</p>
+  {% if errors.archivo %}<p class="error">{{ errors.archivo }}</p>{% endif %}
+
+  <button class="btn" type="submit">{{ t('single_send') }}</button>
+</form>
+{% endblock %}

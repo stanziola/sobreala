@@ -12,6 +12,7 @@
 {% if done == 'partial' %}<p class="notice notice--ok">{{ t('send_done_some') }}</p>{% endif %}
 {% if done == 'blocked' %}<p class="notice">{{ t('send_done_blocked') }}</p>{% endif %}
 {% if done == 'late' %}<p class="notice">{{ t('send_already_out') }}</p>{% endif %}
+{% if done == 'single_failed' %}<p class="notice">{{ t('single_failed') }}</p>{% endif %}
 {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
 {# Lo que le falta a la cuenta, arriba del todo: enterarse de que no se puede
@@ -35,6 +36,8 @@
 </p>
 
 {% if can_send %}
+{# El correo individual, como uno normal: a una persona, con su archivo. #}
+<p><a class="btn btn--outline" href="{{ url_for('campaigns.write') }}">{{ t('single_title') }}</a></p>
 <h2 class="settings__subtitle">{{ t('send_new') }}</h2>
 <form method="post" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -48,7 +51,7 @@
 <div class="table-wrap">
   <table class="table">
     <tbody>
-      {% for one in campaigns %}
+      {% for one in campaigns if one.kind != 'single' %}
       <tr>
         <td>
           <b>{{ one.subject }}</b><br>
@@ -121,7 +124,8 @@
         <td>
           <b>{{ one.subject }}</b><br>
           <span class="table__quiet">
-            {{ (one.tags or [])|join(' · ') or everyone }}</span>
+            {% if one.to %}{{ t('single_row', to=one.to) }}
+            {% else %}{{ (one.tags or [])|join(' · ') or everyone }}{% endif %}</span>
         </td>
         <td class="table__quiet">
           {{ t('send_state_sent', n=one.sent) }}

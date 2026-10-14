@@ -1583,6 +1583,29 @@ TEXTS = {
     "send_lead": "Elige a quién le escribes y qué plantilla. Puedes mandarlo "
                  "ahora o dejarlo programado.",
     "send_new": "Nueva campaña",
+    # El correo individual (octubre de 2026).
+    "single_title": "Escribir un correo",
+    "single_lead": "Un correo a una persona, con un archivo si hace falta. Sabrás "
+                   "si le llegó, si lo abrió y si pulsó un enlace.",
+    "single_to": "Para",
+    "single_to_hint": "Tiene que estar en tus contactos.",
+    "single_body": "Mensaje",
+    "single_file": "Archivo adjunto (opcional)",
+    "single_file_hint": "Uno, de hasta {mb} MB: PDF, JPG, PNG, Word o Excel.",
+    "single_file_big": "El archivo pasa de {mb} MB.",
+    "single_file_kind": "Ese tipo de archivo no se puede adjuntar. Usa PDF, JPG, "
+                        "PNG, Word o Excel.",
+    "single_send": "Enviar",
+    "single_not_contact": "Esa dirección no está en tus contactos. Agrégala "
+                          "primero en Contactos.",
+    "single_suppressed": "Esa persona se dio de baja o su correo rebotó. No se le "
+                         "puede escribir.",
+    "single_body_long": "El mensaje pasa de {n} caracteres.",
+    "single_blocked": "Todavía no puedes enviar. Mira lo que falta en Enviar "
+                      "correos.",
+    "single_failed": "No se pudo enviar tu correo. Vuelve a intentarlo, y si sigue "
+                     "fallando, escríbenos.",
+    "single_row": "Individual · {to}",
     "send_submit": "Guardar la campaña",
     "send_save": "Guardar los cambios",
     "send_yours": "Campañas guardadas",

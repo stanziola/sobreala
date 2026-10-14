@@ -41,7 +41,8 @@ from models import contact as contacts
 from models import design as designs
 from models import event as events
 from models import token as tokens
-from services import notices, render, sender, ses_identity
+from models import suppression as suppressions
+from services import attachments, notices, render, sender, ses_identity
 from services import clock
 from services.security import csrf_ok, rate_limit
 
@@ -217,6 +218,90 @@ def save(db, account, campaign) -> dict[str, str]:
     return {}
 
 
+@bp.route("/campaigns/write", methods=["GET", "POST"])
+def write():
+    """Escribir un correo a una persona, como uno normal: para, asunto, texto y
+    un archivo si hace falta. Sale ya, por el mismo camino que una campaña.
+
+    La persona tiene que estar en Contactos: es lo que dice de dónde salió su
+    dirección, si se dio de baja y qué pasó con lo que se le mandó."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = may_send()
+    if answer:
+        return answer
+
+    db = get_db()
+    errors: dict[str, str] = {}
+    form = request.form if request.method == "POST" else {"para": request.args.get("para", "")}
+    if request.method == "POST":
+        errors = send_single(db, account)
+        if isinstance(errors, str):
+            # Salió: al detalle de su envío, donde se verá si le llegó y si lo abrió.
+            return redirect(errors)
+    return render_template(
+        "campaigns/write.html", section="envios", account=account, errors=errors,
+        form=form, accept=attachments.ACCEPT,
+        max_mb=attachments.MAX_BYTES // (1024 * 1024), body_max=campaigns.BODY_MAX)
+
+
+def send_single(db, account):
+    """Comprobar el formulario y mandar. Devuelve los errores, o a dónde ir."""
+    if not csrf_ok(request.form.get("csrf_token")):
+        return {"form": t("error_csrf")}
+    errors: dict[str, str] = {}
+    to = " ".join(request.form.get("para", "").split()).lower()[:254]
+    subject = campaigns.clean_subject(request.form.get("asunto", ""))
+    body = request.form.get("mensaje", "").strip()
+    found = contacts.by_emails(db, account["_id"], [to]).get(to) if to else None
+    if not to:
+        errors["para"] = t("error_required")
+    elif found is None:
+        errors["para"] = t("single_not_contact")
+    elif suppressions.among(db, account["_id"], [to]):
+        errors["para"] = t("single_suppressed")
+    if not subject:
+        errors["asunto"] = t("error_required")
+    if not body:
+        errors["mensaje"] = t("error_required")
+    elif len(body) > campaigns.BODY_MAX:
+        errors["mensaje"] = t("single_body_long", n=campaigns.BODY_MAX)
+
+    attachment = None
+    upload = request.files.get("archivo")
+    data = upload.read(attachments.MAX_BYTES + 1) if upload and upload.filename else b""
+    if data:
+        kind = attachments.kind_of(data)
+        if len(data) > attachments.MAX_BYTES:
+            errors["archivo"] = t("single_file_big", mb=attachments.MAX_BYTES // (1024 * 1024))
+        elif kind is None:
+            errors["archivo"] = t("single_file_kind")
+        else:
+            maintype, subtype, ext = kind
+            attachment = (attachments.safe_name(upload.filename, ext), maintype, subtype,
+                          data)
+    if errors:
+        return errors
+
+    why = sender.blocked(account)
+    if why:
+        return {"form": t("single_blocked")}
+
+    # El archivo va directo en el correo, que sale ahora mismo, y no se guarda
+    # en ningún sitio: después no sirve para nada, y la copia de un documento
+    # privado sería algo más que cuidar.
+    campaign_id = campaigns.create_single(
+        db, account["_id"], subject=subject, body=body, contact_id=found["_id"],
+        to=found.get("email", to))
+    result = sender.run(db, account, campaigns.by_id(db, account["_id"], campaign_id),
+                        attachment=attachment)
+    done = campaigns.by_id(db, account["_id"], campaign_id) or {}
+    if result.get("sent") and done.get("run_id"):
+        return url_for("campaigns.run_detail", raw=done["run_id"])
+    return url_for("campaigns.index", done="single_failed")
+
+
 @bp.route("/campaigns/<raw>", methods=["GET", "POST"])
 def edit(raw):
     """Cambiar una campaña que todavía no ha empezado a salir."""
@@ -228,7 +313,7 @@ def edit(raw):
     campaign_id = as_id(raw)
     found = (campaigns.by_id(db, account["_id"], campaign_id)
              if campaign_id else None)
-    if found is None:
+    if found is None or found.get("kind") == campaigns.SINGLE:
         return redirect(url_for("campaigns.index"))
     if not campaigns.editable(found):
         return redirect(url_for("campaigns.index", done="late"))
@@ -345,7 +430,7 @@ def send(raw):
     campaign_id = as_id(raw)
     found = (campaigns.by_id(db, account["_id"], campaign_id)
              if campaign_id else None)
-    if found is None:
+    if found is None or found.get("kind") == campaigns.SINGLE:
         return redirect(url_for("campaigns.index"))
 
     if request.method == "GET":

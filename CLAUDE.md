@@ -296,6 +296,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   por sus etiquetas, nunca por la dirección. Rebote permanente y queja anulan en
   esa cuenta.
 - Falta la pausa automática por rebotes (> 3 %) y quejas (> 0.05 %).
+- **El correo individual** (`/campaigns/write`) es una campaña de una persona,
+  con un adjunto opcional que va directo en el correo y **no se guarda**: lleva
+  la baja, la cuota y sus cifras como todas.
 
 ### El panel (`docs/panel.md`)
 

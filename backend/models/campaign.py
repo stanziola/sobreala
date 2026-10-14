@@ -68,6 +68,38 @@ def tags_of(campaign: dict[str, Any] | None) -> list[str]:
     return [one["tag"]] if one.get("tag") else []
 
 
+# El correo individual (octubre de 2026): una campaña de **una persona**, con su
+# texto y, si quiere, un archivo adjunto. Sale por el mismo camino que las demás
+# (`services/sender.py`), así que lleva la baja, la marca de agua, la dirección
+# postal y sus cifras; no sale en «Tus campañas», solo en lo que ya salió.
+SINGLE = "single"
+BODY_MAX = 20000
+
+
+def create_single(db, account_id, *, subject: str, body: str, contact_id, to: str) -> Any:
+    """Dejar listo un correo a una persona, para salir ya. Devuelve su id."""
+    return db.campaigns.insert_one({
+        "account_id": account_id,
+        "kind": SINGLE,
+        "subject": clean_subject(subject),
+        "body": body[:BODY_MAX],
+        "design_id": None,
+        "contact_id": contact_id,
+        "to": to,
+        "tags": [],
+        "scheduled_at": now(),
+        "status": SCHEDULED,
+        "position": 0,
+        "total": 0,
+        "sent": 0,
+        "skipped": 0,
+        "failed": 0,
+        "errors": [],
+        "created_at": now(),
+        "updated_at": now(),
+    }).inserted_id
+
+
 def create(db, account_id, *, subject: str, design_id, tags: list[str],
            scheduled_at: datetime) -> Any:
     """Dejar la campaña en cola. Devuelve su id."""

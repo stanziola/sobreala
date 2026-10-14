@@ -294,3 +294,28 @@ lea «entregado» como «lo vio».
 
 **La pausa automática por umbrales no está.** Se decidió esperar a tener cifras
 reales antes de poner el corte.
+
+## El correo individual (octubre de 2026)
+
+- **«Escribir un correo»** en Enviar correos (`/campaigns/write`): para, asunto,
+  mensaje y un archivo opcional. Solo quien puede enviar.
+- **Es una campaña de una persona** (`kind: single`, `contact_id`, `to`, `body`),
+  y sale ya por `sender.run()`: la supresión (regla 1), la cuota
+  (cuenta uno), la baja y `List-Unsubscribe` (regla 3), la marca de agua del
+  Básico (regla 4), la dirección postal y las etiquetas de SES. Por eso su
+  detalle dice si le llegó, si lo abrió y si pulsó, y al enviarlo se aterriza
+  ahí. No sale en «Tus campañas» (no se edita ni se vuelve a mandar), sí en lo
+  que ya salió, como «Individual · persona».
+- **La persona tiene que estar en Contactos**: es lo que dice de dónde salió su
+  dirección. Una dada de baja o que rebotó no se puede elegir.
+- **El texto** lo arma `render.text_to_html()`: escapado, un párrafo por línea en
+  blanco, con el mismo sobre y pie que todo (`email_from_body`).
+- **El adjunto**: uno, de hasta 5 MB, PDF, JPG, PNG, Word o Excel, **reconocido
+  por su contenido** (`services/attachments.py`). **No se guarda**: llega del
+  formulario a `sender.run(..., attachment=...)`, `build()` lo pega con
+  `add_attachment` y el correo sale en ese momento. En la base no queda ni el
+  archivo ni su nombre, y por eso no necesita S3. Se probó guardarlo en S3 y se
+  quitó antes de subirlo (octubre de 2026): después de salir el correo no servía
+  para nada y era la copia de un documento privado. Si un día hace falta ver en
+  el detalle qué se mandó, o programar un correo con archivo, se guarda con
+  vencimiento.
