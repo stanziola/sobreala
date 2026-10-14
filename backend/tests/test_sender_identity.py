@@ -230,6 +230,36 @@ def test_conectar_comprobar_y_quitar_un_dominio(client, database, outbox, ses):
     assert ("delete", "coopveraguas.org") in ses.calls
 
 
+def test_los_registros_se_bajan_para_importarlos_en_cloudflare(client, database,
+                                                              outbox, ses):
+    browser, cuenta = owner(client, database)
+    # Sin dominio no hay archivo.
+    assert browser.get("/campaigns/sender/records.txt").status_code == 404
+
+    post(browser, action="domain", domain="coopveraguas.org")
+    pantalla = browser.get(URL).get_data(as_text=True)
+    assert 'href="/campaigns/sender/records.txt"' in pantalla
+    assert "Descargar registros para Cloudflare" in pantalla
+
+    archivo = browser.get("/campaigns/sender/records.txt")
+    assert archivo.status_code == 200
+    assert archivo.mimetype == "text/plain"
+    assert ('attachment; filename="registros-dns-coopveraguas.org.txt"'
+            == archivo.headers["Content-Disposition"])
+    lineas = [one for one in archivo.get_data(as_text=True).splitlines()
+              if one and not one.startswith(";")]
+    # Los tres CNAME, con el nombre completo y su punto final, y sin proxy.
+    assert lineas == [
+        f"{token}._domainkey.coopveraguas.org.\t3600\tIN\tCNAME\t"
+        f"{token}.dkim.amazonses.com.\t; cf_tags=cf-proxied:false"
+        for token in ("aaa", "bbb", "ccc")]
+
+    # Ya verificado, la tabla y el botón dejan de salir.
+    ses.verified.add("coopveraguas.org")
+    post(browser, action="check")
+    assert "records.txt" not in browser.get(URL).get_data(as_text=True)
+
+
 def test_el_dominio_de_otra_cuenta_no_se_toca(client, database, outbox, ses):
     browser, _ = owner(client, database)
     post(browser, action="domain", domain="coopveraguas.org")

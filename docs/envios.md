@@ -32,7 +32,9 @@ campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
   reservados (`info`, `soporte`, `notifications`…) no se pueden elegir.
 - **El dominio propio lo conecta el cliente solo.** El panel crea su identidad
   en SES por la API v2 (`services/ses_identity.py`, con Easy DKIM), le enseña
-  los tres CNAME para su DNS, y consulta si ya está verificada al abrir la
+  los tres CNAME para su DNS (también como archivo de zona para **importarlos
+  en Cloudflare de una vez**, `/campaigns/sender/records.txt`, sin proxy con
+  `cf_tags=cf-proxied:false`), y consulta si ya está verificada al abrir la
   pantalla y con «Comprobar ahora»: no hay proceso que lo mire solo. Quitarlo
   borra la identidad de SES. Los de correo gratis (gmail.com y compañía) no se
   pueden conectar, porque nadie puede ponerles registros. Sin MAIL FROM propio

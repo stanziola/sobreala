@@ -24,8 +24,8 @@ from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import (Blueprint, abort, redirect, render_template, request,
-                   session, url_for)
+from flask import (Blueprint, Response, abort, redirect, render_template,
+                   request, session, url_for)
 
 from blueprints.auth.routes import (CONFIRM_PER_IP, REGISTER_PER_EMAIL,
                                     clean_email, client_ip, current_account,
@@ -533,6 +533,24 @@ def sender_page():
             return redirect(url_for("campaigns.sender_page", done="local") + "#domain")
 
     return sender_screen(db, account, errors=errors, done="", form=request.form)
+
+
+@bp.route("/campaigns/sender/records.txt")
+def sender_records():
+    """Los registros del dominio propio como archivo, para importarlos en
+    Cloudflare de una vez en lugar de copiarlos uno por uno. Los ve quien ve la
+    pantalla del remitente; sin dominio, no hay archivo."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    mine = accounts.sender_of(account)
+    if not mine.get("domain") or not mine.get("dkim_tokens"):
+        abort(404)
+    text = ses_identity.zone_file(mine["domain"], mine["dkim_tokens"])
+    name = f"registros-dns-{mine['domain']}.txt"
+    return Response(text, mimetype="text/plain", headers={
+        "Content-Disposition": f'attachment; filename="{name}"',
+        "Cache-Control": "no-store"})
 
 
 @bp.route("/campaigns/sender/code", methods=["GET", "POST"])

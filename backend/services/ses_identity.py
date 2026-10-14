@@ -43,6 +43,23 @@ def records(domain: str, tokens: list[str]) -> list[dict[str, str]]:
              "value": f"{token}.dkim.amazonses.com"} for token in tokens]
 
 
+def zone_file(domain: str, tokens: list[str]) -> str:
+    """Los mismos registros como archivo de zona (formato BIND), que Cloudflare
+    importa de una vez (DNS, Registros, «Importar y exportar») y que aceptan
+    casi todos los proveedores de DNS.
+
+    Los nombres van completos y con su punto final, para que no se lean como
+    relativos al dominio. `cf_tags=cf-proxied:false` le dice a Cloudflare que
+    entren sin proxy («Solo DNS»): un CNAME de DKIM detrás del proxy no lo
+    encuentra Amazon."""
+    lines = [f"; Sobreala: los registros de {domain} para Amazon SES (DKIM).",
+             "; En Cloudflare: DNS, Registros, Importar y exportar.", ""]
+    for one in records(domain, tokens):
+        lines.append(f"{one['name']}.\t3600\tIN\t{one['type']}\t{one['value']}."
+                     "\t; cf_tags=cf-proxied:false")
+    return "\n".join(lines) + "\n"
+
+
 def create(domain: str) -> list[str]:
     """Crear la identidad y devolver sus tres tokens de DKIM.
 

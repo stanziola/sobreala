@@ -1639,6 +1639,11 @@ TEXTS = {
     "sender_records_value": "Valor",
     "sender_records_hint": "Amazon los comprueba solo. Suele tardar unos minutos, "
                            "y puede llegar a 72 horas.",
+    "sender_records_download": "Descargar registros para Cloudflare",
+    "sender_records_download_hint": "En Cloudflare: DNS, Registros, «Importar y "
+                                    "exportar», y sube el archivo. Entran los "
+                                    "tres de una vez y sin proxy, como los pide "
+                                    "Amazon.",
     "sender_check": "Comprobar ahora",
     "sender_remove": "Quitar dominio",
     "sender_local": "Dirección de tu dominio",

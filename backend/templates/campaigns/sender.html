@@ -116,6 +116,13 @@
       </tbody>
     </table>
   </div>
+  {# Los mismos registros como archivo, para Cloudflare: se importan de una vez
+     y entran sin proxy, como los pide Amazon. #}
+  <div class="setting__form">
+    <a class="btn btn--small btn--outline" href="{{ url_for('campaigns.sender_records') }}"
+       download>{{ t('sender_records_download') }}</a>
+  </div>
+  <p class="hint">{{ t('sender_records_download_hint') }}</p>
   <p class="hint">{{ t('sender_records_hint') }}</p>
   {% endif %}
 
