@@ -349,7 +349,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   partes, anclas.
 - **Los avisos de «guardado» bajan desde arriba** (`panel.js`, `#toasts`), y
   guardar lo mismo que había no escribe nada y dice «No se realizaron
-  cambios» (`?same=1`).
+  cambios» (`?same=1`). **Guardar no mueve la pantalla**: `panel.js` anota la
+  altura antes de mandar un formulario (o de pulsar «Editar» y «Cancelar»,
+  `data-keep-scroll`) y la cabecera de `base.html` vuelve ahí, sin el ancla.
 - **El logo de la empresa es una foto de perfil** (octubre de 2026): llena su
   círculo en todas partes, y con él el botón de la barra (en los dos sitios) es
   solo la foto; el menú abierto del panel empieza con el logo y el nombre.

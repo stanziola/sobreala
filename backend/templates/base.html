@@ -39,6 +39,30 @@
       if (m) m.setAttribute("content", "#245285");
     }
   })();
+  // Saving does not move the screen (October 2026): panel.js notes the height
+  // before a form is sent or «Editar»/«Cancelar» is pressed, and if this page
+  // is that same one (or the form's own, showing its error), it goes back
+  // there. The anchor comes off the address first, or the browser would jump
+  // to the saved row. A note older than a minute does not count.
+  (function () {
+    var kept;
+    try {
+      kept = JSON.parse(sessionStorage.getItem("sa_scroll") || "null");
+      sessionStorage.removeItem("sa_scroll");
+    } catch (e) { return; }
+    if (!kept || !(Date.now() - kept.at < 60000)
+        || (kept.paths || []).indexOf(location.pathname) === -1) return;
+    if (location.hash) history.replaceState(history.state, "", location.pathname + location.search);
+    // Again once the images are in, unless the person scrolled meanwhile.
+    var landed = null;
+    document.addEventListener("DOMContentLoaded", function () {
+      window.scrollTo(0, kept.y);
+      landed = window.scrollY;
+    });
+    window.addEventListener("load", function () {
+      if (landed === null || window.scrollY === landed) window.scrollTo(0, kept.y);
+    });
+  })();
 </script>
 <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/css/panel.css?v={{ asset_version }}">

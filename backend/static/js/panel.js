@@ -1024,3 +1024,33 @@
     first.insertBefore(holder, first.firstChild);
   });
 })();
+
+/* Guardar no mueve la pantalla (octubre de 2026). Antes de mandar un
+   formulario, o de pulsar un enlace con data-keep-scroll («Editar» y
+   «Cancelar»), se anota a qué altura estaba la página; el guion de la cabecera
+   de base.html vuelve ahí si lo que llega es esta misma página, o la del
+   formulario con su error. Antes el panel volvía con un ancla (#address,
+   #logo…) y el navegador bajaba hasta ella. Los que bajan un archivo o abren
+   otra pestaña no cambian de página y no se anotan. La dirección se lee con
+   getAttribute: un campo llamado «action» tapa form.action. */
+(function () {
+  function keep(to) {
+    try {
+      window.sessionStorage.setItem("sa_scroll", JSON.stringify({
+        paths: [location.pathname, new URL(to || "", location.href).pathname],
+        y: window.scrollY || window.pageYOffset || 0, at: Date.now()}));
+    } catch (err) {}
+  }
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (e.defaultPrevented || !form || !form.getAttribute) return;
+    if ((form.getAttribute("method") || "").toLowerCase() !== "post") return;
+    if (form.hasAttribute("target") || form.hasAttribute("data-download")) return;
+    keep(form.getAttribute("action"));
+  });
+  document.addEventListener("click", function (e) {
+    var link = e.target.closest ? e.target.closest("a[data-keep-scroll]") : null;
+    if (!link || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    keep(link.getAttribute("href"));
+  });
+})();

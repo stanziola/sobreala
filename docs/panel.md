@@ -244,6 +244,33 @@ ya había no escribe nada y lo dice**, en gris: «No se realizaron cambios.»
   verificación de la ficha (verificar lo ya verificado o rechazar lo ya
   rechazado: no se anota otra decisión igual).
 
+### Guardar no mueve la pantalla (octubre de 2026)
+
+Al guardar, el panel vuelve a la misma página con un ancla (`#address`,
+`#phones`, `#logo`, `#sessions`, `#users`, `#domain`, `#verificaciones`…), y el
+navegador bajaba hasta ella: la fila guardada quedaba arriba del todo y la
+pantalla saltaba. **Ahora se queda donde estaba**, y el aviso que baja desde
+arriba se ve igual.
+
+- **Cómo:** `panel.js` anota en `sessionStorage` (`sa_scroll`) la página, la
+  dirección del formulario y la altura **antes de mandar cualquier formulario
+  POST**, salvo los que bajan un archivo (`data-download`) o abren otra
+  pestaña (`target`), que no cambian de página. Al cargar, un guion de la
+  cabecera de `base.html` (con su `nonce`) lo lee: si la página es esa misma,
+  o la del formulario (que es donde vuelve un error, con el error al lado del
+  campo), y pasó menos de un minuto, **le quita el ancla a la dirección antes
+  de que el navegador baje** y vuelve a la altura, al tener el HTML y otra vez
+  al cargar las imágenes (si la persona no se movió entretanto). Funciona en
+  todos los formularios del panel y de administración sin tocar las rutas. La
+  dirección del formulario se lee con `getAttribute`: varios formularios
+  tienen un campo que se llama `action`, y ese campo tapa `form.action`.
+- **«Editar» y «Cancelar»** de la dirección y los teléfonos, en Cuenta, y
+  «Agregar» y «Cancelar» de los métodos de pago, en Facturación, son enlaces y
+  hacen lo mismo con `data-keep-scroll`.
+- **El ancla se queda en las redirecciones**: sin JavaScript sigue bajando
+  hasta la fila, y al llegar desde otra página también (el enlace de Masivo
+  «escribe tu dirección postal» lleva a `#address`).
+
 ### Los botones que agregan (octubre de 2026)
 
 Todo botón que agrega o crea algo lleva un «+» delante (`_icon-plus.svg`,

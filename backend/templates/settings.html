@@ -173,13 +173,13 @@
              value="{{ postal }}" autocomplete="street-address"
              placeholder="{{ t('settings_postal_placeholder') }}">
       <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
-      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account') }}#address">{{ t('settings_cancel') }}</a>
+      <a class="btn btn--small btn--outline" data-keep-scroll href="{{ url_for('auth.settings', section='account') }}#address">{{ t('settings_cancel') }}</a>
       {% if postal_error %}<p class="error">{{ postal_error }}</p>{% endif %}
     </form>
     {% else %}
     {% if postal %}<span class="setting__value">{{ postal }}</span>
     {% else %}<span class="tag tag--warn">{{ t('settings_postal_missing') }}</span>{% endif %}
-    <a class="btn btn--small btn--outline"
+    <a class="btn btn--small btn--outline" data-keep-scroll
        href="{{ url_for('auth.settings', section='account', editar='address') }}#address">{{ t('settings_edit') }}</a>
     {% endif %}
     {% endcall %}
@@ -200,12 +200,12 @@
       <p class="hint">{{ t('register_company_phones') }}</p>
       {{ company_phones(company, phone_options, company_max) }}
       <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
-      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account') }}#phones">{{ t('settings_cancel') }}</a>
+      <a class="btn btn--small btn--outline" data-keep-scroll href="{{ url_for('auth.settings', section='account') }}#phones">{{ t('settings_cancel') }}</a>
       {% if account_errors.phones %}<p class="error">{{ account_errors.phones }}</p>{% endif %}
     </form>
     {% else %}
     <span class="setting__value">{{ phones_text|join(' · ') }}</span>
-    <a class="btn btn--small btn--outline"
+    <a class="btn btn--small btn--outline" data-keep-scroll
        href="{{ url_for('auth.settings', section='account', editar='phones') }}#phones">{{ t('settings_edit') }}</a>
     {% endif %}
     {% endcall %}
@@ -543,12 +543,12 @@
     {% if adding %}
     <div class="method-picker" id="agregar">
       {{ method_list() }}
-      <a class="btn btn--small btn--outline"
+      <a class="btn btn--small btn--outline" data-keep-scroll
          href="{{ url_for('auth.settings', section='billing') }}#methods">{{ t('settings_cancel') }}</a>
     </div>
     {% else %}
     {% if not vaults %}<p class="hint">{{ t('methods_none') }}</p>{% endif %}
-    <a class="btn btn--small btn--outline btn--icon method-add" data-open-dialog="agregar-metodo"
+    <a class="btn btn--small btn--outline btn--icon method-add" data-open-dialog="agregar-metodo" data-keep-scroll
        href="{{ url_for('auth.settings', section='billing', agregar=1) }}#agregar">{% include "_icon-plus.svg" %}<span>{{ t('methods_add') }}</span></a>
     {# La misma bandeja que «Cargar plantilla» (`panel.js`, data-open-dialog),
        que entra deslizándose desde la derecha. #}
