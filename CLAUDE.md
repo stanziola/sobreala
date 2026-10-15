@@ -247,6 +247,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Un registro sin confirmar se borra a las 24 h (`purge_at`). Ninguna contraseña
   se repite (`password_history`). El doble factor, si está puesto, se pide
   siempre.
+- **El sitio sabe en qué punto está la empresa** por la migaja `sa_in`
+  (`company_state()`: cerrada, demostración pedida, abierta o con plan), y sus
+  botones dicen lo que toca: nadie con la demostración o un plan ve «Solicitar
+  demo».
 - `notifications`: lo no escrito vale «sí»; los avisos de seguridad no se apagan.
   Todos los avisos los compone `services/notices.py`, y ninguno puede romper lo
   que estaba pasando. **Todos los correos del sistema** comparten el sobre

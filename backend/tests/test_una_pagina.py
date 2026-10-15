@@ -53,11 +53,11 @@ def test_la_portada_dice_menos():
     assert "Escríbenos y te acompañamos" not in portada
     assert re.findall(r'<a class="btn[^>]*>([^<]+)</a>', portada) == [
         "Solicitar demo", "Ver planes"]
-    # Pedir la demostración pide una cuenta; con sesión, nav.js la cambia por
-    # la bienvenida.
+    # Pedir la demostración pide una cuenta; con sesión, nav.js la cambia
+    # según en qué punto está la empresa (data-cta, octubre de 2026).
     assert 'href="https://app.sobreala.com/signup"' in portada
-    assert 'data-signed-href="https://app.sobreala.com/welcome"' in portada
-    assert 'href="/#planes">Ver planes</a>' in portada
+    assert 'data-href-closed="https://app.sobreala.com/welcome"' in portada
+    assert 'href="/#planes" data-cta-backup>Ver planes</a>' in portada
 
 
 def test_el_problema_sin_numeros_y_con_su_barra():

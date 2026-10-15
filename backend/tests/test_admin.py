@@ -727,17 +727,19 @@ def test_la_migaja_del_sitio_publico_dice_el_rol(client, database, outbox,
     admin.get("/admin/")
     assert admin.get_cookie("sa_in").value == "admin"
 
+    # Abierta sin plan: el estado de la empresa va al final (octubre de 2026),
+    # para que la portada no le ofrezca la demostración.
     navegador.get("/dashboard")
-    assert navegador.get_cookie("sa_in").value == "1"
+    assert navegador.get_cookie("sa_in").value == "1:::demo"
 
     # Con plan lleva también cuál, para que /pricing pueda apagar los menores.
     accounts.set_plan(database, cliente["_id"], "negocio")
     navegador.get("/dashboard")
-    assert navegador.get_cookie("sa_in").value == "1:negocio:monthly"
+    assert navegador.get_cookie("sa_in").value == "1:negocio:monthly:paid"
 
     # Vencido ya no va: es cuando se vuelve a comprar desde /pricing.
     from datetime import timedelta
     database.accounts.update_one({"_id": cliente["_id"]}, {"$set": {
         "plan_until": accounts.now() - timedelta(days=1)}})
     navegador.get("/dashboard")
-    assert navegador.get_cookie("sa_in").value == "1"
+    assert navegador.get_cookie("sa_in").value == "1:::demo"

@@ -18,7 +18,7 @@ from config import Config
 DOWNLOAD_TOKEN = re.compile(r"[A-Za-z0-9]{8,32}")
 from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, at_moment, on_date, t
-from models.account import (current_plan, is_admin, plan_cycle,
+from models.account import (current_plan, is_admin, is_open, plan_cycle,
                             status_of as account_status_of)
 from services import dashboard, mailer
 from services.plans import money
@@ -36,6 +36,21 @@ from services.security import MIN_PASSWORD_LENGTH, csrf_token
 # cualquier script de ese dominio pueda saber que quien mira es administrador;
 # no hay forma de que un sitio estático lo sepa sin que se lo digan.
 HINT_COOKIE = "sa_in"
+
+
+def company_state(company: dict | None) -> str:
+    """En qué punto está la empresa, para los botones del sitio (octubre de
+    2026): `paid` con un plan vigente, `demo` abierta sin plan (por la
+    demostración, o con un plan vencido), `requested` si pidió la demostración
+    y todavía no se abrió, y `closed` si no. Sin esto el sitio le ofrecía
+    «Solicitar demo» a quien ya la tenía o ya había pagado."""
+    if current_plan(company):
+        return "paid"
+    if is_open(company):
+        return "demo"
+    if (company or {}).get("demo_requested_at"):
+        return "requested"
+    return "closed"
 
 
 def hint_domain() -> str | None:
@@ -212,7 +227,7 @@ def create_app(overrides: dict | None = None) -> Flask:
         """
         from blueprints.auth.routes import SESSION_KEY
 
-        from blueprints.auth.routes import current_account
+        from blueprints.auth.routes import current_account, current_workspace
 
         signed_in = bool(session.get(SESSION_KEY))
         # Se compara contra el valor que debería tener, no contra su presencia:
@@ -225,14 +240,18 @@ def create_app(overrides: dict | None = None) -> Flask:
                 if is_admin(account):
                     wanted = "admin"
                 else:
-                    # «1» a secas, o «1:negocio» con el plan vigente. El plan
-                    # va ahí para que /pricing pueda apagar el que ya se tiene
-                    # y los menores: una página estática no lo sabe de otra
-                    # forma. Vencido no va, que es cuando se vuelve a comprar.
-                    # Cuesta lo mismo que costó el rol, y es el mismo trato:
-                    # cualquier script de ese dominio puede leerlo.
-                    plan = current_plan(account)
-                    wanted = f"1:{plan}:{plan_cycle(account)}" if plan else "1"
+                    # «1:<plan>:<ciclo>:<estado>». El plan vigente va para que
+                    # /pricing pueda apagar el que ya se tiene y los menores
+                    # (vencido no va, que es cuando se vuelve a comprar), y el
+                    # estado de la empresa (`company_state`) para que la
+                    # portada no le ofrezca la demostración a quien ya la tiene.
+                    # Son de la empresa, también para un usuario suyo. Cuesta lo
+                    # mismo que costó el rol, y es el mismo trato: cualquier
+                    # script de ese dominio puede leerlo.
+                    company = current_workspace() or account
+                    plan = current_plan(company)
+                    cycle = plan_cycle(company) if plan else ""
+                    wanted = f"1:{plan or ''}:{cycle}:{company_state(company)}"
                 # La última zona en la que se vio esta cuenta: es la de los
                 # correos que le llegan sin estar mirando, como un plan que
                 # vence. Solo se escribe cuando cambia.

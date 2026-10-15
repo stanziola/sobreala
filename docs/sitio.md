@@ -82,6 +82,24 @@ sobre ese azul el gris no se lee.
 había cuatro (Estadísticas, Enviar correos, Contactos y Plantillas), igual que
 el del panel.
 
+**Los botones que llevan a la cuenta dicen lo que toca** (octubre de 2026): el
+principal de la portada y el «Crear mi cuenta» del final de los tutoriales.
+El sitio no sabe quién mira; lo sabe por la migaja del panel (`sa_in`), que
+desde ahora lleva también **en qué punto está la empresa** (`company_state()`
+en `backend/app.py`): `1:<plan>:<ciclo>:<estado>`. Los textos viven en
+`CTA_STATES` de `content.py` y los pinta `nav.js` (`data-cta`):
+
+| Estado | Portada | Final del tutorial |
+|---|---|---|
+| Sin sesión | Solicitar demo (a registrarse) · Ver planes | Crear mi cuenta |
+| `closed`, cerrada | Solicitar demo (a `/welcome`) · Ver planes | Solicitar demo |
+| `requested`, demostración pedida | Ver mi solicitud · Ver planes | Ver mi solicitud |
+| `demo`, abierta sin plan | solo Ver planes, de principal | Ver planes |
+| `paid`, con plan | Ir al Dashboard · Ver planes | Ir al Dashboard |
+
+Una migaja de antes («1» a secas) se lee como cerrada, que es lo que se hacía.
+Como el plan, cualquier script de `sobreala.com` puede leer el estado.
+
 ## La portada
 
 ### Se va descubriendo al bajar (octubre de 2026)

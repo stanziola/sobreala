@@ -88,13 +88,22 @@ PLAN_BUTTONS = {
 }
 
 # Los dos botones de la portada. La demostración se pide desde la cuenta (el
-# teléfono y la identificación vienen del registro), así que el botón lleva a
-# crearla; a quien ya tiene sesión,
-# nav.js lo manda a su bienvenida, que es donde se pide. Las dos direcciones son
-# del panel.
-CTA_PRIMARY = {"label": "Solicitar demo", "path": "/signup", "signed_path": "/welcome"}
+# teléfono y la identificación vienen del registro), así que sin sesión el
+# botón lleva a crearla.
+CTA_PRIMARY = {"label": "Solicitar demo", "path": "/signup"}
 CTA_SECONDARY = {"label": "Ver planes", "url": "/#planes"}
 
+# Lo que dicen esos botones con sesión, según en qué punto está la empresa
+# (octubre de 2026). El sitio es estático y lo sabe por la migaja del panel
+# (`sa_in`, ver `company_state()` en backend/app.py); nav.js elige. Cerrada, la
+# demostración se pide desde la bienvenida; pedida, ahí se ve cómo va; con
+# plan, al Dashboard. **Abierta por la demostración no hay principal**: se
+# esconde y «Ver planes» pasa a serlo, que es lo único que le falta.
+CTA_STATES = {
+    "closed": {"label": "Solicitar demo", "url": PANEL["base_url"] + "/welcome"},
+    "requested": {"label": "Ver mi solicitud", "url": PANEL["base_url"] + "/welcome"},
+    "paid": {"label": "Ir al Dashboard", "url": PANEL["base_url"] + "/dashboard"},
+}
 
 # --------------------------------------------------------------------------- home
 
@@ -499,7 +508,11 @@ TUTORIALS = {
     "done_title": "¡Listo!",
     "again": "Repetir",
     "next": "Siguiente tutorial: {name}",
-    "signup": {"label": "Crear mi cuenta", "url": "https://app.sobreala.com/signup"},
+    # El botón del final del último tutorial. Con sesión dice lo mismo que el
+    # de la portada, y en la demostración lleva a los planes.
+    "signup": {"label": "Crear mi cuenta", "url": "https://app.sobreala.com/signup",
+               "states": {**CTA_STATES,
+                          "demo": {"label": "Ver planes", "url": "/#planes"}}},
     "screen": "Pantalla del panel: {what}",
     "tours": [
         {

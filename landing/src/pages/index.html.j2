@@ -19,13 +19,16 @@
         <span class="hero__title-accent">{{ page.hero.title_accent }}</span>
       </h1>
       {#- Pedir la demostración pide una cuenta, así que lleva a crearla. Con
-          sesión, nav.js lo cambia por la bienvenida (data-signed-href); a un
-          administrador se le esconde, como los botones de los planes. -#}
+          sesión, nav.js lo cambia según en qué punto está la empresa
+          (data-cta, `CTA_STATES`): sin estado propio, que es la demostración
+          ya abierta, se esconde y «Ver planes» pasa a ser el principal
+          (data-cta-backup). A un administrador se le esconde, como los botones
+          de los planes. -#}
       <div class="hero__actions">
         <a class="btn btn--primary btn--lg" data-hide-for-admin
-           href="{{ panel.base_url }}{{ cta_primary.path }}"
-           data-signed-href="{{ panel.base_url }}{{ cta_primary.signed_path }}">{{ cta_primary.label }}</a>
-        <a class="btn btn--outline btn--lg" href="{{ cta_secondary.url }}">{{ cta_secondary.label }}</a>
+           href="{{ panel.base_url }}{{ cta_primary.path }}" data-cta
+           {%- for state, one in cta_states.items() %} data-label-{{ state }}="{{ one.label }}" data-href-{{ state }}="{{ one.url }}"{% endfor %}>{{ cta_primary.label }}</a>
+        <a class="btn btn--outline btn--lg" href="{{ cta_secondary.url }}" data-cta-backup>{{ cta_secondary.label }}</a>
       </div>
     </div>
     <div class="hero__art">

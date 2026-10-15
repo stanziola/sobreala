@@ -584,6 +584,7 @@ def build() -> list[Path]:
         "panel": content.PANEL,
         "plan_buttons": content.PLAN_BUTTONS,
         "cta_secondary": content.CTA_SECONDARY,
+        "cta_states": content.CTA_STATES,
         "footer": content.FOOTER,
         "tutorials": content.TUTORIALS,
         "tutorial_tours": tutorial_tours(),

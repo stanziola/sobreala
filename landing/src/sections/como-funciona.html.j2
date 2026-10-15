@@ -133,7 +133,9 @@
               {% set coming = tutorial_tours[loop.index] %}
               <a class="btn btn--primary" href="#{{ coming.id }}" data-goto="{{ coming.id }}">{{ tut.next | replace('{name}', coming.name) }}</a>
               {% else %}
-              <a class="btn btn--primary" href="{{ tut.signup.url }}">{{ tut.signup.label }}</a>
+              {#- Con sesión dice lo mismo que el de la portada (nav.js). -#}
+              <a class="btn btn--primary" href="{{ tut.signup.url }}" data-cta
+                 {%- for state, one in tut.signup.states.items() %} data-label-{{ state }}="{{ one.label }}" data-href-{{ state }}="{{ one.url }}"{% endfor %}>{{ tut.signup.label }}</a>
               {% endif %}
             </p>
           </li>

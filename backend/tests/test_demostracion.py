@@ -110,7 +110,7 @@ def test_el_menu_ensena_las_cuatro_filas_y_cada_una_lleva_a_la_demo(
 
     assert ">Dashboard</span>" in pantalla
     assert ">Tu demostración<" not in pantalla
-    assert browser.get_cookie("sa_in").value == "1"
+    assert browser.get_cookie("sa_in").value == "1:::closed"
 
     for url, seccion in (("/dashboard", "Estadísticas"),
                          ("/campaigns", "Enviar correos"),
@@ -314,7 +314,7 @@ def test_abrirla_pide_motivo_y_deja_todo_escrito(client, database, outbox,
     assert browser.get("/contacts").status_code == 200
     menu = browser.get("/dashboard").get_data(as_text=True)
     assert ">Contactos<" in menu
-    assert browser.get_cookie("sa_in").value == "1"
+    assert browser.get_cookie("sa_in").value == "1:::demo"
 
 
 def test_abierta_por_la_demo_tiene_lo_del_basico_y_envia_solo_a_prueba(client, database,
@@ -406,3 +406,50 @@ def test_las_cuentas_de_antes_siguen_abiertas(client, database, outbox):
     assert accounts.is_open(accounts.by_id(database, pagada["_id"]))
     assert accounts.is_open(accounts.by_id(database, habilitada["_id"]))
 
+
+def test_la_migaja_dice_en_que_punto_esta_la_empresa(client, database, outbox,
+                                                     monkeypatch):
+    """Octubre de 2026: la portada cambia sus botones según esto. Cerrada,
+    «Solicitar demo»; pedida, «Ver mi solicitud»; abierta por la demostración,
+    solo «Ver planes»; con plan, «Ir al Dashboard». Un usuario de la empresa
+    lleva el estado de su empresa."""
+    from test_users import as_member
+
+    monkeypatch.setattr(Config, "PUBLIC_SITE_URL", "http://localhost")
+    browser, cuenta = cerrada(client, database)
+    browser.get("/welcome")
+    assert browser.get_cookie("sa_in").value == "1:::closed"
+
+    pedir(browser)
+    browser.get("/welcome")
+    assert browser.get_cookie("sa_in").value == "1:::requested"
+
+    jefe, _ = make_admin(client, database)
+    open_account(jefe, cuenta)
+    browser.get("/dashboard")
+    assert browser.get_cookie("sa_in").value == "1:::demo"
+
+    accounts.set_plan(database, cuenta["_id"], "negocio")
+    browser.get("/dashboard")
+    assert browser.get_cookie("sa_in").value == "1:negocio:monthly:paid"
+
+    _, empresa, suyo = as_member(client, database, outbox=outbox)
+    accounts.set_plan(database, empresa["_id"], "empresa")
+    suyo.get("/contacts")
+    assert suyo.get_cookie("sa_in").value == "1:empresa:monthly:paid"
+
+
+def test_la_portada_trae_los_botones_de_cada_estado():
+    """El sitio construido lleva lo que nav.js pone según la migaja: «Ver mi
+    solicitud» y «Ir al Dashboard»; la demostración abierta no tiene principal
+    y «Ver planes» hace de respaldo."""
+    from pathlib import Path
+
+    sitio = (Path(__file__).resolve().parents[2] / "landing" / "index.html").read_text(
+        encoding="utf-8")
+    portada = sitio.split('class="hero__actions"')[1].split("</div>")[0]
+    assert 'data-label-requested="Ver mi solicitud"' in portada
+    assert 'data-label-paid="Ir al Dashboard"' in portada
+    assert 'data-href-paid="https://app.sobreala.com/dashboard"' in portada
+    assert "data-label-demo" not in portada and "data-cta-backup" in portada
+    assert 'data-label-demo="Ver planes"' in sitio

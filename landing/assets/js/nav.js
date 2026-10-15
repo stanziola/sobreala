@@ -273,6 +273,9 @@
   var admin = partes[0] === "admin";
   var plan = partes[1] || "";
   var anual = partes[2] === "yearly";
+  // En qué punto está la empresa (octubre de 2026): closed, requested, demo o
+  // paid. Una migaja de antes, «1» a secas, se lee como cerrada.
+  var estado = partes[3] || "closed";
 
   // Una cuenta de administrador no compra planes, así que los botones de
   // contratar de /pricing sobran: el panel la mandaría a administración. Va
@@ -283,11 +286,27 @@
       function (el) { el.hidden = true; });
   }
 
-  // «Solicitar demo» lleva a crear la cuenta. Quien ya tiene una la pide desde
-  // su bienvenida, así que el botón va directo ahí.
-  Array.prototype.forEach.call(
-    document.querySelectorAll("[data-signed-href]"),
-    function (el) { el.setAttribute("href", el.getAttribute("data-signed-href")); });
+  // Los botones que llevan a la cuenta dicen lo que toca según en qué punto
+  // está la empresa (`CTA_STATES` en content.py): la demostración a quien no la
+  // tiene, su solicitud a quien la pidió, el Dashboard a quien pagó. Uno sin
+  // texto para ese estado se esconde, y el de al lado que hace de respaldo
+  // (data-cta-backup, «Ver planes») pasa a ser el principal.
+  if (!admin) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-cta]"), function (el) {
+      var label = el.getAttribute("data-label-" + estado);
+      if (label) {
+        el.textContent = label;
+        el.setAttribute("href", el.getAttribute("data-href-" + estado));
+        return;
+      }
+      el.hidden = true;
+      var backup = el.parentNode && el.parentNode.querySelector("[data-cta-backup]");
+      if (backup) {
+        backup.classList.remove("btn--outline");
+        backup.classList.add("btn--primary");
+      }
+    });
+  }
 
   // Con un plan vigente solo se mejora, así que el crédito por los correos sin
   // usar nunca sobra: los de abajo se apagan (bajar de plan se habla, lo pagado
