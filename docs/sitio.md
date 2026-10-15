@@ -74,11 +74,11 @@ permanencia.
 
 `assets/js/reveal.js` y el final de `src/site.css`. Al entrar en pantalla, los
 títulos (`.hero__title` y cada `.section__title`) salen **palabra por
-palabra**; la frase destacada del inicio (`.hero__title-accent`) se **subraya
-con un trazo** que se dibuja; las tarjetas (`.plan`, `.faq__item`,
+palabra**; las tarjetas (`.plan`, `.faq__item`,
 `.story__side`) **suben** con un retraso entre ellas; y los precios de los
 planes **cuentan hasta su número** (si `plans.js` los cambia a mitad, se deja de
-contar).
+contar). Hubo además un trazo que subrayaba la frase destacada del inicio, y
+se quitó el mismo mes.
 
 **Nada queda escondido sin el script**: el CSS solo esconde lo que va a
 aparecer cuando `<html>` lleva `js-reveal`, y esa clase la pone el script justo

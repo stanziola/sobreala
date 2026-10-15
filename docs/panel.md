@@ -175,7 +175,8 @@ moverse por el panel sin saber dónde está cada cosa.
 - **Cómo**: `panel.js` pide `/search/suggest?q=` (JSON) mientras se escribe, con
   una pausa corta y descartando respuestas viejas, y pinta con `textContent`
   (los nombres los escribió el cliente). Flechas, Enter y Esc; «/» lleva al
-  campo. Sin JavaScript el campo manda a `/search`, que enseña lo mismo en una
+  campo, sin nada a la vista que lo diga (el recuadro con la «/» se quitó
+  porque no se entendía). Sin JavaScript el campo manda a `/search`, que enseña lo mismo en una
   página. Sin sesión, las dos dan 404.
 - En el teléfono es un ícono que abre el campo encima de la barra.
 - **No está en el sitio público**: sin sesión no hay nada que buscar. Es la

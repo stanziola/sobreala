@@ -2,7 +2,6 @@
 
    Al entrar en pantalla:
      * los títulos de cada sección salen palabra por palabra;
-     * la frase destacada del inicio se subraya con un trazo que se dibuja;
      * las tarjetas (planes, preguntas) suben con un poco de retraso entre ellas;
      * los precios de los planes cuentan hasta su número.
 

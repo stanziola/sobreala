@@ -305,12 +305,6 @@ a:not([class]):hover { color: var(--color-accent); }
   border-color: var(--color-accent);
 }
 .search__box:focus-within .search__icon { color: var(--color-ink-soft); }
-.search__key {
-  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-  padding: 1px 7px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, .45);
-  font: inherit; font-size: .78rem; color: rgba(255, 255, 255, .8);
-}
-.search__box:focus-within .search__key { display: none; }
 .search__list {
   position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 70;
   margin: 0; padding: 6px; list-style: none;
@@ -339,7 +333,6 @@ a:not([class]):hover { color: var(--color-accent); }
     display: block; position: absolute; left: 12px; right: 12px; top: 12px; z-index: 80;
   }
   .search.is-open .search__toggle { visibility: hidden; }
-  .search__key { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .search__list { animation: none; } }
 /* En un teléfono angosto, con sesión, la barra lleva el ala, la lupa y el menú:
