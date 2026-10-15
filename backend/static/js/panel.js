@@ -705,8 +705,8 @@
   });
 })();
 
-/* La búsqueda (octubre de 2026), arriba de la barra lateral del Dashboard y
-   de la de Administración. Mientras se escribe, pide las
+/* La búsqueda (octubre de 2026), en la barra de arriba del Dashboard y de
+   Administración, al lado del ala. Mientras se escribe, pide las
    sugerencias al panel (`/search/suggest`) y las enseña debajo; las flechas
    las recorren, Enter abre la marcada (sin marcar, el formulario manda a la
    página de resultados, que es lo que pasa sin JavaScript) y Esc la cierra.

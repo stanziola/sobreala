@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ t('admin_title') }}{% endblock %}
 {% block wrap_class %}wrap--wide{% endblock %}
+{# La búsqueda, en la barra de arriba al lado del ala, como en el Dashboard del
+   cliente: el administrador no tiene Dashboard, y esto es lo suyo. #}
+{% set bar_search = true %}
 {% block content %}
 <h1 class="settings__heading">{{ t('admin_title') }}</h1>
 
@@ -14,9 +17,6 @@
     ('correos', 'admin_mail_title', url_for('admin.system_mail'))] %}
 
   <nav class="settings__nav" aria-label="{{ t('admin_title') }}">
-    {# La búsqueda, arriba de las pestañas: el administrador no tiene
-       Dashboard, y esto es lo suyo. #}
-    {% include "_search.html" %}
     {% for slug, label, href in tabs %}
     <a class="settings__tab{% if slug == section %} is-current{% endif %}"
        href="{{ href }}"{% if slug == section %} aria-current="page"{% endif %}>

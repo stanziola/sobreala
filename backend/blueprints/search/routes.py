@@ -1,25 +1,26 @@
-"""La búsqueda (octubre de 2026), arriba de la barra lateral del Dashboard.
+"""La búsqueda (octubre de 2026), en la barra de arriba del Dashboard.
 
-Para moverse por el panel sin saber dónde está cada cosa. Mientras se escribe
-sugiere dos clases de resultados:
+Para moverse por el Dashboard sin saber dónde está cada cosa. Mientras se
+escribe sugiere dos clases de resultados:
 
-  * **pantallas y acciones** («Importar contactos», «Cambiar la contraseña»,
-    «Facturación», «Redactar»), **las que esa cuenta puede abrir**:
-    un usuario de la empresa ve solo las de sus permisos, y un administrador
-    las suyas. Se buscan por su nombre y por palabras que la gente usa para
-    pedirlas («csv», «bajas», «dos pasos»);
+  * **las pantallas y acciones del Dashboard** («Importar contactos»,
+    «Enviados», «Redactar»), **las que esa cuenta puede abrir**: un usuario de
+    la empresa ve solo las de sus permisos, y un administrador las de
+    Administración. Se buscan por su nombre y por palabras que la gente usa
+    para pedirlas («csv», «bajas»). **Configuración no sale** (octubre de
+    2026): se llega por el menú de la cuenta;
   * **lo suyo por nombre**: campañas, envíos, plantillas y etiquetas de su
     cuenta, con un tope cada uno.
 
-Sin acentos y sin mayúsculas: «facturacion» encuentra «Facturación». Las
+Sin acentos y sin mayúsculas: «estadisticas» encuentra «Estadísticas». Las
 sugerencias las pide `panel.js` a `/search/suggest` (JSON); sin JavaScript, el
 campo manda a `/search`, que enseña lo mismo en una página. Sin sesión, las dos
 responden 404: no hay nada que buscar.
 
-Solo vive en el panel, y dentro de él en la barra lateral del Dashboard (la del
-administrador, en la de Administración): el sitio público no tiene sesión, y
-sin ella no hay qué buscar (es la excepción a «lo que existe en los dos
-sitios», `CLAUDE.md`).
+Solo vive en el panel, y dentro de él en la barra de arriba, al lado del ala,
+en el Dashboard (y en Administración, para el administrador): el sitio público
+no tiene sesión, y sin ella no hay qué buscar (es la excepción a «lo que existe
+en los dos sitios», `CLAUDE.md`).
 """
 
 from __future__ import annotations
@@ -29,8 +30,7 @@ from typing import Any
 
 from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
-from blueprints.auth.routes import (current_account, current_workspace,
-                                    parts_for, sections_for)
+from blueprints.auth.routes import current_account, current_workspace
 from db import get_db
 from i18n import t
 from models import account as accounts
@@ -47,7 +47,6 @@ SUGGEST_MAX = 8
 QUERY_MAX = 80
 
 # Las pantallas de un cliente: (texto, ruta, permiso, palabras con que se piden).
-# Configuración se agrega aparte, con sus subsecciones (`settings_pages`).
 CLIENT_PAGES = (
     ("search_page_stats", "auth.panel", accounts.STATS,
      "estadisticas cifras aperturas clics rebotes graficas panel dashboard resumen"),
@@ -87,31 +86,6 @@ ADMIN_PAGES = (
     ("search_page_admin_mail", "admin.system_mail", None,
      "correos del sistema no le llego codigo"),
 )
-# Palabras con que se piden las subsecciones de Configuración, además de su
-# nombre y el de su sección.
-SETTINGS_WORDS = {
-    ("account", "profile"): "nombre empresa correo cambiar correo",
-    ("account", "contact"): "direccion postal telefonos",
-    ("account", "verification"): "verificar documentos identificacion cedula",
-    ("account", "plan"): "plan contratado",
-    ("security", "two-step"): "dos pasos doble factor mfa codigo autenticador",
-    ("security", "password"): "cambiar contrasena clave google",
-    ("security", "users"): "usuarios equipo invitar permisos",
-    ("security", "sessions"): "sesiones dispositivos cerrar sesion",
-    ("notifications", "plan"): "avisos correos facturacion vencimiento",
-    ("notifications", "security"): "avisos dispositivo nuevo seguridad",
-    ("notifications", "clients"): "avisos pagos registros pausas",
-    ("billing", "plan"): "plan vence pagar",
-    ("billing", "methods"): "metodos de pago paypal tarjeta agregar",
-    ("billing", "auto-renewal"): "renovacion automatica suscripcion cobro",
-    ("billing", "history"): "historial compras facturas pagos recibos",
-    ("test", "addresses"): "direcciones de prueba demostracion",
-}
-SECTION_LABELS = {"account": "settings_section_account",
-                  "security": "settings_section_security",
-                  "notifications": "settings_section_notifications",
-                  "billing": "settings_section_payments",
-                  "test": "settings_section_test"}
 
 
 def words(text: str) -> list[str]:
@@ -133,25 +107,6 @@ def pages_for(account: dict) -> list[dict[str, Any]]:
             continue
         out.append({"label": t(key), "url": url_for(endpoint), "kind": "page",
                     "hint": "", "words": extra})
-    for section in sections_for(account):
-        section_label = t(SECTION_LABELS[section])
-        # Cada sección se lee entera (octubre de 2026): la sección, y sus
-        # partes como anclas de su página.
-        parts = parts_for(account, section)
-        out.append({"label": section_label, "kind": "page",
-                    "hint": t("search_in", where=t("menu_settings")),
-                    "url": url_for("auth.settings", section=section),
-                    "words": "configuracion " + " ".join(
-                        SETTINGS_WORDS.get((section, part), "") for part in parts)})
-        for part in parts:
-            label = t(f"settings_part_{section}_{part.replace('-', '_')}")
-            if label == section_label:
-                continue
-            out.append({"label": label, "kind": "page",
-                        "hint": t("search_in", where=section_label),
-                        "url": url_for("auth.settings", section=section) + "#" + part,
-                        "words": f"configuracion {section_label} "
-                                 + SETTINGS_WORDS.get((section, part), "")})
     return out
 
 

@@ -68,16 +68,20 @@
 <link rel="stylesheet" href="/static/css/panel.css?v={{ asset_version }}">
 </head>
 <body>
-<header class="bar">
+<header class="bar{% if bar_search %} bar--search{% endif %}">
   {# Dentro de la cuenta el logo lleva al panel, que es lo que espera quien
      está trabajando. Fuera, al sitio público: desde entrar o registro no había
      ninguna forma de volver a mirar la web antes de decidirse. #}
   {# Always out to the public site, session or not: from inside the account it
      is the only way back to the pages someone may want to reread. #}
+  {# En el Dashboard y en Administración (`bar_search`, que ponen sus marcos)
+     la barra lleva solo el ala y, al lado, la búsqueda (octubre de 2026). El
+     nombre se queda para el lector de pantalla. #}
   <a class="bar__brand" href="{{ site_url }}/" title="{{ t('back_to_site') }}">
     <span class="bar__wing">{% include "_wing.svg" %}</span>
-    <span class="bar__name">{{ t('brand') }}</span>
+    <span class="bar__name{% if bar_search %} visually-hidden{% endif %}">{{ t('brand') }}</span>
   </a>
+  {% if bar_search %}{% include "_search.html" %}{% endif %}
 
   <div class="bar__actions">
     {% block bar_actions %}{% endblock %}

@@ -1,10 +1,12 @@
 """La búsqueda de la barra (octubre de 2026).
 
 Lo que fijan estas pruebas: que **sin sesión no hay nada** (404), que se
-encuentren pantallas por su nombre y por cómo se piden («csv», «dos pasos»),
-sin acentos ni mayúsculas, que **cada cuenta vea solo lo que puede abrir** (un
+encuentren pantallas por su nombre y por cómo se piden («csv», «bajas»), sin
+acentos ni mayúsculas, que **cada cuenta vea solo lo que puede abrir** (un
 usuario sus permisos, un administrador lo suyo), que encuentre lo suyo por
-nombre y nada de otra cuenta, y que sin JavaScript la página diga lo mismo.
+nombre y nada de otra cuenta, que sin JavaScript la página diga lo mismo, que
+**Configuración no salga**, y que el campo vaya en la barra de arriba, al lado
+del ala, solo en el Dashboard y en Administración.
 """
 
 from __future__ import annotations
@@ -37,9 +39,9 @@ def test_encuentra_pantallas_por_nombre_y_por_como_se_piden(client, database, ou
     browser, _, _ = ready(client, database)
     assert "/contacts/import" in urls(sugerencias(browser, "importar"))
     assert "/contacts/import" in urls(sugerencias(browser, "CSV"))
-    assert "/settings/security#two-step" in urls(sugerencias(browser, "dos pasos"))
-    # Sin acentos: «facturacion» encuentra lo de Facturación.
-    assert "/settings/billing" in urls(sugerencias(browser, "facturacion"))
+    assert "/contacts/suppressions" in urls(sugerencias(browser, "bajas"))
+    # Sin acentos: «estadisticas» encuentra Estadísticas.
+    assert "/dashboard" in urls(sugerencias(browser, "estadisticas"))
     # La barra lleva el campo, con sesión.
     assert 'data-search' in browser.get("/campaigns").get_data(as_text=True)
     assert 'data-search' not in client.get("/login").get_data(as_text=True)
@@ -63,7 +65,7 @@ def test_un_usuario_ve_solo_sus_permisos(client, database, outbox):
     _, _, suyo = as_member(client, database, permisos=("contacts",), outbox=outbox)
     assert "/contacts/import" in urls(sugerencias(suyo, "importar"))
     assert "/campaigns" not in urls(sugerencias(suyo, "enviar"))
-    assert "/settings/security#users" not in urls(sugerencias(suyo, "usuarios"))
+    assert "/campaigns/write" not in urls(sugerencias(suyo, "redactar"))
 
 
 def test_un_administrador_ve_lo_suyo(client, database, outbox):
@@ -77,3 +79,45 @@ def test_sin_javascript_la_pagina_dice_lo_mismo(client, database, outbox):
     pagina = browser.get("/search?q=importar").get_data(as_text=True)
     assert 'href="/contacts/import"' in pagina
     assert "Nada coincide" in browser.get("/search?q=zzzz").get_data(as_text=True)
+
+
+def test_configuracion_no_sale(client, database, outbox):
+    """Solo lo del Dashboard (octubre de 2026): a Configuración se llega por el
+    menú de la cuenta, y sus secciones ya no salen ni con «en Facturación»."""
+    browser, _, _ = ready(client, database)
+    admin, _ = make_admin(client, database)
+    for quien in (browser, admin):
+        for q in ("configuracion", "facturacion", "dos pasos", "contrasena", "usuarios",
+                  "sesiones", "notificaciones", "metodos de pago", "direccion postal"):
+            encontradas = sugerencias(quien, q)
+            assert not any(one["url"].startswith("/settings") for one in encontradas), q
+            assert not any(one["hint"].startswith("en ") for one in encontradas), q
+    assert "Nada coincide" in browser.get("/search?q=facturacion").get_data(as_text=True)
+
+
+def barra(html):
+    return html.split("<header", 1)[1].split("</header>", 1)[0]
+
+
+def test_va_en_la_barra_al_lado_del_ala(client, database, outbox):
+    browser, _, _ = ready(client, database)
+    for url in ("/dashboard", "/contacts", "/campaigns/sent", "/search?q=importar"):
+        html = browser.get(url).get_data(as_text=True)
+        arriba = barra(html)
+        assert arriba.startswith(' class="bar bar--search">'), url
+        # Solo el ala: el nombre, para el lector de pantalla.
+        assert '<span class="bar__name visually-hidden">Sobreala</span>' in arriba, url
+        # Al lado del ala, antes del menú.
+        assert (arriba.index('class="bar__brand"') < arriba.index("data-search")
+                < arriba.index('class="bar__actions"')), url
+        # Y ya no en la barra lateral.
+        assert html.count("data-search") == 1, url
+    # Fuera del Dashboard, la barra de siempre, con el nombre y sin el campo.
+    ajustes = barra(browser.get("/settings/account").get_data(as_text=True))
+    assert ajustes.startswith(' class="bar">') and "data-search" not in ajustes
+    assert '<span class="bar__name">Sobreala</span>' in ajustes
+
+    admin, _ = make_admin(client, database)
+    for url in ("/admin/accounts", "/admin/clients", "/search?q=cuentas"):
+        html = admin.get(url).get_data(as_text=True)
+        assert "data-search" in barra(html) and html.count("data-search") == 1, url

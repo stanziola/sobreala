@@ -1,16 +1,20 @@
 {% extends "base.html" %}
 {% block wrap_class %}wrap--wide{% endblock %}
+{# La búsqueda, en la barra de arriba al lado del ala (`base.html`). #}
+{% set bar_search = true %}
 
 {#- El Dashboard (octubre de 2026): Estadísticas, Correos y Contactos en un
     árbol a la izquierda, como el de Cloudflare, y lo elegido en el panel
-    grande de la derecha. La búsqueda va arriba del árbol, y solo aquí.
+    grande de la derecha. La búsqueda va en la barra de arriba, al lado del
+    ala: aquí y en Administración.
 
     El árbol lo arma `services/dashboard.py` con los permisos de quien mira;
     cada pantalla sigue en su dirección de siempre y solo extiende este marco.
     Cada rama es un enlace a su primera fila, así que sin JavaScript abre algo;
     con él, en una pantalla ancha, se despliega en su sitio
     (`data-settings-toggle`, en `panel.js`). En el teléfono el árbol
-    se esconde detrás de «Secciones» y la búsqueda queda a la vista. -#}
+    se esconde detrás de «Secciones», y la búsqueda baja a su propia fila de
+    la barra. -#}
 
 {% macro dash_row(item, here, depth) %}
 {% if item.rows %}
@@ -39,7 +43,6 @@
 {% set here = dash_here() %}
 <div class="dash">
   <nav class="dash-nav" aria-label="{{ t('dash_title') }}" data-dash-nav>
-    {% include "_search.html" %}
     <button class="dash-nav__toggle" type="button" data-dash-toggle hidden
             aria-expanded="false" aria-controls="dash-tree">
       <span>{{ t('dash_sections') }}</span>

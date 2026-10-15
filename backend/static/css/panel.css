@@ -299,20 +299,38 @@ a:not([class]):hover { text-decoration: underline; }
 .bar__wing .wing-shadow { fill: var(--color-shadow); }
 .bar__actions { display: flex; align-items: center; gap: 10px; }
 
-/* La búsqueda (octubre de 2026). Vive arriba de la barra lateral del
-   Dashboard y de la de Administración, sobre la página y no sobre el azul de
-   la barra. Las sugerencias cuelgan debajo, en una tarjeta como la del menú. */
+/* La búsqueda (octubre de 2026), en la barra de arriba del Dashboard y de
+   Administración, al lado del ala. Sobre el azul va translúcida, como el
+   botón del menú, y al escribir se vuelve un campo como los demás. Las
+   sugerencias cuelgan debajo, en una tarjeta como la del menú. En el teléfono
+   baja a su propia fila, de lado a lado: al lado del ala y del nombre de la
+   empresa no cabe. */
 .search { position: relative; }
+.bar__search { flex: 0 1 420px; min-width: 0; margin-right: auto; }
 .search__box { position: relative; }
 .search__icon {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-  display: inline-flex; color: var(--color-ink-soft); pointer-events: none;
+  display: inline-flex; color: rgba(255, 255, 255, .8); pointer-events: none;
+  transition: color var(--fast) var(--ease);
 }
 .search__icon .icon { width: 18px; height: 18px; }
 .search__input {
   width: 100%; min-height: 40px; margin: 0; padding: 8px 12px 8px 38px;
-  color: var(--color-ink); background: var(--color-surface);
-  border: 1px solid var(--color-field); border-radius: 10px;
+  font-size: .95rem; text-overflow: ellipsis;
+  color: var(--color-on-dark); background: rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .4); border-radius: 11px;
+  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.search__input::placeholder { color: rgba(255, 255, 255, .8); opacity: 1; }
+.search__input:hover { background: rgba(255, 255, 255, .2); border-color: rgba(255, 255, 255, .7); }
+.search__input:focus {
+  color: var(--color-ink); background: var(--color-surface); border-color: var(--color-surface);
+}
+.search__input:focus::placeholder { color: var(--color-ink-soft); }
+.search__box:focus-within .search__icon { color: var(--color-ink-soft); }
+@media (max-width: 639px) {
+  .bar--search { flex-wrap: wrap; row-gap: 12px; }
+  .bar__search { order: 3; flex: 1 0 100%; margin-right: 0; }
 }
 .search__list {
   position: absolute; left: 0; top: calc(100% + 6px); z-index: 70;
@@ -332,13 +350,6 @@ a:not([class]):hover { text-decoration: underline; }
 .search__empty { padding: 9px 12px; color: var(--color-ink-soft); font-size: .92rem; }
 @media (prefers-reduced-motion: reduce) { .search__list { animation: none; } }
 @media (max-width: 480px) { .menu__who { max-width: 140px; } }
-/* En Administración, la búsqueda ocupa su propia fila encima de las pestañas,
-   también en el teléfono, donde las pestañas van en una fila que se desliza. */
-.settings__nav > .search { flex: none; }
-@media (max-width: 779px) {
-  .settings__nav:has(> .search) { flex-wrap: wrap; overflow: visible; }
-  .settings__nav > .search { flex-basis: 100%; }
-}
 /* La página de resultados, sin JavaScript. */
 .search-results { margin: 8px 0 0; padding: 0; list-style: none; }
 .search-results li { border-bottom: 1px solid var(--color-border); }
@@ -737,7 +748,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
    Estadísticas, Correos y Contactos en un árbol a la izquierda, y lo elegido
    en el panel grande de la derecha (octubre de 2026). Las ramas se despliegan
    con una fila de grid que pasa de 0fr a 1fr, y la flecha gira. En el teléfono el árbol va arriba, entero, detrás de
-   «Secciones», y la búsqueda queda a la vista. */
+   «Secciones». */
 .dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
 @media (min-width: 780px) { .dash { grid-template-columns: 230px minmax(0, 1fr); gap: 28px; } }
 .dash__pane { min-width: 0; }

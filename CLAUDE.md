@@ -196,8 +196,9 @@ aplicación aparte: comparte modelos y servicios con el resto.
   cambio y se comprueban las dos en el navegador, con sesión y sin ella. Ya
   mordió dos veces: la fila de Plantillas se puso solo en el panel, y salir
   preguntaba en un sitio y no en el otro. **La única excepción es la
-  búsqueda** (octubre de 2026): vive solo en el panel, arriba del árbol del
-  Dashboard, porque sin sesión no hay nada que buscar. El menú de los dos
+  búsqueda** (octubre de 2026): vive solo en el panel, en la barra de arriba
+  al lado del ala, en el Dashboard y en Administración, porque sin sesión no
+  hay nada que buscar. El menú de los dos
   tiene una fila, **Dashboard**, donde antes había cuatro.
 
 ---
@@ -360,10 +361,12 @@ cosa está como está, y lo que ya se probó y se quitó.
   (`services/clock.py`, galleta `sa_tz`).
 - Hasta cuatro cuentas abiertas en un navegador (`/switch-account`), cada una
   con su sesión de verdad. «Cerrar sesión» las cierra todas.
-- **La búsqueda del Dashboard** (`blueprints/search/`): pantallas y acciones que
-  esa cuenta puede abrir, y sus campañas, envíos, plantillas y etiquetas por
-  nombre. Sugiere mientras se escribe (`/search/suggest`), sin JavaScript manda
-  a `/search`, y sin sesión da 404.
+- **La búsqueda del Dashboard** (`blueprints/search/`): en la barra de arriba,
+  al lado del ala, que ahí va sin la palabra (`bar_search`). Pantallas y
+  acciones del Dashboard que esa cuenta puede abrir, y sus campañas, envíos,
+  plantillas y etiquetas por nombre; **Configuración no sale**. Sugiere
+  mientras se escribe (`/search/suggest`), sin JavaScript manda a `/search`, y
+  sin sesión da 404.
 - La ficha de administración enseña cifras y orígenes, **nunca la lista de
   direcciones de un cliente**.
 - En administración, **Cuentas es para hacer cosas y Clientes para vigilar**:

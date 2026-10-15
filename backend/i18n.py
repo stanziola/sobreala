@@ -412,7 +412,6 @@ TEXTS = {
     "search_suggestions": "Sugerencias",
     "search_none": "Nada coincide con «{q}».",
     "search_nothing": "Nada coincide.",
-    "search_in": "en {where}",
     "search_kind_campaign": "Campaña",
     "search_kind_run": "Envío",
     "search_kind_design": "Plantilla",

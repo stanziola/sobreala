@@ -53,7 +53,8 @@ manda al panel, y a un administrador lo devuelve a `/admin`.
 
 **Estadísticas, Correos y Contactos son una sola fila del menú, Dashboard**, en
 los dos sitios. Adentro, como en Cloudflare, **un árbol a la izquierda y lo
-elegido en el panel grande de la derecha**, con la búsqueda arriba del árbol:
+elegido en el panel grande de la derecha**, con la búsqueda en la barra de
+arriba, al lado del ala:
 
 ```
 Estadísticas ▸ Resumen · Aperturas y clics · Campañas · Cuándo abren · Lista · Cuota
@@ -70,8 +71,8 @@ Contactos    ▸ Lista · Supresiones
   las piezas cargadas siguen a pantalla completa**, porque necesitan el ancho.
 - Cada rama es un enlace a su primera fila, así que sin JavaScript abre algo;
   con él, en una pantalla ancha, se despliega en su sitio
-  (`data-settings-toggle`). En el teléfono el árbol se esconde detrás de «Secciones» y
-  la búsqueda queda a la vista.
+  (`data-settings-toggle`). En el teléfono el árbol se esconde detrás de
+  «Secciones», y la búsqueda baja a su propia fila de la barra.
 - Un usuario de la empresa ve solo las ramas de sus permisos; sin
   Estadísticas, `/dashboard` lo manda a la primera que tenga (`needs()`). Una
   cuenta cerrada lo ve entero y cada pantalla la lleva a `/welcome`. El
@@ -202,20 +203,33 @@ solos; ofrecerlos es sacarlos de esa tupla.
 
 ### La búsqueda (octubre de 2026)
 
-Un campo **arriba del árbol del Dashboard** (`_search.html`, `blueprints/search/`),
-para moverse por el panel sin saber dónde está cada cosa. **Solo ahí**: hasta
-octubre de 2026 iba en medio de la barra de arriba, y Configuración ya no la
-tiene. El administrador, que no tiene Dashboard, la lleva arriba de las
-pestañas de Administración.
+Un campo **en la barra de arriba, al lado del ala, en las pantallas del
+Dashboard** (`_search.html`, `blueprints/search/`), para moverse por el
+Dashboard sin saber dónde está cada cosa. Ahí la barra lleva **solo el ala**:
+la palabra «Sobreala» se queda para el lector de pantalla. Los marcos que la
+quieren ponen `bar_search` (`_dashboard.html` y `admin/_layout.html`) y
+`base.html` la dibuja. **El administrador**, que no tiene Dashboard, la lleva
+igual en Administración. Fuera de ahí (Configuración, la lista de cuentas)
+la barra es la de siempre, con la palabra y sin el campo.
 
-- **Qué encuentra**: las pantallas y acciones **que esa cuenta puede abrir**
-  (`CLIENT_PAGES` y `ADMIN_PAGES`, filtradas por `accounts.can()`; las
-  subsecciones de Configuración salen de `parts_for()`, y las partes de Cuenta
-  y Facturación, que se leen enteras, van a su ancla), por su nombre y por
-  palabras con que se piden («csv», «bajas», «dos pasos»); y **lo suyo por
-  nombre**: campañas, envíos, plantillas y etiquetas de su empresa, cinco de
-  cada una. Sin acentos ni mayúsculas, y cada palabra buscada tiene que estar al
-  principio de alguna del texto.
+Por dónde pasó: hasta octubre de 2026 iba en medio de la barra de arriba, en
+todas las pantallas; después, arriba del árbol del Dashboard (y de las
+pestañas de Administración); y desde el 15 de octubre, en la barra otra vez,
+pero pegada al ala y solo donde se trabaja. Sobre el azul va translúcida, como
+el botón del menú, y al escribir se vuelve un campo como los demás. **En el
+teléfono** (por debajo de 640 px) baja a su propia fila de la barra, de lado a
+lado: al lado del ala y del nombre de la empresa no cabe.
+
+- **Qué encuentra**: **solo lo del Dashboard**. Las pantallas y acciones **que
+  esa cuenta puede abrir** (`CLIENT_PAGES` y `ADMIN_PAGES`, filtradas por
+  `accounts.can()`), por su nombre y por palabras con que se piden («csv»,
+  «bajas»); y **lo suyo por nombre**: campañas, envíos, plantillas y etiquetas
+  de su empresa, cinco de cada una. Sin acentos ni mayúsculas, y cada palabra
+  buscada tiene que estar al principio de alguna del texto. **Configuración no
+  sale** (octubre de 2026): ni sus secciones ni sus partes, ni para el cliente
+  ni para el administrador. A Configuración se llega por el menú de la cuenta,
+  y ya no hay resultados con «en Facturación» al lado (el texto `search_in` se
+  quitó).
 - **Cómo**: `panel.js` pide `/search/suggest?q=` (JSON) mientras se escribe, con
   una pausa corta y descartando respuestas viejas, y pinta con `textContent`
   (los nombres los escribió el cliente). Flechas, Enter y Esc; «/» lleva al

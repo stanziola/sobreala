@@ -1,9 +1,10 @@
-{# La búsqueda (octubre de 2026). Vive en la barra lateral de donde se trabaja:
-   el Dashboard del cliente y Administración. Sin JavaScript manda a /search;
-   con él sugiere mientras se escribe (`panel.js`, data-search). Es lo único
-   de la barra de arriba que no tiene el sitio público, y por eso ya no está
-   en ella. #}
-<form class="search" role="search" method="get" action="{{ url_for('search.page') }}"
+{# La búsqueda (octubre de 2026). Va en la barra de arriba, al lado del ala,
+   donde se trabaja: el Dashboard del cliente y Administración (los dos marcos
+   ponen `bar_search`, y `base.html` la dibuja). Sin JavaScript manda a
+   /search; con él sugiere mientras se escribe (`panel.js`, data-search). Es lo
+   único de la barra que no tiene el sitio público: sin sesión no hay nada que
+   buscar. #}
+<form class="search bar__search" role="search" method="get" action="{{ url_for('search.page') }}"
       data-search data-suggest="{{ url_for('search.suggest') }}"
       data-none="{{ t('search_nothing') }}">
   <div class="search__box">
