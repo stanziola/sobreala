@@ -39,7 +39,7 @@ def test_encuentra_pantallas_por_nombre_y_por_como_se_piden(client, database, ou
     assert "/contacts/import" in urls(sugerencias(browser, "CSV"))
     assert "/settings/security/two-step" in urls(sugerencias(browser, "dos pasos"))
     # Sin acentos: «facturacion» encuentra lo de Facturación.
-    assert "/settings/billing/history" in urls(sugerencias(browser, "facturacion"))
+    assert "/settings/billing" in urls(sugerencias(browser, "facturacion"))
     # La barra lleva el campo, con sesión.
     assert 'data-search' in browser.get("/campaigns").get_data(as_text=True)
     assert 'data-search' not in client.get("/login").get_data(as_text=True)

@@ -125,7 +125,6 @@ def lists_chosen(account) -> list[str]:
 
 
 def shared(db, account, **extra):
-    sent_runs = runs.for_account(db, account["_id"])
     return {
         "account": account,
         "lists": lists_of(db, account),
@@ -135,13 +134,6 @@ def shared(db, account, **extra):
         "campaigns": campaigns.for_account(db, account["_id"]),
         "tags_of": campaigns.tags_of,
         "everyone": t("send_all_contacts"),
-        # Una fila por vez que salió algo, que es otra cosa que una fila por
-        # campaña: la mandada seis veces son seis envíos.
-        "runs": sent_runs,
-        # Lo que contó SES de cada envío: entregados, rebotes, abiertos, con
-        # clic y quejas, en personas. Una consulta para toda la lista.
-        "run_counts": events.counts_by_run(
-            db, account["_id"], [one["_id"] for one in sent_runs]),
         "times": runs.times_by_campaign(db, account["_id"]),
         # Qué le falta a la cuenta para que un envío salga de verdad. Se enseña
         # siempre, no al final: enterarse de que no se puede después de armarlo
@@ -364,6 +356,35 @@ def edit(raw):
 
 # Cuántas personas por página en el detalle de un envío.
 PER_PAGE = 50
+
+
+@bp.route("/campaigns/sent")
+def sent_list():
+    """Enviados (octubre de 2026): todo lo que salió, campañas e individuales,
+    lo último arriba. Una línea por envío y no por campaña: la mandada seis
+    veces son seis.
+
+    Sale de `campaign_runs`, con el asunto copiado, así que sigue diciendo la
+    verdad aunque después se corrija o se borre la campaña. Las cifras son las
+    de `events.counts_by_run()`, en personas y en una sola consulta: de una
+    campaña se escriben sobre los que salieron (500/551) y de un individual,
+    que es una persona, con una marca.
+    """
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    db = get_db()
+    sent_runs = runs.for_account(db, account["_id"])
+    # Qué individuales llevaban archivo, para decir si lo bajó. Una consulta.
+    singles = [one["campaign_id"] for one in sent_runs if one.get("to")]
+    with_file = {doc["_id"] for doc in db.campaigns.find(
+        {"account_id": account["_id"], "_id": {"$in": singles},
+         "download_id": {"$exists": True}}, {"_id": 1})} if singles else set()
+    return render_template(
+        "campaigns/sent.html", account=account, runs=sent_runs,
+        run_counts=events.counts_by_run(
+            db, account["_id"], [one["_id"] for one in sent_runs]),
+        with_file=with_file, everyone=t("send_all_contacts"))
 
 
 @bp.route("/campaigns/sent/<raw>")

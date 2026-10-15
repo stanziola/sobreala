@@ -84,7 +84,7 @@ def test_la_direccion_se_guarda_y_sale_en_el_correo(client, database, outbox,
     cuenta = accounts.by_id(database, account["_id"])
     assert accounts.postal_of(cuenta) == "Apartado 0816-00001, Santiago, Veraguas"
     assert "postal" not in sender.blocked(cuenta)
-    assert "Apartado 0816-00001" in browser.get("/settings/account/contact").get_data(as_text=True)
+    assert "Apartado 0816-00001" in browser.get("/settings/account").get_data(as_text=True)
 
     make(browser, piece)
     send_it(browser, database, account["_id"])

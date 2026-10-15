@@ -1,11 +1,10 @@
-{% extends "base.html" %}
+{% extends "_dashboard.html" %}
 {% block title %}{{ t('run_title') }}{% endblock %}
-{% block wrap_class %}wrap--wide{% endblock %}
 
 {#- El detalle de un envío: una fila por persona a la que le salió, con lo que
     contó Amazon de cada una. Cada cosa cuenta una vez (`events.record()`), así
     que «Abrió» es la primera apertura aunque haya abierto veinte. -#}
-{% block content %}
+{% block pane %}
 <h1 class="settings__heading">{{ run.subject }}</h1>
 <p class="settings__lead">
   {{ t('run_sent_on', when=run.finished_at|at_moment) }}
@@ -108,6 +107,6 @@
 <p class="hint">{{ t('run_note') }}</p>
 
 <p class="foot">
-  <a href="{{ url_for('campaigns.index') }}">{{ t('send_back') }}</a>
+  <a href="{{ url_for('campaigns.sent_list') }}">{{ t('sent_back') }}</a>
 </p>
 {% endblock %}

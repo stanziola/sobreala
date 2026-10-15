@@ -35,7 +35,7 @@
              options, label=t('register_company_phones') ~ ' ' ~ (i + 1)) }}
   </div>
   {% endfor %}
-  <button class="btn btn--small btn--outline phones__add" type="button" hidden
-          data-more-add>{{ t('phone_add') }}</button>
+  <button class="btn btn--small btn--outline btn--icon phones__add" type="button" hidden
+          data-more-add>{% include "_icon-plus.svg" %}<span>{{ t('phone_add') }}</span></button>
 </div>
 {% endmacro %}

@@ -68,6 +68,20 @@ permanencia.
   usan `contacts`, `templates`, `campaigns`, `stats` y `settings`, que no
   chocan con las anclas de las secciones.
 
+### Botones y enlaces: menos azul (octubre de 2026)
+
+Como en el panel: **el botón principal es gris casi negro** con la letra blanca
+(`--color-action`; de noche, gris claro con la letra oscura), **el de contorno
+es gris**, y lo elegido (la pestaña de un tutorial, mensual o anual en Planes)
+también. **Los enlaces** van del color del texto, en seminegrita, y se subrayan
+al pasar el mouse. **El azul de la marca no cambia**: la cabecera, la portada y
+el pie siguen azules, y los botones de la portada siguen como estaban, porque
+sobre ese azul el gris no se lee.
+
+**El menú de la cuenta tiene una fila, Dashboard** (`/dashboard`), donde antes
+había cuatro (Estadísticas, Enviar correos, Contactos y Plantillas), igual que
+el del panel.
+
 ## La portada
 
 ### Se va descubriendo al bajar (octubre de 2026)

@@ -19,13 +19,13 @@ from pymongo.errors import DuplicateKeyError
 
 from models.account import normalize_email
 
-# Why the address is here. Only one of them can ever be lifted.
+# Why the address is here. None of them is lifted from the panel: since
+# October 2026 the screen is only for looking, and nobody adds one by hand.
 UNSUBSCRIBE = "unsubscribe"      # asked to stop; comes back only by opting in again
-HARD_BOUNCE = "hard_bounce"      # the address does not exist. Never lifted.
-COMPLAINT = "complaint"          # marked as spam. Never lifted.
-MANUAL = "manual"                # the client put it here, and can take it out
+HARD_BOUNCE = "hard_bounce"      # the address does not exist
+COMPLAINT = "complaint"          # marked as spam
+MANUAL = "manual"                # put there by hand before October 2026; only read
 REASONS = (UNSUBSCRIBE, HARD_BOUNCE, COMPLAINT, MANUAL)
-LIFTABLE = (MANUAL,)
 
 
 def now() -> datetime:
@@ -99,17 +99,3 @@ def count_between(db, account_id, start, end=None, *, reason: str | None = None)
 def for_account(db, account_id, *, limit: int = 200) -> list[dict[str, Any]]:
     return list(db.suppressions.find({"account_id": account_id})
                 .sort("created_at", -1).limit(limit))
-
-
-def lift(db, account_id, email: str) -> bool:
-    """Take an address off the list. Only what the client put there by hand.
-
-    A bounce or a complaint is a fact about the address, not a preference: it
-    does not stop being true because somebody presses a button.
-    """
-    result = db.suppressions.delete_one({
-        "account_id": account_id,
-        "email_normalized": normalize_email(email),
-        "reason": {"$in": list(LIFTABLE)},
-    })
-    return result.deleted_count == 1

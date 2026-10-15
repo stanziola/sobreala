@@ -1,8 +1,7 @@
-{% extends "base.html" %}
+{% extends "_dashboard.html" %}
 {% block title %}{{ t('designs_title') }}{% endblock %}
-{% block wrap_class %}wrap--wide{% endblock %}
 
-{% block content %}
+{% block pane %}
 <h1 class="settings__heading">{{ t('designs_title') }}</h1>
 <p class="settings__lead">{{ t('designs_lead') }}</p>
 
@@ -12,7 +11,7 @@
 
 <div class="start">
   {# El lienzo, y cargar el ZIP de uno. Los dos son de todos los planes. #}
-  <a class="btn start__one" href="{{ url_for('designs.create') }}">{{ t('designs_create') }}</a>
+  <a class="btn btn--icon start__one" href="{{ url_for('designs.create') }}">{% include "_icon-plus.svg" %}<span>{{ t('designs_create') }}</span></a>
   <a class="btn start__one" href="{{ url_for('designs.upload') }}"
      data-open-dialog="cargar">{{ t('designs_upload_button') }}</a>
 </div>

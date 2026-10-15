@@ -1,7 +1,6 @@
-{% extends "base.html" %}
+{% extends "_dashboard.html" %}
 {% block title %}{{ t('single_title') }}{% endblock %}
-{% block content %}
-<p class="foot"><a href="{{ url_for('campaigns.index') }}">{{ t('sender_back') }}</a></p>
+{% block pane %}
 <h1 class="settings__heading">{{ t('single_title') }}</h1>
 <p class="settings__lead">{{ t('single_lead') }}</p>
 

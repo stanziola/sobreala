@@ -1,10 +1,10 @@
-"""La búsqueda de la barra de arriba (octubre de 2026).
+"""La búsqueda (octubre de 2026), arriba de la barra lateral del Dashboard.
 
 Para moverse por el panel sin saber dónde está cada cosa. Mientras se escribe
 sugiere dos clases de resultados:
 
   * **pantallas y acciones** («Importar contactos», «Cambiar la contraseña»,
-    «Facturación», «Escribir un correo»), **las que esa cuenta puede abrir**:
+    «Facturación», «Redactar»), **las que esa cuenta puede abrir**:
     un usuario de la empresa ve solo las de sus permisos, y un administrador
     las suyas. Se buscan por su nombre y por palabras que la gente usa para
     pedirlas («csv», «bajas», «dos pasos»);
@@ -16,8 +16,10 @@ sugerencias las pide `panel.js` a `/search/suggest` (JSON); sin JavaScript, el
 campo manda a `/search`, que enseña lo mismo en una página. Sin sesión, las dos
 responden 404: no hay nada que buscar.
 
-Solo vive en el panel: el sitio público no tiene sesión, y sin ella no hay qué
-buscar (es la excepción a «lo que existe en los dos sitios», `CLAUDE.md`).
+Solo vive en el panel, y dentro de él en la barra lateral del Dashboard (la del
+administrador, en la de Administración): el sitio público no tiene sesión, y
+sin ella no hay qué buscar (es la excepción a «lo que existe en los dos
+sitios», `CLAUDE.md`).
 """
 
 from __future__ import annotations
@@ -27,7 +29,7 @@ from typing import Any
 
 from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
-from blueprints.auth.routes import (current_account, current_workspace,
+from blueprints.auth.routes import (WHOLE, current_account, current_workspace,
                                     parts_for, sections_for)
 from db import get_db
 from i18n import t
@@ -48,11 +50,13 @@ QUERY_MAX = 80
 # Configuración se agrega aparte, con sus subsecciones (`settings_pages`).
 CLIENT_PAGES = (
     ("search_page_stats", "auth.panel", accounts.STATS,
-     "estadisticas cifras aperturas clics rebotes graficas panel"),
+     "estadisticas cifras aperturas clics rebotes graficas panel dashboard resumen"),
     ("search_page_send", "campaigns.index", accounts.CAMPAIGNS,
-     "enviar campanas correos programar mandar"),
+     "enviar campanas correos programar mandar masivo"),
+    ("search_page_sent", "campaigns.sent_list", accounts.CAMPAIGNS,
+     "enviados envios salieron historial abiertos clics"),
     ("search_page_write", "campaigns.write", accounts.SEND,
-     "escribir correo individual una persona adjunto archivo"),
+     "escribir correo individual una persona adjunto archivo redactar"),
     ("search_page_sender", "campaigns.sender_page", accounts.SEND,
      "remitente dominio propio responder a direccion de salida"),
     ("search_page_contacts", "contacts.index", accounts.CONTACTS,
@@ -131,11 +135,22 @@ def pages_for(account: dict) -> list[dict[str, Any]]:
                     "hint": "", "words": extra})
     for section in sections_for(account):
         section_label = t(SECTION_LABELS[section])
-        for part in parts_for(account, section):
+        # Cuenta y Facturación se leen enteras: la sección, y sus partes como
+        # anclas.
+        whole = WHOLE.get(section, ())
+        if whole:
+            out.append({"label": section_label, "kind": "page",
+                        "hint": t("search_in", where=t("menu_settings")),
+                        "url": url_for("auth.settings", section=section),
+                        "words": "configuracion " + " ".join(
+                            SETTINGS_WORDS.get((section, part), "") for part in whole)})
+        for part in parts_for(account, section) or whole:
             label = t(f"settings_part_{section}_{part.replace('-', '_')}")
+            url = (url_for("auth.settings", section=section) + "#" + part if part in whole
+                   else url_for("auth.settings", section=section, part=part))
             out.append({"label": label, "kind": "page",
                         "hint": t("search_in", where=section_label),
-                        "url": url_for("auth.settings", section=section, part=part),
+                        "url": url,
                         "words": f"configuracion {section_label} "
                                  + SETTINGS_WORDS.get((section, part), "")})
     return out

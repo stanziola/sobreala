@@ -1,8 +1,7 @@
-{% extends "base.html" %}
+{% extends "_dashboard.html" %}
 {% block title %}{{ t('send_title') }}{% endblock %}
-{% block wrap_class %}wrap--wide{% endblock %}
 
-{% block content %}
+{% block pane %}
 <h1 class="settings__heading">{{ t('send_title') }}</h1>
 <p class="settings__lead">{{ t('send_lead') }}</p>
 
@@ -43,8 +42,6 @@
 </p>
 
 {% if can_send %}
-{# El correo individual, como uno normal: a una persona, con su archivo. #}
-<p><a class="btn btn--outline" href="{{ url_for('campaigns.write') }}">{{ t('single_title') }}</a></p>
 <h2 class="settings__subtitle">{{ t('send_new') }}</h2>
 <form method="post" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -116,57 +113,4 @@
 <p class="hint">{{ t('send_none') }}</p>
 {% endif %}
 
-{# --------------------------------------------------- lo que ya salió --- #}
-{# Una línea por envío y no por campaña: la mandada seis veces son seis. Sale
-   de `campaign_runs`, con el asunto copiado, así que sigue diciendo la verdad
-   aunque después se corrija o se borre la campaña. #}
-<h2 class="settings__subtitle">{{ t('send_runs_title') }}</h2>
-<p class="settings__lead">{{ t('send_runs_lead') }}</p>
-{% if runs %}
-<div class="table-wrap">
-  <table class="table">
-    <tbody>
-      {% for one in runs %}
-      <tr>
-        <td>
-          <b>{{ one.subject }}</b><br>
-          <span class="table__quiet">
-            {% if one.to %}{{ t('single_row', to=one.to) }}
-            {% else %}{{ (one.tags or [])|join(' · ') or everyone }}{% endif %}</span>
-        </td>
-        <td class="table__quiet">
-          {{ t('send_state_sent', n=one.sent) }}
-          {% if one.skipped %}· {{ t('send_state_skipped', n=one.skipped) }}{% endif %}
-          {% if one.failed %}· {{ t('send_state_failed', n=one.failed) }}{% endif %}
-          {# Lo que contó Amazon después, en personas. Solo si contó algo: un
-             envío de antes de configurar los avisos no tiene cifras, y una fila
-             de ceros diría que no le llegó a nadie. #}
-          {% set seen = run_counts.get(one._id) %}
-          {% if seen and seen.values()|sum %}
-          <br>{{ t('send_seen', delivered=seen.delivery, bounced=seen.bounce,
-                   opened=seen.open, clicked=seen.click) }}
-          {% if seen.complaint %}· {{ t('send_seen_complaints', n=seen.complaint) }}{% endif %}
-          {% endif %}
-        </td>
-        <td class="table__quiet">{{ one.finished_at|ago }}</td>
-        <td>
-          <a class="btn btn--small btn--outline"
-             href="{{ url_for('campaigns.run_detail', raw=one._id) }}">{{ t('send_details') }}</a>
-        </td>
-      </tr>
-      {% if one.errors %}
-      <tr>
-        <td colspan="4" class="table__quiet">
-          {{ t('send_errors_title') }}
-          {% for bad in one.errors %}<br>{{ bad.email }}: {{ bad.error }}{% endfor %}
-        </td>
-      </tr>
-      {% endif %}
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% else %}
-<p class="hint">{{ t('send_runs_none') }}</p>
-{% endif %}
 {% endblock %}

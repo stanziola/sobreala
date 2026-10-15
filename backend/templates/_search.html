@@ -1,0 +1,19 @@
+{# La búsqueda (octubre de 2026). Vive en la barra lateral de donde se trabaja:
+   el Dashboard del cliente y Administración. Sin JavaScript manda a /search;
+   con él sugiere mientras se escribe (`panel.js`, data-search). Es lo único
+   de la barra de arriba que no tiene el sitio público, y por eso ya no está
+   en ella. #}
+<form class="search" role="search" method="get" action="{{ url_for('search.page') }}"
+      data-search data-suggest="{{ url_for('search.suggest') }}"
+      data-none="{{ t('search_nothing') }}">
+  <div class="search__box">
+    <span class="search__icon">{% include "_icon-search.svg" %}</span>
+    <label class="visually-hidden" for="buscar">{{ t('search_label') }}</label>
+    <input class="search__input" id="buscar" name="q" type="search"
+           placeholder="{{ t('search_placeholder') }}" autocomplete="off"
+           role="combobox" aria-autocomplete="list" aria-expanded="false"
+           aria-controls="buscar-sugerencias">
+    <ul class="search__list" id="buscar-sugerencias" role="listbox"
+        aria-label="{{ t('search_suggestions') }}" hidden></ul>
+  </div>
+</form>

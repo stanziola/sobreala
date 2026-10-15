@@ -134,13 +134,14 @@ def test_la_grafica_cuenta_personas_como_como_le_fue(client, database, outbox):
 def test_la_barra_de_correos_del_mes(client, database, outbox):
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    sin_plan = browser.get("/dashboard").get_data(as_text=True)
+    # La cuota es su propia sección de Estadísticas (octubre de 2026).
+    sin_plan = browser.get("/dashboard/quota").get_data(as_text=True)
     assert "Sin plan contratado: no hay correos incluidos." in sin_plan
 
     accounts.activate_plan(database, cuenta["_id"], "negocio",
                            events.now() + timedelta(days=30))
     accounts.add_sent(database, cuenta["_id"], 12600)
-    pantalla = browser.get("/dashboard").get_data(as_text=True)
+    pantalla = browser.get("/dashboard/quota").get_data(as_text=True)
     assert "12,600 de 15,000 correos" in pantalla
     # Sin fecha de renovación: todavía no hay renovación automática.
     assert "se renuevan" not in pantalla

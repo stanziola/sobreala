@@ -481,7 +481,10 @@ def test_la_baja_no_se_puede_levantar_desde_el_panel(client, database, outbox):
     quien = contacts.page(database, account["_id"])[0][0]
     other(client).post(f"/unsubscribe/{unsubscribe.sign(quien['_id'])}")
 
-    assert suppressions.lift(database, account["_id"], quien["email"]) is False
+    # Desde octubre de 2026 el panel no quita ninguna: no hay ruta.
+    assert browser.post("/contacts/suppressions/remove", data={
+        "email": quien["email"]}).status_code in (404, 405)
+    assert suppressions.has(database, account["_id"], quien["email"])
 
 
 # ------------------------------------------------------------ quién la ve
@@ -498,18 +501,24 @@ def test_la_pantalla_no_es_para_administradores(client, database, outbox):
 
 
 def test_la_fila_esta_en_los_dos_menus(client, database, outbox):
+    """Desde octubre de 2026 es una sola fila, Dashboard, en los dos menús; las
+    campañas se abren desde su árbol, dentro del panel."""
     from pathlib import Path
 
     browser, _, _ = ready(client, database)
 
     panel = browser.get("/dashboard").get_data(as_text=True)
-    assert "Enviar correos" in panel
-    assert "/campaigns" in panel
+    assert ">Dashboard</span>" in panel
+    assert ">Enviar correos<" not in panel
+    assert 'href="/campaigns"' in panel
 
     raiz = Path(__file__).resolve().parent.parent.parent
     sitio = (raiz / "landing" / "index.html").read_text(encoding="utf-8")
-    assert "Enviar correos" in sitio
-    assert "/campaigns" in sitio
+    # Solo el menú de la cuenta: «Enviar correos» todavía nombra un tutorial.
+    menu = sitio.split('class="usermenu__panel"')[1].split("</details>")[0]
+    assert ">Dashboard</span>" in menu
+    assert "/dashboard" in menu
+    assert "Enviar correos" not in menu
 
 
 # --------------------------------------------------------- la rama de SES

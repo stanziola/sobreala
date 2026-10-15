@@ -55,11 +55,10 @@ PANEL = {
     # Se enseña en lugar de los dos anteriores cuando el panel dejó su migaja.
     "account_label": "Mi cuenta",
     # El menú de la barra. Sin sesión solo se ven el modo y el idioma; con
-    # sesión aparecen además las tres que necesitan una cuenta.
+    # sesión aparecen además las que necesitan una cuenta.
     "options_label": "Opciones",
-    "send_label": "Enviar correos",
-    "contacts_label": "Contactos",
-    "designs_label": "Plantillas",
+    # Estadísticas, Correos y Contactos, en una sola fila (octubre de 2026).
+    "dashboard_label": "Dashboard",
     "settings_label": "Configuración",
     "panel_label": "Estadísticas",
     # Solo la ve quien tiene el rol, y quien lo decide es la galleta que deja
@@ -95,6 +94,7 @@ PLAN_BUTTONS = {
 # del panel.
 CTA_PRIMARY = {"label": "Solicitar demo", "path": "/signup", "signed_path": "/welcome"}
 CTA_SECONDARY = {"label": "Ver planes", "url": "/#planes"}
+
 
 # --------------------------------------------------------------------------- home
 

@@ -667,19 +667,36 @@
   });
 })();
 
-/* La búsqueda de la barra (octubre de 2026). Mientras se escribe, pide las
+/* El árbol del Dashboard en el teléfono (octubre de 2026): se esconde detrás
+   de «Secciones» para que lo primero que se vea sea la pantalla y no el menú.
+   Sin JavaScript el árbol sale entero, que es peor de mirar pero funciona. Las
+   ramas se despliegan con el mismo código que Configuración, de arriba. */
+(function () {
+  var nav = document.querySelector("[data-dash-nav]");
+  if (!nav) return;
+  var button = nav.querySelector("[data-dash-toggle]");
+  if (!button) return;
+  button.hidden = false;
+  nav.classList.add("is-collapsible");
+  button.addEventListener("click", function () {
+    var shown = !nav.classList.contains("is-shown");
+    nav.classList.toggle("is-shown", shown);
+    button.setAttribute("aria-expanded", shown ? "true" : "false");
+  });
+})();
+
+/* La búsqueda (octubre de 2026), arriba de la barra lateral del Dashboard y
+   de la de Administración. Mientras se escribe, pide las
    sugerencias al panel (`/search/suggest`) y las enseña debajo; las flechas
    las recorren, Enter abre la marcada (sin marcar, el formulario manda a la
    página de resultados, que es lo que pasa sin JavaScript) y Esc la cierra.
-   «/» lleva al campo desde cualquier parte que no sea otro campo. En el
-   teléfono, el ícono abre el campo encima de la barra. Lo que llega se pinta
-   con textContent: los nombres los escribió el cliente. */
+   «/» lleva al campo desde cualquier parte que no sea otro campo. Lo que
+   llega se pinta con textContent: los nombres los escribió el cliente. */
 (function () {
   var form = document.querySelector("form[data-search]");
   if (!form || !window.fetch) return;
   var input = form.querySelector(".search__input");
   var list = form.querySelector(".search__list");
-  var opener = form.querySelector("[data-search-open]");
   var url = form.getAttribute("data-suggest");
   var timer = null;
   var active = -1;
@@ -774,16 +791,12 @@
       window.location.href = all[active].querySelector("a").href;
     } else if (e.key === "Escape") {
       close();
-      form.classList.remove("is-open");
       input.blur();
     }
   });
 
   document.addEventListener("click", function (e) {
-    if (!form.contains(e.target)) {
-      close();
-      form.classList.remove("is-open");
-    }
+    if (!form.contains(e.target)) close();
   });
 
   document.addEventListener("keydown", function (e) {
@@ -791,17 +804,8 @@
     var tag = (document.activeElement && document.activeElement.tagName) || "";
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || document.activeElement.isContentEditable) return;
     e.preventDefault();
-    form.classList.add("is-open");
     input.focus();
   });
-
-  if (opener) {
-    opener.addEventListener("click", function (e) {
-      e.preventDefault();
-      form.classList.add("is-open");
-      input.focus();
-    });
-  }
 })();
 
 /* Los botones que trabajan (octubre de 2026). Al mandar un formulario, el botón

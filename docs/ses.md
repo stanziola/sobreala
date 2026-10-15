@@ -199,7 +199,7 @@ sandbox y no cuentan contra la reputación:
 
 1. Importar las tres como contactos de una cuenta de prueba y mandarles una
    campaña.
-2. En unos segundos, en `/campaigns`, «Campañas enviadas» tiene que decir 2
+2. En unos segundos, en Enviados (`/campaigns/sent`), la fila tiene que decir 2
    entregados, 1 rebote y 1 queja.
 3. En Contactos → Supresiones, `bounce@` sale como rebote y `complaint@` como
    queja.

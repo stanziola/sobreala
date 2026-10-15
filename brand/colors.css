@@ -44,6 +44,13 @@
   --color-accent-soft: #EDEDEF;   /* chips, badges, quiet highlights */
   --color-accent-light: #CFEBFA;  /* accents over the brand blue; 4.7:1 */
 
+  /* Lo que se pulsa (octubre de 2026): botones, enlaces y lo seleccionado van
+   * en gris oscuro y no en azul, que se queda para gráficas, interruptores, el
+   * foco del teclado y la raya de lo seleccionado. Blanco sobre él da 15.9:1. */
+  --color-action: #27272A;
+  --color-action-hover: #3F3F46;  /* blanco encima: 10.4:1 */
+  --color-on-action: #FFFFFF;
+
   /* Lo que salió bien: el ganchito del recibo al completar un pago. Es un
    * dibujo, no texto, así que pide 3:1 y da 3.3:1 sobre blanco. */
   --color-success: #16A34A;

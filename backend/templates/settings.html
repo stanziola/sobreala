@@ -96,8 +96,14 @@
   {% endif %}
 
   <div class="settings__pane">
+    {# Cuenta y Facturación se leen enteras, en una página (octubre de 2026):
+       sus partes son subtítulos con su ancla. Las demás enseñan una parte. #}
+    {% if part %}
     <p class="settings__eyebrow">{{ t(label_of[section]) }}</p>
     <h2 class="settings__title">{{ part_name(section, part) }}</h2>
+    {% else %}
+    <h2 class="settings__title">{{ t(label_of[section]) }}</h2>
+    {% endif %}
 
     {# ------------------------------------------------------------ cuenta #}
     {% if section == 'account' %}
@@ -121,16 +127,15 @@
     {# Mientras falte enviar un documento, o haya uno rechazado. Amarillo, porque
        no impide nada de esta pantalla pero es lo que falta; lleva al formulario
        (octubre de 2026: antes se subían aquí abajo). Al enviarlos se va. Sale
-       en Perfil, que es lo primero que se abre, y en Verificación. #}
-    {% if documents_due and part in ('profile', 'verification') %}
+       arriba de toda Cuenta. #}
+    {% if documents_due %}
     <div class="notice notice--pending">
       <p><strong>{{ t('settings_pending_title') }}</strong> {{ t('settings_pending_text') }}</p>
       <p><a href="{{ url_for('auth.verification') }}">{{ t('settings_pending_link') }}</a></p>
     </div>
     {% endif %}
 
-    {% if part == 'profile' %}
-    <hr class="settings__rule">
+    <h3 class="settings__subtitle settings__subtitle--part" id="profile">{{ part_name('account', 'profile') }}</h3>
 
     {% call row(t('settings_account_contact'), '') %}
     <span class="setting__value">{{ account.contact_name }}</span>
@@ -151,8 +156,7 @@
        href="{{ url_for('auth.change_email') }}">{{ t('settings_account_email_change') }}</a>
     {% endcall %}
 
-    {% elif part == 'contact' %}
-    <hr class="settings__rule">
+    <h3 class="settings__subtitle settings__subtitle--part" id="contact">{{ part_name('account', 'contact') }}</h3>
     {# Lo que se escribió al registrarse se ve como texto, y se cambia con
        «Editar» (octubre de 2026): antes eran campos con «Guardar» a la vista. #}
     {% if request.args.get('address') %}
@@ -170,14 +174,14 @@
              value="{{ postal }}" autocomplete="street-address"
              placeholder="{{ t('settings_postal_placeholder') }}">
       <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
-      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account', part='contact') }}#address">{{ t('settings_cancel') }}</a>
+      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account') }}#address">{{ t('settings_cancel') }}</a>
       {% if postal_error %}<p class="error">{{ postal_error }}</p>{% endif %}
     </form>
     {% else %}
     {% if postal %}<span class="setting__value">{{ postal }}</span>
     {% else %}<span class="tag tag--warn">{{ t('settings_postal_missing') }}</span>{% endif %}
     <a class="btn btn--small btn--outline"
-       href="{{ url_for('auth.settings', section='account', part='contact', editar='address') }}#address">{{ t('settings_edit') }}</a>
+       href="{{ url_for('auth.settings', section='account', editar='address') }}#address">{{ t('settings_edit') }}</a>
     {% endif %}
     {% endcall %}
 
@@ -197,20 +201,19 @@
       <p class="hint">{{ t('register_company_phones') }}</p>
       {{ company_phones(company, phone_options, company_max) }}
       <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
-      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account', part='contact') }}#phones">{{ t('settings_cancel') }}</a>
+      <a class="btn btn--small btn--outline" href="{{ url_for('auth.settings', section='account') }}#phones">{{ t('settings_cancel') }}</a>
       {% if account_errors.phones %}<p class="error">{{ account_errors.phones }}</p>{% endif %}
     </form>
     {% else %}
     <span class="setting__value">{{ phones_text|join(' · ') }}</span>
     <a class="btn btn--small btn--outline"
-       href="{{ url_for('auth.settings', section='account', part='contact', editar='phones') }}#phones">{{ t('settings_edit') }}</a>
+       href="{{ url_for('auth.settings', section='account', editar='phones') }}#phones">{{ t('settings_edit') }}</a>
     {% endif %}
     {% endcall %}
     {% endif %}
 
-    {% elif part == 'verification' %}
+    <h3 class="settings__subtitle settings__subtitle--part" id="verification">{{ part_name('account', 'verification') }}</h3>
     <p class="settings__lead">{{ t('settings_verify_lead') }}</p>
-    <hr class="settings__rule">
     {% for kind, status in verifications %}
     {% call row(t('verify_name_' + kind), '') %}
     <span class="tag {{ 'tag--on' if status == 'verified' else ('tag--warn' if status in ('missing', 'rejected') else 'tag--quiet') }}">
@@ -218,8 +221,7 @@
     {% endcall %}
     {% endfor %}
 
-    {% elif part == 'plan' %}
-    <hr class="settings__rule">
+    <h3 class="settings__subtitle settings__subtitle--part" id="plan">{{ part_name('account', 'plan') }}</h3>
     {# Cerrada, la cuenta no prepara nada todavía: se dice cómo se abre. #}
     {% call row(t('settings_account_plan'),
                 '' if plan else (t('settings_account_closed_hint') if bar_closed
@@ -233,7 +235,6 @@
     <a class="btn btn--small btn--outline"
        href="{{ url_for('auth.settings', section='billing') }}">{{ t('settings_account_to_billing') }}</a>
     {% endcall %}
-    {% endif %}
 
     {# --------------------------------------------------------- seguridad #}
     {% elif section == 'security' %}
@@ -296,7 +297,7 @@
     {% call row(t('users_seats', used=seats_used, seats=seats),
                 '' if seats_left else t('users_seats_full')) %}
     {% if seats_left %}
-    <a class="btn btn--small" href="{{ url_for('auth.user_form') }}">{{ t('users_new') }}</a>
+    <a class="btn btn--small btn--icon" href="{{ url_for('auth.user_form') }}">{% include "_icon-plus.svg" %}<span>{{ t('users_new') }}</span></a>
     {% else %}
     <a class="btn btn--small btn--outline" href="{{ site_url }}/#planes">{{ t('users_more_seats') }}</a>
     {% endif %}
@@ -467,14 +468,13 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="visually-hidden" for="prueba">{{ t('test_add_label') }}</label>
       <input id="prueba" name="email" type="email" placeholder="{{ t('test_add_label') }}" autocomplete="off" required>
-      <button class="btn btn--small" type="submit">{{ t('test_add') }}</button>
+      <button class="btn btn--small btn--icon" type="submit">{% include "_icon-plus.svg" %}<span>{{ t('test_add') }}</span></button>
     </form>
     {% endif %}
 
     {# ------------------------------------------------------------- pagos #}
     {% elif section == 'billing' %}
 
-    {% if part == 'plan' %}
     {% if request.args.get('done') %}
     <p class="notice notice--ok">{{ t('pay_done') }}</p>
     {% endif %}
@@ -486,7 +486,7 @@
     {% endif %}
 
     {# ----- tu plan: con su fecha, en la zona de quien mira. ----- #}
-    <hr class="settings__rule">
+    <h3 class="settings__subtitle settings__subtitle--part" id="plan">{{ part_name('billing', 'plan') }}</h3>
     {% call row(t('billing_plan_row'), '') %}
     {% if plan %}
     <span class="setting__value">{{ plans[plan].name if plan in plans else plan }}</span>
@@ -498,15 +498,12 @@
 
     {# ----- los métodos: solo lo guardado (octubre de 2026). PayPal se entra una
        vez y queda; la tarjeta y Yappy no se guardan, así que no salen. ----- #}
-    {% elif part == 'methods' %}
+    <h3 class="settings__subtitle settings__subtitle--part" id="methods">{{ part_name('billing', 'methods') }}</h3>
     {% if request.args.get('paypal') == 'saved' %}
     <p class="notice notice--ok">{{ t('methods_paypal_saved') }}</p>
     {% elif request.args.get('paypal') == 'removed' %}
     <p class="notice notice--ok">{{ t('methods_paypal_removed') }}</p>
-    {% elif request.args.get('error') %}
-    <p class="notice">{{ t('pay_error_paypal') }}</p>
     {% endif %}
-    <hr class="settings__rule" id="metodos">
 
     {# Cada cuenta guardada: su logo pegado a la izquierda y la cuenta al lado. #}
     {% for one in vaults %}
@@ -536,7 +533,7 @@
         {% if name == 'paypal' and vault_ready %}
         <form method="post" action="{{ url_for('auth.add_paypal') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="btn btn--small" type="submit">{{ t('methods_add_this') }}<span class="visually-hidden"> {{ t('pay_method_' + name) }}</span></button>
+          <button class="btn btn--small btn--icon" type="submit">{% include "_icon-plus.svg" %}<span>{{ t('methods_add_this') }}<span class="visually-hidden"> {{ t('pay_method_' + name) }}</span></span></button>
         </form>
         {% else %}
         <span class="tag tag--quiet">{{ t('methods_unavailable') }}</span>
@@ -553,12 +550,12 @@
     <div class="method-picker" id="agregar">
       {{ method_list() }}
       <a class="btn btn--small btn--outline"
-         href="{{ url_for('auth.settings', section='billing', part='methods') }}">{{ t('settings_cancel') }}</a>
+         href="{{ url_for('auth.settings', section='billing') }}#methods">{{ t('settings_cancel') }}</a>
     </div>
     {% else %}
     {% if not vaults %}<p class="hint">{{ t('methods_none') }}</p>{% endif %}
-    <a class="btn btn--small btn--outline method-add" data-open-dialog="agregar-metodo"
-       href="{{ url_for('auth.settings', section='billing', part='methods', agregar=1) }}">{{ t('methods_add') }}</a>
+    <a class="btn btn--small btn--outline btn--icon method-add" data-open-dialog="agregar-metodo"
+       href="{{ url_for('auth.settings', section='billing', agregar=1) }}#agregar">{% include "_icon-plus.svg" %}<span>{{ t('methods_add') }}</span></a>
     {# La misma bandeja que «Cargar plantilla» (`panel.js`, data-open-dialog),
        que entra deslizándose desde la derecha. #}
     <dialog class="drawer drawer--slide" id="agregar-metodo" aria-labelledby="agregar-metodo-titulo">
@@ -573,13 +570,12 @@
 
     {# La renovación automática, solo con su aviso montado: un botón que no puede
        cobrar es peor que ninguno. Si no se puede, se dice por qué. #}
-    {% elif part == 'auto-renewal' %}
+    <h3 class="settings__subtitle settings__subtitle--part" id="auto-renewal">{{ part_name('billing', 'auto-renewal') }}</h3>
     {% if request.args.get('renewal') == 'on' %}
     <p class="notice notice--ok">{{ t('renewal_done_on') }}</p>
     {% elif request.args.get('renewal') == 'off' %}
     <p class="notice notice--ok">{{ t('renewal_done_off') }}</p>
     {% endif %}
-    <hr class="settings__rule">
     {% if renewal_on or (subscription and subscription.status == 'suspended')
           or (renewals_ready and can_renew) %}
     {% call row(t('renewal_title'), t('renewal_desc'), id='renovacion') %}
@@ -611,7 +607,7 @@
 
     {# ----- lo que se ha comprado. La columna de la factura solo sale cuando
        las facturas se enciendan (`invoices.SHOWN`). ----- #}
-    {% elif part == 'history' %}
+    <h3 class="settings__subtitle settings__subtitle--part" id="history">{{ part_name('billing', 'history') }}</h3>
     {% if payments %}
     <div class="table-wrap">
       <table class="table">
@@ -655,7 +651,6 @@
     {% if invoices_shown %}<p class="hint">{{ t('billing_invoices_hint') }}</p>{% endif %}
     {% else %}
     <p class="hint">{{ t('billing_invoices_none') }}</p>
-    {% endif %}
     {% endif %}
     {% endif %}
 

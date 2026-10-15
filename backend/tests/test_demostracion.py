@@ -97,8 +97,9 @@ def test_cerrada_no_guarda_nada_aunque_escriba_el_formulario(client, database,
 
 def test_el_menu_ensena_las_cuatro_filas_y_cada_una_lleva_a_la_demo(
         client, database, outbox, monkeypatch):
-    """Cerrada, el menú es el de siempre: las cuatro filas de cliente, y cada
-    una aterriza en la bienvenida, que ya no dice a cuál quería entrar (se
+    """Cerrada, el menú es el de siempre: la fila del Dashboard (hasta octubre
+    de 2026, las cuatro filas de cliente), y cada pantalla de su árbol aterriza
+    en la bienvenida, que ya no dice a cuál quería entrar (se
     quitó en octubre de 2026: la bienvenida ofrece las dos formas de abrirla).
     La migaja es la de cualquiera sin plan, así que el menú del sitio también
     las enseña."""
@@ -107,9 +108,7 @@ def test_el_menu_ensena_las_cuatro_filas_y_cada_una_lleva_a_la_demo(
 
     pantalla = browser.get("/welcome").get_data(as_text=True)
 
-    for fila in (">Estadísticas<", ">Enviar correos<", ">Contactos<",
-                 ">Plantillas<"):
-        assert fila in pantalla, fila
+    assert ">Dashboard</span>" in pantalla
     assert ">Tu demostración<" not in pantalla
     assert browser.get_cookie("sa_in").value == "1"
 
@@ -406,3 +405,4 @@ def test_las_cuentas_de_antes_siguen_abiertas(client, database, outbox):
 
     assert accounts.is_open(accounts.by_id(database, pagada["_id"]))
     assert accounts.is_open(accounts.by_id(database, habilitada["_id"]))
+

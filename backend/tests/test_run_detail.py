@@ -66,7 +66,8 @@ def test_el_detalle_dice_que_paso_con_cada_uno(client, database, outbox, monkeyp
     events.record(database, kind=events.CLICK, email="socio0@ejemplo.com", **uno)
     events.record(database, kind=events.BOUNCE, email="socio1@ejemplo.com", **uno)
 
-    indice = browser.get("/campaigns").get_data(as_text=True)
+    # Lo que salió vive en Enviados desde octubre de 2026.
+    indice = browser.get("/campaigns/sent").get_data(as_text=True)
     assert f'href="/campaigns/sent/{run["_id"]}"' in indice and "Detalles" in indice
 
     pantalla = browser.get(f"/campaigns/sent/{run['_id']}").get_data(as_text=True)

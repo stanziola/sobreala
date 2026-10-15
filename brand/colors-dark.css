@@ -35,6 +35,12 @@
   --color-accent-soft: #26262A;   /* chips and quiet highlights */
   --color-accent-light: #CFEBFA;  /* text over the brand blue; 6.5:1 */
 
+  /* Lo que se pulsa: de noche, gris claro con el texto oscuro encima
+   * (14.9:1), para que el botón se siga viendo sobre la página negra. */
+  --color-action: #E4E4E7;
+  --color-action-hover: #FFFFFF;  /* texto oscuro encima: 17.7:1 */
+  --color-on-action: #18181B;
+
   /* El verde de lo que salió bien, más claro para que se lea sobre el gris de
    * las tarjetas: 7.5:1 sobre #1B1B1E. */
   --color-success: #22C55E;

@@ -1,52 +1,35 @@
-{% extends "base.html" %}
+{% extends "_dashboard.html" %}
 {% block title %}{{ t('contacts_title') }}{% endblock %}
-{% block wrap_class %}wrap--wide{% endblock %}
 
-{# La misma forma que configuración: las secciones a la izquierda y el trabajo
-   a la derecha. Es el mismo producto, así que se recorre igual. #}
-{% block content %}
+{# Contactos, dentro del Dashboard (octubre de 2026). El árbol tiene Lista y
+   Supresiones; importar, las etiquetas y las columnas se abren desde los
+   botones de la lista, que es donde se está cuando hacen falta. #}
+{% block pane %}
 <h1 class="settings__heading">{{ t('contacts_title') }}</h1>
 
-<div class="settings">
-  {% set tabs = [
-    ('lista', 'contacts_tab_list', url_for('contacts.index')),
-    ('importar', 'contacts_tab_import', url_for('contacts.upload')),
-    ('etiquetas', 'contacts_tab_tags', url_for('contacts.tags')),
-    ('columnas', 'contacts_tab_fields', url_for('contacts.fields')),
-    ('supresiones', 'contacts_tab_blocked', url_for('contacts.blocked'))] %}
+{# El contador vive arriba de todas las pantallas de Contactos: es la misma
+   cifra en todas, y es la que decide si se puede seguir subiendo gente. #}
+{# Dos números a propósito: los que ocupan sitio y los que no. Un anulado
+   no puede recibir nada, así que no cuenta contra el límite. #}
+<p class="quota{% if not left %} is-full{% endif %}">
+  <b>{{ t('contacts_counter', total=active, limit=limit) }}</b><br>
+  {% if left %}
+  {{ t('contacts_counter_left', n=left) }}
+  {% else %}
+  {{ t('contacts_full') }}
+  <a href="{{ site_url }}/#planes">{{ t('contacts_plans') }}</a>
+  {% endif %}
+  {% if blocked_total %}<br>
+  {{ t('contacts_counter_blocked_one') if blocked_total == 1
+     else t('contacts_counter_blocked', n=blocked_total) }}
+  {% endif %}
+  {# Los que no tienen todas sus columnas llenas. No reciben nada, y esto es
+     lo que impide que eso se descubra al mandar una campaña. #}
+  {% if incomplete_total %}<br>
+  {{ t('contacts_counter_incomplete_one') if incomplete_total == 1
+     else t('contacts_counter_incomplete', n=incomplete_total) }}
+  {% endif %}
+</p>
 
-  <nav class="settings__nav" aria-label="{{ t('contacts_title') }}">
-    {% for slug, label, href in tabs %}
-    <a class="settings__tab{% if slug == section %} is-current{% endif %}"
-       href="{{ href }}"{% if slug == section %} aria-current="page"{% endif %}>
-      {{ t(label) }}</a>
-    {% endfor %}
-
-    {# El contador vive aquí y no dentro de cada pantalla: es la misma cifra en
-       las tres, y es la que decide si se puede seguir subiendo gente. #}
-    {# Dos números a propósito: los que ocupan sitio y los que no. Un anulado
-       no puede recibir nada, así que no cuenta contra el límite. #}
-    <p class="quota{% if not left %} is-full{% endif %}">
-      <b>{{ t('contacts_counter', total=active, limit=limit) }}</b><br>
-      {% if left %}
-      {{ t('contacts_counter_left', n=left) }}
-      {% else %}
-      {{ t('contacts_full') }}
-      <a href="{{ site_url }}/#planes">{{ t('contacts_plans') }}</a>
-      {% endif %}
-      {% if blocked_total %}<br>
-      {{ t('contacts_counter_blocked_one') if blocked_total == 1
-         else t('contacts_counter_blocked', n=blocked_total) }}
-      {% endif %}
-      {# Los que no tienen todas sus columnas llenas. No reciben nada, y esto es
-         lo que impide que eso se descubra al mandar una campaña. #}
-      {% if incomplete_total %}<br>
-      {{ t('contacts_counter_incomplete_one') if incomplete_total == 1
-         else t('contacts_counter_incomplete', n=incomplete_total) }}
-      {% endif %}
-    </p>
-  </nav>
-
-  <div class="settings__pane">{% block pane %}{% endblock %}</div>
-</div>
+<div class="settings__pane">{% block contacts_pane %}{% endblock %}</div>
 {% endblock %}

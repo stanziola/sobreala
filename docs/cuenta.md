@@ -96,8 +96,9 @@ contraseña y su segundo factor son suyos, no de la empresa.
 registrarse con solo confirmar un correo, y las imágenes viven en la base: unas
 200 cuentas falsas, con sus 20 fotos cada una, llenarían los 512 MB de Atlas.
 Cerrada, solo usa su bienvenida y Configuración, y puede comprar un plan.
-- **El menú de los dos sitios enseña las cuatro filas de siempre**
-  (Estadísticas, Enviar correos, Contactos y Plantillas), y cada pantalla la
+- **El menú de los dos sitios enseña el Dashboard** (hasta octubre de 2026,
+  cuatro filas: Estadísticas, Enviar correos, Contactos y Plantillas), y cada
+  pantalla de su árbol la
   devuelve a `/welcome?para=<permiso>`. Lo decide `needs()`, por donde ya
   pasaban todas, así que una pantalla nueva hereda la puerta. Hasta octubre de
   2026 la bienvenida decía arriba a cuál quería entrar («Para entrar a
@@ -139,7 +140,7 @@ Hasta ese mes la demostración no enviaba nada, así que no enseñaba lo mejor
   queden correos (`demo_used`). Campañas e individuales salen **solo** a las
   confirmadas; el resto de la lista se salta sin gastar nada. **Hasta
   `DEMO_SENDS` (50) correos en total** (`demo_sent`), con la marca de agua y la
-  baja de siempre. Enviar correos lo dice arriba, con cuántas tiene y cuántos le
+  baja de siempre. Masivo lo dice arriba, con cuántas tiene y cuántos le
   quedan.
 - Con un plan pagado nada de esto aplica, y la sección desaparece.
 
@@ -224,7 +225,7 @@ Cancelar. Funciona sin JavaScript. Hasta octubre de 2026 eran campos con
 (`accounts.verifications.{identity,address}`).
 - **El cliente envía los dos documentos en un formulario aparte**
   (`/verification`, solo el dueño), al que lo llevan el aviso amarillo de
-  Configuración, el de la cuenta limitada y Enviar correos. Hasta octubre de
+  Configuración, el de la cuenta limitada y Masivo. Hasta octubre de
   2026 se subían dentro de Configuración → Cuenta.
   - la identificación, con la foto o el PDF de su cédula o pasaporte;
   - la dirección, con un recibo de luz, agua o teléfono, el aviso de
@@ -257,7 +258,7 @@ Cancelar. Funciona sin JavaScript. Hasta octubre de 2026 eran campos con
 
 **Limitar no es suspender.** Una cuenta limitada entra, prepara todo y puede
 pagar; lo único que no puede es enviar: `sender.blocked()` dice `limited`, y
-Enviar correos lo explica con el enlace al formulario de documentos.
+Masivo lo explica con el enlace al formulario de documentos.
 Suspender sigue cerrando la entrada.
 - **Lo decide el administrador en la ficha** («Limitar la cuenta»), con un
   motivo de una lista (`accounts.LIMIT_REASONS`; hoy solo `verification`,
@@ -303,22 +304,25 @@ las cuentas de sus clientes. Las filas se esconden del menú
 
 ### Configuración en subsecciones (octubre de 2026)
 
-El menú de Configuración lleva **un ícono por sección** y cada sección **se
-despliega** (la altura y la flecha, animadas; con «reducir movimiento», sin
-animar) en sus subsecciones, cada una con su dirección `/settings/<sección>/<parte>`
-y su pantalla (`PARTS` en `blueprints/auth/routes.py`):
+El menú de Configuración lleva **un ícono por sección**. Seguridad y
+Notificaciones **se despliegan** (la altura y la flecha, animadas; con «reducir
+movimiento», sin animar) en sus subsecciones, cada una con su dirección
+`/settings/<sección>/<parte>` y su pantalla (`PARTS` en
+`blueprints/auth/routes.py`). **Cuenta y Facturación se leen enteras**, en una
+sola página (octubre de 2026, `WHOLE`): sus partes son subtítulos con su ancla,
+y una dirección de antes (`/settings/billing/methods`) lleva a la sección y baja
+a la suya (`#methods`).
 
-| Sección | Subsecciones |
+| Sección | Partes |
 |---|---|
-| Cuenta | Perfil · Dirección y teléfonos · Verificación · Tu plan |
+| Cuenta (una página) | Perfil · Dirección y teléfonos · Verificación · Tu plan |
 | Seguridad | Autenticación de múltiples factores · Contraseña · Usuarios (solo el dueño) · Sesiones |
 | Notificaciones | Plan y facturación · Seguridad (un administrador: Clientes · Seguridad) |
-| Facturación | Tu plan · Métodos de pago · Renovación automática · Historial de compras |
+| Facturación (una página) | Tu plan · Métodos de pago · Renovación automática · Historial de compras |
 | Direcciones de prueba | (solo en la demostración, sin subsecciones) |
 
 - `/settings/<sección>` abre la primera, salvo que la dirección traiga algo que
-  diga otra cosa (`PART_HINTS`): `?user=invited` abre Usuarios, `?renewal=on`
-  la renovación, `?editar=address` Dirección y teléfonos. Así las redirecciones
+  diga otra cosa (`PART_HINTS`): `?user=invited` abre Usuarios. Así las redirecciones
   de siempre siguen cayendo donde está lo que avisan. Una parte que no existe,
   o que no le toca (Usuarios para un usuario), vuelve a la sección.
 - Con JavaScript, pulsar una sección la despliega sin recargar (`panel.js`,
@@ -334,8 +338,8 @@ y su pantalla (`PARTS` en `blueprints/auth/routes.py`):
 - **Google solo sale si la cuenta está conectada**, en Contraseña, con su
   «Desconectar». Quien se registró sin Google no ve la fila; se conecta solo la
   primera vez que entra con Google.
-- El aviso de la pausa o el límite sale arriba de toda Cuenta, y el de los
-  documentos pendientes en Perfil y en Verificación.
+- El aviso de la pausa o el límite y el de los documentos pendientes salen
+  arriba de toda Cuenta.
 
 **Un registro que no se confirma se borra a las 24 horas.** `create()` escribe
 `purge_at` y `confirm_email()` lo quita, así que Mongo barre solo lo que quedó a
@@ -508,8 +512,7 @@ dónde escribir.
 **Los trece comparten un solo par de plantillas**, `email/notice.html` y `.txt`,
 porque todos tienen la misma forma: un titular, unos párrafos, y a veces un
 botón, un recuadro o un código de seis dígitos. Los siete correos anteriores —confirmación,
-bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el suyo;
-podrían mudarse a este sobre, pero eso es otro cambio.
+bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el suyo.
 
 **Ninguno puede romper lo que estaba pasando.** Un correo que no sale no puede
 hacer que un pago cobrado parezca fallido, así que el envío va envuelto y solo

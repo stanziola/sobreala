@@ -96,7 +96,7 @@ def test_sin_nada_guardado_dice_que_no_hay_y_ofrece_agregar(client, database,
                                                             monkeypatch):
     browser, _, _ = abierta(client, database, monkeypatch)
 
-    entera = browser.get("/settings/billing/methods").get_data(as_text=True)
+    entera = browser.get("/settings/billing").get_data(as_text=True)
     pantalla = fuera_de_la_bandeja(entera)
 
     assert "No tienes métodos de pago guardados" in pantalla
@@ -164,7 +164,7 @@ def test_con_una_guardada_se_agrega_otra(client, database, monkeypatch):
     assert "paypal=saved" in volver(browser).headers["Location"]
 
     assert [one["id"] for one in guardadas(database, cuenta)] == ["VAULT-1", "VAULT-2"]
-    pantalla = browser.get("/settings/billing/methods").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "ana@paypal.com" in pantalla and "luis@paypal.com" in pantalla
     assert pantalla.count('class="setting__text saved-method"') == 2
 
@@ -219,7 +219,7 @@ def test_eliminar_una_la_quita_en_paypal_y_deja_la_otra(client, database,
     assert "paypal=removed" in respuesta.headers["Location"]
     assert state["deleted"] == ["VAULT-1"]
     assert [one["id"] for one in guardadas(database, cuenta)] == ["VAULT-2"]
-    pantalla = browser.get("/settings/billing/methods").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "ana@paypal.com" not in pantalla and "luis@paypal.com" in pantalla
 
 
@@ -264,7 +264,7 @@ def test_la_guardada_en_el_campo_de_antes_se_ve_y_se_quita(client, database,
     database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {"paypal_vault": {
         "id": "VIEJA", "payer": "vieja@paypal.com", "created_at": accounts.now()}}})
 
-    assert "vieja@paypal.com" in browser.get("/settings/billing/methods").get_data(as_text=True)
+    assert "vieja@paypal.com" in browser.get("/settings/billing").get_data(as_text=True)
     assert 'value="saved:VIEJA"' in browser.get("/checkout/negocio").get_data(as_text=True)
 
     quitar(browser, "VIEJA")
@@ -381,8 +381,8 @@ def test_el_historial_lleva_encabezados_vence_el_y_usd(client, database,
     pagar(browser, "saved:VAULT-1")
 
     # El plan y el historial están en subsecciones distintas (octubre de 2026).
-    pantalla = (browser.get("/settings/billing/plan").get_data(as_text=True)
-                + browser.get("/settings/billing/history").get_data(as_text=True))
+    pantalla = (browser.get("/settings/billing").get_data(as_text=True)
+                + browser.get("/settings/billing").get_data(as_text=True))
 
     encabezado = pantalla.split("<thead>")[1].split("</thead>")[0]
     for columna in ("Fecha", "Plan", "Periodo", "Método", "Monto"):

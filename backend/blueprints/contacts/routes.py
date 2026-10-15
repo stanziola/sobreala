@@ -733,6 +733,12 @@ def upload():
 
 @bp.route("/contacts/suppressions")
 def blocked():
+    """Las direcciones a las que esta cuenta ya no le escribe, y por qué.
+
+    Solo para mirar (octubre de 2026): aquí entran solas, por la baja, el
+    rebote permanente o la queja, y no se ponen ni se quitan a mano. Para
+    dejar de escribirle a alguien se borra el contacto.
+    """
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
@@ -740,37 +746,4 @@ def blocked():
     db = get_db()
     return render_template(
         "contacts/suppressions.html", section="supresiones",
-        **shared(db, account, rows=suppressions.for_account(db, account["_id"]),
-                 liftable=suppressions.LIFTABLE))
-
-
-@bp.route("/contacts/suppressions/add", methods=["POST"])
-def block():
-    account = signed_in()
-    if account is None:
-        return redirect(url_for("auth.login"))
-
-    if csrf_ok(request.form.get("csrf_token")):
-        address = importer.clean(request.form.get("email", ""))
-        if not address:
-            return redirect(url_for("contacts.blocked", error="email"))
-        suppressions.add(get_db(), account["_id"], address,
-                         reason=suppressions.MANUAL, source="panel")
-    return redirect(url_for("contacts.blocked", saved=1))
-
-
-@bp.route("/contacts/suppressions/remove", methods=["POST"])
-def unblock():
-    """Only what the client put there by hand comes off.
-
-    A bounce or a complaint is a fact about the address, not a preference, and
-    models/suppression.py refuses the others rather than trusting this form.
-    """
-    account = signed_in()
-    if account is None:
-        return redirect(url_for("auth.login"))
-
-    if csrf_ok(request.form.get("csrf_token")):
-        suppressions.lift(get_db(), account["_id"],
-                          request.form.get("email", ""))
-    return redirect(url_for("contacts.blocked"))
+        **shared(db, account, rows=suppressions.for_account(db, account["_id"])))

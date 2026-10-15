@@ -38,8 +38,12 @@ p { margin: 0; }
    texto se ponen del azul de la marca al pasar el mouse. Solo los que no
    llevan clase: botones, menú y pestañas tienen su propio efecto, y un botón
    azul con la letra azul no se leería. */
-a { color: var(--color-accent-strong); text-decoration: none; }
-a:not([class]):hover { color: var(--color-accent); }
+/* Los enlaces van del color del texto (octubre de 2026: antes azules). Los que
+   están dentro de una frase van en seminegrita para no confundirse con ella, y
+   se subrayan al pasar el ratón. Lo mismo en el sitio. */
+a { color: var(--color-ink); text-decoration: none; }
+a:not([class]) { font-weight: 600; text-underline-offset: 3px; }
+a:not([class]):hover { text-decoration: underline; }
 /* Un solo anillo al enfocar. Antes se dibujaban dos: el borde del elemento
    cambiaba a azul y encima aparecía un contorno separado por un hueco de 3 px.
    Ahora el contorno se pega al borde y los dos son del mismo azul, así que se
@@ -73,32 +77,24 @@ a:not([class]):hover { color: var(--color-accent); }
 .bar__wing .wing-shadow { fill: var(--color-shadow); }
 .bar__actions { display: flex; align-items: center; gap: 10px; }
 
-/* La búsqueda de la barra (octubre de 2026). En una pantalla ancha es un campo
-   en medio de la barra; en el teléfono, un ícono que lo abre encima de ella.
-   Las sugerencias cuelgan debajo, en una tarjeta como la del menú. */
-.search { position: relative; flex: 1 1 auto; max-width: 440px; margin: 0 auto 0 8px; }
-.search__toggle { display: none; }
+/* La búsqueda (octubre de 2026). Vive arriba de la barra lateral del
+   Dashboard y de la de Administración, sobre la página y no sobre el azul de
+   la barra. Las sugerencias cuelgan debajo, en una tarjeta como la del menú. */
+.search { position: relative; }
 .search__box { position: relative; }
 .search__icon {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-  display: inline-flex; color: rgba(255, 255, 255, .75); pointer-events: none;
+  display: inline-flex; color: var(--color-ink-soft); pointer-events: none;
 }
 .search__icon .icon { width: 18px; height: 18px; }
 .search__input {
-  width: 100%; min-height: 40px; margin: 0; padding: 8px 40px 8px 38px;
-  color: inherit; background: rgba(255, 255, 255, .12);
-  border: 1px solid rgba(255, 255, 255, .35); border-radius: 11px;
-  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  width: 100%; min-height: 40px; margin: 0; padding: 8px 12px 8px 38px;
+  color: var(--color-ink); background: var(--color-surface);
+  border: 1px solid var(--color-field); border-radius: 10px;
 }
-.search__input::placeholder { color: rgba(255, 255, 255, .75); }
-.search__input:focus {
-  outline: none; background: var(--color-surface); color: var(--color-ink);
-  border-color: var(--color-accent);
-}
-.search__box:focus-within .search__icon { color: var(--color-ink-soft); }
 .search__list {
-  position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 70;
-  margin: 0; padding: 6px; list-style: none;
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 70;
+  width: max(100%, 320px); margin: 0; padding: 6px; list-style: none;
   color: var(--color-ink); background: var(--color-surface);
   border: 1px solid var(--color-border); border-radius: 14px;
   box-shadow: var(--shadow-lg);
@@ -112,25 +108,14 @@ a:not([class]):hover { color: var(--color-accent); }
 .search__option a:hover, .search__option.is-active a { background: var(--color-surface-alt); }
 .search__hint { font-size: .8rem; color: var(--color-ink-soft); white-space: nowrap; }
 .search__empty { padding: 9px 12px; color: var(--color-ink-soft); font-size: .92rem; }
-@media (max-width: 720px) {
-  .search { flex: 0 0 auto; max-width: none; margin: 0 0 0 auto; position: static; }
-  .search__toggle {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; border-radius: 11px; color: inherit;
-    border: 1px solid rgba(255, 255, 255, .4);
-  }
-  .search__box { display: none; }
-  .search.is-open .search__box {
-    display: block; position: absolute; left: 12px; right: 12px; top: 12px; z-index: 80;
-  }
-  .search.is-open .search__toggle { visibility: hidden; }
-}
 @media (prefers-reduced-motion: reduce) { .search__list { animation: none; } }
-/* En un teléfono angosto, con sesión, la barra lleva el ala, la lupa y el menú:
-   el nombre de la marca no cabe al lado, y el de la empresa se acorta. */
-@media (max-width: 480px) {
-  .bar:has(.search) .bar__name { display: none; }
-  .menu__who { max-width: 140px; }
+@media (max-width: 480px) { .menu__who { max-width: 140px; } }
+/* En Administración, la búsqueda ocupa su propia fila encima de las pestañas,
+   también en el teléfono, donde las pestañas van en una fila que se desliza. */
+.settings__nav > .search { flex: none; }
+@media (max-width: 779px) {
+  .settings__nav:has(> .search) { flex-wrap: wrap; overflow: visible; }
+  .settings__nav > .search { flex-basis: 100%; }
 }
 /* La página de resultados, sin JavaScript. */
 .search-results { margin: 8px 0 0; padding: 0; list-style: none; }
@@ -195,7 +180,7 @@ a.menu__item:hover, button.menu__item:hover { background: var(--color-hover); te
 /* The language that works, and the one that is only announced. */
 .menu__item.is-on { cursor: default; font-weight: 600; }
 .menu__item.is-off { cursor: default; color: var(--color-ink-soft); }
-.menu__item.is-on .menu__icons { color: var(--color-accent-strong); }
+.menu__item.is-on .menu__icons { color: var(--color-ink); }
 
 /* Theme toggle. The icon shows the action, not the state: a sun while dark
    (press to go light) and a moon while light, same as the public site. */
@@ -276,7 +261,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .code__box:disabled, .btn:disabled {
   opacity: .5; cursor: not-allowed; filter: grayscale(.4);
 }
-.btn:disabled:hover { transform: none; filter: grayscale(.4); }
+.btn:disabled:hover { transform: none; filter: grayscale(.4); background: var(--color-action); }
 
 /* How long the code has left. What it says decides nothing: the expiry that
    counts is the one in the database. */
@@ -329,22 +314,43 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .btn {
   display: inline-block; margin-top: 22px; padding: 12px 22px;
   font: inherit; font-weight: 600; text-align: center; text-decoration: none;
-  color: var(--color-on-accent); background: var(--color-accent);
+  color: var(--color-on-action); background: var(--color-action);
   border: 0; border-radius: 8px; cursor: pointer;
-  transition: transform 160ms ease, filter 160ms ease;
+  transition: transform 160ms ease, background-color 160ms ease;
 }
-.btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
-/* El sólido no tiene borde y su fondo ya es azul: un anillo azul encima
-   no se vería, así que lleva el azul oscuro. */
-.btn:focus-visible { outline-color: var(--color-accent-strong); }
+/* Gris oscuro y no azul (octubre de 2026). El foco sigue siendo el anillo azul
+   de todo el panel, que sobre el gris sí se ve. */
+.btn:hover { transform: translateY(-1px); background: var(--color-action-hover); }
 .btn--small { margin-top: 12px; padding: 8px 14px; font-size: .9rem; }
 /* For buttons inside a card, where the white-on-blue quiet button would be
    invisible. */
 .btn--outline {
-  background: transparent; color: var(--color-accent-strong);
-  border: 1px solid var(--color-border);
+  background: transparent; color: var(--color-ink);
+  border: 1px solid var(--color-field);
 }
 .btn--outline:hover { background: var(--color-surface-alt); filter: none; transform: none; }
+
+/* Enviados: las cifras alineadas a la derecha, para que 500/551 se lea en
+   columna, y la marca de un individual. */
+.table__num, .table th.table__num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mark-yes { font-weight: 700; color: var(--color-success); }
+.pill {
+  display: inline-block; padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  font-size: .78rem; font-weight: 600; color: var(--color-ink);
+  background: var(--color-surface-alt); border: 1px solid var(--color-border);
+}
+
+/* El motivo de una supresión: ámbar el rebote, rojo la queja, gris lo demás.
+   El mismo ámbar y el mismo rojo de `.level`, en Clientes. */
+.pill--hard_bounce { color: #92400E; background: rgba(217, 119, 6, .16); border-color: transparent; }
+.pill--complaint { color: #B42318; background: rgba(180, 35, 24, .12); border-color: transparent; }
+:root[data-theme="dark"] .pill--hard_bounce { color: #FCD34D; background: rgba(252, 211, 77, .14); }
+:root[data-theme="dark"] .pill--complaint { color: #FCA5A5; background: rgba(252, 165, 165, .14); }
+
+/* Un botón que agrega algo lleva el «+» delante (octubre de 2026). */
+.btn--icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn--icon > .icon { width: 18px; height: 18px; flex: none; }
+.btn--small.btn--icon > .icon { width: 16px; height: 16px; }
 
 /* Elegir archivo. El control del navegador no se puede pintar; se esconde sin
    quitarle el foco y la etiqueta hace de botón. El anillo se dibuja alrededor
@@ -443,7 +449,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 .settings__tab:hover { background: var(--color-surface-alt); color: var(--color-ink); text-decoration: none; }
-.settings__tab.is-current { background: var(--color-accent-soft); color: var(--color-accent-strong); }
+/* Lo seleccionado: fondo gris y la raya azul a la izquierda (octubre de 2026). */
+.settings__tab.is-current { background: var(--color-hover); color: var(--color-ink); box-shadow: inset 3px 0 0 var(--color-accent); }
 
 /* ------------------------------------------------ el menú de Configuración
    Cada sección con su ícono y, debajo, sus subsecciones (octubre de 2026). Se
@@ -465,8 +472,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 }
 .settings-subnav__item:hover { color: var(--color-ink); text-decoration: none; }
 .settings-subnav__item.is-current {
-  background: var(--color-accent-soft); color: var(--color-accent-strong);
-  border-color: transparent;
+  background: var(--color-hover); color: var(--color-ink); border-color: var(--color-field);
 }
 @media (min-width: 780px) {
   .settings-subnav { display: none; }
@@ -489,13 +495,73 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   .settings-nav__item:first-child { margin-top: 4px; }
   .settings-nav__item:last-child { margin-bottom: 6px; }
   .settings-nav__item:hover { background: var(--color-surface-alt); color: var(--color-ink); text-decoration: none; }
-  .settings-nav__item.is-current { color: var(--color-accent-strong); font-weight: 700; }
+  .settings-nav__item.is-current { background: var(--color-hover); color: var(--color-ink); box-shadow: inset 3px 0 0 var(--color-accent); font-weight: 600; }
   /* La sección abierta no se pinta entera: lo que se marca es la subsección. */
   .settings-nav__group.is-open > .settings-nav__head.is-current { background: transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
   .settings-nav__sub, .settings-nav__caret { transition: none; }
 }
+/* ------------------------------------------------------------ el Dashboard
+   Estadísticas, Correos y Contactos en un árbol a la izquierda, y lo elegido
+   en el panel grande de la derecha (octubre de 2026). Las ramas se despliegan
+   como las de Configuración: una fila de grid que pasa de 0fr a 1fr y la
+   flecha que gira. En el teléfono el árbol va arriba, entero, detrás de
+   «Secciones», y la búsqueda queda a la vista. */
+.dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (min-width: 780px) { .dash { grid-template-columns: 230px minmax(0, 1fr); gap: 28px; } }
+.dash__pane { min-width: 0; }
+.dash-nav { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 780px) {
+  .dash-nav { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto;
+              padding-right: 4px; }
+}
+.dash-nav__tree { display: flex; flex-direction: column; gap: 2px; }
+.dash-nav__head, .dash-nav__item, .dash-nav__toggle {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px; text-decoration: none;
+  color: var(--color-ink-soft); font-size: .93rem; line-height: 1.3;
+  transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.dash-nav__head { font-weight: 600; }
+.dash-nav__head--0 { color: var(--color-ink); }
+.dash-nav__head:hover, .dash-nav__item:hover, .dash-nav__toggle:hover {
+  background: var(--color-surface-alt); color: var(--color-ink); text-decoration: none;
+}
+.dash-nav__icon { display: inline-flex; flex: none; }
+.dash-nav__icon .icon { width: 18px; height: 18px; }
+.dash-nav__caret { display: inline-flex; margin-left: auto; flex: none;
+                   transition: transform .28s var(--ease); }
+.dash-nav__caret .icon { width: 16px; height: 16px; }
+.dash-nav__group.is-open > .dash-nav__head .dash-nav__caret { transform: rotate(180deg); }
+.dash-nav__sub { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s var(--ease); }
+.dash-nav__group.is-open > .dash-nav__sub { grid-template-rows: 1fr; }
+.dash-nav__items { min-height: 0; overflow: hidden; display: flex; flex-direction: column;
+                   gap: 2px; padding-left: 28px; }
+.dash-nav__group .dash-nav__group .dash-nav__items { padding-left: 14px; }
+.dash-nav__items > :first-child { margin-top: 2px; }
+.dash-nav__items > :last-child { margin-bottom: 4px; }
+/* Lo seleccionado: fondo gris y una raya azul a la izquierda. */
+.dash-nav__item.is-current {
+  background: var(--color-hover); color: var(--color-ink); font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+.dash-nav__toggle { width: 100%; font: inherit; font-weight: 600; color: var(--color-ink);
+                    background: var(--color-surface); border: 1px solid var(--color-border); cursor: pointer; }
+@media (max-width: 779px) {
+  /* Abierto entero: desplegar a medias en un teléfono solo esconde cosas. */
+  .dash-nav__sub { grid-template-rows: 1fr; }
+  .dash-nav__head .dash-nav__caret { display: none; }
+  .dash-nav.is-collapsible:not(.is-shown) .dash-nav__tree { display: none; }
+  .dash-nav.is-shown .dash-nav__toggle .dash-nav__caret { transform: rotate(180deg); }
+}
+@media (min-width: 780px) { .dash-nav__toggle { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .dash-nav__sub, .dash-nav__caret { transition: none; }
+}
+/* El título de cada pantalla, arriba del panel. */
+.dash__pane > .settings__heading:first-child { margin-top: 0; }
+
 /* La sección arriba del título de la subsección, en chiquito. */
 .settings__eyebrow {
   margin: 0 0 2px; font-size: .78rem; font-weight: 700; letter-spacing: .04em;
@@ -604,8 +670,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   text-align: center; background: var(--color-surface-alt); border-radius: 12px;
 }
 .recovery { margin-top: 18px; }
-.recovery summary { cursor: pointer; color: var(--color-accent-strong);
-                    font-size: .9rem; }
+.recovery summary { cursor: pointer; color: var(--color-ink); font-size: .9rem; font-weight: 600; }
+.recovery summary:hover { text-decoration: underline; text-underline-offset: 3px; }
 /* Meter contactos y buscar entre los que hay son dos cosas distintas: los
    botones no se pegan entre sí ni al buscador de abajo. */
 .row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 4px; }
@@ -614,10 +680,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 /* --------------------------------------------------------------- contactos
    La misma pantalla que configuración, más una tabla y un contador. */
 
-/* Cuánto cabe todavía. Vive bajo las pestañas porque es la misma cifra en las
-   tres y es la que decide si se puede seguir subiendo gente. */
+/* Cuánto cabe todavía. Vive arriba de todas las pantallas de Contactos porque
+   es la misma cifra en todas y es la que decide si se puede seguir subiendo
+   gente. */
 .quota {
-  margin-top: 14px; padding: 12px 14px; border-radius: 10px;
+  margin: 0 0 16px; padding: 12px 14px; border-radius: 10px;
   font-size: .88rem; line-height: 1.5; color: var(--color-ink-soft);
   background: var(--color-surface-alt); border: 1px solid var(--color-border);
 }
@@ -897,10 +964,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
    que es un POST y no un enlace, pero en la pantalla se ve como antes. */
 .link-button {
   padding: 0; border: 0; background: none;
-  font: inherit; color: var(--color-accent-strong);
-  text-decoration: none; cursor: pointer;
+  font: inherit; font-weight: 600; color: var(--color-ink); cursor: pointer;
+  text-decoration: none; text-underline-offset: 3px;
 }
-.link-button:hover { color: var(--color-accent); }
+.link-button:hover { text-decoration: underline; }
 /* «Continuar con Google»: el botón claro de su marca, con la G a color. */
 .btn--google {
   display: flex; width: 100%; gap: 10px; align-items: center; justify-content: center;
@@ -1284,8 +1351,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .chip { padding: 7px 12px; border: 0; background: var(--color-surface);
         color: var(--color-ink-soft); font: inherit; font-size: .85rem; cursor: pointer; }
 .chip + .chip { border-left: 1px solid var(--color-border); }
-.chip.is-on { background: var(--color-accent-soft); color: var(--color-accent-strong);
-              font-weight: 700; }
+.chip.is-on { background: var(--color-hover); color: var(--color-ink); font-weight: 700; }
 
 /* De antes: las prediseñadas en tarjetas. Ya no se ofrecen, pero las clases
    siguen por si vuelven a hacer falta en el editor. */
@@ -1336,7 +1402,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 }
 /* La que se está usando ahora mismo, marcada para no tener que leerlas. */
 .switcher__item.is-on {
-  border-color: var(--color-accent); background: var(--color-accent-soft);
+  border-color: var(--color-field); background: var(--color-hover);
+  box-shadow: inset 3px 0 0 var(--color-accent);
 }
 .switcher__icon { display: inline-flex; color: var(--color-ink-soft); }
 .switcher__who { display: grid; gap: 2px; margin-right: auto; min-width: 0; }
@@ -1428,10 +1495,10 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 .pay-other { margin-top: 12px; }
 .pay-other > summary {
   display: inline-block; cursor: pointer; list-style: none;
-  color: var(--color-accent-strong); font-weight: 600; font-size: .95rem;
+  color: var(--color-ink); font-weight: 600; font-size: .95rem; text-underline-offset: 3px;
 }
 .pay-other > summary::-webkit-details-marker { display: none; }
-.pay-other > summary:hover { color: var(--color-accent); }
+.pay-other > summary:hover { text-decoration: underline; }
 .pay-logos__one { height: 22px; width: auto; }
 .summary__pay, .receipt__go { width: 100%; justify-content: center; margin-top: 18px; }
 

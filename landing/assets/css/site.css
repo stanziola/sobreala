@@ -23,6 +23,13 @@
   --color-accent-soft: #EDEDEF;   /* chips, badges, quiet highlights */
   --color-accent-light: #CFEBFA;  /* accents over the brand blue; 4.7:1 */
 
+  /* Lo que se pulsa (octubre de 2026): botones, enlaces y lo seleccionado van
+   * en gris oscuro y no en azul, que se queda para gráficas, interruptores, el
+   * foco del teclado y la raya de lo seleccionado. Blanco sobre él da 15.9:1. */
+  --color-action: #27272A;
+  --color-action-hover: #3F3F46;  /* blanco encima: 10.4:1 */
+  --color-on-action: #FFFFFF;
+
   /* Lo que salió bien: el ganchito del recibo al completar un pago. Es un
    * dibujo, no texto, así que pide 3:1 y da 3.3:1 sobre blanco. */
   --color-success: #16A34A;
@@ -122,6 +129,12 @@
   --color-accent-strong: #5CBDF0; /* links and hover; 8.8:1 on the page */
   --color-accent-soft: #26262A;   /* chips and quiet highlights */
   --color-accent-light: #CFEBFA;  /* text over the brand blue; 6.5:1 */
+
+  /* Lo que se pulsa: de noche, gris claro con el texto oscuro encima
+   * (14.9:1), para que el botón se siga viendo sobre la página negra. */
+  --color-action: #E4E4E7;
+  --color-action-hover: #FFFFFF;  /* texto oscuro encima: 17.7:1 */
+  --color-on-action: #18181B;
 
   /* El verde de lo que salió bien, más claro para que se lea sobre el gris de
    * las tarjetas: 7.5:1 sobre #1B1B1E. */
@@ -249,11 +262,13 @@ body {
 img, svg { display: block; max-width: 100%; }
 h1, h2, h3, p, ul, ol { margin: 0; }
 ul, ol { padding: 0; list-style: none; }
-/* Los enlaces no se subrayan, ni al pasar el mouse (octubre de 2026): los de
-   texto se ponen del azul de la marca. Solo los que no llevan clase, igual que
-   en el panel: botones, barra y menú tienen su propio efecto. */
-a { color: var(--color-accent-strong); text-decoration: none; }
-a:not([class]):hover { color: var(--color-accent); }
+/* Los enlaces van del color del texto y no en azul (octubre de 2026): los de
+   una frase, en seminegrita, y se subrayan al pasar el mouse. Solo los que no
+   llevan clase, igual que en el panel: botones, barra y menú tienen su propio
+   efecto. */
+a { color: var(--color-ink); text-decoration: none; }
+a:not([class]) { font-weight: 600; text-underline-offset: 3px; }
+a:not([class]):hover { text-decoration: underline; }
 button { font: inherit; color: inherit; }
 /* Un solo anillo al enfocar. Antes se dibujaban dos: el borde del elemento
    cambiaba a azul y encima aparecía un contorno separado por un hueco de 3 px.
@@ -349,12 +364,16 @@ button { font: inherit; color: inherit; }
   cursor: default; transform: none; filter: none; box-shadow: none;
 }
 
-.btn--primary { background: var(--color-accent); color: var(--color-on-accent); box-shadow: var(--shadow-sm); }
-.btn--primary:hover { background: var(--color-accent-light); transform: translateY(-2px); box-shadow: var(--shadow); }
+/* Gris oscuro y no azul (octubre de 2026), como en el panel. Sobre el azul de
+   la marca (la portada) siguen como estaban: ahí el gris no se lee. */
+.btn--primary { background: var(--color-action); color: var(--color-on-action); box-shadow: var(--shadow-sm); }
+.btn--primary:hover { background: var(--color-action-hover); transform: translateY(-2px); box-shadow: var(--shadow); }
 .btn--primary:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+.hero__actions .btn--primary { background: var(--color-accent); color: var(--color-on-accent); }
+.hero__actions .btn--primary:hover { background: var(--color-accent-light); }
 
-.btn--outline { background: transparent; color: var(--color-accent-strong); border-color: var(--color-accent-strong); }
-.btn--outline:hover { background: var(--color-accent-strong); color: var(--color-on-dark); transform: translateY(-2px); }
+.btn--outline { background: transparent; color: var(--color-ink); border-color: var(--color-field); }
+.btn--outline:hover { background: var(--color-action); color: var(--color-on-action); border-color: var(--color-action); transform: translateY(-2px); }
 
 .btn--ghost { background: transparent; color: var(--color-on-dark); border-color: var(--color-on-dark-soft); }
 .btn--ghost:hover { background: rgba(255, 255, 255, .12); border-color: var(--color-on-dark); }
@@ -1172,9 +1191,10 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   border: 1px solid var(--color-border);
   transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease);
 }
-.tutorial__tab:hover { border-color: var(--color-accent); }
+.tutorial__tab:hover { border-color: var(--color-field); }
+/* Lo seleccionado, en gris oscuro como en el panel (octubre de 2026). */
 .tutorial__tab[aria-selected="true"] {
-  background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent);
+  background: var(--color-action); color: var(--color-on-action); border-color: var(--color-action);
 }
 .guide + .guide { margin-top: clamp(40px, 6vw, 64px); }
 .guide__name { font-size: 1.35rem; font-weight: 700; }
@@ -1373,7 +1393,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 .cycle__option:hover { color: var(--color-ink); }
-.cycle__option.is-on { background: var(--color-accent); color: var(--color-on-accent); }
+.cycle__option.is-on { background: var(--color-action); color: var(--color-on-action); }
 /* El descuento es del plan anual, así que solo se enciende con el anual
    puesto: en mensual queda apagado, para que nadie lo lea como el precio que
    está mirando. */

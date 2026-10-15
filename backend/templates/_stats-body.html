@@ -4,9 +4,16 @@
     plantillas distintas porque cada una vive dentro de su propia barra: la
     del panel y la de administración con sus pestañas. Lo que enseñan es
     esto, una sola vez, para que no puedan separarse. -#}
+{#- Por secciones (octubre de 2026): el cliente mira una a la vez, desde el
+    árbol del Dashboard (`only` es la que pidió); el administrador, que no pide
+    ninguna, las ve todas seguidas. Es el mismo cuerpo para los dos, así que
+    no pueden separarse. -#}
+{%- set only = stats_section|default('') -%}
+
 {# Un solo formulario en GET para los filtros: la dirección guarda lo que estás
    mirando, así que se puede recargar y compartir. El selector de cuenta solo
    lo dibuja el administrador; el cliente ve la suya y no hay nada que elegir. #}
+{% if not only or only != 'quota' %}
 <form class="filters" method="get">
   {% if pick %}
   <label class="visually-hidden" for="cuenta">{{ t('stats_pick') }}</label>
@@ -54,7 +61,9 @@
   <a class="btn btn--small btn--outline" data-download href="{{ url_for('analytics.as_pdf', period=period, tag=tag, campaign=campaign) }}">{{ t('export_pdf') }}</a>
 </p>
 {% endif %}
+{% endif %}
 
+{% if not only or only == 'summary' %}
 {# ------------------------------------------------------ cómo le fue --- #}
 {#- Personas y no eventos: quien abre tres veces cuenta una. Los porcentajes de
     abiertos, clics y quejas son sobre los entregados, que es a quien le pudo
@@ -109,7 +118,9 @@
 {% with c = sending, label = t('stats_sending_title') %}
 {% include "_bars.html" %}
 {% endwith %}
+{% endif %}
 
+{% if not only or only == 'opens' %}
 {# ---------------------------------------------------- aperturas y clics --- #}
 <h2 class="settings__subtitle">{{ t('stats_engage_title') }}</h2>
 <p class="settings__lead">{{ t('stats_engage_lead') }}</p>
@@ -117,7 +128,9 @@
 {% with c = engaging, label = t('stats_engage_title') %}
 {% include "_bars.html" %}
 {% endwith %}
+{% endif %}
 
+{% if not only or only == 'campaigns' %}
 {# ------------------------------------------------- mejores campañas --- #}
 <h2 class="settings__subtitle">{{ t('stats_best_title') }}</h2>
 <p class="settings__lead">{{ t('stats_best_lead') }}</p>
@@ -174,7 +187,9 @@
 {% else %}
 <p class="hint">{{ t('stats_links_none') }}</p>
 {% endif %}
+{% endif %}
 
+{% if not only or only == 'timing' %}
 {# ------------------------------------------------ cuándo abren --- #}
 <h2 class="settings__subtitle">{{ t('stats_when_title') }}</h2>
 <p class="settings__lead">{{ t('stats_when_lead') }}</p>
@@ -192,7 +207,9 @@
 {% else %}
 <p class="hint">{{ t('stats_when_none') }}</p>
 {% endif %}
+{% endif %}
 
+{% if not only or only == 'growth' %}
 {# --------------------------------------------- crecimiento de la lista --- #}
 <h2 class="settings__subtitle">{{ t('stats_growth_title') }}</h2>
 <p class="settings__lead">{{ t('stats_growth_lead') }}</p>
@@ -200,7 +217,9 @@
 {% include "_bars.html" %}
 {% endwith %}
 <p class="hint">{{ t('stats_growth_note') }}</p>
+{% endif %}
 
+{% if not only or only == 'quota' %}
 {# ---------------------------------------------------- correos del mes --- #}
 {#- Cuánto de la cuota del plan se ha gastado este mes. La barra es un SVG y no
     un ancho escrito en `style`: la cabecera del panel no deja estilos en línea. -#}
@@ -219,3 +238,5 @@
 <p class="hint">{{ t('stats_quota_none') }}
   {% if not pick %}<a href="{{ site_url }}/#planes">{{ t('stats_quota_plans') }}</a>{% endif %}</p>
 {% endif %}
+{% endif %}
+

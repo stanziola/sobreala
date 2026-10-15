@@ -7,7 +7,7 @@ tocar esta parte.
 
 ## Envío
 
-**Cada cliente elige de quién salen sus campañas**, en Enviar correos →
+**Cada cliente elige de quién salen sus campañas**, en Correos →
 Remitente (`/campaigns/sender`, `blueprints/campaigns/`), y vale para todas sus
 campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
 
@@ -159,7 +159,7 @@ sin límite, y el asunto copiado hace que el historial siga contando la verdad
 aunque después se corrija o se borre la campaña. **Borrar una campaña no borra
 sus envíos**: lo que salió, salió.
 
-Es lo que dibuja «Campañas enviadas» en `/campaigns` y las líneas de correo de la
+Es lo que dibuja Enviados (`/campaigns/sent`) y las líneas de correo de la
 Actividad de una ficha, que por eso son una por envío y no una por campaña.
 
 **Su `_id` nace al arrancar, no al terminar.** `campaigns.start()` lo genera y
@@ -182,13 +182,17 @@ enlaces del mismo correo es un clic. Así las cifras no se inflan y la colecció
 no crece con cada reapertura. Cada evento
 lleva el `run_id` del envío y la dirección normalizada, que es lo que permite
 contar **personas y no eventos**: quien abre tres veces cuenta una. Lo hace
-`events.counts_by_run()`, una consulta para toda la lista de «Campañas
-enviadas». `models/event.py` lee también la serie por tramo de tiempo y los
+`events.counts_by_run()`, una consulta para toda la lista de Enviados (cuenta
+también `download`, para decir si bajó el archivo de un individual). `models/event.py` lee también la serie por tramo de tiempo y los
 totales del periodo que dibuja Estadísticas.
 
-## Enviar correos
+## Correos
 
-`/campaigns`, debajo de Estadísticas y **solo para clientes**: se marcan las
+Desde octubre de 2026 es una rama del Dashboard (ver `docs/panel.md`):
+**Correos → Enviar → Redactar, Masivo, Plantillas y Enviados**, y Remitente al
+lado de Enviar. Las direcciones no cambiaron.
+
+**Masivo** es `/campaigns`, **solo para clientes**: se marcan las
 etiquetas a las que va —ninguna es toda la lista—, una pieza guardada y el
 asunto, y sale ahora o queda programada.
 
@@ -200,10 +204,16 @@ que `docs/pricing.md` promete, y hasta que esto existió era cierta solo porque
 no se podía elegir más de una. Arriba, siempre, **qué le falta a la cuenta para que un envío salga
 de verdad**; armar y programar se puede igual, mandar no.
 
-La pantalla tiene **dos listas y son dos cosas distintas**: «Campañas
-guardadas», que se corrigen y se vuelven a mandar, y «Campañas enviadas», una
-línea por cada vez que salió algo, leída de `campaign_runs`. Una campaña
-mandada seis veces es una fila arriba y seis abajo.
+Masivo tiene **«Campañas guardadas»**, que se corrigen y se vuelven a mandar.
+Lo que ya salió está en **Enviados** (`/campaigns/sent`): una línea por cada
+vez que salió algo, campañas e individuales, leída de `campaign_runs`. Una
+campaña mandada seis veces es una fila en Masivo y seis en Enviados. **De una
+campaña cada cifra va sobre los que salieron** (entregados, abiertos, clics,
+rebotes y quejas, en personas: `207/210`); **de un individual, una marca** en
+cada columna, y si llevaba archivo, si lo descargó. Un envío del que Amazon
+todavía no contó nada lo dice en vez de enseñar ceros. Las bajas no van: el
+enlace de baja firma el contacto y no el envío, así que no se pueden atribuir
+a uno (por eso Estadísticas las cuenta por cuenta).
 
 **Cada envío tiene su «Detalles»** (`/campaigns/sent/<id>`): una fila por
 persona a la que le salió, con si le llegó (lo último que contó Amazon:
@@ -331,7 +341,7 @@ pausa automática (`reputation.check()`, ver «La pausa automática»).
 
 ## El correo individual (octubre de 2026)
 
-- **«Escribir un correo»** en Enviar correos (`/campaigns/write`): para, asunto,
+- **Redactar** en Correos → Enviar (`/campaigns/write`): para, asunto,
   mensaje y un archivo opcional. Solo quien puede enviar.
 - **Es una campaña de una persona** (`kind: single`, `to`, `contact_id` si
   está en Contactos, `body`, `download_id`), y sale ya por `sender.run()`: la

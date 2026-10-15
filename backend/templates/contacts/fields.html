@@ -1,5 +1,5 @@
 {% extends "contacts/_layout.html" %}
-{% block pane %}
+{% block contacts_pane %}
 <h2 class="settings__title">{{ t('fields_title') }}</h2>
 <p class="settings__lead">{{ t('fields_lead') }}</p>
 {# Cuántas caben sale del plan, y el plan sale de docs/pricing.md. Se enseña
@@ -8,6 +8,18 @@
   {% if fields_free %}{{ t('fields_counter_free', n=fields|length) }}
   {% else %}{{ t('fields_counter', n=fields|length, limit=field_limit) }}{% endif %}
 </p>
+
+{# Agregar una, aquí arriba (octubre de 2026: antes vivía en la lista). Con
+   el plan lleno el botón se apaga: sin hover, sin animación y sin enlace. La
+   ruta lo comprueba igual, porque apagar un botón no es un permiso. #}
+<div class="row">
+  {% if field_room > 0 %}
+  <a class="btn btn--icon" href="{{ url_for('contacts.add_field') }}">{% include "_icon-plus.svg" %}<span>{{ t('fields_add_action') }}</span></a>
+  {% else %}
+  <span class="btn btn--icon btn--off" aria-disabled="true"
+        title="{{ t('fields_full') }}">{% include "_icon-plus.svg" %}<span>{{ t('fields_add_action') }}</span></span>
+  {% endif %}
+</div>
 
 {% if request.args.get('saved') %}
 <p class="notice notice--ok">{{ t('fields_saved') }}</p>
@@ -74,8 +86,4 @@
 <p class="lead">{{ t('fields_empty') }}</p>
 {% endif %}
 
-{# Crear una se hace desde la lista de contactos, que es donde se está cuando
-   hace falta guardar un dato más. #}
-<p class="hint">{{ t('fields_new_where') }}
-  <a href="{{ url_for('contacts.index') }}">{{ t('contacts_tab_list') }}</a></p>
 {% endblock %}

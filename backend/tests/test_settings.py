@@ -227,7 +227,7 @@ def test_each_section_draws_its_own(client, database, outbox):
 
     # Sin la bandeja de agregar, que va escondida y se abre al pedirla.
     payments = re.sub(r"<dialog.*?</dialog>", "", inside.get(
-        "/settings/billing/methods").get_data(as_text=True), flags=re.S)
+        "/settings/billing").get_data(as_text=True), flags=re.S)
     # Solo lo guardado: ni la tarjeta, ni Yappy, ni «Próximamente».
     assert "Yappy" not in payments and "Próximamente" not in payments
     assert "Tarjeta de crédito o débito" not in payments
@@ -286,7 +286,7 @@ def test_an_account_with_no_plan_says_so(client, database, outbox):
     inside = other(client)
     login(inside)
 
-    assert "Sin plan contratado" in inside.get("/settings/account/plan").get_data(as_text=True)
+    assert "Sin plan contratado" in inside.get("/settings/account").get_data(as_text=True)
 
 
 def test_the_panel_no_longer_holds_the_settings(client, database, outbox):

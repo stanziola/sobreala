@@ -21,7 +21,9 @@ consecuencia que conviene tener presente: con una sola etiqueta no se puede
 segmentar, así que el Básico tampoco; si algún día estorba, es cambiar una fila
 del documento.
 
-**Las etiquetas se crean antes de usarse**, en `/contacts/tags`, y viven
+**Las etiquetas se crean antes de usarse**, en `/contacts/tags` (el botón
+«Etiquetas» de la lista: desde octubre de 2026 no tienen fila en el árbol del
+Dashboard, igual que Importar y Columnas), y viven
 en `contact_tags` del documento de la cuenta. Los formularios de agregar e
 importar solo enseñan casillas con las que existen, y el servidor descarta lo
 que llegue y no esté en ese registro. Dos razones: escribirlas en cada
@@ -57,10 +59,12 @@ dejar fuera, y las cifras de envío ya no los cuentan—. Lo hace una condición
 la consulta común (`models/contact.py`) que **solo encienden los caminos de
 envío**: la lista sí los enseña, porque para completarlos hay que verlos.
 
-**Se crean desde la lista de contactos**, que es donde se está cuando hace falta
-guardar un dato más, y con el plan lleno ese botón sale apagado —y la ruta lo
-comprueba igual—. `/contacts/columns` es para lo que ya existe: **cambiar el
-tipo**, que no se deja si algún valor no encaja en el nuevo, y borrar. El nombre
+**Se administran en Columnas** (`/contacts/columns`), a la que se llega con el
+botón «Columnas» de la lista: arriba, «Agregar columna», que con el plan lleno
+sale apagado —y la ruta lo comprueba igual—; debajo, lo que ya existe:
+**cambiar el tipo**, que no se deja si algún valor no encaja en el nuevo, y
+borrar. Hasta octubre de 2026 se creaban desde la lista y Columnas era una
+pestaña. El nombre
 no se cambia: es lo que las piezas ya tienen escrito dentro. Borrar una borra lo
 que los contactos tenían escrito en ella; los contactos se quedan.
 
@@ -133,9 +137,19 @@ una baja en una cuenta no afecta a las demás.
 | `unsubscribe` | Solo si la persona se resuscribe por el formulario, con doble opt-in |
 | `hard_bounce` | Nunca |
 | `complaint` | Nunca |
-| `manual` | Sí, por el cliente desde el panel |
+| `manual` | Ya no se crea (ver abajo); las que hubiera se quedan |
 
 Guardar siempre fecha y origen.
+
+**Supresiones es solo para mirar** (octubre de 2026): la dirección, el motivo y
+desde cuándo, con el motivo en una pastilla de color (ámbar el rebote, rojo la
+queja, gris la baja), y el botón de borrar los contactos anulados. Sin texto de
+explicación. **No se suprime ni se levanta nada a mano**: las rutas
+`/contacts/suppressions/add` y `/remove` se quitaron, y con ellas
+`suppressions.lift()`. Para dejar de escribirle a alguien, se borra el
+contacto; **borrarlo no lo suprime**, así que si vuelve en una importación
+vuelve a recibir. Una supresión `manual` de antes no se puede quitar desde el
+panel: en la base de desarrollo no había ninguna.
 
 ### `imports`
 Un documento por archivo subido: nombre, etiquetas, el origen declarado, en qué

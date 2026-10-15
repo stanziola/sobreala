@@ -111,6 +111,7 @@ sobreala/
     │                       # quedaron viejos
     ├── services/
     │   ├── mailer.py       # correo del sistema: file | smtp | ses
+    │   ├── dashboard.py    # el árbol del Dashboard y la fila marcada
     │   ├── notices.py      # los avisos de la cuenta: plan, cuenta abierta,
     │   │                   # suspensión, y los avisos para el admin
     │   ├── security.py     # contraseñas, CSRF, límite de intentos
@@ -195,8 +196,9 @@ aplicación aparte: comparte modelos y servicios con el resto.
   cambio y se comprueban las dos en el navegador, con sesión y sin ella. Ya
   mordió dos veces: la fila de Plantillas se puso solo en el panel, y salir
   preguntaba en un sitio y no en el otro. **La única excepción es la
-  búsqueda** (octubre de 2026): vive solo en la barra del panel, porque sin
-  sesión no hay nada que buscar.
+  búsqueda** (octubre de 2026): vive solo en el panel, arriba del árbol del
+  Dashboard, porque sin sesión no hay nada que buscar. El menú de los dos
+  tiene una fila, **Dashboard**, donde antes había cuatro.
 
 ---
 
@@ -263,7 +265,9 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Las **columnas propias** son obligatorias: a un contacto incompleto no se le
   manda nada. El valor se guarda normalizado y como texto.
 - **La supresión vive en su propia colección**, se consulta en lote con `$in` y
-  no se marca en el contacto.
+  no se marca en el contacto. **Supresiones es solo para mirar** (octubre de
+  2026): ni se suprime ni se levanta a mano; para dejar de escribirle a alguien
+  se borra el contacto.
 - La importación corre dentro del request, en streaming; hay que mudarla antes
   del primer cliente con más de unas 5,000 filas. `consent` guarda de dónde
   salió cada contacto.
@@ -312,14 +316,26 @@ cosa está como está, y lo que ya se probó y se quitó.
 ### El panel (`docs/panel.md`)
 
 - Al entrar se aterriza en el sitio público. Una cuenta nueva ve `/welcome`.
-- `/dashboard` es Estadísticas, en personas y con su pastilla contra el periodo
-  anterior. Lo llena `services/stats.py`, y el administrador ve la misma
-  pantalla.
+- **El Dashboard** (`services/dashboard.py`, `_dashboard.html`): Estadísticas,
+  Correos (Enviar → Redactar, Masivo, Plantillas y Enviados; y Remitente) y
+  Contactos (Lista y Supresiones) en un árbol a la izquierda, y la pantalla a
+  la derecha. Las direcciones de siempre no cambiaron. Importar, Etiquetas y
+  Columnas se abren desde la lista de Contactos.
+- `/dashboard` es el Resumen de Estadísticas, y `/dashboard/<sección>` las
+  demás; en personas y con su pastilla contra el periodo anterior. Lo llena
+  `services/stats.py`, y el administrador ve la misma pantalla, entera.
+- **Enviados** (`/campaigns/sent`): todo lo que salió, una línea por envío; de
+  una campaña, cada cifra sobre los que salieron (`207/210`), y de un
+  individual, una marca.
+- **Menos azul**: botones, enlaces y lo seleccionado van en gris
+  (`--color-action`); el azul queda para gráficas, interruptores, el foco y la
+  raya de lo seleccionado. Cuenta y Facturación, en Configuración, son una
+  página cada una.
 - **Todo se guarda en UTC y se escribe en la zona de quien mira**
   (`services/clock.py`, galleta `sa_tz`).
 - Hasta cuatro cuentas abiertas en un navegador (`/switch-account`), cada una
   con su sesión de verdad. «Cerrar sesión» las cierra todas.
-- **La búsqueda de la barra** (`blueprints/search/`): pantallas y acciones que
+- **La búsqueda del Dashboard** (`blueprints/search/`): pantallas y acciones que
   esa cuenta puede abrir, y sus campañas, envíos, plantillas y etiquetas por
   nombre. Sugiere mientras se escribe (`/search/suggest`), sin JavaScript manda
   a `/search`, y sin sesión da 404.

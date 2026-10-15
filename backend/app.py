@@ -20,6 +20,7 @@ from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, at_moment, on_date, t
 from models.account import (current_plan, is_admin, plan_cycle,
                             status_of as account_status_of)
+from services import dashboard
 from services.plans import money
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
@@ -152,7 +153,11 @@ def create_app(overrides: dict | None = None) -> Flask:
                                  site_url=Config.PUBLIC_SITE_URL,
                                  # El mismo número que refuerza el servidor, para
                                  # que la lista de la pantalla no pueda mentir.
-                                 password_min=MIN_PASSWORD_LENGTH)
+                                 password_min=MIN_PASSWORD_LENGTH,
+                                 # El árbol del Dashboard y la fila marcada.
+                                 dash_tree=dashboard.tree,
+                                 dash_here=dashboard.here,
+                                 dash_holds=dashboard.holds)
     app.jinja_env.filters["ago"] = ago
     # Para lo que va a pasar, no para lo que pasó: «17 de septiembre a las 09:00».
     app.jinja_env.filters["at_moment"] = at_moment

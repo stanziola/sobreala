@@ -237,7 +237,7 @@ def best_runs(db, account_id, runs: list[dict[str, Any]]) -> list[dict[str, Any]
     """Los envíos del periodo, del que más abrieron al que menos.
 
     Las cifras las pone `events.counts_by_run()`, la misma consulta que usa
-    «Campañas enviadas»: las dos pantallas no pueden decir cosas distintas.
+    Enviados: las dos pantallas no pueden decir cosas distintas.
     """
     if not runs:
         return []

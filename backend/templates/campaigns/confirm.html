@@ -1,11 +1,11 @@
-{% extends "base.html" %}
+{% extends "_dashboard.html" %}
 {% block title %}{{ t('send_confirm_title') }}{% endblock %}
 
 {#- La pantalla que pregunta antes de mandar. El GET la dibuja y no manda nada;
     el POST de abajo es el que le escribe a la gente, que es el mismo reparto
     que usa exportar contactos. Aquí importa más: un correo que salió no se
     puede recoger. -#}
-{% block content %}
+{% block pane %}
 <h1 class="settings__heading">{{ t('send_confirm_title') }}</h1>
 <p class="settings__lead">{{ t('send_confirm_lead') }}</p>
 

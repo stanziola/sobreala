@@ -1,8 +1,7 @@
-{% extends "base.html" %}
+{% extends "_dashboard.html" %}
 {% block title %}{{ t('panel_title') }}{% endblock %}
-{% block wrap_class %}wrap--wide{% endblock %}
 
-{% block content %}
+{% block pane %}
 {# Recuperar la contraseña deja a la persona aquí, ya dentro; cambiarla desde
    configuración la deja en su sección. Las dos pantallas dan el mismo aviso. #}
 {% if request.args.get('updated') %}
@@ -20,7 +19,9 @@
 {% endif %}
 
 <h1 class="settings__heading">{{ t('panel_title') }}</h1>
+{% if stats_section == 'summary' %}
 <p class="settings__lead">{{ t('panel_greeting', name=account.contact_name) }}</p>
+{% endif %}
 
 {% include "_stats-body.html" %}
 

@@ -119,7 +119,7 @@ def test_aprobada_y_consultada_activa_el_plan(client, database, outbox, monkeypa
     assert pagado["status"] == payments.COMPLETED
     assert pagado["card_last4"] == "4242" and pagado["order_id"] == "OPER-1"
     assert accounts.plan_of(accounts.by_id(database, cuenta["_id"])) == "basico"
-    lista = browser.get("/settings/billing/history").get_data(as_text=True)
+    lista = browser.get("/settings/billing").get_data(as_text=True)
     assert "terminada en 4242" in lista
 
 

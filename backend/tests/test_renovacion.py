@@ -193,7 +193,7 @@ def test_un_monto_o_una_moneda_distintos_no_activan_nada(client, database, outbo
 def test_activarla_desde_facturacion_empieza_el_dia_que_vence(client, database,
                                                               outbox, monkeypatch):
     browser, cuenta, state = cuenta_pagada(client, database, monkeypatch)
-    pantalla = browser.get("/settings/billing/auto-renewal").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "Activar con PayPal" in pantalla
 
     respuesta = browser.post("/settings/billing/renewal", data={
@@ -214,7 +214,7 @@ def test_activarla_desde_facturacion_empieza_el_dia_que_vence(client, database,
     # No cobró nada todavía: el plan sigue siendo el mismo hasta su fecha.
     assert despues["plan_until"] == cuenta["plan_until"]
     assert database.payments.count_documents({}) == 0
-    pantalla = browser.get("/settings/billing/auto-renewal").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "Cancelar renovación" in pantalla and "Próximo cobro" in pantalla
 
 
@@ -224,7 +224,7 @@ def test_sin_el_aviso_montado_no_sale_la_fila_ni_el_boton(client, database, outb
     monkeypatch.setattr(Config, "PAYPAL_WEBHOOK_ID", "")
 
     # La subsección existe (octubre de 2026), pero sin botón: dice por qué.
-    pantalla = browser.get("/settings/billing/auto-renewal").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "Activar con PayPal" not in pantalla and "Próximamente" not in pantalla
     assert "todavía no está disponible" in pantalla
     sin = browser.post("/settings/billing/renewal", data={"csrf_token": csrf(browser)})
@@ -310,7 +310,7 @@ def test_un_cobro_fallido_avisa_y_no_corta_el_plan(client, database, outbox,
     assert despues["plan_until"] == cuenta["plan_until"] and despues["status"] == accounts.ACTIVE
     assert any("No pudimos cobrar tu renovación" in one["subject"]
                for one in correos(database, mail_log.RENEWAL))
-    pantalla = browser.get("/settings/billing/auto-renewal").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
     assert "PayPal no pudo cobrar" in pantalla
 
 
@@ -330,7 +330,7 @@ def test_cancelar_conserva_lo_pagado_y_avisa(client, database, outbox, monkeypat
                for one in correos(database, mail_log.RENEWAL))
     # Y se puede volver a activar.
     assert "Activar con PayPal" in browser.get(
-        "/settings/billing/auto-renewal").get_data(as_text=True)
+        "/settings/billing").get_data(as_text=True)
 
 
 def test_solo_el_dueno_toca_la_renovacion(client, database, outbox, monkeypatch):

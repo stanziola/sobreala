@@ -2,7 +2,7 @@
 {# Siete columnas no caben en la anchura del resto sin partir los nombres en
    dos líneas. Configuración se queda como está: tiene filas, no tablas. #}
 {% block wrap_class %}wrap--table{% endblock %}
-{% block pane %}
+{% block contacts_pane %}
 <h2 class="settings__title">{{ t('contacts_tab_list') }}</h2>
 
 {% if request.args.get('saved') %}
@@ -27,22 +27,15 @@
 </div>
 {% endif %}
 
-{# Las dos formas de meter contactos, arriba y a la vista. Cada una tiene su
-   pantalla; desde aquí solo se llega. #}
+{# Lo que se hace con la lista, arriba y a la vista: meter gente (a mano o
+   importando) y abrir sus etiquetas y sus columnas, que desde octubre de 2026
+   no tienen fila propia en el árbol: se llega desde aquí, que es donde se
+   está cuando hacen falta. #}
 <div class="row">
-  <a class="btn" href="{{ url_for('contacts.add_one') }}">{{ t('contacts_add_title') }}</a>
+  <a class="btn btn--icon" href="{{ url_for('contacts.add_one') }}">{% include "_icon-plus.svg" %}<span>{{ t('contacts_add_title') }}</span></a>
   <a class="btn btn--outline" href="{{ url_for('contacts.upload') }}">{{ t('contacts_import_action') }}</a>
-  {# Una columna más se agrega desde aquí, que es donde se está cuando hace
-     falta. Con el plan lleno el botón se apaga: sin hover, sin animación y sin
-     enlace. La ruta lo comprueba igual, porque apagar un botón no es un
-     permiso. #}
-  {% if field_room > 0 %}
-  <a class="btn btn--outline"
-     href="{{ url_for('contacts.add_field') }}">{{ t('fields_add_action') }}</a>
-  {% else %}
-  <span class="btn btn--off" aria-disabled="true"
-        title="{{ t('fields_full') }}">{{ t('fields_add_action') }}</span>
-  {% endif %}
+  <a class="btn btn--outline" href="{{ url_for('contacts.tags') }}">{{ t('contacts_tab_tags') }}</a>
+  <a class="btn btn--outline" href="{{ url_for('contacts.fields') }}">{{ t('contacts_tab_fields') }}</a>
   {% if total %}
   {# Se lleva el buscador y el filtro puestos, así sirve para sacar un grupo. #}
   <a class="btn btn--outline"

@@ -72,7 +72,7 @@ def between(db, account_id, start, end=None, *, tag: str = "", campaign=None,
     """Los envíos que salieron en ese tramo, con los filtros de la pantalla.
 
     Es lo que dibuja «Tus mejores campañas»: sus cifras las pone después
-    `events.counts_by_run()`, la misma consulta que usa «Campañas enviadas»,
+    `events.counts_by_run()`, la misma consulta que usa Enviados,
     para que las dos pantallas no puedan decir cosas distintas.
     """
     when: dict[str, Any] = {"$gte": start}

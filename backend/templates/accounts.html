@@ -47,7 +47,7 @@
   {# Agregar pasa por la pantalla de entrar entera: aquí no se abre ninguna
      puerta que no estuviera ya abierta. #}
   <p class="switcher__add">
-    <a class="btn btn--outline" href="{{ url_for('auth.login', add=1) }}">{{ t('accounts_add') }}</a>
+    <a class="btn btn--outline btn--icon" href="{{ url_for('auth.login', add=1) }}">{% include "_icon-plus.svg" %}<span>{{ t('accounts_add') }}</span></a>
   </p>
   {% else %}
   <p class="hint">{{ t('accounts_full', n=max_accounts) }}</p>

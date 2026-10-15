@@ -1,6 +1,8 @@
-{% extends "base.html" %}
+{# Dentro del Dashboard, o de Administración para quien administra: es donde
+   vive el campo. #}
+{% extends "admin/_layout.html" if bar_admin else "_dashboard.html" %}
 {% block title %}{{ t('search_title') }}{% endblock %}
-{% block content %}
+{% block pane %}
 {# Lo que hace el campo de la barra sin JavaScript: los mismos resultados que
    las sugerencias, en una página. #}
 <h1 class="settings__heading">{{ t('search_title') }}</h1>

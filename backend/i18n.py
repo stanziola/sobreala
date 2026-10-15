@@ -30,6 +30,29 @@ TEXTS = {
     "menu_language_current": "Español",
     "menu_language_soon": "Inglés (pronto)",
 
+    # --- the Dashboard (octubre de 2026) -------------------------------------
+    # One row of the menu for everything a client works with, and its tree.
+    "menu_dashboard": "Dashboard",
+    "dash_title": "Dashboard",
+    "dash_sections": "Secciones",
+    "dash_stats": "Estadísticas",
+    "dash_stats_summary": "Resumen",
+    "dash_stats_opens": "Aperturas y clics",
+    "dash_stats_campaigns": "Campañas",
+    "dash_stats_timing": "Cuándo abren",
+    "dash_stats_growth": "Lista",
+    "dash_stats_quota": "Cuota",
+    "dash_mail": "Correos",
+    "dash_send": "Enviar",
+    "dash_compose": "Redactar",
+    "dash_bulk": "Masivo",
+    "dash_templates": "Plantillas",
+    "dash_sent": "Enviados",
+    "dash_sender": "Remitente",
+    "dash_contacts": "Contactos",
+    "dash_contacts_list": "Lista",
+    "dash_contacts_suppressions": "Supresiones",
+
     # --- signing out from a link -------------------------------------------
     # Salir cierra la sesión al momento desde los dos sitios. Esta pantalla ya
     # no está en ese camino: solo la recibe una petición que el navegador dijo
@@ -390,8 +413,9 @@ TEXTS = {
     "search_kind_design": "Plantilla",
     "search_kind_tag": "Etiqueta",
     "search_page_stats": "Estadísticas",
-    "search_page_send": "Enviar correos",
-    "search_page_write": "Escribir un correo",
+    "search_page_send": "Masivo",
+    "search_page_sent": "Enviados",
+    "search_page_write": "Redactar",
     "search_page_sender": "Remitente",
     "search_page_contacts": "Contactos",
     "search_page_import": "Importar contactos",
@@ -940,7 +964,6 @@ TEXTS = {
     # --- contacts ----------------------------------------------------------
     "contacts_title": "Contactos",
     "contacts_tab_list": "Tus contactos",
-    "contacts_tab_import": "Importar",
     "contacts_tab_blocked": "Supresiones",
     "contacts_counter": "{total} de {limit} contactos",
     "contacts_counter_left": "Te quedan {n}.",
@@ -968,11 +991,6 @@ TEXTS = {
     "contacts_export_confirm": "Descargar",
     "contacts_export_back": "Volver a la lista",
     "contacts_remove_blocked": "Eliminar los anulados",
-    "contacts_remove_blocked_hint": "Eliminar los anulados borra esos "
-                                    "contactos y deja sus supresiones donde "
-                                    "están: esas direcciones siguen sin poder "
-                                    "recibir nada, y si vuelven en una "
-                                    "importación vuelven marcadas.",
     "contacts_added_blocked": "Lo guardamos, pero esa dirección está anulada: "
                               "no va a recibir nada.",
     "contacts_plans": "Ver los planes",
@@ -1082,7 +1100,6 @@ TEXTS = {
                           "mientras les falte no reciben correos. Se completan "
                           "editándolos o volviendo a importar el archivo con "
                           "esa columna.",
-    "fields_new_where": "Para crear una nueva, ve a",
     "fields_type_save": "Guardar",
     "fields_col_filled": "La tienen",
     "fields_filled": "{n} de {total}",
@@ -1206,38 +1223,15 @@ TEXTS = {
     "import_status_running": "En curso",
 
     "blocked_title": "Supresiones",
-    "blocked_lead": "Direcciones a las que esta cuenta no le puede volver a "
-                    "escribir. Se revisan antes de cada envío, y no gastan "
-                    "cuota.",
     "blocked_empty": "No hay ninguna. Es lo normal al empezar.",
-    "blocked_how": "Hoy entran aquí de dos formas: cuando alguien pulsa el "
-                   "botón de anular la suscripción en uno de tus correos, y "
-                   "cuando agregas una dirección tú misma.",
-    "blocked_bounces_soon": "Los rebotes y las quejas todavía no entran solos. "
-                            "Para eso hace falta el aviso de Amazon, que se "
-                            "configura una vez y avisa por cada correo que no "
-                            "llegó; mientras tanto, una dirección que rebota no "
-                            "se anula sola.",
     "blocked_col_email": "Correo",
     "blocked_col_reason": "Motivo",
     "blocked_col_when": "Desde",
-    "blocked_reason_unsubscribe": "Pidió la baja",
-    "blocked_reason_hard_bounce": "La dirección no existe",
-    "blocked_reason_complaint": "La marcó como spam",
-    "blocked_reason_manual": "La agregaste tú",
-    "blocked_lift": "Quitar",
-    "blocked_locked": "No se puede quitar",
-    "blocked_locked_hint": "Un rebote o una queja son un hecho de la "
-                          "dirección, no una preferencia: no dejan de ser "
-                          "ciertos porque se pulse un botón. Solo se quita lo "
-                          "que agregaste a mano.",
-    "blocked_add_title": "Suprimir una dirección",
-    "blocked_add_lead": "Para cuando alguien te escribe pidiendo que no le "
-                        "mandes más. Queda fuera de todos tus envíos.",
-    "blocked_add_submit": "Suprimir",
-    "blocked_saved": "Listo, esa dirección quedó suprimida.",
+    "blocked_reason_unsubscribe": "Baja",
+    "blocked_reason_hard_bounce": "Rebote",
+    "blocked_reason_complaint": "Queja",
+    "blocked_reason_manual": "Manual",
 
-    "menu_contacts": "Contactos",
     "menu_admin": "Administración",
 
     # --- plantillas --------------------------------------------------------
@@ -1650,13 +1644,12 @@ TEXTS = {
 
     "menu_designs": "Plantillas",
     # --- enviar correos ----------------------------------------------------
-    "menu_send": "Enviar correos",
-    "send_title": "Enviar correos",
+    "send_title": "Masivo",
     "send_lead": "Elige a quién le escribes y qué plantilla. Puedes mandarlo "
                  "ahora o dejarlo programado.",
     "send_new": "Nueva campaña",
     # El correo individual (octubre de 2026).
-    "single_title": "Escribir un correo",
+    "single_title": "Redactar",
     "single_lead": "Un correo a una persona, con un archivo si hace falta. Sabrás "
                    "si le llegó, si lo abrió, si pulsó un enlace y si bajó el "
                    "archivo.",
@@ -1698,13 +1691,26 @@ TEXTS = {
     "send_save": "Guardar los cambios",
     "send_yours": "Campañas guardadas",
     "send_none": "Todavía no has armado ninguna.",
-    "send_runs_title": "Campañas enviadas",
-    "send_runs_lead": "Una línea por cada vez que salió algo, lo último "
-                      "arriba.",
     "send_runs_none": "Todavía no ha salido ninguna.",
     "send_times_one": "Enviada una vez, {when}",
     "send_times": "Enviada {n} veces, la última {when}",
     "send_back": "Volver a envíos",
+
+    # Enviados (octubre de 2026): todo lo que salió, en una tabla.
+    "sent_title": "Enviados",
+    "sent_back": "Volver a Enviados",
+    "sent_col_subject": "Asunto",
+    "sent_col_when": "Fecha",
+    "sent_col_delivered": "Entregados",
+    "sent_col_opened": "Abiertos",
+    "sent_col_clicked": "Clics",
+    "sent_col_bounced": "Rebotes",
+    "sent_col_complaints": "Quejas",
+    "sent_kind_bulk": "Campaña",
+    "sent_kind_single": "Individual",
+    "sent_waiting": "Esperando lo que cuente Amazon.",
+    "sent_downloaded": "Descargó el archivo",
+    "sent_not_downloaded": "No ha bajado el archivo",
 
     "send_subject": "Asunto",
     "send_subject_hint": "Lo primero que se lee, y muchas veces lo único. "

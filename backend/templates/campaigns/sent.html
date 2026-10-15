@@ -1,0 +1,76 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('sent_title') }}{% endblock %}
+
+{#- Enviados (octubre de 2026): todo lo que salió, campañas e individuales, una
+    línea por envío. De una campaña cada cifra va sobre los que salieron
+    (500/551); de un individual, que es una persona, una marca. Las cifras son
+    personas, no eventos, y las cuenta Amazon después de salir: un envío sin
+    avisos todavía lo dice en vez de enseñar una fila de ceros. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('sent_title') }}</h1>
+
+{% set columns = [('delivery', 'sent_col_delivered'), ('open', 'sent_col_opened'),
+                  ('click', 'sent_col_clicked'), ('bounce', 'sent_col_bounced'),
+                  ('complaint', 'sent_col_complaints')] %}
+{% if runs %}
+<div class="table-wrap">
+  <table class="table table--sent">
+    <thead>
+      <tr>
+        <th scope="col">{{ t('sent_col_subject') }}</th>
+        <th scope="col">{{ t('sent_col_when') }}</th>
+        {% for key, label in columns %}<th scope="col" class="table__num">{{ t(label) }}</th>{% endfor %}
+        <th scope="col"><span class="visually-hidden">{{ t('send_details') }}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for one in runs %}
+      {% set seen = run_counts.get(one._id) or {} %}
+      {% set single = one.to %}
+      <tr>
+        <td>
+          <b>{{ one.subject }}</b><br>
+          <span class="pill">{{ t('sent_kind_single') if single else t('sent_kind_bulk') }}</span>
+          <span class="table__quiet">
+            {% if single %}{{ one.to }}{% else %}{{ (one.tags or [])|join(' · ') or everyone }}{% endif %}
+            {% if one.skipped %}· {{ t('send_state_skipped', n=one.skipped) }}{% endif %}
+            {% if one.failed %}· {{ t('send_state_failed', n=one.failed) }}{% endif %}</span>
+        </td>
+        <td class="table__quiet">{{ one.finished_at|ago }}</td>
+        {% if not seen.values()|sum %}
+        <td class="table__quiet" colspan="{{ columns|length }}">{{ t('sent_waiting') }}</td>
+        {% else %}
+        {% for key, label in columns %}
+        <td class="table__num">
+          {% if single %}
+          {% if seen[key] %}<span class="mark-yes" title="{{ t(label) }}">✓</span>{% else %}<span class="table__quiet">—</span>{% endif %}
+          {% if key == 'click' and one.campaign_id in with_file %}
+          <br><span class="table__quiet">{{ t('sent_downloaded') if seen.download else t('sent_not_downloaded') }}</span>
+          {% endif %}
+          {% else %}
+          {{ seen[key] }}/{{ one.sent }}
+          {% endif %}
+        </td>
+        {% endfor %}
+        {% endif %}
+        <td>
+          <a class="btn btn--small btn--outline"
+             href="{{ url_for('campaigns.run_detail', raw=one._id) }}">{{ t('send_details') }}</a>
+        </td>
+      </tr>
+      {% if one.errors %}
+      <tr>
+        <td colspan="{{ columns|length + 3 }}" class="table__quiet">
+          {{ t('send_errors_title') }}
+          {% for bad in one.errors %}<br>{{ bad.email }}: {{ bad.error }}{% endfor %}
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('send_runs_none') }}</p>
+{% endif %}
+{% endblock %}

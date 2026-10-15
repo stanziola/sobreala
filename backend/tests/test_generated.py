@@ -52,12 +52,17 @@ def test_planes_ya_no_vende_complementos():
     assert "al recargar" not in planes
 
 
-def test_los_enlaces_no_se_subrayan_en_el_panel_ni_en_el_sitio():
-    """Ni quietos ni al pasar el mouse (octubre de 2026): los de texto se
-    ponen del azul de la marca. En los dos sitios, que se ven igual."""
+def test_los_enlaces_se_subrayan_solo_al_pasar_el_mouse():
+    """Octubre de 2026: van del color del texto y no en azul, y se subrayan
+    solo al pasar el mouse, nunca quietos. En los dos sitios, que se ven
+    igual."""
     raiz = Path(__file__).resolve().parents[2]
     for hoja in (raiz / "backend/static/css/_panel.src.css",
                  raiz / "landing/src/site.css"):
         texto = hoja.read_text(encoding="utf-8")
-        assert "text-decoration: underline" not in texto, hoja
-        assert "a:not([class]):hover { color: var(--color-accent); }" in texto, hoja
+        assert "a { color: var(--color-ink); text-decoration: none; }" in texto, hoja
+        assert "a:not([class]):hover { text-decoration: underline; }" in texto, hoja
+        # Cada subrayado de la hoja es de un :hover.
+        for linea in texto.splitlines():
+            if "text-decoration: underline" in linea:
+                assert ":hover" in linea, (hoja, linea)

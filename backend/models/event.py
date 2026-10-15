@@ -32,8 +32,9 @@ DOWNLOAD = "download"
 KINDS = (SENT, DELIVERED, BOUNCE, COMPLAINT, OPEN, CLICK, REJECT, DOWNLOAD)
 
 # Lo que se cuenta de un envío, en personas y no en eventos: quien abre tres
-# veces cuenta una.
-RUN_KINDS = (DELIVERED, BOUNCE, OPEN, CLICK, COMPLAINT)
+# veces cuenta una. La descarga es la del archivo de un individual, para que
+# Enviados diga si lo bajó.
+RUN_KINDS = (DELIVERED, BOUNCE, OPEN, CLICK, COMPLAINT, DOWNLOAD)
 
 # Los periodos que ofrece la pantalla, en el orden en que se ofrecen, y en qué
 # tramos se parte cada uno. Una hora se mira cada cinco minutos, un día por

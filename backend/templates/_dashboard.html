@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block wrap_class %}wrap--wide{% endblock %}
+
+{#- El Dashboard (octubre de 2026): Estadísticas, Correos y Contactos en un
+    árbol a la izquierda, como el de Cloudflare, y lo elegido en el panel
+    grande de la derecha. La búsqueda va arriba del árbol, y solo aquí.
+
+    El árbol lo arma `services/dashboard.py` con los permisos de quien mira;
+    cada pantalla sigue en su dirección de siempre y solo extiende este marco.
+    Cada rama es un enlace a su primera fila, así que sin JavaScript abre algo;
+    con él, en una pantalla ancha, se despliega en su sitio
+    (`data-settings-toggle`, el mismo de Configuración). En el teléfono el árbol
+    se esconde detrás de «Secciones» y la búsqueda queda a la vista. -#}
+
+{% macro dash_row(item, here, depth) %}
+{% if item.rows %}
+{% set open = dash_holds(item, here) %}
+<div class="dash-nav__group{% if open %} is-open{% endif %}">
+  <a class="dash-nav__head dash-nav__head--{{ depth }}{% if open %} is-here{% endif %}"
+     href="{{ item.url }}" data-settings-toggle
+     aria-expanded="{{ 'true' if open else 'false' }}" aria-controls="dash-{{ item.key }}">
+    {% if item.icon %}<span class="dash-nav__icon">{% include item.icon %}</span>{% endif %}
+    <span class="dash-nav__label">{{ t(item.label) }}</span>
+    <span class="dash-nav__caret">{% include "_icon-caret.svg" %}</span>
+  </a>
+  <div class="dash-nav__sub" id="dash-{{ item.key }}">
+    <div class="dash-nav__items">
+      {% for one in item.rows %}{{ dash_row(one, here, depth + 1) }}{% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+<a class="dash-nav__item{% if item.key == here %} is-current{% endif %}" href="{{ item.url }}"
+   {%- if item.key == here %} aria-current="page"{% endif %}>{{ t(item.label) }}</a>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+{% set here = dash_here() %}
+<div class="dash">
+  <nav class="dash-nav" aria-label="{{ t('dash_title') }}" data-dash-nav>
+    {% include "_search.html" %}
+    <button class="dash-nav__toggle" type="button" data-dash-toggle hidden
+            aria-expanded="false" aria-controls="dash-tree">
+      <span>{{ t('dash_sections') }}</span>
+      <span class="dash-nav__caret">{% include "_icon-caret.svg" %}</span>
+    </button>
+    <div class="dash-nav__tree" id="dash-tree">
+      {% for branch in dash_tree(bar_account) %}{{ dash_row(branch, here, 0) }}{% endfor %}
+    </div>
+  </nav>
+
+  <div class="dash__pane">{% block pane %}{% endblock %}</div>
+</div>
+{% endblock %}

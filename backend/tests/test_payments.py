@@ -523,8 +523,8 @@ def test_opciones_de_pago_ya_no_vende(client, database, outbox, monkeypatch):
     # Los métodos (sin la bandeja de agregar) y lo cobrado, que desde octubre de
     # 2026 son dos subsecciones de Facturación.
     pantalla = fuera_de_la_bandeja(
-        browser.get("/settings/billing/methods").get_data(as_text=True)
-        + browser.get("/settings/billing/history").get_data(as_text=True))
+        browser.get("/settings/billing").get_data(as_text=True)
+        + browser.get("/settings/billing").get_data(as_text=True))
     assert "/settings/billing/checkout" not in pantalla
     # Y sí sigue diciendo qué tienes y qué se te ha cobrado.
     assert "PayPal" in pantalla
@@ -551,7 +551,7 @@ def test_tus_pagos_solo_ensena_lo_que_se_cobro(client, database, outbox,
     # Y otro que se queda a medias: se crea la orden y nadie vuelve de PayPal.
     buy(browser, plan="negocio")
 
-    pantalla = browser.get("/settings/billing/history").get_data(as_text=True)
+    pantalla = browser.get("/settings/billing").get_data(as_text=True)
 
     # Una fila por pago cobrado, esperando su factura; el intento a medias no.
     assert pantalla.count("Factura en camino") == 1

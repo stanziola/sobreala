@@ -115,8 +115,8 @@
 
         <div class="usermenu__panel">
           {#- Una cuenta de administrador no tiene clientes a los que
-              escribirle, así que los contactos y las plantillas le salen
-              vacíos y no se le enseñan. Quién es lo dice la galleta que deja el
+              escribirle, así que el Dashboard le sale vacío y no se le
+              enseña. Quién es lo dice la galleta que deja el
               panel, y nav.js decide con ella.
 
               Las mismas dos filas y en el mismo orden que el menú del panel,
@@ -131,32 +131,14 @@
             <span class="usermenu__icons">{% include "partials/icon-shield.svg.j2" %}</span>
             <span>{{ panel.admin_label }}</span></a>
 
-          {#- El panel va primero porque es a lo que se dedica la empresa: lo
-              demás son ajustes de la cuenta, y se buscan cuando hace falta. -#}
+          {#- El Dashboard (octubre de 2026): Estadísticas, Correos y Contactos
+              en una sola fila, igual que en el menú del panel, que es la otra
+              mitad de esto. Va primero porque es a lo que se dedica la
+              empresa: lo demás son ajustes de la cuenta. -#}
           <a class="usermenu__item" data-client-only hidden
              href="{{ panel.base_url }}/dashboard">
             <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
-            <span>{{ panel.panel_label }}</span></a>
-
-          {#- Debajo de Estadísticas y solo para clientes, igual que en el
-              panel: una cuenta de administrador no tiene a quién escribirle. -#}
-          <a class="usermenu__item" data-client-only hidden
-             href="{{ panel.base_url }}/campaigns">
-            <span class="usermenu__icons">{% include "partials/icon-send.svg.j2" %}</span>
-            <span>{{ panel.send_label }}</span></a>
-
-          <a class="usermenu__item" data-client-only hidden
-             href="{{ panel.base_url }}/contacts">
-            <span class="usermenu__icons">{% include "partials/icon-people.svg.j2" %}</span>
-            <span>{{ panel.contacts_label }}</span></a>
-
-          {#- Debajo de contactos: primero a quién le escribes, después con qué.
-              El mismo orden que el menú del panel, que tiene que decir lo
-              mismo que este. -#}
-          <a class="usermenu__item" data-client-only hidden
-             href="{{ panel.base_url }}/templates">
-            <span class="usermenu__icons">{% include "partials/icon-mail.svg.j2" %}</span>
-            <span>{{ panel.designs_label }}</span></a>
+            <span>{{ panel.dashboard_label }}</span></a>
 
           <a class="usermenu__item" data-account-only hidden
              href="{{ panel.base_url }}/settings">

@@ -293,32 +293,30 @@ def test_borrar_un_contacto_no_levanta_su_supresion(client, database, outbox):
     assert suppressions.has(database, cuenta["_id"], "bea@coop.com")
 
 
-def test_solo_se_quita_lo_que_se_puso_a_mano(client, database, outbox):
+def test_supresiones_es_solo_para_mirar(client, database, outbox):
+    """Octubre de 2026: la pantalla enseña la dirección y el motivo, en color, y
+    no deja agregar ni quitar ninguna a mano."""
     browser = inside(client)
     cuenta = account_of(database)
+    suppressions.add(database, cuenta["_id"], "rebote@coop.com",
+                     reason=suppressions.HARD_BOUNCE)
     suppressions.add(database, cuenta["_id"], "queja@coop.com",
                      reason=suppressions.COMPLAINT)
-    suppressions.add(database, cuenta["_id"], "mia@coop.com",
-                     reason=suppressions.MANUAL)
+    suppressions.add(database, cuenta["_id"], "baja@coop.com",
+                     reason=suppressions.UNSUBSCRIBE)
 
-    for direccion in ("queja@coop.com", "mia@coop.com"):
-        browser.post("/contacts/suppressions/remove", data={
-            "csrf_token": csrf(browser, "/contacts/suppressions"),
-            "email": direccion})
+    pantalla = browser.get("/contacts/suppressions").get_data(as_text=True)
+    assert "pill--hard_bounce" in pantalla and "pill--complaint" in pantalla
+    assert "pill--unsubscribe" in pantalla
+    assert "<form" not in pantalla.split('class="dash__pane"')[1]
 
-    # Un rebote o una queja son un hecho de la dirección, no una preferencia.
+    token = csrf(browser, "/contacts/suppressions")
+    assert browser.post("/contacts/suppressions/add", data={
+        "csrf_token": token, "email": "quiensea@coop.com"}).status_code in (404, 405)
+    assert browser.post("/contacts/suppressions/remove", data={
+        "csrf_token": token, "email": "queja@coop.com"}).status_code in (404, 405)
+    assert not suppressions.has(database, cuenta["_id"], "quiensea@coop.com")
     assert suppressions.has(database, cuenta["_id"], "queja@coop.com")
-    assert not suppressions.has(database, cuenta["_id"], "mia@coop.com")
-
-
-def test_suprimir_a_mano_desde_la_pantalla(client, database, outbox):
-    browser = inside(client)
-    browser.post("/contacts/suppressions/add", data={
-        "csrf_token": csrf(browser, "/contacts/suppressions"),
-        "email": "quiensea@coop.com"})
-
-    assert suppressions.has(database, account_of(database)["_id"],
-                            "quiensea@coop.com")
 
 
 # ------------------------------------------------------- cada cuenta la suya

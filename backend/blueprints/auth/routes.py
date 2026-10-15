@@ -42,6 +42,7 @@ from models import session as sessions
 from models import token as tokens
 from models import verification_doc as verification_docs
 from services import countries
+from services import dashboard
 from services import importer
 from services import google_auth
 from services import mailer
@@ -1866,12 +1867,13 @@ def request_demo():
 
 
 @bp.route("/dashboard")
-def panel():
+@bp.route("/dashboard/<section>")
+def panel(section: str = ""):
     """Las estadísticas de la cuenta: sus cifras y las gráficas de sus envíos.
 
-    La dirección sigue siendo /dashboard aunque la pantalla se llame Estadísticas:
-    cambiarla rompería los enlaces guardados y el correo de bienvenida a cambio
-    de nada.
+    Es la entrada del Dashboard (octubre de 2026), y se miran por secciones:
+    /dashboard es el Resumen y /dashboard/<sección> cada una de las demás
+    (`dashboard.STATS_SECTIONS`). Una sección inventada da 404.
 
     La llena `services/stats.py`, el mismo que llena la del administrador, para
     que las dos no puedan separarse.
@@ -1882,6 +1884,10 @@ def panel():
     answer = not_for_admins(account) or needs(account, accounts.STATS)
     if answer:
         return answer
+    if not section:
+        section = dashboard.STATS_SECTIONS[0]
+    elif section == dashboard.STATS_SECTIONS[0] or section not in dashboard.STATS_SECTIONS:
+        abort(404)
 
     db = get_db()
     # Las cifras son las de la empresa, también cuando las mira un usuario suyo.
@@ -1892,7 +1898,7 @@ def panel():
     notices.plan_watch(db, company)
 
     return render_template(
-        "stats.html", account=company, pick=None,
+        "stats.html", account=company, pick=None, stats_section=section,
         **stats.screen(db, company,
                        period=request.args.get("period", ""),
                        tag=request.args.get("tag", ""),
@@ -1934,11 +1940,16 @@ def sections_for(account: dict | None) -> tuple[str, ...]:
 # Cada una tiene su dirección, `/settings/<sección>/<parte>`, y enseña solo lo
 # suyo; el menú las despliega debajo de su sección. La primera es la de entrada.
 PARTS = {
-    "account": ("profile", "contact", "verification", "plan"),
     "security": ("two-step", "password", "users", "sessions"),
     "notifications": ("plan", "security"),
-    "billing": ("plan", "methods", "auto-renewal", "history"),
     "test": ("addresses",),
+}
+# Cuenta y Facturación se leen enteras, en una sola página (octubre de 2026):
+# lo que fueron sus subsecciones son anclas. Una dirección de antes
+# (/settings/billing/methods) lleva a la sección y baja a su parte.
+WHOLE = {
+    "account": ("profile", "contact", "verification", "plan"),
+    "billing": ("plan", "methods", "auto-renewal", "history"),
 }
 # Los avisos que guarda cada subsección de Notificaciones. Cada formulario
 # escribe solo los suyos, así guardar una no apaga los de la otra.
@@ -1951,12 +1962,8 @@ NOTICE_PARTS = {
 # así las redirecciones de siempre («?user=invited», «?renewal=on») siguen
 # cayendo donde está lo que avisan.
 PART_HINTS = {
-    "account": (("editar", "contact"), ("address", "contact"),
-                ("phones", "contact"), ("email", "profile")),
     "security": (("user", "users"), ("updated", "password"),
                  ("google", "password"), ("dospasos", "two-step")),
-    "billing": (("agregar", "methods"), ("paypal", "methods"),
-                ("renewal", "auto-renewal")),
 }
 
 
@@ -1972,6 +1979,10 @@ def parts_for(account: dict | None, section: str) -> tuple[str, ...]:
 
 
 def part_from_hints(section: str, parts: tuple[str, ...]) -> str:
+    """La subsección que abre una dirección que no la nombra. Una sección que
+    se lee entera no tiene ninguna: vacío."""
+    if not parts:
+        return ""
     for arg, part in PART_HINTS.get(section, ()):
         if request.args.get(arg) and part in parts:
             return part
@@ -2059,9 +2070,10 @@ def settings(section: str = "account", part: str = ""):
     Cuáles son depende de quién mira: un cliente tiene cuatro y un
     administrador solo Seguridad.
 
-    Desde octubre de 2026 cada sección se parte en subsecciones (`PARTS`), y
-    la pantalla enseña una sola. Sin `part`, se elige por lo que trae la
-    dirección (`PART_HINTS`) o la primera.
+    Desde octubre de 2026 Seguridad y Notificaciones se parten en
+    subsecciones (`PARTS`), y la pantalla enseña una sola. Sin `part`, se elige
+    por lo que trae la dirección (`PART_HINTS`) o la primera. Cuenta y
+    Facturación se leen enteras (`WHOLE`).
     """
     account = current_account()
     if account is None:
@@ -2073,12 +2085,9 @@ def settings(section: str = "account", part: str = ""):
         return redirect(url_for("auth.settings", section=sections[0]))
     parts = parts_for(account, section)
     if part and part not in parts:
-        return redirect(url_for("auth.settings", section=section))
+        anchor = "#" + part if part in WHOLE.get(section, ()) else ""
+        return redirect(url_for("auth.settings", section=section, **request.args) + anchor)
     part = part or part_from_hints(section, parts)
-    if request.method == "POST" and section == "account":
-        # Lo que se escribe en Cuenta (la dirección y los teléfonos) vive en
-        # «Dirección y teléfonos»: si algo falla, ahí se vuelve a dibujar.
-        part = "contact"
 
     db = get_db()
     postal_error = ""
@@ -2107,7 +2116,7 @@ def settings(section: str = "account", part: str = ""):
                 accounts.set_phones(db, account["_id"], phone=phone,
                                     company_phones=company_phones)
                 return redirect(url_for("auth.settings", section="account",
-                                        part="contact", phones=1) + "#phones")
+                                        phones=1) + "#phones")
             account_errors["phones"] = t("error_phone")
             editing = "phones"
         else:
@@ -2117,7 +2126,7 @@ def settings(section: str = "account", part: str = ""):
                     accounts.set_postal(db, account["_id"], address)
                     changed_verified(db, account, accounts.ADDRESS)
                 return redirect(url_for("auth.settings", section="account",
-                                        part="contact", address=1) + "#address")
+                                        address=1) + "#address")
             postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
                              max=accounts.POSTAL_MAX)
             editing = "address"

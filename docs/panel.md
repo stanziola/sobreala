@@ -26,31 +26,69 @@ pasado nada: la peor primera pantalla posible.
 `docs/cuenta.md`), `/welcome` es la pantalla de la demostración: los dos caminos
 que la abren, lo que incluye la llamada, el formulario para pedirla (a qué
 se dedica el negocio y para qué usará Sobreala) y los botones de ver los planes y de Configuración.
-Las cuatro pantallas de cliente, que siguen en el menú, la devuelven ahí (con
+Las pantallas del Dashboard, que sigue en el menú, la devuelven ahí (con
 `?para=`, que ya no se lee: el aviso de a cuál quería entrar se quitó en octubre
 de 2026). **Ya abierta y sin plan**, dice que la cuenta está lista y lleva esos
 dos botones, como antes.
 
-**Los enlaces no se subrayan** (octubre de 2026), en el panel ni en el sitio:
-quietos van en su azul (`--color-accent-strong`) y, al pasar el mouse, los de
-texto se ponen del azul de la marca (`--color-accent`). La regla es
-`a:not([class]):hover`: botones, menú y pestañas llevan clase y su propio
-efecto, y un botón azul con la letra azul no se leería. En el pie del sitio, que
-va sobre el azul de la marca, se ponen celeste (`--color-accent-light`).
+**Menos azul** (octubre de 2026), en el panel y en el sitio. **Los botones**
+van en gris casi negro con la letra blanca (`--color-action`, que de noche es
+gris claro con la letra oscura), y los de contorno en gris. **Los enlaces**
+van del color del texto: los de una frase (`a:not([class])`), en seminegrita y
+subrayados al pasar el mouse; botones, menú y pestañas llevan clase y su propio
+efecto. **Lo seleccionado** (el árbol del Dashboard, las pestañas, las
+subsecciones, los chips, la cuenta en uso) lleva fondo gris y una raya azul de
+3 px a la izquierda. **El azul se queda** en las gráficas, los interruptores, las
+casillas, el foco del teclado y el lienzo, y en el sitio, en todo lo que lleva
+el azul de la marca (cabecera, portada y pie, con sus botones). En el pie del
+sitio los enlaces van celeste (`--color-accent-light`), como antes.
 
 Esa dirección se queda en el historial, así que lleva dos guardas que **no son
 para el día del registro**, donde no pueden darse: con un plan ya contratado
 manda al panel, y a un administrador lo devuelve a `/admin`.
 
-**`/dashboard` es la pantalla de Estadísticas.** La dirección no cambió aunque la
-pantalla se llame así: cambiarla rompería los enlaces guardados y el correo de
-bienvenida a cambio de nada. **Solo enseña envíos**: los contactos, las
-importaciones y el plan tienen sus propias pantallas y salieron de aquí. Tiene
-cuatro partes, con filtro por periodo, por etiqueta y por **campaña**:
+### El Dashboard (octubre de 2026)
+
+**Estadísticas, Correos y Contactos son una sola fila del menú, Dashboard**, en
+los dos sitios. Adentro, como en Cloudflare, **un árbol a la izquierda y lo
+elegido en el panel grande de la derecha**, con la búsqueda arriba del árbol:
+
+```
+Estadísticas ▸ Resumen · Aperturas y clics · Campañas · Cuándo abren · Lista · Cuota
+Correos      ▸ Enviar ▸ Redactar · Masivo · Plantillas · Enviados
+                Remitente
+Contactos    ▸ Lista · Supresiones
+```
+
+- El árbol lo arma `services/dashboard.py` (`tree()`) con los permisos de quien
+  mira, y la fila marcada la decide el endpoint (`here()`), así que el menú y
+  la pantalla no pueden decir cosas distintas. Cada pantalla sigue en su
+  dirección de siempre (`/campaigns`, `/campaigns/write`, `/templates`,
+  `/contacts`…) y solo extiende `_dashboard.html`. **El editor del lienzo y
+  las piezas cargadas siguen a pantalla completa**, porque necesitan el ancho.
+- Cada rama es un enlace a su primera fila, así que sin JavaScript abre algo;
+  con él, en una pantalla ancha, se despliega en su sitio, con el mismo código
+  que Configuración. En el teléfono el árbol se esconde detrás de «Secciones» y
+  la búsqueda queda a la vista.
+- Un usuario de la empresa ve solo las ramas de sus permisos; sin
+  Estadísticas, `/dashboard` lo manda a la primera que tenga (`needs()`). Una
+  cuenta cerrada lo ve entero y cada pantalla la lleva a `/welcome`. El
+  administrador no tiene Dashboard: tiene `/admin`.
+- Importar, Etiquetas y Columnas no tienen fila: se abren con los botones de la
+  lista de Contactos, y en el árbol queda marcada Lista.
+
+**`/dashboard` es el Resumen de Estadísticas**, y cada sección tiene su
+dirección: `/dashboard/opens`, `/campaigns`, `/timing`, `/growth` y `/quota`
+(`dashboard.STATS_SECTIONS`; otra da 404). Los filtros viajan en la dirección,
+así que pasar de una sección a otra los conserva. El cuerpo es uno solo
+(`_stats-body.html`) y enseña la sección pedida (`stats_section`); el
+administrador, que no pide ninguna, ve todas seguidas. **Solo enseña envíos**:
+los contactos, las importaciones y el plan tienen sus propias pantallas. Con
+filtro por periodo, por etiqueta y por **campaña**:
 
 - **«Cómo le fue»**: enviados, y el porcentaje de entregados, rebotes,
   aperturas, clics y quejas, **en personas** (`events.people()`, la misma
-  cuenta que «Campañas enviadas»). Entregados y rebotes sobre lo enviado; lo
+  cuenta que Enviados). Entregados y rebotes sobre lo enviado; lo
   demás sobre lo entregado. Debajo, fijo, que las aperturas son aproximadas y
   que entregado no es la bandeja.
 - **Cada cifra lleva su pastilla contra el periodo anterior**, del mismo largo
@@ -87,7 +125,7 @@ cuatro partes, con filtro por periodo, por etiqueta y por **campaña**:
   mentir. La pantalla dice por qué faltan.
 - **Tus mejores campañas**: los envíos del periodo ordenados por aperturas, con
   enlace a su «Detalles». Sus cifras salen de `events.counts_by_run()`, la
-  misma consulta de «Campañas enviadas», así que las dos pantallas no pueden
+  misma consulta de Enviados, así que las dos pantallas no pueden
   decir cosas distintas.
 - **Enlaces más pulsados**: qué enlace pulsó más gente. SES manda la dirección
   dentro del aviso de clic y se guarda **en el mismo evento** (`links`, con
@@ -128,12 +166,12 @@ la frase de que aún no ha pasado nada.
 
 La llena `services/stats.py`, y **es la misma pantalla que ve el
 administrador** en `/admin/` para la cuenta que elija: una plantilla y dos
-entradas, para que no puedan separarse. **`/contacts`** tiene cinco
-pantallas: la lista —una fila por contacto: su correo, su nombre, **sus
+entradas, para que no puedan separarse. **`/contacts`** tiene en el árbol
+dos pantallas: la lista —una fila por contacto: su correo, su nombre, **sus
 columnas propias**, si está activo, anulado o incompleto, sus etiquetas y
-cuándo entró—, la importación, las etiquetas, las columnas propias y las
-supresiones. Agregar uno a mano tiene su propia pantalla, a la que se llega
-desde un botón encima de la lista, y exportar pasa por una confirmación que dice
+cuándo entró— y las supresiones, que son solo para mirar. La importación, las
+etiquetas y las columnas propias se abren desde los botones de encima de la
+lista, igual que agregar uno a mano, y exportar pasa por una confirmación que dice
 cuántos van a salir. **Borrar también pregunta**: el botón de cada fila, y el de
 eliminar los anulados, llevan a una pantalla que dice cuántos se van y tiene el
 botón rojo; el que borra es el POST. **`/templates`** tiene arriba crear y cargar, y debajo
@@ -160,14 +198,18 @@ una etiqueta que lo diga. **Los avisos de lo que todavía no existe
 medias. Sin interruptor valen «sí», así que el día que empiecen a salir llegan
 solos; ofrecerlos es sacarlos de esa tupla.
 
-### La búsqueda de la barra (octubre de 2026)
+### La búsqueda (octubre de 2026)
 
-Un campo en medio de la barra, **solo con sesión** (`blueprints/search/`), para
-moverse por el panel sin saber dónde está cada cosa.
+Un campo **arriba del árbol del Dashboard** (`_search.html`, `blueprints/search/`),
+para moverse por el panel sin saber dónde está cada cosa. **Solo ahí**: hasta
+octubre de 2026 iba en medio de la barra de arriba, y Configuración ya no la
+tiene. El administrador, que no tiene Dashboard, la lleva arriba de las
+pestañas de Administración.
 
 - **Qué encuentra**: las pantallas y acciones **que esa cuenta puede abrir**
   (`CLIENT_PAGES` y `ADMIN_PAGES`, filtradas por `accounts.can()`; las
-  subsecciones de Configuración salen de `parts_for()`), por su nombre y por
+  subsecciones de Configuración salen de `parts_for()`, y las partes de Cuenta
+  y Facturación, que se leen enteras, van a su ancla), por su nombre y por
   palabras con que se piden («csv», «bajas», «dos pasos»); y **lo suyo por
   nombre**: campañas, envíos, plantillas y etiquetas de su empresa, cinco de
   cada una. Sin acentos ni mayúsculas, y cada palabra buscada tiene que estar al
@@ -178,9 +220,15 @@ moverse por el panel sin saber dónde está cada cosa.
   campo, sin nada a la vista que lo diga (el recuadro con la «/» se quitó
   porque no se entendía). Sin JavaScript el campo manda a `/search`, que enseña lo mismo en una
   página. Sin sesión, las dos dan 404.
-- En el teléfono es un ícono que abre el campo encima de la barra.
 - **No está en el sitio público**: sin sesión no hay nada que buscar. Es la
   única excepción a «lo que existe en los dos sitios se cambia en los dos».
+
+### Los botones que agregan (octubre de 2026)
+
+Todo botón que agrega o crea algo lleva un «+» delante (`_icon-plus.svg`,
+`.btn--icon`): agregar un contacto, una columna, una etiqueta, un usuario, una
+dirección de prueba, un método de pago, otro teléfono, otra cuenta y crear una
+plantilla.
 
 ### Los botones que trabajan (octubre de 2026)
 
@@ -223,16 +271,16 @@ zona vista en `time_zone`, que es la de los correos que le llegan sin estar
 mirando. Lo relativo («hace 2 horas») no depende de la zona.
 
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
-las mismas cosas en el sitio público y en el panel, en este orden: panel,
-enviar correos, contactos, plantillas, configuración, modo, idioma, cambiar de
-cuenta y cerrar sesión. Las
-plantillas van debajo de contactos: primero a quién le escribes, después con qué.
+las mismas cosas en el sitio público y en el panel, en este orden: Dashboard,
+configuración, modo, idioma, cambiar de cuenta y cerrar sesión. Hasta octubre de
+2026 eran cuatro filas (Estadísticas, Enviar correos, Contactos y Plantillas),
+que ahora viven en el árbol del Dashboard.
 **A un administrador el menú le enseña administración de primera y después
 configuración, y nada más.** El sitio público sí le sigue enseñando las filas de
 cliente, porque solo lee una galleta que dice «hay sesión» y no sabe quién es
 —ponerle el rol sería publicar en el dominio padre quién es administrador—, pero
 pulsarlas lo deja en `/admin`. El idioma es un desplegable dentro del desplegable, no
-dos filas sueltas de algo que casi no se toca. **El panel va primero** porque es a
+dos filas sueltas de algo que casi no se toca. **El Dashboard va primero** porque es a
 lo que se dedica la empresa; lo demás son ajustes, y se buscan cuando hacen
 falta. Sin sesión el mismo control es un botón de tres líneas con las dos que
 sirven sin cuenta.
