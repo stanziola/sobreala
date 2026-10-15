@@ -1,13 +1,13 @@
-"""Configuración en subsecciones (octubre de 2026).
+"""Configuración, una página por sección (octubre de 2026).
 
-Seguridad y Notificaciones se despliegan en el menú en sus subsecciones, y cada
-una tiene su dirección y enseña solo lo suyo; Cuenta y Facturación se leen
-enteras, con sus partes como anclas. Lo que fijan estas pruebas: que cada dirección
-abra lo suyo y la de siempre abra la primera, que las direcciones viejas sigan
-cayendo donde está lo que avisan, que un formulario vuelva a su subsección
-(también si algo falla), que guardar los avisos de una subsección **no apague
-los de la otra**, que un usuario de la empresa no vea Usuarios, que Google solo
-salga conectado, y que agregar un método de pago venga en una bandeja.
+Cada sección se lee entera y sus partes son anclas: primero Cuenta y
+Facturación, y después Seguridad, Notificaciones y las direcciones de prueba,
+que se desplegaban en el menú. Lo que fijan estas pruebas: que cada sección
+traiga todas sus partes, que las direcciones de antes caigan en su ancla, que un
+formulario vuelva a su parte (también si algo falla), que Notificaciones guarde
+todo con un botón sin apagar nada que no se dibujó, que un usuario de la empresa
+no vea Usuarios, que Google solo salga conectado, y que agregar un método de
+pago venga en una bandeja.
 """
 
 from __future__ import annotations
@@ -36,21 +36,28 @@ def csrf(browser, url):
         return sess["_csrf"]
 
 
-def test_cada_subseccion_tiene_su_direccion(client, database, outbox):
+def test_seguridad_y_notificaciones_se_leen_enteras(client, database, outbox):
+    """Octubre de 2026: sin desplegables, cada parte es un subtítulo con su
+    ancla, y una dirección de antes lleva a la sección y baja a su parte."""
     browser = inside(client)
-    for url, title in (("/settings/security/two-step", "Autenticación de múltiples factores"),
-                       ("/settings/security/password", "Contraseña"),
-                       ("/settings/security/users", "Usuarios"),
-                       ("/settings/security/sessions", "Sesiones"),
-                       ("/settings/notifications/plan", "Plan y facturación"),
-                       ("/settings/notifications/security", "Seguridad")):
-        pantalla = browser.get(url)
-        assert pantalla.status_code == 200, url
-        assert f'class="settings__title">{title}<' in pantalla.get_data(as_text=True), url
+    seguridad = browser.get("/settings/security").get_data(as_text=True)
+    assert 'class="settings__title">Seguridad<' in seguridad
+    for parte, nombre in (("two-step", "Autenticación de múltiples factores"),
+                          ("password", "Contraseña"), ("users", "Usuarios"),
+                          ("sessions", "Sesiones")):
+        assert f'id="{parte}">{nombre}<' in seguridad, parte
+    avisos = browser.get("/settings/notifications").get_data(as_text=True)
+    for parte, nombre in (("plan", "Plan y facturación"), ("security", "Seguridad")):
+        assert f'id="{parte}">{nombre}<' in avisos, parte
+    # Un solo «Guardar».
+    assert avisos.count('class="btn" type="submit"') == 1
 
-    # La de siempre abre la primera; una que no existe vuelve a su sección.
-    assert ">Autenticación de múltiples factores<" in browser.get(
-        "/settings/security").get_data(as_text=True)
+    for vieja, ancla in (("/settings/security/sessions", "/settings/security#sessions"),
+                         ("/settings/security/two-step", "/settings/security#two-step"),
+                         ("/settings/notifications/plan", "/settings/notifications#plan")):
+        respuesta = browser.get(vieja)
+        assert respuesta.status_code == 302, vieja
+        assert respuesta.headers["Location"].endswith(ancla), vieja
     assert browser.get("/settings/security/inventada").headers["Location"].endswith(
         "/settings/security")
 
@@ -76,20 +83,25 @@ def test_cuenta_y_facturacion_se_leen_enteras(client, database, outbox):
         "/settings/account")
 
 
-def test_el_menu_despliega_las_subsecciones(client, database, outbox):
+def test_el_menu_no_se_despliega(client, database, outbox):
+    """Una lista con íconos: sin flechas ni subsecciones, y la sección en la
+    que se está marcada sin raya azul."""
     browser = inside(client)
-    pantalla = browser.get("/settings/security/sessions").get_data(as_text=True)
-    # Solo Seguridad y Notificaciones se despliegan.
-    assert pantalla.count("data-settings-toggle") == 2
+    pantalla = browser.get("/settings/security").get_data(as_text=True)
+    assert "data-settings-toggle" not in pantalla
+    assert "settings-subnav" not in pantalla and "settings-nav__item" not in pantalla
     assert 'href="/settings/billing"' in pantalla
-    assert 'class="settings-nav__item is-current"' in pantalla
-    assert 'aria-current="page">Sesiones<' in pantalla
+    assert 'is-current"\n       href="/settings/security" aria-current="page"' in pantalla
 
 
-def test_las_direcciones_viejas_caen_donde_esta_lo_que_avisan(client, database, outbox):
+def test_los_avisos_de_siempre_salen_en_la_pagina_entera(client, database, outbox):
+    """Las redirecciones de siempre traen su aviso, y la página entera lo
+    enseña: antes elegían la subsección donde estaba."""
     browser = inside(client)
-    assert ">Usuarios<" in browser.get("/settings/security?user=invited").get_data(as_text=True)
-    assert ">Contraseña<" in browser.get("/settings/security?updated=1").get_data(as_text=True)
+    assert "Listo, le mandamos la invitación a su correo." in browser.get(
+        "/settings/security?user=invited").get_data(as_text=True)
+    assert "notice notice--ok" in browser.get(
+        "/settings/security?updated=1").get_data(as_text=True)
 
 
 def test_un_formulario_vuelve_a_su_parte(client, database, outbox):
@@ -106,13 +118,13 @@ def test_un_formulario_vuelve_a_su_parte(client, database, outbox):
     assert 'name="address"' in pantalla
 
 
-def test_guardar_una_subseccion_de_avisos_no_apaga_la_otra(client, database, outbox):
+def test_un_solo_guardar_para_todos_los_avisos(client, database, outbox):
+    """Un formulario para toda la página: lo que no va marcado se apaga, lo
+    marcado se enciende, y los de seguridad no se tocan."""
     browser = inside(client)
-    browser.post("/settings/notifications/security", data={
-        "csrf_token": csrf(browser, "/settings/notifications/security")})  # sin new_login
-    browser.post("/settings/notifications/plan", data={
-        "csrf_token": csrf(browser, "/settings/notifications/plan"),
-        "billing": "on", "plan_state": "on"})
+    browser.post("/settings/notifications", data={
+        "csrf_token": csrf(browser, "/settings/notifications"),
+        "billing": "on", "plan_state": "on"})  # sin new_login
 
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert accounts.wants(cuenta, accounts.NEW_LOGIN) is False
@@ -123,17 +135,19 @@ def test_un_usuario_de_la_empresa_no_ve_usuarios(client, database, outbox):
     _, _, suyo = as_member(client, database, outbox=outbox)
 
     pantalla = suyo.get("/settings/security").get_data(as_text=True)
-    assert 'href="/settings/security/users"' not in pantalla
-    assert suyo.get("/settings/security/users").status_code == 302
+    assert 'id="users"' not in pantalla
+    # La dirección de antes lo deja en Seguridad, sin bajar a Usuarios.
+    assert suyo.get("/settings/security/users").headers["Location"].endswith(
+        "/settings/security")
 
 
 def test_google_solo_sale_conectado(client, database, outbox):
     browser = inside(client)
-    sin = browser.get("/settings/security/password").get_data(as_text=True)
+    sin = browser.get("/settings/security").get_data(as_text=True)
     assert "Google" not in sin
     database.accounts.update_one({"email_normalized": "ana@ejemplo.com"},
                                  {"$set": {"google_sub": "G-ANA"}})
-    con = browser.get("/settings/security/password").get_data(as_text=True)
+    con = browser.get("/settings/security").get_data(as_text=True)
     assert "Google" in con and "Desconectar" in con
 
 

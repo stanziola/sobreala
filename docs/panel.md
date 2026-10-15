@@ -36,9 +36,11 @@ van en gris casi negro con la letra blanca (`--color-action`, que de noche es
 gris claro con la letra oscura), y los de contorno en gris. **Los enlaces**
 van del color del texto: los de una frase (`a:not([class])`), en seminegrita y
 subrayados al pasar el mouse; botones, menú y pestañas llevan clase y su propio
-efecto. **Lo seleccionado** (el árbol del Dashboard, las pestañas, las
-subsecciones, los chips, la cuenta en uso) lleva fondo gris y una raya azul de
-3 px a la izquierda. **El azul se queda** en las gráficas, los interruptores, las
+efecto. **Lo seleccionado** (el árbol del Dashboard, el menú de
+Configuración, las pestañas de Administración, los chips, la cuenta en uso)
+lleva el fondo un poco más oscuro (`--color-hover`), **sin raya**, y **el hover
+es más blanco** (`--color-surface`): hasta octubre de 2026 tenía una raya azul a
+la izquierda, y el hover era del mismo gris que la página. **El azul se queda** en las gráficas, los interruptores, las
 casillas, el foco del teclado y el lienzo, y en el sitio, en todo lo que lleva
 el azul de la marca (cabecera, portada y pie, con sus botones). En el pie del
 sitio los enlaces van celeste (`--color-accent-light`), como antes.
@@ -67,8 +69,8 @@ Contactos    ▸ Lista · Supresiones
   `/contacts`…) y solo extiende `_dashboard.html`. **El editor del lienzo y
   las piezas cargadas siguen a pantalla completa**, porque necesitan el ancho.
 - Cada rama es un enlace a su primera fila, así que sin JavaScript abre algo;
-  con él, en una pantalla ancha, se despliega en su sitio, con el mismo código
-  que Configuración. En el teléfono el árbol se esconde detrás de «Secciones» y
+  con él, en una pantalla ancha, se despliega en su sitio
+  (`data-settings-toggle`). En el teléfono el árbol se esconde detrás de «Secciones» y
   la búsqueda queda a la vista.
 - Un usuario de la empresa ve solo las ramas de sus permisos; sin
   Estadísticas, `/dashboard` lo manda a la primera que tenga (`needs()`). Una

@@ -34,16 +34,13 @@ def save(client, **wanted):
     """Post the notification forms the way the screen does.
 
     An unchecked switch sends nothing at all, which is what a browser does, so
-    the test has to leave those keys out rather than send them as false. Desde
-    octubre de 2026 son dos formularios, uno por subsección (`NOTICE_PARTS`),
-    y se mandan los dos, como quien guarda una y después la otra.
+    the test has to leave those keys out rather than send them as false. Un
+    solo formulario para toda la página (octubre de 2026).
     """
-    for part in ("plan", "security"):
-        token = csrf(client, f"/settings/notifications/{part}")
-        data = {"csrf_token": token}
-        data.update({name: "on" for name, on in wanted.items() if on})
-        answer = client.post(f"/settings/notifications/{part}", data=data)
-    return answer
+    token = csrf(client, "/settings/notifications")
+    data = {"csrf_token": token}
+    data.update({name: "on" for name, on in wanted.items() if on})
+    return client.post("/settings/notifications", data=data)
 
 
 def turn_on_two_step(client):
@@ -208,16 +205,16 @@ def test_each_section_draws_its_own(client, database, outbox):
     assert "Sale al pie de tus campañas" not in account
     assert "El tuyo, que es al que te escribimos" not in account
 
-    # Seguridad, en sus subsecciones (octubre de 2026).
-    security = inside.get("/settings/security/password").get_data(as_text=True)
+    # Seguridad, entera en una página (octubre de 2026).
+    security = inside.get("/settings/security").get_data(as_text=True)
     assert "/change-password" in security
     assert "Personas de tu equipo" not in security
     cambiar = inside.get("/change-password").get_data(as_text=True)
     assert "Si la cambias, se cierra la sesión en los demás dispositivos." in cambiar
     assert "/account/two-factor" in inside.get("/settings/security").get_data(as_text=True)
-    assert "Tus dispositivos" in inside.get("/settings/security/sessions").get_data(as_text=True)
+    assert "Tus dispositivos" in security
 
-    notices = inside.get("/settings/notifications/security").get_data(as_text=True)
+    notices = inside.get("/settings/notifications").get_data(as_text=True)
     # Los de seguridad: encendidos y bloqueados, sin frase que lo diga.
     assert "switch--locked" in notices
     assert "Siempre activo" not in notices
@@ -262,8 +259,7 @@ def test_el_administrador_tiene_notificaciones_y_son_las_suyas(
     for name in accounts.ADMIN_NOTICES:
         assert f'name="{name}"' in pantalla
     # Y los de seguridad siguen sin interruptor, como en cualquier cuenta.
-    assert "switch--locked" in inside.get(
-        "/settings/notifications/security").get_data(as_text=True)
+    assert "switch--locked" in pantalla
 
 
 def test_el_administrador_guarda_solo_sus_avisos(client, database, outbox):

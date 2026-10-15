@@ -37,7 +37,7 @@ def test_encuentra_pantallas_por_nombre_y_por_como_se_piden(client, database, ou
     browser, _, _ = ready(client, database)
     assert "/contacts/import" in urls(sugerencias(browser, "importar"))
     assert "/contacts/import" in urls(sugerencias(browser, "CSV"))
-    assert "/settings/security/two-step" in urls(sugerencias(browser, "dos pasos"))
+    assert "/settings/security#two-step" in urls(sugerencias(browser, "dos pasos"))
     # Sin acentos: «facturacion» encuentra lo de Facturación.
     assert "/settings/billing" in urls(sugerencias(browser, "facturacion"))
     # La barra lleva el campo, con sesión.
@@ -63,7 +63,7 @@ def test_un_usuario_ve_solo_sus_permisos(client, database, outbox):
     _, _, suyo = as_member(client, database, permisos=("contacts",), outbox=outbox)
     assert "/contacts/import" in urls(sugerencias(suyo, "importar"))
     assert "/campaigns" not in urls(sugerencias(suyo, "enviar"))
-    assert "/settings/security/users" not in urls(sugerencias(suyo, "usuarios"))
+    assert "/settings/security#users" not in urls(sugerencias(suyo, "usuarios"))
 
 
 def test_un_administrador_ve_lo_suyo(client, database, outbox):

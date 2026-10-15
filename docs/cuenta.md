@@ -302,39 +302,33 @@ cuidar en la cuenta que puede abrir y suspender a todas las demás, y
 las cuentas de sus clientes. Las filas se esconden del menú
 **y las rutas la devuelven a `/admin`**: esconder un botón no es un permiso.
 
-### Configuración en subsecciones (octubre de 2026)
+### Configuración, una página por sección (octubre de 2026)
 
-El menú de Configuración lleva **un ícono por sección**. Seguridad y
-Notificaciones **se despliegan** (la altura y la flecha, animadas; con «reducir
-movimiento», sin animar) en sus subsecciones, cada una con su dirección
-`/settings/<sección>/<parte>` y su pantalla (`PARTS` en
-`blueprints/auth/routes.py`). **Cuenta y Facturación se leen enteras**, en una
-sola página (octubre de 2026, `WHOLE`): sus partes son subtítulos con su ancla,
-y una dirección de antes (`/settings/billing/methods`) lleva a la sección y baja
-a la suya (`#methods`).
+El menú de Configuración lleva **un ícono por sección y no se despliega**.
+**Cada sección se lee entera**, en una sola página (`WHOLE` en
+`blueprints/auth/routes.py`): sus partes son subtítulos con su ancla. Hasta
+octubre de 2026 Seguridad y Notificaciones se desplegaban en el menú, con una
+pantalla por parte (`/settings/<sección>/<parte>`); esas direcciones siguen
+valiendo y llevan a la sección y bajan a la suya (`/settings/security/sessions`
+→ `/settings/security#sessions`).
 
 | Sección | Partes |
 |---|---|
-| Cuenta (una página) | Perfil · Dirección y teléfonos · Verificación · Tu plan |
+| Cuenta | Perfil · Dirección y teléfonos · Verificación · Tu plan |
 | Seguridad | Autenticación de múltiples factores · Contraseña · Usuarios (solo el dueño) · Sesiones |
 | Notificaciones | Plan y facturación · Seguridad (un administrador: Clientes · Seguridad) |
-| Facturación (una página) | Tu plan · Métodos de pago · Renovación automática · Historial de compras |
-| Direcciones de prueba | (solo en la demostración, sin subsecciones) |
+| Facturación | Tu plan · Métodos de pago · Renovación automática · Historial de compras |
+| Direcciones de prueba | (solo en la demostración) |
 
-- `/settings/<sección>` abre la primera, salvo que la dirección traiga algo que
-  diga otra cosa (`PART_HINTS`): `?user=invited` abre Usuarios. Así las redirecciones
-  de siempre siguen cayendo donde está lo que avisan. Una parte que no existe,
-  o que no le toca (Usuarios para un usuario), vuelve a la sección.
-- Con JavaScript, pulsar una sección la despliega sin recargar (`panel.js`,
-  `data-settings-toggle`); sin él, el enlace abre su primera subsección. En el
-  teléfono el menú va en una fila y las subsecciones de la abierta en otra
-  (`.settings-subnav`), porque desplegarlas en vertical empujaría la pantalla.
-- **Cada formulario de Notificaciones guarda solo lo suyo** (`NOTICE_PARTS`),
-  y `set_notifications()` escribe aviso por aviso: guardar «Plan y facturación»
-  no toca «Entrar desde un dispositivo nuevo». Los de un administrador se dibujan
-  todos en el orden de `ADMIN_NOTICES`: hasta octubre de 2026 faltaban «Alguien
-  pidió una demostración» y «El panel pausó a un cliente», y guardar esa pantalla
-  los apagaba sin que se viera.
+- Una parte que no existe, o que no le toca (Usuarios para un usuario), deja en
+  la sección sin bajar a ninguna. Los avisos de siempre (`?user=invited`,
+  `?updated=1`) salen en la página entera.
+- **Notificaciones tiene un solo formulario y un solo «Guardar»**, con todos
+  los avisos que esa cuenta puede elegir (`notices_for`), así guardar nunca
+  apaga uno que no se dibujó; `set_notifications()` escribe aviso por aviso.
+  Los de un administrador se dibujan todos en el orden de `ADMIN_NOTICES`:
+  hasta octubre de 2026 faltaban «Alguien pidió una demostración» y «El panel
+  pausó a un cliente», y guardar esa pantalla los apagaba sin que se viera.
 - **Google solo sale si la cuenta está conectada**, en Contraseña, con su
   «Desconectar». Quien se registró sin Google no ve la fila; se conecta solo la
   primera vez que entra con Google.

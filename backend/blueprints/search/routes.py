@@ -29,7 +29,7 @@ from typing import Any
 
 from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
-from blueprints.auth.routes import (WHOLE, current_account, current_workspace,
+from blueprints.auth.routes import (current_account, current_workspace,
                                     parts_for, sections_for)
 from db import get_db
 from i18n import t
@@ -135,22 +135,21 @@ def pages_for(account: dict) -> list[dict[str, Any]]:
                     "hint": "", "words": extra})
     for section in sections_for(account):
         section_label = t(SECTION_LABELS[section])
-        # Cuenta y Facturación se leen enteras: la sección, y sus partes como
-        # anclas.
-        whole = WHOLE.get(section, ())
-        if whole:
-            out.append({"label": section_label, "kind": "page",
-                        "hint": t("search_in", where=t("menu_settings")),
-                        "url": url_for("auth.settings", section=section),
-                        "words": "configuracion " + " ".join(
-                            SETTINGS_WORDS.get((section, part), "") for part in whole)})
-        for part in parts_for(account, section) or whole:
+        # Cada sección se lee entera (octubre de 2026): la sección, y sus
+        # partes como anclas de su página.
+        parts = parts_for(account, section)
+        out.append({"label": section_label, "kind": "page",
+                    "hint": t("search_in", where=t("menu_settings")),
+                    "url": url_for("auth.settings", section=section),
+                    "words": "configuracion " + " ".join(
+                        SETTINGS_WORDS.get((section, part), "") for part in parts)})
+        for part in parts:
             label = t(f"settings_part_{section}_{part.replace('-', '_')}")
-            url = (url_for("auth.settings", section=section) + "#" + part if part in whole
-                   else url_for("auth.settings", section=section, part=part))
+            if label == section_label:
+                continue
             out.append({"label": label, "kind": "page",
                         "hint": t("search_in", where=section_label),
-                        "url": url,
+                        "url": url_for("auth.settings", section=section) + "#" + part,
                         "words": f"configuracion {section_label} "
                                  + SETTINGS_WORDS.get((section, part), "")})
     return out

@@ -670,65 +670,25 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   color: var(--color-ink-soft);
   transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
-.settings__tab:hover { background: var(--color-surface-alt); color: var(--color-ink); text-decoration: none; }
-/* Lo seleccionado: fondo gris y la raya azul a la izquierda (octubre de 2026). */
-.settings__tab.is-current { background: var(--color-hover); color: var(--color-ink); box-shadow: inset 3px 0 0 var(--color-accent); }
+/* Al pasar el ratón, más blanco que la página; lo seleccionado, un poco más
+   oscuro, sin raya (octubre de 2026). De noche, lo mismo con los grises de
+   allá: el hover en el de las tarjetas y lo seleccionado un paso más claro.
+   Va después del hover para ganarle cuando se pasa por encima de la que ya
+   está elegida. */
+.settings__tab:hover { background: var(--color-surface); color: var(--color-ink); text-decoration: none; }
+.settings__tab.is-current { background: var(--color-hover); color: var(--color-ink); }
 
 /* ------------------------------------------------ el menú de Configuración
-   Cada sección con su ícono y, debajo, sus subsecciones (octubre de 2026). Se
-   despliegan con la altura (una fila de grid que pasa de 0fr a 1fr, que sí se
-   anima) y la flecha gira. En el teléfono el menú va en una fila y las
-   subsecciones de la abierta en otra (`.settings-subnav`): desplegar en
-   vertical empujaría la pantalla hacia abajo. */
+   Cada sección con su ícono, sin desplegables (octubre de 2026): se leen
+   enteras, y sus partes son anclas de su página. En el teléfono va en una
+   fila que se desliza. */
 .settings-nav__head { display: flex; align-items: center; gap: 10px; white-space: normal; }
 .settings-nav__icon { display: inline-flex; flex: none; }
 .settings-nav__icon .icon { width: 18px; height: 18px; }
-.settings-nav__caret { display: none; margin-left: auto; flex: none;
-                       transition: transform .28s var(--ease); }
-.settings-nav__sub { display: none; }
-.settings-subnav { display: flex; gap: 6px; overflow-x: auto; margin-top: -10px; }
-.settings-subnav__item {
-  padding: 7px 12px; border-radius: 999px; border: 1px solid var(--color-border);
-  font-size: .88rem; font-weight: 600; color: var(--color-ink-soft);
-  text-decoration: none; white-space: nowrap;
-}
-.settings-subnav__item:hover { color: var(--color-ink); text-decoration: none; }
-.settings-subnav__item.is-current {
-  background: var(--color-hover); color: var(--color-ink); border-color: var(--color-field);
-}
-@media (min-width: 780px) {
-  .settings-subnav { display: none; }
-  .settings-nav__caret { display: inline-flex; }
-  .settings-nav__group.is-open .settings-nav__caret { transform: rotate(180deg); }
-  .settings-nav__sub {
-    display: grid; grid-template-rows: 0fr;
-    transition: grid-template-rows .28s var(--ease);
-  }
-  .settings-nav__group.is-open .settings-nav__sub { grid-template-rows: 1fr; }
-  .settings-nav__items {
-    min-height: 0; overflow: hidden;
-    display: flex; flex-direction: column; gap: 2px; padding-left: 28px;
-  }
-  .settings-nav__item {
-    padding: 8px 12px; border-radius: 8px; font-size: .9rem; line-height: 1.3;
-    color: var(--color-ink-soft); text-decoration: none;
-    transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
-  }
-  .settings-nav__item:first-child { margin-top: 4px; }
-  .settings-nav__item:last-child { margin-bottom: 6px; }
-  .settings-nav__item:hover { background: var(--color-surface-alt); color: var(--color-ink); text-decoration: none; }
-  .settings-nav__item.is-current { background: var(--color-hover); color: var(--color-ink); box-shadow: inset 3px 0 0 var(--color-accent); font-weight: 600; }
-  /* La sección abierta no se pinta entera: lo que se marca es la subsección. */
-  .settings-nav__group.is-open > .settings-nav__head.is-current { background: transparent; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .settings-nav__sub, .settings-nav__caret { transition: none; }
-}
 /* ------------------------------------------------------------ el Dashboard
    Estadísticas, Correos y Contactos en un árbol a la izquierda, y lo elegido
    en el panel grande de la derecha (octubre de 2026). Las ramas se despliegan
-   como las de Configuración: una fila de grid que pasa de 0fr a 1fr y la
-   flecha que gira. En el teléfono el árbol va arriba, entero, detrás de
+   con una fila de grid que pasa de 0fr a 1fr, y la flecha gira. En el teléfono el árbol va arriba, entero, detrás de
    «Secciones», y la búsqueda queda a la vista. */
 .dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
 @media (min-width: 780px) { .dash { grid-template-columns: 230px minmax(0, 1fr); gap: 28px; } }
@@ -748,7 +708,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .dash-nav__head { font-weight: 600; }
 .dash-nav__head--0 { color: var(--color-ink); }
 .dash-nav__head:hover, .dash-nav__item:hover, .dash-nav__toggle:hover {
-  background: var(--color-surface-alt); color: var(--color-ink); text-decoration: none;
+  background: var(--color-surface); color: var(--color-ink); text-decoration: none;
 }
 .dash-nav__icon { display: inline-flex; flex: none; }
 .dash-nav__icon .icon { width: 18px; height: 18px; }
@@ -763,11 +723,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .dash-nav__group .dash-nav__group .dash-nav__items { padding-left: 14px; }
 .dash-nav__items > :first-child { margin-top: 2px; }
 .dash-nav__items > :last-child { margin-bottom: 4px; }
-/* Lo seleccionado: fondo gris y una raya azul a la izquierda. */
-.dash-nav__item.is-current {
-  background: var(--color-hover); color: var(--color-ink); font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--color-accent);
-}
+/* Lo seleccionado: el fondo un poco más oscuro, sin raya; el hover, más
+   blanco (como en Configuración). */
+.dash-nav__item.is-current { background: var(--color-hover); color: var(--color-ink); font-weight: 600; }
 .dash-nav__toggle { width: 100%; font: inherit; font-weight: 600; color: var(--color-ink);
                     background: var(--color-surface); border: 1px solid var(--color-border); cursor: pointer; }
 @media (max-width: 779px) {
@@ -783,12 +741,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 }
 /* El título de cada pantalla, arriba del panel. */
 .dash__pane > .settings__heading:first-child { margin-top: 0; }
-
-/* La sección arriba del título de la subsección, en chiquito. */
-.settings__eyebrow {
-  margin: 0 0 2px; font-size: .78rem; font-weight: 700; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--color-ink-soft);
-}
 
 .settings__pane {
   padding: clamp(20px, 3.5vw, 30px); border-radius: 16px;
@@ -1623,10 +1575,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   border: 1px solid var(--color-border); background: var(--color-surface);
 }
 /* La que se está usando ahora mismo, marcada para no tener que leerlas. */
-.switcher__item.is-on {
-  border-color: var(--color-field); background: var(--color-hover);
-  box-shadow: inset 3px 0 0 var(--color-accent);
-}
+.switcher__item.is-on { border-color: var(--color-field); background: var(--color-hover); }
 .switcher__icon { display: inline-flex; color: var(--color-ink-soft); }
 .switcher__who { display: grid; gap: 2px; margin-right: auto; min-width: 0; }
 .switcher__who b { overflow-wrap: anywhere; }

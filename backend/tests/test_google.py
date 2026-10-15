@@ -296,7 +296,7 @@ def test_seguridad_dice_conectado_y_desconectar_pide_contrasena(client, database
     browser = other(client)
     entrar_con_google(browser)
 
-    pantalla = browser.get("/settings/security/password").get_data(as_text=True)
+    pantalla = browser.get("/settings/security").get_data(as_text=True)
     assert "Conectado" in pantalla and "Desconectar" in pantalla
 
     salida = browser.post("/settings/google/disconnect",
@@ -314,7 +314,7 @@ def test_sin_contrasena_no_se_desconecta(client, database, outbox, monkeypatch):
         "contact_name": "Luis", "phone_country": "PA", "phone": "60001111",
         "address": "Calle 10, Santiago de Veraguas"})
 
-    pantalla = browser.get("/settings/security/password").get_data(as_text=True)
+    pantalla = browser.get("/settings/security").get_data(as_text=True)
     assert "Conectado" in pantalla and "Desconectar" not in pantalla
     salida = browser.post("/settings/google/disconnect",
                           data={"csrf_token": csrf(browser, "/settings/security")})

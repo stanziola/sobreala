@@ -38,8 +38,7 @@
   {# Cuáles se listan lo decide la vista, no esta plantilla: un cliente tiene
      cuatro (cinco en la demostración) y un administrador dos. Los slugs son
      las direcciones; el español de al lado sale de i18n, como en todas partes.
-     Desde octubre de 2026 cada una lleva su ícono y se despliega en sus
-     subsecciones, con su propia dirección cada una. #}
+     Cada una lleva su ícono (octubre de 2026). #}
   {% set label_of = {
     'account': 'settings_section_account',
     'security': 'settings_section_security',
@@ -53,57 +52,23 @@
     'billing': '_icon-card.svg',
     'test': '_icon-send.svg'} %}
 
-  {# Con JavaScript, pulsar una sección la despliega sin recargar
-     (`panel.js`, `data-settings-toggle`); sin él, el enlace abre su primera
-     subsección. La abierta es la de la página en la que se está. #}
+  {# Una lista con íconos, sin desplegables (octubre de 2026): cada sección se
+     lee entera, y lo que fueron sus subsecciones son anclas de su página. #}
   <nav class="settings__nav settings-nav" aria-label="{{ t('settings_title') }}">
     {% for slug in sections %}
-    {% set is_here = slug == section %}
-    {% set subs = parts_of[slug] %}
-    <div class="settings-nav__group{% if is_here %} is-open{% endif %}">
-      <a class="settings__tab settings-nav__head{% if is_here %} is-current{% endif %}"
-         href="{{ url_for('auth.settings', section=slug) }}"
-         {%- if subs|length > 1 %} data-settings-toggle aria-expanded="{{ 'true' if is_here else 'false' }}" aria-controls="sub-{{ slug }}"{% endif %}>
-        <span class="settings-nav__icon">{% include icon_of[slug] %}</span>
-        <span class="settings-nav__label">{{ t(label_of[slug]) }}</span>
-        {% if subs|length > 1 %}<span class="settings-nav__caret">{% include "_icon-caret.svg" %}</span>{% endif %}
-      </a>
-      {% if subs|length > 1 %}
-      <div class="settings-nav__sub" id="sub-{{ slug }}">
-        <div class="settings-nav__items">
-          {% for one in subs %}
-          <a class="settings-nav__item{% if is_here and one == part %} is-current{% endif %}"
-             href="{{ url_for('auth.settings', section=slug, part=one) }}"
-             {%- if is_here and one == part %} aria-current="page"{% endif %}>{{ part_name(slug, one) }}</a>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-    </div>
+    <a class="settings__tab settings-nav__head{% if slug == section %} is-current{% endif %}"
+       href="{{ url_for('auth.settings', section=slug) }}"
+       {%- if slug == section %} aria-current="page"{% endif %}>
+      <span class="settings-nav__icon">{% include icon_of[slug] %}</span>
+      <span class="settings-nav__label">{{ t(label_of[slug]) }}</span>
+    </a>
     {% endfor %}
   </nav>
-
-  {# En el teléfono el menú va en una fila, y las subsecciones de la sección
-     abierta en otra debajo: desplegar en vertical empujaría la pantalla. #}
-  {% if parts_of[section]|length > 1 %}
-  <nav class="settings-subnav" aria-label="{{ t(label_of[section]) }}">
-    {% for one in parts_of[section] %}
-    <a class="settings-subnav__item{% if one == part %} is-current{% endif %}"
-       href="{{ url_for('auth.settings', section=section, part=one) }}"
-       {%- if one == part %} aria-current="page"{% endif %}>{{ part_name(section, one) }}</a>
-    {% endfor %}
-  </nav>
-  {% endif %}
 
   <div class="settings__pane">
-    {# Cuenta y Facturación se leen enteras, en una página (octubre de 2026):
-       sus partes son subtítulos con su ancla. Las demás enseñan una parte. #}
-    {% if part %}
-    <p class="settings__eyebrow">{{ t(label_of[section]) }}</p>
-    <h2 class="settings__title">{{ part_name(section, part) }}</h2>
-    {% else %}
+    {# Cada sección se lee entera, en una página (octubre de 2026): sus partes
+       son subtítulos con su ancla. #}
     <h2 class="settings__title">{{ t(label_of[section]) }}</h2>
-    {% endif %}
 
     {# ------------------------------------------------------------ cuenta #}
     {% if section == 'account' %}
@@ -239,11 +204,10 @@
     {# --------------------------------------------------------- seguridad #}
     {% elif section == 'security' %}
 
-    {% if part == 'two-step' %}
+    <h3 class="settings__subtitle settings__subtitle--part" id="two-step">{{ part_name('security', 'two-step') }}</h3>
     {% if request.args.get('dospasos') == 'off' %}
     <p class="notice notice--ok">{{ t('two_step_turned_off') }}</p>
     {% endif %}
-    <hr class="settings__rule">
     {% call row(t('two_step_title'), t('settings_two_step_desc')) %}
     <span class="tag {{ 'tag--on' if two_step else 'tag--quiet' }}">
       {{ t('panel_two_step_on') if two_step else t('panel_two_step_off') }}</span>
@@ -251,7 +215,7 @@
       {{ t('settings_two_step_manage') if two_step else t('settings_two_step_turn_on') }}</a>
     {% endcall %}
 
-    {% elif part == 'password' %}
+    <h3 class="settings__subtitle settings__subtitle--part" id="password">{{ part_name('security', 'password') }}</h3>
     {% if request.args.get('updated') %}
     <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
     {% endif %}
@@ -260,7 +224,6 @@
     {% elif request.args.get('google') == 'nopassword' %}
     <p class="notice">{{ t('google_needs_password') }}</p>
     {% endif %}
-    <hr class="settings__rule">
 
     {% call row(t('settings_password_row'), t('settings_password_desc')) %}
     <a class="btn btn--small btn--outline"
@@ -286,13 +249,13 @@
     {# ----- los usuarios de la cuenta. Solo los ve el dueño: un usuario tiene
        esta pantalla para su contraseña, su segundo factor y sus dispositivos,
        y nada más. ----- #}
-    {% elif part == 'users' and not is_member %}
+    {% if not is_member %}
+    <h3 class="settings__subtitle settings__subtitle--part" id="users">{{ part_name('security', 'users') }}</h3>
     {% if request.args.get('user') == 'invited' %}
     <p class="notice notice--ok">{{ t('users_invited_ok') }}</p>
     {% elif request.args.get('user') == 'saved' %}
     <p class="notice notice--ok">{{ t('users_saved_ok') }}</p>
     {% endif %}
-    <hr class="settings__rule" id="users">
 
     {% call row(t('users_seats', used=seats_used, seats=seats),
                 '' if seats_left else t('users_seats_full')) %}
@@ -344,8 +307,9 @@
       </div>
     </div>
     {% endfor %}
+    {% endif %}
 
-    {% elif part == 'sessions' %}
+    <h3 class="settings__subtitle settings__subtitle--part" id="sessions">{{ part_name('security', 'sessions') }}</h3>
     <p class="settings__lead">{{ t('devices_title') }}</p>
     <ul class="devices">
       {% for device in devices %}
@@ -384,7 +348,6 @@
     {% else %}
     <p class="hint">{{ t('device_alone') }}</p>
     {% endif %}
-    {% endif %}
 
     {# ---------------------------------------------------- notificaciones #}
     {% elif section == 'notifications' %}
@@ -392,59 +355,56 @@
     {% if request.args.get('saved') %}
     <p class="notice notice--ok">{{ t('settings_notifications_saved') }}</p>
     {% endif %}
-    <hr class="settings__rule">
 
-    {% if part == 'security' %}
-    {# Los de seguridad no se pueden apagar: su interruptor está encendido y
-       bloqueado, así se ve de un vistazo que siempre salen, sin decirlo con
-       palabras. No va dentro del formulario: no manda nada. #}
-    {% for label in [t('settings_fixed_codes'), t('settings_fixed_password'),
-                     t('settings_fixed_two_step')] %}
-    {% call row(label, '', id='fijo-' ~ loop.index) %}
-    <label class="switch switch--locked">
-      <input type="checkbox" checked disabled aria-labelledby="fijo-{{ loop.index }}">
-      <span class="switch__track"><span class="switch__knob"></span></span>
-    </label>
-    {% endcall %}
-    {% endfor %}
-    {% if not is_admin %}
-    <form method="post" action="{{ url_for('auth.settings', section='notifications', part='security') }}">
+    {# Un solo formulario y un solo «Guardar» para toda la página (octubre de
+       2026: antes, uno por subsección). Trae todos los avisos que esa cuenta
+       puede elegir, así guardar nunca apaga uno que no se dibujó. #}
+    <form method="post" action="{{ url_for('auth.settings', section='notifications') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      {{ toggle('new_login', t('settings_notice_new_login'),
-                t('settings_notice_new_login_desc'), notifications.new_login) }}
-      <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
-    </form>
-    {% endif %}
 
-    {# La lista de quien administra es otra: habla de lo que hacen los
-       clientes. Va entera y en el orden de `ADMIN_NOTICES`, así un aviso
-       nuevo sale solo y guardar nunca apaga uno que no se dibujó. #}
-    {% elif part == 'clients' and is_admin %}
-    <form method="post" action="{{ url_for('auth.settings', section='notifications', part='clients') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if is_admin %}
+      {# La lista de quien administra es otra: habla de lo que hacen los
+         clientes. Va entera y en el orden de `ADMIN_NOTICES`, así un aviso
+         nuevo sale solo. #}
+      <h3 class="settings__subtitle settings__subtitle--part" id="clients">{{ part_name('notifications', 'clients') }}</h3>
       {% for name in notifications %}
       {{ toggle(name, t('settings_notice_' + name), t('settings_notice_' + name + '_desc'),
                 notifications[name]) }}
       {% endfor %}
-      <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
-    </form>
-
-    {% elif part == 'plan' %}
-    <form method="post" action="{{ url_for('auth.settings', section='notifications', part='plan') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% else %}
+      <h3 class="settings__subtitle settings__subtitle--part" id="plan">{{ part_name('notifications', 'plan') }}</h3>
       {{ toggle('billing', t('settings_notice_billing'),
                 t('settings_notice_billing_desc'), notifications.billing) }}
       {{ toggle('plan_state', t('settings_notice_plan_state'),
                 t('settings_notice_plan_state_desc'), notifications.plan_state) }}
+      {% endif %}
+
+      <h3 class="settings__subtitle settings__subtitle--part" id="security">{{ part_name('notifications', 'security') }}</h3>
+      {# Los de seguridad no se pueden apagar: su interruptor está encendido y
+         bloqueado, así se ve de un vistazo que siempre salen, sin decirlo con
+         palabras. Desactivado, no se manda con el formulario. #}
+      {% for label in [t('settings_fixed_codes'), t('settings_fixed_password'),
+                       t('settings_fixed_two_step')] %}
+      {% call row(label, '', id='fijo-' ~ loop.index) %}
+      <label class="switch switch--locked">
+        <input type="checkbox" checked disabled aria-labelledby="fijo-{{ loop.index }}">
+        <span class="switch__track"><span class="switch__knob"></span></span>
+      </label>
+      {% endcall %}
+      {% endfor %}
+      {% if not is_admin %}
+      {{ toggle('new_login', t('settings_notice_new_login'),
+                t('settings_notice_new_login_desc'), notifications.new_login) }}
+      {% endif %}
+
       <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>
     </form>
-    {% endif %}
 
     {# ------------------------------------------- direcciones de prueba #}
     {# Solo en la demostración: las únicas a las que puede enviar. Cada una se
        confirma desde su propio buzón, como en el «sandbox» de Amazon. #}
     {% elif section == 'test' %}
-    <p class="settings__lead">{{ t('test_lead', n=test_max, total=demo_total) }}</p>
+    <p class="settings__lead" id="addresses">{{ t('test_lead', n=test_max, total=demo_total) }}</p>
     {% if request.args.get('sent') %}<p class="notice notice--ok">{{ t('test_sent') }}</p>{% endif %}
     {% if request.args.get('error') in ['email', 'wait', 'full'] %}
     <p class="notice">{{ t('test_error_' + request.args.get('error'), n=test_max) }}</p>

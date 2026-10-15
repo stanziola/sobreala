@@ -334,9 +334,10 @@ cosa está como está, y lo que ya se probó y se quitó.
   una campaña, cada cifra sobre los que salieron (`207/210`), y de un
   individual, una marca.
 - **Menos azul**: botones, enlaces y lo seleccionado van en gris
-  (`--color-action`); el azul queda para gráficas, interruptores, el foco y la
-  raya de lo seleccionado. Cuenta y Facturación, en Configuración, son una
-  página cada una.
+  (`--color-action`); el azul queda para gráficas, interruptores y el foco. Lo
+  seleccionado tiene el fondo un poco más oscuro, sin raya, y el hover es más
+  blanco. **Configuración no se despliega**: cada sección es una página, y sus
+  partes, anclas.
 - **Todo se guarda en UTC y se escribe en la zona de quien mira**
   (`services/clock.py`, galleta `sa_tz`).
 - Hasta cuatro cuentas abiertas en un navegador (`/switch-account`), cada una

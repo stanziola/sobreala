@@ -647,10 +647,11 @@
   });
 })();
 
-/* El menú de Configuración (octubre de 2026): en una pantalla ancha, pulsar
-   una sección despliega o recoge sus subsecciones sin recargar; la animación
-   la hace el CSS. En el teléfono el enlace va a la sección, y sus subsecciones
-   salen en su propia fila. Sin JavaScript, el enlace abre la primera. */
+/* Las ramas del árbol del Dashboard (octubre de 2026): en una pantalla ancha,
+   pulsar una rama la despliega o la recoge sin recargar; la animación la hace
+   el CSS. En el teléfono el enlace va a su primera fila. Sin JavaScript,
+   también. Nació para el menú de Configuración, que ya no se despliega: de ahí
+   el nombre del atributo. */
 (function () {
   var heads = document.querySelectorAll("[data-settings-toggle]");
   if (!heads.length || !window.matchMedia) return;
