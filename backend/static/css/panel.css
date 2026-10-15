@@ -467,6 +467,22 @@ a.menu__item:hover, button.menu__item:hover { background: var(--color-hover); te
    puede ser más estrecha que el resto. Hoy vale lo mismo que --wide; queda como
    clase aparte porque la nombra su plantilla. */
 .wrap--table { width: min(100% - 32px, 1400px); }
+/* El Dashboard y Administración, pegados a la izquierda (octubre de 2026): el
+   menú de secciones arranca donde arranca el ala de la barra, y lo de la
+   derecha se lleva el resto del ancho. Con el tope de arriba, en un monitor
+   de 1920 el menú flotaba a 260 px del borde. Lo de la derecha para en
+   1600 px, por lo que dice el tope: en uno de 1920 eso es casi todo, y en uno
+   más ancho no deja las líneas de lado a lado. Las páginas sueltas se quedan
+   centradas. */
+.wrap--left {
+  width: auto;
+  margin-left: clamp(16px, 4vw, 28px); margin-right: clamp(16px, 4vw, 28px);
+}
+.wrap--left .dash__pane, .wrap--left .settings__pane { max-width: 1600px; }
+/* Configuración también arranca ahí, para que el menú no salte al pasar del
+   Dashboard, pero con su ancho de siempre: tiene filas, no tablas, y más
+   ancho solo aleja cada valor de su nombre. */
+.wrap--rows { max-width: 1400px; }
 /* Las tablas, las gráficas y las listas de cifras llenan el ancho, que es para
    lo que se ensanchó. Los campos de escribir no: un cuadro de mil cuatrocientos
    píxeles para un motivo o un nombre es peor de leer y de apuntar que uno de la

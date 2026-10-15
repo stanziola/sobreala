@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block wrap_class %}wrap--wide{% endblock %}
+{# Pegado a la izquierda, con lo de la derecha a todo el ancho (`.wrap--left`). #}
+{% block wrap_class %}wrap--wide wrap--left{% endblock %}
 {# La búsqueda, en la barra de arriba al lado del ala (`base.html`). #}
 {% set bar_search = true %}
 

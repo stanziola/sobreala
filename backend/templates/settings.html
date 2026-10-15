@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% from "_phone.html" import phone, company_phones with context %}
 {% block title %}{{ t('settings_title') }}{% endblock %}
-{% block wrap_class %}wrap--wide{% endblock %}
+{# Pegada a la izquierda como el Dashboard, con su ancho de siempre. #}
+{% block wrap_class %}wrap--wide wrap--left wrap--rows{% endblock %}
 
 {# A row: what it is on the left, what you can do about it on the right. Every
    section is made of these, which is what keeps four different subjects

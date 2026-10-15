@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ t('admin_title') }}{% endblock %}
-{% block wrap_class %}wrap--wide{% endblock %}
+{# Pegado a la izquierda, como el Dashboard (`.wrap--left`). #}
+{% block wrap_class %}wrap--wide wrap--left{% endblock %}
 {# La búsqueda, en la barra de arriba al lado del ala, como en el Dashboard del
    cliente: el administrador no tiene Dashboard, y esto es lo suyo. #}
 {% set bar_search = true %}

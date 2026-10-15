@@ -1,12 +1,13 @@
 """El Dashboard (octubre de 2026).
 
 Estadísticas, Correos y Contactos en un árbol a la izquierda y la pantalla a la
-derecha, con la búsqueda arriba del árbol y solo ahí. Lo que fijan estas
-pruebas: que el árbol sea el de los permisos de quien mira y marque la pantalla
-en la que se está, que Estadísticas se mire por secciones sin perder los
-filtros, que Enviados escriba las cifras de una campaña sobre los que salieron
-y las de un individual con marcas, y que el pie de los correos del sistema
-lleve las mismas redes que el del sitio.
+derecha, con la búsqueda en la barra de arriba y solo aquí (y en
+Administración). Lo que fijan estas pruebas: que el árbol sea el de los
+permisos de quien mira y marque la pantalla en la que se está, que vaya pegado
+a la izquierda, que Estadísticas se mire por secciones sin perder los filtros,
+que Enviados escriba las cifras de una campaña sobre los que salieron y las de
+un individual con marcas, y que el pie de los correos del sistema lleve las
+mismas redes que el del sitio.
 """
 
 from __future__ import annotations
@@ -57,6 +58,24 @@ def test_la_busqueda_vive_solo_en_el_dashboard(client, database, outbox):
     assert "data-search" in browser.get("/dashboard").get_data(as_text=True)
     assert "data-search" in browser.get("/contacts").get_data(as_text=True)
     assert "data-search" not in browser.get("/settings/account").get_data(as_text=True)
+
+
+def test_pegado_a_la_izquierda(client, database, outbox):
+    """El menú de secciones arranca donde arranca el ala (octubre de 2026), y lo
+    de la derecha se lleva el resto: el Dashboard y Administración. Configuración
+    arranca igual, para que el menú no salte, con su ancho de siempre."""
+    browser, _, _ = ready(client, database)
+    for url, clase in (("/dashboard", "wrap wrap--wide wrap--left"),
+                       ("/campaigns/write", "wrap wrap--wide wrap--left"),
+                       ("/contacts", "wrap wrap--table wrap--left"),
+                       ("/settings/account", "wrap wrap--wide wrap--left wrap--rows")):
+        assert f'<main class="{clase}">' in browser.get(url).get_data(as_text=True), url
+    assert "wrap--left" not in client.get("/login").get_data(as_text=True)
+    admin, _ = make_admin(client, database)
+    assert '<main class="wrap wrap--wide wrap--left">' in admin.get(
+        "/admin/accounts").get_data(as_text=True)
+    css = (ROOT / "backend/static/css/_panel.src.css").read_text(encoding="utf-8")
+    assert ".wrap--left {" in css and ".wrap--rows { max-width: 1400px; }" in css
 
 
 def test_un_usuario_ve_solo_sus_ramas(client, database, outbox):

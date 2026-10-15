@@ -336,7 +336,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   Correos (Enviar → Redactar, Masivo, Plantillas y Enviados; y Remitente) y
   Contactos (Lista y Supresiones) en un árbol a la izquierda, y la pantalla a
   la derecha. Las direcciones de siempre no cambiaron. Importar, Etiquetas y
-  Columnas se abren desde la lista de Contactos.
+  Columnas se abren desde la lista de Contactos. **Pegado a la izquierda**
+  (`.wrap--left`): el árbol arranca donde el ala, y lo de la derecha se lleva
+  el resto; Administración igual, y Configuración arranca ahí con su ancho.
 - `/dashboard` es el Resumen de Estadísticas, y `/dashboard/<sección>` las
   demás; en personas y con su pastilla contra el periodo anterior. Lo llena
   `services/stats.py`, y el administrador ve la misma pantalla, entera.

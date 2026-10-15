@@ -1,7 +1,7 @@
 {% extends "contacts/_layout.html" %}
 {# Siete columnas no caben en la anchura del resto sin partir los nombres en
    dos líneas. Configuración se queda como está: tiene filas, no tablas. #}
-{% block wrap_class %}wrap--table{% endblock %}
+{% block wrap_class %}wrap--table wrap--left{% endblock %}
 {% block contacts_pane %}
 <h2 class="settings__title">{{ t('contacts_tab_list') }}</h2>
 

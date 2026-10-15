@@ -79,6 +79,15 @@ Contactos    ▸ Lista · Supresiones
   administrador no tiene Dashboard: tiene `/admin`.
 - Importar, Etiquetas y Columnas no tienen fila: se abren con los botones de la
   lista de Contactos, y en el árbol queda marcada Lista.
+- **Pegado a la izquierda** (octubre de 2026, `.wrap--left`): el árbol arranca
+  donde arranca el ala de la barra, y lo de la derecha se lleva el resto del
+  ancho, hasta 1600 px. Antes todo iba centrado en 1400 px, y en un monitor de
+  1920 el árbol flotaba a 260 px del borde. Lo mismo **Administración**, y
+  **Configuración** arranca igual para que el menú no salte al pasar del
+  Dashboard, pero con su ancho de siempre (`.wrap--rows`, 1400 px): tiene
+  filas, no tablas, y más ancho solo aleja cada valor de su nombre. Las páginas
+  sueltas (entrar, contratar, el editor del lienzo, Estadísticas del
+  administrador) siguen centradas.
 
 **`/dashboard` es el Resumen de Estadísticas**, y cada sección tiene su
 dirección: `/dashboard/opens`, `/campaigns`, `/timing`, `/growth` y `/quota`
