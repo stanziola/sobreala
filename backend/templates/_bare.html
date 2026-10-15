@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ t('brand') }}{% endblock %}</title>
+<meta name="robots" content="noindex">
+{#- Una página que abre alguien de fuera, desde un correo (octubre de 2026):
+    sin la barra ni el menú de Sobreala, porque quien llega conoce a la empresa
+    que le escribió, no a nosotros. El tema sale del dispositivo, como en el
+    panel, sin ofrecer cambiarlo. -#}
+<script nonce="{{ csp_nonce }}">
+  (function () {
+    var dark = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  })();
+</script>
+<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/panel.css?v={{ asset_version }}">
+</head>
+<body class="bare">
+<main class="wrap bare__main">
+{% block content %}{% endblock %}
+</main>
+{#- Quien guarda el archivo y cuenta la descarga somos nosotros: se dice, en
+    chiquito. -#}
+<footer class="bare__foot">
+  {{ t('bare_by') }} <a href="{{ site_url }}/">{{ t('brand') }}</a> ·
+  <a href="{{ site_url }}/privacy/">{{ t('bare_privacy') }}</a>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

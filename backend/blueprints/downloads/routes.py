@@ -3,11 +3,13 @@
 La otra punta del enlace que `services/downloads.py` mete en el correo. Como la
 baja, se abre **sin sesión**: quien llega es la persona que recibió el correo.
 
-**Abrir no descarga.** El GET enseña una página con el nombre, el tamaño, de
-quién viene y el botón «Descargar»; el POST entrega el archivo y anota el
-evento `download`, uno por envío y persona. Los escáneres de correo abren los
-enlaces, pero no pulsan botones: así «lo descargó» quiere decir que alguien lo
-pidió.
+**Abrir no descarga, pero la página baja el archivo sola** (octubre de 2026).
+El GET enseña una página propia, sin la barra de Sobreala, con el logo y el
+nombre de quien lo manda, el archivo y su tamaño; un guion manda el POST al
+cargar, y la página dice que ya se puede cerrar. El POST entrega el archivo y
+anota el evento `download`, uno por envío y persona. Los escáneres de correo
+abren los enlaces pero no ejecutan guiones (casi ninguno): así «lo descargó»
+sigue queriendo decir que alguien lo pidió. Sin JavaScript queda el botón.
 
 Un enlace con la firma mala da 404. Uno bueno de un archivo vencido (más de 30
 días) o borrado dice que ya no está, con 410.
@@ -41,11 +43,12 @@ def page(token):
         return render_template("downloads/gone.html"), 410
 
     account = accounts.by_id(db, found["account_id"]) or {}
+    logo = accounts.logo_of(account)
     if request.method == "POST":
         if not csrf_ok(request.form.get("csrf_token")):
             return render_template(
                 "downloads/page.html", file=found, company=account.get("company_name", ""),
-                size=downloads.size_label(found["size"]), token=token), 400
+                logo=logo, size=downloads.size_label(found["size"]), token=token), 400
         campaign = campaigns.by_id(db, found["account_id"], found["campaign_id"]) or {}
         events.record(db, found["account_id"], kind=events.DOWNLOAD,
                       campaign_id=found["campaign_id"], run_id=campaign.get("run_id"),
@@ -57,4 +60,4 @@ def page(token):
 
     return render_template(
         "downloads/page.html", file=found, company=account.get("company_name", ""),
-        size=downloads.size_label(found["size"]), token=token)
+        logo=logo, size=downloads.size_label(found["size"]), token=token)

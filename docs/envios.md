@@ -407,12 +407,22 @@ pausa automática (`reputation.check()`, ver «La pausa automática»).
     tanto.
   - El enlace (`/d/<testigo>`, `services/downloads.py`) va firmado con la llave
     del servidor, como el de la baja, y no guarda nada por enlace.
-  - **Abrir el enlace no lo baja**: abre una página con el nombre, el tamaño y
-    el botón «Descargar» (`blueprints/downloads/`). Los escáneres de correo
-    abren los enlaces de lo que revisan; si bastara con abrirlo, casi todos
-    dirían que se bajó. Pulsar el botón entrega el archivo y anota el evento
-    `download`, uno por envío y persona, que sale en el detalle («Bajó el
-    archivo») y en Eventos.
+  - **Abrir el enlace no lo baja, pero la página lo baja sola** (octubre de
+    2026, `blueprints/downloads/`): es una página propia, **sin la barra ni el
+    menú de Sobreala** (`_bare.html`), con el logo y el nombre de quien lo
+    manda, el archivo y su tamaño, y un pie chiquito («Enviado por Sobreala ·
+    Privacidad»). Un guion con su `nonce` manda el formulario al cargar y
+    cambia los textos a «Tu descarga empezó. Ya puedes cerrar esta pestaña.»
+    **Cerrarla sola no se puede**: el navegador solo deja cerrar una pestaña
+    que abrió el mismo guion, y esta la abrió el lector de correo. Antes era un
+    botón que se quedaba girando, porque una descarga no cambia de página.
+  - Los escáneres de correo abren los enlaces de lo que revisan pero (casi
+    todos) no ejecutan guiones, así que no cuentan como descarga; algunos, como
+    Microsoft Defender, sí los ejecutan en su caja de arena, y es el mismo
+    margen que tienen las aperturas. Sin JavaScript queda el botón «Descargar»,
+    que no gira. El POST entrega el archivo y anota el evento `download`, uno
+    por envío y persona, que sale en el detalle («Bajó el archivo»), en
+    Enviados y en Eventos.
   - Vencido o borrado, la página dice que ya no está (410). Con la firma mala,
     404.
   - Hasta octubre de 2026 iba adjunto y no se guardaba; antes de eso se probó

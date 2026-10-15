@@ -1698,6 +1698,12 @@ TEXTS = {
     "download_lead": "{company} te mandó este archivo.",
     "download_lead_plain": "Te mandaron este archivo.",
     "download_submit": "Descargar",
+    # La página baja el archivo sola (octubre de 2026).
+    "download_started": "Tu descarga empezó",
+    "download_close": "Ya puedes cerrar esta pestaña.",
+    "download_again": "Descargar otra vez",
+    "bare_by": "Enviado por",
+    "bare_privacy": "Privacidad",
     "download_gone_title": "Este archivo ya no está",
     "download_gone_lead": "Los archivos se guardan {days} días. Si todavía lo "
                           "necesitas, pídeselo de nuevo a quien te lo mandó.",

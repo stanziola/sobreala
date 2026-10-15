@@ -1646,6 +1646,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   object-fit: contain; background: #FFFFFF; border: 1px solid var(--color-border);
 }
 .avatar--small { width: 24px; height: 24px; padding: 2px; vertical-align: middle; margin-right: 8px; }
+/* Las páginas que abre alguien de fuera, sin la barra (`_bare.html`): la
+   tarjeta en medio y un pie chiquito con quién guarda el archivo. */
+.bare__main { padding-top: clamp(32px, 8vh, 72px); }
+.bare__foot { padding: 0 16px 28px; text-align: center; font-size: .82rem;
+              color: var(--color-ink-soft); }
+.download__file { margin: 14px 0 0; overflow-wrap: anywhere; }
+
 /* Quién escribe, arriba de las páginas que abre un contacto. */
 .sender-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .sender-head__logo {

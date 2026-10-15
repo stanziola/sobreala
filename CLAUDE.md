@@ -324,8 +324,9 @@ cosa está como está, y lo que ya se probó y se quitó.
 - **El correo individual** (`/campaigns/write`) es una campaña de una persona,
   **a cualquier dirección** (no la guarda en Contactos) y **sin baja ni marca
   de agua**, también con plantilla; si la plantilla nombra datos que esa
-  dirección no tiene, no sale. Lleva la cuota, la supresión y sus cifras como todas. Su archivo va
-  como enlace de descarga (`downloads`, 30 días), que dice si lo bajó.
+  dirección no tiene, no sale. Lleva la cuota, la supresión y sus cifras como
+  todas. Su archivo va como enlace de descarga (`downloads`, 30 días), que
+  dice si lo bajó, a una página sin la barra de Sobreala que lo baja sola.
 
 ### El panel (`docs/panel.md`)
 

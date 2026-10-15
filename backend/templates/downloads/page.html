@@ -1,18 +1,44 @@
-{% extends "base.html" %}
+{% extends "_bare.html" %}
 {% block title %}{{ t('download_title') }}{% endblock %}
 
-{% block content %}
-<div class="card card--narrow">
-  <h1>{{ t('download_title') }}</h1>
-  <p class="lead">{{ t('download_lead', company=company) if company else t('download_lead_plain') }}</p>
-  <p><b>{{ file.name }}</b> <span class="hint">{{ size }}</span></p>
+{#- La página del enlace de un archivo (octubre de 2026). **Baja sola**: un
+    guion manda el formulario al cargar, y la página dice que ya se puede
+    cerrar. Cerrarla sola no se puede: el navegador solo deja cerrar una
+    pestaña que abrió el mismo guion, y esta la abrió el lector de correo.
 
-  {# Lo que baja el archivo es este botón y no abrir la página: los escáneres
-     de correo abren los enlaces de lo que revisan, y si bastara con abrirla,
-     casi todos los correos dirían que alguien lo bajó. #}
-  <form method="post">
+    Los escáneres de correo abren los enlaces de lo que revisan pero no
+    ejecutan guiones, así que «lo descargó» sigue queriendo decir que alguien
+    lo pidió (algunos, como Microsoft Defender, sí los ejecutan en su caja de
+    arena: es el mismo margen que tienen las aperturas). Sin JavaScript queda
+    el botón, que no gira (`data-no-busy`): la página no cambia al bajar. -#}
+{% block content %}
+<div class="card card--narrow download">
+  {% include "_sender_head.html" %}
+  {# Lo que se lee sin JavaScript: el botón. El guion cambia cada texto por
+     el de `data-started` al empezar la descarga. #}
+  <h1 data-started="{{ t('download_started') }}">{{ t('download_title') }}</h1>
+  <p class="lead" data-started="{{ t('download_close') }}">
+    {{ t('download_lead', company=company) if company else t('download_lead_plain') }}</p>
+  <p class="download__file"><b>{{ file.name }}</b> <span class="hint">{{ size }}</span></p>
+
+  <form method="post" id="bajar" data-no-busy>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button class="btn" type="submit">{{ t('download_submit') }}</button>
+    <button class="btn" type="submit" data-started="{{ t('download_again') }}">{{ t('download_submit') }}</button>
   </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+  (function () {
+    var form = document.getElementById("bajar");
+    if (!form) return;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-started]"), function (el) {
+      el.textContent = el.getAttribute("data-started");
+    });
+    var again = form.querySelector("button");
+    if (again) again.className = "btn btn--small btn--outline";
+    form.submit();
+  })();
+</script>
 {% endblock %}
