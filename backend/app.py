@@ -20,7 +20,7 @@ from db import ensure_indexes_once, health, indexes_ready
 from i18n import ago, at_moment, on_date, t
 from models.account import (current_plan, is_admin, plan_cycle,
                             status_of as account_status_of)
-from services import dashboard
+from services import dashboard, mailer
 from services.plans import money
 from services.security import MIN_PASSWORD_LENGTH, csrf_token
 
@@ -157,7 +157,9 @@ def create_app(overrides: dict | None = None) -> Flask:
                                  # El árbol del Dashboard y la fila marcada.
                                  dash_tree=dashboard.tree,
                                  dash_here=dashboard.here,
-                                 dash_holds=dashboard.holds)
+                                 dash_holds=dashboard.holds,
+                                 # El pie de los correos del sistema.
+                                 mail_links=mailer.footer_links())
     app.jinja_env.filters["ago"] = ago
     # Para lo que va a pasar, no para lo que pasó: «17 de septiembre a las 09:00».
     app.jinja_env.filters["at_moment"] = at_moment

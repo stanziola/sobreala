@@ -2274,6 +2274,12 @@ TEXTS = {
                    "escríbenos y lo revisamos.",
 
     # --- emails ------------------------------------------------------------
+    # El pie de todos los correos del sistema (octubre de 2026): quién y dónde,
+    # las redes y la ayuda.
+    "mail_footer_name": "Sobreala",
+    "mail_footer_address": "Santiago de Veraguas, Veraguas, Panamá",
+    "mail_footer_help": "Ayuda",
+    "mail_footer_privacy": "Privacidad",
     "mail_confirm_subject": "{code} es tu código de Sobreala",
     "mail_confirm_heading": "Confirma tu correo",
     "mail_confirm_body": "Gracias por crear tu cuenta en Sobreala. Escribe "

@@ -514,6 +514,19 @@ porque todos tienen la misma forma: un titular, unos párrafos, y a veces un
 botón, un recuadro o un código de seis dígitos. Los siete correos anteriores —confirmación,
 bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el suyo.
 
+**Los ocho comparten el mismo aspecto** (octubre de 2026): `email/_layout.html`
+es el sobre y `email/_parts.html` sus piezas (titular, párrafo, código, botón,
+recuadro y nota). Sobre blanco, el logo centrado arriba, el texto en gris casi
+negro, **un botón oscuro** con la letra blanca y, debajo de una raya, **el pie**:
+«Sobreala» y la dirección (Santiago de Veraguas, Veraguas, Panamá) a la
+izquierda, Instagram y WhatsApp a la derecha, y «Ayuda · Privacidad» debajo.
+Las direcciones del pie viven en `mailer.footer_links()`, y una prueba las
+compara con el pie del sitio (`CONTACT` en `landing/content.py`). Las imágenes
+son PNG que sirve el panel (Gmail y Outlook no dibujan SVG): el ala de
+siempre, `email-logo.png`, y los dos íconos en gris (`static/img/mail/`), que
+`build_assets.py` saca del glifo negro de cada kit de `brand/social/`. Las
+versiones en texto no cambiaron.
+
 **Ninguno puede romper lo que estaba pasando.** Un correo que no sale no puede
 hacer que un pago cobrado parezca fallido, así que el envío va envuelto y solo
 deja una línea en el registro. Y como todos los del sistema, son

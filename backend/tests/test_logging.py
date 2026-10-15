@@ -84,8 +84,10 @@ def test_the_welcome_is_recorded_with_its_own_purpose(client, database, outbox):
     assert row["to"] == "ana@ejemplo.com"
     assert row["account_id"] == accounts.by_email(database, "ana@ejemplo.com")["_id"]
     # The logo travels as a hosted image, not embedded: mail clients do not
-    # draw SVG and nobody wants 26 KB more of message.
-    assert "/assets/img/logo-wing.png" in row["html"]
+    # draw SVG and nobody wants 26 KB more of message. Since October 2026 it
+    # is the panel's PNG, with the footer every system mail shares.
+    assert "/static/img/email-logo.png" in row["html"]
+    assert "Santiago de Veraguas" in row["html"]
 
 
 def test_a_failed_send_undoes_the_registration(client, database, outbox,

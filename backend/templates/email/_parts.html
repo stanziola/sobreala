@@ -1,0 +1,45 @@
+{#- Las piezas de los correos del sistema, para que los ocho se lean igual
+    (octubre de 2026). Estilos en línea: los lectores de correo no leen hojas
+    de estilo. -#}
+
+{% macro heading(text) -%}
+<p style="margin:0 0 18px;font-size:17px;line-height:1.5;font-weight:bold;color:#18181B;">{{ text }}</p>
+{%- endmacro %}
+
+{% macro para(text) -%}
+<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#27272A;">{{ caller() if caller else text }}</p>
+{%- endmacro %}
+
+{#- Gris casi negro con letra blanca, como los botones del panel. -#}
+{% macro button(href, label) -%}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 4px;">
+  <tr><td style="background:#18181B;border-radius:8px;">
+    <a href="{{ href }}" style="display:inline-block;padding:14px 30px;font-size:16px;
+       font-weight:bold;color:#FFFFFF;text-decoration:none;">{{ label }}</a>
+  </td></tr>
+</table>
+{%- endmacro %}
+
+{#- Monoespaciada y separada: seis dígitos se copian con los ojos y hay que
+    poder leerlos de un vistazo desde la notificación del teléfono. -#}
+{% macro code_box(code) -%}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 20px;">
+  <tr><td style="background:#F4F4F5;border-radius:10px;padding:16px 26px;
+                 font-family:Consolas,Menlo,monospace;font-size:32px;
+                 font-weight:bold;letter-spacing:8px;color:#18181B;">{{ code }}</td></tr>
+</table>
+{%- endmacro %}
+
+{% macro note(title, text) -%}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="margin-top:24px;background:#F4F4F5;border-radius:10px;">
+  <tr><td style="padding:16px 18px;">
+    {% if title %}<p style="margin:0 0 6px;font-size:15px;font-weight:bold;color:#18181B;">{{ title }}</p>{% endif %}
+    <p style="margin:0;font-size:14px;line-height:1.6;color:#3F3F46;">{{ caller() if caller else text }}</p>
+  </td></tr>
+</table>
+{%- endmacro %}
+
+{% macro small(text) -%}
+<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#71717A;">{{ caller() if caller else text }}</p>
+{%- endmacro %}

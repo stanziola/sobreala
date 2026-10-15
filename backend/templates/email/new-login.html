@@ -1,55 +1,15 @@
-{#- Transactional message: no unsubscribe link and no watermark on purpose.
-    Inline styles and a table, because email clients ignore stylesheets. -#}
-<!DOCTYPE html>
-<html lang="es">
-<body style="margin:0;padding:0;background:#F1F6FC;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-       style="background:#F1F6FC;padding:32px 16px;">
-  <tr><td align="center">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-           style="max-width:520px;background:#FFFFFF;border-radius:14px;
-                  font-family:Helvetica,Arial,sans-serif;color:#0E1B2A;">
-      <tr><td style="background:#3166A7;border-radius:14px 14px 0 0;padding:16px 24px;">
-        <img src="{{ site_url }}/assets/img/logo-wing.png" width="44" height="26" alt=""
-             style="display:inline-block;vertical-align:middle;border:0;">
-        <span style="display:inline-block;vertical-align:middle;padding-left:10px;
-                     color:#FFFFFF;font-size:20px;font-weight:bold;">{{ t('brand') }}</span>
-      </td></tr>
-      <tr><td style="padding:28px;">
-        <h1 style="margin:0 0 14px;font-size:22px;line-height:1.25;">
-          {{ t('mail_login_heading') }}</h1>
-        <p style="margin:0 0 18px;font-size:16px;line-height:1.6;color:#51617A;">
-          {{ t('mail_login_body') }}</p>
-
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-               style="background:#F1F6FC;border-radius:10px;">
-          <tr><td style="padding:16px 18px;font-size:15px;line-height:1.7;">
-            <b>{{ device }}</b><br>
-            <span style="color:#51617A;">{{ t('mail_login_ip', ip=ip) }}</span>
-          </td></tr>
-        </table>
-
-        <p style="margin:22px 0 10px;font-size:16px;font-weight:bold;">
-          {{ t('mail_login_alert_title') }}</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#51617A;">
-          {{ t('mail_login_alert') }}</p>
-
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="background:#31A9E8;border-radius:8px;">
-            <a href="{{ link }}" style="display:inline-block;padding:13px 26px;
-               font-size:16px;font-weight:bold;color:#0E1B2A;text-decoration:none;">
-              {{ t('mail_login_close') }}</a>
-          </td></tr>
-        </table>
-
-        <p style="margin:18px 0 0;font-size:15px;">
-          <a href="{{ recover }}" style="color:#136A9B;">{{ t('mail_login_change') }}</a></p>
-
-        <p style="margin:22px 0 0;font-size:13px;color:#51617A;">
-          {{ t('mail_login_ignore') }}</p>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body>
-</html>
+{% extends "email/_layout.html" %}
+{% import "email/_parts.html" as m %}
+{#- Somebody signed in from a device never used before: what it was, and a way
+    out that does not need the password. -#}
+{% block body %}
+{{ m.heading(t('mail_login_heading')) }}
+{{ m.para(t('mail_login_body')) }}
+{% call m.note('', '') %}<b style="color:#18181B;">{{ device }}</b><br>{{ t('mail_login_ip', ip=ip) }}{% endcall %}
+<p style="margin:24px 0 8px;font-size:16px;font-weight:bold;color:#18181B;">{{ t('mail_login_alert_title') }}</p>
+{{ m.para(t('mail_login_alert')) }}
+{{ m.button(link, t('mail_login_close')) }}
+<p style="margin:18px 0 0;font-size:15px;">
+  <a href="{{ recover }}" style="color:#18181B;text-decoration:underline;">{{ t('mail_login_change') }}</a></p>
+{{ m.small(t('mail_login_ignore')) }}
+{% endblock %}

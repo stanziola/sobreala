@@ -5,10 +5,14 @@ derecha, con la búsqueda arriba del árbol y solo ahí. Lo que fijan estas
 pruebas: que el árbol sea el de los permisos de quien mira y marque la pantalla
 en la que se está, que Estadísticas se mire por secciones sin perder los
 filtros, que Enviados escriba las cifras de una campaña sobre los que salieron
-y las de un individual con marcas.
+y las de un individual con marcas, y que el pie de los correos del sistema
+lleve las mismas redes que el del sitio.
 """
 
 from __future__ import annotations
+
+import ast
+from pathlib import Path
 
 from bson import ObjectId
 
@@ -17,6 +21,9 @@ from test_campaigns import ready
 from test_users import as_member
 
 from models import event as events
+from services import mailer
+
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def tree_of(page: str) -> str:
@@ -136,3 +143,20 @@ def test_enviados_cifras_de_campana_y_marcas_de_individual(client, database, out
     # Masivo ya no enseña lo que salió.
     assert "Prueba de campaña" not in browser.get("/campaigns").get_data(as_text=True)
 
+
+# --------------------------------------------------------- el pie del correo
+
+def test_el_pie_del_correo_tiene_las_redes_del_sitio(client, database, outbox):
+    source = (ROOT / "landing" / "content.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    contact = next(ast.literal_eval(node.value) for node in tree.body
+                   if isinstance(node, ast.Assign)
+                   and getattr(node.targets[0], "id", "") == "CONTACT")
+    assert mailer.INSTAGRAM_URL == contact["instagram_url"]
+    assert mailer.WHATSAPP_NUMBER == contact["whatsapp_number"]
+
+    ready(client, database)
+    mail = sorted(outbox.glob("*.html"))[0].read_text(encoding="utf-8")
+    assert contact["instagram_url"] in mail
+    assert f"https://wa.me/{contact['whatsapp_number']}" in mail
+    assert "Santiago de Veraguas" in mail and "/static/img/mail/instagram.png" in mail

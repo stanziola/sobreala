@@ -1,0 +1,64 @@
+{#- El sobre de todos los correos del sistema (octubre de 2026): el logo
+    centrado arriba, el texto sobre blanco, un botón oscuro y, debajo de una
+    raya, el pie con la dirección, las redes y la ayuda. Cada correo llena
+    `body` con las piezas de `email/_parts.html`.
+
+    Son mensajes transaccionales: sin enlace de baja y sin marca de agua, que
+    es la regla 8. Tablas y estilos en línea, que es lo único que entienden
+    todos los lectores de correo; las imágenes son PNG, que Gmail y Outlook no
+    dibujan SVG. El logo y los íconos llevan alt vacío o el nombre de la red:
+    si el lector bloquea imágenes, el nombre de la marca ya está en texto. -#}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>{{ t('brand') }}</title>
+</head>
+<body style="margin:0;padding:0;background:#FFFFFF;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#FFFFFF;">
+  <tr><td align="center" style="padding:32px 16px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="max-width:560px;font-family:Helvetica,Arial,sans-serif;color:#18181B;">
+      <tr><td align="center" style="padding:4px 0 40px;">
+        <img src="{{ mail_links.logo }}" width="40" height="24" alt=""
+             style="display:inline-block;vertical-align:middle;border:0;border-radius:5px;">
+        <span style="display:inline-block;vertical-align:middle;padding-left:8px;
+                     font-size:22px;font-weight:bold;color:#18181B;">{{ t('brand') }}</span>
+      </td></tr>
+
+      <tr><td style="padding:0 8px;">
+        {% block body %}{% endblock %}
+      </td></tr>
+
+      <tr><td style="padding:40px 8px 0;">
+        <div style="border-top:1px solid #E4E4E7;font-size:0;line-height:0;">&nbsp;</div>
+      </td></tr>
+      <tr><td style="padding:24px 8px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td valign="top" style="font-size:13px;line-height:1.7;color:#71717A;">
+              {{ t('mail_footer_name') }}<br>{{ t('mail_footer_address') }}</td>
+            <td valign="top" align="right" style="white-space:nowrap;padding-left:12px;">
+              <a href="{{ mail_links.instagram }}" style="text-decoration:none;"><img
+                 src="{{ mail_links.instagram_icon }}" width="18" height="18" alt="Instagram"
+                 style="display:inline-block;border:0;"></a>
+              <a href="{{ mail_links.whatsapp }}" style="text-decoration:none;padding-left:14px;"><img
+                 src="{{ mail_links.whatsapp_icon }}" width="18" height="18" alt="WhatsApp"
+                 style="display:inline-block;border:0;"></a>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:18px 0 0;font-size:13px;color:#71717A;">
+          <a href="{{ mail_links.help }}" style="color:#71717A;text-decoration:underline;">{{ t('mail_footer_help') }}</a>
+          &middot;
+          <a href="{{ mail_links.privacy }}" style="color:#71717A;text-decoration:underline;">{{ t('mail_footer_privacy') }}</a>
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

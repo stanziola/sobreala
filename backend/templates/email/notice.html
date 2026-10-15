@@ -1,82 +1,14 @@
-{#- El sobre de los avisos de la cuenta: el plan, la cuenta abierta y la
-    suspensión.
-
-    Uno solo para todos ellos, y no un archivo por correo, porque los ocho
-    tienen la misma forma: un titular, unos párrafos, a veces un botón y a veces
-    un recuadro. Lo que cambia es el texto, y el texto vive en `i18n.py` como
-    todo lo demás. Quien lo llena es `services/notices.py`.
-
-    Los siete correos anteriores —confirmación, bienvenida, recuperación…— siguen
-    teniendo cada uno el suyo; no se tocaron.
-
-    Es un mensaje transaccional: sin enlace de baja y sin marca de agua, que es
-    la regla 8. Tablas y estilos en línea, que es lo único que entienden todos
-    los lectores de correo. -#}
-<!DOCTYPE html>
-<html lang="es">
-<body style="margin:0;padding:0;background:#F1F6FC;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-       style="background:#F1F6FC;padding:32px 16px;">
-  <tr><td align="center">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-           style="max-width:520px;background:#FFFFFF;border-radius:14px;
-                  font-family:Helvetica,Arial,sans-serif;color:#0E1B2A;">
-      {#- El ala va sin fondo a propósito: en modo oscuro el cliente de correo
-          repinta el fondo que declara esta celda y no toca las imágenes, así
-          que un PNG con su propio fondo se ve como un recuadro flotando. Y con
-          alt vacío porque el nombre de la marca ya está en texto al lado. -#}
-      <tr><td style="background:#3166A7;border-radius:14px 14px 0 0;padding:16px 24px;">
-        <img src="{{ site_url }}/assets/img/logo-wing.png" width="44" height="26" alt=""
-             style="display:inline-block;vertical-align:middle;border:0;">
-        <span style="display:inline-block;vertical-align:middle;padding-left:10px;
-                     color:#FFFFFF;font-size:20px;font-weight:bold;">{{ t('brand') }}</span>
-      </td></tr>
-      <tr><td style="padding:28px;">
-        <h1 style="margin:0 0 14px;font-size:22px;line-height:1.25;">{{ heading }}</h1>
-
-        {% for one in paragraphs %}
-        <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#51617A;">{{ one }}</p>
-        {% endfor %}
-
-        {% if code %}
-        {#- Monoespaciada y separada, como en el correo de confirmación: seis
-            dígitos se copian con los ojos y hay que poder leerlos de un
-            vistazo desde la notificación del teléfono. -#}
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"
-               style="margin:6px 0 18px;">
-          <tr><td style="background:#F1F6FC;border-radius:10px;padding:16px 26px;
-                         font-family:Consolas,Menlo,monospace;font-size:32px;
-                         font-weight:bold;letter-spacing:8px;color:#0E1B2A;">
-            {{ code }}</td></tr>
-        </table>
-        {% endif %}
-
-        {% if button %}
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"
-               style="margin-top:8px;">
-          <tr><td style="background:#31A9E8;border-radius:8px;">
-            <a href="{{ button.href }}" style="display:inline-block;padding:13px 26px;
-               font-size:16px;font-weight:bold;color:#0E1B2A;text-decoration:none;">{{ button.label }}</a>
-          </td></tr>
-        </table>
-        {% endif %}
-
-        {% if note %}
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-               style="margin-top:26px;background:#F1F6FC;border-radius:10px;">
-          <tr><td style="padding:16px 18px;">
-            <p style="margin:0 0 6px;font-size:15px;font-weight:bold;">{{ note.title }}</p>
-            <p style="margin:0;font-size:14px;line-height:1.6;color:#51617A;">{{ note.text }}</p>
-          </td></tr>
-        </table>
-        {% endif %}
-
-        {% if foot %}
-        <p style="margin:22px 0 0;font-size:13px;color:#51617A;">{{ foot }}</p>
-        {% endif %}
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body>
-</html>
+{% extends "email/_layout.html" %}
+{% import "email/_parts.html" as m %}
+{#- El sobre de los avisos de la cuenta: el plan, la cuenta abierta, la
+    suspensión y los del administrador. Lo llena `services/notices.py`: un
+    titular, unos párrafos, a veces un código, un botón o un recuadro. -#}
+{% block body %}
+{{ m.heading(heading) }}
+{% for one in paragraphs %}{{ m.para(one) }}
+{% endfor %}
+{% if code %}{{ m.code_box(code) }}{% endif %}
+{% if button %}{{ m.button(button.href, button.label) }}{% endif %}
+{% if note %}{{ m.note(note.title, note.text) }}{% endif %}
+{% if foot %}{{ m.small(foot) }}{% endif %}
+{% endblock %}

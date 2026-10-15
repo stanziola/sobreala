@@ -139,6 +139,7 @@ def build() -> list[Path]:
             shutil.copy2(source, img / name)
             written.append(img / name)
     written.append(email_logo(img))
+    written += mail_social(img)
     written += payment_logos(img)
     return written
 
@@ -217,6 +218,50 @@ def email_logo(img: Path) -> Path:
         source.convert("RGB").resize((width, EMAIL_LOGO_HEIGHT), Image.LANCZOS).save(
             out, format="PNG", optimize=True)
     return out
+
+
+# Los íconos de redes del pie de los correos del sistema (octubre de 2026). En
+# PNG, por lo mismo que el ala, y en gris: el pie va callado, como el del resto
+# del correo. Salen del glifo negro de cada kit oficial (brand/social/, que no se
+# edita): su forma, recortada a lo que se ve, cuadrada y pintada de este gris,
+# al doble de los 18 px a los que se dibuja.
+MAIL_SOCIAL = {
+    "instagram": BRAND_DIR / "social" / "instagram" / "03 Black Glyph" / "Instagram_Glyph_Black.png",
+    "whatsapp": (BRAND_DIR / "social" / "whatsapp" / "01_Glyph" / "01_Digital RGB" / "02_PNG"
+                 / "Digital_Glyph_Black_RGB_2026.png"),
+}
+MAIL_SOCIAL_SIZE = 36
+MAIL_SOCIAL_GRAY = (113, 113, 122)  # #71717A, el gris del pie
+
+
+def mail_social(img: Path) -> list[Path]:
+    from PIL import Image
+
+    out_dir = img / "mail"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for name, source in MAIL_SOCIAL.items():
+        if not source.exists():
+            continue
+        with Image.open(source) as opened:
+            shape = opened.convert("RGBA")
+        # La forma es lo opaco y oscuro: el glifo negro sobre transparente.
+        alpha = shape.getchannel("A")
+        dark = shape.convert("L").point(lambda v: 255 - v)
+        mask = Image.composite(dark, Image.new("L", shape.size, 0), alpha)
+        box = mask.getbbox()
+        if box:
+            mask = mask.crop(box)
+        side = max(mask.size)
+        square = Image.new("L", (side, side), 0)
+        square.paste(mask, ((side - mask.width) // 2, (side - mask.height) // 2))
+        square = square.resize((MAIL_SOCIAL_SIZE, MAIL_SOCIAL_SIZE), Image.LANCZOS)
+        icon = Image.new("RGBA", square.size, MAIL_SOCIAL_GRAY + (0,))
+        icon.putalpha(square)
+        target = out_dir / f"{name}.png"
+        icon.save(target, format="PNG", optimize=True)
+        written.append(target)
+    return written
 
 
 def check() -> list[Path]:

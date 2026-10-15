@@ -40,6 +40,27 @@ from models import mail_log
 SMTP_TIMEOUT = 10
 
 
+# Lo que lleva el pie de todos los correos del sistema (octubre de 2026): las
+# redes y la ayuda. Las mismas direcciones que el pie del sitio
+# (`landing/content.py`, CONTACT); una prueba las compara. Las imágenes son PNG
+# que sirve el panel (`build_assets.py`): Gmail y Outlook no dibujan SVG.
+INSTAGRAM_URL = "https://instagram.com/sobreala"
+WHATSAPP_NUMBER = "50760807972"
+
+
+def footer_links() -> dict[str, str]:
+    return {
+        "logo": f"{Config.APP_BASE_URL}/static/img/email-logo.png",
+        "instagram": INSTAGRAM_URL,
+        "instagram_icon": f"{Config.APP_BASE_URL}/static/img/mail/instagram.png",
+        "whatsapp": f"https://wa.me/{WHATSAPP_NUMBER}",
+        "whatsapp_icon": f"{Config.APP_BASE_URL}/static/img/mail/whatsapp.png",
+        "help": f"{Config.PUBLIC_SITE_URL}/#preguntas",
+        "privacy": f"{Config.PUBLIC_SITE_URL}/privacy/",
+        "site": Config.PUBLIC_SITE_URL,
+    }
+
+
 def send(to: str, subject: str, html: str, text: str, *,
          purpose: str = "", account_id: Any = None) -> str:
     """Send one message. Returns an identifier for the log.
