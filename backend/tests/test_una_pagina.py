@@ -44,6 +44,19 @@ def test_las_direcciones_de_antes_llevan_a_su_seccion():
         assert 'name="robots" content="noindex"' in html, pagina
 
 
+def test_la_pestana_separa_con_una_barra(client, database, outbox):
+    """«Términos y condiciones | Sobreala» y no con «·» (octubre de 2026), en
+    las páginas del sitio y en las del panel."""
+    for pagina, titulo in (("privacy", "Política de privacidad"),
+                           ("terms", "Términos y condiciones"),
+                           ("pricing", "Precios"), ("how-it-works", "Cómo funciona"),
+                           ("contact", "Contacto")):
+        html = (LANDING / pagina / "index.html").read_text(encoding="utf-8")
+        assert f"<title>{titulo} | Sobreala</title>" in html, pagina
+    entrar = client.get("/login").get_data(as_text=True)
+    assert re.search(r"<title>[^<·|]+ \| Sobreala</title>", entrar)
+
+
 def test_la_portada_dice_menos():
     """La pestaña dice solo «Sobreala», y arriba van el título y dos botones."""
     html = (LANDING / "index.html").read_text(encoding="utf-8")

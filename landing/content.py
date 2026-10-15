@@ -799,7 +799,7 @@ TUTORIALS = {
 # --------------------------------------------------------------------------- how it works
 
 HOW = {
-    "meta_title": "Cómo funciona · Sobreala",
+    "meta_title": "Cómo funciona | Sobreala",
     "meta_description": (
         "Tutoriales del panel de Sobreala: contactos, plantillas, envíos, "
         "estadísticas y configuración, paso a paso y pulsando."
@@ -849,7 +849,7 @@ HOW = {
 # --------------------------------------------------------------------------- pricing
 
 PRICING = {
-    "meta_title": "Precios · Sobreala",
+    "meta_title": "Precios | Sobreala",
     "meta_description": (
         "Planes de Sobreala desde $15 al mes, con contactos, correos mensuales y "
         "soporte que responde. Plan anual con 20% de descuento."
@@ -927,7 +927,7 @@ ABOUT = {
 # Instagram están en el pie, que lleva el ancla #contacto. Esto queda solo
 # para la página de paso de /contact/, que manda ahí.
 CONTACT_PAGE = {
-    "meta_title": "Contacto · Sobreala",
+    "meta_title": "Contacto | Sobreala",
     "hero": {"title": "Contacto"},
 }
 
@@ -962,7 +962,7 @@ UPDATED = "14 de octubre de 2026"
 TERMS_UPDATED = "11 de octubre de 2026"
 
 PRIVACY = {
-    "meta_title": "Política de privacidad · Sobreala",
+    "meta_title": "Política de privacidad | Sobreala",
     "meta_description": (
         "Qué datos trata Sobreala, para qué, con quién los comparte, cuánto "
         "tiempo los guarda y cómo ejercer tus derechos bajo la Ley 81 de 2019."
@@ -1200,7 +1200,7 @@ PRIVACY = {
 }
 
 TERMS = {
-    "meta_title": "Términos y condiciones · Sobreala",
+    "meta_title": "Términos y condiciones | Sobreala",
     "meta_description": (
         "Condiciones de uso de Sobreala: cuenta, planes y pagos, reglas de "
         "envío, tratamiento de los datos de tus contactos y responsabilidades."

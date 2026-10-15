@@ -147,7 +147,10 @@ tus contactos con un solo click») y la nota de «Escríbenos y te acompañamos�
 - **«Ver planes» baja a `#planes`.** Los dos viven en `CTA_PRIMARY` y
   `CTA_SECONDARY` de `content.py`.
 - **La pestaña dice solo «Sobreala»** (`HOME["meta_title"]`). La tarjeta para
-  compartir no cambió: dibuja el título de la portada.
+  compartir no cambió: dibuja el título de la portada. Las demás páginas
+  separan su nombre de la marca con una barra, «Términos y condiciones |
+  Sobreala» (octubre de 2026; antes con «·»), igual que el panel
+  (`base.html`).
 
 **«¿Sigues enviando correos masivos desde Gmail o Outlook?» son cuatro puntos
 que se recorren**: a un lado la lista, con el que estás viendo marcado con un
