@@ -2082,6 +2082,11 @@ def settings(section: str = "account", part: str = ""):
             company_phones, bad = accounts.clean_phones(
                 [one["number"] for one in company], [one["country"] for one in company])
             if phone and not bad:
+                # Los mismos que ya había: no se escribe nada, y se dice.
+                if (phone == account.get("phone")
+                        and list(company_phones) == list(account.get("company_phones") or [])):
+                    return redirect(url_for("auth.settings", section="account",
+                                            same=1) + "#phones")
                 accounts.set_phones(db, account["_id"], phone=phone,
                                     company_phones=company_phones)
                 return redirect(url_for("auth.settings", section="account",
@@ -2091,9 +2096,11 @@ def settings(section: str = "account", part: str = ""):
         else:
             address = accounts.clean_postal(request.form.get("address", ""))
             if address is not None:
-                if address != accounts.postal_of(account):
-                    accounts.set_postal(db, account["_id"], address)
-                    changed_verified(db, account, accounts.ADDRESS)
+                if address == accounts.postal_of(account):
+                    return redirect(url_for("auth.settings", section="account",
+                                            same=1) + "#address")
+                accounts.set_postal(db, account["_id"], address)
+                changed_verified(db, account, accounts.ADDRESS)
                 return redirect(url_for("auth.settings", section="account",
                                         address=1) + "#address")
             postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
@@ -2102,22 +2109,23 @@ def settings(section: str = "account", part: str = ""):
     elif request.method == "POST":
         if section != "notifications":
             return redirect(url_for("auth.settings", section=section))
-        if csrf_ok(request.form.get("csrf_token")):
-            # Only the names models/account.py knows are read. A field naming a
-            # security notice is dropped here rather than written, so no form
-            # —or anything pretending to be one— can turn the alarm off. Y las
-            # que se leen son las suyas: un administrador tiene otra lista. Un
-            # solo formulario las trae todas (octubre de 2026: antes, uno por
-            # subsección).
-            mine = accounts.notices_for(account)
-            accounts.set_notifications(db, account["_id"], {
-                name: bool(request.form.get(name)) for name in mine},
-                names=mine)
-            log_auth(db, events.SETTINGS, events.OK, email=account["email"],
-                     account_id=account["_id"])
-        else:
+        if not csrf_ok(request.form.get("csrf_token")):
             log_auth(db, events.SETTINGS, events.CSRF_FAILED,
                      email=account["email"], account_id=account["_id"])
+            return redirect(url_for("auth.settings", section="notifications"))
+        # Only the names models/account.py knows are read. A field naming a
+        # security notice is dropped here rather than written, so no form —or
+        # anything pretending to be one— can turn the alarm off. Y las que se
+        # leen son las suyas: un administrador tiene otra lista. Un solo
+        # formulario las trae todas (octubre de 2026: antes, uno por
+        # subsección).
+        mine = accounts.notices_for(account)
+        wanted = {name: bool(request.form.get(name)) for name in mine}
+        if all(accounts.wants(account, name) == on for name, on in wanted.items()):
+            return redirect(url_for("auth.settings", section="notifications", same=1))
+        accounts.set_notifications(db, account["_id"], wanted, names=mine)
+        log_auth(db, events.SETTINGS, events.OK, email=account["email"],
+                 account_id=account["_id"])
         return redirect(url_for("auth.settings", section="notifications", saved=1))
 
     here = current_session()

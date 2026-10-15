@@ -590,6 +590,8 @@ def sender_page():
         if handle is None:
             errors["handle"] = t("sender_handle_bad", min=accounts.HANDLE_MIN,
                                  max=accounts.HANDLE_MAX)
+        elif handle == mine.get("handle"):
+            return redirect(url_for("campaigns.sender_page", same=1))
         elif not accounts.set_handle(db, account["_id"], handle):
             errors["handle"] = t("sender_handle_taken")
         else:
@@ -679,6 +681,8 @@ def sender_page():
         local = accounts.clean_local(request.form.get("local", ""))
         if local is None:
             errors["local"] = t("sender_local_bad")
+        elif local == mine.get("domain_local"):
+            return redirect(url_for("campaigns.sender_page", same=1) + "#domain")
         else:
             accounts.set_domain_local(db, account["_id"], local)
             return redirect(url_for("campaigns.sender_page", done="local") + "#domain")

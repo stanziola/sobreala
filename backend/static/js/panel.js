@@ -940,7 +940,61 @@
     });
   });
 
-  // Los avisos verdes dibujan su palomita al aparecer.
+  // Los avisos bajan desde arriba, como una notificación del teléfono (octubre
+  // de 2026): el verde de lo que se guardó, con su palomita, y el gris de «No
+  // se realizaron cambios». Se van solos a los cuatro segundos (quietos
+  // mientras el ratón está encima) y tienen su «×». Solo los de una frase: uno
+  // con un enlace o un botón se queda en su sitio, porque se iría con lo que
+  // hay que pulsar. El texto se copia con textContent.
+  var shelf = document.getElementById("toasts");
+  var same = document.getElementById("icono-igual");
+  if (shelf) {
+    Array.prototype.forEach.call(document.querySelectorAll("p.notice--ok, p.notice--same"), function (note) {
+      if (note.querySelector("a, button, form, input")) return;
+      var gray = note.classList.contains("notice--same");
+      var toast = document.createElement("div");
+      toast.className = "toast" + (gray ? " toast--same" : "");
+      var mark = document.createElement("span");
+      mark.className = "toast__icon";
+      if (gray && same) mark.appendChild(same.content.firstElementChild.cloneNode(true));
+      else mark.appendChild(icon(check, 1));
+      var text = document.createElement("span");
+      text.className = "toast__text";
+      text.textContent = note.textContent.trim();
+      var close = document.createElement("button");
+      close.type = "button";
+      close.className = "toast__close";
+      close.setAttribute("aria-label", shelf.getAttribute("data-close") || "Cerrar");
+      close.textContent = "×";
+      toast.appendChild(mark);
+      toast.appendChild(text);
+      toast.appendChild(close);
+      note.parentNode.removeChild(note);
+      shelf.appendChild(toast);
+
+      var timer = null;
+      function leave() {
+        window.clearTimeout(timer);
+        toast.classList.remove("is-in");
+        window.setTimeout(function () {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, still ? 0 : 320);
+      }
+      function wait(ms) {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(leave, ms);
+      }
+      close.addEventListener("click", leave);
+      toast.addEventListener("mouseenter", function () { window.clearTimeout(timer); });
+      toast.addEventListener("mouseleave", function () { wait(2000); });
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () { toast.classList.add("is-in"); });
+      });
+      wait(4000);
+    });
+  }
+
+  // Los avisos verdes que se quedan en su sitio dibujan su palomita al aparecer.
   Array.prototype.forEach.call(document.querySelectorAll(".notice--ok"), function (note) {
     if (note.querySelector(".notice__check")) return;
     var holder = document.createElement("span");

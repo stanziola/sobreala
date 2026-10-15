@@ -63,7 +63,17 @@
 
 <span class="visually-hidden" role="status" id="theme-status"></span>
 
+{# Los avisos que bajan desde arriba, como una notificación del teléfono
+   (octubre de 2026): `panel.js` mueve aquí los verdes de «guardado» y el gris
+   de «No se realizaron cambios». Sin JavaScript se quedan donde están. #}
+<div class="toasts" id="toasts" role="status" aria-live="polite"
+     data-close="{{ t('toast_close') }}"></div>
+
 <main class="wrap {% block wrap_class %}{% endblock %}">
+{# Guardar lo mismo que ya había (`?same=1`): un solo aviso para todo el panel. #}
+{% if request.args.get('same') %}
+<p class="notice notice--same">{{ t('saved_none') }}</p>
+{% endif %}
 {% block content %}{% endblock %}
 </main>
 
@@ -72,6 +82,7 @@
    Iconify, «line-md» (licencia MIT). `panel.js` los copia de aquí. #}
 <template id="icono-cargando">{% include "_icon-loading.svg" %}</template>
 <template id="icono-listo">{% include "_icon-confirm.svg" %}</template>
+<template id="icono-igual">{% include "_icon-same.svg" %}</template>
 
 <script src="/static/js/panel.js?v={{ asset_version }}"></script>
 {% block scripts %}{% endblock %}

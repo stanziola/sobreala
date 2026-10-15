@@ -16,6 +16,11 @@ TEXTS = {
     # abiertas a la vez, para saltar entre ellas sin escribir nada.
     "nav_switch": "Cambiar de cuenta",
     "back_to_site": "Volver al sitio",
+    # Los avisos que bajan desde arriba (octubre de 2026). El de «guardado»
+    # dice qué se guardó y vive con su pantalla; este es el de cuando no cambió
+    # nada, igual para todas.
+    "saved_none": "No se realizaron cambios.",
+    "toast_close": "Cerrar el aviso",
 
     # --- the bar menu ------------------------------------------------------
     # Two faces of the same control: three lines before signing in, the name of

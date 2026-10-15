@@ -225,6 +225,25 @@ pestañas de Administración.
 - **No está en el sitio público**: sin sesión no hay nada que buscar. Es la
   única excepción a «lo que existe en los dos sitios se cambia en los dos».
 
+### Los avisos que bajan desde arriba (octubre de 2026)
+
+**Lo que se guardó baja desde arriba**, como una notificación del teléfono:
+verde y con la palomita que se dibuja, se va sola a los cuatro segundos
+(quieta mientras el ratón está encima) y tiene su «×». **Guardar lo mismo que
+ya había no escribe nada y lo dice**, en gris: «No se realizaron cambios.»
+
+- **Cómo:** `panel.js` mueve a `#toasts` (en `base.html`, con `aria-live`) cada
+  `p.notice--ok` y cada `p.notice--same`. Solo los de una frase: uno con un
+  enlace o un botón se queda en su sitio, porque se iría con lo que hay que
+  pulsar. Sin JavaScript, los dos se ven donde están, y el gris como un aviso
+  gris. Con «reducir movimiento», aparecen y se van sin moverse.
+- **Los textos verdes son los de siempre**, y dicen qué se guardó. El gris es
+  uno solo para todo el panel: `?same=1` lo pinta `base.html`.
+- **Dónde se sabe que no cambió nada:** Cuenta (la dirección y los teléfonos),
+  Notificaciones, Remitente (el usuario y la dirección del dominio propio) y la
+  verificación de la ficha (verificar lo ya verificado o rechazar lo ya
+  rechazado: no se anota otra decisión igual).
+
 ### Los botones que agregan (octubre de 2026)
 
 Todo botón que agrega o crea algo lleva un «+» delante (`_icon-plus.svg`,

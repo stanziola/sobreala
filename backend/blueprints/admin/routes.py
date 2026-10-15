@@ -633,6 +633,12 @@ def verify(account, raw, kind):
                         + "#verificaciones")
     before = accounts.verification_of(client, kind)["status"]
     status = accounts.VERIFIED if decision == "verified" else accounts.REJECTED
+    if before == status:
+        # Ya estaba así: no se anota otra decisión igual, y se dice. El
+        # documento, si quedó uno, se borra igual: de él no hace falta nada.
+        verification_docs.remove(db, client["_id"], kind)
+        return redirect(url_for("admin.account_page", raw=raw, same=1)
+                        + "#verificaciones")
     accounts.set_verification(db, client["_id"], kind, status, by=account["_id"],
                               reason=reason if status == accounts.REJECTED else "")
     verification_docs.remove(db, client["_id"], kind)

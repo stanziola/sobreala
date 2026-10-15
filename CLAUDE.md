@@ -338,6 +338,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   seleccionado tiene el fondo un poco más oscuro, sin raya, y el hover es más
   blanco. **Configuración no se despliega**: cada sección es una página, y sus
   partes, anclas.
+- **Los avisos de «guardado» bajan desde arriba** (`panel.js`, `#toasts`), y
+  guardar lo mismo que había no escribe nada y dice «No se realizaron
+  cambios» (`?same=1`).
 - **Todo se guarda en UTC y se escribe en la zona de quien mira**
   (`services/clock.py`, galleta `sa_tz`).
 - Hasta cuatro cuentas abiertas en un navegador (`/switch-account`), cada una
