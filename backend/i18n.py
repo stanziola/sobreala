@@ -1667,8 +1667,8 @@ TEXTS = {
     "menu_designs": "Plantillas",
     # --- enviar correos ----------------------------------------------------
     "send_title": "Masivo",
-    "send_lead": "Elige a quién le escribes y qué plantilla. Puedes mandarlo "
-                 "ahora o dejarlo programado.",
+    "send_lead": "Elige a quién le escribes y cómo lo armas: con una plantilla o "
+                 "escrito. Puedes mandarlo ahora o dejarlo programado.",
     "send_new": "Nueva campaña",
     # El correo individual (octubre de 2026).
     "single_title": "Redactar",
@@ -1745,6 +1745,17 @@ TEXTS = {
                       "toda tu lista.",
     "send_all_contacts": "Todos mis contactos",
     "send_howmany": "{n} contactos",
+    # Escribir o Plantilla (octubre de 2026), en Redactar y en Masivo.
+    "send_mode": "Cómo lo armas",
+    "send_mode_write": "Escribir",
+    "send_mode_template": "Plantilla",
+    "send_logo": "Poner mi logo arriba",
+    "send_written_name": "Texto escrito",
+    "send_written_hint": "Sale con el enlace de baja y la dirección postal, como "
+                         "toda campaña.",
+    "single_template_missing": "Esta plantilla usa {what}, y esa dirección no "
+                               "tiene esos datos en Contactos. Agrégala con sus "
+                               "datos o elige Escribir.",
     "send_piece": "Plantilla",
     "send_no_pieces": "Todavía no tienes ninguna plantilla guardada. Arma una "
                       "primero en",

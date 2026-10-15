@@ -59,25 +59,42 @@ BATCH = 100
 POLICY = policy.SMTP.clone(max_line_length=998)
 
 
-class Piece:
-    """La pieza de la campaña, lista para armarse con la baja de cada uno."""
+# Lo que sale de un texto escrito y no de una plantilla guardada (octubre de
+# 2026: el individual y, desde entonces, también el masivo).
+WRITTEN = "written"
 
-    def __init__(self, design: dict[str, Any]):
+
+class Piece:
+    """Lo que dice el correo, listo para armarse con la baja de cada uno.
+
+    Sale de una plantilla guardada (las tres clases de pieza) o de un texto
+    escrito (`source: written`), y en los dos casos puede ser un correo
+    individual o una campaña (octubre de 2026). **El individual va sin baja ni
+    marca de agua**: es un correo de una persona a otra, no una campaña. La
+    dirección postal sí va, y su archivo, si lleva, va como botón justo encima
+    del pie. El texto escrito puede llevar el logo de la empresa arriba.
+    """
+
+    def __init__(self, design: dict[str, Any], *, single: bool = False,
+                 download: dict[str, str] | None = None, logo: str = ""):
         self.design = design
+        self.single = single
+        self.download = download
+        self.logo = logo
         self.built_in = design.get("source") == designs.BUILT_IN
 
     def html(self, *, plan: str | None, unsubscribe_url: str, postal: str = "") -> str:
-        if self.design.get("source") == campaigns.SINGLE:
-            # El correo individual: su texto y, si lleva archivo, el botón para
-            # bajarlo. **Sin baja ni marca de agua** (octubre de 2026): es un
-            # correo de una persona a otra, no una campaña. La dirección postal
-            # sí va.
-            body = render.text_to_html(self.design.get("body", ""))
-            if self.design.get("download"):
-                body += render.download_button(**self.design["download"])
-            return render.email_from_body(body, plan=plan, unsubscribe="",
-                                          postal=postal, watermark=False)
-        if self.design.get("source") == designs.CANVAS:
+        # El individual, sin baja y sin marca; una campaña, con su baja y con
+        # la marca que diga su plan.
+        unsubscribe_url = "" if self.single else unsubscribe_url
+        watermark = False if self.single else None
+        extra = render.download_button(**self.download) if self.download else ""
+        source = self.design.get("source")
+        if source == WRITTEN:
+            body = self.logo + render.text_to_html(self.design.get("body", ""))
+            return render.email_from_body(body + extra, plan=plan, unsubscribe=unsubscribe_url,
+                                          postal=postal, watermark=watermark)
+        if source == designs.CANVAS:
             # Lo arma el mismo código que la vista previa del lienzo, así que
             # lo que se vio es lo que sale.
             doc = canvas.read(self.design.get("canvas")) or canvas.blank()
@@ -85,15 +102,17 @@ class Piece:
                     for one in self.design.get("backgrounds") or []]
             shades = self.design.get("shades") or []
             return render.email_from_body(
-                canvas.to_html(doc, urls, shades), plan=plan,
+                canvas.to_html(doc, urls, shades) + extra, plan=plan,
                 unsubscribe=unsubscribe_url, style=canvas.dark_css(doc, shades),
-                postal=postal)
+                postal=postal, watermark=watermark)
         if self.built_in:
             return render.email(self.design.get("template", ""),
                                 self.design.get("fields") or {},
-                                plan=plan, unsubscribe=unsubscribe_url, postal=postal)
+                                plan=plan, unsubscribe=unsubscribe_url, postal=postal,
+                                watermark=watermark, extra=extra)
         return render.email_from_html(self.design.get("html", ""), plan=plan, postal=postal,
-                                      unsubscribe=unsubscribe_url)
+                                      unsubscribe=unsubscribe_url, watermark=watermark,
+                                      extra=extra)
 
 
 class Stripper(HTMLParser):
@@ -236,6 +255,32 @@ def deliver(message: EmailMessage) -> str:
     return client.send_raw_email(**kwargs)["MessageId"]
 
 
+# El logo arriba de un correo escrito: ni más ancho ni más alto que esto.
+LOGO_BOX = (180, 64)
+
+
+def logo_block(db, account: dict[str, Any]) -> str:
+    """El logo de la empresa para ponerlo arriba de un correo escrito, a su
+    medida dentro de `LOGO_BOX`. Vacío si no tiene o no se puede leer."""
+    name = accounts.logo_of(account)
+    raw = images.data_of(db, account["_id"], name) if name else None
+    if not raw:
+        return ""
+    try:
+        from io import BytesIO
+
+        from PIL import Image
+
+        with Image.open(BytesIO(raw)) as opened:
+            width, height = opened.size
+    except Exception:  # noqa: BLE001 - sin logo es mejor que sin correo
+        return ""
+    scale = min(LOGO_BOX[0] / width, LOGO_BOX[1] / height, 1)
+    return render.logo_header(imaging.url_of(name), alt=account.get("company_name", ""),
+                              width=max(1, round(width * scale)),
+                              height=max(1, round(height * scale)))
+
+
 def download_of(db, campaign: dict[str, Any]) -> dict[str, str] | None:
     """El botón del archivo de un correo individual: su enlace, su nombre y su
     tamaño. None si no lleva archivo o ya no está."""
@@ -299,11 +344,10 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         return {"blocked": why, "sent": 0, "left": 0}
 
     single = campaign.get("kind") == campaigns.SINGLE
-    if single:
-        # El correo individual no tiene pieza guardada: es su propio texto, y
-        # el botón de su archivo si lo lleva.
-        piece = {"source": campaigns.SINGLE, "body": campaign.get("body", ""),
-                 "download": download_of(db, campaign)}
+    if campaigns.written(campaign):
+        # Un texto escrito, sin plantilla guardada: el individual de siempre y,
+        # desde octubre de 2026, también el masivo.
+        piece = {"source": WRITTEN, "body": campaign.get("body", "")}
     else:
         piece = designs.by_id(db, account_id, campaign["design_id"])
     if piece is None:
@@ -350,7 +394,9 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         # Guardada cuando el lienzo iba por diapositivas: sus imágenes son de
         # otra forma. Se rehacen una vez, antes del primer correo.
         piece = designs.upgrade_canvas(db, account_id, piece)
-    ready = Piece(piece)
+    ready = Piece(piece, single=single,
+                  download=download_of(db, campaign) if single else None,
+                  logo=logo_block(db, account) if campaign.get("logo") else "")
     among = suppressions.among(db, account_id,
                                [one["email"] for one in people])
     sent = skipped = failed = 0

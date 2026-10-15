@@ -76,17 +76,21 @@ SINGLE = "single"
 BODY_MAX = 20000
 
 
-def create_single(db, account_id, *, subject: str, body: str, contact_id, to: str) -> Any:
+def create_single(db, account_id, *, subject: str, body: str, contact_id, to: str,
+                  design_id=None, logo: bool = False) -> Any:
     """Dejar listo un correo a una persona, para salir ya. Devuelve su id.
 
     `to` es la dirección, que puede no estar en Contactos (octubre de 2026):
-    entonces `contact_id` va en None y no se guarda ningún contacto."""
+    entonces `contact_id` va en None y no se guarda ningún contacto. Sale de su
+    texto (`body`, con el logo arriba si `logo`) o de una plantilla
+    (`design_id`), las dos cosas desde octubre de 2026."""
     return db.campaigns.insert_one({
         "account_id": account_id,
         "kind": SINGLE,
         "subject": clean_subject(subject),
-        "body": body[:BODY_MAX],
-        "design_id": None,
+        "body": "" if design_id else body[:BODY_MAX],
+        "logo": bool(logo) and not design_id,
+        "design_id": design_id,
         "contact_id": contact_id,
         "to": to,
         # El archivo, si lleva: `models/download.py`. Se pone después de crear
@@ -107,12 +111,17 @@ def create_single(db, account_id, *, subject: str, body: str, contact_id, to: st
 
 
 def create(db, account_id, *, subject: str, design_id, tags: list[str],
-           scheduled_at: datetime) -> Any:
-    """Dejar la campaña en cola. Devuelve su id."""
+           scheduled_at: datetime, body: str = "", logo: bool = False) -> Any:
+    """Dejar la campaña en cola. Devuelve su id.
+
+    Sale de una plantilla (`design_id`) o, desde octubre de 2026, de un texto
+    escrito (`body`, con el logo de la empresa arriba si `logo`)."""
     return db.campaigns.insert_one({
         "account_id": account_id,
         "subject": clean_subject(subject),
         "design_id": design_id,
+        "body": "" if design_id else body[:BODY_MAX],
+        "logo": bool(logo) and not design_id,
         # Vacío es «todos mis contactos». Se guardan los nombres de las
         # etiquetas y no sus posiciones: las etiquetas se pueden reordenar.
         "tags": list(tags or []),
@@ -137,6 +146,11 @@ def for_account(db, account_id, *, limit: int = 50) -> list[dict[str, Any]]:
                 .sort("scheduled_at", -1).limit(limit))
 
 
+def written(campaign: dict[str, Any] | None) -> bool:
+    """Si sale de un texto escrito y no de una plantilla (octubre de 2026)."""
+    return bool(campaign) and not campaign.get("design_id")
+
+
 def by_id(db, account_id, campaign_id) -> dict[str, Any] | None:
     """Una de esta cuenta. La cuenta va en la consulta, no se comprueba después."""
     return db.campaigns.find_one({"_id": campaign_id, "account_id": account_id})
@@ -154,7 +168,8 @@ def editable(campaign: dict[str, Any] | None) -> bool:
 
 
 def update(db, account_id, campaign_id, *, subject: str, design_id,
-           tags: list[str], scheduled_at: datetime) -> bool:
+           tags: list[str], scheduled_at: datetime, body: str = "",
+           logo: bool = False) -> bool:
     """Cambiarla. False si en este momento está saliendo.
 
     El estado va en la consulta y no en una comprobación previa: entre mirar y
@@ -164,6 +179,8 @@ def update(db, account_id, campaign_id, *, subject: str, design_id,
         {"_id": campaign_id, "account_id": account_id,
          "status": {"$ne": SENDING}},
         {"$set": {"subject": clean_subject(subject), "design_id": design_id,
+                  "body": "" if design_id else body[:BODY_MAX],
+                  "logo": bool(logo) and not design_id,
                   "tags": list(tags or []), "scheduled_at": scheduled_at,
                   "updated_at": now()},
          # Una campaña de antes llevaba una sola etiqueta en otro campo. Se

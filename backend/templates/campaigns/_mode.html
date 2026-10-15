@@ -1,0 +1,17 @@
+{#- Escribir o Plantilla (octubre de 2026): cómo se arma el correo, en
+    Redactar y en Masivo. Sin JavaScript se ven las dos partes y manda la
+    elegida; con él, `panel.js` esconde la otra (`data-mode`).
+
+    Espera: mode (la elegida) y, en orden, las dos opciones como
+    `options=[(valor, texto), ...]`. -#}
+<fieldset class="mode" data-mode>
+  <legend class="field-label">{{ t('send_mode') }}</legend>
+  <div class="mode__options">
+    {% for value, label in options %}
+    <label class="mode__option">
+      <input type="radio" name="modo" value="{{ value }}"{% if value == mode %} checked{% endif %}>
+      <span>{{ label }}</span>
+    </label>
+    {% endfor %}
+  </div>
+</fieldset>

@@ -199,8 +199,36 @@ Desde octubre de 2026 es una rama del Dashboard (ver `docs/panel.md`):
 lado de Enviar. Las direcciones no cambiaron.
 
 **Masivo** es `/campaigns`, **solo para clientes**: se marcan las
-etiquetas a las que va —ninguna es toda la lista—, una pieza guardada y el
-asunto, y sale ahora o queda programada.
+etiquetas a las que va —ninguna es toda la lista—, el asunto y **cómo se arma:
+con una plantilla guardada o escrito** (octubre de 2026, `modo`), y sale ahora
+o queda programada.
+
+### Escribir o Plantilla (octubre de 2026)
+
+Masivo y Redactar ofrecen los dos lo mismo arriba, **Escribir | Plantilla**
+(`campaigns/_mode.html`; sin JavaScript se ven las dos partes y manda la
+elegida). La campaña guarda `design_id`, o `body` (y `logo`) si se escribió
+(`campaigns.written()`), y `sender.Piece` la arma igual en los dos casos:
+
+- **Lo escrito** sale de `render.text_to_html()`, y con «Poner mi logo arriba»
+  lleva el logo de la empresa centrado y a su medida (`sender.logo_block`,
+  dentro de 180×64). El logo queda anotado como enviado (`images.mark_sent`),
+  así cambiarlo después no rompe los correos que ya llegaron.
+- **Un masivo escrito es una campaña**: lleva la baja, `List-Unsubscribe` y la
+  marca de agua del Básico (reglas 3 y 4), y **no lleva archivo**: en una
+  campaña a cientos, un archivo de 5 MB son cientos de descargas desde el
+  panel. La pantalla que pregunta antes de mandarla dice «Texto escrito» donde
+  iría la plantilla.
+- **Un individual con plantilla sigue siendo individual**: sin baja ni marca
+  de agua, con la dirección postal y con el botón de su archivo justo encima
+  del pie, en las tres clases de pieza (`render.email()` y
+  `email_from_html()` reciben `watermark` y `extra`). **Si la plantilla nombra
+  columnas o el nombre** (las marcas se buscan en el correo armado y en el
+  asunto, `marks_missing()`) y esa dirección no está en Contactos o no los
+  tiene, no sale y se dice cuáles faltan: a quien le falta un dato no le llega
+  nada. El correo sí se conoce siempre.
+- Es lo que usará la API cuando exista: una plantilla ya sirve para un correo
+  a una persona.
 
 **Se le puede escribir a varias etiquetas a la vez**, y le llega a quien lleve
 cualquiera de ellas. Que nadie reciba dos veces no hubo que construirlo: un
@@ -348,7 +376,8 @@ pausa automática (`reputation.check()`, ver «La pausa automática»).
 ## El correo individual (octubre de 2026)
 
 - **Redactar** en Correos → Enviar (`/campaigns/write`): para, asunto,
-  mensaje y un archivo opcional. Solo quien puede enviar.
+  el mensaje escrito o una plantilla (octubre de 2026, ver «Escribir o
+  Plantilla») y un archivo opcional. Solo quien puede enviar.
 - **Es una campaña de una persona** (`kind: single`, `to`, `contact_id` si
   está en Contactos, `body`, `download_id`), y sale ya por `sender.run()`: la
   supresión (regla 1), la cuota (cuenta uno), la dirección postal y las

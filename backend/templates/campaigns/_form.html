@@ -1,7 +1,8 @@
 {#- El formulario de una campaña, el mismo para crear y para editar.
 
-    Espera: lists, pieces, named, errors, form (lo que se acaba de escribir) y,
-    al editar, campaign y when. -#}
+    Espera: lists, pieces, named, errors, form (lo que se acaba de escribir),
+    has_logo y, al editar, campaign y when. Desde octubre de 2026 se arma con
+    una plantilla o escrito, sin archivo (el archivo es del individual). -#}
 {% set chosen = form.getlist('lista') if form.getlist('lista')
                   else (tags_of(campaign) if campaign else []) %}
 {% set piece_id = form.get('pieza', campaign.design_id|string if campaign else '') %}
@@ -33,19 +34,28 @@
 {% endif %}
 {% if errors.lista %}<p class="error">{{ errors.lista }}</p>{% endif %}
 
-<label for="pieza">{{ t('send_piece') }}</label>
-{% if pieces %}
-<select id="pieza" name="pieza">
-  {% for one in pieces %}
-  <option value="{{ one._id }}"{% if one._id|string == piece_id %} selected{% endif %}>
-    {{ one.name }}{% if one.template %} · {{ named.get(one.template, one.template) }}{% endif %}</option>
-  {% endfor %}
-</select>
-{% if errors.pieza %}<p class="error">{{ errors.pieza }}</p>{% endif %}
-{% else %}
-<p class="hint">{{ t('send_no_pieces') }}
-  <a href="{{ url_for('designs.index') }}">{{ t('menu_designs') }}</a></p>
-{% endif %}
+{% set mode = form.get('modo', 'escribir' if campaign and not campaign.design_id else 'plantilla') %}
+{% with options=[('plantilla', t('send_mode_template')), ('escribir', t('send_mode_write'))] %}
+{% include "campaigns/_mode.html" %}
+{% endwith %}
+
+<div class="mode__part" data-mode-part="plantilla">
+  {% include "campaigns/_pieces.html" %}
+</div>
+
+<div class="mode__part" data-mode-part="escribir">
+  <label for="mensaje">{{ t('single_body') }}</label>
+  <textarea id="mensaje" name="mensaje" rows="10" maxlength="{{ body_max }}">{{ form.get('mensaje', campaign.body if campaign else '') }}</textarea>
+  {% if errors.mensaje %}<p class="error">{{ errors.mensaje }}</p>{% endif %}
+  <p class="hint">{{ t('send_written_hint') }}</p>
+  {% if has_logo %}
+  <label class="check">
+    <input type="checkbox" name="logo" value="1"
+           {%- if form.get('logo') or (campaign and campaign.logo) or (not campaign and not form.get('asunto')) %} checked{% endif %}>
+    <span>{{ t('send_logo') }}</span>
+  </label>
+  {% endif %}
+</div>
 
 <p class="field-label">{{ t('send_when') }}</p>
 {% set when_now = form.get('cuando', 'fecha' if campaign else 'ahora') == 'ahora' %}

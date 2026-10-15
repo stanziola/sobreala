@@ -45,6 +45,7 @@ from models import token as tokens
 from models import suppression as suppressions
 from services import address_check, attachments, importer, notices, render, sender, ses_identity
 from services import clock
+from services import fields
 from services.security import csrf_ok, rate_limit
 
 bp = Blueprint("campaigns", __name__)
@@ -152,6 +153,9 @@ def shared(db, account, **extra):
         # Un usuario puede tener solo «ver las campañas»: entonces la pantalla
         # se lee entera y no enseña botones que su cuenta no puede pulsar.
         "can_send": accounts.can(current_account(), accounts.SEND),
+        # «Poner mi logo arriba», en lo escrito (octubre de 2026).
+        "has_logo": bool(accounts.logo_of(account)),
+        "body_max": campaigns.BODY_MAX,
         **extra,
     }
 
@@ -181,11 +185,31 @@ def index():
                  removed=bool(request.args.get("deleted"))))
 
 
+# Cómo se arma un correo (octubre de 2026): escrito a mano o con una plantilla
+# guardada. Los dos sirven para el individual y para el masivo.
+WRITE = "escribir"
+TEMPLATE = "plantilla"
+
+
+def mode_of(default: str) -> str:
+    """Lo que eligió el formulario; algo inventado es lo de siempre."""
+    chosen = request.form.get("modo", default)
+    return chosen if chosen in (WRITE, TEMPLATE) else default
+
+
 def save(db, account, campaign) -> dict[str, str]:
-    """Guardar lo que dice el formulario, para una nueva o para una que se edita."""
+    """Guardar lo que dice el formulario, para una nueva o para una que se edita.
+
+    Desde octubre de 2026 una campaña sale de una plantilla o de un texto
+    escrito (`modo`), con el logo de la empresa arriba si se pide. Escrita,
+    lleva su baja y la marca de agua de su plan como cualquier campaña; el
+    archivo es solo del individual."""
     errors: dict[str, str] = {}
     subject = campaigns.clean_subject(request.form.get("asunto", ""))
-    design_id = as_id(request.form.get("pieza"))
+    mode = mode_of(TEMPLATE)
+    design_id = as_id(request.form.get("pieza")) if mode == TEMPLATE else None
+    body = request.form.get("mensaje", "").strip() if mode == WRITE else ""
+    logo = mode == WRITE and bool(request.form.get("logo")) and bool(accounts.logo_of(account))
     tags = lists_chosen(account)
     now_wanted = request.form.get("cuando") == "ahora"
     when = accounts.now() if now_wanted else read_when(
@@ -195,7 +219,12 @@ def save(db, account, campaign) -> dict[str, str]:
         return {"form": t("error_csrf")}
     if not subject:
         errors["asunto"] = t("error_required")
-    if design_id is None or designs.by_id(db, account["_id"], design_id) is None:
+    if mode == WRITE:
+        if not body:
+            errors["mensaje"] = t("error_required")
+        elif len(body) > campaigns.BODY_MAX:
+            errors["mensaje"] = t("single_body_long", n=campaigns.BODY_MAX)
+    elif design_id is None or designs.by_id(db, account["_id"], design_id) is None:
         errors["pieza"] = t("send_pick_piece")
     if when is None:
         errors["fecha"] = t("send_pick_when")
@@ -208,10 +237,11 @@ def save(db, account, campaign) -> dict[str, str]:
 
     if campaign is None:
         campaigns.create(db, account["_id"], subject=subject,
-                         design_id=design_id, tags=tags, scheduled_at=when)
+                         design_id=design_id, tags=tags, scheduled_at=when,
+                         body=body, logo=logo)
     elif not campaigns.update(db, account["_id"], campaign["_id"],
                               subject=subject, design_id=design_id, tags=tags,
-                              scheduled_at=when):
+                              scheduled_at=when, body=body, logo=logo):
         return {"form": t("send_already_out")}
     return {}
 
@@ -244,7 +274,11 @@ def write():
         "campaigns/write.html", section="envios", account=account, errors=errors,
         form=form, accept=attachments.ACCEPT,
         max_mb=attachments.MAX_BYTES // (1024 * 1024), body_max=campaigns.BODY_MAX,
-        keep_days=downloads_model.KEEP_DAYS)
+        keep_days=downloads_model.KEEP_DAYS,
+        # Las mismas plantillas que el masivo (octubre de 2026).
+        pieces=pieces(db, account["_id"]),
+        named={one["key"]: one["label"] for one in render.TEMPLATE_LIST.values()},
+        has_logo=bool(accounts.logo_of(account)))
 
 
 def send_single(db, account):
@@ -256,7 +290,11 @@ def send_single(db, account):
     raw_to = " ".join((request.form.get("corregir") or request.form.get("para", "")).split())[:254]
     to = (importer.clean(raw_to) or "").lower() if raw_to else ""
     subject = campaigns.clean_subject(request.form.get("asunto", ""))
-    body = request.form.get("mensaje", "").strip()
+    mode = mode_of(WRITE)
+    body = request.form.get("mensaje", "").strip() if mode == WRITE else ""
+    design = (designs.by_id(db, account["_id"], as_id(request.form.get("pieza")))
+              if mode == TEMPLATE and as_id(request.form.get("pieza")) else None)
+    logo = mode == WRITE and bool(request.form.get("logo")) and bool(accounts.logo_of(account))
     found = contacts.by_emails(db, account["_id"], [to]).get(to) if to else None
     if not raw_to:
         errors["para"] = t("error_required")
@@ -278,7 +316,20 @@ def send_single(db, account):
         errors["typo"] = address_check.suggestion(to)
     if not subject:
         errors["asunto"] = t("error_required")
-    if not body:
+    if mode == TEMPLATE:
+        if design is None:
+            errors["pieza"] = t("send_pick_piece")
+        elif to and "para" not in errors:
+            # A quien le falta un dato no le llega nada (octubre de 2026): la
+            # plantilla nombra columnas o el nombre, y esa dirección no está en
+            # Contactos o no los tiene.
+            # El contacto entero: `by_emails` no trae sus columnas.
+            person = (contacts.by_id(db, account["_id"], found["_id"]) if found
+                      else None) or {"email": to}
+            lacking = marks_missing(account, design, subject, person)
+            if lacking:
+                errors["pieza"] = t("single_template_missing", what=", ".join(lacking))
+    elif not body:
         errors["mensaje"] = t("error_required")
     elif len(body) > campaigns.BODY_MAX:
         errors["mensaje"] = t("single_body_long", n=campaigns.BODY_MAX)
@@ -306,7 +357,8 @@ def send_single(db, account):
     campaign_id = campaigns.create_single(
         db, account["_id"], subject=subject, body=body,
         contact_id=found["_id"] if found else None,
-        to=found.get("email", to) if found else to)
+        to=found.get("email", to) if found else to,
+        design_id=design["_id"] if design else None, logo=logo)
     # El archivo se guarda 30 días y el correo lleva su enlace de descarga: es
     # lo que deja saber si la persona lo bajó (`models/download.py`).
     if attachment:
@@ -319,6 +371,28 @@ def send_single(db, account):
     if result.get("sent") and done.get("run_id"):
         return url_for("campaigns.run_detail", raw=done["run_id"])
     return url_for("campaigns.index", done="single_failed")
+
+
+def marks_missing(account, design, subject: str, contact) -> list[str]:
+    """Los datos que nombra la plantilla y le faltan a esa persona: los nombres
+    de sus columnas (y «Nombre») tal como los ve el cliente.
+
+    Las marcas se buscan en el correo ya armado y en el asunto, así vale para
+    las tres clases de pieza. A quien no está en Contactos le falta todo lo
+    que se nombre, menos su correo."""
+    html = sender.Piece(design, single=True).html(plan=None, unsubscribe_url="")
+    used = set(fields.MARK.findall(html + " " + subject))
+    if not used:
+        return []
+    lacking = []
+    values = fields.values_of(contact)
+    for one in accounts.fields_of(account):
+        if one["key"] in used and not values.get(one["key"]):
+            lacking.append(one["label"])
+    for key, (where, label) in fields.BUILT_IN.items():
+        if key in used and not (contact or {}).get(where):
+            lacking.append(label)
+    return lacking
 
 
 @bp.route("/campaigns/<raw>", methods=["GET", "POST"])
@@ -488,8 +562,10 @@ def send(raw):
         return render_template(
             "campaigns/confirm.html", section="envios",
             **shared(db, account, campaign=found,
-                     piece=designs.by_id(db, account["_id"],
-                                         found.get("design_id")),
+                     # Una escrita no tiene pieza guardada: se dice que es su
+                     # texto, y se puede mandar (octubre de 2026).
+                     piece=({"name": t("send_written_name")} if campaigns.written(found)
+                            else designs.by_id(db, account["_id"], found.get("design_id"))),
                      going=contacts.matching_count(
                          db, account["_id"],
                          tags=campaigns.tags_of(found),

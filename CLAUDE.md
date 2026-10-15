@@ -318,9 +318,13 @@ cosa está como está, y lo que ya se probó y se quitó.
   rebotes permanentes > 3 % desde 100 enviados, o quejas > 0.1 % desde 1,000.
   Es un límite (`accounts.pause()`): no envía, avisa al cliente y al
   administrador, y solo la quita el administrador desde la ficha.
+- **Escribir o Plantilla**, en el individual y en el masivo: la campaña
+  guarda `body` (y `logo`) o `design_id`. Escrito, el masivo sigue siendo una
+  campaña (baja y marca) y sin archivo.
 - **El correo individual** (`/campaigns/write`) es una campaña de una persona,
   **a cualquier dirección** (no la guarda en Contactos) y **sin baja ni marca
-  de agua**. Lleva la cuota, la supresión y sus cifras como todas. Su archivo va
+  de agua**, también con plantilla; si la plantilla nombra datos que esa
+  dirección no tiene, no sale. Lleva la cuota, la supresión y sus cifras como todas. Su archivo va
   como enlace de descarga (`downloads`, 30 días), que dice si lo bajó.
 
 ### El panel (`docs/panel.md`)

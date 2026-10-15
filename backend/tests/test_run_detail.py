@@ -164,7 +164,7 @@ def test_el_formulario_dice_etiquetas_y_plantilla(client, database, outbox):
     browser, account, _ = ready(client, database)
     accounts.add_field(database, account["_id"], label="Edad", kind="number")
     pantalla = browser.get("/campaigns").get_data(as_text=True)
-    assert "Elige a quién le escribes y qué plantilla." in pantalla
+    assert "Elige a quién le escribes y cómo lo armas: con una plantilla o escrito." in pantalla
     assert ">Etiquetas<" in pantalla and ">Plantilla<" in pantalla
     assert "A quién" not in pantalla and "Con qué plantilla" not in pantalla
     assert "Se guardan armadas" not in pantalla

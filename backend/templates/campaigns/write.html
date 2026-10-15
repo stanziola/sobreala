@@ -35,10 +35,29 @@
          value="{{ form.get('asunto', '') }}" required>
   {% if errors.asunto %}<p class="error">{{ errors.asunto }}</p>{% endif %}
 
-  <label for="mensaje">{{ t('single_body') }}</label>
-  <textarea id="mensaje" name="mensaje" rows="10" maxlength="{{ body_max }}"
-            required>{{ form.get('mensaje', '') }}</textarea>
-  {% if errors.mensaje %}<p class="error">{{ errors.mensaje }}</p>{% endif %}
+  {# Escribirlo o usar una plantilla guardada (octubre de 2026). Con plantilla
+     sale igual de individual: sin baja ni marca de agua. #}
+  {% set mode = form.get('modo', 'escribir') %}
+  {% with options=[('escribir', t('send_mode_write')), ('plantilla', t('send_mode_template'))] %}
+  {% include "campaigns/_mode.html" %}
+  {% endwith %}
+
+  <div class="mode__part" data-mode-part="escribir">
+    <label for="mensaje">{{ t('single_body') }}</label>
+    <textarea id="mensaje" name="mensaje" rows="10" maxlength="{{ body_max }}">{{ form.get('mensaje', '') }}</textarea>
+    {% if errors.mensaje %}<p class="error">{{ errors.mensaje }}</p>{% endif %}
+    {% if has_logo %}
+    <label class="check">
+      <input type="checkbox" name="logo" value="1"{% if form.get('logo') or not form.get('asunto') %} checked{% endif %}>
+      <span>{{ t('send_logo') }}</span>
+    </label>
+    {% endif %}
+  </div>
+
+  <div class="mode__part" data-mode-part="plantilla">
+    {% set piece_id = form.get('pieza', '') %}
+    {% include "campaigns/_pieces.html" %}
+  </div>
 
   <label for="archivo">{{ t('single_file') }}</label>
   <input id="archivo" name="archivo" type="file" accept="{{ accept }}"

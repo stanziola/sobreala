@@ -647,6 +647,25 @@
   });
 })();
 
+/* Escribir o Plantilla (octubre de 2026), en Redactar y en Masivo: se ve solo
+   la parte de lo elegido. Sin JavaScript se ven las dos, y el servidor usa la
+   elegida. */
+(function () {
+  Array.prototype.forEach.call(document.querySelectorAll("[data-mode]"), function (box) {
+    var form = box.closest("form");
+    if (!form) return;
+    function paint() {
+      var chosen = form.querySelector('input[name="modo"]:checked');
+      var value = chosen ? chosen.value : "";
+      Array.prototype.forEach.call(form.querySelectorAll("[data-mode-part]"), function (part) {
+        part.hidden = part.getAttribute("data-mode-part") !== value;
+      });
+    }
+    box.addEventListener("change", paint);
+    paint();
+  });
+})();
+
 /* Las ramas del árbol del Dashboard (octubre de 2026): en una pantalla ancha,
    pulsar una rama la despliega o la recoge sin recargar; la animación la hace
    el CSS. En el teléfono el enlace va a su primera fila. Sin JavaScript,

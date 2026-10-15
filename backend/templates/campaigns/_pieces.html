@@ -1,0 +1,16 @@
+{#- Las plantillas guardadas, para elegir una: el mismo selector en Masivo y
+    en Redactar. Espera: pieces, named, piece_id y errors. -#}
+<label for="pieza">{{ t('send_piece') }}</label>
+{% if pieces %}
+<select id="pieza" name="pieza">
+  {% for one in pieces %}
+  <option value="{{ one._id }}"{% if one._id|string == piece_id %} selected{% endif %}>
+    {{ one.name }}{% if one.template %} · {{ named.get(one.template, one.template) }}{% endif %}</option>
+  {% endfor %}
+</select>
+{% if errors.pieza %}<p class="error">{{ errors.pieza }}</p>{% endif %}
+{% else %}
+<p class="hint">{{ t('send_no_pieces') }}
+  <a href="{{ url_for('designs.index') }}">{{ t('menu_designs') }}</a></p>
+{% if errors.pieza %}<p class="error">{{ errors.pieza }}</p>{% endif %}
+{% endif %}

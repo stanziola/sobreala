@@ -130,21 +130,26 @@ def body(key: str, filled: dict[str, str]) -> str:
 
 
 def email(key: str, filled: dict[str, str], *, plan: str | None,
-          unsubscribe: str = "#", preview: bool = False, postal: str = "") -> str:
+          unsubscribe: str = "#", preview: bool = False, postal: str = "",
+          watermark: bool | None = None, extra: str = "") -> str:
     """El correo entero, tal como saldría.
 
     `unsubscribe` es el enlace de baja, único por destinatario. En la vista
     previa todavía no hay destinatario, así que va uno de mentira y el pie lo
     dice, para que nadie lo pruebe pensando que se dio de baja.
+
+    `watermark` y `extra` son los del correo individual, que puede salir de
+    una plantilla (octubre de 2026): sin marca de agua, y con el botón de su
+    archivo justo encima del pie.
     """
     return _env.get_template("_wrap.html").render(
         # Ya viene escapado de su propia plantilla, que también va con
         # autoescape: sin esto el sobre lo escaparía otra vez y el correo
         # llegaría con las etiquetas a la vista.
-        cuerpo=Markup(body(key, filled)),
+        cuerpo=Markup(body(key, filled) + extra),
         unsubscribe=unsubscribe,
         preview=preview,
-        watermark=plans.has_watermark(plan),
+        watermark=plans.has_watermark(plan) if watermark is None else watermark,
         logo=LOGO_URL,
         postal=postal,
     )
@@ -192,6 +197,16 @@ def email_from_body(body: str, *, plan: str | None, unsubscribe: str = "#",
     )
 
 
+def logo_header(url: str, *, alt: str, width: int, height: int) -> str:
+    """El logo de la empresa arriba de un correo escrito (octubre de 2026),
+    centrado y a su medida: los lectores de correo no respetan `max-height`,
+    así que el ancho y el alto se calculan antes (`sender.logo_block`)."""
+    return ('<div style="padding:28px 24px 0;text-align:center">'
+            f'<img src="{escape(url)}" width="{int(width)}" height="{int(height)}" '
+            f'alt="{escape(alt)}" style="display:inline-block;border:0;'
+            f'width:{int(width)}px;height:{int(height)}px"></div>')
+
+
 def download_button(*, url: str, name: str, size: str) -> str:
     """El botón «Descargar» del archivo de un correo individual, en tablas
     como todo lo demás del correo. Lleva `ses:no-track`: el clic que importa lo
@@ -200,7 +215,7 @@ def download_button(*, url: str, name: str, size: str) -> str:
 
 
 def foot(*, plan: str | None, unsubscribe: str = "#",
-         preview: bool = False, postal: str = "") -> str:
+         preview: bool = False, postal: str = "", watermark: bool | None = None) -> str:
     """Solo lo que ponemos nosotros: la baja, la dirección postal y la marca.
 
     Existe aparte porque a una pieza subida por el cliente no se le puede poner
@@ -209,7 +224,8 @@ def foot(*, plan: str | None, unsubscribe: str = "#",
     """
     return _env.get_template("_foot.html").render(
         unsubscribe=unsubscribe, preview=preview,
-        watermark=plans.has_watermark(plan), logo=LOGO_URL, postal=postal)
+        watermark=plans.has_watermark(plan) if watermark is None else watermark,
+        logo=LOGO_URL, postal=postal)
 
 
 # Dónde termina el documento de un cliente. Se busca sin distinguir mayúsculas
@@ -218,15 +234,20 @@ CLOSING = re.compile(r"</body\s*>", re.IGNORECASE)
 
 
 def email_from_html(html: str, *, plan: str | None, unsubscribe: str = "#",
-                    preview: bool = False, postal: str = "") -> str:
+                    preview: bool = False, postal: str = "",
+                    watermark: bool | None = None, extra: str = "") -> str:
     """Un correo a partir del HTML que subió el cliente.
 
     Se le inyecta el pie justo antes de que cierre el cuerpo; si no cierra
     —`services/html_check.py` no lo exige—, se le pega al final. De las dos
     formas la baja sale **dentro** del correo y no la puede quitar nadie
     editando su archivo, que es de lo que trata la regla 3.
+
+    `watermark` y `extra` son los del correo individual (ver `email()`): el
+    botón de su archivo va justo antes del pie.
     """
-    pie = foot(plan=plan, unsubscribe=unsubscribe, preview=preview, postal=postal)
+    pie = extra + foot(plan=plan, unsubscribe=unsubscribe, preview=preview,
+                       postal=postal, watermark=watermark)
     found = list(CLOSING.finditer(html))
     if not found:
         return html + pie
