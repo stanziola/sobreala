@@ -350,6 +350,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - **Los avisos de «guardado» bajan desde arriba** (`panel.js`, `#toasts`), y
   guardar lo mismo que había no escribe nada y dice «No se realizaron
   cambios» (`?same=1`).
+- **El logo de la empresa es una foto de perfil** (octubre de 2026): llena su
+  círculo en todas partes, y con él el botón de la barra (en los dos sitios) es
+  solo la foto; el menú abierto del panel empieza con el logo y el nombre.
+  Entero va solo en los correos, el PDF y el lienzo.
 - **Todo se guarda en UTC y se escribe en la zona de quien mira**
   (`services/clock.py`, galleta `sa_tz`).
 - Hasta cuatro cuentas abiertas en un navegador (`/switch-account`), cada una

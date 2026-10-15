@@ -107,10 +107,12 @@
           <span class="usermenu__bars" data-usermenu-bars aria-hidden="true">
             <span></span><span></span><span></span></span>
           {#- Con logo, nav.js cambia el ícono por él (octubre de 2026), como en
-              la barra del panel: lo saca de la migaja y lo pide al panel. -#}
+              la barra del panel: lo saca de la migaja y lo pide al panel. En
+              la barra queda solo la foto, y «Mi cuenta» para el lector de
+              pantalla; en el teléfono, dentro del menú, se ve al lado. -#}
           <span class="usermenu__me" data-usermenu-me hidden
                 data-avatar-base="{{ panel.base_url }}/img/">
-            {% include "partials/icon-user.svg.j2" %}<span>{{ panel.account_label }}</span></span>
+            {% include "partials/icon-user.svg.j2" %}<span class="usermenu__me-label">{{ panel.account_label }}</span></span>
           <span class="visually-hidden usermenu__label" data-usermenu-label>{{ panel.options_label }}</span>
           <span class="usermenu__caret" aria-hidden="true">
             {% include "partials/icon-caret.svg.j2" %}</span>

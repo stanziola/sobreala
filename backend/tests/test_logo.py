@@ -12,6 +12,7 @@ usuario de la empresa lo vea y no lo cambie.
 from __future__ import annotations
 
 import io
+from pathlib import Path
 
 from PIL import Image
 
@@ -25,6 +26,8 @@ from models import account as accounts
 from models import contact as contacts
 from models import image as images
 from services import unsubscribe
+
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def png(width=60, height=30, color=(49, 102, 167, 255)) -> bytes:
@@ -84,6 +87,41 @@ def test_subir_cambiar_y_quitar(client, database, outbox, monkeypatch):
     # Quitar sin logo no cambia nada, y lo dice.
     assert "same=1" in remove(browser).headers["Location"]
     assert "menu__avatar" not in browser.get("/settings/account").get_data(as_text=True)
+
+
+def test_en_la_barra_es_una_foto_de_perfil(client, database, outbox):
+    """Con logo, el botón de la barra es solo el círculo (octubre de 2026): el
+    nombre queda para el lector de pantalla, y el menú abierto lo dice arriba.
+    Sin logo, el nombre con su flecha, como siempre."""
+    browser, cuenta, _ = ready(client, database)
+    sin = browser.get("/settings/account").get_data(as_text=True)
+    assert '<summary class="menu__button">' in sin
+    assert '<span class="menu__who">Cooperativa Ejemplo</span>' in sin
+    assert "menu__head" not in sin
+
+    upload(browser, png())
+    logo = logo_of(database, cuenta)
+    con = browser.get("/settings/account").get_data(as_text=True)
+    assert '<summary class="menu__button menu__button--avatar">' in con
+    assert '<span class="menu__who visually-hidden">Cooperativa Ejemplo</span>' in con
+    cabecera = con.split('<div class="menu__head">', 1)[1].split("</div>", 1)[0]
+    assert f'src="/img/{logo}"' in cabecera and "Cooperativa Ejemplo" in cabecera
+
+
+def test_el_logo_llena_su_circulo():
+    """Sin el círculo blanco de antes, en el panel y en el sitio: el logo lo
+    llena, como una foto. Y el sitio trae lo que su guion necesita para dejar
+    solo la foto en la barra."""
+    panel = (ROOT / "backend/static/css/_panel.src.css").read_text(encoding="utf-8")
+    sitio = (ROOT / "landing/src/site.css").read_text(encoding="utf-8")
+    for css, regla in ((panel, ".menu__avatar {"), (panel, ".switcher__logo, .avatar {"),
+                       (panel, ".sender-head__logo {"), (panel, ".logo-preview {"),
+                       (sitio, ".usermenu__avatar {")):
+        cuerpo = css.split(regla, 1)[1].split("}", 1)[0]
+        assert "object-fit: cover" in cuerpo and "#FFFFFF" not in cuerpo, regla
+    assert 'class="usermenu__me-label"' in (ROOT / "landing/index.html").read_text(encoding="utf-8")
+    assert '"usermenu__button--avatar"' in (ROOT / "landing/assets/js/nav.js").read_text(
+        encoding="utf-8")
 
 
 def test_solo_entra_una_imagen_buena(client, database, outbox):

@@ -373,6 +373,10 @@
     foto.src = (me.getAttribute("data-avatar-base") || "") + logo;
     if (icono) me.replaceChild(foto, icono);
     else me.insertBefore(foto, me.firstChild);
+    // Como foto de perfil (octubre de 2026): en la barra, el botón es solo el
+    // círculo; site.css esconde la caja, «Mi cuenta» y la flecha.
+    var boton = menu.querySelector("summary");
+    if (boton) boton.classList.add("usermenu__button--avatar");
   }
   Array.prototype.forEach.call(menu.querySelectorAll("[data-account-only]"),
                                function (row) { row.hidden = false; });

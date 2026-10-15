@@ -1,17 +1,20 @@
 {# The one control in the bar.
 
-   Signed in it wears the company's name and holds everything an account can
-   reach; signed out it is three lines with the two things that work without
-   one. A <details>, so it opens and closes with no JavaScript at all —which
+   Signed in it wears the company's name, or only its logo as a profile photo
+   when it has one, and holds everything an account can reach; signed out it
+   is three lines with the two things that work without one. A <details>, so
+   it opens and closes with no JavaScript at all —which
    matters, because "Cerrar sesión" lives inside it— and panel.js only adds
    Escape and clicking away. #}
+{% set with_photo = bar_account and bar_logo %}
 <details class="menu" data-menu>
-  <summary class="menu__button">
+  <summary class="menu__button{% if with_photo %} menu__button--avatar{% endif %}">
     {% if bar_account %}
-    {# El logo de la empresa, si tiene (octubre de 2026): se reconoce de un
-       vistazo en qué cuenta se está. Sin alt: el nombre va al lado. #}
+    {# El logo de la empresa, si tiene, como foto de perfil (octubre de 2026):
+       el botón es solo el círculo, sin el nombre ni la flecha. El nombre se
+       queda para el lector de pantalla, y por eso la foto va sin alt. #}
     {% if bar_logo %}<img class="menu__avatar" src="{{ url_for('media.image', name=bar_logo) }}" alt="">{% endif %}
-    <span class="menu__who">{{ bar_company or bar_account.company_name }}</span>
+    <span class="menu__who{% if with_photo %} visually-hidden{% endif %}">{{ bar_company or bar_account.company_name }}</span>
     {% else %}
     <span class="menu__bars" aria-hidden="true"><span></span><span></span><span></span></span>
     <span class="visually-hidden">{{ t('menu_options') }}</span>
@@ -20,6 +23,15 @@
   </summary>
 
   <div class="menu__panel">
+    {# Con la foto sola en la barra, el menú abierto dice en qué cuenta se
+       está: con hasta cuatro abiertas, era el nombre del botón el que lo
+       decía. #}
+    {% if with_photo %}
+    <div class="menu__head">
+      <img class="menu__head-photo" src="{{ url_for('media.image', name=bar_logo) }}" alt="">
+      <span class="menu__head-name">{{ bar_company or bar_account.company_name }}</span>
+    </div>
+    {% endif %}
     {% if bar_account %}
     {# Una cuenta de administrador no tiene clientes a los que escribirle, así
        que el Dashboard le saldría vacío y no se le enseña. Las rutas lo

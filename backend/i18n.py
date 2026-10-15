@@ -488,9 +488,9 @@ TEXTS = {
 
     # El logo de la empresa (octubre de 2026).
     "settings_logo": "Logo de la empresa",
-    "settings_logo_hint": "Se ve arriba, al lado del nombre de tu empresa, y lo "
-                          "puedes poner en tus plantillas y correos. PNG, JPG o "
-                          "WebP de hasta 5 MB.",
+    "settings_logo_hint": "Se ve arriba como foto de perfil, en un círculo (uno "
+                          "cuadrado se ve mejor), y lo puedes poner entero en tus "
+                          "plantillas y correos. PNG, JPG o WebP de hasta 5 MB.",
     "settings_logo_pick": "Elegir imagen",
     "settings_logo_none_chosen": "Ninguna elegida",
     "settings_logo_upload": "Subir logo",

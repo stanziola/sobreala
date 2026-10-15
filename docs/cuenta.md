@@ -317,13 +317,21 @@ dominio, y en `envios.sobreala.com` saldría el de Sobreala para todos.
   el borrar de una plantilla lo tocan. Cambiarlo o quitarlo retira el de antes
   (`images.retire_logo`): se borra si nunca salió en un correo, y si salió,
   vence a los doce meses como cualquier imagen enviada.
-- **Dónde se ve:** la barra del panel, en un círculo blanco al lado del nombre
-  de la empresa; la del sitio, que lo sabe por la migaja (`sa_in` lleva su
-  nombre al final, ver `docs/sitio.md`); «Cambiar de cuenta»; Clientes,
-  Cuentas y la ficha en administración; las páginas que abre un contacto (la
-  baja, la confirmación de una dirección de prueba y la descarga, con
-  `_sender_head.html`); arriba del PDF de Estadísticas; y en el lienzo, con
-  «Mi logo» (`docs/plantillas.md`). Sin logo, todo queda como antes.
+- **Dónde se ve:** la barra del panel y la del sitio, que lo sabe por la
+  migaja (`sa_in` lleva su nombre al final, ver `docs/sitio.md`); «Cambiar de
+  cuenta»; Clientes, Cuentas y la ficha en administración; las páginas que abre
+  un contacto (la baja, la confirmación de una dirección de prueba y la
+  descarga, con `_sender_head.html`); arriba del PDF de Estadísticas; y en el
+  lienzo, con «Mi logo» (`docs/plantillas.md`). Sin logo, todo queda como
+  antes.
+- **Cómo se ve: como una foto de perfil** (octubre de 2026). En todas esas
+  pantallas **llena su círculo** (`object-fit: cover`), sin fondo ni borde: uno
+  ancho pierde un poco de los lados, y lo transparente deja ver lo que hay
+  detrás. Hasta entonces iba entero dentro de un círculo blanco con margen, y
+  se veía como un botón con un borde blanco. Configuración lo enseña en el
+  mismo círculo, más grande (72 px), y su texto dice que uno cuadrado se ve
+  mejor. **Entero** sigue yendo donde se lee como logo y no como cara: arriba
+  de un correo escrito (`docs/envios.md`), en el PDF y en el lienzo.
 
 ### Configuración, una página por sección (octubre de 2026)
 
