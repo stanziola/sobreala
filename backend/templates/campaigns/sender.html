@@ -94,9 +94,20 @@
     {{ t('sender_status_' + (mine.domain_status or 'pending')) }}</span>
   {% endcall %}
 
+  {# «Enviado por» (octubre de 2026): el dominio del sobre, que Gmail enseña
+     debajo del remitente. Sin sus dos registros dice el de Amazon, y se envía
+     igual. #}
+  {% if mail_from_state %}
+  {% call row(t('sender_mail_from'), t('sender_mail_from_hint', domain=mail_from_domain)) %}
+  <span class="tag{% if mail_from_state == 'verified' %} tag--on{% else %} tag--warn{% endif %}">
+    {{ t('sender_mail_from_' + mail_from_state) }}</span>
+  {% endcall %}
+  {% endif %}
+
   {% if mine.domain_status != 'verified' %}
-  {# Los tres CNAME, cada uno en un campo de solo lectura: se seleccionan y se
-     copian enteros, también sin JavaScript. #}
+  {# Los cinco registros (los tres CNAME de DKIM y el MX y el TXT del MAIL
+     FROM), cada uno en un campo de solo lectura: se seleccionan y se copian
+     enteros, también sin JavaScript. #}
   <p>{{ t('sender_records_lead') }}</p>
   <div class="table-wrap">
     <table class="table">
@@ -105,7 +116,7 @@
       <tbody>
       {% for one in records %}
       <tr>
-        <td>{{ one.type }}</td>
+        <td>{{ one.type }}{% if one.priority %}<br><span class="table__quiet">{{ t('sender_records_priority', n=one.priority) }}</span>{% endif %}</td>
         <td><input class="copy-field" type="text" readonly value="{{ one.name }}"
                    aria-label="{{ t('sender_records_name') }} {{ loop.index }}"></td>
         <td><input class="copy-field" type="text" readonly value="{{ one.value }}"
@@ -122,6 +133,31 @@
        download data-download>{{ t('sender_records_download') }}</a>
   </div>
   <p class="hint">{{ t('sender_records_download_hint') }}</p>
+  <p class="hint">{{ t('sender_records_hint') }}</p>
+  {% elif mail_from_state and mail_from_state != 'verified' %}
+  {# Verificado, pero sin el MAIL FROM: solo faltan sus dos registros. #}
+  <p>{{ t('sender_mail_from_lead') }}</p>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>{{ t('sender_records_type') }}</th><th>{{ t('sender_records_name') }}</th>
+        <th>{{ t('sender_records_value') }}</th></tr></thead>
+      <tbody>
+      {% for one in mail_from_records %}
+      <tr>
+        <td>{{ one.type }}{% if one.priority %}<br><span class="table__quiet">{{ t('sender_records_priority', n=one.priority) }}</span>{% endif %}</td>
+        <td><input class="copy-field" type="text" readonly value="{{ one.name }}"
+                   aria-label="{{ t('sender_records_name') }} {{ loop.index }}"></td>
+        <td><input class="copy-field" type="text" readonly value="{{ one.value }}"
+                   aria-label="{{ t('sender_records_value') }} {{ loop.index }}"></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="setting__form">
+    <a class="btn btn--small btn--outline" href="{{ url_for('campaigns.sender_records') }}"
+       download data-download>{{ t('sender_records_download') }}</a>
+  </div>
   <p class="hint">{{ t('sender_records_hint') }}</p>
   {% endif %}
 

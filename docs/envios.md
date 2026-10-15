@@ -37,8 +37,14 @@ campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
   `cf_tags=cf-proxied:false`), y consulta si ya está verificada al abrir la
   pantalla y con «Comprobar ahora»: no hay proceso que lo mire solo. Quitarlo
   borra la identidad de SES. Los de correo gratis (gmail.com y compañía) no se
-  pueden conectar, porque nadie puede ponerles registros. Sin MAIL FROM propio
-  todavía: DKIM ya alinea DMARC.
+  pueden conectar, porque nadie puede ponerles registros. **Con su propio MAIL
+  FROM** (octubre de 2026): `envios.<dominio>`, con un MX y un SPF más (cinco
+  registros en total), que es lo que Gmail enseña en «enviado por»; sin él
+  decía `us-east-2.amazonses.com`. Mientras falten esos dos se envía igual con
+  el de Amazon (`USE_DEFAULT_VALUE`), porque DKIM ya alinea DMARC; Remitente
+  dice «Enviado por: listo / esperando los registros». A un dominio conectado
+  antes se le pide al abrir esa pantalla (`ses_identity.mail_from()`). El de
+  `envios.sobreala.com` se pone a mano: `docs/ses.md`, paso 6b.
 - **El «Responder a» se confirma con un código** a esa dirección
   (`tokens.REPLY_TO`, el mismo mecanismo que cambiar el correo de la cuenta),
   para que nadie ponga la de un tercero y le lleguen las respuestas de toda una

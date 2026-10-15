@@ -1828,7 +1828,7 @@ TEXTS = {
     "sender_status_pending": "Pendiente",
     "sender_status_verified": "Verificado",
     "sender_status_failed": "No se encontraron los registros",
-    "sender_records_lead": "Agrega estos tres registros en el DNS de tu dominio, "
+    "sender_records_lead": "Agrega estos cinco registros en el DNS de tu dominio, "
                            "donde lo compraste o donde lo administras:",
     "sender_records_type": "Tipo",
     "sender_records_name": "Nombre",
@@ -1837,9 +1837,21 @@ TEXTS = {
                            "y puede llegar a 72 horas.",
     "sender_records_download": "Descargar registros para Cloudflare",
     "sender_records_download_hint": "En Cloudflare: DNS, Registros, «Importar y "
-                                    "exportar», y sube el archivo. Entran los "
-                                    "tres de una vez y sin proxy, como los pide "
+                                    "exportar», y sube el archivo. Entran todos "
+                                    "de una vez y sin proxy, como los pide "
                                     "Amazon.",
+    "sender_records_priority": "prioridad {n}",
+    # El MAIL FROM (octubre de 2026): el dominio que Gmail enseña en «enviado
+    # por». Sin sus registros dice el de Amazon, y se envía igual.
+    "sender_mail_from": "Enviado por",
+    "sender_mail_from_hint": "Lo que Gmail enseña debajo de tu nombre: {domain}. "
+                             "Mientras falten sus registros dice el de Amazon, y "
+                             "tus correos salen igual.",
+    "sender_mail_from_verified": "Listo",
+    "sender_mail_from_pending": "Esperando los registros",
+    "sender_mail_from_failed": "No se encontraron los registros",
+    "sender_mail_from_lead": "Para que Gmail diga tu dominio y no el de Amazon, "
+                             "agrega estos dos registros en su DNS:",
     "sender_check": "Comprobar ahora",
     "sender_remove": "Quitar dominio",
     "sender_local": "Dirección de tu dominio",

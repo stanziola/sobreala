@@ -63,6 +63,10 @@ class FakeSESv2:
     def __init__(self):
         self.calls: list[tuple[str, str]] = []
         self.verified: set[str] = set()
+        # El MAIL FROM que se le pidió a cada identidad, y cuáles ya ven sus
+        # registros.
+        self.mail_from: dict[str, str] = {}
+        self.mail_from_ok: set[str] = set()
 
     def create_email_identity(self, EmailIdentity, **kwargs):  # noqa: N803
         self.calls.append(("create", EmailIdentity))
@@ -71,9 +75,22 @@ class FakeSESv2:
     def get_email_identity(self, EmailIdentity):  # noqa: N803
         self.calls.append(("get", EmailIdentity))
         ok = EmailIdentity in self.verified
+        mail_from = self.mail_from.get(EmailIdentity, "")
         return {"VerifiedForSendingStatus": ok,
                 "DkimAttributes": {"Status": "SUCCESS" if ok else "PENDING",
-                                   "Tokens": ["aaa", "bbb", "ccc"]}}
+                                   "Tokens": ["aaa", "bbb", "ccc"]},
+                "MailFromAttributes": {
+                    "MailFromDomain": mail_from,
+                    "MailFromDomainStatus": ("SUCCESS" if EmailIdentity in self.mail_from_ok
+                                             else "PENDING"),
+                    "BehaviorOnMxFailure": "USE_DEFAULT_VALUE"} if mail_from else {}}
+
+    def put_email_identity_mail_from_attributes(self, EmailIdentity, MailFromDomain,  # noqa: N803
+                                                BehaviorOnMxFailure):  # noqa: N803
+        self.calls.append(("mail_from", EmailIdentity))
+        assert BehaviorOnMxFailure == "USE_DEFAULT_VALUE"
+        self.mail_from[EmailIdentity] = MailFromDomain
+        return {}
 
     def delete_email_identity(self, EmailIdentity):  # noqa: N803
         self.calls.append(("delete", EmailIdentity))
@@ -248,16 +265,44 @@ def test_los_registros_se_bajan_para_importarlos_en_cloudflare(client, database,
             == archivo.headers["Content-Disposition"])
     lineas = [one for one in archivo.get_data(as_text=True).splitlines()
               if one and not one.startswith(";")]
-    # Los tres CNAME, con el nombre completo y su punto final, y sin proxy.
+    # Los tres CNAME, con el nombre completo y su punto final, y sin proxy; y
+    # el MX y el SPF del MAIL FROM (octubre de 2026), que no pasan por el proxy.
     assert lineas == [
         f"{token}._domainkey.coopveraguas.org.\t3600\tIN\tCNAME\t"
         f"{token}.dkim.amazonses.com.\t; cf_tags=cf-proxied:false"
-        for token in ("aaa", "bbb", "ccc")]
+        for token in ("aaa", "bbb", "ccc")] + [
+        f"envios.coopveraguas.org.\t3600\tIN\tMX\t10 feedback-smtp.{Config.AWS_REGION}.amazonses.com.",
+        'envios.coopveraguas.org.\t3600\tIN\tTXT\t"v=spf1 include:amazonses.com ~all"']
 
-    # Ya verificado, la tabla y el botón dejan de salir.
+    # Verificado DKIM, quedan los dos del MAIL FROM; con ellos, nada.
     ses.verified.add("coopveraguas.org")
     post(browser, action="check")
-    assert "records.txt" not in browser.get(URL).get_data(as_text=True)
+    pantalla = browser.get(URL).get_data(as_text=True)
+    assert "agrega estos dos registros" in pantalla and "records.txt" in pantalla
+    assert "Esperando los registros" in pantalla
+    ses.mail_from_ok.add("coopveraguas.org")
+    pantalla = browser.get(URL).get_data(as_text=True)
+    assert "records.txt" not in pantalla and ">\n    Listo</span>" in pantalla
+
+
+def test_el_dominio_lleva_su_propio_mail_from(client, database, outbox, ses):
+    """Lo que Gmail enseña en «enviado por»: envios.<dominio>, pedido al
+    conectar; y a un dominio conectado antes, al abrir Remitente."""
+    browser, cuenta = owner(client, database)
+    post(browser, action="domain", domain="coopveraguas.org")
+    assert ses.mail_from["coopveraguas.org"] == "envios.coopveraguas.org"
+    pantalla = browser.get(URL).get_data(as_text=True)
+    assert "envios.coopveraguas.org" in pantalla
+    assert f"feedback-smtp.{Config.AWS_REGION}.amazonses.com" in pantalla
+
+    # Uno de antes, sin MAIL FROM en SES: se le pone al abrir la pantalla.
+    del ses.mail_from["coopveraguas.org"]
+    browser.get(URL)
+    assert ses.mail_from["coopveraguas.org"] == "envios.coopveraguas.org"
+    assert ses.calls.count(("mail_from", "coopveraguas.org")) == 2
+    # Con el suyo puesto, abrir la pantalla no lo vuelve a pedir.
+    browser.get(URL)
+    assert ses.calls.count(("mail_from", "coopveraguas.org")) == 2
 
 
 def test_el_dominio_de_otra_cuenta_no_se_toca(client, database, outbox, ses):

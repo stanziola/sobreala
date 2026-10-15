@@ -539,6 +539,11 @@ def sender_screen(db, account, **extra):
             db, account.get("company_name", "")),
         records=ses_identity.records(mine["domain"], mine.get("dkim_tokens") or [])
         if mine.get("domain") else [],
+        # Ya verificado, solo faltan los del MAIL FROM, si faltan.
+        mail_from_records=ses_identity.mail_from_records(mine["domain"])
+        if mine.get("domain") else [],
+        mail_from_domain=ses_identity.mail_from_domain(mine["domain"])
+        if mine.get("domain") else "",
         can_edit=not accounts.is_member(current_account()),
         **extra)
 
@@ -563,8 +568,18 @@ def sender_page():
                 account = accounts.by_id(db, account["_id"])
             except ses_identity.IdentityError as exc:
                 print(f"  [remitente] {mine['domain']}: {exc}", flush=True)
+        # El MAIL FROM, que es lo que Gmail enseña en «enviado por» (octubre de
+        # 2026). A un dominio conectado antes se le pide aquí. No para nada: si
+        # SES no contesta, la pantalla sale sin decirlo.
+        mail_from_state = ""
+        if mine.get("domain"):
+            try:
+                mail_from_state = ses_identity.mail_from(mine["domain"])
+            except ses_identity.IdentityError as exc:
+                print(f"  [remitente] MAIL FROM de {mine['domain']}: {exc}", flush=True)
         return sender_screen(db, account, errors=errors, form={},
-                             done=request.args.get("done", ""))
+                             done=request.args.get("done", ""),
+                             mail_from_state=mail_from_state)
 
     if accounts.is_member(current_account()) or not csrf_ok(request.form.get("csrf_token")):
         return redirect(url_for("campaigns.sender_page"))

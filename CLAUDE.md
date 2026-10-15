@@ -485,7 +485,9 @@ no se descubra el día del lanzamiento.
 - ~~**La pausa automática por rebotes y quejas.**~~ Hecha (octubre de 2026):
   ver «Envío» y «La pausa automática» en `docs/envios.md`.
 - ~~**Verificar `envios.sobreala.com`** como identidad aparte en SES.~~ Hecho
-  (octubre de 2026). El correo del sistema sale por `sobreala.com` (MAIL FROM
+  (octubre de 2026), con su MAIL FROM `mail.envios.sobreala.com` (a mano,
+  `docs/ses.md`); los dominios de los clientes llevan el suyo,
+  `envios.<dominio>`, que pone el panel. El correo del sistema sale por `sobreala.com` (MAIL FROM
   `mail.sobreala.com`); separar los dos es lo que impide que la reputación de
   las campañas arrastre a los códigos de confirmación. El permiso de IAM para
   los dominios de los clientes también está: uno de prueba ya envía.

@@ -143,19 +143,42 @@ impide que su reputación toque la de los códigos de confirmación.
 2. Sus tres CNAME en Cloudflare, **en gris**, igual que los de `sobreala.com`.
 3. Esperar a que diga **Verificada**. `SENDING_DOMAIN` ya vale eso por omisión:
    no hace falta ponerla en Railway.
+4. **Su propio MAIL FROM** (octubre de 2026). Sin él, Gmail enseña «enviado
+   por: us-east-2.amazonses.com» debajo del remitente; con él, el dominio de
+   Sobreala. No es tema legal: es el dominio del sobre, adonde vuelven los
+   rebotes.
+   - En la identidad `envios.sobreala.com`, **MAIL FROM personalizado →
+     Editar**: dominio `mail.envios.sobreala.com`, y en «Comportamiento si falla
+     el MX», **usar el MAIL FROM predeterminado** (así nunca se rechaza un
+     envío por esto).
+   - En Cloudflare, los dos registros que enseña Amazon, **en gris**:
+     - MX `mail.envios` → `feedback-smtp.us-east-2.amazonses.com`, prioridad 10;
+     - TXT `mail.envios` → `v=spf1 include:amazonses.com ~all`.
+
+     La región es la de la cuenta, la de `AWS_REGION`.
+   - Cuando diga **Correcto**, mandarse una campaña de prueba a Gmail: en
+     «Mostrar original», «enviado por» tiene que decir
+     `mail.envios.sobreala.com`.
 
 **Los dominios de los clientes no se crean a mano.** El panel los crea, los
-consulta y los borra por la API v2 (`services/ses_identity.py`). Para eso el
-usuario de IAM necesita, además de enviar:
+consulta y los borra por la API v2 (`services/ses_identity.py`), y desde
+octubre de 2026 **les pone su MAIL FROM**, `envios.<dominio>`: el cliente ve
+cinco registros en vez de tres (los tres CNAME, un MX y un TXT), y a un
+dominio conectado antes se le pide al abrir Remitente. Para eso el usuario de
+IAM necesita, además de enviar:
 
 ```json
 {
   "Effect": "Allow",
   "Action": ["ses:CreateEmailIdentity", "ses:GetEmailIdentity",
-             "ses:DeleteEmailIdentity"],
+             "ses:DeleteEmailIdentity",
+             "ses:PutEmailIdentityMailFromAttributes"],
   "Resource": "arn:aws:ses:us-east-2:TU_CUENTA:identity/*"
 }
 ```
+
+**El último permiso va antes de desplegar**: sin él, conectar un dominio da
+error (la identidad se crea y el MAIL FROM no).
 
 ## 7. Los informes de DMARC
 
