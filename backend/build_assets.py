@@ -139,6 +139,7 @@ def build() -> list[Path]:
             shutil.copy2(source, img / name)
             written.append(img / name)
     written.append(email_logo(img))
+    written.append(mail_header(img))
     written += mail_social(img)
     written += payment_logos(img)
     return written
@@ -232,6 +233,42 @@ MAIL_SOCIAL = {
 }
 MAIL_SOCIAL_SIZE = 36
 MAIL_SOCIAL_GRAY = (113, 113, 122)  # #71717A, el gris del pie
+
+
+# La cabecera de los correos del sistema (octubre de 2026): el ala y «Sobreala»
+# en Changa One, la tipografía de la marca, en el color del logo y **sin
+# fondo**, porque va sobre la franja azul que pinta la plantilla. Sin fondo a
+# propósito: en modo oscuro el lector repinta el fondo de la celda y no toca
+# las imágenes, y un PNG con su propio azul se vería como un recuadro flotando.
+# La palabra va dentro de la imagen porque los lectores de correo no cargan
+# fuentes propias: en texto saldría en Arial. Medida fija, al doble de la que se
+# dibuja (`mailer.HEADER_SIZE`), para que la plantilla no la achate nunca.
+MAIL_HEADER = "header.png"
+MAIL_HEADER_SIZE = (400, 88)
+
+
+def mail_header(img: Path) -> Path:
+    from PIL import Image, ImageDraw, ImageFont
+
+    width, height = MAIL_HEADER_SIZE
+    canvas = Image.new("RGBA", MAIL_HEADER_SIZE, (0, 0, 0, 0))
+    wing = Image.open(BRAND_DIR / "logo" / "logo-wing.png").convert("RGBA")
+    wing.thumbnail((10_000, round(height * .62)), Image.LANCZOS)
+    font = ImageFont.truetype(
+        str(BRAND_DIR / "fonts" / "changa-one" / "ChangaOne-Regular.ttf"), round(height * .56))
+    draw = ImageDraw.Draw(canvas)
+    word = "Sobreala"
+    box = draw.textbbox((0, 0), word, font=font, anchor="ls")
+    gap = round(height * .2)
+    total = wing.width + gap + (box[2] - box[0])
+    left = (width - total) // 2
+    canvas.paste(wing, (left, (height - wing.height) // 2), wing)
+    draw.text((left + wing.width + gap, height // 2), word, font=font,
+              fill=palette("color-logo", "#EFEEEC"), anchor="lm")
+    out = img / "mail" / MAIL_HEADER
+    out.parent.mkdir(parents=True, exist_ok=True)
+    canvas.save(out, format="PNG", optimize=True)
+    return out
 
 
 def mail_social(img: Path) -> list[Path]:

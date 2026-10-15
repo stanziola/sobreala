@@ -46,11 +46,16 @@ SMTP_TIMEOUT = 10
 # que sirve el panel (`build_assets.py`): Gmail y Outlook no dibujan SVG.
 INSTAGRAM_URL = "https://instagram.com/sobreala"
 WHATSAPP_NUMBER = "50760807972"
+# La medida a la que se dibuja la cabecera: la mitad exacta de la imagen que
+# genera `build_assets.py` (`MAIL_HEADER_SIZE`), para que no salga achatada.
+HEADER_SIZE = (200, 44)
 
 
 def footer_links() -> dict[str, str]:
     return {
-        "logo": f"{Config.APP_BASE_URL}/static/img/email-logo.png",
+        "header": f"{Config.APP_BASE_URL}/static/img/mail/header.png",
+        "header_width": str(HEADER_SIZE[0]),
+        "header_height": str(HEADER_SIZE[1]),
         "instagram": INSTAGRAM_URL,
         "instagram_icon": f"{Config.APP_BASE_URL}/static/img/mail/instagram.png",
         "whatsapp": f"https://wa.me/{WHATSAPP_NUMBER}",

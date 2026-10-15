@@ -510,15 +510,21 @@ bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el s
 
 **Los ocho comparten el mismo aspecto** (octubre de 2026): `email/_layout.html`
 es el sobre y `email/_parts.html` sus piezas (titular, párrafo, código, botón,
-recuadro y nota). Sobre blanco, el logo centrado arriba, el texto en gris casi
-negro, **un botón oscuro** con la letra blanca y, debajo de una raya, **el pie**:
-«Sobreala» y la dirección (Santiago de Veraguas, Veraguas, Panamá) a la
-izquierda, Instagram y WhatsApp a la derecha, y «Ayuda · Privacidad» debajo.
-Las direcciones del pie viven en `mailer.footer_links()`, y una prueba las
-compara con el pie del sitio (`CONTACT` en `landing/content.py`). Las imágenes
-son PNG que sirve el panel (Gmail y Outlook no dibujan SVG): el ala de
-siempre, `email-logo.png`, y los dos íconos en gris (`static/img/mail/`), que
-`build_assets.py` saca del glifo negro de cada kit de `brand/social/`. Las
+recuadro y nota). Arriba, **una franja azul de lado a lado** con el ala y
+«Sobreala» en Changa One, la tipografía de la marca. La palabra va **dentro de
+una imagen** (`static/img/mail/header.png`, que genera `build_assets.py`),
+porque los lectores de correo no cargan fuentes propias, y **sin fondo**,
+porque en modo oscuro el lector repinta la celda y no la imagen. Se dibuja a
+`mailer.HEADER_SIZE`, la mitad exacta de la imagen: la primera versión puso el
+ala cuadrada de `email-logo.png` a 40×24 y salió achatada. Debajo, el texto en
+gris casi negro, **un botón oscuro** con la letra blanca y, tras una raya,
+**el pie**: «Sobreala» y la dirección (Santiago de Veraguas, Veraguas, Panamá)
+a la izquierda, Instagram y WhatsApp a la derecha, y «Ayuda · Privacidad»
+debajo. Las direcciones del pie viven en `mailer.footer_links()`, y una prueba
+las compara con el pie del sitio (`CONTACT` en `landing/content.py`). Las
+imágenes son PNG que sirve el panel (Gmail y Outlook no dibujan SVG); los dos
+íconos van en gris (`static/img/mail/`), sacados del glifo negro de cada kit de
+`brand/social/`. `email-logo.png` queda para la marca de agua del Básico. Las
 versiones en texto no cambiaron.
 
 **Ninguno puede romper lo que estaba pasando.** Un correo que no sale no puede

@@ -1,13 +1,17 @@
-{#- El sobre de todos los correos del sistema (octubre de 2026): el logo
-    centrado arriba, el texto sobre blanco, un botón oscuro y, debajo de una
-    raya, el pie con la dirección, las redes y la ayuda. Cada correo llena
-    `body` con las piezas de `email/_parts.html`.
+{#- El sobre de todos los correos del sistema (octubre de 2026): una franja
+    azul de lado a lado con el ala y «Sobreala» en la tipografía de la marca,
+    el texto sobre blanco, un botón oscuro y, debajo de una raya, el pie con la
+    dirección, las redes y la ayuda. Cada correo llena `body` con las piezas de
+    `email/_parts.html`.
 
     Son mensajes transaccionales: sin enlace de baja y sin marca de agua, que
     es la regla 8. Tablas y estilos en línea, que es lo único que entienden
     todos los lectores de correo; las imágenes son PNG, que Gmail y Outlook no
-    dibujan SVG. El logo y los íconos llevan alt vacío o el nombre de la red:
-    si el lector bloquea imágenes, el nombre de la marca ya está en texto. -#}
+    dibujan SVG. La cabecera es una imagen (los lectores de correo no cargan
+    fuentes propias) con `alt="Sobreala"`, que es lo que se lee si se bloquean
+    las imágenes; su medida es la de `mailer.HEADER_SIZE`, la mitad exacta de
+    la imagen, para que no salga achatada. El azul va en `bgcolor` además del
+    estilo, para los lectores viejos. -#}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -19,15 +23,14 @@
 <body style="margin:0;padding:0;background:#FFFFFF;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
        style="background:#FFFFFF;">
-  <tr><td align="center" style="padding:32px 16px;">
+  <tr><td align="center" bgcolor="#3166A7" style="background:#3166A7;padding:22px 16px;">
+    <img src="{{ mail_links.header }}" width="{{ mail_links.header_width }}"
+         height="{{ mail_links.header_height }}" alt="{{ t('brand') }}"
+         style="display:block;margin:0 auto;border:0;color:#FFFFFF;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:bold;">
+  </td></tr>
+  <tr><td align="center" style="padding:36px 16px 32px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
            style="max-width:560px;font-family:Helvetica,Arial,sans-serif;color:#18181B;">
-      <tr><td align="center" style="padding:4px 0 40px;">
-        <img src="{{ mail_links.logo }}" width="40" height="24" alt=""
-             style="display:inline-block;vertical-align:middle;border:0;border-radius:5px;">
-        <span style="display:inline-block;vertical-align:middle;padding-left:8px;
-                     font-size:22px;font-weight:bold;color:#18181B;">{{ t('brand') }}</span>
-      </td></tr>
 
       <tr><td style="padding:0 8px;">
         {% block body %}{% endblock %}

@@ -254,8 +254,8 @@ cosa está como está, y lo que ya se probó y se quitó.
 - `notifications`: lo no escrito vale «sí»; los avisos de seguridad no se apagan.
   Todos los avisos los compone `services/notices.py`, y ninguno puede romper lo
   que estaba pasando. **Todos los correos del sistema** comparten el sobre
-  `email/_layout.html` (logo arriba, botón oscuro, pie con la dirección, las
-  redes y la ayuda).
+  `email/_layout.html` (una franja azul con el ala y «Sobreala» en imagen,
+  botón oscuro, pie con la dirección, las redes y la ayuda).
 - `sessions`: un documento por dispositivo, con hash del testigo. Entrar desde
   un dispositivo nuevo avisa por correo.
 - **Entrar y registrarse con Google** (`services/google_auth.py`): quién es lo
