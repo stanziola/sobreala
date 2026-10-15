@@ -1,0 +1,10 @@
+{#- Quién escribe, arriba de las páginas que abre un contacto (octubre de 2026):
+    la baja, la confirmación de una dirección de prueba y la descarga de un
+    archivo. Con el logo de esa empresa si tiene uno, y su nombre: es a ella a
+    quien conoce quien llega, no a Sobreala. -#}
+{% if logo or company %}
+<div class="sender-head">
+  {% if logo %}<img class="sender-head__logo" src="{{ url_for('media.image', name=logo) }}" alt="">{% endif %}
+  {% if company %}<span class="sender-head__name">{{ company }}</span>{% endif %}
+</div>
+{% endif %}

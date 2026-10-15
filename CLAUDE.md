@@ -247,6 +247,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Un registro sin confirmar se borra a las 24 h (`purge_at`). Ninguna contraseña
   se repite (`password_history`). El doble factor, si está puesto, se pide
   siempre.
+- **El logo de la empresa** (`/settings/logo`, solo el dueño): en `images` con
+  `kind: logo`, fuera del tope de fotos. Lo enseñan la barra de los dos sitios,
+  las páginas que abre un contacto, el PDF, administración y la lista de
+  cuentas; el lienzo pone una copia con «Mi logo».
 - **El sitio sabe en qué punto está la empresa** por la migaja `sa_in`
   (`company_state()`: cerrada, demostración pedida, abierta o con plan), y sus
   botones dicen lo que toca: nadie con la demostración o un plan ve «Solicitar

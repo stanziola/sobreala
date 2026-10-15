@@ -486,6 +486,21 @@ TEXTS = {
     "test_page_bad": "Este enlace ya se usó o venció. Pide uno nuevo desde "
                      "Configuración.",
 
+    # El logo de la empresa (octubre de 2026).
+    "settings_logo": "Logo de la empresa",
+    "settings_logo_hint": "Se ve arriba, al lado del nombre de tu empresa, y lo "
+                          "puedes poner en tus plantillas y correos. PNG, JPG o "
+                          "WebP de hasta 5 MB.",
+    "settings_logo_pick": "Elegir imagen",
+    "settings_logo_none_chosen": "Ninguna elegida",
+    "settings_logo_upload": "Subir logo",
+    "settings_logo_change": "Cambiar logo",
+    "settings_logo_remove": "Quitar logo",
+    "settings_logo_saved": "Listo, guardamos tu logo.",
+    "settings_logo_removed": "Listo, quitamos tu logo.",
+    "settings_logo_error_required": "Elige una imagen para subir.",
+    "settings_logo_error_heavy": "Esa imagen pesa más de 5 MB. Prueba con una más liviana.",
+    "settings_logo_error_kind": "Esa imagen no se pudo leer. Sube un PNG, un JPG o un WebP.",
     "settings_account_contact": "Tu nombre",
     "settings_account_company": "Empresa u organización",
     "settings_account_email": "Correo",
@@ -1430,6 +1445,8 @@ TEXTS = {
     "canvas_add_text": "Texto",
     "canvas_add_button": "Botón",
     "canvas_add_image": "Imagen",
+    "canvas_add_logo": "Mi logo",
+    "canvas_logo_none": "Tu empresa todavía no tiene logo. Súbelo en Configuración, en Cuenta.",
     "canvas_add_shape": "Geometría",
     "canvas_image_hint": "JPG, PNG, GIF o WebP, hasta {mb} MB. Entra debajo de "
                          "lo último, a la mitad del ancho. Los bordes "

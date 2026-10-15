@@ -503,6 +503,7 @@
     say("");
     if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
     if (kind === "image") { pickImage(null); return; }
+    if (kind === "logo") { useLogo(); return; }
     if (kind === "text") {
       place({ t: "text", x: 40, w: W - 80, h: 34, text: S.newText, font: "Arial",
               size: 22, color: "#18181B", bold: false, italic: false, align: "left", line: 1.4 });
@@ -537,11 +538,21 @@
      diga, y con null entra una nueva. La misma ruta para el botón y para lo
      que se pega: el servidor la revisa por lo que trae dentro y la achica. */
   function sendImage(file, replace) {
-    say(S.uploading);
     var body = new FormData();
-    body.append("csrf_token", saveForm.querySelector("[name=csrf_token]").value);
     body.append("archivo", file);
-    fetch(root.getAttribute("data-upload"), { method: "POST", body: body, credentials: "same-origin" })
+    askImage(root.getAttribute("data-upload"), body, replace);
+  }
+
+  /* El logo de la empresa (octubre de 2026): el servidor pone una copia como
+     foto de esta cuenta y contesta lo mismo que al subir una. */
+  function useLogo() {
+    askImage(root.getAttribute("data-logo"), new FormData(), null);
+  }
+
+  function askImage(url, body, replace) {
+    say(S.uploading);
+    body.append("csrf_token", saveForm.querySelector("[name=csrf_token]").value);
+    fetch(url, { method: "POST", body: body, credentials: "same-origin" })
       .then(function (r) { return r.json().catch(function () { return { error: S.uploadFailed }; }); })
       .then(function (answer) {
         if (answer.error || !answer.name) { say(answer.error || S.uploadFailed); return; }

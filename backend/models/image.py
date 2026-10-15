@@ -50,6 +50,13 @@ LIVE = {"expires_at": {"$exists": False}}
 # cliente, así que no cuenta contra su tope: si contara, cada vez que guarda
 # una plantilla de tres diapositivas perdería tres de sus veinte.
 BACKGROUND = "background"
+# El logo de la empresa (octubre de 2026): uno por cuenta, el que dice
+# `accounts.logo`. No cuenta contra el tope, la limpieza de las fotos que no
+# están en ninguna plantilla no lo toca, y borrar una plantilla tampoco: el
+# lienzo pone una copia (`designs.canvas_logo`), no el logo mismo.
+LOGO = "logo"
+# Lo que no subió el cliente para sus plantillas.
+NOT_PHOTOS = {"$nin": [BACKGROUND, LOGO]}
 
 
 def save(db, account_id, *, data: bytes, ext: str, mime: str,
@@ -91,14 +98,14 @@ def count(db, account_id) -> int:
     """Las que cuentan contra el tope: las que subió el cliente y siguen en
     alguna pieza. Una retirada ya no gasta ninguna de las veinte."""
     return db.images.count_documents({"account_id": account_id,
-                                      "kind": {"$ne": BACKGROUND}, **LIVE})
+                                      "kind": NOT_PHOTOS, **LIVE})
 
 
 def uploaded_before(db, account_id, moment: datetime) -> list[str]:
     """Las fotos que subió la cuenta antes de `moment` y siguen contando: las
     candidatas a haber quedado fuera de toda plantilla."""
     return [one["name"] for one in db.images.find(
-        {"account_id": account_id, "kind": {"$ne": BACKGROUND}, **LIVE,
+        {"account_id": account_id, "kind": NOT_PHOTOS, **LIVE,
          "created_at": {"$lt": moment}}, {"name": 1})]
 
 
@@ -139,11 +146,26 @@ def remove(db, account_id, names) -> int:
     Las que nunca salieron en un envío se borran. Las que salieron se retiran:
     vencen doce meses después del último envío que las llevó, porque los
     correos que ya llegaron las siguen pidiendo.
+
+    El logo de la cuenta no se toca aquí (lo quita `retire_logo`): esto lo
+    llaman las plantillas al borrarse o cambiar.
     """
     wanted = [one for one in names if one]
     if not wanted:
         return 0
-    scope = {"account_id": account_id, "name": {"$in": wanted}}
+    return _retire(db, {"account_id": account_id, "name": {"$in": wanted},
+                        "kind": {"$ne": LOGO}})
+
+
+def retire_logo(db, account_id, name: str) -> int:
+    """Quitar un logo que se cambió o se quitó, como cualquier imagen: borrado
+    si nunca salió en un correo, retirado con su TTL si salió."""
+    if not name:
+        return 0
+    return _retire(db, {"account_id": account_id, "name": name, "kind": LOGO})
+
+
+def _retire(db, scope: dict[str, Any]) -> int:
     keep_ms = int(KEEP_SENT.total_seconds() * 1000)
     db.images.update_many({**scope, "sent_at": {"$exists": True}},
                           [{"$set": {"expires_at": {"$add": ["$sent_at", keep_ms]}}}])

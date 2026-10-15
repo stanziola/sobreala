@@ -46,7 +46,7 @@
     <tbody>
       {% for row in rows %}
       <tr>
-        <td><b>{{ row.company_name }}</b><br>
+        <td>{% if row.logo %}<img class="avatar avatar--small" src="{{ url_for('media.image', name=row.logo) }}" alt="">{% endif %}<b>{{ row.company_name }}</b><br>
           <span class="table__quiet">{{ row.contact_name }}</span></td>
         <td>{{ row.email }}
           {% if not row.email_confirmed_at %}

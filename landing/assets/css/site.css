@@ -438,6 +438,12 @@ button { font: inherit; color: inherit; }
 .usermenu__bars { display: grid; gap: 4px; width: 20px; }
 .usermenu__bars span { display: block; height: 2px; background: currentColor; border-radius: 2px; }
 .usermenu__me { display: inline-flex; align-items: center; gap: 8px; }
+/* El logo de la empresa, como en la barra del panel: en un círculo blanco,
+   entero (octubre de 2026). */
+.usermenu__avatar {
+  flex: none; width: 24px; height: 24px; padding: 2px; border-radius: 50%;
+  object-fit: contain; background: #FFFFFF;
+}
 .usermenu__caret { display: grid; transition: transform var(--fast) var(--ease); }
 .usermenu[open] > summary .usermenu__caret { transform: rotate(180deg); }
 

@@ -868,7 +868,9 @@ def canvas_editor(account, found):
                 "width": canvas.WIDTH, "lineMin": canvas.LINE_MIN,
                 "lineMax": canvas.LINE_MAX},
         image_mb=imaging.MAX_UPLOAD // (1024 * 1024),
-        watermark=plans.has_watermark(accounts.plan_of(account)))
+        watermark=plans.has_watermark(accounts.plan_of(account)),
+        # «Mi logo» sale solo si la empresa tiene uno (octubre de 2026).
+        has_logo=bool(accounts.logo_of(account)))
 
 
 @bp.route("/templates/create", methods=["GET", "POST"])
@@ -1083,6 +1085,40 @@ def canvas_image():
     with Image.open(BytesIO(data)) as opened:
         width, height = opened.size
     name = images.save(db, account["_id"], data=data, ext=ext, mime=mime)
+    return jsonify(name=name, url=imaging.url_of(name), width=width, height=height)
+
+
+@bp.route("/templates/canvas/logo", methods=["POST"])
+def canvas_logo():
+    """Poner el logo de la empresa en el lienzo (octubre de 2026). Contesta lo
+    mismo que subir una foto, y el editor la pone igual.
+
+    **Entra una copia**, no el logo mismo: así la plantilla y el logo viven
+    cada uno lo suyo, y cambiar o quitar el logo en Configuración no le deja un
+    hueco a ninguna plantilla guardada. Por eso cuenta contra el tope de fotos,
+    como cualquier otra.
+    """
+    account = signed_in()
+    if account is None:
+        abort(403)
+    if not csrf_ok(request.form.get("csrf_token")):
+        return jsonify(error=t("error_csrf")), 400
+    db = get_db()
+    logo = accounts.logo_of(account)
+    data = images.data_of(db, account["_id"], logo) if logo else None
+    if not data:
+        return jsonify(error=t("canvas_logo_none")), 400
+    if not photo_room(db, account):
+        return jsonify(error=t("designs_image_limit", n=photo_limit(account))), 400
+    from io import BytesIO
+
+    from PIL import Image
+
+    with Image.open(BytesIO(data)) as opened:
+        width, height = opened.size
+        ext = "png" if opened.format == "PNG" else "jpg"
+    name = images.save(db, account["_id"], data=data, ext=ext,
+                       mime="image/png" if ext == "png" else "image/jpeg")
     return jsonify(name=name, url=imaging.url_of(name), width=width, height=height)
 
 

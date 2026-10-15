@@ -103,6 +103,7 @@
 } %}
 <div class="editor" data-canvas
      data-upload="{{ url_for('designs.canvas_image') }}"
+     data-logo="{{ url_for('designs.canvas_logo') }}"
      data-review="{{ url_for('designs.canvas_review') }}"
      data-strings='{{ strings|tojson }}'
      data-limits='{{ limits|tojson }}'>
@@ -113,6 +114,10 @@
       <button class="tool" type="button" data-add="text">{{ t('canvas_add_text') }}</button>
       <button class="tool" type="button" data-add="button">{{ t('canvas_add_button') }}</button>
       <button class="tool" type="button" data-add="image">{{ t('canvas_add_image') }}</button>
+      {# El logo de la empresa, sin volver a subirlo (octubre de 2026). #}
+      {% if has_logo %}
+      <button class="tool" type="button" data-add="logo">{{ t('canvas_add_logo') }}</button>
+      {% endif %}
       {#- Las figuras, en un menú que abre sin JavaScript: cada una entra con su
           medida, y la línea, fina. -#}
       <details class="geo" data-geo>

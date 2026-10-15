@@ -47,15 +47,18 @@ def page(token):
 
     account = accounts.by_id(db, contact["account_id"])
     company = (account or {}).get("company_name", "")
+    # Su logo arriba, si tiene (octubre de 2026): quien llega conoce a esa
+    # empresa, no a Sobreala.
+    logo = accounts.logo_of(account)
 
     if request.method == "POST":
         suppressions.add(db, contact["account_id"], contact["email"],
                          reason=suppressions.UNSUBSCRIBE,
                          source="enlace del correo")
         return render_template("unsubscribe/done.html",
-                               email=contact["email"], company=company)
+                               email=contact["email"], company=company, logo=logo)
 
     return render_template(
         "unsubscribe/ask.html", email=contact["email"], company=company,
-        token=token,
+        logo=logo, token=token,
         already=suppressions.has(db, contact["account_id"], contact["email"]))

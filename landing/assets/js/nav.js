@@ -276,6 +276,9 @@
   // En qué punto está la empresa (octubre de 2026): closed, requested, demo o
   // paid. Una migaja de antes, «1» a secas, se lee como cerrada.
   var estado = partes[3] || "closed";
+  // El logo de la empresa, si tiene: el nombre de su imagen en el panel. Solo
+  // si tiene la forma de los que genera el panel; si no, se deja el ícono.
+  var logo = /^[A-Za-z0-9_-]{16,64}\.(?:jpg|png)$/.test(partes[4] || "") ? partes[4] : "";
 
   // Una cuenta de administrador no compra planes, así que los botones de
   // contratar de /pricing sobran: el panel la mandaría a administración. Va
@@ -362,6 +365,15 @@
   // be read out twice.
   if (label) label.hidden = true;
   if (me) me.hidden = false;
+  if (me && logo && !admin) {
+    var icono = me.querySelector("svg");
+    var foto = document.createElement("img");
+    foto.className = "usermenu__avatar";
+    foto.alt = "";
+    foto.src = (me.getAttribute("data-avatar-base") || "") + logo;
+    if (icono) me.replaceChild(foto, icono);
+    else me.insertBefore(foto, me.firstChild);
+  }
   Array.prototype.forEach.call(menu.querySelectorAll("[data-account-only]"),
                                function (row) { row.hidden = false; });
   // Las que dependen de quién es: administración para uno, panel y contactos

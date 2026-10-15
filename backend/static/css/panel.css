@@ -358,6 +358,12 @@ a:not([class]):hover { text-decoration: underline; }
 }
 .menu__button::-webkit-details-marker { display: none; }
 .menu__button:hover { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .7); }
+/* El logo de la empresa en un círculo blanco, porque un logo oscuro sobre el
+   azul de la barra no se vería (octubre de 2026). Entero, sin recortarlo. */
+.menu__avatar {
+  flex: none; width: 26px; height: 26px; padding: 2px; border-radius: 50%;
+  object-fit: contain; background: #FFFFFF;
+}
 /* A long company name shortens instead of pushing the bar out of shape. */
 .menu__who { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu__bars { display: grid; gap: 4px; width: 20px; }
@@ -1615,6 +1621,23 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 /* La que se está usando ahora mismo, marcada para no tener que leerlas. */
 .switcher__item.is-on { border-color: var(--color-field); background: var(--color-hover); }
 .switcher__icon { display: inline-flex; color: var(--color-ink-soft); }
+.switcher__logo, .avatar {
+  flex: none; width: 32px; height: 32px; padding: 3px; border-radius: 50%;
+  object-fit: contain; background: #FFFFFF; border: 1px solid var(--color-border);
+}
+.avatar--small { width: 24px; height: 24px; padding: 2px; vertical-align: middle; margin-right: 8px; }
+/* Quién escribe, arriba de las páginas que abre un contacto. */
+.sender-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.sender-head__logo {
+  max-width: 120px; max-height: 48px; object-fit: contain;
+  padding: 4px; border-radius: 8px; background: #FFFFFF;
+}
+.sender-head__name { font-weight: 700; font-size: 1.05rem; }
+/* La vista previa del logo en Configuración: tal como es, sobre blanco. */
+.logo-preview {
+  max-width: 160px; max-height: 64px; padding: 6px; border-radius: 10px;
+  object-fit: contain; background: #FFFFFF; border: 1px solid var(--color-border);
+}
 .switcher__who { display: grid; gap: 2px; margin-right: auto; min-width: 0; }
 .switcher__who b { overflow-wrap: anywhere; }
 .switcher__mail {

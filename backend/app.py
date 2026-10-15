@@ -240,18 +240,23 @@ def create_app(overrides: dict | None = None) -> Flask:
                 if is_admin(account):
                     wanted = "admin"
                 else:
-                    # «1:<plan>:<ciclo>:<estado>». El plan vigente va para que
+                    # «1:<plan>:<ciclo>:<estado>[:<logo>]». El plan vigente va para que
                     # /pricing pueda apagar el que ya se tiene y los menores
                     # (vencido no va, que es cuando se vuelve a comprar), y el
                     # estado de la empresa (`company_state`) para que la
                     # portada no le ofrezca la demostración a quien ya la tiene.
-                    # Son de la empresa, también para un usuario suyo. Cuesta lo
-                    # mismo que costó el rol, y es el mismo trato: cualquier
-                    # script de ese dominio puede leerlo.
+                    # Y el nombre del logo, si tiene (octubre de 2026), para que
+                    # la barra del sitio lo enseñe como la del panel: ya es
+                    # público, es la dirección de una imagen. Son de la
+                    # empresa, también para un usuario suyo. Cuesta lo mismo
+                    # que costó el rol, y es el mismo trato: cualquier script
+                    # de ese dominio puede leerlo.
                     company = current_workspace() or account
                     plan = current_plan(company)
                     cycle = plan_cycle(company) if plan else ""
-                    wanted = f"1:{plan or ''}:{cycle}:{company_state(company)}"
+                    logo = (company or {}).get("logo") or ""
+                    wanted = (f"1:{plan or ''}:{cycle}:{company_state(company)}"
+                              + (f":{logo}" if logo else ""))
                 # La última zona en la que se vio esta cuenta: es la de los
                 # correos que le llegan sin estar mirando, como un plan que
                 # vence. Solo se escribe cuando cambia.

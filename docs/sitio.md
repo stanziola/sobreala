@@ -100,6 +100,13 @@ en `backend/app.py`): `1:<plan>:<ciclo>:<estado>`. Los textos viven en
 Una migaja de antes («1» a secas) se lee como cerrada, que es lo que se hacía.
 Como el plan, cualquier script de `sobreala.com` puede leer el estado.
 
+**El logo de la empresa, en «Mi cuenta»** (octubre de 2026), como en la barra
+del panel: la migaja lleva al final el nombre de su imagen
+(`1:<plan>:<ciclo>:<estado>:<logo>`, solo si tiene) y `nav.js` cambia el ícono
+de persona por él, pedido a `https://app.sobreala.com/img/<nombre>`. Solo si el
+nombre tiene la forma de los que genera el panel. Ese nombre ya es público: es
+la dirección de una imagen.
+
 ## La portada
 
 ### Se va descubriendo al bajar (octubre de 2026)

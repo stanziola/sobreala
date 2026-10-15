@@ -28,6 +28,7 @@ from blueprints.auth.routes import (current_account, current_workspace, needs,
 from db import get_db
 from i18n import at_moment, t
 from models import account as accounts
+from models import image as images
 from services import stats
 
 bp = Blueprint("analytics", __name__)
@@ -150,6 +151,29 @@ def as_csv():
                              f'attachment; filename="{name}"'})
 
 
+def _logo_flowable(company, mm):
+    """El logo como imagen del PDF, a 14 mm de alto y con su proporción; None
+    si no tiene o no se puede leer."""
+    name = accounts.logo_of(company)
+    if not name:
+        return None
+    raw = images.data_of(get_db(), company["_id"], name)
+    if not raw:
+        return None
+    try:
+        from PIL import Image as Picture
+        from reportlab.platypus import Image as PdfImage
+
+        with Picture.open(io.BytesIO(raw)) as opened:
+            width, height = opened.size
+        tall = 14 * mm
+        wide = min(tall * width / max(height, 1), 60 * mm)
+        return PdfImage(io.BytesIO(raw), width=wide, height=wide * height / max(width, 1),
+                        hAlign="LEFT")
+    except Exception:  # noqa: BLE001 - sin logo es mejor que sin PDF
+        return None
+
+
 @bp.route("/dashboard/export.pdf")
 def as_pdf():
     company, data = _screen()
@@ -176,6 +200,12 @@ def as_pdf():
     small.leading = 11
 
     story = []
+    # El logo de la empresa arriba, si tiene (octubre de 2026): el PDF es para
+    # pasárselo a una junta, y así se ve de quién es. Nunca rompe el archivo.
+    logo = _logo_flowable(company, mm)
+    if logo is not None:
+        story.append(logo)
+        story.append(Spacer(1, 5 * mm))
     for title, rows, nothing in _blocks(company, data):
         story.append(Paragraph(f"<b>{title}</b>", styles["Heading3"]))
         if len(rows) == 1 and nothing:

@@ -302,6 +302,29 @@ cuidar en la cuenta que puede abrir y suspender a todas las demás, y
 las cuentas de sus clientes. Las filas se esconden del menú
 **y las rutas la devuelven a `/admin`**: esconder un botón no es un permiso.
 
+### El logo de la empresa (octubre de 2026)
+
+**Lo sube el dueño** en Configuración → Cuenta → Perfil (`/settings/logo`): un
+PNG, un JPG o un WebP de hasta 5 MB, reconocido por cómo empieza (un GIF o un
+PDF no entran), sin sus bordes transparentes y achicado a 400 px. Un usuario
+de la empresa lo ve y no lo cambia. **Gmail no lo enseña como foto de quien
+escribe**: eso pide BIMI, con un certificado de unos USD 1,000 al año por
+dominio, y en `envios.sobreala.com` saldría el de Sobreala para todos.
+
+- **Dónde vive:** en `images`, como las fotos de las plantillas, con
+  `kind: logo`, y la cuenta guarda su nombre en `logo` (`accounts.logo_of`).
+  No cuenta contra el tope de fotos, y ni la limpieza de las fotos sueltas ni
+  el borrar de una plantilla lo tocan. Cambiarlo o quitarlo retira el de antes
+  (`images.retire_logo`): se borra si nunca salió en un correo, y si salió,
+  vence a los doce meses como cualquier imagen enviada.
+- **Dónde se ve:** la barra del panel, en un círculo blanco al lado del nombre
+  de la empresa; la del sitio, que lo sabe por la migaja (`sa_in` lleva su
+  nombre al final, ver `docs/sitio.md`); «Cambiar de cuenta»; Clientes,
+  Cuentas y la ficha en administración; las páginas que abre un contacto (la
+  baja, la confirmación de una dirección de prueba y la descarga, con
+  `_sender_head.html`); arriba del PDF de Estadísticas; y en el lienzo, con
+  «Mi logo» (`docs/plantillas.md`). Sin logo, todo queda como antes.
+
 ### Configuración, una página por sección (octubre de 2026)
 
 El menú de Configuración lleva **un ícono por sección y no se despliega**.

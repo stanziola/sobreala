@@ -34,6 +34,7 @@ from db import get_db
 from i18n import t
 from models import account as accounts
 from models import contact as contacts
+from models import image as images
 from models import auth_event as events
 from models import mail_log
 from models import invoice as invoices
@@ -43,6 +44,7 @@ from models import token as tokens
 from models import verification_doc as verification_docs
 from services import countries
 from services import dashboard
+from services import imaging
 from services import importer
 from services import google_auth
 from services import mailer
@@ -167,7 +169,9 @@ def open_accounts() -> list[dict]:
             continue
         seen.add(doc["account_id"])
         keep.append(raw)
+        # El logo es de la empresa, también el de un usuario suyo.
         found.append({"raw": raw, "doc": doc, "account": account,
+                      "logo": accounts.logo_of(accounts.owner_of(db, account)),
                       "active": raw == active})
     if keep != list(session.get(OPEN_KEY) or []):
         session[OPEN_KEY] = keep
@@ -282,11 +286,13 @@ def bar_account():
                 # ni con el pago: Configuración lo avisa en amarillo.
                 "bar_closed": is_closed(account),
                 # El nombre de arriba es el de la empresa, también para un
-                # usuario suyo: es la cuenta en la que está trabajando.
-                "bar_company": (current_workspace() or {}).get("company_name", "")}
+                # usuario suyo: es la cuenta en la que está trabajando. Y su
+                # logo al lado, si tiene (octubre de 2026).
+                "bar_company": (current_workspace() or {}).get("company_name", ""),
+                "bar_logo": accounts.logo_of(current_workspace())}
     except Exception:  # noqa: BLE001 - the page is worth more than the menu
         return {"bar_account": None, "bar_admin": False, "bar_can": {},
-                "bar_closed": False, "bar_company": ""}
+                "bar_closed": False, "bar_company": "", "bar_logo": ""}
 
 
 def landing(account: dict | None) -> str:
@@ -1961,6 +1967,66 @@ def parts_for(account: dict | None, section: str) -> tuple[str, ...]:
     return found
 
 
+# ------------------------------------------------- el logo de la empresa
+
+# El logo se achica a este ancho: en la barra se ve chico, y en un correo o en
+# el PDF no hace falta más. PNG, JPG o WebP; el WebP sale convertido, como las
+# fotos de las plantillas, porque no todos los lectores de correo lo dibujan.
+LOGO_WIDTH = 400
+LOGO_KINDS = ("png", "jpg", "webp")
+
+
+@bp.route("/settings/logo", methods=["POST"])
+def settings_logo():
+    """Subir, cambiar o quitar el logo de la empresa (octubre de 2026).
+
+    Solo el dueño: un usuario de la empresa lo ve y no lo cambia. El de antes
+    se quita como cualquier imagen (`images.retire_logo`): borrado si nunca
+    salió en un correo, y si salió, se queda doce meses para los que ya
+    llegaron.
+    """
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+
+    def back(**args):
+        return redirect(url_for("auth.settings", section="account", **args) + "#logo")
+
+    if not csrf_ok(request.form.get("csrf_token")):
+        return back()
+    db = get_db()
+    old = accounts.logo_of(account)
+    if request.form.get("action") == "remove":
+        if not old:
+            return back(same=1)
+        accounts.set_logo(db, account["_id"], "")
+        images.retire_logo(db, account["_id"], old)
+        return back(logo="removed")
+
+    archivo = request.files.get("logo")
+    raw = archivo.read(imaging.MAX_UPLOAD + 1) if archivo and archivo.filename else b""
+    if not raw:
+        return back(logo_error="required")
+    if len(raw) > imaging.MAX_UPLOAD:
+        return back(logo_error="heavy")
+    found = imaging.kind(raw)
+    if found is None or found[0] not in LOGO_KINDS:
+        return back(logo_error="kind")
+    try:
+        # Sin los bordes transparentes, como las fotos del lienzo.
+        data, ext, mime = imaging.shrink(imaging.trim(raw), width=LOGO_WIDTH)
+    except imaging.ImageError:
+        return back(logo_error="kind")
+    name = images.save(db, account["_id"], data=data, ext=ext, mime=mime, kind=images.LOGO)
+    accounts.set_logo(db, account["_id"], name)
+    if old:
+        images.retire_logo(db, account["_id"], old)
+    return back(logo="saved")
+
+
 # ---------------------------------------------- las direcciones de prueba
 
 # Cuántas confirmaciones se pueden mandar por hora: cada una es un correo a una
@@ -2026,7 +2092,8 @@ def test_address_confirm(raw):
     contacts.create(db, account["_id"], email=email,
                     consent=contacts.consent_of(contacts.OTHER, t("test_address_consent")))
     return render_template("test-address.html", ok=True, email=email,
-                           company=account.get("company_name", ""))
+                           company=account.get("company_name", ""),
+                           logo=accounts.logo_of(account))
 
 
 @bp.route("/settings", methods=["GET", "POST"])

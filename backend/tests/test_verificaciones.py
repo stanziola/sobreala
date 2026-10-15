@@ -151,9 +151,11 @@ def test_configuracion_enseña_texto_y_editar_abre_el_formulario(client, databas
     assert "editar=address" in pantalla and "editar=phones" in pantalla
     assert 'name="address"' not in pantalla and 'name="phone"' not in pantalla
     assert "Guardar" not in pantalla
-    # La identificación no se escribe, y los documentos ya no se suben aquí.
+    # La identificación no se escribe, y los documentos ya no se suben aquí:
+    # el único archivo de Cuenta es el logo de la empresa (octubre de 2026).
     assert 'name="tax_id"' not in pantalla
-    assert 'type="file"' not in pantalla
+    assert pantalla.count('type="file"') == 1 and 'name="logo" type="file"' in pantalla
+    assert 'name="identity"' not in pantalla
 
     editando = browser.get("/settings?editar=address").get_data(as_text=True)
     assert 'name="address"' in editando and "Guardar" in editando

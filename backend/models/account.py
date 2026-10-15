@@ -886,6 +886,22 @@ def set_postal(db, account_id, address: str) -> None:
                            {"$set": {"postal_address": address, "updated_at": now()}})
 
 
+# El logo de la empresa (octubre de 2026): el nombre de su imagen en `images`
+# (con `kind: logo`), que se sirve en `/img/<nombre>`. Lo cambia el dueño en
+# Configuración → Cuenta, y lo ven la barra, las plantillas, los correos, las
+# páginas que abre un contacto, el PDF de Estadísticas y administración. De un
+# usuario de la empresa, el de la empresa (`owner_of`).
+def logo_of(account: dict[str, Any] | None) -> str:
+    return (account or {}).get("logo") or ""
+
+
+def set_logo(db, account_id, name: str) -> None:
+    """Poner el logo, o quitarlo con un nombre vacío."""
+    change = ({"$set": {"logo": name, "updated_at": now()}} if name
+              else {"$unset": {"logo": ""}, "$set": {"updated_at": now()}})
+    db.accounts.update_one({"_id": account_id}, change)
+
+
 # --------------------------------------------------------- las verificaciones
 #
 # Dos cosas que una persona de Sobreala comprueba a mano: la identificación

@@ -106,7 +106,10 @@
         <summary class="usermenu__button">
           <span class="usermenu__bars" data-usermenu-bars aria-hidden="true">
             <span></span><span></span><span></span></span>
-          <span class="usermenu__me" data-usermenu-me hidden>
+          {#- Con logo, nav.js cambia el ícono por él (octubre de 2026), como en
+              la barra del panel: lo saca de la migaja y lo pide al panel. -#}
+          <span class="usermenu__me" data-usermenu-me hidden
+                data-avatar-base="{{ panel.base_url }}/img/">
             {% include "partials/icon-user.svg.j2" %}<span>{{ panel.account_label }}</span></span>
           <span class="visually-hidden usermenu__label" data-usermenu-label>{{ panel.options_label }}</span>
           <span class="usermenu__caret" aria-hidden="true">

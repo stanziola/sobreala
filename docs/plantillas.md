@@ -625,6 +625,13 @@ diapositivas. Ahora:
 - **Una retirada ya no es de nadie**: `owns()` y `count()` no la cuentan, así
   que no gasta del tope ni se puede poner en otra pieza, pero `/img/` la sigue
   sirviendo, porque la busca por nombre.
+- **El logo de la empresa** (octubre de 2026, `kind: logo`) vive aquí también,
+  pero no es de ninguna pieza: no cuenta contra el tope, la limpieza de las
+  fotos sueltas no lo ve y `remove()` no lo toca. **«Mi logo», en el lienzo,
+  pone una copia** (`/templates/canvas/logo`, que contesta lo mismo que subir
+  una foto), así cambiar o quitar el logo en Configuración no le deja un hueco
+  a ninguna plantilla guardada. La copia es una foto más y cuenta contra el
+  tope. El botón sale solo si la empresa tiene logo.
 - **Si un HTML cargado la vuelve a nombrar, deja de estar retirada**
   (`images.keep()` al cargar y al guardar un HTML): si no, esa pieza la
   perdería el día que venciera.

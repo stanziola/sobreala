@@ -8,6 +8,9 @@
 <details class="menu" data-menu>
   <summary class="menu__button">
     {% if bar_account %}
+    {# El logo de la empresa, si tiene (octubre de 2026): se reconoce de un
+       vistazo en qué cuenta se está. Sin alt: el nombre va al lado. #}
+    {% if bar_logo %}<img class="menu__avatar" src="{{ url_for('media.image', name=bar_logo) }}" alt="">{% endif %}
     <span class="menu__who">{{ bar_company or bar_account.company_name }}</span>
     {% else %}
     <span class="menu__bars" aria-hidden="true"><span></span><span></span><span></span></span>

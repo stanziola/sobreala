@@ -102,6 +102,40 @@
 
     <h3 class="settings__subtitle settings__subtitle--part" id="profile">{{ part_name('account', 'profile') }}</h3>
 
+    {# El logo de la empresa (octubre de 2026): lo ven la barra, las plantillas,
+       los correos, las páginas que abre un contacto y el PDF de Estadísticas.
+       Gmail no lo enseña como foto de quien escribe: eso pide BIMI. #}
+    {% if request.args.get('logo') == 'saved' %}
+    <p class="notice notice--ok">{{ t('settings_logo_saved') }}</p>
+    {% elif request.args.get('logo') == 'removed' %}
+    <p class="notice notice--ok">{{ t('settings_logo_removed') }}</p>
+    {% endif %}
+    {% if request.args.get('logo_error') in ['required', 'heavy', 'kind'] %}
+    <p class="notice">{{ t('settings_logo_error_' + request.args.get('logo_error')) }}</p>
+    {% endif %}
+    {% call row(t('settings_logo'), t('settings_logo_hint'), id='logo') %}
+    {% if account.logo %}
+    <img class="logo-preview" src="{{ url_for('media.image', name=account.logo) }}" alt="">
+    {% endif %}
+    <form class="setting__form" method="post" action="{{ url_for('auth.settings_logo') }}"
+          enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="filepick">
+        <input class="filepick__input" id="logo-archivo" name="logo" type="file"
+               accept="image/png,image/jpeg,image/webp" required>
+        <label class="btn btn--small btn--outline" for="logo-archivo">{{ t('settings_logo_pick') }}</label>
+        <span class="filepick__name" data-file-name>{{ t('settings_logo_none_chosen') }}</span>
+      </div>
+      <button class="btn btn--small" type="submit">{{ t('settings_logo_change') if account.logo else t('settings_logo_upload') }}</button>
+    </form>
+    {% if account.logo %}
+    <form method="post" action="{{ url_for('auth.settings_logo') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--small btn--outline" type="submit" name="action" value="remove">{{ t('settings_logo_remove') }}</button>
+    </form>
+    {% endif %}
+    {% endcall %}
+
     {% call row(t('settings_account_contact'), '') %}
     <span class="setting__value">{{ account.contact_name }}</span>
     {% endcall %}

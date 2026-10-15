@@ -1,6 +1,7 @@
 {% extends "admin/_layout.html" %}
 {% block pane %}
-<h2 class="settings__title">{{ client.company_name }}</h2>
+{# Con su logo, si tiene (octubre de 2026): se reconoce de un vistazo. #}
+<h2 class="settings__title">{% if client.logo %}<img class="avatar" src="{{ url_for('media.image', name=client.logo) }}" alt=""> {% endif %}{{ client.company_name }}</h2>
 <p class="settings__lead">{{ t('admin_account_lead') }}</p>
 
 {% if request.args.get('done') %}

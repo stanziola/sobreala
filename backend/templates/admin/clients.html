@@ -95,7 +95,7 @@
     <tbody>
       {% for one in rows %}
       <tr>
-        <td><a href="{{ url_for('admin.account_page', raw=one.account._id) }}"><b>{{ one.account.company_name }}</b></a><br>
+        <td>{% if one.account.logo %}<img class="avatar avatar--small" src="{{ url_for('media.image', name=one.account.logo) }}" alt="">{% endif %}<a href="{{ url_for('admin.account_page', raw=one.account._id) }}"><b>{{ one.account.company_name }}</b></a><br>
           <span class="table__quiet">{{ one.account.email }}</span></td>
         <td class="table__quiet">{{ plan_name(one.account.plan) or t('admin_no_plan') }}</td>
         <td class="num">{{ '{:,}'.format(one.sent) }}</td>

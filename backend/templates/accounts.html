@@ -13,7 +13,11 @@
   <ul class="switcher">
     {% for one in accounts %}
     <li class="switcher__item{% if one.active %} is-on{% endif %}">
+      {% if one.logo %}
+      <img class="switcher__logo" src="{{ url_for('media.image', name=one.logo) }}" alt="">
+      {% else %}
       <span class="switcher__icon">{% include "_icon-user.svg" %}</span>
+      {% endif %}
       <span class="switcher__who">
         <b>{{ one.account.company_name }}</b>
         <span class="switcher__mail">{{ one.account.email }}</span>
