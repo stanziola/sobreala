@@ -124,9 +124,10 @@ def test_el_html_ya_no_se_carga_en_ningun_plan(client, database, outbox):
 
 
 def test_cargar_esta_para_todos_y_pide_el_zip(client, database, outbox):
+    """En el Lienzo desde octubre de 2026: cargar un ZIP es abrir un lienzo."""
     browser = inside(client)
     with_plan(database, "basico")
-    pantalla = browser.get("/templates").get_data(as_text=True)
+    pantalla = browser.get("/templates/create").get_data(as_text=True)
     # Encendido y con su enlace, sin el aviso del plan que sí subía HTML.
     assert 'href="/templates/upload"' in pantalla
     assert "Cargar plantilla (ZIP)" in pantalla
@@ -182,29 +183,31 @@ AVISO = {"titulo": "Corte de agua", "texto": "El martes desde las 8.",
          "boton": "", "enlace": "", "nombre": "Aviso de corte"}
 
 
-def test_la_pantalla_tiene_los_dos_caminos_y_no_las_prediseñadas(
-        client, database, outbox):
+def test_el_lienzo_tiene_cargar_y_no_las_prediseñadas(client, database, outbox):
+    """Crear y cargar viven en el Lienzo desde octubre de 2026, y las
+    prediseñadas ya no se ofrecen en ningún sitio."""
     browser = inside(client)
     with_plan(database, "negocio")
 
-    pantalla = browser.get("/templates").get_data(as_text=True)
-    assert "Crear plantilla" in pantalla
+    assert "Usar esta" not in browser.get("/templates").get_data(as_text=True)
+    pantalla = browser.get("/templates/create").get_data(as_text=True)
     assert "Cargar plantilla (ZIP)" in pantalla
     assert 'href="/templates/upload"' in pantalla
     assert "Usar esta" not in pantalla
-    # Las dos notas: el dato de cada persona y el tamaño máximo. Sin columnas
-    # propias quedan el nombre y el correo, que trae todo contacto.
+    # El dato de cada persona: sin columnas propias quedan el nombre y el
+    # correo, que trae todo contacto.
     assert "*|NOMBRE|*" in pantalla and "*|CORREO|*" in pantalla
-    assert "102 KB" in pantalla
 
 
-def test_la_nota_usa_las_columnas_de_la_cuenta(client, database, outbox):
+def test_el_lienzo_ofrece_las_columnas_de_la_cuenta(client, database, outbox):
+    """Antes era una nota arriba de Mis plantillas; ahora, los botones de
+    marcas del Lienzo (octubre de 2026)."""
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {
         "contact_fields": [{"key": "CIUDAD", "label": "Ciudad", "type": "text"}]}})
 
-    pantalla = browser.get("/templates").get_data(as_text=True)
+    pantalla = browser.get("/templates/create").get_data(as_text=True)
     assert "*|CIUDAD|*" in pantalla
     assert "*|EDAD|*" not in pantalla
 

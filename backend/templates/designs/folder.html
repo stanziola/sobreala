@@ -1,0 +1,24 @@
+{% extends "_dashboard.html" %}
+{% from "designs/_folder.html" import folder_menu with context %}
+{% block title %}{{ folder.name }}{% endblock %}
+
+{#- Una carpeta de Mis plantillas, con todas sus plantillas (octubre de 2026).
+    Se llega pulsando el cristal de la carpeta; desde las hojas que asoman se
+    va directo a una plantilla. -#}
+{% block pane %}
+<p class="crumb"><a href="{{ url_for('designs.index') }}"><span aria-hidden="true">← </span>{{ t('folders_back') }}</a></p>
+<div class="shelf__head">
+  <h1 class="settings__heading shelf__title">
+    <span class="swatch swatch--{{ folder.color }}" aria-hidden="true"></span>{{ folder.name }}</h1>
+  {{ folder_menu(folder, here=folder) }}
+</div>
+
+{% include "designs/_shelf_notices.html" %}
+{% include "designs/_folder_trays.html" %}
+
+{% if mine %}
+{% include "designs/_cards.html" %}
+{% else %}
+<p class="hint">{{ t('folders_empty') }}</p>
+{% endif %}
+{% endblock %}

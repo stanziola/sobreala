@@ -1,0 +1,29 @@
+{#- Las bandejas de las carpetas: nueva, nombre, color y eliminar.
+
+    Con JavaScript, el enlace de cada una (`data-folder-tray`) abre su diálogo
+    lleno con la carpeta pulsada. Sin él, o si al guardar algo no se pudo, la
+    página llega con `editing` y la bandeja va arriba, abierta y llena, con un
+    «Cancelar» que vuelve a la página sin ella. Espera: editing, folder (la
+    carpeta abierta, o nada en Mis plantillas) y colors. -#}
+{% from "designs/_folder.html" import folder_form, tray_title with context %}
+{% set here_url = url_for('designs.folder', raw=folder.id) if folder else url_for('designs.index') %}
+
+{% if editing %}
+<section class="tray-inline" id="carpeta-bandeja" aria-labelledby="carpeta-bandeja-titulo">
+  {{ tray_title(editing.what, editing.folder, 'carpeta-bandeja-titulo') }}
+  {{ folder_form(editing.what, editing.folder, editing.form, editing.errors, back=folder,
+                 cancel=here_url, prefix='bandeja') }}
+</section>
+{% endif %}
+
+{% for what in ('new', 'rename', 'color', 'delete') %}
+<dialog class="drawer drawer--slide" id="carpeta-{{ what }}" data-folder-dialog="{{ what }}"
+        aria-labelledby="carpeta-{{ what }}-titulo">
+  <div class="drawer__head">
+    {{ tray_title(what, None, 'carpeta-' ~ what ~ '-titulo') }}
+    <button class="drawer__close" type="button" data-close-dialog
+            aria-label="{{ t('designs_close') }}">×</button>
+  </div>
+  {{ folder_form(what, None, {}, {}, back=folder) }}
+</dialog>
+{% endfor %}

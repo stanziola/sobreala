@@ -62,6 +62,10 @@ def test_el_arbol_tiene_sus_ramas_y_marca_donde_se_esta(client, database, outbox
     assert ">Direcciones de prueba<" not in arbol
     enviar = arbol.split(">Enviar</span>")[1].split(">Plantillas</span>")[0]
     assert ">Remitente<" not in enviar and ">Mis plantillas<" not in enviar
+    # Plantillas trae Mis plantillas y el Lienzo, que se llamó «Crear».
+    plantillas = arbol.split(">Plantillas</span>")[1].split(">Contactos</span>")[0]
+    assert ">Mis plantillas<" in plantillas and ">Lienzo<" in plantillas
+    assert ">Crear<" not in arbol
 
 
 def test_la_busqueda_vive_solo_en_el_dashboard(client, database, outbox):

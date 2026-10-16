@@ -523,6 +523,69 @@
   });
 })();
 
+/* Los menús de tres puntos de las carpetas (octubre de 2026). Son <details>,
+   así que abren y cierran solos; esto les suma lo que el navegador no hace:
+   Escape, y cerrarse con un clic en cualquier otro sitio (también al abrir
+   otro). */
+(function () {
+  var pops = document.querySelectorAll("details[data-popover]");
+  if (!pops.length) return;
+  document.addEventListener("click", function (e) {
+    Array.prototype.forEach.call(pops, function (pop) {
+      if (pop.open && !pop.contains(e.target)) pop.open = false;
+    });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    Array.prototype.forEach.call(pops, function (pop) {
+      if (!pop.open) return;
+      pop.open = false;
+      var button = pop.querySelector("summary");
+      if (button) button.focus();
+    });
+  });
+})();
+
+/* Las bandejas de las carpetas: nueva, nombre, color y eliminar. Cada enlace
+   lleva la carpeta pulsada (`data-folder-*`), y su diálogo es uno para todas:
+   aquí se llena con ella y se abre. Sin JavaScript el enlace abre la página
+   con la bandeja ya llena. */
+(function () {
+  var links = document.querySelectorAll("[data-folder-tray]");
+  if (!links.length) return;
+  function each(root, selector, fn) {
+    Array.prototype.forEach.call(root.querySelectorAll(selector), fn);
+  }
+  each(document, "[data-folder-dialog]", function (dialog) {
+    each(dialog, "[data-close-dialog]", function (btn) {
+      btn.addEventListener("click", function () { dialog.close(); });
+    });
+    dialog.addEventListener("click", function (e) {
+      if (e.target === dialog) dialog.close();
+    });
+  });
+  Array.prototype.forEach.call(links, function (link) {
+    var dialog = document.querySelector('[data-folder-dialog="' + link.getAttribute("data-folder-tray") + '"]');
+    if (!dialog || typeof dialog.showModal !== "function") return;
+    link.addEventListener("click", function (e) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      var id = link.getAttribute("data-folder-id") || "";
+      var name = link.getAttribute("data-folder-name") || "";
+      var color = link.getAttribute("data-folder-color") || "gray";
+      each(dialog, '[data-fill="id"]', function (el) { el.value = id; });
+      each(dialog, '[data-fill="name"]', function (el) { el.value = name; });
+      each(dialog, '[data-fill="label"]', function (el) { el.textContent = name; });
+      each(dialog, '[data-fill="color"]', function (el) { el.checked = el.value === color; });
+      var menu = link.closest("details");
+      if (menu) menu.open = false;
+      dialog.showModal();
+      var field = dialog.querySelector('[data-fill="name"]');
+      if (field) field.select();
+    });
+  });
+})();
+
 /* La vista previa que se refresca sola al escribir. Pulsa por su cuenta el
    botón de ver cómo queda, que manda al marco de al lado: la respuesta trae
    su propia cabecera de correo, cosa que un marco llenado desde aquí no

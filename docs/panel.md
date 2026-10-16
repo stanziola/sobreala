@@ -59,13 +59,16 @@ arriba, al lado del ala:
 ```
 Estadísticas           ▸ Resumen · Aperturas y clics · Campañas · Cuándo abren · Lista · Cuota
 Correos                ▸ Enviar ▸ Redactar · Masivo · Enviados
-Plantillas             ▸ Mis plantillas · Crear
+Plantillas             ▸ Mis plantillas · Lienzo
 Contactos              ▸ Lista · Supresiones
 Configuración de envío ▸ Remitente · Direcciones de prueba (en la demostración)
 ```
 
 **Plantillas y Configuración de envío son ramas desde el 16 de octubre de
 2026.** Plantillas era una fila de Correos → Enviar; Remitente, una de Correos.
+La fila «Lienzo» se llamó «Crear» hasta el mismo octubre; Mis plantillas son
+sus carpetas y las sueltas, y una carpeta abierta (`/templates/folders/<id>`)
+marca Mis plantillas (ver «Las carpetas» en `docs/plantillas.md`).
 **Configuración de envío** trae lo que el envío necesita: Remitente y, durante
 la demostración, las direcciones de prueba (`/settings/test`, con la misma
 regla de `sections_for()`), que son los correos verificados a los que puede

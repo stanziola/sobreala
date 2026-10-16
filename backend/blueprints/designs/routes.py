@@ -129,19 +129,76 @@ def as_id(raw):
 
 
 def shared(db, account, **extra):
-    """Lo que toda la pantalla necesita: qué hay guardado."""
-    return {
-        "account": account,
-        # Todas juntas: da igual de dónde salió cada una, se editan, se
-        # duplican y se borran desde la misma fila.
-        "mine": designs.for_account(db, account["_id"]),
+    """Lo que toda la pantalla necesita."""
+    return {"account": account, **extra}
+
+
+def editor_url(one) -> str:
+    """Dónde se edita cada clase de plantilla: el lienzo, el HTML cargado
+    antes o la prediseñada de antes."""
+    if one.get("source") == designs.CANVAS:
+        return url_for("designs.edit_canvas", raw=one["_id"])
+    if one.get("source") == designs.UPLOAD:
+        return url_for("designs.edit_html", raw=one["_id"])
+    return url_for("designs.piece", raw=one["_id"])
+
+
+def listed_at(account, folder_id, **args) -> str:
+    """A dónde se vuelve después de guardar, duplicar, mover o borrar: a la
+    carpeta donde estaba, si todavía existe, y si no a Mis plantillas."""
+    if designs.folder_of(account, folder_id) is not None:
+        return url_for("designs.folder", raw=folder_id, **args)
+    return url_for("designs.index", **args)
+
+
+# Los avisos de las carpetas, por lo que llega en `?carpeta_hecha=`.
+FOLDER_DONE = {"nueva": "folders_done_new", "nombre": "folders_done_name",
+               "color": "folders_done_color", "eliminada": "folders_done_deleted"}
+# What each tray does, by the word in `?editar=`, so a link works without
+# JavaScript: the page opens with that form in sight.
+FOLDER_EDITS = {"nombre": "rename", "color": "color", "eliminar": "delete"}
+
+
+def editing_of(account) -> dict | None:
+    """La bandeja que pide la dirección (`?nueva=1`, o `?carpeta=<id>&editar=`),
+    para dibujarla abierta: es lo que hace un enlace del menú sin JavaScript."""
+    if request.args.get("nueva"):
+        return {"what": "new", "folder": None, "form": {}, "errors": {}}
+    what = FOLDER_EDITS.get(request.args.get("editar", ""))
+    found = designs.folder_of(account, as_id(request.args.get("carpeta")))
+    if what and found is not None:
+        return {"what": what, "folder": found, "form": {}, "errors": {}}
+    return None
+
+
+def shelf_screen(db, account, *, folder=None, editing=None):
+    """Mis plantillas, o una de sus carpetas: la misma pantalla con otra lista.
+
+    Las tarjetas son las de siempre: da igual de dónde salió cada plantilla, se
+    editan, se duplican, se mueven y se borran desde la misma fila.
+    """
+    folders = designs.folders_of(account)
+    context = {
         "named": {one["key"]: one["name"] for one in offered()},
-        "max_kb": html_check.MAX_BYTES // 1024,
-        # Las columnas propias de la cuenta, para poder escribirlas dentro de
-        # una pieza sin tener que acordarse de cómo se llamaban.
-        "columns": marks_for(account),
-        **extra,
+        "folders": folders, "colors": designs.FOLDER_COLORS,
+        "editor_url": editor_url, "editing": editing or editing_of(account),
+        "saved": bool(request.args.get("saved")),
+        "updated": bool(request.args.get("changed")),
+        "copied": bool(request.args.get("copy")),
+        "moved": bool(request.args.get("movida")),
+        "folder_done": FOLDER_DONE.get(request.args.get("carpeta_hecha", "")),
+        "folder_limit": designs.FOLDER_LIMIT,
     }
+    if folder is not None:
+        return render_template(
+            "designs/folder.html", section="plantillas", folder=folder,
+            mine=designs.in_folder(db, account["_id"], folder["id"]),
+            **shared(db, account, **context))
+    found = designs.shelf(db, account)
+    return render_template(
+        "designs/index.html", section="plantillas", mine=found["loose"],
+        counts=found["counts"], peek=found["peek"],
+        **shared(db, account, **context))
 
 
 @bp.route("/templates")
@@ -149,12 +206,83 @@ def index():
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
-    return render_template(
-        "designs/index.html", section="plantillas",
-        **shared(get_db(), account, errors={},
-                 saved=bool(request.args.get("saved")),
-                 updated=bool(request.args.get("changed")),
-                 copied=bool(request.args.get("copy"))))
+    return shelf_screen(get_db(), account)
+
+
+@bp.route("/templates/folders/<raw>")
+def folder(raw):
+    """Una carpeta, con todas sus plantillas. La de otra cuenta no está."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    found = designs.folder_of(account, as_id(raw))
+    if found is None:
+        abort(404)
+    return shelf_screen(get_db(), account, folder=found)
+
+
+@bp.route("/templates/folders", methods=["POST"])
+def folders():
+    """Crear una carpeta, cambiarle el nombre o el color, o eliminarla, según
+    `action`. Se vuelve a donde se estaba (`back`: la carpeta abierta, o nada
+    para Mis plantillas). Si algo no se puede, la pantalla vuelve con la bandeja
+    abierta y el porqué."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    db = get_db()
+    back = as_id(request.form.get("back"))
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(listed_at(account, back))
+
+    action = request.form.get("action", "")
+    found = designs.folder_of(account, as_id(request.form.get("folder")))
+    name = request.form.get("nombre", "")
+    color = request.form.get("color", "")
+    if action == "new":
+        new_id, wrong = designs.add_folder(db, account, name, color)
+        if new_id is not None:
+            return redirect(url_for("designs.index", carpeta_hecha="nueva"))
+    elif found is None or action not in ("rename", "color", "delete"):
+        return redirect(listed_at(account, back))
+    elif action == "delete":
+        designs.remove_folder(db, account, found["id"])
+        return redirect(url_for("designs.index", carpeta_hecha="eliminada"))
+    else:
+        wrong = (designs.rename_folder(db, account, found["id"], name)
+                 if action == "rename"
+                 else designs.recolor_folder(db, account, found["id"], color))
+        if wrong == "same":
+            return redirect(listed_at(account, back, same=1))
+        if not wrong:
+            return redirect(listed_at(account, back, carpeta_hecha=(
+                "nombre" if action == "rename" else "color")))
+
+    errors = {"form": {"required": t("error_required"),
+                       "taken": t("folders_error_taken"),
+                       "full": t("folders_error_full", n=designs.FOLDER_LIMIT),
+                       "color": t("folders_error_color")}.get(wrong, t("error_required"))}
+    editing = {"what": action, "folder": found, "errors": errors,
+               "form": {"nombre": name, "color": color}}
+    here = designs.folder_of(account, back)
+    return shelf_screen(db, account, folder=here, editing=editing)
+
+
+@bp.route("/templates/move", methods=["POST"])
+def move():
+    """Pasar una plantilla a una carpeta, o sacarla («Sin carpeta»)."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    back = as_id(request.form.get("back"))
+    raw = request.form.get("folder", "")
+    target = as_id(raw) if raw else None
+    design_id = as_id(request.form.get("id"))
+    if (csrf_ok(request.form.get("csrf_token")) and design_id
+            and (not raw or target is not None)
+            and designs.move(get_db(), account, design_id, target)):
+        return redirect(listed_at(account, back, movida=1))
+    return redirect(listed_at(account, back))
 
 
 @bp.route("/templates/upload", methods=["GET", "POST"])
@@ -317,7 +445,7 @@ def edit_html(raw):
                 # Las que el HTML de antes nombraba y este ya no (una foto
                 # cambiada con «Cambiar», por ejemplo).
                 drop_unused(db, account["_id"], images_in(found))
-                return redirect(url_for("designs.index", changed=1))
+                return redirect(listed_at(account, found.get("folder_id"), changed=1))
 
     return render_template(
         "designs/html.html", section="plantillas", account=account,
@@ -597,7 +725,7 @@ def compose(account, key: str, found):
             else:
                 designs.update_filled(db, account["_id"], found["_id"],
                                       name=name, filled=filled)
-                return redirect(url_for("designs.index", changed=1))
+                return redirect(listed_at(account, found.get("folder_id"), changed=1))
 
     return render_template(
         "designs/fill.html", section="plantillas", account=account,
@@ -822,6 +950,12 @@ def canvas_editor(account, found):
     errors: dict[str, str] = {}
     doc = (canvas.read(found.get("canvas")) if found else None) or canvas.blank()
     name = found.get("name", "") if found else ""
+    # La carpeta elegida junto al nombre (octubre de 2026). La de otra cuenta,
+    # o una que ya no existe, es ninguna.
+    folder_id = found.get("folder_id") if found else None
+    if request.method == "POST" and "carpeta" in request.form:
+        picked = designs.folder_of(account, as_id(request.form.get("carpeta")))
+        folder_id = picked["id"] if picked else None
 
     if request.method == "POST":
         name = designs.clean_name(request.form.get("nombre", "")) or name
@@ -846,19 +980,20 @@ def canvas_editor(account, found):
                     if found is None:
                         designs.save_canvas(db, account["_id"], name=name,
                                             doc=posted, backgrounds=grounds,
-                                            shades=shades)
-                        return redirect(url_for("designs.index", saved=1))
+                                            shades=shades, folder_id=folder_id)
+                        return redirect(listed_at(account, folder_id, saved=1))
                     designs.update_canvas(db, account["_id"], found["_id"],
                                           name=name, doc=posted, backgrounds=grounds,
-                                          shades=shades)
+                                          shades=shades, folder_id=folder_id)
                     # Lo que la versión de antes nombraba y esta ya no: sus
                     # imágenes fundidas y las fotos que se quitaron del lienzo.
                     drop_unused(db, account["_id"], images_in(found))
-                    return redirect(url_for("designs.index", changed=1))
+                    return redirect(listed_at(account, folder_id, changed=1))
 
     return render_template(
         "designs/canvas.html", section="plantillas", account=account,
         found=found, doc=doc, name=name, errors=errors,
+        folders=designs.folders_of(account), folder_id=folder_id,
         fonts=list(canvas.FONTS), font_stacks=canvas.FONTS,
         columns=marks_for(account), keys=CANVAS_KEYS,
         people=contacts.for_preview(db, account["_id"]),
@@ -1128,6 +1263,9 @@ def copy():
     if account is None:
         return redirect(url_for("auth.login"))
 
+    # De vuelta a donde se pulsó: la carpeta abierta, o Mis plantillas. La
+    # copia queda en la misma carpeta que la original.
+    back = as_id(request.form.get("back"))
     if csrf_ok(request.form.get("csrf_token")):
         design_id = as_id(request.form.get("id"))
         db = get_db()
@@ -1135,8 +1273,8 @@ def copy():
         if found is not None:
             designs.duplicate(db, account["_id"], found["_id"],
                               name=t("designs_copy_name", name=found.get("name", "")))
-            return redirect(url_for("designs.index", copy=1))
-    return redirect(url_for("designs.index"))
+            return redirect(listed_at(account, back, copy=1))
+    return redirect(listed_at(account, back))
 
 
 @bp.route("/templates/delete", methods=["POST"])
@@ -1156,4 +1294,4 @@ def remove():
                 # todavía nombra otra, que es lo que deja una copia al
                 # duplicar.
                 drop_unused(db, account["_id"], images_in(gone))
-    return redirect(url_for("designs.index"))
+    return redirect(listed_at(account, as_id(request.form.get("back"))))

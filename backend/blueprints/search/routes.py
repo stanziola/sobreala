@@ -62,8 +62,9 @@ SEARCH_WORDS = {
     "bulk": "enviar campanas correos programar mandar",
     "sent": "envios salieron historial abiertos clics",
     "sender": "dominio propio responder a direccion de salida",
-    "templates": "disenos piezas",
-    "templates-new": "plantilla nueva lienzo disenar",
+    "templates": "disenos piezas carpetas",
+    # Se llamó «Crear» hasta octubre de 2026: así se sigue encontrando.
+    "templates-new": "plantilla nueva crear disenar",
     "contacts": "personas socios clientes",
     "suppressions": "bajas anulados rebotes quejas",
     "settings-test": "demostracion correos verificados prueba",

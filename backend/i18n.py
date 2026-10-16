@@ -53,7 +53,7 @@ TEXTS = {
     "dash_bulk": "Masivo",
     "dash_templates": "Plantillas",
     "dash_templates_mine": "Mis plantillas",
-    "dash_templates_new": "Crear",
+    "dash_templates_new": "Lienzo",
     "dash_send_settings": "Configuración de envío",
     "dash_sent": "Enviados",
     "dash_sender": "Remitente",
@@ -1316,21 +1316,9 @@ TEXTS = {
     # Para el cliente son «plantillas»; en el código son «designs», porque
     # `templates/` en este proyecto ya son las plantillas Jinja del panel.
     "designs_title": "Plantillas",
-    "designs_lead": "Las piezas con las que sale tu correo. Créalas aquí, o "
-                    "carga el ZIP de una que te pasaron.",
-    "designs_create": "Crear plantilla",
-
+    # Cargar el ZIP de un lienzo vive en el Lienzo (octubre de 2026): cargarlo
+    # es abrir un lienzo.
     "designs_upload_button": "Cargar plantilla (ZIP)",
-    "designs_note_columns": "Si escribes {mark} en el texto, a cada persona le "
-                            "llega lo que tenga en su columna «{what}». Tus "
-                            "columnas:",
-    "designs_note_columns_none": "Cuando crees columnas, como Edad, y escribas "
-                                 "*|EDAD|* en el texto, a cada persona le "
-                                 "llegará su propia edad.",
-    "designs_note_columns_link": "Crear columnas en Contactos",
-    "designs_note_size": "Un correo no puede pesar más de {kb} KB: pasado eso "
-                         "Gmail lo corta, y lo primero que se pierde es el "
-                         "botón para anular la suscripción.",
     "designs_kind_upload": "HTML cargado, {kb} KB",
     # Las diapositivas se quitaron en septiembre de 2026: ahora es una hoja.
     "designs_kind_sheet": "Hecha en el editor",
@@ -1466,6 +1454,56 @@ TEXTS = {
     "designs_submit": "Cargar",
     "designs_saved": "Listo, ya la puedes usar.",
     "designs_delete": "Eliminar",
+
+    # Las carpetas de Mis plantillas (octubre de 2026).
+    "folders_title": "Carpetas",
+    "folders_loose": "Sin carpeta",
+    "folders_new": "Nueva carpeta",
+    "folders_name": "Nombre",
+    "folders_color": "Color",
+    "folders_save": "Guardar",
+    "folders_cancel": "Cancelar",
+    "folders_count_none": "Vacía",
+    "folders_count_one": "1 plantilla",
+    "folders_count": "{n} plantillas",
+    "folders_open_aria": "Abrir la carpeta {name}, {count}",
+    "folders_peek_aria": "Las más recientes de {name}",
+    "folders_menu_aria": "Opciones de {name}",
+    "folders_open": "Abrir",
+    "folders_rename": "Cambiar nombre",
+    "folders_recolor": "Cambiar color",
+    "folders_delete": "Eliminar",
+    "folders_new_title": "Nueva carpeta",
+    "folders_rename_title": "Cambiar el nombre de",
+    "folders_recolor_title": "Cambiar el color de",
+    "folders_delete_title": "Eliminar",
+    "folders_delete_lead": "Sus plantillas no se borran: quedan en Mis "
+                           "plantillas, sin carpeta.",
+    "folders_delete_confirm": "Eliminar la carpeta",
+    "folders_back": "Mis plantillas",
+    "folders_empty": "Esta carpeta está vacía. Para llenarla, usa «Mover a…» "
+                     "en una plantilla, o elígela al guardar en el Lienzo.",
+    "folders_done_new": "Listo, ya tienes la carpeta.",
+    "folders_done_name": "Listo, se cambió el nombre.",
+    "folders_done_color": "Listo, se cambió el color.",
+    "folders_done_deleted": "Listo, se eliminó la carpeta. Sus plantillas "
+                            "quedaron sin carpeta.",
+    "folders_done_moved": "Listo, se movió la plantilla.",
+    "folders_error_taken": "Ya tienes una carpeta con ese nombre.",
+    "folders_error_full": "Ya tienes {n} carpetas, que es el máximo.",
+    "folders_error_color": "Elige uno de los colores.",
+    "folders_move": "Mover a…",
+    "folders_move_none": "Sin carpeta",
+    "folders_color_gray": "Gris",
+    "folders_color_blue": "Azul",
+    "folders_color_green": "Verde",
+    "folders_color_amber": "Ámbar",
+    "folders_color_red": "Rojo",
+    "folders_color_purple": "Morado",
+    "folders_color_pink": "Rosa",
+    "folders_color_teal": "Turquesa",
+    # La lista del Lienzo, junto al nombre.
+    "canvas_folder": "Carpeta",
     "designs_size": "{kb} KB",
 
     # Por qué no se pudo guardar. Cada regla está por una razón, y la frase la

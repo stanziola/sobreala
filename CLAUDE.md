@@ -305,7 +305,15 @@ cosa está como está, y lo que ya se probó y se quitó.
   enviar: `to_html()` lo traduce a una cuadrícula de tablas. `parse()` no se fía
   del JSON, `problems()` y `review()` deciden si se guarda.
 - **Se baja y se carga como ZIP** (`canvas_from_pack()`): el lienzo con sus
-  fotos y el HTML con sus imágenes. Cargarlo pasa lo mismo que Guardar.
+  fotos y el HTML con sus imágenes. Cargarlo pasa lo mismo que Guardar. Crear
+  y cargar viven en el **Lienzo** (la fila que se llamó «Crear», octubre de
+  2026).
+- **Mis plantillas son carpetas** (octubre de 2026): `accounts.design_folders`
+  y `designs.folder_id`, un nivel, ocho colores, dibujadas como la carpeta de
+  cristal de un componente de React rehecho en Jinja y CSS. Al pasar el ratón
+  asoman las cuatro más recientes (pulsar una la abre; el cristal entra a la
+  carpeta), y su menú ⋮ cambia nombre y color o la elimina **sin borrar sus
+  plantillas**.
 - Las imágenes viven en la colección `images`, se achican al entrar y las sirve
   `/img/<nombre>` sin sesión. **Una que salió en un envío no se borra**: se
   retira con TTL a doce meses.
@@ -344,7 +352,7 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Al entrar se aterriza en el sitio público. Una cuenta nueva ve `/welcome`.
 - **El Dashboard** (`services/dashboard.py`, `_dashboard.html`): Estadísticas,
   Correos (Enviar → Redactar, Masivo y Enviados), Plantillas (Mis plantillas y
-  Crear), Contactos (Lista y Supresiones) y Configuración de envío (Remitente
+  Lienzo), Contactos (Lista y Supresiones) y Configuración de envío (Remitente
   y, en la demostración, las direcciones de prueba) en un árbol a la izquierda,
   y la pantalla a la derecha. **La configuración de la cuenta es aparte**
   (`_settings_frame.html`, desde el menú de arriba). Las direcciones de siempre no cambiaron. Importar, Etiquetas y

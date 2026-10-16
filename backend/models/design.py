@@ -34,6 +34,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from bson import ObjectId
+
 NAME_MAX = 80
 
 # De dónde salió cada pieza. Va escrito en todos los documentos y no solo en los
@@ -105,14 +107,15 @@ def update_filled(db, account_id, design_id, *, name: str,
 
 def save_canvas(db, account_id, *, name: str, doc: dict[str, Any],
                 backgrounds: list[str | None],
-                shades: list[str | None] | None = None) -> Any:
+                shades: list[str | None] | None = None, folder_id=None) -> Any:
     """Guardar un lienzo nuevo. Devuelve su id.
 
     `backgrounds` son las imágenes de sus grupos y `shades` su color promedio,
     en el orden de `canvas.groups()` (se llaman así desde que eran los fondos
-    de cada diapositiva).
+    de cada diapositiva). `folder_id` es la carpeta elegida en el Lienzo, ya
+    comprobada por quien llama.
     """
-    return db.designs.insert_one({
+    record = {
         "account_id": account_id,
         "source": CANVAS,
         "name": clean_name(name),
@@ -121,20 +124,33 @@ def save_canvas(db, account_id, *, name: str, doc: dict[str, Any],
         "shades": list(shades or []),
         "created_at": now(),
         "updated_at": now(),
-    }).inserted_id
+    }
+    if folder_id is not None:
+        record["folder_id"] = folder_id
+    return db.designs.insert_one(record).inserted_id
+
+
+# `update_canvas` without a folder leaves it where it was: the sender upgrades
+# old canvases and knows nothing about folders.
+KEEP = object()
 
 
 def update_canvas(db, account_id, design_id, *, name: str | None = None,
                   doc: dict[str, Any], backgrounds: list[str | None],
-                  shades: list[str | None] | None = None) -> bool:
+                  shades: list[str | None] | None = None, folder_id=KEEP) -> bool:
     """Volver a guardar un lienzo. La cuenta va en la consulta."""
-    changes = {"canvas": doc, "backgrounds": list(backgrounds),
-               "shades": list(shades or []), "updated_at": now()}
+    changes: dict[str, Any] = {"canvas": doc, "backgrounds": list(backgrounds),
+                               "shades": list(shades or []), "updated_at": now()}
     if name is not None:
         changes["name"] = clean_name(name)
+    update: dict[str, Any] = {"$set": changes}
+    if folder_id is None:
+        update["$unset"] = {"folder_id": ""}
+    elif folder_id is not KEEP:
+        changes["folder_id"] = folder_id
     return db.designs.update_one(
         {"_id": design_id, "account_id": account_id, "source": CANVAS},
-        {"$set": changes}).matched_count == 1
+        update).matched_count == 1
 
 
 def still_named(db, account_id) -> set[str]:
@@ -219,3 +235,157 @@ def remove(db, account_id, design_id) -> dict[str, Any] | None:
     """
     return db.designs.find_one_and_delete(
         {"_id": design_id, "account_id": account_id})
+
+
+# ------------------------------------------------------------- las carpetas
+#
+# Para agrupar las plantillas (octubre de 2026). Viven en la cuenta de la
+# empresa, como sus etiquetas: `design_folders`, una lista de `{id, name,
+# color}`. Cada plantilla dice la suya en `folder_id`, y sin él está suelta. Un
+# solo nivel: no hay carpetas dentro de carpetas. Eliminar una carpeta nunca
+# borra sus plantillas, que quedan sueltas.
+
+FOLDER_NAME_MAX = 40
+FOLDER_LIMIT = 50
+# The palette, in the order the picker shows it. Gray is the folder of the
+# design it came from.
+FOLDER_COLORS = ("gray", "blue", "green", "amber", "red", "purple", "pink", "teal")
+# How many templates peek out of a folder when the pointer is on it.
+PEEK = 4
+# What a list of templates needs: neither the HTML nor the canvas of each.
+LISTED = {"name": 1, "source": 1, "bytes": 1, "template": 1, "folder_id": 1,
+          "created_at": 1, "updated_at": 1}
+
+
+def clean_folder_name(raw: str) -> str:
+    return " ".join((raw or "").split())[:FOLDER_NAME_MAX]
+
+
+def folders_of(account: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Las carpetas de la cuenta, por nombre."""
+    found = [dict(one) for one in (account or {}).get("design_folders") or []]
+    return sorted(found, key=lambda one: one.get("name", "").casefold())
+
+
+def folder_of(account: dict[str, Any] | None, folder_id) -> dict[str, Any] | None:
+    """Una carpeta de esa cuenta, o None. La de otra cuenta no está en su
+    lista, así que no se encuentra."""
+    if folder_id is None:
+        return None
+    return next((one for one in folders_of(account) if one.get("id") == folder_id), None)
+
+
+def _name_taken(account, name: str, but=None) -> bool:
+    """Sin mayúsculas, como las etiquetas: «Cobros» y «cobros» serían dos."""
+    return any(one.get("name", "").casefold() == name.casefold() and one.get("id") != but
+               for one in folders_of(account))
+
+
+def add_folder(db, account: dict[str, Any], name: str, color: str) -> tuple[Any, str]:
+    """Crear una carpeta. Devuelve su id y "", o None y por qué no:
+    `required`, `color`, `taken` o `full`."""
+    name = clean_folder_name(name)
+    if not name:
+        return None, "required"
+    if color not in FOLDER_COLORS:
+        return None, "color"
+    if _name_taken(account, name):
+        return None, "taken"
+    if len(folders_of(account)) >= FOLDER_LIMIT:
+        return None, "full"
+    folder_id = ObjectId()
+    db.accounts.update_one({"_id": account["_id"]}, {
+        "$push": {"design_folders": {"id": folder_id, "name": name, "color": color}},
+        "$set": {"updated_at": now()}})
+    return folder_id, ""
+
+
+def rename_folder(db, account: dict[str, Any], folder_id, name: str) -> str:
+    """Vacío si se cambió. Si no: `missing`, `required`, `same` o `taken`."""
+    found = folder_of(account, folder_id)
+    if found is None:
+        return "missing"
+    name = clean_folder_name(name)
+    if not name:
+        return "required"
+    if name == found.get("name"):
+        return "same"
+    if _name_taken(account, name, but=folder_id):
+        return "taken"
+    db.accounts.update_one({"_id": account["_id"], "design_folders.id": folder_id},
+                           {"$set": {"design_folders.$.name": name, "updated_at": now()}})
+    return ""
+
+
+def recolor_folder(db, account: dict[str, Any], folder_id, color: str) -> str:
+    """Vacío si se cambió. Si no: `missing`, `color` o `same`."""
+    found = folder_of(account, folder_id)
+    if found is None:
+        return "missing"
+    if color not in FOLDER_COLORS:
+        return "color"
+    if color == found.get("color"):
+        return "same"
+    db.accounts.update_one({"_id": account["_id"], "design_folders.id": folder_id},
+                           {"$set": {"design_folders.$.color": color, "updated_at": now()}})
+    return ""
+
+
+def remove_folder(db, account: dict[str, Any], folder_id) -> bool:
+    """Eliminar la carpeta. Sus plantillas no se borran: quedan sueltas."""
+    if folder_of(account, folder_id) is None:
+        return False
+    db.accounts.update_one({"_id": account["_id"]},
+                           {"$pull": {"design_folders": {"id": folder_id}},
+                            "$set": {"updated_at": now()}})
+    db.designs.update_many({"account_id": account["_id"], "folder_id": folder_id},
+                           {"$unset": {"folder_id": ""}})
+    return True
+
+
+def move(db, account: dict[str, Any], design_id, folder_id) -> bool:
+    """Pasar una plantilla a una carpeta de la misma cuenta, o sacarla con
+    None. False si la plantilla o la carpeta no son de esa cuenta. No cuenta
+    como un cambio: no la vuelve de las más recientes."""
+    if folder_id is not None and folder_of(account, folder_id) is None:
+        return False
+    update = ({"$unset": {"folder_id": ""}} if folder_id is None
+              else {"$set": {"folder_id": folder_id}})
+    return db.designs.update_one({"_id": design_id, "account_id": account["_id"]},
+                                 update).matched_count == 1
+
+
+def changed_at(one: dict[str, Any]):
+    """Su último cambio. Las cargadas que nunca se editaron no tienen
+    `updated_at`."""
+    return one.get("updated_at") or one.get("created_at")
+
+
+def shelf(db, account: dict[str, Any], *, limit: int = 50) -> dict[str, Any]:
+    """Mis plantillas, ordenada: las sueltas (las más nuevas primero, hasta
+    `limit`, como antes de las carpetas) y, por carpeta, cuántas tiene y las
+    `PEEK` de cambio más reciente, que son las que asoman. Van de la más vieja a
+    la más nueva, que es la que queda delante, pegada al cristal.
+
+    Una plantilla que nombra una carpeta que ya no existe cuenta como suelta.
+    """
+    folders = folders_of(account)
+    inside: dict[Any, list[dict[str, Any]]] = {one["id"]: [] for one in folders}
+    loose: list[dict[str, Any]] = []
+    for one in db.designs.find({"account_id": account["_id"]}, LISTED).sort("created_at", -1):
+        if one.get("folder_id") in inside:
+            inside[one["folder_id"]].append(one)
+        else:
+            loose.append(one)
+    return {
+        "loose": loose[:limit],
+        "counts": {key: len(items) for key, items in inside.items()},
+        "peek": {key: sorted(items, key=changed_at, reverse=True)[:PEEK][::-1]
+                 for key, items in inside.items()},
+    }
+
+
+def in_folder(db, account_id, folder_id, *, limit: int = 50) -> list[dict[str, Any]]:
+    """Las plantillas de una carpeta, las más nuevas primero."""
+    return list(db.designs.find({"account_id": account_id, "folder_id": folder_id}, LISTED)
+                .sort("created_at", -1).limit(limit))

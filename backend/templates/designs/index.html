@@ -1,102 +1,48 @@
 {% extends "_dashboard.html" %}
+{% from "designs/_folder.html" import folder_card with context %}
 {% block title %}{{ t('designs_title') }}{% endblock %}
 
+{#- Mis plantillas (octubre de 2026): sus carpetas y, debajo, las plantillas
+    sueltas. Crear y cargar viven en el Lienzo, y las dos notas que había
+    arriba (las marcas de las columnas y el tope de peso) ya están dentro del
+    editor. El único botón es «Nueva carpeta». -#}
 {% block pane %}
-<h1 class="settings__heading">{{ t('designs_title') }}</h1>
-<p class="settings__lead">{{ t('designs_lead') }}</p>
-
-{% if saved %}<p class="notice notice--ok">{{ t('designs_saved') }}</p>{% endif %}
-{% if updated %}<p class="notice notice--ok">{{ t('designs_updated') }}</p>{% endif %}
-{% if copied %}<p class="notice notice--ok">{{ t('designs_copied') }}</p>{% endif %}
-
-<div class="start">
-  {# El lienzo, y cargar el ZIP de uno. Los dos son de todos los planes. #}
-  <a class="btn btn--icon start__one" href="{{ url_for('designs.create') }}">{% include "_icon-plus.svg" %}<span>{{ t('designs_create') }}</span></a>
-  <a class="btn start__one" href="{{ url_for('designs.upload') }}"
-     data-open-dialog="cargar">{{ t('designs_upload_button') }}</a>
+<div class="shelf__head">
+  <h1 class="settings__heading">{{ t('designs_title') }}</h1>
+  {% if folders|length < folder_limit %}
+  <a class="btn btn--small btn--outline btn--icon" data-folder-tray="new" data-keep-scroll
+     href="{{ url_for('designs.index', nueva=1) }}#carpeta-bandeja">{% include "_icon-plus.svg" %}<span>{{ t('folders_new') }}</span></a>
+  {% endif %}
 </div>
 
-<ul class="notes">
-  <li>
-    {% if columns %}
-    {% set first = columns[0] %}
-    {{ t('designs_note_columns', mark='*|' ~ first.key ~ '|*', what=first.label) }}
-    <span class="notes__marks">{% for one in columns %}<code>*|{{ one.key }}|*</code>{% if not loop.last %} {% endif %}{% endfor %}</span>
-    {% else %}
-    {{ t('designs_note_columns_none') }}
-    <a href="{{ url_for('contacts.index') }}">{{ t('designs_note_columns_link') }}</a>
-    {% endif %}
-  </li>
-  <li>{{ t('designs_note_size', kb=max_kb) }}</li>
-</ul>
+{% include "designs/_shelf_notices.html" %}
+{% include "designs/_folder_trays.html" %}
 
-<h2 class="settings__subtitle">{{ t('designs_mine_title') }}</h2>
-{% if mine %}
-{#- Tarjetas y no una tabla: lo primero que se busca es cuál era, y eso se
-    reconoce mirándolo. Cada una enseña el correo tal como sale, en un marco
-    aislado y achicado, que se pide solo cuando se acerca (`loading="lazy"`). -#}
-<ul class="cards">
-  {% for one in mine %}
-  <li class="card-piece">
-    <div class="card-piece__view">
-      {#- `scrolling="no"`: el correo es más alto que el marco y el navegador le
-          dibujaba su barra, que achicada es una rayita gris al lado. Desde
-          fuera no hay otra manera: el desbordamiento lo decide el documento de
-          dentro, y ese es el correo tal cual (ajeno, si el HTML lo subió el
-          cliente). -#}
-      <iframe src="{{ url_for('designs.piece_view', raw=one._id) }}" sandbox
-              scrolling="no" loading="lazy" tabindex="-1"
-              title="{{ one.name }}"></iframe>
-    </div>
-    <div class="card-piece__body">
-      <p class="card-piece__name"><b>{{ one.name }}</b></p>
-      <p class="card-piece__what">
-        {%- if one.source == 'upload' -%}
-        {{ t('designs_kind_upload', kb=((one.bytes or 0) / 1024)|round(1)) }}
-        {%- elif one.source == 'canvas' -%}
-        {{ t('designs_kind_sheet') }}
-        {%- else -%}
-        {{ t('designs_from', name=named.get(one.template, one.template)) }}
-        {%- endif %} · {{ (one.updated_at or one.created_at)|ago }}
-      </p>
-      <div class="card-piece__doing">
-        {% if one.source == 'upload' %}
-        <a class="btn btn--small btn--outline"
-           href="{{ url_for('designs.edit_html', raw=one._id) }}">{{ t('designs_edit') }}</a>
-        {% elif one.source == 'canvas' %}
-        <a class="btn btn--small btn--outline"
-           href="{{ url_for('designs.edit_canvas', raw=one._id) }}">{{ t('designs_edit') }}</a>
-        {% else %}
-        <a class="btn btn--small btn--outline"
-           href="{{ url_for('designs.piece', raw=one._id) }}">{{ t('designs_edit') }}</a>
-        {% endif %}
-        <form method="post" action="{{ url_for('designs.copy') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="id" value="{{ one._id }}">
-          <button class="btn btn--small btn--outline" type="submit">{{ t('designs_copy') }}</button>
-        </form>
-        <form method="post" action="{{ url_for('designs.remove') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="id" value="{{ one._id }}">
-          <button class="btn btn--small btn--outline" type="submit">{{ t('designs_delete') }}</button>
-        </form>
-      </div>
-    </div>
-  </li>
+{% if folders %}
+{# El brillo del borde de cada cristal: más blanco arriba. Uno para todos. #}
+<svg class="svg-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="folder-rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".95"/>
+      <stop offset=".35" stop-color="#FFFFFF" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".12"/>
+    </linearGradient>
+  </defs>
+</svg>
+<h2 class="settings__subtitle">{{ t('folders_title') }}</h2>
+<ul class="folders">
+  {% for one in folders %}
+  <li class="folders__one">{{ folder_card(one, counts.get(one.id, 0), peek.get(one.id, [])) }}</li>
   {% endfor %}
 </ul>
+{% endif %}
+
+{% if mine or not folders %}
+<h2 class="settings__subtitle">{{ t('folders_loose') if folders else t('designs_mine_title') }}</h2>
+{% if mine %}
+{% include "designs/_cards.html" %}
 {% else %}
 <p class="hint">{{ t('designs_mine_empty') }}</p>
 {% endif %}
-
-{# La bandeja de cargar. Sin JavaScript el botón lleva a su propia página,
-   con el mismo formulario. #}
-<dialog class="drawer" id="cargar" aria-labelledby="cargar-titulo">
-  <div class="drawer__head">
-    <h2 class="settings__subtitle" id="cargar-titulo">{{ t('designs_upload_title') }}</h2>
-    <button class="drawer__close" type="button" data-close-dialog
-            aria-label="{{ t('designs_close') }}">×</button>
-  </div>
-  {% include "designs/_upload_form.html" %}
-</dialog>
+{% endif %}
 {% endblock %}

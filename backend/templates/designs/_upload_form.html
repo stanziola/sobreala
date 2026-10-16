@@ -1,12 +1,14 @@
-{#- El formulario de cargar el ZIP de un lienzo. Va en la bandeja de la lista
-    y en su propia página, y los dos mandan a la misma ruta. -#}
+{#- El formulario de cargar el ZIP de un lienzo. Va en la bandeja del Lienzo y
+    en su propia página, y los dos mandan a la misma ruta. En el Lienzo su
+    campo de nombre lleva otro id (`upload_name_id`). -#}
+{% set name_id = upload_name_id or 'nombre' %}
 <p class="settings__lead">{{ t('designs_upload_hint') }}</p>
 <form method="post" action="{{ url_for('designs.upload') }}"
       enctype="multipart/form-data" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  <label for="nombre">{{ t('designs_name') }}</label>
-  <input id="nombre" name="nombre" type="text" maxlength="80" autocomplete="off">
+  <label for="{{ name_id }}">{{ t('designs_name') }}</label>
+  <input id="{{ name_id }}" name="nombre" type="text" maxlength="80" autocomplete="off">
   <p class="hint">{{ t('designs_name_hint') }}</p>
 
   {# El mismo botón nuestro que en importar: el del navegador no se puede

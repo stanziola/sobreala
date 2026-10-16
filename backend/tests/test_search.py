@@ -96,6 +96,10 @@ def test_cada_resultado_dice_donde_esta(client, database, outbox):
     assert any(one["url"] == "/campaigns/sender"
                and one["hint"] == "Configuración de envío"
                for one in sugerencias(browser, "remitente"))
+    # «Crear» se llama «Lienzo» desde octubre de 2026, y se encuentra igual.
+    for q in ("lienzo", "crear"):
+        assert any(one["url"] == "/templates/create" and one["label"] == "Lienzo"
+                   and one["hint"] == "Plantillas" for one in sugerencias(browser, q)), q
     # Sin JavaScript, la página dice lo mismo.
     assert "· Estadísticas" in browser.get("/search?q=lista").get_data(as_text=True)
     # El administrador, en lo suyo.

@@ -76,24 +76,70 @@ administrador sigue sin dibujarse**: allí se baja como `text/plain`.
 **La lista de plantillas son tarjetas con el correo dentro.** Cada una enseña la
 pieza armada como correo, achicada en un marco aislado (`sandbox`, sin permisos,
 con `loading="lazy"`), y debajo el nombre, de qué clase es, cuándo se tocó y
-Editar, Duplicar y Borrar. Lo sirve **`GET /templates/<id>/preview`**, que arma
+Editar, Duplicar, Borrar y «Mover a…». Lo sirve **`GET /templates/<id>/preview`**, que arma
 las tres clases de pieza con lo que ya existía (`html_preview()`,
 `canvas_email()` y `preview()`) y lleva la cabecera de correo; la pieza de otra
 cuenta responde 404. Una tabla de nombres obligaba a abrir cada una para
-acordarse de cuál era.
+acordarse de cuál era. **Duplicar copia las imágenes por nombre**, así que
+borrar una pieza solo borra las imágenes que ninguna otra nombra.
 
-**La pantalla de Plantillas tiene dos caminos arriba**, los dos de todos los
-planes: Crear plantilla (el lienzo) y **Cargar plantilla (ZIP)**, que carga el
-ZIP de un lienzo. Cargar abre una bandeja con el formulario; sin JavaScript el
-botón lleva a `/templates/upload`, que es la misma ruta. Al cargar se va
-directo al editor del lienzo nuevo. Debajo, dos notas —el
-dato de cada persona, con las columnas de esa cuenta, y el tope de 102 KB— y la
-lista de todas sus piezas, con Editar, Duplicar y Borrar. **Duplicar copia las
-imágenes por nombre**, así que borrar una pieza solo borra las imágenes que
-ninguna otra nombra.
+**Mis plantillas es sus carpetas y, debajo, las sueltas** («Sin carpeta»), y su
+único botón es «Nueva carpeta» (octubre de 2026). Hasta entonces tenía arriba
+dos caminos, Crear plantilla y Cargar plantilla (ZIP), y dos notas: el dato de
+cada persona, con las columnas de la cuenta, y el tope de 102 KB. Se quitaron
+a pedido: **crear y cargar viven en el Lienzo**, y las dos notas ya estaban
+dentro del editor (los botones de las marcas y la revisión de peso). **Cargar
+plantilla (ZIP)** es un botón del Lienzo que abre la misma bandeja de antes;
+sin JavaScript lleva a `/templates/upload`, que es la misma ruta, y al cargar se
+va directo al editor del lienzo nuevo. Cada lista enseña hasta 50 tarjetas,
+como antes, y se lee sin el HTML ni el lienzo de cada pieza (`designs.LISTED`).
 
-## El lienzo de «Crear plantilla»
+### Las carpetas
 
+Para agrupar las plantillas (octubre de 2026), con el dibujo de la carpeta de
+cristal del componente «Glass Folder Cards», rehecho sin React: el panel es
+Jinja con su propio CSS y JavaScript, y meter React, Tailwind y shadcn habría
+sido un segundo sistema de construcción para un solo dibujo.
+
+- **Viven en la cuenta de la empresa**, como sus etiquetas:
+  `accounts.design_folders`, una lista de `{id, name, color}`, y cada plantilla
+  dice la suya en `designs.folder_id`. Un solo nivel; hasta 50 (`FOLDER_LIMIT`);
+  el nombre, de 1 a 40, no se repite sin mirar mayúsculas; el color es uno de
+  ocho (`FOLDER_COLORS`: gris, que es el de siempre, azul, verde, ámbar, rojo,
+  morado, rosa y turquesa). Lo hace `models/design.py`.
+- **El dibujo** (`designs/_folder.html` y «La carpeta de cristal» en
+  `_panel.src.css`): el fondo del color de la carpeta, las plantillas en medio y
+  delante un cristal esmerilado (`backdrop-filter`) con su bisagra abajo; sus
+  dos formas son las rutas del componente, como `clip-path`. Se dibuja a
+  340 × 272 y se achica entera con `--k`, por eso sus letras van más grandes que
+  en el componente. En oscuro, el cristal es ahumado.
+- **Al pasar el ratón** (o con el foco dentro) el cristal se inclina y asoman
+  **las cuatro de cambio más reciente** (`changed_at()`), separadas lo justo
+  para leer su nombre; **pulsar una abre esa plantilla** en su editor, y
+  **pulsar el cristal entra a la carpeta** (`/templates/folders/<id>`, con todas
+  como tarjetas; la de otra cuenta da 404). Sin ratón, tocar la carpeta entra.
+  El panel no deja estilos escritos en el HTML (`style-src 'self'`), así que
+  dónde va cada hoja lo dice el CSS por su lugar en la lista
+  (`folder__files--N`), con un desorden fijo de ocho (`folder__sheet--jN`).
+- **El menú ⋮**, en vertical: Abrir, Cambiar nombre, Cambiar color y Eliminar.
+  Es un `<details>`, y cada opción abre su bandeja, que `panel.js` llena con la
+  carpeta pulsada (`data-folder-tray`); sin JavaScript, el mismo enlace abre la
+  página con la bandeja ya llena (`?carpeta=<id>&editar=…`), y ahí vuelve
+  también si algo no se pudo guardar. Todo pasa por `POST /templates/folders`
+  con su `action`.
+- **Eliminar una carpeta nunca borra sus plantillas**: quedan sin carpeta, y la
+  bandeja lo dice antes.
+- **Se entra a una carpeta** con «Mover a…» en cada tarjeta (`POST
+  /templates/move`, solo a una carpeta de la misma cuenta) o eligiéndola en la
+  lista «Carpeta» del Lienzo al guardar. Duplicar deja la copia en la misma.
+  Mover no cuenta como un cambio: no la vuelve de las más recientes.
+- **Se vuelve a donde se estaba**: guardar una plantilla que está en una
+  carpeta, duplicarla, moverla o borrarla vuelve a esa carpeta (`listed_at()`).
+
+## El Lienzo
+
+La fila «Lienzo» de Plantillas, que se llamó «Crear» hasta octubre de 2026 (el
+buscador la sigue encontrando por «crear»).
 `/templates/create` y `/templates/canvas/<id>`, con `services/canvas.py` y
 `static/js/canvas.js`. **Es una sola hoja de 600 px que crece hacia abajo**:
 texto, botón, imagen y geometría se ponen donde se quiera, se mueven, cambian

@@ -21,6 +21,19 @@
            autocomplete="off" required>
     {% if errors.nombre %}<p class="error">{{ errors.nombre }}</p>{% endif %}
   </div>
+  {#- La carpeta donde queda (octubre de 2026). Sin carpetas no hay nada que
+      elegir, y la lista no sale. -#}
+  {% if folders %}
+  <div class="editor__folder">
+    <label for="carpeta">{{ t('canvas_folder') }}</label>
+    <select id="carpeta" name="carpeta">
+      <option value="">{{ t('folders_move_none') }}</option>
+      {% for one in folders %}
+      <option value="{{ one.id }}"{% if one.id == folder_id %} selected{% endif %}>{{ one.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
   <div class="editor__actions">
     {#- Flechas curvas, que es como se reconocen deshacer y rehacer. El nombre
         sigue estando para quien no ve el icono. -#}
@@ -53,6 +66,10 @@
     <button class="btn btn--small btn--outline" type="button"
             data-canvas-html>{{ t('canvas_html') }}</button>
     {% endif %}
+    {#- Cargar el ZIP de un lienzo vive aquí desde octubre de 2026: cargarlo es
+        abrir un lienzo. Sin JavaScript lleva a su propia página. -#}
+    <a class="btn btn--small btn--outline" href="{{ url_for('designs.upload') }}"
+       data-open-dialog="cargar">{{ t('designs_upload_button') }}</a>
     <button class="btn" type="submit">{{ t('designs_save') }}</button>
   </div>
 </form>
@@ -355,6 +372,19 @@
     <dt>{{ what }}</dt><dd>{{ how }}</dd>
     {% endfor %}
   </dl>
+</dialog>
+
+{# La bandeja de cargar el ZIP de un lienzo, la misma que tenía Mis plantillas.
+   Su campo de nombre lleva otro id: aquí «nombre» es el de la plantilla. #}
+<dialog class="drawer" id="cargar" aria-labelledby="cargar-titulo">
+  <div class="drawer__head">
+    <h2 class="settings__subtitle" id="cargar-titulo">{{ t('designs_upload_title') }}</h2>
+    <button class="drawer__close" type="button" data-close-dialog
+            aria-label="{{ t('designs_close') }}">×</button>
+  </div>
+  {% with upload_name_id = 'cargar-nombre', errors = {} %}
+  {% include "designs/_upload_form.html" %}
+  {% endwith %}
 </dialog>
 
 <script type="application/json" id="canvas-doc">{{ doc|tojson }}</script>

@@ -34,6 +34,10 @@ ENDPOINT_ROWS = {
     "campaigns.run_detail": "sent",
     "campaigns.sender_page": "sender",
     "designs.index": "templates",
+    # A folder, and the page that comes back when a folder could not be
+    # saved, are Mis plantillas (octubre de 2026).
+    "designs.folder": "templates",
+    "designs.folders": "templates",
     "designs.create": "templates-new",
     "contacts.blocked": "suppressions",
     "contacts.remove_suppressed": "suppressions",

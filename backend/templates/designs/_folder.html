@@ -1,0 +1,156 @@
+{#- Las carpetas de Mis plantillas (octubre de 2026).
+
+    El dibujo sale del componente «Glass Folder Cards», rehecho con HTML y CSS
+    (_panel.src.css, «La carpeta de cristal»): un fondo de color, las
+    plantillas en medio y un cristal esmerilado delante, con sus dos formas
+    (las rutas de abajo, que también están en el CSS como clip-path). Al pasar
+    el ratón el cristal se inclina y asoman las cuatro más recientes; pulsar
+    una abre esa plantilla, y pulsar el cristal entra a la carpeta. -#}
+
+{% set back_path = "M0 56A22 22 0 0 1 22 34L146 34C170 34 172 0 198 0L318 0A22 22 0 0 1 340 22L340 250A22 22 0 0 1 318 272L22 272A22 22 0 0 1 0 250Z" %}
+{% set front_path = "M0 22A22 22 0 0 1 22 0L118 0C144 0 146 32 172 32L318 32A22 22 0 0 1 340 54L340 176A22 22 0 0 1 318 198L22 198A22 22 0 0 1 0 176Z" %}
+
+{% macro count_text(n) -%}
+{{ t('folders_count_none') if n == 0 else (t('folders_count_one') if n == 1 else t('folders_count', n=n)) }}
+{%- endmacro %}
+
+{#- La dirección que abre una bandeja sin JavaScript: la misma página, con esa
+    bandeja a la vista. `here` es la carpeta abierta, si se está dentro de una. -#}
+{% macro tray_url(folder, what, here=None) -%}
+{% if here %}{{ url_for('designs.folder', raw=here.id, carpeta=folder.id, editar=what) }}
+{%- else %}{{ url_for('designs.index', carpeta=folder.id, editar=what) }}{% endif %}#carpeta-bandeja
+{%- endmacro %}
+
+{#- El menú de los tres puntos, en vertical. Es un <details>, así que abre y
+    cierra sin JavaScript; panel.js lo cierra además con Escape y con un clic
+    fuera. Cambiar nombre, Cambiar color y Eliminar abren su bandeja
+    (`data-folder-tray`), y sin JavaScript su enlace abre la página con ella. -#}
+{% macro folder_menu(folder, here=None, on_glass=False) %}
+<details class="folder-menu{{ ' folder-menu--glass' if on_glass }}" data-popover>
+  <summary class="folder-menu__key" aria-label="{{ t('folders_menu_aria', name=folder.name) }}">
+    <svg class="folder-menu__dots" viewBox="0 0 6 22" aria-hidden="true" focusable="false">
+      <circle cx="3" cy="3" r="2.4"/><circle cx="3" cy="11" r="2.4"/><circle cx="3" cy="19" r="2.4"/>
+    </svg>
+  </summary>
+  <div class="folder-menu__panel">
+    {% if on_glass %}
+    <a class="folder-menu__item" href="{{ url_for('designs.folder', raw=folder.id) }}">{{ t('folders_open') }}</a>
+    {% endif %}
+    {% for what, key, label in (('rename', 'nombre', 'folders_rename'),
+                                ('color', 'color', 'folders_recolor'),
+                                ('delete', 'eliminar', 'folders_delete')) %}
+    <a class="folder-menu__item{{ ' folder-menu__item--danger' if what == 'delete' }}"
+       href="{{ tray_url(folder, key, here) }}" data-keep-scroll
+       data-folder-tray="{{ what }}" data-folder-id="{{ folder.id }}"
+       data-folder-name="{{ folder.name }}" data-folder-color="{{ folder.color }}">{{ t(label) }}</a>
+    {% endfor %}
+  </div>
+</details>
+{% endmacro %}
+
+{#- Una carpeta en la cuadrícula. `peek` son sus cuatro de cambio más reciente,
+    de la más vieja a la más nueva: la última queda delante, pegada al cristal.
+    En el orden del teclado va primero el cristal y después las hojas. -#}
+{% macro folder_card(folder, count, peek) %}
+{% set shown = peek|length %}
+<div class="folder folder--{{ folder.color }}">
+  <div class="folder__stage">
+    <div class="folder__shadow" aria-hidden="true"></div>
+    <div class="folder__back" aria-hidden="true"><div class="folder__sheen"></div></div>
+    <svg class="folder__rim folder__rim--back" viewBox="0 0 340 272" aria-hidden="true" focusable="false">
+      <path d="{{ back_path }}"/>
+    </svg>
+
+    <a class="folder__front" href="{{ url_for('designs.folder', raw=folder.id) }}"
+       aria-label="{{ t('folders_open_aria', name=folder.name, count=count_text(count)) }}">
+      <span class="folder__tint" aria-hidden="true"></span>
+      <span class="folder__spec" aria-hidden="true"></span>
+      <svg class="folder__rim folder__rim--front" viewBox="0 0 340 198" aria-hidden="true" focusable="false">
+        <path d="{{ front_path }}"/>
+      </svg>
+      <span class="folder__label" aria-hidden="true">
+        <span class="folder__title">{{ folder.name }}</span>
+        <span class="folder__meta">{{ count_text(count) }}</span>
+      </span>
+    </a>
+
+    {% if shown %}
+    {#- Dónde va cada hoja lo dice el CSS por su lugar en la lista y por cuántas
+        son (`folder__files--N`): el panel no deja estilos escritos en el HTML.
+        Cada una lleva además un desorden pequeño y fijo, como hojas de verdad
+        (`folder__sheet--jN`, de su id: no baila de una visita a otra). -#}
+    <ul class="folder__files folder__files--{{ shown }}" aria-label="{{ t('folders_peek_aria', name=folder.name) }}">
+      {% for one in peek %}
+      <li class="folder__slot">
+        <a class="folder__sheet folder__sheet--j{{ ((one._id|string)[-4:]|int(0, 16)) % 8 }}" href="{{ editor_url(one) }}">
+          <span class="folder__lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="folder__sheet-head">
+            <span class="folder__sheet-name">{{ one.name }}</span>
+            <span class="folder__sheet-meta">{{ (one.updated_at or one.created_at)|ago }}</span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {{ folder_menu(folder, on_glass=True) }}
+</div>
+{% endmacro %}
+
+{#- El formulario de cada bandeja: nueva, nombre, color y eliminar. El mismo
+    sirve en el diálogo (panel.js lo llena con la carpeta pulsada: `data-fill`)
+    y en la página sin JavaScript o con un error, ya lleno. `back` es la
+    carpeta abierta, para volver a ella. -#}
+{% macro folder_form(what, folder=None, form={}, errors={}, back=None, cancel='', prefix='carpeta') %}
+<form class="folder-form" method="post" action="{{ url_for('designs.folders') }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="{{ what }}">
+  <input type="hidden" name="folder" value="{{ folder.id if folder else '' }}" data-fill="id">
+  <input type="hidden" name="back" value="{{ back.id if back else '' }}">
+  {% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
+
+  {% if what in ('new', 'rename') %}
+  <label for="{{ prefix }}-{{ what }}-nombre">{{ t('folders_name') }}</label>
+  <input id="{{ prefix }}-{{ what }}-nombre" name="nombre" type="text" maxlength="40"
+         autocomplete="off" required data-fill="name"
+         value="{{ form.get('nombre', folder.name if folder else '') }}">
+  {% endif %}
+
+  {% if what in ('new', 'color') %}
+  {% set current = form.get('color') or (folder.color if folder else 'gray') %}
+  <fieldset class="swatches">
+    <legend class="field-label">{{ t('folders_color') }}</legend>
+    {% for one in colors %}
+    <label class="swatches__one">
+      <input type="radio" name="color" value="{{ one }}" data-fill="color"
+             {%- if one == current %} checked{% endif %}>
+      <span class="swatch swatch--{{ one }}" aria-hidden="true"></span>
+      <span>{{ t('folders_color_' + one) }}</span>
+    </label>
+    {% endfor %}
+  </fieldset>
+  {% endif %}
+
+  {% if what == 'delete' %}
+  <p>{{ t('folders_delete_lead') }}</p>
+  {% endif %}
+
+  <div class="folder-form__doing">
+    <button class="btn" type="submit">{{ t('folders_delete_confirm') if what == 'delete' else t('folders_save') }}</button>
+    {% if cancel %}<a class="btn btn--outline" href="{{ cancel }}" data-keep-scroll>{{ t('folders_cancel') }}</a>{% endif %}
+  </div>
+</form>
+{% endmacro %}
+
+{#- El título de cada bandeja, con el nombre de la carpeta en su sitio para que
+    panel.js lo cambie (`data-fill="label"`). -#}
+{% macro tray_title(what, folder=None, id='') %}
+<h2 class="settings__subtitle"{% if id %} id="{{ id }}"{% endif %}>
+  {%- if what == 'new' -%}{{ t('folders_new_title') }}
+  {%- else -%}
+  {{ t({'rename': 'folders_rename_title', 'color': 'folders_recolor_title',
+        'delete': 'folders_delete_title'}[what]) }} «<span data-fill="label">{{ folder.name if folder else '' }}</span>»
+  {%- endif -%}
+</h2>
+{% endmacro %}

@@ -1125,33 +1125,350 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 }
 
 /* --------------------------------------------------------------- plantillas
-   Los dos caminos arriba, las notas, y la lista. */
+   Mis plantillas (octubre de 2026): sus carpetas y, debajo, las sueltas. Crear
+   y cargar viven en el Lienzo. */
 
-/* Crear y cargar: las dos cosas que se vienen a hacer aquí, del mismo tamaño
-   y lado a lado. Estrecha la pantalla, una debajo de otra. */
-.start { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 22px; }
-.start__one {
-  flex: 1 1 240px; justify-content: center; text-align: center;
-  padding: 18px 22px; font-size: 1.05rem;
+/* El título y su botón («Nueva carpeta», o el menú de la carpeta abierta). */
+.shelf__head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 18px;
 }
-.start__soon { font-weight: 500; font-size: .85rem; opacity: .8; }
-/* Apagado sobre el fondo de la página se perdía: lleva su borde. */
-.start__one.btn--off, .start__one.btn--off:hover {
-  background: var(--color-surface); border: 1px solid var(--color-border);
+.shelf__head .settings__heading { margin-bottom: 0; }
+.shelf__head .btn { margin-top: 0; }
+.shelf__title { display: flex; align-items: center; gap: 12px; overflow-wrap: anywhere; }
+.shelf__title .swatch { width: 18px; height: 18px; }
+/* De una carpeta, de vuelta a Mis plantillas. */
+.crumb { margin: 0 0 8px; font-size: .9rem; }
+.crumb a { color: var(--color-ink-soft); text-decoration: none; }
+.crumb a:hover { color: var(--color-ink); text-decoration: underline; }
+
+/* El color de cada carpeta: el fondo de la de cristal y su muestra en las
+   bandejas, en «Mover a…» y junto al nombre. Ocho, y gris es el de siempre.
+   En oscuro, los mismos más hondos: detrás del cristal ahumado. */
+.folder--gray, .swatch--gray { --folder-hi: #F3F3F4; --folder-lo: #D4D4DA; }
+.folder--blue, .swatch--blue { --folder-hi: #B9D6F8; --folder-lo: #4F8FDC; }
+.folder--green, .swatch--green { --folder-hi: #B5E6CC; --folder-lo: #3DAA77; }
+.folder--amber, .swatch--amber { --folder-hi: #FBE0A8; --folder-lo: #E2A03C; }
+.folder--red, .swatch--red { --folder-hi: #F7C0BA; --folder-lo: #D9574C; }
+.folder--purple, .swatch--purple { --folder-hi: #D8C9F7; --folder-lo: #8A68DC; }
+.folder--pink, .swatch--pink { --folder-hi: #F8C6DA; --folder-lo: #DC6697; }
+.folder--teal, .swatch--teal { --folder-hi: #B1E6E3; --folder-lo: #2BA59F; }
+:root[data-theme="dark"] :is(.folder--gray, .swatch--gray) { --folder-hi: #2C2C31; --folder-lo: #141416; }
+:root[data-theme="dark"] :is(.folder--blue, .swatch--blue) { --folder-hi: #3A6CAD; --folder-lo: #17345C; }
+:root[data-theme="dark"] :is(.folder--green, .swatch--green) { --folder-hi: #2F8560; --folder-lo: #12402B; }
+:root[data-theme="dark"] :is(.folder--amber, .swatch--amber) { --folder-hi: #A87424; --folder-lo: #4F350C; }
+:root[data-theme="dark"] :is(.folder--red, .swatch--red) { --folder-hi: #A8443B; --folder-lo: #521C17; }
+:root[data-theme="dark"] :is(.folder--purple, .swatch--purple) { --folder-hi: #6A50AA; --folder-lo: #2D2050; }
+:root[data-theme="dark"] :is(.folder--pink, .swatch--pink) { --folder-hi: #A8456F; --folder-lo: #4D1C32; }
+:root[data-theme="dark"] :is(.folder--teal, .swatch--teal) { --folder-hi: #23847F; --folder-lo: #0E3D3A; }
+.swatch {
+  display: inline-block; flex: none; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--folder-lo); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14);
+}
+.swatch--none { background: transparent; box-shadow: inset 0 0 0 1.5px var(--color-field); }
+
+/* --------------------------------------------- la carpeta de cristal
+   Del componente «Glass Folder Cards» (octubre de 2026), rehecho sin React:
+   un fondo de color, las plantillas en medio y un cristal esmerilado delante,
+   con la bisagra abajo. Se dibuja a 340 × 272, que es la medida de sus dos
+   formas (las mismas rutas que en designs/_folder.html), y se achica entera
+   con `--k`; arriba deja 54 de aire para que las hojas asomen. Las letras van
+   más grandes que en el componente porque se achican con todo lo demás.
+
+   Quieta, las hojas apenas asoman. Con el ratón encima (o con el foco
+   dentro), el cristal se inclina y suben las cuatro más recientes, separadas
+   lo justo para leer cada nombre: pulsar una abre esa plantilla, y pulsar el
+   cristal entra a la carpeta. */
+.folders {
+  --k: .8235;
+  list-style: none; margin: 16px 0 0; padding: 0;
+  display: grid; gap: 30px 34px;
+  grid-template-columns: repeat(auto-fill, calc(340px * var(--k)));
+}
+@media (max-width: 420px) {
+  .folders { --k: .86; justify-content: center; }
+}
+.folder, .folder-menu {
+  --folder-ease: cubic-bezier(.2, .8, .2, 1);
+  --folder-spring: cubic-bezier(.34, 1.36, .5, 1);
+}
+.folder {
+  --hinge: 0deg; --lift: 42px; --spread: 0px; --fan: 0deg; --stack: 15px;
+  --folder-ink: #141416; --folder-ink-soft: rgba(20, 20, 22, .58);
+  position: relative; isolation: isolate;
+  width: calc(340px * var(--k, .8235)); height: calc(326px * var(--k, .8235));
+}
+:root[data-theme="dark"] .folder { --folder-ink: #F5F5F7; --folder-ink-soft: rgba(245, 245, 247, .62); }
+@media (hover: hover) {
+  .folder:hover { --hinge: -11deg; --lift: -50px; --spread: 6px; --fan: 1deg; --stack: 26px; }
+}
+.folder:focus-within { --hinge: -11deg; --lift: -50px; --spread: 6px; --fan: 1deg; --stack: 26px; }
+
+.folder__stage {
+  position: absolute; left: 0; top: 0; width: 340px; height: 272px;
+  transform-origin: 0 0;
+  transform: translateY(calc(54px * var(--k, .8235))) scale(var(--k, .8235));
+}
+.folder__shadow {
+  position: absolute; left: 18px; right: 18px; bottom: -6px; height: 60px;
+  border-radius: 40px; background: rgba(16, 18, 24, .3); filter: blur(22px);
+}
+:root[data-theme="dark"] .folder__shadow { background: rgba(0, 0, 0, .62); }
+.folder__back {
+  position: absolute; inset: 0; overflow: hidden;
+  clip-path: path("M0 56A22 22 0 0 1 22 34L146 34C170 34 172 0 198 0L318 0A22 22 0 0 1 340 22L340 250A22 22 0 0 1 318 272L22 272A22 22 0 0 1 0 250Z");
+  background: linear-gradient(180deg, var(--folder-hi) 0%, var(--folder-lo) 100%);
+}
+.folder__sheen {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, 0) 22%),
+    radial-gradient(120% 80% at 80% 0%, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 60%);
+}
+.folder__rim {
+  position: absolute; left: 0; top: 0; max-width: none; overflow: visible;
+  pointer-events: none; fill: none;
+}
+.folder__rim--back { width: 340px; height: 272px; }
+.folder__rim--back path { stroke: rgba(255, 255, 255, .45); stroke-width: 1; }
+:root[data-theme="dark"] .folder__rim--back path { stroke: rgba(255, 255, 255, .16); }
+
+/* Las hojas: debajo del cristal, que las esconde de la cintura para abajo. */
+.folder__files {
+  position: absolute; inset: 0; z-index: 5; margin: 0; padding: 0; list-style: none;
+  pointer-events: none;
+  /* Nada cuelga por debajo del bolsillo, por alta que sea la pila. */
+  clip-path: inset(-400px -400px 10px -400px);
+}
+.folder__sheet {
+  position: absolute; left: 34px; top: 96px; width: 272px; height: 184px;
+  display: block; overflow: hidden; border-radius: 16px; pointer-events: auto;
+  color: inherit; text-decoration: none;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F2F2F0 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 0 0 .5px rgba(0, 0, 0, .1),
+              0 10px 26px -8px rgba(10, 12, 20, .28);
+  transform-origin: 50% 100%;
+  transform:
+    translate(calc(var(--jx) + var(--slot) * var(--spread)),
+              calc(var(--lift) + var(--depth) * var(--stack) * -1))
+    rotate(calc(var(--jr) + var(--slot) * var(--fan)));
+  transition: transform .75s var(--folder-spring) calc(var(--depth) * 40ms),
+              box-shadow .4s var(--folder-ease);
+}
+:root[data-theme="dark"] .folder__sheet {
+  background: linear-gradient(180deg, #2C2C30 0%, #1C1C1F 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 0 0 .5px rgba(255, 255, 255, .08),
+              0 12px 28px -8px rgba(0, 0, 0, .7);
+}
+/* La que se va a abrir sube un poco más. */
+.folder__sheet:hover, .folder__sheet:focus-visible {
+  transform:
+    translate(calc(var(--jx) + var(--slot) * var(--spread)),
+              calc(var(--lift) + var(--depth) * var(--stack) * -1 - 14px))
+    rotate(calc(var(--slot) * var(--fan) * .6));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 0 0 .5px rgba(0, 0, 0, .1),
+              0 22px 40px -12px rgba(10, 12, 20, .42);
+  transition-delay: 0s;
+}
+.folder__sheet:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+/* Dónde va cada una, por cuántas son y su lugar: -1 a 1 de lado a lado
+   (`--slot`) y cuántas tiene delante (`--depth`). La última, la más nueva,
+   queda delante. */
+.folder__files--1 .folder__slot:nth-child(1) .folder__sheet { --slot: 0; --depth: 0; }
+.folder__files--2 .folder__slot:nth-child(1) .folder__sheet { --slot: -1; --depth: 1; }
+.folder__files--2 .folder__slot:nth-child(2) .folder__sheet { --slot: 1; --depth: 0; }
+.folder__files--3 .folder__slot:nth-child(1) .folder__sheet { --slot: -1; --depth: 2; }
+.folder__files--3 .folder__slot:nth-child(2) .folder__sheet { --slot: 0; --depth: 1; }
+.folder__files--3 .folder__slot:nth-child(3) .folder__sheet { --slot: 1; --depth: 0; }
+.folder__files--4 .folder__slot:nth-child(1) .folder__sheet { --slot: -1; --depth: 3; }
+.folder__files--4 .folder__slot:nth-child(2) .folder__sheet { --slot: -.333; --depth: 2; }
+.folder__files--4 .folder__slot:nth-child(3) .folder__sheet { --slot: .333; --depth: 1; }
+.folder__files--4 .folder__slot:nth-child(4) .folder__sheet { --slot: 1; --depth: 0; }
+/* Un desorden pequeño y fijo, como hojas de verdad. */
+.folder__sheet--j0 { --jx: -4px; --jr: -1.2deg; }
+.folder__sheet--j1 { --jx: 3px; --jr: .8deg; }
+.folder__sheet--j2 { --jx: -1px; --jr: 1.4deg; }
+.folder__sheet--j3 { --jx: 5px; --jr: -.6deg; }
+.folder__sheet--j4 { --jx: -5px; --jr: .4deg; }
+.folder__sheet--j5 { --jx: 1px; --jr: -1.5deg; }
+.folder__sheet--j6 { --jx: -3px; --jr: 1deg; }
+.folder__sheet--j7 { --jx: 4px; --jr: -.2deg; }
+.folder__lines {
+  position: absolute; left: 14px; right: 14px; top: 40px;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.folder__lines i { display: block; height: 5px; border-radius: 3px; background: rgba(24, 24, 27, .08); }
+.folder__lines i:first-child { height: 9px; margin-bottom: 4px; background: rgba(24, 24, 27, .14); }
+.folder__lines i:nth-child(1) { width: 86%; }
+.folder__lines i:nth-child(2) { width: 92%; }
+.folder__lines i:nth-child(3) { width: 64%; }
+.folder__lines i:nth-child(4) { width: 88%; }
+.folder__lines i:nth-child(5) { width: 42%; }
+:root[data-theme="dark"] .folder__lines i { background: rgba(255, 255, 255, .08); }
+:root[data-theme="dark"] .folder__lines i:first-child { background: rgba(255, 255, 255, .16); }
+.folder__sheet-head {
+  position: absolute; left: 14px; right: 14px; top: 6px;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  white-space: nowrap;
+}
+.folder__sheet-name {
+  overflow: hidden; text-overflow: ellipsis;
+  font-size: 15px; font-weight: 600; color: #18181B;
+}
+.folder__sheet-meta {
+  flex: none; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 12px; color: rgba(24, 24, 27, .55);
+}
+:root[data-theme="dark"] .folder__sheet-name { color: #FAFAFA; }
+:root[data-theme="dark"] .folder__sheet-meta { color: rgba(250, 250, 250, .66); }
+
+/* El cristal: el enlace que entra a la carpeta, colgado de su bisagra. */
+.folder__front {
+  position: absolute; left: 0; top: 74px; width: 340px; height: 198px; z-index: 10;
+  display: block; color: var(--folder-ink); text-decoration: none;
+  clip-path: path("M0 22A22 22 0 0 1 22 0L118 0C144 0 146 32 172 32L318 32A22 22 0 0 1 340 54L340 176A22 22 0 0 1 318 198L22 198A22 22 0 0 1 0 176Z");
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+  transform-origin: 50% 100%;
+  transform: perspective(760px) rotateX(var(--hinge));
+  transition: transform .8s var(--folder-spring);
+}
+.folder__front:hover { text-decoration: none; }
+.folder__front:focus-visible { outline: none; }
+.folder__tint {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .5) 42%,
+                              rgba(252, 252, 252, .93) 100%);
+}
+:root[data-theme="dark"] .folder__tint {
+  background: linear-gradient(180deg, rgba(18, 18, 20, .18) 0%, rgba(14, 14, 16, .62) 46%,
+                              rgba(8, 8, 10, .94) 100%);
+}
+.folder__spec {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(260px 200px at 50% 30%, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 70%);
+  mix-blend-mode: soft-light; opacity: .9;
+}
+:root[data-theme="dark"] .folder__spec { mix-blend-mode: screen; opacity: .16; }
+.folder__rim--front { width: 340px; height: 198px; }
+.folder__rim--front path {
+  stroke: url(#folder-rim); stroke-width: 2.4;
+  transition: stroke-width .3s var(--folder-ease);
+}
+:root[data-theme="dark"] .folder__rim--front { opacity: .55; }
+/* Con el teclado, el borde del cristal se marca en azul, que es el del foco. */
+.folder__front:focus-visible .folder__rim--front path { stroke: var(--color-accent); stroke-width: 6; }
+:root[data-theme="dark"] .folder__front:focus-visible .folder__rim--front { opacity: 1; }
+.folder__label {
+  position: absolute; left: 28px; right: 92px; bottom: 30px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.folder__title {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 21px; font-weight: 600; line-height: 1.15; letter-spacing: -.012em;
+}
+.folder__meta {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 14px; letter-spacing: .03em; color: var(--folder-ink-soft); white-space: nowrap;
+}
+/* El gradiente del borde del cristal, una vez por página. */
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* El menú de los tres puntos, en vertical. Va fuera del dibujo achicado, para
+   que sus letras no se achiquen con él. En la carpeta abierta va junto al
+   título, y su lista baja en vez de subir. */
+.folder-menu { position: relative; }
+.folder-menu--glass {
+  position: absolute; z-index: 12;
+  right: calc(22px * var(--k, .8235)); bottom: calc(22px * var(--k, .8235));
+}
+.folder-menu__key {
+  display: grid; place-items: center; width: 46px; height: 46px; border-radius: 15px;
+  list-style: none; cursor: pointer; color: #111113;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .92) 0%, rgba(226, 226, 230, .82) 100%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 #FFFFFF, inset 0 -2px 4px rgba(0, 0, 0, .06),
+              0 0 0 1px rgba(0, 0, 0, .16), 0 10px 18px -8px rgba(0, 0, 0, .3);
+  transition: transform .35s var(--folder-spring), box-shadow .35s var(--folder-ease);
+}
+.folder-menu__key::-webkit-details-marker { display: none; }
+.folder-menu__key:hover { transform: translateY(-2px); }
+.folder-menu__key:active { transform: scale(.93); transition-duration: .12s; }
+.folder-menu[open] > .folder-menu__key { transform: scale(.96); }
+.folder-menu__key:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+:root[data-theme="dark"] .folder-menu__key {
+  color: #F5F5F7;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .06) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 0 0 1px rgba(255, 255, 255, .1),
+              0 10px 18px -8px rgba(0, 0, 0, .6);
+}
+.folder-menu__dots { width: 6px; height: 22px; fill: currentColor; }
+.folder-menu__panel {
+  position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 20;
+  display: flex; flex-direction: column; min-width: 184px; padding: 6px;
+  border-radius: 16px; background: rgba(252, 252, 253, .9);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 0 0 .5px rgba(0, 0, 0, .14),
+              0 24px 48px -16px rgba(10, 12, 20, .4);
+  transform-origin: 100% 100%;
+  animation: folder-menu-in .32s var(--folder-spring);
+}
+.folder-menu:not(.folder-menu--glass) .folder-menu__panel {
+  top: calc(100% + 8px); bottom: auto; transform-origin: 100% 0;
+}
+@keyframes folder-menu-in {
+  from { opacity: 0; transform: translateY(6px) scale(.94); }
+  to { opacity: 1; transform: none; }
+}
+:root[data-theme="dark"] .folder-menu__panel {
+  background: rgba(30, 30, 34, .9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 0 0 .5px rgba(255, 255, 255, .1),
+              0 24px 48px -16px rgba(0, 0, 0, .8);
+}
+.folder-menu__item {
+  display: block; padding: 9px 12px; border-radius: 10px; white-space: nowrap;
+  font-size: .92rem; font-weight: 500; color: #18181B; text-decoration: none;
+}
+.folder-menu__item:hover, .folder-menu__item:focus-visible {
+  background: rgba(24, 24, 27, .07); text-decoration: none;
+}
+.folder-menu__item--danger { color: #B42318; }
+:root[data-theme="dark"] .folder-menu__item { color: #F4F4F5; }
+:root[data-theme="dark"] .folder-menu__item:hover,
+:root[data-theme="dark"] .folder-menu__item:focus-visible { background: rgba(255, 255, 255, .09); }
+:root[data-theme="dark"] .folder-menu__item--danger { color: #FF8A80; }
+
+@media (prefers-reduced-motion: reduce) {
+  .folder *, .folder-menu * { transition: none !important; animation: none !important; }
 }
 
-/* Lo que conviene saber antes de empezar, en dos líneas y no en un párrafo. */
-.notes {
-  margin: 22px 0 0; padding: 16px 18px 16px 34px; display: grid; gap: 8px;
-  background: var(--color-surface-alt); border: 1px solid var(--color-border);
-  border-radius: 12px; color: var(--color-ink-soft); font-size: .95rem;
+/* Las bandejas de las carpetas: en su diálogo, o arriba de la página cuando
+   llega sin JavaScript o con algo que no se pudo guardar. */
+.tray-inline {
+  margin: 0 0 18px; padding: 18px 20px; border: 1px solid var(--color-border);
+  border-radius: 14px; background: var(--color-surface); box-shadow: var(--shadow-sm);
 }
-.notes code, .notes__marks code {
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .88rem;
-  color: var(--color-ink); background: var(--color-surface);
-  border: 1px solid var(--color-border); border-radius: 6px; padding: 1px 6px;
+.tray-inline .settings__subtitle { margin-top: 0; padding-top: 0; border-top: 0; }
+.folder-form { display: grid; gap: 8px; margin-top: 14px; }
+.folder-form__doing { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.folder-form__doing .btn { margin-top: 0; }
+.swatches {
+  margin: 8px 0 0; padding: 0; border: 0;
+  display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
 }
-.notes__marks { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 6px; }
+.swatches legend { margin-bottom: 6px; padding: 0; }
+.swatches__one {
+  position: relative; display: flex; align-items: center; gap: 9px; margin: 0;
+  padding: 9px 11px; border: 1px solid var(--color-border); border-radius: 10px;
+  cursor: pointer; font-weight: 500;
+}
+.swatches__one input { position: absolute; opacity: 0; pointer-events: none; }
+.swatches__one .swatch { width: 18px; height: 18px; }
+.swatches__one:hover { background: var(--color-surface-alt); }
+.swatches__one:has(input:checked) { border-color: var(--color-action); box-shadow: inset 0 0 0 1px var(--color-action); }
+.swatches__one:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 /* Las plantillas, en tarjetas: lo primero que se busca es cuál era, y eso se
    reconoce mirándolo. Arriba el correo de verdad, achicado en su marco. */
@@ -1184,6 +1501,23 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .card-piece__doing { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .card-piece__doing form { margin: 0; }
 .card-piece__doing .btn { margin-top: 0; }
+/* «Mover a…»: se despliega dentro de la tarjeta, en su propia fila, porque la
+   tarjeta recorta lo que se le sale. */
+.move > summary { list-style: none; cursor: pointer; }
+.move > summary::-webkit-details-marker { display: none; }
+.move[open] { flex-basis: 100%; }
+.move__list {
+  display: grid; gap: 2px; margin: 8px 0 0; padding: 6px;
+  border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface);
+}
+.move__one {
+  display: flex; align-items: center; gap: 9px; width: 100%; padding: 7px 10px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--color-ink);
+  font: inherit; font-size: .88rem; text-align: left; cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.move__one:hover { background: var(--color-hover); }
+.move__one:disabled { cursor: default; color: var(--color-ink-soft); background: transparent; }
 
 /* La bandeja de cargar: sale de la derecha, encima de la lista. */
 .drawer {

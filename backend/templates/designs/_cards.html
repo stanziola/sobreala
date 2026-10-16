@@ -1,0 +1,71 @@
+{#- Las tarjetas de las plantillas, en Mis plantillas y dentro de una carpeta.
+
+    Tarjetas y no una tabla: lo primero que se busca es cuál era, y eso se
+    reconoce mirándolo. Cada una enseña el correo tal como sale, en un marco
+    aislado y achicado, que se pide solo cuando se acerca (`loading="lazy"`).
+    Espera: mine, named, folders, editor_url y folder (la carpeta abierta, o
+    nada), que es a donde vuelve cada botón. -#}
+<ul class="cards">
+  {% for one in mine %}
+  <li class="card-piece">
+    <div class="card-piece__view">
+      {#- `scrolling="no"`: el correo es más alto que el marco y el navegador le
+          dibujaba su barra, que achicada es una rayita gris al lado. Desde
+          fuera no hay otra manera: el desbordamiento lo decide el documento de
+          dentro, y ese es el correo tal cual (ajeno, si el HTML lo subió el
+          cliente). -#}
+      <iframe src="{{ url_for('designs.piece_view', raw=one._id) }}" sandbox
+              scrolling="no" loading="lazy" tabindex="-1"
+              title="{{ one.name }}"></iframe>
+    </div>
+    <div class="card-piece__body">
+      <p class="card-piece__name"><b>{{ one.name }}</b></p>
+      <p class="card-piece__what">
+        {%- if one.source == 'upload' -%}
+        {{ t('designs_kind_upload', kb=((one.bytes or 0) / 1024)|round(1)) }}
+        {%- elif one.source == 'canvas' -%}
+        {{ t('designs_kind_sheet') }}
+        {%- else -%}
+        {{ t('designs_from', name=named.get(one.template, one.template)) }}
+        {%- endif %} · {{ (one.updated_at or one.created_at)|ago }}
+      </p>
+      <div class="card-piece__doing">
+        <a class="btn btn--small btn--outline" href="{{ editor_url(one) }}">{{ t('designs_edit') }}</a>
+        <form method="post" action="{{ url_for('designs.copy') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ one._id }}">
+          <input type="hidden" name="back" value="{{ folder.id if folder else '' }}">
+          <button class="btn btn--small btn--outline" type="submit">{{ t('designs_copy') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('designs.remove') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="id" value="{{ one._id }}">
+          <input type="hidden" name="back" value="{{ folder.id if folder else '' }}">
+          <button class="btn btn--small btn--outline" type="submit">{{ t('designs_delete') }}</button>
+        </form>
+        {#- Mover a otra carpeta (octubre de 2026). Se despliega dentro de la
+            tarjeta y no encima: la tarjeta recorta lo que se sale. La carpeta
+            donde ya está no se puede pulsar. -#}
+        {% if folders %}
+        <details class="move">
+          <summary class="btn btn--small btn--outline">{{ t('folders_move') }}</summary>
+          <form class="move__list" method="post" action="{{ url_for('designs.move') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="id" value="{{ one._id }}">
+            <input type="hidden" name="back" value="{{ folder.id if folder else '' }}">
+            {% for place in folders %}
+            <button class="move__one" type="submit" name="folder" value="{{ place.id }}"
+                    {%- if place.id == one.folder_id %} disabled aria-current="true"{% endif %}>
+              <span class="swatch swatch--{{ place.color }}" aria-hidden="true"></span>{{ place.name }}</button>
+            {% endfor %}
+            <button class="move__one" type="submit" name="folder" value=""
+                    {%- if not one.folder_id %} disabled aria-current="true"{% endif %}>
+              <span class="swatch swatch--none" aria-hidden="true"></span>{{ t('folders_move_none') }}</button>
+          </form>
+        </details>
+        {% endif %}
+      </div>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
