@@ -1958,6 +1958,14 @@ SECTIONS = ("account", "security", "notifications", "billing")
 # hacen los clientes, no de lo que pasa en su cuenta.
 ADMIN_SECTIONS = ("security", "notifications")
 
+# El nombre de cada sección: en el menú del administrador, en el árbol del
+# Dashboard y en el buscador (octubre de 2026).
+SECTION_LABELS = {"account": "settings_section_account",
+                  "security": "settings_section_security",
+                  "notifications": "settings_section_notifications",
+                  "billing": "settings_section_payments",
+                  "test": "settings_section_test"}
+
 
 def sections_for(account: dict | None) -> tuple[str, ...]:
     """Las secciones que esa cuenta puede abrir. La primera es la de entrada.

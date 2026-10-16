@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{#- La Configuración del administrador (octubre de 2026): él no tiene
+    Dashboard, así que la suya sigue con su menú de secciones a la izquierda,
+    pegada al borde y con el ancho de siempre. La de un cliente va dentro del
+    Dashboard; `settings.html` elige el marco. `label_of` e `icon_of` los pone
+    `settings.html`. -#}
+{% block wrap_class %}wrap--wide wrap--left wrap--rows{% endblock %}
+{% block content %}
+<h1 class="settings__heading">{{ t('settings_title') }}</h1>
+
+<div class="settings">
+  {# Una lista con íconos, sin desplegables (octubre de 2026): cada sección se
+     lee entera, y lo que fueron sus subsecciones son anclas de su página. #}
+  <nav class="settings__nav settings-nav" aria-label="{{ t('settings_title') }}">
+    {% for slug in sections %}
+    <a class="settings__tab settings-nav__head{% if slug == section %} is-current{% endif %}"
+       href="{{ url_for('auth.settings', section=slug) }}"
+       {%- if slug == section %} aria-current="page"{% endif %}>
+      <span class="settings-nav__icon">{% include icon_of[slug] %}</span>
+      <span class="settings-nav__label">{{ t(label_of[slug]) }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+
+  {% block pane %}{% endblock %}
+</div>
+{% endblock %}

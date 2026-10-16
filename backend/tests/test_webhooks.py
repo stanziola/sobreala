@@ -12,6 +12,7 @@ Los avisos son de mentira, pero tienen la forma exacta de los de Amazon.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from bson import ObjectId
@@ -267,11 +268,14 @@ def test_correos_del_sistema_encuentra_por_direccion_sin_ensenar_el_cuerpo(
 def test_el_aviso_de_clic_guarda_su_enlace(client, database):
     """SES manda la direccion dentro del aviso, y hasta ahora se tiraba."""
     cuenta, campana, envio = ObjectId(), ObjectId(), ObjectId()
+    # Ayer, y no una fecha fija: con una fija, al pasar 30 días el clic se salía
+    # del periodo que se cuenta abajo y la prueba fallaba sola.
+    ayer = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
     for enlace in ("https://coop.com/asamblea", "https://coop.com/horario"):
         notify(client, campaign_event(
             "Click", account=cuenta, campaign=campana, run=envio,
             to="ana@coop.com",
-            click={"timestamp": "2026-09-16T12:02:00.000Z", "link": enlace,
+            click={"timestamp": ayer, "link": enlace,
                    "ipAddress": "190.0.0.1", "userAgent": "Mozilla"}))
 
     # Un solo clic, con los dos enlaces dentro: la cifra no se infla.

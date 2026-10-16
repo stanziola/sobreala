@@ -339,9 +339,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 
 - Al entrar se aterriza en el sitio público. Una cuenta nueva ve `/welcome`.
 - **El Dashboard** (`services/dashboard.py`, `_dashboard.html`): Estadísticas,
-  Correos (Enviar → Redactar, Masivo, Plantillas y Enviados; y Remitente) y
-  Contactos (Lista y Supresiones) en un árbol a la izquierda, y la pantalla a
-  la derecha. Las direcciones de siempre no cambiaron. Importar, Etiquetas y
+  Correos (Enviar → Redactar, Masivo y Enviados), Plantillas (Mis plantillas y
+  Crear), Contactos (Lista y Supresiones) y Configuración (Remitente y las
+  secciones de la cuenta) en un árbol a la izquierda, y la pantalla a la
+  derecha. El administrador ve su Configuración aparte. Las direcciones de siempre no cambiaron. Importar, Etiquetas y
   Columnas se abren desde la lista de Contactos. **Pegado a la izquierda**
   (`.wrap--left`): el árbol arranca donde el ala, y lo de la derecha se lleva
   el resto; Administración igual, y Configuración arranca ahí con su ancho.

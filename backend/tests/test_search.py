@@ -113,7 +113,7 @@ def test_va_en_la_barra_al_lado_del_ala(client, database, outbox):
         # Y ya no en la barra lateral.
         assert html.count("data-search") == 1, url
     # Fuera del Dashboard, la barra de siempre, con el nombre y sin el campo.
-    ajustes = barra(browser.get("/settings/account").get_data(as_text=True))
+    ajustes = barra(browser.get("/switch-account").get_data(as_text=True))
     assert ajustes.startswith(' class="bar">') and "data-search" not in ajustes
     assert '<span class="bar__name">Sobreala</span>' in ajustes
 

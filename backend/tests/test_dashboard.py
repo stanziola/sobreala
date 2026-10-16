@@ -36,28 +36,40 @@ def tree_of(page: str) -> str:
 def test_el_arbol_tiene_sus_ramas_y_marca_donde_se_esta(client, database, outbox):
     browser, _, _ = ready(client, database)
     for url, current in (("/dashboard", "Resumen"), ("/campaigns", "Masivo"),
-                         ("/campaigns/write", "Redactar"), ("/templates", "Plantillas"),
+                         ("/campaigns/write", "Redactar"), ("/templates", "Mis plantillas"),
                          ("/campaigns/sent", "Enviados"), ("/campaigns/sender", "Remitente"),
                          ("/contacts", "Lista"), ("/contacts/suppressions", "Supresiones"),
                          # Importar, Etiquetas y Columnas viven bajo la lista.
                          ("/contacts/import", "Lista"), ("/contacts/tags", "Lista"),
-                         ("/contacts/columns", "Lista")):
+                         ("/contacts/columns", "Lista"),
+                         # Configuración, rama del Dashboard (octubre de 2026).
+                         ("/settings/account", "Cuenta"), ("/settings/security", "Seguridad"),
+                         ("/settings/notifications", "Notificaciones"),
+                         ("/settings/billing", "Facturación")):
         page = browser.get(url)
         assert page.status_code == 200, url
         arbol = tree_of(page.get_data(as_text=True))
         assert f'aria-current="page">{current}<' in arbol, url
-        for rama in ("Estadísticas", "Correos", "Enviar", "Contactos"):
+        for rama in ("Estadísticas", "Correos", "Enviar", "Plantillas", "Contactos",
+                     "Configuración"):
             assert f">{rama}</span>" in arbol, (url, rama)
     arbol = tree_of(browser.get("/contacts").get_data(as_text=True))
     assert ">Etiquetas<" not in arbol and ">Columnas<" not in arbol
     assert ">Importar<" not in arbol
+    # Remitente está en Configuración, y Plantillas ya no es una fila de Enviar.
+    configuracion = arbol.split(">Configuración</span>")[1]
+    assert ">Remitente<" in configuracion
+    enviar = arbol.split(">Enviar</span>")[1].split(">Plantillas</span>")[0]
+    assert ">Remitente<" not in enviar and ">Mis plantillas<" not in enviar
 
 
 def test_la_busqueda_vive_solo_en_el_dashboard(client, database, outbox):
     browser, _, _ = ready(client, database)
     assert "data-search" in browser.get("/dashboard").get_data(as_text=True)
     assert "data-search" in browser.get("/contacts").get_data(as_text=True)
-    assert "data-search" not in browser.get("/settings/account").get_data(as_text=True)
+    # Configuración también es del Dashboard (octubre de 2026).
+    assert "data-search" in browser.get("/settings/account").get_data(as_text=True)
+    assert "data-search" not in browser.get("/switch-account").get_data(as_text=True)
 
 
 def test_pegado_a_la_izquierda(client, database, outbox):
@@ -68,10 +80,16 @@ def test_pegado_a_la_izquierda(client, database, outbox):
     for url, clase in (("/dashboard", "wrap wrap--wide wrap--left"),
                        ("/campaigns/write", "wrap wrap--wide wrap--left"),
                        ("/contacts", "wrap wrap--table wrap--left"),
-                       ("/settings/account", "wrap wrap--wide wrap--left wrap--rows")):
+                       ("/settings/account", "wrap wrap--wide wrap--left")):
         assert f'<main class="{clase}">' in browser.get(url).get_data(as_text=True), url
     assert "wrap--left" not in client.get("/login").get_data(as_text=True)
+    # Configuración, dentro del Dashboard, va en medio de su espacio.
+    assert '<div class="dash__pane dash__pane--center">' in browser.get(
+        "/settings/account").get_data(as_text=True)
     admin, _ = make_admin(client, database)
+    # La Configuración del administrador sigue aparte, con su ancho de siempre.
+    assert '<main class="wrap wrap--wide wrap--left wrap--rows">' in admin.get(
+        "/settings/security").get_data(as_text=True)
     assert '<main class="wrap wrap--wide wrap--left">' in admin.get(
         "/admin/accounts").get_data(as_text=True)
     css = (ROOT / "backend/static/css/_panel.src.css").read_text(encoding="utf-8")

@@ -57,11 +57,24 @@ elegido en el panel grande de la derecha**, con la búsqueda en la barra de
 arriba, al lado del ala:
 
 ```
-Estadísticas ▸ Resumen · Aperturas y clics · Campañas · Cuándo abren · Lista · Cuota
-Correos      ▸ Enviar ▸ Redactar · Masivo · Plantillas · Enviados
-                Remitente
-Contactos    ▸ Lista · Supresiones
+Estadísticas  ▸ Resumen · Aperturas y clics · Campañas · Cuándo abren · Lista · Cuota
+Correos       ▸ Enviar ▸ Redactar · Masivo · Enviados
+Plantillas    ▸ Mis plantillas · Crear
+Contactos     ▸ Lista · Supresiones
+Configuración ▸ Remitente · Cuenta · Seguridad · Notificaciones · Facturación
 ```
+
+**Plantillas y Configuración son ramas desde el 16 de octubre de 2026.**
+Plantillas era una fila de Correos → Enviar; Remitente, una de Correos.
+Configuración trae Remitente y las secciones de la cuenta que esa persona puede
+abrir (`sections_for()`: un usuario de la empresa, solo Seguridad; en la
+demostración, también las direcciones de prueba). `settings.html` entra al
+marco del Dashboard para un cliente, y el árbol reemplaza su menú de
+secciones; el administrador, que no tiene Dashboard, la sigue viendo en su
+marco de siempre (`_settings_admin.html`). La fila «Configuración» del menú de
+arriba lleva a lo mismo. **Su tarjeta va en medio** de lo que deja el árbol,
+con su ancho de antes (`pane_center`, 1180 px), y también la de
+Remitente y la de eliminar la cuenta: tienen filas, no tablas.
 
 - El árbol lo arma `services/dashboard.py` (`tree()`) con los permisos de quien
   mira, y la fila marcada la decide el endpoint (`here()`), así que el menú y

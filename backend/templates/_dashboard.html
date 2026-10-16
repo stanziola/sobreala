@@ -54,6 +54,8 @@
     </div>
   </nav>
 
-  <div class="dash__pane">{% block pane %}{% endblock %}</div>
+  {# Configuración (sus secciones, Remitente y eliminar la cuenta) pone
+     `pane_center`: su tarjeta va en medio, con su ancho de siempre. #}
+  <div class="dash__pane{{ ' dash__pane--center' if pane_center }}">{% block pane %}{% endblock %}</div>
 </div>
 {% endblock %}

@@ -1,8 +1,27 @@
-{% extends "base.html" %}
+{# Un cliente tiene su Configuración dentro del Dashboard, en la rama del
+   mismo nombre (octubre de 2026); el administrador, que no tiene Dashboard, en
+   su marco de siempre con el menú de secciones (`_settings_admin.html`). #}
+{% extends "_settings_admin.html" if bar_admin else "_dashboard.html" %}
 {% from "_phone.html" import phone, company_phones with context %}
 {% block title %}{{ t('settings_title') }}{% endblock %}
-{# Pegada a la izquierda como el Dashboard, con su ancho de siempre. #}
-{% block wrap_class %}wrap--wide wrap--left wrap--rows{% endblock %}
+{% set pane_center = true %}
+
+{# Cuáles se listan lo decide la vista, no esta plantilla: un cliente tiene
+   cuatro (cinco en la demostración) y un administrador dos. Los slugs son
+   las direcciones; el español de al lado sale de i18n, como en todas partes.
+   Cada una lleva su ícono (octubre de 2026). #}
+{% set label_of = {
+  'account': 'settings_section_account',
+  'security': 'settings_section_security',
+  'notifications': 'settings_section_notifications',
+  'billing': 'settings_section_payments',
+  'test': 'settings_section_test'} %}
+{% set icon_of = {
+  'account': '_icon-user.svg',
+  'security': '_icon-shield.svg',
+  'notifications': '_icon-bell.svg',
+  'billing': '_icon-card.svg',
+  'test': '_icon-send.svg'} %}
 
 {# A row: what it is on the left, what you can do about it on the right. Every
    section is made of these, which is what keeps four different subjects
@@ -32,40 +51,8 @@
 {{ t('settings_part_' ~ slug ~ '_' ~ one|replace('-', '_')) }}
 {%- endmacro %}
 
-{% block content %}
-<h1 class="settings__heading">{{ t('settings_title') }}</h1>
-
-<div class="settings">
-  {# Cuáles se listan lo decide la vista, no esta plantilla: un cliente tiene
-     cuatro (cinco en la demostración) y un administrador dos. Los slugs son
-     las direcciones; el español de al lado sale de i18n, como en todas partes.
-     Cada una lleva su ícono (octubre de 2026). #}
-  {% set label_of = {
-    'account': 'settings_section_account',
-    'security': 'settings_section_security',
-    'notifications': 'settings_section_notifications',
-    'billing': 'settings_section_payments',
-    'test': 'settings_section_test'} %}
-  {% set icon_of = {
-    'account': '_icon-user.svg',
-    'security': '_icon-shield.svg',
-    'notifications': '_icon-bell.svg',
-    'billing': '_icon-card.svg',
-    'test': '_icon-send.svg'} %}
-
-  {# Una lista con íconos, sin desplegables (octubre de 2026): cada sección se
-     lee entera, y lo que fueron sus subsecciones son anclas de su página. #}
-  <nav class="settings__nav settings-nav" aria-label="{{ t('settings_title') }}">
-    {% for slug in sections %}
-    <a class="settings__tab settings-nav__head{% if slug == section %} is-current{% endif %}"
-       href="{{ url_for('auth.settings', section=slug) }}"
-       {%- if slug == section %} aria-current="page"{% endif %}>
-      <span class="settings-nav__icon">{% include icon_of[slug] %}</span>
-      <span class="settings-nav__label">{{ t(label_of[slug]) }}</span>
-    </a>
-    {% endfor %}
-  </nav>
-
+{% block pane %}
+{% if not bar_admin %}<h1 class="settings__heading">{{ t('settings_title') }}</h1>{% endif %}
   <div class="settings__pane">
     {# Cada sección se lee entera, en una página (octubre de 2026): sus partes
        son subtítulos con su ancla. #}
@@ -652,5 +639,4 @@
     {% endif %}
 
   </div>
-</div>
 {% endblock %}

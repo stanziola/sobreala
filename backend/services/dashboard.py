@@ -34,6 +34,7 @@ ENDPOINT_ROWS = {
     "campaigns.run_detail": "sent",
     "campaigns.sender_page": "sender",
     "designs.index": "templates",
+    "designs.create": "templates-new",
     "contacts.blocked": "suppressions",
     "contacts.remove_suppressed": "suppressions",
 }
@@ -59,6 +60,9 @@ def here() -> str:
         return "stats-" + ((request.view_args or {}).get("section") or STATS_SECTIONS[0])
     if endpoint in ENDPOINT_ROWS:
         return ENDPOINT_ROWS[endpoint]
+    # Configuración is a branch too (octubre de 2026): each section its row.
+    if endpoint == "auth.settings":
+        return "settings-" + (request.view_args or {}).get("section", "account")
     # The rest of Contacts (importing, columns, tags, one contact) lives
     # under the list: they are reached from its buttons.
     if endpoint.startswith("contacts."):
@@ -92,21 +96,22 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
     if can(accounts.CAMPAIGNS):
         send.append({"key": "bulk", "label": "dash_bulk",
                      "url": url_for("campaigns.index")})
-    if can(accounts.DESIGNS):
-        send.append({"key": "templates", "label": "dash_templates",
-                     "url": url_for("designs.index")})
     if can(accounts.CAMPAIGNS):
         send.append({"key": "sent", "label": "dash_sent",
                      "url": url_for("campaigns.sent_list")})
-    mail = []
     if send:
-        mail.append({"key": "send", "label": "dash_send", "rows": send})
-    if can(accounts.SEND):
-        mail.append({"key": "sender", "label": "dash_sender",
-                     "url": url_for("campaigns.sender_page")})
-    if mail:
-        branches.append({"key": "mail", "label": "dash_mail",
-                         "icon": "_icon-send.svg", "rows": mail})
+        branches.append({"key": "mail", "label": "dash_mail", "icon": "_icon-send.svg",
+                         "rows": [{"key": "send", "label": "dash_send", "rows": send}]})
+
+    # Plantillas, its own branch (octubre de 2026): it was a row of Enviar.
+    if can(accounts.DESIGNS):
+        branches.append({
+            "key": "templates-branch", "label": "dash_templates",
+            "icon": "_icon-template.svg",
+            "rows": [{"key": "templates", "label": "dash_templates_mine",
+                      "url": url_for("designs.index")},
+                     {"key": "templates-new", "label": "dash_templates_new",
+                      "url": url_for("designs.create")}]})
 
     if can(accounts.CONTACTS):
         branches.append({
@@ -116,6 +121,22 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
                  "url": url_for("contacts.index")},
                 {"key": "suppressions", "label": "dash_contacts_suppressions",
                  "url": url_for("contacts.blocked")}]})
+
+    # Configuración (octubre de 2026): Remitente, which was in Correos, and the
+    # account's own sections, the ones this person may open. The admin has no
+    # Dashboard and keeps his Configuración as it was.
+    from blueprints.auth.routes import SECTION_LABELS, sections_for
+
+    settings = []
+    if can(accounts.SEND):
+        settings.append({"key": "sender", "label": "dash_sender",
+                         "url": url_for("campaigns.sender_page")})
+    settings += [{"key": "settings-" + slug, "label": SECTION_LABELS[slug],
+                  "url": url_for("auth.settings", section=slug)}
+                 for slug in sections_for(account)]
+    if settings:
+        branches.append({"key": "settings-branch", "label": "dash_settings",
+                         "icon": "_icon-gear.svg", "rows": settings})
     for branch in branches:
         _point(branch)
     return branches
