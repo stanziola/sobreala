@@ -81,18 +81,29 @@ def test_sin_javascript_la_pagina_dice_lo_mismo(client, database, outbox):
     assert "Nada coincide" in browser.get("/search?q=zzzz").get_data(as_text=True)
 
 
-def test_configuracion_no_sale(client, database, outbox):
-    """Solo lo del Dashboard (octubre de 2026): a Configuración se llega por el
-    menú de la cuenta, y sus secciones ya no salen ni con «en Facturación»."""
+def test_cada_resultado_dice_donde_esta(client, database, outbox):
+    """Las pantallas salen del árbol del Dashboard con su camino al lado (16 de
+    octubre de 2026): «Lista» de Estadísticas y «Lista» de Contactos no se
+    confunden, y Configuración, que ya es una rama, también sale."""
     browser, _, _ = ready(client, database)
+    listas = {(one["label"], one["hint"]) for one in sugerencias(browser, "lista")}
+    assert ("Lista", "Estadísticas") in listas and ("Lista", "Contactos") in listas
+    assert ("Importar contactos", "Contactos") in listas
+    facturas = sugerencias(browser, "factura")
+    assert any(one["url"] == "/settings/billing" and one["hint"] == "Configuración"
+               for one in facturas)
+    # Las partes de Configuración van a su ancla, con su sección en el camino.
+    assert any(one["url"] == "/settings/security#two-step"
+               and one["hint"] == "Configuración › Seguridad"
+               for one in sugerencias(browser, "dos pasos"))
+    assert any(one["url"] == "/campaigns/sender" and one["hint"] == "Configuración"
+               for one in sugerencias(browser, "remitente"))
+    # Sin JavaScript, la página dice lo mismo.
+    assert "· Estadísticas" in browser.get("/search?q=lista").get_data(as_text=True)
+    # El administrador, en lo suyo.
     admin, _ = make_admin(client, database)
-    for quien in (browser, admin):
-        for q in ("configuracion", "facturacion", "dos pasos", "contrasena", "usuarios",
-                  "sesiones", "notificaciones", "metodos de pago", "direccion postal"):
-            encontradas = sugerencias(quien, q)
-            assert not any(one["url"].startswith("/settings") for one in encontradas), q
-            assert not any(one["hint"].startswith("en ") for one in encontradas), q
-    assert "Nada coincide" in browser.get("/search?q=facturacion").get_data(as_text=True)
+    assert any(one["url"] == "/admin/clients" and one["hint"] == "Administración"
+               for one in sugerencias(admin, "clientes"))
 
 
 def barra(html):

@@ -373,9 +373,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Hasta cuatro cuentas abiertas en un navegador (`/switch-account`), cada una
   con su sesión de verdad. «Cerrar sesión» las cierra todas.
 - **La búsqueda del Dashboard** (`blueprints/search/`): en la barra de arriba,
-  al lado del ala, que ahí va sin la palabra (`bar_search`). Pantallas y
-  acciones del Dashboard que esa cuenta puede abrir, y sus campañas, envíos,
-  plantillas y etiquetas por nombre; **Configuración no sale**. Sugiere
+  al lado del ala, que ahí va sin la palabra (`bar_search`). Las pantallas
+  salen del árbol del Dashboard, **cada una con su sitio al lado** («Lista ·
+  Estadísticas», «Lista · Contactos»), más sus campañas, envíos, plantillas y
+  etiquetas por nombre. Sugiere
   mientras se escribe (`/search/suggest`), sin JavaScript manda a `/search`, y
   sin sesión da 404.
 - La ficha de administración enseña cifras y orígenes, **nunca la lista de

@@ -242,16 +242,22 @@ el botón del menú, y al escribir se vuelve un campo como los demás. **En el
 teléfono** (por debajo de 640 px) baja a su propia fila de la barra, de lado a
 lado: al lado del ala y del nombre de la empresa no cabe.
 
-- **Qué encuentra**: **solo lo del Dashboard**. Las pantallas y acciones **que
-  esa cuenta puede abrir** (`CLIENT_PAGES` y `ADMIN_PAGES`, filtradas por
-  `accounts.can()`), por su nombre y por palabras con que se piden («csv»,
-  «bajas»); y **lo suyo por nombre**: campañas, envíos, plantillas y etiquetas
-  de su empresa, cinco de cada una. Sin acentos ni mayúsculas, y cada palabra
-  buscada tiene que estar al principio de alguna del texto. **Configuración no
-  sale** (octubre de 2026): ni sus secciones ni sus partes, ni para el cliente
-  ni para el administrador. A Configuración se llega por el menú de la cuenta,
-  y ya no hay resultados con «en Facturación» al lado (el texto `search_in` se
-  quitó).
+- **Qué encuentra**: **el árbol del Dashboard entero, cada cosa con su sitio
+  al lado** (16 de octubre de 2026). Las pantallas salen de `dashboard.tree()`,
+  que ya trae los permisos de quien mira, y la pista es el camino de ramas:
+  «Lista · Estadísticas» y «Lista · Contactos», «Facturación ·
+  Configuración». Antes salían de una lista aparte (`CLIENT_PAGES`) y sin
+  decir dónde estaban, y dos «Lista» no se distinguían. Además, lo que se hace
+  desde una pantalla sin ser fila (`CLIENT_ACTIONS`: importar, agregar un
+  contacto, etiquetas, columnas) y las partes de Configuración, que llevan a su
+  ancla («Autenticación de múltiples factores · Configuración › Seguridad»).
+  Se buscan por su nombre, el de su rama y palabras con que se piden
+  (`SEARCH_WORDS` por clave del árbol, «csv», «bajas»); y **lo suyo por
+  nombre**: campañas, envíos, plantillas y etiquetas de su empresa, cinco de
+  cada una. Sin acentos ni mayúsculas, y cada palabra buscada tiene que estar
+  al principio de alguna del texto. El administrador busca en lo suyo, con
+  «Administración» al lado. Entre el 15 y el 16 de octubre Configuración no
+  salía; volvió cuando pasó a ser una rama del Dashboard.
 - **Cómo**: `panel.js` pide `/search/suggest?q=` (JSON) mientras se escribe, con
   una pausa corta y descartando respuestas viejas, y pinta con `textContent`
   (los nombres los escribió el cliente). Flechas, Enter y Esc; «/» lleva al

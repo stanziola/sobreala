@@ -3,24 +3,25 @@
 Para moverse por el Dashboard sin saber dónde está cada cosa. Mientras se
 escribe sugiere dos clases de resultados:
 
-  * **las pantallas y acciones del Dashboard** («Importar contactos»,
-    «Enviados», «Redactar»), **las que esa cuenta puede abrir**: un usuario de
-    la empresa ve solo las de sus permisos, y un administrador las de
-    Administración. Se buscan por su nombre y por palabras que la gente usa
-    para pedirlas («csv», «bajas»). **Configuración no sale** (octubre de
-    2026): se llega por el menú de la cuenta;
+  * **las pantallas del Dashboard, sacadas de su árbol** (`dashboard.tree()`),
+    **cada una con su sitio** al lado: «Lista · Estadísticas» y «Lista ·
+    Contactos», «Facturación · Configuración» (16 de octubre de 2026: antes
+    salían de una lista aparte, sin decir dónde estaban). El árbol ya trae
+    los permisos de quien mira. Además, lo que se hace desde una pantalla sin
+    ser fila (importar, agregar un contacto, etiquetas, columnas) y las partes
+    de Configuración, que llevan a su ancla. Se buscan por su nombre, el de
+    su rama y palabras con que la gente las pide («csv», «bajas»). Un
+    administrador busca en lo suyo;
   * **lo suyo por nombre**: campañas, envíos, plantillas y etiquetas de su
     cuenta, con un tope cada uno.
 
-Sin acentos y sin mayúsculas: «estadisticas» encuentra «Estadísticas». Las
+Sin acentos y sin mayúsculas: «facturacion» encuentra «Facturación». Las
 sugerencias las pide `panel.js` a `/search/suggest` (JSON); sin JavaScript, el
 campo manda a `/search`, que enseña lo mismo en una página. Sin sesión, las dos
 responden 404: no hay nada que buscar.
 
-Solo vive en el panel, y dentro de él en la barra de arriba, al lado del ala,
-en el Dashboard (y en Administración, para el administrador): el sitio público
-no tiene sesión, y sin ella no hay qué buscar (es la excepción a «lo que existe
-en los dos sitios», `CLAUDE.md`).
+Solo vive en el panel: el sitio público no tiene sesión, y sin ella no hay qué
+buscar (es la excepción a «lo que existe en los dos sitios», `CLAUDE.md`).
 """
 
 from __future__ import annotations
@@ -30,13 +31,14 @@ from typing import Any
 
 from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
-from blueprints.auth.routes import current_account, current_workspace
+from blueprints.auth.routes import current_account, current_workspace, parts_for
 from db import get_db
 from i18n import t
 from models import account as accounts
 from models import campaign as campaigns
 from models import campaign_run as runs
 from models import design as designs
+from services import dashboard
 from services.importer import fold
 
 bp = Blueprint("search", __name__)
@@ -46,46 +48,64 @@ PER_KIND = 5
 SUGGEST_MAX = 8
 QUERY_MAX = 80
 
-# Las pantallas de un cliente: (texto, ruta, permiso, palabras con que se piden).
-CLIENT_PAGES = (
-    ("search_page_stats", "auth.panel", accounts.STATS,
-     "estadisticas cifras aperturas clics rebotes graficas panel dashboard resumen"),
-    ("search_page_send", "campaigns.index", accounts.CAMPAIGNS,
-     "enviar campanas correos programar mandar masivo"),
-    ("search_page_sent", "campaigns.sent_list", accounts.CAMPAIGNS,
-     "enviados envios salieron historial abiertos clics"),
-    ("search_page_write", "campaigns.write", accounts.SEND,
-     "escribir correo individual una persona adjunto archivo redactar"),
-    ("search_page_sender", "campaigns.sender_page", accounts.SEND,
-     "remitente dominio propio responder a direccion de salida"),
-    ("search_page_contacts", "contacts.index", accounts.CONTACTS,
-     "contactos lista personas socios clientes"),
-    ("search_page_import", "contacts.upload", accounts.CONTACTS,
+# Las palabras con que se pide cada fila del árbol del Dashboard, además de su
+# nombre y el de su rama (octubre de 2026: el buscador sale del árbol).
+SEARCH_WORDS = {
+    "stats-summary": "estadisticas cifras resumen panel dashboard graficas",
+    "stats-opens": "aperturas clics abiertos",
+    "stats-campaigns": "campanas cifras por campana",
+    "stats-timing": "hora dia horario cuando abren",
+    "stats-growth": "crecimiento contactos nuevos",
+    "stats-quota": "cuota correos del mes limite plan",
+    "compose": "escribir correo individual una persona adjunto archivo",
+    "bulk": "enviar campanas correos programar mandar",
+    "sent": "envios salieron historial abiertos clics",
+    "sender": "dominio propio responder a direccion de salida",
+    "templates": "disenos piezas",
+    "templates-new": "plantilla nueva lienzo disenar",
+    "contacts": "personas socios clientes",
+    "suppressions": "bajas anulados rebotes quejas",
+    "settings-account": "perfil empresa logo direccion telefonos verificar eliminar",
+    "settings-security": "contrasena clave dos pasos doble factor sesiones usuarios",
+    "settings-notifications": "avisos correos",
+    "settings-billing": "pagos plan metodos paypal facturas renovacion",
+    "settings-test": "demostracion",
+}
+# Lo que se hace desde una pantalla y no es fila del árbol: (texto, ruta,
+# permiso, la fila donde vive, palabras con que se pide).
+CLIENT_ACTIONS = (
+    ("search_page_import", "contacts.upload", accounts.CONTACTS, "contacts",
      "importar subir csv excel archivo lista"),
-    ("search_page_add_contact", "contacts.add_one", accounts.CONTACTS,
+    ("search_page_add_contact", "contacts.add_one", accounts.CONTACTS, "contacts",
      "agregar contacto nuevo a mano"),
-    ("search_page_tags", "contacts.tags", accounts.CONTACTS,
+    ("search_page_tags", "contacts.tags", accounts.CONTACTS, "contacts",
      "etiquetas listas grupos"),
-    ("search_page_fields", "contacts.fields", accounts.CONTACTS,
+    ("search_page_fields", "contacts.fields", accounts.CONTACTS, "contacts",
      "columnas campos datos propios"),
-    ("search_page_suppressions", "contacts.blocked", accounts.CONTACTS,
-     "bajas supresiones anulados rebotes quejas"),
-    ("search_page_designs", "designs.index", accounts.DESIGNS,
-     "plantillas disenos piezas"),
-    ("search_page_new_design", "designs.create", accounts.DESIGNS,
-     "crear plantilla nueva lienzo disenar"),
 )
+# Las partes de Configuración, como anclas de su sección.
+PART_WORDS = {
+    ("account", "profile"): "nombre empresa correo logo",
+    ("account", "contact"): "direccion postal telefonos",
+    ("account", "verification"): "verificar documentos identificacion cedula",
+    ("security", "two-step"): "dos pasos doble factor mfa codigo autenticador",
+    ("security", "password"): "cambiar contrasena clave google github",
+    ("security", "users"): "usuarios equipo invitar permisos",
+    ("security", "sessions"): "sesiones dispositivos cerrar sesion",
+    ("billing", "methods"): "metodos de pago paypal tarjeta agregar",
+    ("billing", "auto-renewal"): "renovacion automatica suscripcion cobro",
+    ("billing", "history"): "historial compras facturas pagos recibos",
+}
 ADMIN_PAGES = (
-    ("search_page_admin_stats", "admin.home", None, "estadisticas cifras"),
-    ("search_page_admin_accounts", "admin.accounts_list", None,
-     "cuentas aprobar abrir limitar demostracion verificar"),
-    ("search_page_admin_clients", "admin.clients_list", None,
+    ("search_page_admin_stats", "admin.home", "estadisticas cifras"),
+    ("search_page_admin_accounts", "admin.accounts_list",
+     "cuentas aprobar abrir limitar demostracion verificar eliminar"),
+    ("search_page_admin_clients", "admin.clients_list",
      "clientes vigilar rebotes quejas amazon salud"),
-    ("search_page_admin_events", "admin.activity_page", None,
-     "eventos en vivo lo que pasa avisos"),
-    ("search_page_admin_mail", "admin.system_mail", None,
-     "correos del sistema no le llego codigo"),
+    ("search_page_admin_events", "admin.activity_page", "eventos en vivo lo que pasa avisos"),
+    ("search_page_admin_mail", "admin.system_mail", "correos del sistema no le llego codigo"),
 )
+PATH = " › "
 
 
 def words(text: str) -> list[str]:
@@ -98,15 +118,49 @@ def matches(query: list[str], *texts: str) -> bool:
     return all(any(one.startswith(part) for one in found) for part in query)
 
 
+def leaves(rows: list[dict], path: list[str]):
+    """Cada fila del árbol que abre una pantalla, con el camino de ramas que
+    lleva a ella."""
+    for row in rows:
+        if row.get("rows"):
+            yield from leaves(row["rows"], path + [t(row["label"])])
+        else:
+            yield row, path
+
+
 def pages_for(account: dict) -> list[dict[str, Any]]:
-    """Las pantallas que esta cuenta puede abrir, con lo que las encuentra."""
-    out = []
-    listed = ADMIN_PAGES if accounts.is_admin(account) else CLIENT_PAGES
-    for key, endpoint, permission, extra in listed:
-        if permission and not accounts.can(account, permission):
-            continue
-        out.append({"label": t(key), "url": url_for(endpoint), "kind": "page",
-                    "hint": "", "words": extra})
+    """Las pantallas que esta cuenta puede abrir, cada una con su sitio.
+
+    Salen del árbol del Dashboard (`services/dashboard.tree()`), que ya trae los
+    permisos de quien mira: lo que cambie en el árbol cambia solo aquí. La pista
+    es el camino de ramas, así «Lista» de Estadísticas y «Lista» de Contactos
+    no se confunden.
+    """
+    out: list[dict[str, Any]] = []
+
+    def add(label, url, path, extra=""):
+        out.append({"label": label, "url": url, "kind": "page",
+                    "hint": PATH.join(path), "words": " ".join(path) + " " + extra})
+
+    if accounts.is_admin(account):
+        for key, endpoint, extra in ADMIN_PAGES:
+            add(t(key), url_for(endpoint), [t("admin_title")], extra)
+        return out
+
+    places = {}
+    for row, path in leaves(dashboard.tree(account), []):
+        add(t(row["label"]), row["url"], path, SEARCH_WORDS.get(row["key"], ""))
+        places[row["key"]] = path + [t(row["label"])]
+        if row["key"].startswith("settings-"):
+            section = row["key"][len("settings-"):]
+            for part in parts_for(account, section):
+                label = t(f"settings_part_{section}_{part.replace('-', '_')}")
+                if label != t(row["label"]):
+                    add(label, row["url"] + "#" + part, places[row["key"]],
+                        PART_WORDS.get((section, part), ""))
+    for key, endpoint, permission, where, extra in CLIENT_ACTIONS:
+        if accounts.can(account, permission) and where in places:
+            add(t(key), url_for(endpoint), places[where][:-1], extra)
     return out
 
 
