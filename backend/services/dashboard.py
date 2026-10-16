@@ -35,7 +35,6 @@ ENDPOINT_ROWS = {
     "campaigns.sender_page": "sender",
     "designs.index": "templates",
     "designs.create": "templates-new",
-    "auth.delete_account": "settings-account",
     "contacts.blocked": "suppressions",
     "contacts.remove_suppressed": "suppressions",
 }
@@ -61,9 +60,10 @@ def here() -> str:
         return "stats-" + ((request.view_args or {}).get("section") or STATS_SECTIONS[0])
     if endpoint in ENDPOINT_ROWS:
         return ENDPOINT_ROWS[endpoint]
-    # Configuración is a branch too (octubre de 2026): each section its row.
-    if endpoint == "auth.settings":
-        return "settings-" + (request.view_args or {}).get("section", "account")
+    # The test addresses are a row of Configuración de envío (octubre de 2026);
+    # the account's own settings are not part of the Dashboard.
+    if endpoint == "auth.settings" and (request.view_args or {}).get("section") == "test":
+        return "settings-test"
     # The rest of Contacts (importing, columns, tags, one contact) lives
     # under the list: they are reached from its buttons.
     if endpoint.startswith("contacts."):
@@ -123,21 +123,22 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
                 {"key": "suppressions", "label": "dash_contacts_suppressions",
                  "url": url_for("contacts.blocked")}]})
 
-    # Configuración (octubre de 2026): Remitente, which was in Correos, and the
-    # account's own sections, the ones this person may open. The admin has no
-    # Dashboard and keeps his Configuración as it was.
+    # Configuración de envío (octubre de 2026): what sending needs, Remitente
+    # (which was in Correos) and, during the demo, the test addresses. The
+    # account's own settings (Cuenta, Seguridad, Notificaciones, Facturación)
+    # are not here: they keep their page, from the menu at the top.
     from blueprints.auth.routes import SECTION_LABELS, sections_for
 
-    settings = []
+    sending = []
     if can(accounts.SEND):
-        settings.append({"key": "sender", "label": "dash_sender",
-                         "url": url_for("campaigns.sender_page")})
-    settings += [{"key": "settings-" + slug, "label": SECTION_LABELS[slug],
-                  "url": url_for("auth.settings", section=slug)}
-                 for slug in sections_for(account)]
-    if settings:
-        branches.append({"key": "settings-branch", "label": "dash_settings",
-                         "icon": "_icon-gear.svg", "rows": settings})
+        sending.append({"key": "sender", "label": "dash_sender",
+                        "url": url_for("campaigns.sender_page")})
+    if "test" in sections_for(account):
+        sending.append({"key": "settings-test", "label": SECTION_LABELS["test"],
+                        "url": url_for("auth.settings", section="test")})
+    if sending:
+        branches.append({"key": "send-settings", "label": "dash_send_settings",
+                         "icon": "_icon-gear.svg", "rows": sending})
     for branch in branches:
         _point(branch)
     return branches

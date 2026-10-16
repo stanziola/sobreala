@@ -57,24 +57,29 @@ elegido en el panel grande de la derecha**, con la búsqueda en la barra de
 arriba, al lado del ala:
 
 ```
-Estadísticas  ▸ Resumen · Aperturas y clics · Campañas · Cuándo abren · Lista · Cuota
-Correos       ▸ Enviar ▸ Redactar · Masivo · Enviados
-Plantillas    ▸ Mis plantillas · Crear
-Contactos     ▸ Lista · Supresiones
-Configuración ▸ Remitente · Cuenta · Seguridad · Notificaciones · Facturación
+Estadísticas           ▸ Resumen · Aperturas y clics · Campañas · Cuándo abren · Lista · Cuota
+Correos                ▸ Enviar ▸ Redactar · Masivo · Enviados
+Plantillas             ▸ Mis plantillas · Crear
+Contactos              ▸ Lista · Supresiones
+Configuración de envío ▸ Remitente · Direcciones de prueba (en la demostración)
 ```
 
-**Plantillas y Configuración son ramas desde el 16 de octubre de 2026.**
-Plantillas era una fila de Correos → Enviar; Remitente, una de Correos.
-Configuración trae Remitente y las secciones de la cuenta que esa persona puede
-abrir (`sections_for()`: un usuario de la empresa, solo Seguridad; en la
-demostración, también las direcciones de prueba). `settings.html` entra al
-marco del Dashboard para un cliente, y el árbol reemplaza su menú de
-secciones; el administrador, que no tiene Dashboard, la sigue viendo en su
-marco de siempre (`_settings_admin.html`). La fila «Configuración» del menú de
-arriba lleva a lo mismo. **Su tarjeta va en medio** de lo que deja el árbol,
-con su ancho de antes (`pane_center`, 1180 px), y también la de
-Remitente y la de eliminar la cuenta: tienen filas, no tablas.
+**Plantillas y Configuración de envío son ramas desde el 16 de octubre de
+2026.** Plantillas era una fila de Correos → Enviar; Remitente, una de Correos.
+**Configuración de envío** trae lo que el envío necesita: Remitente y, durante
+la demostración, las direcciones de prueba (`/settings/test`, con la misma
+regla de `sections_for()`), que son los correos verificados a los que puede
+enviar. Sus dos pantallas van en medio de lo que deja el árbol, con el ancho de
+antes (`pane_center`, 1180 px): tienen filas, no tablas.
+
+**La configuración de la cuenta es aparte del Dashboard**: Cuenta, Seguridad,
+Notificaciones y Facturación, en su página con su menú de secciones
+(`_settings_frame.html`), a la que se llega por «Configuración» en el menú de
+arriba. Es la misma del administrador, y la página de eliminar la cuenta cuelga
+de ella. Unas horas del 16 de octubre estuvo dentro del Dashboard, como rama
+«Configuración» junto a Remitente; se sacó porque se había entendido mal el
+pedido, y la rama del Dashboard pasó a llamarse «Configuración de envío» para no
+confundirse con la de la cuenta.
 
 - El árbol lo arma `services/dashboard.py` (`tree()`) con los permisos de quien
   mira, y la fila marcada la decide el endpoint (`here()`), así que el menú y
@@ -245,19 +250,19 @@ lado: al lado del ala y del nombre de la empresa no cabe.
 - **Qué encuentra**: **el árbol del Dashboard entero, cada cosa con su sitio
   al lado** (16 de octubre de 2026). Las pantallas salen de `dashboard.tree()`,
   que ya trae los permisos de quien mira, y la pista es el camino de ramas:
-  «Lista · Estadísticas» y «Lista · Contactos», «Facturación ·
-  Configuración». Antes salían de una lista aparte (`CLIENT_PAGES`) y sin
-  decir dónde estaban, y dos «Lista» no se distinguían. Además, lo que se hace
-  desde una pantalla sin ser fila (`CLIENT_ACTIONS`: importar, agregar un
-  contacto, etiquetas, columnas) y las partes de Configuración, que llevan a su
-  ancla («Autenticación de múltiples factores · Configuración › Seguridad»).
+  «Lista · Estadísticas» y «Lista · Contactos», «Remitente · Configuración de
+  envío». Antes salían de una lista aparte (`CLIENT_PAGES`) y sin decir dónde
+  estaban, y dos «Lista» no se distinguían. Además, lo que se hace desde una
+  pantalla sin ser fila (`CLIENT_ACTIONS`: importar, agregar un contacto,
+  etiquetas, columnas). **La configuración de la cuenta no sale**: es aparte del
+  Dashboard, y se llega por el menú de arriba (salió unas horas del 16 de
+  octubre, mientras fue una rama del Dashboard).
   Se buscan por su nombre, el de su rama y palabras con que se piden
   (`SEARCH_WORDS` por clave del árbol, «csv», «bajas»); y **lo suyo por
   nombre**: campañas, envíos, plantillas y etiquetas de su empresa, cinco de
   cada una. Sin acentos ni mayúsculas, y cada palabra buscada tiene que estar
   al principio de alguna del texto. El administrador busca en lo suyo, con
-  «Administración» al lado. Entre el 15 y el 16 de octubre Configuración no
-  salía; volvió cuando pasó a ser una rama del Dashboard.
+  «Administración» al lado.
 - **Cómo**: `panel.js` pide `/search/suggest?q=` (JSON) mientras se escribe, con
   una pausa corta y descartando respuestas viejas, y pinta con `textContent`
   (los nombres los escribió el cliente). Flechas, Enter y Esc; «/» lleva al

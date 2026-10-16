@@ -54,7 +54,7 @@ TEXTS = {
     "dash_templates": "Plantillas",
     "dash_templates_mine": "Mis plantillas",
     "dash_templates_new": "Crear",
-    "dash_settings": "Configuración",
+    "dash_send_settings": "Configuración de envío",
     "dash_sent": "Enviados",
     "dash_sender": "Remitente",
     "dash_contacts": "Contactos",

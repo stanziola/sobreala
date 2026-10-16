@@ -290,10 +290,14 @@ def bar_account():
                 # usuario suyo: es la cuenta en la que está trabajando. Y su
                 # logo al lado, si tiene (octubre de 2026).
                 "bar_company": (current_workspace() or {}).get("company_name", ""),
-                "bar_logo": accounts.logo_of(current_workspace())}
+                "bar_logo": accounts.logo_of(current_workspace()),
+                # Los nombres y los íconos de las secciones de Configuración,
+                # para su menú y para las páginas que cuelgan de él.
+                "section_labels": SECTION_LABELS, "section_icons": SECTION_ICONS}
     except Exception:  # noqa: BLE001 - the page is worth more than the menu
         return {"bar_account": None, "bar_admin": False, "bar_can": {},
-                "bar_closed": False, "bar_company": "", "bar_logo": ""}
+                "bar_closed": False, "bar_company": "", "bar_logo": "",
+                "section_labels": SECTION_LABELS, "section_icons": SECTION_ICONS}
 
 
 def landing(account: dict | None) -> str:
@@ -1960,13 +1964,17 @@ SECTIONS = ("account", "security", "notifications", "billing")
 # hacen los clientes, no de lo que pasa en su cuenta.
 ADMIN_SECTIONS = ("security", "notifications")
 
-# El nombre de cada sección: en el menú del administrador, en el árbol del
-# Dashboard y en el buscador (octubre de 2026).
+# El nombre de cada sección: en el menú de la configuración de la cuenta y, el
+# de las direcciones de prueba, en el árbol del Dashboard y en el buscador
+# (octubre de 2026).
 SECTION_LABELS = {"account": "settings_section_account",
                   "security": "settings_section_security",
                   "notifications": "settings_section_notifications",
                   "billing": "settings_section_payments",
                   "test": "settings_section_test"}
+# Y su ícono, en ese menú. Las direcciones de prueba no salen en él.
+SECTION_ICONS = {"account": "_icon-user.svg", "security": "_icon-shield.svg",
+                 "notifications": "_icon-bell.svg", "billing": "_icon-card.svg"}
 
 
 def sections_for(account: dict | None) -> tuple[str, ...]:
@@ -2082,9 +2090,11 @@ def delete_account():
                 notices.erased_to_admins(db, gone)
                 close_session()
                 return redirect(url_for("auth.login", deleted=1))
+    # En la configuración de la cuenta, con su menú y Cuenta marcada.
     return render_template("delete-account.html", errors=errors, sent=sent,
                            with_password=with_password, two_step=two_step,
-                           company=account.get("company_name", ""))
+                           company=account.get("company_name", ""),
+                           sections=sections_for(account), section="account")
 
 
 # ------------------------------------------------- el logo de la empresa

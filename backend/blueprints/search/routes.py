@@ -5,11 +5,12 @@ escribe sugiere dos clases de resultados:
 
   * **las pantallas del Dashboard, sacadas de su árbol** (`dashboard.tree()`),
     **cada una con su sitio** al lado: «Lista · Estadísticas» y «Lista ·
-    Contactos», «Facturación · Configuración» (16 de octubre de 2026: antes
+    Contactos», «Remitente · Configuración de envío» (16 de octubre de 2026: antes
     salían de una lista aparte, sin decir dónde estaban). El árbol ya trae
     los permisos de quien mira. Además, lo que se hace desde una pantalla sin
-    ser fila (importar, agregar un contacto, etiquetas, columnas) y las partes
-    de Configuración, que llevan a su ancla. Se buscan por su nombre, el de
+    ser fila (importar, agregar un contacto, etiquetas, columnas). La
+    configuración de la cuenta no sale: es aparte del Dashboard, y se llega
+    por el menú de arriba. Se buscan por su nombre, el de
     su rama y palabras con que la gente las pide («csv», «bajas»). Un
     administrador busca en lo suyo;
   * **lo suyo por nombre**: campañas, envíos, plantillas y etiquetas de su
@@ -31,7 +32,7 @@ from typing import Any
 
 from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
-from blueprints.auth.routes import current_account, current_workspace, parts_for
+from blueprints.auth.routes import current_account, current_workspace
 from db import get_db
 from i18n import t
 from models import account as accounts
@@ -65,11 +66,7 @@ SEARCH_WORDS = {
     "templates-new": "plantilla nueva lienzo disenar",
     "contacts": "personas socios clientes",
     "suppressions": "bajas anulados rebotes quejas",
-    "settings-account": "perfil empresa logo direccion telefonos verificar eliminar",
-    "settings-security": "contrasena clave dos pasos doble factor sesiones usuarios",
-    "settings-notifications": "avisos correos",
-    "settings-billing": "pagos plan metodos paypal facturas renovacion",
-    "settings-test": "demostracion",
+    "settings-test": "demostracion correos verificados prueba",
 }
 # Lo que se hace desde una pantalla y no es fila del árbol: (texto, ruta,
 # permiso, la fila donde vive, palabras con que se pide).
@@ -83,19 +80,6 @@ CLIENT_ACTIONS = (
     ("search_page_fields", "contacts.fields", accounts.CONTACTS, "contacts",
      "columnas campos datos propios"),
 )
-# Las partes de Configuración, como anclas de su sección.
-PART_WORDS = {
-    ("account", "profile"): "nombre empresa correo logo",
-    ("account", "contact"): "direccion postal telefonos",
-    ("account", "verification"): "verificar documentos identificacion cedula",
-    ("security", "two-step"): "dos pasos doble factor mfa codigo autenticador",
-    ("security", "password"): "cambiar contrasena clave google github",
-    ("security", "users"): "usuarios equipo invitar permisos",
-    ("security", "sessions"): "sesiones dispositivos cerrar sesion",
-    ("billing", "methods"): "metodos de pago paypal tarjeta agregar",
-    ("billing", "auto-renewal"): "renovacion automatica suscripcion cobro",
-    ("billing", "history"): "historial compras facturas pagos recibos",
-}
 ADMIN_PAGES = (
     ("search_page_admin_stats", "admin.home", "estadisticas cifras"),
     ("search_page_admin_accounts", "admin.accounts_list",
@@ -151,13 +135,6 @@ def pages_for(account: dict) -> list[dict[str, Any]]:
     for row, path in leaves(dashboard.tree(account), []):
         add(t(row["label"]), row["url"], path, SEARCH_WORDS.get(row["key"], ""))
         places[row["key"]] = path + [t(row["label"])]
-        if row["key"].startswith("settings-"):
-            section = row["key"][len("settings-"):]
-            for part in parts_for(account, section):
-                label = t(f"settings_part_{section}_{part.replace('-', '_')}")
-                if label != t(row["label"]):
-                    add(label, row["url"] + "#" + part, places[row["key"]],
-                        PART_WORDS.get((section, part), ""))
     for key, endpoint, permission, where, extra in CLIENT_ACTIONS:
         if accounts.can(account, permission) and where in places:
             add(t(key), url_for(endpoint), places[where][:-1], extra)

@@ -758,8 +758,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
 @media (min-width: 780px) { .dash { grid-template-columns: 230px minmax(0, 1fr); gap: 28px; } }
 .dash__pane { min-width: 0; }
-/* Configuración, dentro del Dashboard: el árbol a la izquierda y su tarjeta en
-   medio de lo que queda, con el ancho que tenía antes. Tiene filas, no
+/* Configuración de envío, en el Dashboard: el árbol a la izquierda y su tarjeta
+   en medio de lo que queda, con el ancho que tenía antes. Tiene filas, no
    tablas, y más ancho solo aleja cada valor de su nombre. */
 .wrap--left .dash__pane--center { width: 100%; max-width: 1180px; margin-inline: auto; }
 .dash-nav { display: flex; flex-direction: column; gap: 10px; }

@@ -41,24 +41,25 @@ def test_el_arbol_tiene_sus_ramas_y_marca_donde_se_esta(client, database, outbox
                          ("/contacts", "Lista"), ("/contacts/suppressions", "Supresiones"),
                          # Importar, Etiquetas y Columnas viven bajo la lista.
                          ("/contacts/import", "Lista"), ("/contacts/tags", "Lista"),
-                         ("/contacts/columns", "Lista"),
-                         # Configuración, rama del Dashboard (octubre de 2026).
-                         ("/settings/account", "Cuenta"), ("/settings/security", "Seguridad"),
-                         ("/settings/notifications", "Notificaciones"),
-                         ("/settings/billing", "Facturación")):
+                         ("/contacts/columns", "Lista")):
         page = browser.get(url)
         assert page.status_code == 200, url
         arbol = tree_of(page.get_data(as_text=True))
         assert f'aria-current="page">{current}<' in arbol, url
         for rama in ("Estadísticas", "Correos", "Enviar", "Plantillas", "Contactos",
-                     "Configuración"):
+                     "Configuración de envío"):
             assert f">{rama}</span>" in arbol, (url, rama)
     arbol = tree_of(browser.get("/contacts").get_data(as_text=True))
     assert ">Etiquetas<" not in arbol and ">Columnas<" not in arbol
     assert ">Importar<" not in arbol
-    # Remitente está en Configuración, y Plantillas ya no es una fila de Enviar.
-    configuracion = arbol.split(">Configuración</span>")[1]
+    # Remitente está en Configuración de envío, y Plantillas ya no es una fila
+    # de Enviar. La configuración de la cuenta no es del Dashboard.
+    configuracion = arbol.split(">Configuración de envío</span>")[1]
     assert ">Remitente<" in configuracion
+    for seccion in ("Cuenta", "Seguridad", "Notificaciones", "Facturación"):
+        assert f">{seccion}<" not in arbol, seccion
+    # Sin la demostración, las direcciones de prueba no salen.
+    assert ">Direcciones de prueba<" not in arbol
     enviar = arbol.split(">Enviar</span>")[1].split(">Plantillas</span>")[0]
     assert ">Remitente<" not in enviar and ">Mis plantillas<" not in enviar
 
@@ -67,9 +68,24 @@ def test_la_busqueda_vive_solo_en_el_dashboard(client, database, outbox):
     browser, _, _ = ready(client, database)
     assert "data-search" in browser.get("/dashboard").get_data(as_text=True)
     assert "data-search" in browser.get("/contacts").get_data(as_text=True)
-    # Configuración también es del Dashboard (octubre de 2026).
-    assert "data-search" in browser.get("/settings/account").get_data(as_text=True)
+    # La configuración de la cuenta es aparte del Dashboard.
+    assert "data-search" not in browser.get("/settings/account").get_data(as_text=True)
     assert "data-search" not in browser.get("/switch-account").get_data(as_text=True)
+
+
+def test_en_la_demostracion_las_direcciones_de_prueba(client, database, outbox):
+    """Las direcciones de prueba son del envío: en la demostración salen en
+    Configuración de envío, al lado de Remitente, y su pantalla se abre en el
+    Dashboard (octubre de 2026). En el menú de la cuenta ya no están."""
+    browser, _, _ = ready(client, database, plan=None)
+    pagina = browser.get("/settings/test").get_data(as_text=True)
+    arbol = tree_of(pagina)
+    assert 'aria-current="page">Direcciones de prueba<' in arbol
+    assert ">Remitente<" in arbol.split(">Configuración de envío</span>")[1]
+    assert "Configuración de envío</h1>" in pagina
+    cuenta = browser.get("/settings/account").get_data(as_text=True)
+    assert 'class="settings__nav' in cuenta and 'href="/settings/test"' not in cuenta.split(
+        'class="settings__nav')[1].split("</nav>")[0]
 
 
 def test_pegado_a_la_izquierda(client, database, outbox):
@@ -80,12 +96,12 @@ def test_pegado_a_la_izquierda(client, database, outbox):
     for url, clase in (("/dashboard", "wrap wrap--wide wrap--left"),
                        ("/campaigns/write", "wrap wrap--wide wrap--left"),
                        ("/contacts", "wrap wrap--table wrap--left"),
-                       ("/settings/account", "wrap wrap--wide wrap--left")):
+                       ("/settings/account", "wrap wrap--wide wrap--left wrap--rows")):
         assert f'<main class="{clase}">' in browser.get(url).get_data(as_text=True), url
     assert "wrap--left" not in client.get("/login").get_data(as_text=True)
-    # Configuración, dentro del Dashboard, va en medio de su espacio.
+    # Remitente, en Configuración de envío, va en medio de su espacio.
     assert '<div class="dash__pane dash__pane--center">' in browser.get(
-        "/settings/account").get_data(as_text=True)
+        "/campaigns/sender").get_data(as_text=True)
     admin, _ = make_admin(client, database)
     # La Configuración del administrador sigue aparte, con su ancho de siempre.
     assert '<main class="wrap wrap--wide wrap--left wrap--rows">' in admin.get(
