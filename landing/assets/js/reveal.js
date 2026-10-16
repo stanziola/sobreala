@@ -87,6 +87,15 @@
       el.classList.add("is-revealed");
       seen.unobserve(el);
       if (el.hasAttribute("data-price")) countUp(el);
+      // Terminada la entrada, la tarjeta suelta sus clases: con ellas puestas,
+      // `transform: none` le ganaba al hover y los planes ya no se levantaban.
+      if (el.classList.contains("reveal-rise")) {
+        var wait = (parseFloat(el.style.getPropertyValue("--i")) || 0) * 90 + 800;
+        window.setTimeout(function () {
+          el.classList.remove("reveal-rise", "is-revealed");
+          el.style.removeProperty("--i");
+        }, wait);
+      }
     });
   }, { threshold: 0.25, rootMargin: "0px 0px -8% 0px" });
 

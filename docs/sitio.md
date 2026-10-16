@@ -133,7 +133,10 @@ palabra**; las tarjetas (`.plan`, `.faq__item`,
 `.story__side`) **suben** con un retraso entre ellas; y los precios de los
 planes **cuentan hasta su número** (si `plans.js` los cambia a mitad, se deja de
 contar). Hubo además un trazo que subrayaba la frase destacada del inicio, y
-se quitó el mismo mes.
+se quitó el mismo mes. **Al terminar de subir, cada tarjeta suelta sus clases
+de entrada** (`reveal-rise` e `is-revealed`): con ellas puestas, su
+`transform: none` le ganaba al hover y las tarjetas de los planes dejaron de
+levantarse al pasar el cursor (arreglado el 16 de octubre de 2026).
 
 **Nada queda escondido sin el script**: el CSS solo esconde lo que va a
 aparecer cuando `<html>` lleva `js-reveal`, y esa clase la pone el script justo

@@ -57,6 +57,14 @@ def test_la_pestana_separa_con_una_barra(client, database, outbox):
     assert re.search(r"<title>[^<·|]+ \| Sobreala</title>", entrar)
 
 
+def test_las_tarjetas_sueltan_su_entrada():
+    """Al terminar de subir, cada tarjeta suelta `reveal-rise` e `is-revealed`
+    (octubre de 2026): con ellas, `transform: none` le ganaba al hover y los
+    planes ya no se levantaban."""
+    guion = (LANDING / "assets" / "js" / "reveal.js").read_text(encoding="utf-8")
+    assert 'el.classList.remove("reveal-rise", "is-revealed")' in guion
+
+
 def test_la_portada_dice_menos():
     """La pestaña dice solo «Sobreala», y arriba van el título y dos botones."""
     html = (LANDING / "index.html").read_text(encoding="utf-8")
