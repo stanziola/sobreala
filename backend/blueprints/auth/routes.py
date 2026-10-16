@@ -44,6 +44,7 @@ from models import token as tokens
 from models import verification_doc as verification_docs
 from services import countries
 from services import dashboard
+from services import erase
 from services import imaging
 from services import importer
 from services import github_auth, google_auth
@@ -1176,7 +1177,8 @@ def login():
                            # Solo cuando no hay nada que corregir: un error de
                            # contraseña importa más que de dónde se venía.
                            switched=bool(request.args.get("change"))
-                           and not errors)
+                           and not errors,
+                           deleted=bool(request.args.get("deleted")) and not errors)
 
 
 def finish_sign_in(db, account: dict, *, remember: bool, email: str):
@@ -1991,7 +1993,7 @@ def sections_for(account: dict | None) -> tuple[str, ...]:
 # desplegaban en el menú, cada parte con su pantalla; una dirección de aquellas
 # (/settings/security/sessions) lleva ahora a la sección y baja a su parte.
 WHOLE = {
-    "account": ("profile", "contact", "verification", "plan"),
+    "account": ("profile", "contact", "verification", "plan", "delete"),
     "security": ("two-step", "password", "users", "sessions"),
     "notifications": ("plan", "security"),
     "billing": ("plan", "methods", "auto-renewal", "history"),
@@ -2008,6 +2010,81 @@ def parts_for(account: dict | None, section: str) -> tuple[str, ...]:
         # Los usuarios son de la empresa: un usuario no los ve.
         found = tuple(one for one in found if one != "users")
     return found
+
+
+# ------------------------------------------------------- eliminar la cuenta
+#
+# Eliminar la cuenta y sus datos (octubre de 2026). Solo el dueño, porque la
+# cuenta es de la empresa. Se confirma escribiendo el nombre de la empresa y
+# la contraseña (con doble factor, además el código de la app); quien entró con
+# Google o GitHub y no tiene contraseña pide un código por correo. Lo que se
+# borra y lo que se queda lo decide `services/erase.py`.
+
+ERASE_PER_ACCOUNT = (5, 900)
+
+
+def same_name(typed: str, name: str) -> bool:
+    """El nombre de la empresa, sin fijarse en mayúsculas ni en espacios de más."""
+    typed = " ".join(typed.split()).casefold()
+    return bool(typed) and typed == " ".join((name or "").split()).casefold()
+
+
+@bp.route("/settings/delete", methods=["GET", "POST"])
+def delete_account():
+    """La página que dice qué se borra y qué no, y que borra al confirmar."""
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    answer = not_for_admins(account) or owner_only(account)
+    if answer:
+        return answer
+    db = get_db()
+    with_password = bool(account.get("password_hash"))
+    two_step = accounts.two_factor_on(account)
+    errors: dict[str, str] = {}
+    sent = False
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif not rate_limit(db, f"erase:{account['_id']}", *ERASE_PER_ACCOUNT):
+            errors["form"] = t("error_too_many")
+        elif request.form.get("action") == "code":
+            if not with_password:
+                code = tokens.issue(db, account["_id"], tokens.ERASE)
+                sent = notices.erase_code(account, code)
+        else:
+            doc = None
+            if not same_name(request.form.get("company", ""), account.get("company_name", "")):
+                errors["company"] = t("erase_error_company")
+            if with_password:
+                if not verify_password(request.form.get("password", ""),
+                                       account.get("password_hash")):
+                    errors["password"] = t("erase_error_password")
+            else:
+                reason, doc = tokens.check(db, account["_id"],
+                                           request.form.get("email_code", "").strip(),
+                                           tokens.ERASE)
+                if reason != tokens.VALID:
+                    errors["email_code"] = t("erase_error_code")
+            if two_step and not errors:
+                typed = request.form.get("app_code", "").strip()
+                counter = (totp.counter_for(account["two_factor"]["secret"], typed)
+                           if typed else None)
+                if counter is None or not accounts.use_counter(db, account["_id"], counter):
+                    errors["app_code"] = t("error_code_invalid")
+            if not errors:
+                if doc is not None:
+                    tokens.spend(db, doc)
+                gone = dict(account)
+                erase.erase(db, account["_id"], by=account["_id"],
+                            reason=t("erase_reason_self"))
+                notices.erased(gone)
+                notices.erased_to_admins(db, gone)
+                close_session()
+                return redirect(url_for("auth.login", deleted=1))
+    return render_template("delete-account.html", errors=errors, sent=sent,
+                           with_password=with_password, two_step=two_step,
+                           company=account.get("company_name", ""))
 
 
 # ------------------------------------------------- el logo de la empresa

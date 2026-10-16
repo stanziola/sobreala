@@ -958,8 +958,9 @@ def holder_line() -> str:
 # Las dos cambiaron el 11 de octubre de 2026: el registro pide teléfono,
 # dirección e identificación personal, que se verifican con un documento que se
 # borra al revisarlo, y una cuenta puede quedar limitada hasta verificarse. La
-# privacidad, otra vez el 15: se puede entrar con GitHub.
-UPDATED = "15 de octubre de 2026"
+# privacidad, otra vez el 15: se puede entrar con GitHub; y el 16: la cuenta se
+# elimina desde Configuración.
+UPDATED = "16 de octubre de 2026"
 TERMS_UPDATED = "11 de octubre de 2026"
 
 PRIVACY = {
@@ -1129,6 +1130,10 @@ PRIVACY = {
             "paragraphs": [
                 "Puedes pedir acceso a tus datos, corregirlos, cancelarlos, "
                 "oponerte a un tratamiento o llevártelos a otro servicio. "
+                "**Eliminar tu cuenta y sus datos lo puedes hacer tú mismo**, "
+                "desde Configuración → Cuenta: se borran al momento, salvo las "
+                "supresiones, los pagos y facturas y la bitácora de accesos, "
+                "que se guardan como se dice arriba. "
                 "Escríbenos a info@sobreala.com desde la dirección de tu "
                 "cuenta y respondemos dentro de los plazos de la Ley 81 de "
                 "2019. Si no quedas conforme, puedes acudir a la Autoridad "

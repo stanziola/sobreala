@@ -26,6 +26,7 @@ INVOICE = "invoice"      # se subió o se reemplazó la factura de un pago
 VERIFY = "verify"        # se verificó o se rechazó la identificación o la dirección
 LIMIT = "limit"          # se limitó la cuenta, o se le quitó el límite
 NOTIFY = "notify"        # se le mandó al cliente el resultado de sus verificaciones
+ERASE = "erase"          # se eliminó la cuenta y sus datos (por ella misma o por un admin)
 
 
 def now() -> datetime:

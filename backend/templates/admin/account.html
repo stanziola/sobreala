@@ -472,5 +472,20 @@
 <p class="hint">{{ t('admin_history_empty') }}</p>
 {% endif %}
 
+{# Eliminar la cuenta y sus datos (octubre de 2026): lo que antes se hacía a
+   mano en la base. La misma `erase()` que usa el cliente; se confirma
+   escribiendo el nombre de la empresa, y el motivo queda en el registro. #}
+<h3 class="settings__subtitle" id="eliminar">{{ t('admin_erase_title') }}</h3>
+<p class="settings__lead">{{ t('admin_erase_hint') }}</p>
+{% if request.args.get('erase_error') %}<p class="error">{{ t('admin_erase_error') }}</p>{% endif %}
+<form method="post" action="{{ url_for('admin.erase_account', raw=client._id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="erase-company">{{ t('admin_erase_company', company=client.company_name) }}</label>
+  <input id="erase-company" name="company" type="text" autocomplete="off" required>
+  <label for="erase-reason">{{ t('admin_erase_reason') }}</label>
+  <input id="erase-reason" name="reason" type="text" maxlength="300" autocomplete="off" required>
+  <button class="btn btn--danger" type="submit">{{ t('admin_erase_submit') }}</button>
+</form>
+
 <p class="foot"><a href="{{ url_for('admin.accounts_list') }}">{{ t('admin_back') }}</a></p>
 {% endblock %}

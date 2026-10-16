@@ -620,3 +620,37 @@ def pause_to_admins(db, client, *, reason: str, note: str) -> int:
                 foot=switch_off_hint()):
             sent += 1
     return sent
+
+
+# ------------------------------------------------------ eliminar la cuenta
+#
+# Octubre de 2026. El código, para quien no tiene contraseña; el aviso de que se
+# eliminó, a la dirección que tenía (la cuenta ya no existe, pero el mensaje es
+# lo único que le queda de que pasó); y el aviso a quien administra, que va con
+# el interruptor de los registros.
+
+def erase_code(account, code: str) -> bool:
+    return deliver(account, purpose=mail_log.ERASE_CODE,
+                   subject=t("mail_erase_code_subject"),
+                   heading=t("mail_erase_code_heading"),
+                   paragraphs=[t("mail_erase_code_body")], code=code)
+
+
+def erased(account) -> bool:
+    return deliver(account, purpose=mail_log.ERASED,
+                   subject=t("mail_erased_subject"),
+                   heading=t("mail_erased_heading"),
+                   paragraphs=[t("mail_erased_body", company=about(account))])
+
+
+def erased_to_admins(db, client) -> int:
+    sent = 0
+    for admin in admins_who_want(db, accounts.ADMIN_SIGNUP):
+        if deliver(admin, purpose=mail_log.ADMIN_ERASED,
+                   subject=t("mail_admin_erased_subject", company=about(client)),
+                   heading=t("mail_admin_erased_heading", company=about(client)),
+                   paragraphs=[t("mail_admin_erased_body", company=about(client),
+                                 email=client.get("email", ""))],
+                   foot=switch_off_hint()):
+            sent += 1
+    return sent

@@ -2,6 +2,7 @@
 {% block pane %}
 <h2 class="settings__title">{{ t('admin_tab_accounts') }}</h2>
 <p class="settings__lead">{{ t('admin_accounts_lead') }}</p>
+{% if request.args.get('erased') %}<p class="notice notice--ok">{{ t('admin_erased') }}</p>{% endif %}
 
 <form class="filters" method="get" action="{{ url_for('admin.accounts_list') }}">
   <label class="visually-hidden" for="q">{{ t('admin_search') }}</label>

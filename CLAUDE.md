@@ -245,6 +245,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - **Los usuarios de una empresa son documentos de `accounts`** con `owner_id`
   y `permissions`. `current_workspace()` es la empresa y `current_account()` la
   persona. Se comprueba en la ruta con `needs()` y `owner_only()`.
+- **Eliminar la cuenta** (Configuración → Cuenta, solo el dueño; también el
+  administrador desde la ficha): `services/erase.py` borra lo de la empresa y
+  sus usuarios, y deja las supresiones, los pagos y facturas y la bitácora. Se
+  confirma con el nombre de la empresa y la contraseña (o un código).
 - Un registro sin confirmar se borra a las 24 h (`purge_at`). Ninguna contraseña
   se repite (`password_history`). El doble factor, si está puesto, se pide
   siempre.

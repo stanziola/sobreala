@@ -1605,6 +1605,12 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
    que ya preguntó, no en la lista. */
 .btn--danger { background: #D92D20; color: #FFFFFF; border-color: #D92D20; }
 .btn--danger:hover { background: #B42318; border-color: #B42318; }
+/* Eliminar la cuenta (octubre de 2026): las dos listas de lo que se va y lo que
+   se queda, y el botón rojo al lado de «Cancelar». */
+.erase__list { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+.erase__code { margin-top: 18px; }
+.erase__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.erase__actions .btn { margin-top: 22px; }
 
 /* Un botón apagado: el plan no da para más. No es un enlace, así que no lleva
    a ningún sitio; y sin hover ni transición, para que la mano no espere nada.

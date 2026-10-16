@@ -14,6 +14,7 @@
                                                    else t('login_register_short') }}</a></p>
 
 {% if switched %}<p class="notice notice--ok">{{ t('login_switched') }}</p>{% endif %}
+{% if deleted %}<p class="notice notice--ok">{{ t('login_deleted') }}</p>{% endif %}
 {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
 {# data-once: un doble clic abría dos sesiones, y la que se quedaba sin

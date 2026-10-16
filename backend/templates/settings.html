@@ -223,6 +223,14 @@
        href="{{ url_for('auth.settings', section='billing') }}">{{ t('settings_account_to_billing') }}</a>
     {% endcall %}
 
+    {# Eliminar la cuenta y sus datos (octubre de 2026): al final, y en otra
+       página que dice qué se borra y pide confirmarlo. Esta sección solo la ve
+       el dueño. #}
+    <h3 class="settings__subtitle settings__subtitle--part" id="delete">{{ part_name('account', 'delete') }}</h3>
+    {% call row(t('erase_row'), t('erase_row_desc')) %}
+    <a class="btn btn--small btn--danger" href="{{ url_for('auth.delete_account') }}">{{ t('erase_open') }}</a>
+    {% endcall %}
+
     {# --------------------------------------------------------- seguridad #}
     {% elif section == 'security' %}
 

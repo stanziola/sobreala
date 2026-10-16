@@ -35,6 +35,7 @@ ENDPOINT_ROWS = {
     "campaigns.sender_page": "sender",
     "designs.index": "templates",
     "designs.create": "templates-new",
+    "auth.delete_account": "settings-account",
     "contacts.blocked": "suppressions",
     "contacts.remove_suppressed": "suppressions",
 }

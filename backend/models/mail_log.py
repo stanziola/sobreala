@@ -63,6 +63,11 @@ INVITE = "invite"
 EMAIL_CHANGED = "email_changed"
 # El código que confirma el «Responder a» de las campañas.
 REPLY_TO_CODE = "reply_to_code"
+# Eliminar la cuenta (octubre de 2026): el código sin contraseña, el aviso de
+# que se eliminó, y el aviso a quien administra.
+ERASE_CODE = "erase_code"
+ERASED = "erased"
+ADMIN_ERASED = "admin_erased"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"
 

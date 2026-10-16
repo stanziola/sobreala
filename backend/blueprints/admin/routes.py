@@ -25,7 +25,7 @@ from bson import ObjectId
 from flask import (Blueprint, Response, abort, jsonify, redirect,
                    render_template, request, url_for)
 
-from blueprints.auth.routes import current_account
+from blueprints.auth.routes import current_account, same_name
 from db import get_db
 from i18n import t
 from models import account as accounts
@@ -41,6 +41,7 @@ from models import session as sessions
 from models import suppression as suppressions
 from models import verification_doc as verification_docs
 from services import activity as happening
+from services import erase
 from services import notices
 from services import plans
 from services import reputation
@@ -732,3 +733,22 @@ def limit_account(account, raw):
                          reason=note or t("admin_limit_reason_" + reason))
         notices.limited(client, reason=reason)
     return redirect(url_for("admin.account_page", raw=raw, done=1) + "#limite")
+
+
+@bp.route("/accounts/<raw>/erase", methods=["POST"])
+@only_admins
+def erase_account(account, raw):
+    """Eliminar esta cuenta y sus datos, con su motivo (octubre de 2026). Lo que
+    antes se hacía a mano en la base; la misma `erase()` que usa el dueño. Se
+    confirma escribiendo el nombre de la empresa."""
+    db = get_db()
+    client = wanted(raw)
+    back = url_for("admin.account_page", raw=raw) + "#eliminar"
+    reason = request.form.get("reason", "").strip()
+    if (not csrf_ok(request.form.get("csrf_token")) or not reason
+            or not same_name(request.form.get("company", ""), client.get("company_name", ""))):
+        return redirect(url_for("admin.account_page", raw=raw, erase_error=1) + "#eliminar")
+    gone = dict(client)
+    erase.erase(db, client["_id"], by=account["_id"], reason=reason)
+    notices.erased(gone)
+    return redirect(url_for("admin.accounts_list", erased=1))

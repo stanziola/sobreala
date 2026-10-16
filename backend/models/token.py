@@ -46,6 +46,9 @@ REPLY_TO = "reply_to"
 # enlace a esa dirección: prueba que es de quien la puso, y que acepta recibir
 # los correos de prueba.
 TEST_ADDRESS = "test_address"
+# Eliminar la cuenta sin contraseña (entró con Google o GitHub): el código
+# va a su correo (octubre de 2026).
+ERASE = "erase"
 
 # Why a code was refused, so the visitor gets a useful message instead of a
 # generic error. UNKNOWN is "there is no code waiting for this account"; INVALID

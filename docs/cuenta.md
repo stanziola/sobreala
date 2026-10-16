@@ -600,6 +600,49 @@ historial se conserva hasta que se decida otra cosa. `auth_events` registra la
 verdad, `already_registered` incluido; la regla 7 gobierna lo que se le dice al
 visitante, no lo que la plataforma sabe de su propio tráfico.
 
+## Eliminar la cuenta y sus datos (octubre de 2026)
+
+Hasta el 16 de octubre de 2026 una cuenta se eliminaba borrando a mano su
+documento de `accounts`, y todo lo demás (contactos, campañas, envíos, eventos,
+plantillas, imágenes, sesiones) se quedaba en la base para siempre, sin dueño.
+Ahora hay un botón, y **un solo sitio que borra**: `services/erase.py`,
+`erase(db, owner_id, by=, reason=)`.
+
+- **Dónde:** Configuración → Cuenta, al final, «Eliminar la cuenta» (la parte
+  `delete`). Solo el dueño: la cuenta es de la empresa, y a un usuario la ruta
+  lo devuelve a Seguridad. El botón rojo lleva a `/settings/delete`, que dice
+  qué se borra y qué se queda, que el plan vigente no se reembolsa, y ofrece
+  bajar los contactos antes.
+- **Se confirma** escribiendo el nombre de la empresa (sin fijarse en
+  mayúsculas ni en espacios de más) y la contraseña; con doble factor, además
+  el código de la app (gasta su ventana, como al entrar). Quien entró con
+  Google o GitHub y no tiene contraseña pide un código por correo
+  (`tokens.ERASE`). Con CSRF y cinco intentos cada quince minutos.
+- **Se borra**, con un `delete_many` por colección (`ERASED`): `contacts`,
+  `campaigns`, `campaign_runs`, `events`, `designs`, `images`, `imports`,
+  `downloads`, `sessions`, `account_tokens` y `verification_docs`, del dueño y
+  de los usuarios de su empresa, y al final sus documentos de `accounts`.
+  Afuera, el dominio propio se suelta en Amazon, la renovación automática se
+  cancela y las cuentas de PayPal guardadas se olvidan; si algo de afuera falla
+  se anota y se sigue.
+- **Se queda** (`KEPT`), porque lo prometen la privacidad y los términos o lo
+  pide la ley: `suppressions` (nadie le vuelve a escribir a quien pidió no
+  recibir), `payments` e `invoices` (obligaciones contables), y `auth_events`,
+  `mail_log` y `admin_events` (la bitácora). En `admin_events` queda una línea
+  `erase` con quién, cuándo y cuántos documentos, sin ninguna dirección.
+- **Después:** se cierran las sesiones de este navegador, llega un correo a la
+  dirección que tenía («Tu cuenta se eliminó»), se avisa a quien administra
+  (con el interruptor de los registros) y se aterriza en entrar con un aviso
+  verde. El sitio público es estático y no tiene cómo enseñar ese aviso.
+- **El administrador** lo hace desde la ficha («Eliminar esta cuenta», `#eliminar`),
+  escribiendo el nombre de la empresa y un motivo, con la misma `erase()`.
+- **Las supresiones quedan huérfanas** a propósito: si la misma empresa vuelve
+  con otra cuenta no se le aplican. Para eso habría que guardarlas por dominio
+  o por RUC, y se deja para cuando se pidan los datos de facturación.
+- **Corre dentro de la petición.** Con cuentas de cientos de miles de eventos
+  conviene mudarlo al proceso en segundo plano, con la importación, cuando
+  exista.
+
 ## Entrar y registrarse, a dos columnas (octubre de 2026)
 
 Como la imagen de referencia que se dio: **a la izquierda**, media pantalla en
