@@ -362,8 +362,10 @@ cosa está como está, y lo que ya se probó y se quitó.
   altura antes de mandar un formulario (o de pulsar «Editar» y «Cancelar»,
   `data-keep-scroll`) y la cabecera de `base.html` vuelve ahí, sin el ancla.
 - **El logo de la empresa es una foto de perfil** (octubre de 2026): llena su
-  círculo en todas partes, y con él el botón de la barra (en los dos sitios) es
-  solo la foto; el menú abierto del panel empieza con el logo y el nombre.
+  círculo en todas partes, y con él el botón de la barra (en los dos sitios)
+  lleva la foto y la flecha en su caja, sin el nombre; el menú abierto del
+  panel empieza con el logo y el nombre. La fila del Dashboard lleva un
+  tablero, no las gráficas.
   Entero va solo en los correos, el PDF y el lienzo.
 - **Todo se guarda en UTC y se escribe en la zona de quien mira**
   (`services/clock.py`, galleta `sa_tz`).

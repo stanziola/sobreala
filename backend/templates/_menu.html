@@ -1,6 +1,6 @@
 {# The one control in the bar.
 
-   Signed in it wears the company's name, or only its logo as a profile photo
+   Signed in it wears the company's name, or its logo as a profile photo
    when it has one, and holds everything an account can reach; signed out it
    is three lines with the two things that work without one. A <details>, so
    it opens and closes with no JavaScript at all —which
@@ -11,8 +11,8 @@
   <summary class="menu__button{% if with_photo %} menu__button--avatar{% endif %}">
     {% if bar_account %}
     {# El logo de la empresa, si tiene, como foto de perfil (octubre de 2026):
-       el botón es solo el círculo, sin el nombre ni la flecha. El nombre se
-       queda para el lector de pantalla, y por eso la foto va sin alt. #}
+       el botón lleva la foto y la flecha, sin el nombre. El nombre se queda
+       para el lector de pantalla, y por eso la foto va sin alt. #}
     {% if bar_logo %}<img class="menu__avatar" src="{{ url_for('media.image', name=bar_logo) }}" alt="">{% endif %}
     <span class="menu__who{% if with_photo %} visually-hidden{% endif %}">{{ bar_company or bar_account.company_name }}</span>
     {% else %}
@@ -59,8 +59,10 @@
        la ve igual, y cada pantalla la lleva a contratar o a pedir la
        demostración. #}
     {% if bar_can.stats or bar_can.campaigns or bar_can.contacts or bar_can.designs %}
+    {# Un tablero, no las gráficas (octubre de 2026): esas son de
+       Estadísticas, que es una de sus ramas. #}
     <a class="menu__item" href="{{ url_for('auth.panel') }}">
-      <span class="menu__icons">{% include "_icon-chart.svg" %}</span>
+      <span class="menu__icons">{% include "_icon-dashboard.svg" %}</span>
       <span>{{ t('menu_dashboard') }}</span>
     </a>
     {% endif %}

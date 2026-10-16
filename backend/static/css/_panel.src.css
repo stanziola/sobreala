@@ -148,24 +148,14 @@ a:not([class]):hover { text-decoration: underline; }
 .menu__button::-webkit-details-marker { display: none; }
 .menu__button:hover { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .7); }
 /* El logo de la empresa como foto de perfil (octubre de 2026): llena su
-   círculo, y uno ancho pierde un poco de los lados. Con él, el botón es solo
-   el círculo: sin caja, sin la flecha y sin el nombre, que queda para el
-   lector de pantalla. Al pasar el ratón o con el menú abierto, un aro blanco.
-   El botón mide 42 px como el del nombre, para que la barra no cambie de alto,
-   y es un bloque: en línea, la línea de texto en la que se apoya le sumaba
-   unos píxeles por debajo. */
-.menu__avatar {
-  flex: none; display: block; width: 36px; height: 36px; border-radius: 50%;
-  object-fit: cover; transition: box-shadow var(--fast) var(--ease);
-}
-.menu__button--avatar {
-  display: flex; justify-content: center; min-height: 42px; padding: 3px;
-  border: 0; border-radius: 50%;
-}
-.menu__button--avatar:hover { background: transparent; }
-.menu__button--avatar .menu__caret { display: none; }
-.menu__button--avatar:hover .menu__avatar,
-.menu[open] > .menu__button--avatar .menu__avatar { box-shadow: 0 0 0 3px rgba(255, 255, 255, .55); }
+   círculo, y uno ancho pierde un poco de los lados. Con él, el botón lleva la
+   foto y la flecha en la caja de siempre, para que se lea como un desplegable
+   (solo el círculo, sin caja ni flecha, no se entendía que abría un menú); el
+   nombre queda para el lector de pantalla. Mide 42 px como el del nombre, y es
+   un bloque: en línea, la línea de texto en la que se apoya le sumaba unos
+   píxeles por debajo. */
+.menu__avatar { flex: none; display: block; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.menu__button--avatar { display: flex; gap: 6px; min-height: 42px; padding: 4px 10px 4px 4px; }
 /* A long company name shortens instead of pushing the bar out of shape. */
 .menu__who { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu__bars { display: grid; gap: 4px; width: 20px; }

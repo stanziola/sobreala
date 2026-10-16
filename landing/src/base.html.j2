@@ -108,8 +108,8 @@
             <span></span><span></span><span></span></span>
           {#- Con logo, nav.js cambia el ícono por él (octubre de 2026), como en
               la barra del panel: lo saca de la migaja y lo pide al panel. En
-              la barra queda solo la foto, y «Mi cuenta» para el lector de
-              pantalla; en el teléfono, dentro del menú, se ve al lado. -#}
+              la barra va la foto con su flecha, y «Mi cuenta» para el lector
+              de pantalla; en el teléfono, dentro del menú, se ve al lado. -#}
           <span class="usermenu__me" data-usermenu-me hidden
                 data-avatar-base="{{ panel.base_url }}/img/">
             {% include "partials/icon-user.svg.j2" %}<span class="usermenu__me-label">{{ panel.account_label }}</span></span>
@@ -142,7 +142,7 @@
               empresa: lo demás son ajustes de la cuenta. -#}
           <a class="usermenu__item" data-client-only hidden
              href="{{ panel.base_url }}/dashboard">
-            <span class="usermenu__icons">{% include "partials/icon-chart.svg.j2" %}</span>
+            <span class="usermenu__icons">{% include "partials/icon-dashboard.svg.j2" %}</span>
             <span>{{ panel.dashboard_label }}</span></a>
 
           <a class="usermenu__item" data-account-only hidden

@@ -90,9 +90,9 @@ def test_subir_cambiar_y_quitar(client, database, outbox, monkeypatch):
 
 
 def test_en_la_barra_es_una_foto_de_perfil(client, database, outbox):
-    """Con logo, el botón de la barra es solo el círculo (octubre de 2026): el
-    nombre queda para el lector de pantalla, y el menú abierto lo dice arriba.
-    Sin logo, el nombre con su flecha, como siempre."""
+    """Con logo, el botón de la barra lleva la foto y la flecha en su caja
+    (octubre de 2026): el nombre queda para el lector de pantalla, y el menú
+    abierto lo dice arriba. Sin logo, el nombre con su flecha, como siempre."""
     browser, cuenta, _ = ready(client, database)
     sin = browser.get("/settings/account").get_data(as_text=True)
     assert '<summary class="menu__button">' in sin
@@ -110,8 +110,9 @@ def test_en_la_barra_es_una_foto_de_perfil(client, database, outbox):
 
 def test_el_logo_llena_su_circulo():
     """Sin el círculo blanco de antes, en el panel y en el sitio: el logo lo
-    llena, como una foto. Y el sitio trae lo que su guion necesita para dejar
-    solo la foto en la barra."""
+    llena, como una foto. El botón con foto no esconde su flecha ni pierde su
+    caja: tiene que leerse como un desplegable. Y el sitio trae lo que su guion
+    necesita para dejar la foto en la barra."""
     panel = (ROOT / "backend/static/css/_panel.src.css").read_text(encoding="utf-8")
     sitio = (ROOT / "landing/src/site.css").read_text(encoding="utf-8")
     for css, regla in ((panel, ".menu__avatar {"), (panel, ".switcher__logo, .avatar {"),
@@ -119,6 +120,9 @@ def test_el_logo_llena_su_circulo():
                        (sitio, ".usermenu__avatar {")):
         cuerpo = css.split(regla, 1)[1].split("}", 1)[0]
         assert "object-fit: cover" in cuerpo and "#FFFFFF" not in cuerpo, regla
+    for css, boton in ((panel, ".menu__button--avatar"), (sitio, ".usermenu__button--avatar")):
+        reglas = [linea for linea in css.splitlines() if linea.lstrip().startswith(boton)]
+        assert not any("caret" in linea or "border: 0" in linea for linea in reglas), boton
     assert 'class="usermenu__me-label"' in (ROOT / "landing/index.html").read_text(encoding="utf-8")
     assert '"usermenu__button--avatar"' in (ROOT / "landing/assets/js/nav.js").read_text(
         encoding="utf-8")

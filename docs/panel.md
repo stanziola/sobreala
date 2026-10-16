@@ -341,10 +341,11 @@ tarde de Panamá quedaban para las 10 de la mañana—. La cuenta guarda la últ
 zona vista en `time_zone`, que es la de los correos que le llegan sin estar
 mirando. Lo relativo («hace 2 horas») no depende de la zona.
 
-**Con el logo de la empresa, el botón de la barra es solo la foto** (octubre de
-2026): el logo en un círculo de 36 px, como una foto de perfil, sin la caja, sin
-el nombre y sin la flecha; al pasar el ratón o con el menú abierto lleva un aro
-blanco. El nombre se queda para el lector de pantalla (`visually-hidden`), y
+**Con el logo de la empresa, el botón de la barra lleva la foto y la flecha en
+su caja** (octubre de 2026): el logo en un círculo de 32 px, como una foto de
+perfil, sin el nombre. Se probó primero solo el círculo, sin caja ni flecha, y
+no se leía como un desplegable. El nombre se queda para el lector de pantalla
+(`visually-hidden`), y
 **el menú abierto empieza con una cabecera** (`.menu__head`: el logo y el
 nombre de la empresa), porque con hasta cuatro cuentas abiertas el nombre del
 botón era lo que decía en cuál se estaba. El botón mide 42 px igual que el del
@@ -358,7 +359,10 @@ La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: Dashboard,
 configuración, modo, idioma, cambiar de cuenta y cerrar sesión. Hasta octubre de
 2026 eran cuatro filas (Estadísticas, Enviar correos, Contactos y Plantillas),
-que ahora viven en el árbol del Dashboard.
+que ahora viven en el árbol del Dashboard. **El Dashboard lleva un tablero**
+(cuatro recuadros, `_icon-dashboard.svg` y `icon-dashboard.svg.j2`): llevaba
+las gráficas, que son de Estadísticas y siguen ahí, en la rama del árbol y en la
+fila del administrador.
 **A un administrador el menú le enseña administración de primera y después
 configuración, y nada más.** El sitio público sí le sigue enseñando las filas de
 cliente, porque solo lee una galleta que dice «hay sesión» y no sabe quién es

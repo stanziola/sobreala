@@ -107,13 +107,18 @@ de persona por él, pedido a `https://app.sobreala.com/img/<nombre>`. Solo si el
 nombre tiene la forma de los que genera el panel. Ese nombre ya es público: es
 la dirección de una imagen.
 
-**Con logo, en la barra queda solo la foto** (octubre de 2026), igual que en el
-panel: `nav.js` le pone `usermenu__button--avatar` al botón y `site.css`, desde
-960 px, le quita la caja y la flecha, deja «Mi cuenta» (`usermenu__me-label`)
-para el lector de pantalla y dibuja el aro al pasar el ratón o con el menú
-abierto. El logo llena su círculo de 36 px. **En el teléfono**, donde la cuenta
-es una fila más dentro del menú de tres líneas, se queda «Mi cuenta» al lado
-del círculo (de 32 px): una foto suelta en una fila de texto no se entiende. El
+**Con logo, en la barra va la foto con su flecha** (octubre de 2026), igual que
+en el panel: `nav.js` le pone `usermenu__button--avatar` al botón y `site.css`,
+desde 960 px, deja la foto y la flecha en la caja de siempre y «Mi cuenta»
+(`usermenu__me-label`) para el lector de pantalla. El logo llena su círculo de
+32 px. Se probó primero solo el círculo, sin caja ni flecha, y no se leía como
+un desplegable. **En el teléfono**, donde la cuenta es una fila más dentro del
+menú de tres líneas, se queda «Mi cuenta» al lado del círculo: una foto suelta
+en una fila de texto no se entiende. **Desde 960 px la cuenta va pegada al borde
+derecho**, a la misma distancia que el ala del izquierdo, como en el panel: los
+enlaces quedan en medio de lo que sobra, y el hueco de las tres líneas, que
+solo viven en el teléfono, se quitó. Con «Ingresar» y «Registrarse» pasa lo
+mismo. El
 menú del sitio no lleva la cabecera con el nombre que tiene el del panel: la
 migaja no lleva el nombre de la empresa, y antes el botón decía «Mi cuenta» y
 tampoco lo enseñaba.

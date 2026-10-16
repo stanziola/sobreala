@@ -217,29 +217,18 @@ button { font: inherit; color: inherit; }
 .usermenu__bars span { display: block; height: 2px; background: currentColor; border-radius: 2px; }
 .usermenu__me { display: inline-flex; align-items: center; gap: 8px; }
 /* El logo de la empresa como foto de perfil, igual que en la barra del panel
-   (octubre de 2026): llena su círculo, y el botón es solo el círculo, sin
-   caja, sin «Mi cuenta» (queda para el lector de pantalla) y sin la flecha.
-   Al pasar el ratón o con el menú abierto, un aro blanco. El botón mide
-   42 px como el de las letras, y es un bloque: en línea, la línea de texto en
-   la que se apoya le sumaba unos píxeles por debajo. */
-.usermenu__avatar {
-  flex: none; display: block; width: 36px; height: 36px; border-radius: 50%;
-  object-fit: cover; transition: box-shadow var(--fast) var(--ease);
-}
+   (octubre de 2026): llena su círculo, y el botón lleva la foto y la flecha en
+   la caja de siempre, para que se lea como un desplegable; «Mi cuenta» queda
+   para el lector de pantalla. Mide 42 px como el de las letras, y es un
+   bloque: en línea, la línea de texto en la que se apoya le sumaba unos
+   píxeles por debajo. En el teléfono es una fila más del menú, con «Mi
+   cuenta» al lado. */
+.usermenu__avatar { flex: none; display: block; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 @media (min-width: 960px) {
-  .usermenu__button--avatar {
-    display: flex; justify-content: center; min-height: 42px; padding: 3px;
-    border: 0; border-radius: 50%;
-  }
-  .usermenu__button--avatar:hover { background: transparent; }
-  .usermenu__button--avatar .usermenu__caret { display: none; }
+  .usermenu__button--avatar { display: flex; gap: 6px; min-height: 42px; padding: 4px 10px 4px 4px; }
   .usermenu__button--avatar .usermenu__me-label {
     position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-  }
-  .usermenu__button--avatar:hover .usermenu__avatar,
-  .usermenu[open] > .usermenu__button--avatar .usermenu__avatar {
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, .55);
   }
 }
 .usermenu__caret { display: grid; transition: transform var(--fast) var(--ease); }
@@ -292,8 +281,6 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   .usermenu__button { width: 100%; min-height: 52px; gap: 12px; font-size: 1.04rem; }
   .usermenu__panel { position: static; min-width: 0; margin-top: 10px; box-shadow: none; }
   .usermenu__caret { margin-left: auto; }
-  /* Una fila más del menú: el círculo, con «Mi cuenta» al lado. */
-  .usermenu__avatar { width: 32px; height: 32px; }
   /* Dentro del menú, entre filas con su nombre escrito, tres líneas sueltas no
      se entienden: aquí la palabra deja de ser solo para el lector de pantalla.
      Cuando hay sesión el script la esconde, porque "Mi cuenta" ya la nombra. */
@@ -395,6 +382,13 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   .nav-toggle { display: none; }
   .header-actions { order: 3; }
   .site-nav { display: flex; align-items: center; gap: 18px; }
+  /* La cuenta pegada al borde derecho, a la misma distancia que el ala del
+     izquierdo, como en el panel (octubre de 2026); los enlaces, en medio de lo
+     que queda. Las tres líneas solo viven en el teléfono, así que su hueco al
+     final sobra. */
+  .site-nav { flex: 1; }
+  .site-nav__list { margin-inline: auto; }
+  .header-actions { display: none; }
 }
 
 /* ------------------------------------------------------------------ hero (home) */
