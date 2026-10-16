@@ -50,14 +50,16 @@
   <button class="btn" type="submit">{{ t('login_submit') }}</button>
 </form>
 
-{# Entrar o registrarse con Google (octubre de 2026): el mismo botón para los
-   dos. Solo sale con el cliente de Google puesto. #}
-{% if google_ready %}
-<p class="or-line"><span>{{ t('google_or') }}</span></p>
+{# Entrar o registrarse con Google o con GitHub (octubre de 2026): el mismo
+   botón para los dos casos. Cada uno sale solo con su cliente puesto. #}
+{% if providers %}
+<p class="or-line"><span>{{ t('oauth_or') }}</span></p>
 <div class="providers">
-  <a class="btn btn--provider" href="{{ url_for('auth.google_start', add=1) if adding
-                                        else url_for('auth.google_start') }}">
-    {% include "_google-g.svg" %}<span>{{ t('google_button') }}</span></a>
+  {% for one in providers %}
+  <a class="btn btn--provider" href="{{ url_for('auth.oauth_start', provider=one.key, add=1) if adding
+                                        else url_for('auth.oauth_start', provider=one.key) }}">
+    {% include one.mark %}<span>{{ t('oauth_button', provider=one.label) }}</span></a>
+  {% endfor %}
 </div>
 {% endif %}
 {% endblock %}

@@ -158,6 +158,24 @@ def unlink_google(db, account_id) -> None:
         "$unset": {"google_sub": ""}, "$set": {"updated_at": now()}})
 
 
+# Y con GitHub (octubre de 2026): `github_id` es el identificador numérico de su
+# cuenta, que tampoco cambia aunque cambie su nombre de usuario o su correo.
+def by_github(db, github_id: str) -> dict[str, Any] | None:
+    if not github_id:
+        return None
+    return db.accounts.find_one({"github_id": github_id})
+
+
+def link_github(db, account_id, github_id: str) -> None:
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "github_id": github_id, "updated_at": now()}})
+
+
+def unlink_github(db, account_id) -> None:
+    db.accounts.update_one({"_id": account_id}, {
+        "$unset": {"github_id": ""}, "$set": {"updated_at": now()}})
+
+
 def by_id(db, account_id) -> dict[str, Any] | None:
     return db.accounts.find_one({"_id": account_id})
 

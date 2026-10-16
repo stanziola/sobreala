@@ -957,8 +957,9 @@ def holder_line() -> str:
 
 # Las dos cambiaron el 11 de octubre de 2026: el registro pide teléfono,
 # dirección e identificación personal, que se verifican con un documento que se
-# borra al revisarlo, y una cuenta puede quedar limitada hasta verificarse.
-UPDATED = "14 de octubre de 2026"
+# borra al revisarlo, y una cuenta puede quedar limitada hasta verificarse. La
+# privacidad, otra vez el 15: se puede entrar con GitHub.
+UPDATED = "15 de octubre de 2026"
 TERMS_UPDATED = "11 de octubre de 2026"
 
 PRIVACY = {
@@ -1041,6 +1042,10 @@ PRIVACY = {
                 "verificado), tu nombre y un identificador de tu cuenta de "
                 "Google, y nada más: ni tu contraseña, ni tus contactos, ni tus "
                 "archivos. Lo usamos solo para dejarte entrar.",
+                "**Si entras con GitHub:** GitHub nos da tu correo principal (ya "
+                "verificado), tu nombre y un identificador de tu cuenta de "
+                "GitHub, y nada más: ni tu contraseña, ni tus repositorios. Lo "
+                "usamos solo para dejarte entrar.",
                 "**De pagos:** el plan, la fecha y el resultado del cobro, y si "
                 "activas la renovación automática, el identificador de tu "
                 "suscripción de PayPal. "

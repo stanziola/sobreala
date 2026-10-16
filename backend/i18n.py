@@ -254,29 +254,31 @@ TEXTS = {
     "login_email": "Correo electrónico",
     "login_password": "Contraseña",
     "login_submit": "Entrar",
-    # Entrar y registrarse con Google (octubre de 2026).
-    "google_button": "Continuar con Google",
-    "google_or": "o",
-    "google_cancelled": "No se completó la entrada con Google. Vuelve a intentarlo.",
-    "google_error": "No pudimos hablar con Google en este momento. Vuelve a "
-                    "intentarlo en unos minutos.",
-    "google_unverified": "Tu cuenta de Google no tiene el correo verificado. "
-                         "Entra con tu correo y tu contraseña.",
-    "google_other": "Ese correo ya está conectado a otra cuenta de Google. Entra "
-                    "con esa, o con tu correo y tu contraseña.",
-    "google_signup_title": "Completa tu cuenta",
-    "google_signup_lead": "Entraste con Google como {email}. Faltan estos datos "
-                          "para crear tu cuenta.",
-    "google_title": "Google",
-    "google_on_desc": "Entras con tu cuenta de Google.",
-    "google_off_desc": "Entra una vez con Google y quedará conectado.",
-    "google_on": "Conectado",
-    "google_off": "Sin conectar",
-    "google_disconnect": "Desconectar",
-    "google_done_off": "Listo, desconectaste Google. Entras con tu correo y tu "
-                       "contraseña.",
-    "google_needs_password": "Para desconectar Google, crea primero una "
-                             "contraseña con «¿Olvidaste tu contraseña?».",
+    # Entrar y registrarse con Google (octubre de 2026) y con GitHub (el mismo
+    # mes): los mismos textos para los dos, con el nombre de cada uno.
+    "provider_google": "Google",
+    "provider_github": "GitHub",
+    "oauth_button": "Continuar con {provider}",
+    "oauth_or": "o",
+    "oauth_cancelled": "No se completó la entrada con {provider}. Vuelve a intentarlo.",
+    "oauth_error": "No pudimos hablar con {provider} en este momento. Vuelve a "
+                   "intentarlo en unos minutos.",
+    "oauth_unverified": "Tu cuenta de {provider} no tiene el correo verificado. "
+                        "Entra con tu correo y tu contraseña.",
+    "oauth_other": "Ese correo ya está conectado a otra cuenta de {provider}. Entra "
+                   "con esa, o con tu correo y tu contraseña.",
+    "oauth_signup_title": "Completa tu cuenta",
+    "oauth_signup_lead": "Entraste con {provider} como {email}. Faltan estos datos "
+                         "para crear tu cuenta.",
+    "oauth_on_desc": "Entras con tu cuenta de {provider}.",
+    "oauth_off_desc": "Entra una vez con {provider} y quedará conectado.",
+    "oauth_on": "Conectado",
+    "oauth_off": "Sin conectar",
+    "oauth_disconnect": "Desconectar",
+    "oauth_done_off": "Listo, desconectaste {provider}. Entras con tu correo y tu "
+                      "contraseña.",
+    "oauth_needs_password": "Para desconectar {provider}, crea primero una "
+                            "contraseña con «¿Olvidaste tu contraseña?».",
     # Corto, para que quepa al lado de «¿Olvidaste tu contraseña?».
     "login_remember": "Recordarme 30 días",
     "login_no_account": "¿Todavía no tienes cuenta?",

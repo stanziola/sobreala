@@ -267,9 +267,11 @@ cosa está como está, y lo que ya se probó y se quitó.
   barra: a la izquierda el ala y cuatro dibujos de «Funciones» del sitio que
   rotan (`_art-*.svg`, que genera `build_assets.py`), y a la derecha el
   formulario.
-- **Entrar y registrarse con Google** (`services/google_auth.py`): quién es lo
-  dice Google al servidor, nunca la vuelta. Tras Google pasa lo mismo que tras
-  la contraseña (`finish_sign_in()`: doble factor incluido). Sin cuenta, se
+- **Entrar y registrarse con Google o GitHub** (`services/google_auth.py`,
+  `services/github_auth.py`, por las mismas rutas: `PROVIDERS`): quién es lo
+  dice el proveedor al servidor, nunca la vuelta; de GitHub vale solo el
+  correo principal verificado. Tras cualquiera de los dos pasa lo mismo que
+  tras la contraseña (`finish_sign_in()`: doble factor incluido). Sin cuenta, se
   piden empresa, teléfonos y dirección, y nace confirmada y sin contraseña.
 
 ### Contactos (`docs/contactos.md`)
@@ -466,6 +468,8 @@ SES_TOPIC_ARN             # opcional: descarta avisos de otro tema
 SENDING_DOMAIN            # opcional: por omisión envios.sobreala.com
 GOOGLE_CLIENT_ID          # entrar y registrarse con Google; sin los dos, no hay
 GOOGLE_CLIENT_SECRET      # botón y sus rutas dan 404
+GITHUB_CLIENT_ID          # lo mismo con GitHub (una OAuth App); sin los dos, no
+GITHUB_CLIENT_SECRET      # hay botón y sus rutas dan 404
 PAYPAL_ENV                # sandbox | live; en producción, con llaves, tiene que
                           # estar escrita: sin ella no arranca
 PAYPAL_CLIENT_ID

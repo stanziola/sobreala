@@ -1,11 +1,12 @@
 {% extends "_auth.html" %}
 {% from "_phone.html" import phone, company_phones with context %}
-{% block title %}{{ t('google_signup_title') }}{% endblock %}
+{% block title %}{{ t('oauth_signup_title') }}{% endblock %}
 {% block auth %}
-{# Quien entró con Google y no tenía cuenta: el correo y el nombre los dio
-   Google; aquí se pide lo mismo que en el registro, menos la contraseña. #}
-  <h1>{{ t('google_signup_title') }}</h1>
-  <p class="lead">{{ t('google_signup_lead', email=email) }}</p>
+{# Quien entró con Google o con GitHub y no tenía cuenta: el correo y el
+   nombre los dio el proveedor; aquí se pide lo mismo que en el registro, menos
+   la contraseña. #}
+  <h1>{{ t('oauth_signup_title') }}</h1>
+  <p class="lead">{{ t('oauth_signup_lead', provider=provider, email=email) }}</p>
 
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 

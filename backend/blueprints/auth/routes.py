@@ -46,7 +46,7 @@ from services import countries
 from services import dashboard
 from services import imaging
 from services import importer
-from services import google_auth
+from services import github_auth, google_auth
 from services import mailer
 from services import notices
 from services import paguelofacil
@@ -924,7 +924,7 @@ def register_screen(form: dict, errors: dict, adding: bool,
                     company: list[dict[str, str]]):
     return render_template("register.html", form=form, errors=errors,
                            adding=adding, company=company,
-                           google_ready=google_auth.configured(),
+                           providers=ready_providers(),
                            phone_options=countries.options(),
                            company_max=accounts.COMPANY_PHONES_MAX,
                            postal_max=accounts.POSTAL_MAX)
@@ -1139,7 +1139,7 @@ def login():
                 return render_template("login.html", errors=errors,
                                        email=email_value, remember=remember,
                                        adding=adding,
-                                       google_ready=google_auth.configured())
+                                       providers=ready_providers())
             # Called even when there is no account, so a wrong address and a
             # wrong password take a similar amount of time.
             if verify_password(password, account and account.get("password_hash")):
@@ -1157,7 +1157,7 @@ def login():
                     return render_template("login.html", errors=errors,
                                            email=email_value, remember=remember,
                                            adding=adding,
-                                           google_ready=google_auth.configured())
+                                           providers=ready_providers())
                 remember = bool(request.form.get("remember"))
                 return finish_sign_in(db, account, remember=remember,
                                       email=email_value)
@@ -1172,7 +1172,7 @@ def login():
 
     return render_template("login.html", errors=errors, email=email_value,
                            remember=remember, adding=adding,
-                           google_ready=google_auth.configured(),
+                           providers=ready_providers(),
                            # Solo cuando no hay nada que corregir: un error de
                            # contraseña importa más que de dónde se venía.
                            switched=bool(request.args.get("change"))
@@ -1212,101 +1212,135 @@ def finish_sign_in(db, account: dict, *, remember: bool, email: str):
     return redirect(after_sign_in(account))
 
 
-# ------------------------------------------------------------------ google
+# ------------------------------------------------------- google y github
 #
-# Entrar y registrarse con Google (octubre de 2026). Quién es lo dice Google al
-# servidor (`google_auth.who()`), nunca la dirección de vuelta. Con una cuenta
-# que ya existe, pasa lo mismo que tras la contraseña (`finish_sign_in`); sin
-# ella, se piden los datos que Google no da y se crea, ya confirmada.
+# Entrar y registrarse con Google (octubre de 2026) y con GitHub (el mismo
+# mes). Quién es lo dice el proveedor al servidor (el `who()` de su servicio),
+# nunca la dirección de vuelta. Con una cuenta que ya existe, pasa lo mismo que
+# tras la contraseña (`finish_sign_in`); sin ella, se piden los datos que el
+# proveedor no da y se crea, ya confirmada. Los dos van por las mismas rutas,
+# así lo que se arregle en una vale para la otra; las de Google no cambiaron
+# de dirección.
 
-GOOGLE_REQUEST = "google_request"
-GOOGLE_PENDING = "google_pending"
+PROVIDERS = {
+    "google": {"service": google_auth, "field": "google_sub", "mark": "_google-g.svg",
+               "by": accounts.by_google, "link": accounts.link_google,
+               "unlink": accounts.unlink_google},
+    "github": {"service": github_auth, "field": "github_id", "mark": "_github-mark.svg",
+               "by": accounts.by_github, "link": accounts.link_github,
+               "unlink": accounts.unlink_github},
+}
+PROVIDER = "<any(google, github):provider>"
+OAUTH_ERRORS = (google_auth.GoogleError, github_auth.GitHubError)
 
 
-def google_redirect_uri() -> str:
-    return f"{Config.APP_BASE_URL}{url_for('auth.google_return')}"
+def provider_name(provider: str) -> str:
+    return t(f"provider_{provider}")
 
 
-def google_failed(message: str):
+def sign_in_list() -> list[dict[str, str]]:
+    """Todos los proveedores, para las filas de Seguridad: una cuenta enlazada se
+    ve y se desconecta aunque ese proveedor se haya apagado."""
+    return [{"key": key, "label": provider_name(key), "field": one["field"]}
+            for key, one in PROVIDERS.items()]
+
+
+def ready_providers() -> list[dict[str, str]]:
+    """Los que tienen su cliente puesto, en el orden de sus botones."""
+    return [{"key": key, "label": provider_name(key), "mark": one["mark"]}
+            for key, one in PROVIDERS.items() if one["service"].configured()]
+
+
+def provider_or_404(provider: str) -> dict:
+    one = PROVIDERS[provider]
+    if not one["service"].configured():
+        abort(404)
+    return one
+
+
+def oauth_redirect_uri(provider: str) -> str:
+    return f"{Config.APP_BASE_URL}{url_for('auth.oauth_return', provider=provider)}"
+
+
+def oauth_failed(message: str):
     """Volver a la pantalla de entrar con el motivo, sin abrir nada."""
     return render_template("login.html", errors={"form": message}, email="",
                            remember=True, adding=bool(session.get(ADDING)),
-                           google_ready=google_auth.configured())
+                           providers=ready_providers())
 
 
-@bp.route("/login/google")
-def google_start():
-    """Mandar a elegir la cuenta de Google. El `state` y el verificador de PKCE
-    se quedan en la sesión para comprobar la vuelta."""
-    if not google_auth.configured():
-        abort(404)
+@bp.route(f"/login/{PROVIDER}")
+def oauth_start(provider: str):
+    """Mandar a elegir la cuenta del proveedor. El `state` y el verificador de
+    PKCE se quedan en la sesión para comprobar la vuelta."""
+    one = provider_or_404(provider)
     adding = bool(request.args.get("add"))
     if current_session() and not adding:
         return redirect(landing(current_account()))
     if adding:
         session[ADDING] = True
-    asked = google_auth.new_request()
-    session[GOOGLE_REQUEST] = {"state": asked["state"], "verifier": asked["verifier"]}
-    return redirect(google_auth.authorize_url(
+    asked = one["service"].new_request()
+    session[f"{provider}_request"] = {"state": asked["state"], "verifier": asked["verifier"]}
+    return redirect(one["service"].authorize_url(
         state=asked["state"], challenge=asked["challenge"],
-        redirect_uri=google_redirect_uri()))
+        redirect_uri=oauth_redirect_uri(provider)))
 
 
-@bp.route("/login/google/return")
-def google_return():
-    """La vuelta de Google. Solo vale con el `state` que se guardó al salir; el
-    código se cambia por la identidad hablando el servidor con Google."""
-    if not google_auth.configured():
-        abort(404)
+@bp.route(f"/login/{PROVIDER}/return")
+def oauth_return(provider: str):
+    """La vuelta del proveedor. Solo vale con el `state` que se guardó al salir;
+    el código se cambia por la identidad hablando el servidor con el proveedor."""
+    one = provider_or_404(provider)
+    name = provider_name(provider)
     db = get_db()
-    asked = session.pop(GOOGLE_REQUEST, None) or {}
+    asked = session.pop(f"{provider}_request", None) or {}
     state = request.args.get("state", "")
     code = request.args.get("code", "")
     if (not asked or not state or not code
             or not secrets.compare_digest(state, asked.get("state", ""))):
-        return google_failed(t("google_cancelled"))
+        return oauth_failed(t("oauth_cancelled", provider=name))
     if not rate_limit(db, f"login:ip:{client_ip()}", *LOGIN_PER_IP):
-        return google_failed(t("error_too_many"))
+        return oauth_failed(t("error_too_many"))
     try:
-        found = google_auth.who(code, verifier=asked["verifier"],
-                                redirect_uri=google_redirect_uri())
-    except google_auth.GoogleError:
-        return google_failed(t("google_error"))
+        found = one["service"].who(code, verifier=asked["verifier"],
+                                   redirect_uri=oauth_redirect_uri(provider))
+    except OAUTH_ERRORS:
+        return oauth_failed(t("oauth_error", provider=name))
     if not found["email_verified"]:
-        return google_failed(t("google_unverified"))
+        return oauth_failed(t("oauth_unverified", provider=name))
 
-    account = accounts.by_google(db, found["sub"]) or accounts.by_email(db, found["email"])
+    field = one["field"]
+    account = one["by"](db, found["sub"]) or accounts.by_email(db, found["email"])
     if account is None:
-        # Nadie con ese correo: se crea, con lo que Google no da.
-        session[GOOGLE_PENDING] = {"sub": found["sub"], "email": found["email"],
-                                   "name": found["name"]}
-        return redirect(url_for("auth.google_signup"))
-    if account.get("google_sub") and account["google_sub"] != found["sub"]:
+        # Nadie con ese correo: se crea, con lo que el proveedor no da.
+        session[f"{provider}_pending"] = {"sub": found["sub"], "email": found["email"],
+                                          "name": found["name"]}
+        return redirect(url_for("auth.oauth_signup", provider=provider))
+    if account.get(field) and account[field] != found["sub"]:
         log_auth(db, events.LOGIN, events.BAD_CREDENTIALS, email=found["email"],
                  account_id=account["_id"])
-        return google_failed(t("google_other"))
+        return oauth_failed(t("oauth_other", provider=name))
     if accounts.is_suspended(account) or not member_may_enter(db, account):
         log_auth(db, events.LOGIN, events.SUSPENDED, email=account["email"],
                  account_id=account["_id"])
-        return google_failed(t("error_suspended"))
-    # La primera vez queda enlazada. Google ya comprobó el correo, así que uno
-    # registrado sin confirmar queda confirmado.
-    if not account.get("google_sub"):
-        accounts.link_google(db, account["_id"], found["sub"])
+        return oauth_failed(t("error_suspended"))
+    # La primera vez queda enlazada. El proveedor ya comprobó el correo, así que
+    # uno registrado sin confirmar queda confirmado.
+    if not account.get(field):
+        one["link"](db, account["_id"], found["sub"])
     if not account.get("email_confirmed_at"):
         accounts.confirm_email(db, account["_id"])
     account = accounts.by_id(db, account["_id"])
     return finish_sign_in(db, account, remember=True, email=account["email"])
 
 
-@bp.route("/signup/google", methods=["GET", "POST"])
-def google_signup():
-    """Crear la cuenta de quien entró con Google y no tenía: el correo y el
-    nombre ya los dio Google; faltan la empresa, los teléfonos y la dirección,
-    lo mismo que pide el registro. Nace confirmada y sin contraseña."""
-    if not google_auth.configured():
-        abort(404)
-    pending = session.get(GOOGLE_PENDING)
+@bp.route(f"/signup/{PROVIDER}", methods=["GET", "POST"])
+def oauth_signup(provider: str):
+    """Crear la cuenta de quien entró con un proveedor y no tenía: el correo y
+    el nombre ya los dio; faltan la empresa, los teléfonos y la dirección, lo
+    mismo que pide el registro. Nace confirmada y sin contraseña."""
+    one = provider_or_404(provider)
+    pending = session.get(f"{provider}_pending")
     if not pending:
         return redirect(url_for("auth.login"))
 
@@ -1333,7 +1367,8 @@ def google_signup():
             elif not phone:
                 errors["phone"] = t("error_phone")
             company_phones, bad_phone = accounts.clean_phones(
-                [one["number"] for one in company], [one["country"] for one in company])
+                [one_phone["number"] for one_phone in company],
+                [one_phone["country"] for one_phone in company])
             if bad_phone:
                 errors["company_phones"] = t("error_phone")
             address = accounts.clean_postal(form["address"])
@@ -1348,29 +1383,29 @@ def google_signup():
                     postal_address=address)
                 if created is None:
                     # Alguien registró ese correo mientras tanto: que entre.
-                    session.pop(GOOGLE_PENDING, None)
-                    return google_failed(t("error_email_taken"))
-                accounts.link_google(db, created["_id"], pending["sub"])
+                    session.pop(f"{provider}_pending", None)
+                    return oauth_failed(t("error_email_taken"))
+                one["link"](db, created["_id"], pending["sub"])
                 accounts.confirm_email(db, created["_id"])
                 log_auth(db, events.REGISTER, events.CREATED, email=pending["email"],
                          account_id=created["_id"])
                 account = accounts.by_id(db, created["_id"])
                 deliver(db, send_welcome, account, kind=events.CONFIRM)
                 notices.signup_to_admins(db, account)
-                session.pop(GOOGLE_PENDING, None)
+                session.pop(f"{provider}_pending", None)
                 sign_in(account, keep=bool(session.pop(ADDING, False)))
                 return redirect(url_for("auth.welcome"))
-    return render_template("register-google.html", form=form, errors=errors,
-                           email=pending["email"], company=company,
-                           phone_options=countries.options(),
+    return render_template("register-oauth.html", form=form, errors=errors,
+                           email=pending["email"], provider=provider_name(provider),
+                           company=company, phone_options=countries.options(),
                            company_max=accounts.COMPANY_PHONES_MAX,
                            postal_max=accounts.POSTAL_MAX)
 
 
-@bp.route("/settings/google/disconnect", methods=["POST"])
-def google_disconnect():
-    """Quitar Google de esta persona. Solo si tiene contraseña: sin ella se
-    quedaría sin forma de entrar."""
+@bp.route(f"/settings/{PROVIDER}/disconnect", methods=["POST"])
+def oauth_disconnect(provider: str):
+    """Quitar un proveedor de esta persona. Solo si tiene contraseña: sin ella
+    se quedaría sin forma de entrar. Vale aunque ese proveedor se haya apagado."""
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
@@ -1378,9 +1413,9 @@ def google_disconnect():
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(back)
     if not account.get("password_hash"):
-        return redirect(f"{back}?google=nopassword")
-    accounts.unlink_google(get_db(), account["_id"])
-    return redirect(f"{back}?google=off")
+        return redirect(f"{back}?{provider}=nopassword")
+    PROVIDERS[provider]["unlink"](get_db(), account["_id"])
+    return redirect(f"{back}?{provider}=off")
 
 
 @bp.route("/login/code", methods=["GET", "POST"])
@@ -2228,7 +2263,7 @@ def settings(section: str = "account", part: str = ""):
         account_errors=account_errors,
         editing=editing,
         renewals_ready=paypal.renewals_ready(),
-        google_ready=google_auth.configured(),
+        sign_in_with=sign_in_list(),
         test_addresses=accounts.test_addresses_of(account),
         test_max=accounts.DEMO_ADDRESSES, demo_total=accounts.DEMO_SENDS,
         demo_left=accounts.demo_left(account),

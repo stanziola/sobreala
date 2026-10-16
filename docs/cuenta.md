@@ -360,9 +360,9 @@ valiendo y llevan a la sección y bajan a la suya (`/settings/security/sessions`
   Los de un administrador se dibujan todos en el orden de `ADMIN_NOTICES`:
   hasta octubre de 2026 faltaban «Alguien pidió una demostración» y «El panel
   pausó a un cliente», y guardar esa pantalla los apagaba sin que se viera.
-- **Google solo sale si la cuenta está conectada**, en Contraseña, con su
-  «Desconectar». Quien se registró sin Google no ve la fila; se conecta solo la
-  primera vez que entra con Google.
+- **Google y GitHub solo salen si la cuenta está conectada**, en Contraseña,
+  cada uno con su «Desconectar». Quien se registró sin ellos no ve la fila; se
+  conectan solos la primera vez que entra con cada uno.
 - El aviso de la pausa o el límite y el de los documentos pendientes salen
   arriba de toda Cuenta.
 
@@ -640,10 +640,22 @@ cambie de cara a la mitad.
 - **En el teléfono** (por debajo de 900 px) la izquierda es una franja azul con
   el ala, sin las funciones, y el formulario va a todo el ancho.
 
-## Entrar y registrarse con Google (octubre de 2026)
+## Entrar y registrarse con Google o con GitHub (octubre de 2026)
 
-- **Un solo botón, «Continuar con Google»**, en entrar y en el registro. Sale solo
-  con `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`; sin ellos, las rutas dan 404.
+**Los dos van por el mismo camino.** Google llegó primero y GitHub se sumó el
+15 de octubre de 2026: las rutas son de un proveedor (`/login/<proveedor>`,
+`/login/<proveedor>/return`, `/signup/<proveedor>` y
+`/settings/<proveedor>/disconnect`, con `<any(google, github):proveedor>`), y
+`PROVIDERS` en `blueprints/auth/routes.py` dice de cada uno su servicio, el
+campo de la cuenta (`google_sub` o `github_id`) y su marca. Lo que se arregle
+en uno vale para el otro. Las direcciones de Google no cambiaron. Lo de abajo
+se escribió para Google y vale igual para GitHub, salvo lo que dice su propio
+apartado.
+
+- **Un solo botón por proveedor, «Continuar con Google» y «Continuar con
+  GitHub»**, lado a lado, en entrar y en el registro. Cada uno sale solo con
+  su par de variables (`GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`,
+  `GITHUB_CLIENT_ID` y `GITHUB_CLIENT_SECRET`); sin ellas, sus rutas dan 404.
 - **OAuth 2.0 con código y PKCE, con `urllib`** (`services/google_auth.py`). El
   `state` y el verificador viven en la sesión. **Quién es lo dice Google al
   servidor**: el código se cambia por un token y con él se pide `sub`, `email`,
@@ -668,3 +680,27 @@ cambie de cara a la mitad.
 - **Lo que hace falta en Google Cloud:** un cliente OAuth de tipo aplicación web,
   la pantalla de consentimiento (nombre, logo, privacidad y términos) y la
   dirección de vuelta `https://app.sobreala.com/login/google/return`.
+
+### Lo que GitHub tiene distinto
+
+- **`services/github_auth.py`**, con `urllib` como el de Google: código con
+  `state` y **PKCE (S256)**, que GitHub admite en las aplicaciones OAuth desde
+  julio de 2025; el secreto se sigue mandando, desde el servidor. Se pide
+  `read:user user:email` y nada más: ni repositorios.
+- **Quién es:** `/user` da el identificador (que no cambia aunque cambie el
+  nombre de usuario o el correo) y el nombre; `/user/emails` da los correos, y
+  de ellos **vale solo el principal y verificado**. Sin él, no entra, como el
+  correo sin verificar de Google. `who()` devuelve lo mismo que el de Google
+  (`sub`, `email`, `email_verified`, `name`).
+- **Sin cabecera `User-Agent`, la API de GitHub contesta que no a todo**: va en
+  cada llamada. Y un código que no vale no da un error HTTP: da 200 con
+  `error`, y eso también se trata como error.
+- **El botón** lleva la marca de GitHub (`_github-mark.svg`) en el color del
+  texto, así sigue el tema.
+- **La privacidad** lo dice al lado de Google: qué da GitHub (el correo
+  principal verificado, el nombre y el identificador) y para qué.
+- **Lo que hace falta en GitHub:** Settings → Developer settings → OAuth Apps →
+  New OAuth App, con el nombre «Sobreala», la página `https://sobreala.com` y la
+  dirección de vuelta `https://app.sobreala.com/login/github/return`. Del
+  resultado salen el Client ID y el secreto (que se genera ahí), que van en
+  Railway como `GITHUB_CLIENT_ID` y `GITHUB_CLIENT_SECRET`.

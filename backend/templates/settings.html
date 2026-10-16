@@ -254,32 +254,34 @@
     {% if request.args.get('updated') %}
     <p class="notice notice--ok">{{ t('password_changed_ok') }}</p>
     {% endif %}
-    {% if request.args.get('google') == 'off' %}
-    <p class="notice notice--ok">{{ t('google_done_off') }}</p>
-    {% elif request.args.get('google') == 'nopassword' %}
-    <p class="notice">{{ t('google_needs_password') }}</p>
+    {% for one in sign_in_with %}
+    {% if request.args.get(one.key) == 'off' %}
+    <p class="notice notice--ok">{{ t('oauth_done_off', provider=one.label) }}</p>
+    {% elif request.args.get(one.key) == 'nopassword' %}
+    <p class="notice">{{ t('oauth_needs_password', provider=one.label) }}</p>
     {% endif %}
+    {% endfor %}
 
     {% call row(t('settings_password_row'), t('settings_password_desc')) %}
     <a class="btn btn--small btn--outline"
        href="{{ url_for('auth.change_password') }}">{{ t('settings_password_action') }}</a>
     {% endcall %}
 
-    {# Google solo sale si la cuenta está conectada (octubre de 2026): quien se
-       registró sin él no tiene nada que ver aquí. Se conecta solo, la primera
-       vez que se entra con Google. Desconectarlo pide tener contraseña, para no
-       quedarse sin forma de entrar. #}
-    {% if account.google_sub %}
-    {% call row(t('google_title'), t('google_on_desc')) %}
-    <span class="tag tag--on">{{ t('google_on') }}</span>
+    {# Google y GitHub solo salen si la cuenta está conectada (octubre de 2026):
+       quien se registró sin ellos no tiene nada que ver aquí. Se conectan
+       solos, la primera vez que se entra con cada uno. Desconectarlos pide
+       tener contraseña, para no quedarse sin forma de entrar. #}
+    {% for one in sign_in_with if account.get(one.field) %}
+    {% call row(one.label, t('oauth_on_desc', provider=one.label)) %}
+    <span class="tag tag--on">{{ t('oauth_on') }}</span>
     {% if account.password_hash %}
-    <form method="post" action="{{ url_for('auth.google_disconnect') }}">
+    <form method="post" action="{{ url_for('auth.oauth_disconnect', provider=one.key) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn--small btn--outline" type="submit">{{ t('google_disconnect') }}</button>
+      <button class="btn btn--small btn--outline" type="submit">{{ t('oauth_disconnect') }}</button>
     </form>
     {% endif %}
     {% endcall %}
-    {% endif %}
+    {% endfor %}
 
     {# ----- los usuarios de la cuenta. Solo los ve el dueño: un usuario tiene
        esta pantalla para su contraseña, su segundo factor y sus dispositivos,
