@@ -72,6 +72,9 @@
        data-open-dialog="cargar">{{ t('designs_upload_button') }}</a>
     <button class="btn" type="submit">{{ t('designs_save') }}</button>
   </div>
+  {#- De quién sale y a dónde se responde (octubre de 2026), en su propia fila
+      debajo del nombre y los botones. -#}
+  {% include "designs/_sending.html" %}
 </form>
 <p class="error error--form" data-canvas-error hidden role="alert"></p>
 

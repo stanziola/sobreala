@@ -151,6 +151,32 @@ def listed_at(account, folder_id, **args) -> str:
     return url_for("designs.index", **args)
 
 
+def sending_choice(account) -> dict | None:
+    """La elección de «Sale de» y «Responder a» que llegó al guardar (octubre
+    de 2026): solo un remitente que pueda salir y una dirección confirmada de
+    esta cuenta; lo demás es el predeterminado. None si el formulario no trae
+    las listas."""
+    if "remitente" not in request.form and "responder" not in request.form:
+        return None
+    raw = request.form.get("remitente", "")
+    found = accounts.from_of(account, as_id(raw)) if raw else None
+    reply = request.form.get("responder", "")
+    return {"send_from": found["id"] if found and found["ready"] else None,
+            "reply_to": reply if reply in accounts.reply_tos_of(account) else None}
+
+
+def sending_context(account, found, choice=None) -> dict:
+    """Lo que necesitan las dos listas de un editor: lo que se puede elegir, los
+    predeterminados y lo elegido (lo que llegó, si vuelve con un error)."""
+    chosen = choice if choice is not None else {
+        "send_from": (found or {}).get("send_from"), "reply_to": (found or {}).get("reply_to")}
+    return {"senders": [one for one in accounts.froms_of(account) if one["ready"]],
+            "replies": accounts.reply_tos_of(account),
+            "default_from": accounts.default_from(account),
+            "default_reply": accounts.default_reply(account),
+            "chosen": chosen}
+
+
 # Los avisos de las carpetas, por lo que llega en `?carpeta_hecha=`.
 FOLDER_DONE = {"nueva": "folders_done_new", "nombre": "folders_done_name",
                "color": "folders_done_color", "eliminada": "folders_done_deleted"}
@@ -427,6 +453,7 @@ def edit_html(raw):
     html = found.get("html", "")
     name = found.get("name", "")
 
+    choice = sending_choice(account) if request.method == "POST" else None
     if request.method == "POST":
         html = request.form.get("html", "")
         name = designs.clean_name(request.form.get("nombre", "")) or name
@@ -441,6 +468,8 @@ def edit_html(raw):
             else:
                 designs.update_html(db, account["_id"], found["_id"], name=name,
                                     html=html)
+                if choice is not None:
+                    designs.set_sending(db, account["_id"], found["_id"], **choice)
                 images.keep(db, account["_id"], imaging.names_in(html))
                 # Las que el HTML de antes nombraba y este ya no (una foto
                 # cambiada con «Cambiar», por ejemplo).
@@ -450,6 +479,7 @@ def edit_html(raw):
     return render_template(
         "designs/html.html", section="plantillas", account=account,
         found=found, html=html, name=name, errors=errors,
+        **sending_context(account, found, choice),
         columns=marks_for(account),
         people=contacts.for_preview(db, account["_id"]),
         max_kb=html_check.MAX_BYTES // 1024,
@@ -725,6 +755,9 @@ def compose(account, key: str, found):
             else:
                 designs.update_filled(db, account["_id"], found["_id"],
                                       name=name, filled=filled)
+                choice = sending_choice(account)
+                if choice is not None:
+                    designs.set_sending(db, account["_id"], found["_id"], **choice)
                 return redirect(listed_at(account, found.get("folder_id"), changed=1))
 
     return render_template(
@@ -740,7 +773,9 @@ def compose(account, key: str, found):
         name=name, errors=errors, found=found,
         columns=marks_for(account),
         image_mb=imaging.MAX_UPLOAD // (1024 * 1024),
-        watermark=plans.has_watermark(plan))
+        watermark=plans.has_watermark(plan),
+        **sending_context(account, found,
+                          sending_choice(account) if request.method == "POST" else None))
 
 
 @bp.route("/templates/piece/<raw>", methods=["GET", "POST"])
@@ -956,6 +991,8 @@ def canvas_editor(account, found):
     if request.method == "POST" and "carpeta" in request.form:
         picked = designs.folder_of(account, as_id(request.form.get("carpeta")))
         folder_id = picked["id"] if picked else None
+    # Y de quién sale y a dónde se responde, si el formulario lo trae.
+    choice = sending_choice(account) if request.method == "POST" else None
 
     if request.method == "POST":
         name = designs.clean_name(request.form.get("nombre", "")) or name
@@ -978,13 +1015,17 @@ def canvas_editor(account, found):
                 else:
                     grounds, shades = fused
                     if found is None:
-                        designs.save_canvas(db, account["_id"], name=name,
-                                            doc=posted, backgrounds=grounds,
-                                            shades=shades, folder_id=folder_id)
+                        new_id = designs.save_canvas(
+                            db, account["_id"], name=name, doc=posted, backgrounds=grounds,
+                            shades=shades, folder_id=folder_id)
+                        if choice is not None:
+                            designs.set_sending(db, account["_id"], new_id, **choice)
                         return redirect(listed_at(account, folder_id, saved=1))
                     designs.update_canvas(db, account["_id"], found["_id"],
                                           name=name, doc=posted, backgrounds=grounds,
                                           shades=shades, folder_id=folder_id)
+                    if choice is not None:
+                        designs.set_sending(db, account["_id"], found["_id"], **choice)
                     # Lo que la versión de antes nombraba y esta ya no: sus
                     # imágenes fundidas y las fotos que se quitaron del lienzo.
                     drop_unused(db, account["_id"], images_in(found))
@@ -994,6 +1035,7 @@ def canvas_editor(account, found):
         "designs/canvas.html", section="plantillas", account=account,
         found=found, doc=doc, name=name, errors=errors,
         folders=designs.folders_of(account), folder_id=folder_id,
+        **sending_context(account, found, choice),
         fonts=list(canvas.FONTS), font_stacks=canvas.FONTS,
         columns=marks_for(account), keys=CANVAS_KEYS,
         people=contacts.for_preview(db, account["_id"]),

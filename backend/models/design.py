@@ -385,6 +385,36 @@ def shelf(db, account: dict[str, Any], *, limit: int = 50) -> dict[str, Any]:
     }
 
 
+def set_sending(db, account_id, design_id, *, send_from, reply_to) -> None:
+    """De quién sale y a dónde se responde esta plantilla (octubre de 2026):
+    el id de un remitente de la cuenta y una dirección de sus «Responder a»,
+    ya comprobados por quien llama. None es el predeterminado de la cuenta."""
+    sets: dict[str, Any] = {}
+    gone: dict[str, str] = {}
+    for field, value in (("send_from", send_from), ("reply_to", reply_to)):
+        if value is None:
+            gone[field] = ""
+        else:
+            sets[field] = value
+    update: dict[str, Any] = {}
+    if sets:
+        update["$set"] = sets
+    if gone:
+        update["$unset"] = gone
+    db.designs.update_one({"_id": design_id, "account_id": account_id}, update)
+
+
+def forget_sending(db, account_id, *, froms=(), replies=()) -> None:
+    """Lo que se quitó de Remitente sale también de las plantillas que lo
+    usaban, que vuelven al predeterminado."""
+    if froms:
+        db.designs.update_many({"account_id": account_id, "send_from": {"$in": list(froms)}},
+                               {"$unset": {"send_from": ""}})
+    if replies:
+        db.designs.update_many({"account_id": account_id, "reply_to": {"$in": list(replies)}},
+                               {"$unset": {"reply_to": ""}})
+
+
 def in_folder(db, account_id, folder_id, *, limit: int = 50) -> list[dict[str, Any]]:
     """Las plantillas de una carpeta, las más nuevas primero."""
     return list(db.designs.find({"account_id": account_id, "folder_id": folder_id}, LISTED)

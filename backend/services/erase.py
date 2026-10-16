@@ -41,12 +41,12 @@ def _outside(db, account: dict[str, Any]) -> list[str]:
     from services import paypal, renewals, ses_identity
 
     failed = []
-    domain = (account.get("sender") or {}).get("domain")
-    if domain:
+    # Todos sus dominios (octubre de 2026: puede tener varios).
+    for domain in accounts.domains_of(account):
         try:
-            ses_identity.delete(domain)
+            ses_identity.delete(domain["name"])
         except Exception as exc:  # noqa: BLE001 - anotado, no detiene
-            failed.append(f"ses {domain}: {type(exc).__name__}")
+            failed.append(f"ses {domain['name']}: {type(exc).__name__}")
     sub = accounts.subscription_of(account)
     if sub and sub.get("id") and sub.get("status") != accounts.SUB_CANCELLED:
         try:

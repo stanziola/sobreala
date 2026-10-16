@@ -136,6 +136,18 @@ sido un segundo sistema de construcción para un solo dibujo.
 - **Se vuelve a donde se estaba**: guardar una plantilla que está en una
   carpeta, duplicarla, moverla o borrarla vuelve a esa carpeta (`listed_at()`).
 
+### De quién sale cada plantilla
+
+**Los tres editores** (el Lienzo, el HTML de antes y las prediseñadas de antes)
+llevan dos listas, **«Sale de»** y **«Responder a»** (`designs/_sending.html`,
+octubre de 2026), con los remitentes que pueden salir y los «Responder a»
+confirmados de la cuenta. La primera opción de cada una es el predeterminado,
+que es lo que vale si no se elige. Se guardan con Guardar
+(`designs.set_sending()`: `send_from` y `reply_to`), y solo se acepta lo de la
+propia cuenta (`sending_choice()`). Si lo elegido se quita de Remitente, la
+plantilla vuelve al predeterminado. Lo demás está en «Envío» de
+`docs/envios.md`.
+
 ## El Lienzo
 
 La fila «Lienzo» de Plantillas, que se llamó «Crear» hasta octubre de 2026 (el

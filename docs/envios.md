@@ -7,15 +7,47 @@ tocar esta parte.
 
 ## Envío
 
-**Cada cliente elige de quién salen sus campañas**, en Correos →
-Remitente (`/campaigns/sender`, `blueprints/campaigns/`), y vale para todas sus
-campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
+**Cada cliente elige de quién salen sus campañas**, en Configuración de envío →
+Remitente (`/campaigns/sender`, `blueprints/campaigns/`). La cambia solo el
+dueño; un usuario con permiso de enviar la ve.
+
+**Desde octubre de 2026 hay varios de cada uno, y cada plantilla elige los
+suyos** (`account.sender`, en `models/account.py`):
+
+- **Remitentes** (`froms`): cada uno es **un nombre y una dirección**. El
+  nombre es el que se ve en el buzón (vacío es el de la empresa). La dirección
+  es la de la cuenta en `envios.sobreala.com` (ahí solo cambia el nombre, y
+  puede haber varios con nombres distintos) o **cualquiera de un dominio
+  propio verificado** (`ventas@`, `cobros@`…). Hasta 20, y uno es el
+  **predeterminado**.
+- **«Responder a»** (`reply_tos`): hasta 10, cada uno confirmado, y uno
+  predeterminado. Sin ninguno, las respuestas van al correo del dueño.
+- **Dominios propios** (`domains`): hasta 5, cada uno con su estado y sus
+  registros. Únicos entre cuentas por un índice de varias claves
+  (`uniq_sender_domains`).
+- **La plantilla elige** en sus editores (los tres: Lienzo, HTML y
+  prediseñadas) **«Sale de»** y **«Responder a»** (`designs.send_from` y
+  `designs.reply_to`); sin elegir, o si lo elegido ya no existe o su dominio
+  no está verificado, salen los predeterminados (`sender.remitente()` y
+  `sender.reply_to()`). **Lo escrito**, que no tiene plantilla, sale con los
+  predeterminados.
+- **Quitar** un remitente, un «Responder a» o un dominio lo borra también de
+  las plantillas que lo usaban (`designs.forget_sending()`), que vuelven al
+  predeterminado. Quitar un dominio se lleva sus remitentes y los «Responder
+  a» de ese dominio, y si el predeterminado era uno de ellos, pasa a serlo el
+  de `envios.sobreala.com`.
+- **La pantalla que pregunta antes de mandar dice de quién sale y a dónde se
+  responde** esa campaña: con la elección por plantilla, ahí se comprueba.
+- **Hasta octubre de 2026 había uno solo de cada uno** (`sender.domain`,
+  `domain_local` y `reply_to`). `ensure_indexes()` los pasa a las listas una
+  vez (`accounts.migrate_sender()`): el dominio verificado con su dirección
+  queda de remitente predeterminado, porque de ahí salían sus campañas.
 
 | Cliente | De | Responder a |
 |---|---|---|
-| Sin dominio propio | `Tu Empresa <usuario@envios.sobreala.com>`, con el usuario que eligió | La dirección que confirmó con un código, o el correo del dueño |
-| Con su dominio verificado | `Tu Empresa <boletin@tuempresa.com>`, la que elija de su dominio | Igual; una de su propio dominio no pide código |
-| Sin usuario elegido | **No sale**: `sender.blocked()` dice `sender` | — |
+| Sin dominio propio | `Tu Empresa <usuario@envios.sobreala.com>`, con el usuario que eligió, y el nombre de cada remitente | Las direcciones que confirmó con un código, o el correo del dueño |
+| Con dominios verificados | Además, `Ventas <ventas@tuempresa.com>`: las que agregue de cada dominio | Igual; una de sus propios dominios no pide código |
+| Sin usuario ni remitente que pueda salir | **No sale**: `sender.blocked()` dice `sender` | — |
 
 - **Una campaña nunca sale de `notifications@sobreala.com`**, que es solo del
   correo del sistema. `sender.sender_email()` no tiene esa salida: así una
@@ -27,16 +59,19 @@ campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
   cuenta, y la pausa automática (abajo). Hubo además una
   habilitación a mano antes del primer envío, y se quitó en octubre de 2026
   (ver «Abrir la cuenta» en `docs/cuenta.md`).
-- **El usuario es único entre cuentas**, y el dominio también: lo garantizan dos
-  índices únicos parciales sobre `sender.handle` y `sender.domain`. Los
-  reservados (`info`, `soporte`, `notifications`…) no se pueden elegir.
-- **El dominio propio lo conecta el cliente solo.** El panel crea su identidad
+- **El usuario es único entre cuentas**, y cada dominio también: lo garantizan
+  dos índices únicos parciales, sobre `sender.handle` y sobre
+  `sender.domains.name` (de varias claves: ninguna otra cuenta repite uno de la
+  lista). Los reservados (`info`, `soporte`, `notifications`…) no se pueden
+  elegir.
+- **Cada dominio propio lo conecta el cliente solo.** El panel crea su identidad
   en SES por la API v2 (`services/ses_identity.py`, con Easy DKIM), le enseña
   los tres CNAME para su DNS (también como archivo de zona para **importarlos
-  en Cloudflare de una vez**, `/campaigns/sender/records.txt`, sin proxy con
-  `cf_tags=cf-proxied:false`), y consulta si ya está verificada al abrir la
-  pantalla y con «Comprobar ahora»: no hay proceso que lo mire solo. Quitarlo
-  borra la identidad de SES. Los de correo gratis (gmail.com y compañía) no se
+  en Cloudflare de una vez**, `/campaigns/sender/records/<dominio>.txt`, sin
+  proxy con `cf_tags=cf-proxied:false`), y consulta si ya está verificado al
+  abrir la pantalla (cada uno que falte) y con «Comprobar ahora»: no hay
+  proceso que lo mire solo. Quitarlo borra la identidad de SES, y eliminar la
+  cuenta borra la de todos. Los de correo gratis (gmail.com y compañía) no se
   pueden conectar, porque nadie puede ponerles registros. **Con su propio MAIL
   FROM** (octubre de 2026): `envios.<dominio>`, con un MX y un SPF más (cinco
   registros en total), que es lo que Gmail enseña en «enviado por»; sin él
@@ -45,11 +80,13 @@ campañas. La cambia solo el dueño; un usuario con permiso de enviar la ve.
   dice «Enviado por: listo / esperando los registros». A un dominio conectado
   antes se le pide al abrir esa pantalla (`ses_identity.mail_from()`). El de
   `envios.sobreala.com` se pone a mano: `docs/ses.md`, paso 6b.
-- **El «Responder a» se confirma con un código** a esa dirección
+- **Cada «Responder a» se confirma con un código** a esa dirección
   (`tokens.REPLY_TO`, el mismo mecanismo que cambiar el correo de la cuenta),
   para que nadie ponga la de un tercero y le lleguen las respuestas de toda una
-  lista. Hasta que entra, las respuestas siguen yendo a la de antes.
-- La ficha del administrador lo enseña, de solo lectura.
+  lista; las de un dominio propio verificado no lo piden. Espera uno a la vez
+  (`reply_to_pending`), y hasta que entra, las respuestas siguen yendo a donde
+  iban. El primero que se confirma queda de predeterminado.
+- La ficha del administrador lo enseña todo, de solo lectura.
 
 Los de `envios.sobreala.com` comparten reputación, y las defensas automáticas
 son su protección:
@@ -312,8 +349,11 @@ una política de líneas largas.
 
 ### De quién sale
 
-Del remitente que eligió el cliente: ver «Envío», arriba. Lo deciden
-`sender.sender_email()` y `sender.reply_to()`, y nada más.
+Del remitente y el «Responder a» que eligió la plantilla, o de los
+predeterminados de la cuenta: ver «Envío», arriba. Lo deciden
+`sender.remitente()` (y con él `sender_email()` y `from_address()`) y
+`sender.reply_to()`, que reciben la plantilla, y nada más. `build()` les pasa
+la de cada correo.
 
 Y SES sigue en modo de prueba: **solo entrega a direcciones verificadas**. Lo que
 responda por cada destinatario se guarda en la campaña y la pantalla lo enseña.

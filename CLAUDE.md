@@ -322,8 +322,12 @@ cosa está como está, y lo que ya se probó y se quitó.
 
 ### Envío (`docs/envios.md`)
 
-- **Cada cliente elige su remitente**: `usuario@envios.sobreala.com` o su propio
-  dominio verificado. Una campaña nunca sale de `notifications@sobreala.com`.
+- **Cada cliente elige sus remitentes** (octubre de 2026: varios, cada uno con
+  su nombre): de `usuario@envios.sobreala.com` o de cualquier dirección de sus
+  dominios verificados (hasta 5), y varios «Responder a» confirmados. **Cada
+  plantilla elige «Sale de» y «Responder a»** (`designs.send_from` y
+  `reply_to`); sin elegir, y en lo escrito, van los predeterminados. Una
+  campaña nunca sale de `notifications@sobreala.com`.
 - **`services/sender.py` es el único sitio que le escribe a un contacto**; los
   del sistema salen por `mailer.py`. Para mandar hace falta un plan con cuota
   (`sender.blocked()`).

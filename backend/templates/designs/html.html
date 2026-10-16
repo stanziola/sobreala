@@ -18,6 +18,8 @@
     <input id="nombre" name="nombre" type="text" maxlength="80"
            value="{{ name }}" autocomplete="off">
 
+    {% include "designs/_sending.html" %}
+
     {% include "designs/_columns.html" %}
 
     <label for="html">{{ t('designs_html_code') }}</label>

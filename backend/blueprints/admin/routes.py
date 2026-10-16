@@ -390,7 +390,9 @@ def account_page(account, raw):
         whatsapp=accounts.whatsapp_url(client.get("phone")),
         tax_id=accounts.tax_id_of(client),
         client_from=sender.sender_email(client), client_reply=sender.reply_to(client),
-        client_sender=accounts.sender_of(client),
+        # Todos sus remitentes, «Responder a» y dominios (octubre de 2026).
+        client_froms=accounts.froms_of(client), client_replies=accounts.reply_tos_of(client),
+        client_domains=accounts.domains_of(client),
         limit=accounts.contact_limit(client),
         # Cifras y orígenes. Las direcciones de sus contactos no se listan.
         contacts_total=contacts.count(db, client["_id"]),

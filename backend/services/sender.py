@@ -150,32 +150,46 @@ def plain_text(html: str) -> str:
     return "\n".join(line for line in lines if line)
 
 
-def sender_email(account: dict[str, Any]) -> str:
-    """La dirección de la que sale una campaña, o vacío si todavía no hay.
+def remitente(account: dict[str, Any], design: dict[str, Any] | None = None):
+    """El remitente de un correo: el que eligió su plantilla
+    (`designs.send_from`), si todavía existe y puede salir; si no, el
+    predeterminado de la cuenta. None si no hay ninguno que pueda (octubre de
+    2026: hay varios)."""
+    chosen = accounts.from_of(account, (design or {}).get("send_from"))
+    if chosen is not None and chosen["ready"]:
+        return chosen
+    return accounts.default_from(account)
 
-    Con su dominio verificado y una dirección elegida, de ese dominio. Si no, de
-    su usuario en `SENDING_DOMAIN`. **Nunca de `SYSTEM_FROM_EMAIL`**: esa es
-    la de los códigos y los recibos, y una lista mala de un cliente no puede
-    llevárselos a spam. Sin usuario, vacío, y `blocked()` dice `sender`.
+
+def sender_email(account: dict[str, Any], design: dict[str, Any] | None = None) -> str:
+    """La dirección de la que sale, o vacío si todavía no hay.
+
+    De su usuario en `SENDING_DOMAIN` o de uno de sus dominios verificados,
+    según el remitente. **Nunca de `SYSTEM_FROM_EMAIL`**: esa es la de los
+    códigos y los recibos, y una lista mala de un cliente no puede llevárselos
+    a spam. Sin remitente, vacío, y `blocked()` dice `sender`.
     """
-    mine = accounts.sender_of(account)
-    if accounts.domain_ready(account):
-        return f"{mine['domain_local']}@{mine['domain']}"
-    if mine.get("handle"):
-        return f"{mine['handle']}@{Config.SENDING_DOMAIN}"
-    return ""
+    found = remitente(account, design)
+    return found["address"] if found else ""
 
 
-def from_address(account: dict[str, Any]) -> str:
-    """De quién sale la campaña, con el nombre de la empresa a la vista."""
-    name = (account.get("company_name") or Config.SYSTEM_FROM_NAME).strip()
-    return formataddr((name, sender_email(account)))
+def from_address(account: dict[str, Any], design: dict[str, Any] | None = None) -> str:
+    """De quién sale, con su nombre a la vista: el del remitente, o el de la
+    empresa."""
+    found = remitente(account, design)
+    name = ((found or {}).get("label") or account.get("company_name")
+            or Config.SYSTEM_FROM_NAME).strip()
+    return formataddr((name, found["address"] if found else ""))
 
 
-def reply_to(account: dict[str, Any]) -> str:
-    """A dónde llegan las respuestas: la que el cliente confirmó, o el correo
-    con el que entra el dueño. La conversación es suya, no nuestra."""
-    return accounts.sender_of(account).get("reply_to") or account.get("email", "")
+def reply_to(account: dict[str, Any], design: dict[str, Any] | None = None) -> str:
+    """A dónde llegan las respuestas: el «Responder a» que eligió la plantilla,
+    si sigue confirmado; si no, el predeterminado, o el correo con el que entra
+    el dueño. La conversación es suya, no nuestra."""
+    chosen = (design or {}).get("reply_to")
+    if chosen and chosen in accounts.reply_tos_of(account):
+        return chosen
+    return accounts.default_reply(account)
 
 
 def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
@@ -202,14 +216,17 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     html = columns.fill(html, contact, fields)
 
     message = EmailMessage(policy=POLICY)
-    message["From"] = from_address(account)
+    # De quién sale y a dónde se responde los elige la plantilla (octubre de
+    # 2026); lo escrito no tiene plantilla y va con los predeterminados.
+    message["From"] = from_address(account, piece.design)
     message["To"] = contact["email"]
     # Sin escapar: un asunto es texto, y ahí «&» es «&» y no «&amp;».
     message["Subject"] = columns.fill(campaign["subject"], contact, fields,
                                       html=False)
     # Responder le llega al cliente, no a nosotros: la conversación es suya.
-    if reply_to(account):
-        message["Reply-To"] = reply_to(account)
+    answer = reply_to(account, piece.design)
+    if answer:
+        message["Reply-To"] = answer
     # Las dos cabeceras de la baja de un clic. La segunda es la que hace que
     # Gmail y Outlook enseñen su propio botón: sin ella, el enlace del pie es
     # lo único que hay.

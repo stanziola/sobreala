@@ -1,0 +1,27 @@
+{#- De quién sale esta plantilla y a dónde se responde (octubre de 2026). La
+    primera opción de cada lista es el predeterminado de la cuenta, que es lo
+    que vale si no se elige otro, y lo que vuelve a valer si lo elegido se quita
+    de Remitente. Va en los tres editores. Espera: senders (los remitentes que
+    pueden salir), replies, default_from, default_reply y chosen. -#}
+<div class="sending">
+  <div class="sending__one">
+    <label for="remitente">{{ t('designs_send_from') }}</label>
+    <select id="remitente" name="remitente">
+      <option value="">{{ t('designs_send_default', what=(default_from.label ~ ' <' ~ default_from.address ~ '>') if default_from else t('sender_none')) }}</option>
+      {% for one in senders %}
+      <option value="{{ one.id }}"{% if one.id == chosen.send_from %} selected{% endif %}>{{ one.label }} &lt;{{ one.address }}&gt;</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="sending__one">
+    <label for="responder">{{ t('designs_reply_to') }}</label>
+    <select id="responder" name="responder">
+      <option value="">{{ t('designs_send_default', what=default_reply) }}</option>
+      {% for one in replies %}
+      <option value="{{ one }}"{% if one == chosen.reply_to %} selected{% endif %}>{{ one }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <p class="hint sending__hint">{{ t('designs_sending_hint') }}
+    <a href="{{ url_for('campaigns.sender_page') }}">{{ t('designs_sending_link') }}</a></p>
+</div>

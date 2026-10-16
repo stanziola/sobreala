@@ -1504,6 +1504,14 @@ TEXTS = {
     "folders_color_teal": "Turquesa",
     # La lista del Lienzo, junto al nombre.
     "canvas_folder": "Carpeta",
+    # De quién sale cada plantilla y a dónde se responde (octubre de 2026).
+    "designs_send_from": "Sale de",
+    "designs_reply_to": "Responder a",
+    "designs_send_default": "El predeterminado: {what}",
+    "designs_sending_hint": "Si no eliges otros, sale del remitente "
+                            "predeterminado y las respuestas llegan a la "
+                            "dirección predeterminada.",
+    "designs_sending_link": "Ver Remitente",
     "designs_size": "{kb} KB",
 
     # Por qué no se pudo guardar. Cada regla está por una razón, y la frase la
@@ -1915,28 +1923,65 @@ TEXTS = {
     # Remitente: de quién salen las campañas y a dónde vuelven las respuestas.
     "sender_title": "Remitente",
     "sender_back": "Volver a Enviar correos",
-    "sender_lead": "Desde qué dirección salen tus campañas y a dónde llegan las "
-                   "respuestas. Vale para todas tus campañas.",
+    "sender_lead": "Desde qué direcciones salen tus campañas y a dónde llegan "
+                   "las respuestas. Cada plantilla elige las suyas; la que no "
+                   "elige, y lo que escribes sin plantilla, usan las "
+                   "predeterminadas.",
     "sender_change": "Cambiar remitente",
     "sender_owner_only": "Solo el dueño de la cuenta puede cambiar el remitente.",
-    "sender_now": "Así lo ve quien recibe tus campañas",
+    "sender_now": "Lo predeterminado",
+    # Arriba de Masivo: son los de una plantilla que no elige otros.
+    "sender_now_default": "Lo predeterminado:",
     "sender_now_from": "Sale de: {name} <{email}>",
     "sender_now_none": "Sale de: todavía no elegiste una dirección",
     "sender_now_reply": "Responde a: {email}",
     "sender_none": "Sin elegir",
     "sender_save": "Guardar",
+    "sender_edit": "Editar",
+    "sender_default": "Predeterminado",
+    "sender_make_default": "Hacer predeterminado",
+    # Los remitentes (octubre de 2026: varios, cada uno con su nombre).
+    "sender_froms": "Remitentes",
+    "sender_froms_lead": "Quién firma tus campañas: el nombre que se ve en el "
+                         "buzón y la dirección de la que salen, que es la tuya "
+                         "en {domain} o una de tus dominios verificados.",
+    "sender_froms_none": "Todavía no tienes ninguno. Elige abajo tu dirección de "
+                         "envío.",
+    "sender_from_waiting": "No sale mientras su dominio no esté verificado.",
+    "sender_from_remove": "Quitar",
+    "sender_from_add": "Agregar un remitente",
+    "sender_from_add_button": "Agregar",
+    "sender_from_name": "Nombre",
+    "sender_from_name_hint": "El que se ve en el buzón. Si lo dejas vacío, el "
+                             "de tu empresa: {name}.",
+    "sender_from_address": "Dirección",
+    "sender_from_domain": "Dominio de la dirección",
+    "sender_from_local_hint": "En tus dominios, escribe la parte de antes de la "
+                              "@: boletin, cobros o la que quieras. En {domain} "
+                              "la dirección es siempre la tuya.",
+    "sender_from_full": "Ya tienes {n} remitentes, que es el máximo.",
+    "sender_from_taken": "Ya tienes un remitente con ese nombre y esa dirección.",
+    "sender_from_domain_bad": "Esa dirección no se puede usar: elige la tuya en "
+                              "{domain} o un dominio verificado.",
+    "sender_handle_title": "Tu dirección en {domain}",
     "sender_handle": "Tu dirección de envío",
-    "sender_handle_hint": "La parte de antes de la @. Tus campañas salen de "
-                          "{domain} mientras no conectes un dominio propio.",
+    "sender_handle_hint": "La parte de antes de la @. Es la de tus remitentes en "
+                          "{domain}, y ninguna otra cuenta la puede usar.",
     "sender_handle_bad": "Usa de {min} a {max} letras, números, puntos o guiones, "
                          "sin espacios ni tildes. Algunos nombres están reservados.",
     "sender_handle_taken": "Esa dirección ya la usa otra cuenta. Prueba con otra.",
     "sender_reply": "Responder a",
-    "sender_reply_hint": "A dónde llegan las respuestas de tus contactos. Puede "
-                         "ser cualquier correo: te mandamos un código para "
-                         "confirmar que es tuyo.",
-    "sender_reply_save": "Cambiar",
-    "sender_reply_same": "Las respuestas ya llegan a esa dirección.",
+    "sender_reply_hint": "A dónde llegan las respuestas de tus contactos. Cada "
+                         "dirección se confirma con un código que le mandamos; "
+                         "las de tus dominios verificados no lo necesitan. Sin "
+                         "ninguna, llegan a {email}.",
+    "sender_reply_owner": "El correo con el que entras. Las respuestas llegan "
+                          "aquí mientras no agregues otra dirección.",
+    "sender_reply_remove": "Quitar",
+    "sender_reply_add": "Agregar",
+    "sender_reply_placeholder": "socios@tuempresa.com",
+    "sender_reply_full": "Ya tienes {n} direcciones, que es el máximo.",
+    "sender_reply_same": "Esa dirección ya está en la lista.",
     "sender_reply_waiting": "Esperando el código que mandamos a {email}.",
     "sender_reply_code_link": "Escribir el código",
     "sender_code_title": "Confirma la dirección de respuesta",
@@ -1944,20 +1989,21 @@ TEXTS = {
                         "Escríbelo aquí.",
     "sender_code_submit": "Confirmar",
     "sender_code_other": "Usar otra dirección",
-    "sender_domain": "Tu dominio propio",
-    "sender_domain_lead": "Si tu empresa tiene su dominio (por ejemplo "
-                          "tuempresa.com), conéctalo y tus campañas saldrán de "
-                          "una dirección tuya, con tu propia reputación. Es "
-                          "opcional.",
+    "sender_domain": "Tus dominios",
+    "sender_domain_lead": "Si tu empresa tiene sus dominios (por ejemplo "
+                          "tuempresa.com), conéctalos y tus remitentes podrán "
+                          "salir de direcciones tuyas, con tu propia reputación. "
+                          "Es opcional, y puedes tener hasta {n}.",
     "sender_domain_field": "Tu dominio",
+    "sender_domain_another": "Otro dominio",
     "sender_domain_connect": "Conectar",
     "sender_domain_none": "Sin dominio conectado.",
     "sender_domain_bad": "Ese dominio no se puede usar. Escríbelo como "
                          "tuempresa.com. Los de correo gratis, como gmail.com, "
                          "no se pueden conectar.",
     "sender_domain_taken": "Ese dominio ya está conectado en otra cuenta.",
-    "sender_domain_already": "Ya tienes un dominio conectado. Quítalo para "
-                             "conectar otro.",
+    "sender_domain_mine": "Ese dominio ya está en tu lista.",
+    "sender_domain_full": "Ya tienes {n} dominios, que es el máximo.",
     "sender_domain_failed": "No pudimos hablar con Amazon en este momento. "
                             "Prueba otra vez en unos minutos.",
     "sender_status_pending": "Pendiente",
@@ -1989,17 +2035,23 @@ TEXTS = {
                              "agrega estos dos registros en su DNS:",
     "sender_check": "Comprobar ahora",
     "sender_remove": "Quitar dominio",
-    "sender_local": "Dirección de tu dominio",
-    "sender_local_hint": "La parte de antes de la @ en {domain}: boletin, "
-                         "noticias o la que quieras.",
     "sender_local_bad": "Escribe solo la parte de antes de la @, sin espacios.",
     "sender_done_handle": "Guardamos tu dirección de envío.",
-    "sender_done_reply": "Listo: las respuestas llegarán a esa dirección.",
+    "sender_done_reply": "Listo, agregamos esa dirección.",
+    "sender_done_reply_removed": "Quitamos esa dirección. Las plantillas que la "
+                                 "usaban responden a la predeterminada.",
+    "sender_done_reply_default": "Listo, ahora las respuestas llegan a esa "
+                                 "dirección.",
+    "sender_done_from_added": "Listo, agregamos el remitente.",
+    "sender_done_from_saved": "Listo, guardamos el remitente.",
+    "sender_done_from_removed": "Quitamos el remitente. Las plantillas que salían "
+                                "de él salen del predeterminado.",
+    "sender_done_from_default": "Listo, ese es ahora el remitente predeterminado.",
     "sender_done_domain": "Dominio agregado. Ahora pon los registros en su DNS.",
     "sender_done_check": "Comprobamos tu dominio con Amazon.",
-    "sender_done_local": "Guardamos la dirección de tu dominio.",
-    "sender_done_removed": "Quitamos tu dominio. Tus campañas vuelven a salir de "
-                           "tu dirección de envío.",
+    "sender_done_removed": "Quitamos el dominio, con sus remitentes. Las "
+                           "plantillas que salían de ahí salen del "
+                           "predeterminado.",
     "send_blocked_piece": "La plantilla de esa campaña ya no existe.",
 
     "send_state_ready": "Lista para salir",
@@ -2021,6 +2073,8 @@ TEXTS = {
     "send_confirm_subject": "Asunto",
     "send_confirm_list": "Etiquetas",
     "send_confirm_piece": "Plantilla",
+    "send_confirm_from": "Sale de",
+    "send_confirm_reply": "Responder a",
     "send_confirm_going_none": "Ahora mismo no hay nadie en esa lista, así que "
                                "no hay a quién mandarla.",
     "send_confirm_going_one": "Un contacto",

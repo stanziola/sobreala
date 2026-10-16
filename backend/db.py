@@ -58,15 +58,27 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.accounts.create_index([("owner_id", ASCENDING)], name="by_owner")
     # make_admin.py --lista pregunta justamente por esto.
     db.accounts.create_index([("role", ASCENDING)], name="by_role")
-    # Who a campaign leaves from: one handle on the sending domain and one
-    # domain of their own per account. Partial, so accounts without them don't
-    # collide on a missing value.
+    # Who a campaign leaves from: one handle on the sending domain per account,
+    # and domains of their own that no other account has. Partial, so accounts
+    # without them don't collide on a missing value.
     db.accounts.create_index([("sender.handle", ASCENDING)], unique=True,
                              name="uniq_sender_handle",
                              partialFilterExpression={"sender.handle": {"$type": "string"}})
-    db.accounts.create_index([("sender.domain", ASCENDING)], unique=True,
-                             name="uniq_sender_domain",
-                             partialFilterExpression={"sender.domain": {"$type": "string"}})
+    # Hasta octubre de 2026 había un solo dominio por cuenta (`sender.domain`)
+    # y un solo «Responder a»: se pasan a las listas una vez, y el índice del
+    # dominio de antes se borra aquí y no a mano, para que un despliegue se
+    # arregle solo. Uno por dominio, aunque esté en una lista: el índice es
+    # de varias claves y no deja que otra cuenta lo repita.
+    from models import account as accounts
+
+    accounts.migrate_sender(db)
+    try:
+        db.accounts.drop_index("uniq_sender_domain")
+    except OperationFailure:
+        pass  # never existed, or already gone
+    db.accounts.create_index([("sender.domains.name", ASCENDING)], unique=True,
+                             name="uniq_sender_domains",
+                             partialFilterExpression={"sender.domains.name": {"$type": "string"}})
     # Las cuentas de antes de que el rol existiera. Una sola vez: a partir de
     # ahí no encuentra ninguna. Va aquí porque es la única función que corre
     # sola al arrancar y ya es la que deja la base como tiene que estar.

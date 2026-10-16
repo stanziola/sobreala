@@ -19,6 +19,12 @@
       {% else %}{{ t('send_confirm_going', n=going) }}{% endif %}</b></li>
   <li><span>{{ t('send_confirm_piece') }}</span>
     <b>{{ piece.name if piece else t('send_blocked_piece') }}</b></li>
+  {#- Los elige la plantilla (octubre de 2026): aquí se comprueban antes de
+      que salga. -#}
+  <li><span>{{ t('send_confirm_from') }}</span>
+    <b>{% if sending_from %}{{ sending_from.label }} &lt;{{ sending_from.address }}&gt;
+       {%- else %}{{ t('sender_none') }}{% endif %}</b></li>
+  <li><span>{{ t('send_confirm_reply') }}</span><b>{{ sending_reply }}</b></li>
 </ul>
 <p class="hint">{{ t('send_confirm_quota', n=quota) }}
   {{ t('send_confirm_suppressed') }}</p>

@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import urlsplit
 
+from bson import ObjectId
 from pymongo.errors import DuplicateKeyError
 
 from config import Config
@@ -1039,9 +1040,23 @@ def unlimit(db, account_id) -> bool:
 
 # --------------------------------------------------------------- remitente
 #
-# De quién sale una campaña. Sin dominio propio, de `handle@SENDING_DOMAIN`;
-# con uno verificado, de cualquier dirección de ese dominio. Nunca de la
-# dirección del correo del sistema: ver services/sender.py.
+# De quién sale una campaña y a dónde vuelven las respuestas. Desde octubre de
+# 2026 hay varios de cada uno, y cada plantilla elige los suyos. `sender`
+# guarda:
+#
+#   * `handle`: la dirección de la cuenta en `SENDING_DOMAIN`, única entre
+#     cuentas;
+#   * `domains`: sus dominios propios, `{name, status, dkim_tokens, checked_at,
+#     verified_at}`, únicos entre cuentas;
+#   * `froms`: los remitentes, `{id, name, local, domain}`: el nombre que se ve
+#     en el buzón (vacío es el de la empresa) y la dirección, que es la de
+#     `SENDING_DOMAIN` (con `domain` vacío: ahí solo cambia el nombre) o una de
+#     un dominio propio verificado. `from_default` es el predeterminado;
+#   * `reply_tos`: los «Responder a» ya confirmados, `reply_default` el
+#     predeterminado, y `reply_to_pending` el que espera su código.
+#
+# La plantilla que no elige, y lo escrito, salen con los predeterminados.
+# Nunca de la dirección del correo del sistema: ver services/sender.py.
 
 HANDLE_MIN = 3
 HANDLE_MAX = 30
@@ -1061,10 +1076,15 @@ FREE_MAIL = frozenset({
     "icloud.com", "me.com", "mac.com", "aol.com", "proton.me", "protonmail.com",
     "gmx.com", "zoho.com", "mail.com", "yandex.com",
 })
-SENDER_FIELDS = ("handle", "reply_to", "domain", "domain_local")
 DOMAIN_PENDING = "pending"
 DOMAIN_VERIFIED = "verified"
 DOMAIN_FAILED = "failed"
+# Cuántos de cada uno puede tener una cuenta: cada dominio es una identidad en
+# Amazon, y cada «Responder a» se confirma con un correo.
+DOMAIN_LIMIT = 5
+FROM_LIMIT = 20
+REPLY_LIMIT = 10
+FROM_NAME_MAX = 60
 
 
 def sender_of(account: dict[str, Any] | None) -> dict[str, Any]:
@@ -1140,75 +1160,359 @@ def suggest_handle(db, company_name: str) -> str:
 
 def set_handle(db, account_id, handle: str) -> bool:
     """Guardar el usuario. False si otra cuenta lo tiene: lo decide el índice
-    único, así que dos que lo piden a la vez no se lo llevan los dos."""
+    único, así que dos que lo piden a la vez no se lo llevan los dos. La
+    primera vez nace con él el primer remitente."""
     try:
         db.accounts.update_one({"_id": account_id},
                                {"$set": {"sender.handle": handle, "updated_at": now()}})
     except DuplicateKeyError:
         return False
+    ensure_base_from(db, account_id)
     return True
 
 
-def set_reply_to(db, account_id, address: str) -> None:
-    """El «Responder a», ya probado. Borra lo que estuviera esperando código."""
-    db.accounts.update_one({"_id": account_id},
-                           {"$set": {"sender.reply_to": address, "updated_at": now()},
-                            "$unset": {"sender.reply_to_pending": ""}})
+def ensure_base_from(db, account_id) -> None:
+    """El primer remitente de una cuenta: su dirección de `SENDING_DOMAIN`, con
+    el nombre de la empresa, en cuanto la tiene. Solo si nunca tuvo remitentes:
+    quien los quitó todos no los ve volver."""
+    if not sender_of(by_id(db, account_id)).get("handle"):
+        return
+    first = ObjectId()
+    db.accounts.update_one(
+        {"_id": account_id, "sender.froms": {"$exists": False}},
+        {"$set": {"sender.froms": [{"id": first, "name": "", "local": "", "domain": ""}],
+                  "sender.from_default": first}})
 
 
-def start_reply_to(db, account_id, address: str) -> None:
-    """La dirección nueva espera su código aparte: la de antes sigue valiendo."""
-    db.accounts.update_one({"_id": account_id},
-                           {"$set": {"sender.reply_to_pending": address,
-                                     "updated_at": now()}})
+def clean_from_name(raw: str) -> str:
+    """El nombre que se ve en el buzón. Vacío es el de la empresa."""
+    return " ".join((raw or "").split())[:FROM_NAME_MAX]
 
 
-def clear_reply_to(db, account_id) -> None:
-    """Volver a que las respuestas lleguen al correo del dueño."""
-    db.accounts.update_one({"_id": account_id},
-                           {"$unset": {"sender.reply_to": ""}})
+# -- los dominios propios
+
+def domains_of(account: dict[str, Any] | None) -> list[dict[str, Any]]:
+    return [dict(one) for one in sender_of(account).get("domains") or []]
 
 
-def set_domain(db, account_id, domain: str, tokens: list[str]) -> bool:
-    """Empezar a conectar un dominio. False si otra cuenta ya lo tiene."""
+def domain_of(account: dict[str, Any] | None, name: str) -> dict[str, Any] | None:
+    return next((one for one in domains_of(account) if one.get("name") == name), None)
+
+
+def verified_domains(account: dict[str, Any] | None) -> list[str]:
+    return [one["name"] for one in domains_of(account) if one.get("status") == DOMAIN_VERIFIED]
+
+
+def add_domain(db, account_id, name: str, tokens: list[str]) -> bool:
+    """Empezar a conectar un dominio. False si otra cuenta ya lo tiene: lo
+    decide el índice único sobre `sender.domains.name`."""
     try:
-        db.accounts.update_one({"_id": account_id}, {"$set": {
-            "sender.domain": domain, "sender.domain_status": DOMAIN_PENDING,
-            "sender.dkim_tokens": list(tokens), "sender.domain_checked_at": now(),
-            "updated_at": now()}, "$unset": {"sender.domain_local": "",
-                                             "sender.domain_verified_at": ""}})
+        db.accounts.update_one({"_id": account_id}, {
+            "$push": {"sender.domains": {"name": name, "status": DOMAIN_PENDING,
+                                         "dkim_tokens": list(tokens), "checked_at": now()}},
+            "$set": {"updated_at": now()}})
     except DuplicateKeyError:
         return False
     return True
 
 
-def set_domain_status(db, account_id, status: str) -> None:
-    changes: dict[str, Any] = {"sender.domain_status": status,
-                               "sender.domain_checked_at": now()}
+def set_domain_status(db, account_id, name: str, status: str) -> None:
+    changes: dict[str, Any] = {"sender.domains.$.status": status,
+                               "sender.domains.$.checked_at": now()}
     if status == DOMAIN_VERIFIED:
-        changes["sender.domain_verified_at"] = now()
-    db.accounts.update_one({"_id": account_id, "sender.domain": {"$exists": True}},
+        changes["sender.domains.$.verified_at"] = now()
+    db.accounts.update_one({"_id": account_id, "sender.domains.name": name},
                            {"$set": changes})
 
 
-def set_domain_local(db, account_id, local: str) -> None:
-    db.accounts.update_one({"_id": account_id},
-                           {"$set": {"sender.domain_local": local, "updated_at": now()}})
-
-
-def clear_domain(db, account_id) -> None:
-    db.accounts.update_one({"_id": account_id}, {"$unset": {
-        "sender.domain": "", "sender.domain_status": "", "sender.dkim_tokens": "",
-        "sender.domain_local": "", "sender.domain_checked_at": "",
-        "sender.domain_verified_at": ""}})
-
-
-def domain_ready(account: dict[str, Any] | None) -> bool:
-    """Si las campañas ya pueden salir de su dominio: verificado y con la
-    dirección elegida."""
+def remove_domain(db, account: dict[str, Any], name: str) -> dict[str, list]:
+    """Quitar un dominio, con sus remitentes y los «Responder a» de ese
+    dominio, que ya no los prueba nada. Si el predeterminado era uno de ellos,
+    pasa a serlo el de `SENDING_DOMAIN`. Devuelve lo que se fue (`froms` y
+    `replies`), para quitarlo también de las plantillas que lo usaban."""
     mine = sender_of(account)
-    return bool(mine.get("domain") and mine.get("domain_local")
-                and mine.get("domain_status") == DOMAIN_VERIFIED)
+    froms = [one["id"] for one in mine.get("froms") or [] if one.get("domain") == name]
+    replies = [one for one in mine.get("reply_tos") or []
+               if one.lower().endswith("@" + name)]
+    db.accounts.update_one({"_id": account["_id"]}, {
+        "$pull": {"sender.domains": {"name": name}, "sender.froms": {"domain": name},
+                  "sender.reply_tos": {"$in": replies}},
+        "$set": {"updated_at": now()}})
+    _repair_defaults(db, account["_id"])
+    return {"froms": froms, "replies": replies}
+
+
+# -- los remitentes
+
+def froms_of(account: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Los remitentes, cada uno con su dirección (`address`), el nombre que se
+    ve (`label`) y si puede salir hoy (`ready`): el de `SENDING_DOMAIN`
+    mientras la cuenta tenga su usuario, y el de un dominio propio mientras ese
+    dominio esté verificado."""
+    mine = sender_of(account)
+    handle = mine.get("handle") or ""
+    verified = set(verified_domains(account))
+    company = (account or {}).get("company_name", "")
+    stored = mine.get("froms")
+    if stored is None and handle:
+        # Una cuenta de antes de los remitentes que todavía no pasó por la
+        # migración: sale de su dirección de siempre.
+        stored = [{"id": None, "name": "", "local": "", "domain": ""}]
+    found = []
+    for one in stored or []:
+        domain = one.get("domain") or ""
+        if domain:
+            address = f"{one.get('local', '')}@{domain}"
+            ready = domain in verified and bool(one.get("local"))
+        else:
+            address = f"{handle}@{Config.SENDING_DOMAIN}" if handle else ""
+            ready = bool(handle)
+        found.append({**one, "address": address, "ready": ready, "shared": not domain,
+                      "label": one.get("name") or company})
+    return found
+
+
+def from_of(account: dict[str, Any] | None, from_id) -> dict[str, Any] | None:
+    if from_id is None:
+        return None
+    return next((one for one in froms_of(account) if one.get("id") == from_id), None)
+
+
+def default_from(account: dict[str, Any] | None) -> dict[str, Any] | None:
+    """El remitente predeterminado, si puede salir; si no, el primero que
+    pueda. None si ninguno puede: `sender.blocked()` dice `sender`."""
+    ready = [one for one in froms_of(account) if one["ready"]]
+    wanted = sender_of(account).get("from_default")
+    return (next((one for one in ready if one.get("id") == wanted), None)
+            or (ready[0] if ready else None))
+
+
+def _same_from(one: dict[str, Any], name: str, local: str, domain: str) -> bool:
+    return ((one.get("domain") or "") == domain and (one.get("local") or "") == local
+            and (one.get("name") or "").casefold() == name.casefold())
+
+
+def add_from(db, account: dict[str, Any], *, name: str, local: str,
+             domain: str) -> tuple[Any, str]:
+    """Agregar un remitente. Devuelve su id y "", o None y por qué no: `full`,
+    `domain` (no es suyo o no está verificado), `local` o `taken`. El primero
+    queda de predeterminado."""
+    mine = sender_of(account)
+    stored = mine.get("froms") or []
+    if len(stored) >= FROM_LIMIT:
+        return None, "full"
+    name = clean_from_name(name)
+    if domain:
+        if domain not in verified_domains(account):
+            return None, "domain"
+        local = clean_local(local)
+        if local is None:
+            return None, "local"
+    elif not mine.get("handle"):
+        return None, "domain"
+    else:
+        local = ""
+    if any(_same_from(one, name, local, domain) for one in stored):
+        return None, "taken"
+    new_id = ObjectId()
+    changes: dict[str, Any] = {"updated_at": now()}
+    if not stored:
+        changes["sender.from_default"] = new_id
+    db.accounts.update_one({"_id": account["_id"]}, {
+        "$push": {"sender.froms": {"id": new_id, "name": name, "local": local,
+                                   "domain": domain}},
+        "$set": changes})
+    return new_id, ""
+
+
+def update_from(db, account: dict[str, Any], from_id, *, name: str, local: str) -> str:
+    """Cambiar el nombre y, en un dominio propio, la dirección. Vacío si se
+    cambió; si no, `missing`, `local`, `same` o `taken`."""
+    stored = sender_of(account).get("froms") or []
+    found = next((one for one in stored if one.get("id") == from_id), None)
+    if found is None:
+        return "missing"
+    name = clean_from_name(name)
+    domain = found.get("domain") or ""
+    if domain:
+        local = clean_local(local)
+        if local is None:
+            return "local"
+    else:
+        local = ""
+    if name == (found.get("name") or "") and local == (found.get("local") or ""):
+        return "same"
+    if any(one is not found and _same_from(one, name, local, domain) for one in stored):
+        return "taken"
+    db.accounts.update_one({"_id": account["_id"], "sender.froms.id": from_id},
+                           {"$set": {"sender.froms.$.name": name, "sender.froms.$.local": local,
+                                     "updated_at": now()}})
+    return ""
+
+
+def remove_from(db, account: dict[str, Any], from_id) -> bool:
+    if not any(one.get("id") == from_id for one in sender_of(account).get("froms") or []):
+        return False
+    db.accounts.update_one({"_id": account["_id"]},
+                           {"$pull": {"sender.froms": {"id": from_id}},
+                            "$set": {"updated_at": now()}})
+    _repair_defaults(db, account["_id"])
+    return True
+
+
+def set_from_default(db, account: dict[str, Any], from_id) -> bool:
+    found = from_of(account, from_id)
+    if found is None or not found["ready"]:
+        return False
+    db.accounts.update_one({"_id": account["_id"]},
+                           {"$set": {"sender.from_default": from_id, "updated_at": now()}})
+    return True
+
+
+# -- los «Responder a»
+
+def reply_tos_of(account: dict[str, Any] | None) -> list[str]:
+    return list(sender_of(account).get("reply_tos") or [])
+
+
+def default_reply(account: dict[str, Any] | None) -> str:
+    """A dónde llegan las respuestas si la plantilla no dice: el «Responder a»
+    predeterminado, o el correo con el que entra el dueño."""
+    found = reply_tos_of(account)
+    wanted = sender_of(account).get("reply_default")
+    if wanted in found:
+        return wanted
+    return found[0] if found else (account or {}).get("email", "")
+
+
+def start_reply_to(db, account_id, address: str) -> None:
+    """La dirección nueva espera su código aparte: las de antes siguen
+    valiendo."""
+    db.accounts.update_one({"_id": account_id},
+                           {"$set": {"sender.reply_to_pending": address,
+                                     "updated_at": now()}})
+
+
+def add_reply_to(db, account_id, address: str) -> None:
+    """Un «Responder a» ya probado. El primero queda de predeterminado: hasta
+    entonces las respuestas iban al dueño. Si era el que esperaba su código,
+    ya no espera."""
+    mine = sender_of(by_id(db, account_id))
+    update: dict[str, Any] = {"$addToSet": {"sender.reply_tos": address},
+                              "$set": {"updated_at": now()}}
+    if mine.get("reply_default") not in (mine.get("reply_tos") or []):
+        update["$set"]["sender.reply_default"] = address
+    if (mine.get("reply_to_pending") or "").lower() == address.lower():
+        update["$unset"] = {"sender.reply_to_pending": ""}
+    db.accounts.update_one({"_id": account_id}, update)
+
+
+def remove_reply_to(db, account: dict[str, Any], address: str) -> bool:
+    if address not in reply_tos_of(account):
+        return False
+    db.accounts.update_one({"_id": account["_id"]},
+                           {"$pull": {"sender.reply_tos": address},
+                            "$set": {"updated_at": now()}})
+    _repair_defaults(db, account["_id"])
+    return True
+
+
+def set_reply_default(db, account: dict[str, Any], address: str) -> bool:
+    if address not in reply_tos_of(account):
+        return False
+    db.accounts.update_one({"_id": account["_id"]},
+                           {"$set": {"sender.reply_default": address, "updated_at": now()}})
+    return True
+
+
+def _repair_defaults(db, account_id) -> None:
+    """Después de quitar algo: si el predeterminado se fue, pasa a serlo el de
+    `SENDING_DOMAIN` (o el primero que quede), y el «Responder a», el primero
+    que quede (o el correo del dueño)."""
+    mine = sender_of(by_id(db, account_id))
+    froms = mine.get("froms") or []
+    replies = mine.get("reply_tos") or []
+    changes: dict[str, Any] = {}
+    gone: dict[str, str] = {}
+    if mine.get("from_default") not in [one.get("id") for one in froms]:
+        pick = next((one["id"] for one in froms if not one.get("domain")), None) or (
+            froms[0]["id"] if froms else None)
+        if pick is None:
+            gone["sender.from_default"] = ""
+        else:
+            changes["sender.from_default"] = pick
+    if mine.get("reply_default") and mine["reply_default"] not in replies:
+        if replies:
+            changes["sender.reply_default"] = replies[0]
+        else:
+            gone["sender.reply_default"] = ""
+    update: dict[str, Any] = {}
+    if changes:
+        update["$set"] = changes
+    if gone:
+        update["$unset"] = gone
+    if update:
+        db.accounts.update_one({"_id": account_id}, update)
+
+
+def migrate_sender(db) -> None:
+    """Las cuentas de cuando había un solo remitente (hasta octubre de 2026),
+    pasadas a las listas. Una vez: después ninguna cae en el filtro.
+
+    El dominio de antes pasa a `domains` y, si tenía su dirección elegida, a un
+    remitente que queda de predeterminado si estaba verificado, porque de ahí
+    salían sus campañas. El usuario pasa a ser el primer remitente, y el
+    «Responder a», el primero de la lista y el predeterminado.
+    """
+    old = ("domain", "domain_status", "dkim_tokens", "domain_local",
+           "domain_checked_at", "domain_verified_at", "reply_to")
+    for found in db.accounts.find({"$or": [
+            {f"sender.{name}": {"$exists": True}} for name in old] + [
+            {"sender.handle": {"$type": "string"}, "sender.froms": {"$exists": False}}]},
+            {"sender": 1}):
+        mine = dict(found.get("sender") or {})
+        sets: dict[str, Any] = {}
+        froms = list(mine.get("froms") or [])
+        default = mine.get("from_default")
+        if mine.get("handle") and "froms" not in mine:
+            first = {"id": ObjectId(), "name": "", "local": "", "domain": ""}
+            froms.append(first)
+            default = default or first["id"]
+        if mine.get("domain"):
+            domains = [one for one in mine.get("domains") or []
+                       if one.get("name") != mine["domain"]]
+            record: dict[str, Any] = {"name": mine["domain"],
+                                      "status": mine.get("domain_status") or DOMAIN_PENDING,
+                                      "dkim_tokens": list(mine.get("dkim_tokens") or [])}
+            for before, after in (("domain_checked_at", "checked_at"),
+                                  ("domain_verified_at", "verified_at")):
+                if mine.get(before):
+                    record[after] = mine[before]
+            sets["sender.domains"] = domains + [record]
+            if mine.get("domain_local"):
+                own = {"id": ObjectId(), "name": "", "local": mine["domain_local"],
+                       "domain": mine["domain"]}
+                froms.append(own)
+                if record["status"] == DOMAIN_VERIFIED:
+                    default = own["id"]
+        if froms:
+            sets["sender.froms"] = froms
+        if default is not None:
+            sets["sender.from_default"] = default
+        if mine.get("reply_to"):
+            replies = list(mine.get("reply_tos") or [])
+            if mine["reply_to"] not in replies:
+                replies.append(mine["reply_to"])
+            sets["sender.reply_tos"] = replies
+            sets["sender.reply_default"] = mine.get("reply_default") or mine["reply_to"]
+        update: dict[str, Any] = {}
+        if sets:
+            update["$set"] = sets
+        gone = {f"sender.{name}": "" for name in old if name in mine}
+        if gone:
+            update["$unset"] = gone
+        if update:
+            db.accounts.update_one({"_id": found["_id"]}, update)
 
 
 def set_plan(db, account_id, plan: str | None) -> str | None:

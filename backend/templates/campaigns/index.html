@@ -33,9 +33,11 @@
   <a href="{{ url_for('auth.settings', section='test') }}">{{ t('send_demo_link') }}</a></p>
 {% endif %}
 
-{# Quién firma y a dónde vuelven las respuestas, siempre a la vista. #}
+{# Quién firma y a dónde vuelven las respuestas, siempre a la vista. Son los
+   predeterminados: cada plantilla puede elegir otros (octubre de 2026). #}
 <p class="settings__lead">
-  {% if from_email %}{{ t('sender_now_from', name=account.company_name, email=from_email) }}
+  {{ t('sender_now_default') }}
+  {% if default_from %}{{ t('sender_now_from', name=default_from.label, email=default_from.address) }}
   {% else %}{{ t('sender_now_none') }}{% endif %}
   · {{ t('sender_now_reply', email=reply) }}
   · <a href="{{ url_for('campaigns.sender_page') }}">{{ t('sender_change') }}</a>

@@ -74,13 +74,16 @@
 </div>
 
 {# De quién salen sus campañas y a dónde vuelven las respuestas: es parte de lo
-   que se mira antes de habilitar el envío. Se mira, no se edita. #}
+   que se mira antes de habilitar el envío. Se mira, no se edita. Desde
+   octubre de 2026 son varios: a la derecha el predeterminado, y debajo todos. #}
 <div class="setting">
   <div class="setting__text">
     <h3 class="setting__title">{{ t('sender_title') }}</h3>
     <p class="setting__desc">{{ t('sender_now_reply', email=client_reply) }}
-      {% if client_sender.domain %}<br>{{ client_sender.domain }}:
-      {{ t('sender_status_' + (client_sender.domain_status or 'pending')) }}{% endif %}</p>
+      {% for one in client_froms %}<br>{{ one.label }} &lt;{{ one.address }}&gt;{% endfor %}
+      {% for one in client_replies if one != client_reply %}<br>{{ t('sender_now_reply', email=one) }}{% endfor %}
+      {% for one in client_domains %}<br>{{ one.name }}:
+      {{ t('sender_status_' + (one.status or 'pending')) }}{% endfor %}</p>
   </div>
   <div class="setting__action">
     {% if client_from %}

@@ -140,7 +140,7 @@ def shared(db, account, **extra):
         # siempre, no al final: enterarse de que no se puede después de armarlo
         # todo es la peor forma de enterarse.
         "blocked": sender.blocked(account),
-        "from_email": sender.sender_email(account),
+        "default_from": sender.remitente(account),
         "reply": sender.reply_to(account),
         "quota": accounts.quota_left(account),
         # La demostración envía solo a sus direcciones de prueba: se dice
@@ -559,13 +559,19 @@ def send(raw):
         return redirect(url_for("campaigns.index"))
 
     if request.method == "GET":
+        design = (None if campaigns.written(found)
+                  else designs.by_id(db, account["_id"], found.get("design_id")))
         return render_template(
             "campaigns/confirm.html", section="envios",
             **shared(db, account, campaign=found,
                      # Una escrita no tiene pieza guardada: se dice que es su
                      # texto, y se puede mandar (octubre de 2026).
                      piece=({"name": t("send_written_name")} if campaigns.written(found)
-                            else designs.by_id(db, account["_id"], found.get("design_id"))),
+                            else design),
+                     # De quién sale y a dónde se responde: lo elige la
+                     # plantilla, así que se dice aquí, antes de mandar.
+                     sending_from=sender.remitente(account, design),
+                     sending_reply=sender.reply_to(account, design),
                      going=contacts.matching_count(
                          db, account["_id"],
                          tags=campaigns.tags_of(found),
@@ -593,34 +599,48 @@ def send(raw):
 
 # --------------------------------------------------------------- remitente
 #
-# De quién sale cada campaña y a dónde llegan las respuestas. Vale para todas
-# las campañas de la cuenta. La ve quien puede ver las campañas, y la cambia
-# solo el dueño, como la dirección postal: es la firma de la empresa.
+# De quién salen las campañas y a dónde llegan las respuestas (octubre de 2026:
+# varios de cada uno, y cada plantilla elige los suyos). La ve quien puede ver
+# las campañas, y la cambia solo el dueño, como la dirección postal: es la
+# firma de la empresa.
 
 REPLY_ATTEMPTS = "reply_to_attempts"
 REPLY_DEADLINE = "reply_to_expires_at"
 # Cuántas veces al día se puede pedir un dominio, comprobarlo o quitarlo: cada
 # una es una llamada a Amazon.
 DOMAIN_PER_ACCOUNT = (20, 86400)
+# Por qué no se pudo agregar o cambiar un remitente, en la frase de la pantalla.
+FROM_ERRORS = {"full": "sender_from_full", "domain": "sender_from_domain_bad",
+               "local": "sender_local_bad", "taken": "sender_from_taken"}
 
 
 def sender_screen(db, account, **extra):
+    """La pantalla de Remitente. `states` es el «Enviado por» de cada dominio,
+    que se pregunta a Amazon al abrirla."""
+    states = extra.pop("states", {})
+    # El remitente que se está editando: el de «Editar» (`?editar=<id>`), o el
+    # que volvió con un error.
+    editing = extra.pop("editing", None)
+    if editing is None and request.args.get("editar"):
+        editing = as_id(request.args.get("editar"))
+    domains = [{**one,
+                "records": ses_identity.records(one["name"], one.get("dkim_tokens") or []),
+                "mail_from_records": ses_identity.mail_from_records(one["name"]),
+                "mail_from_domain": ses_identity.mail_from_domain(one["name"]),
+                "mail_from_state": states.get(one["name"], "")}
+               for one in accounts.domains_of(account)]
     mine = accounts.sender_of(account)
     return render_template(
         "campaigns/sender.html", section="envios", account=account, mine=mine,
         sending_domain=Config.SENDING_DOMAIN,
-        from_email=sender.sender_email(account),
-        reply=sender.reply_to(account),
+        froms=accounts.froms_of(account), default_from=accounts.default_from(account),
+        replies=accounts.reply_tos_of(account), default_reply=accounts.default_reply(account),
+        domains=domains, verified=accounts.verified_domains(account),
+        limits={"domains": accounts.DOMAIN_LIMIT, "froms": accounts.FROM_LIMIT,
+                "replies": accounts.REPLY_LIMIT},
         suggestion=mine.get("handle") or accounts.suggest_handle(
             db, account.get("company_name", "")),
-        records=ses_identity.records(mine["domain"], mine.get("dkim_tokens") or [])
-        if mine.get("domain") else [],
-        # Ya verificado, solo faltan los del MAIL FROM, si faltan.
-        mail_from_records=ses_identity.mail_from_records(mine["domain"])
-        if mine.get("domain") else [],
-        mail_from_domain=ses_identity.mail_from_domain(mine["domain"])
-        if mine.get("domain") else "",
-        can_edit=not accounts.is_member(current_account()),
+        editing=editing, can_edit=not accounts.is_member(current_account()),
         **extra)
 
 
@@ -630,62 +650,108 @@ def sender_page():
     if account is None:
         return redirect(url_for("auth.login"))
     db = get_db()
-    mine = accounts.sender_of(account)
     errors: dict[str, str] = {}
 
     if request.method == "GET":
+        # Una cuenta que tiene su usuario y nunca tuvo remitentes los estrena
+        # aquí: es la de antes de que hubiera varios.
+        if accounts.sender_of(account).get("handle") and "froms" not in accounts.sender_of(account):
+            accounts.ensure_base_from(db, account["_id"])
+            account = accounts.by_id(db, account["_id"])
         # Un dominio que espera sus registros se mira al abrir la pantalla: no
-        # hay quién lo mire a las tres de la mañana.
-        if mine.get("domain") and mine.get("domain_status") != accounts.DOMAIN_VERIFIED:
+        # hay quién lo mire a las tres de la mañana. Y el «Enviado por» de
+        # cada uno, que a un dominio conectado antes se le pide aquí (octubre de
+        # 2026); si Amazon no contesta, la pantalla sale sin decirlo.
+        states: dict[str, str] = {}
+        changed = False
+        for one in accounts.domains_of(account):
+            if one.get("status") != accounts.DOMAIN_VERIFIED:
+                try:
+                    accounts.set_domain_status(db, account["_id"], one["name"],
+                                               ses_identity.status(one["name"]))
+                    changed = True
+                except ses_identity.IdentityError as exc:
+                    print(f"  [remitente] {one['name']}: {exc}", flush=True)
             try:
-                accounts.set_domain_status(db, account["_id"],
-                                           ses_identity.status(mine["domain"]))
-                # Leída otra vez de la base: la de la sesión es de antes.
-                account = accounts.by_id(db, account["_id"])
+                states[one["name"]] = ses_identity.mail_from(one["name"])
             except ses_identity.IdentityError as exc:
-                print(f"  [remitente] {mine['domain']}: {exc}", flush=True)
-        # El MAIL FROM, que es lo que Gmail enseña en «enviado por» (octubre de
-        # 2026). A un dominio conectado antes se le pide aquí. No para nada: si
-        # SES no contesta, la pantalla sale sin decirlo.
-        mail_from_state = ""
-        if mine.get("domain"):
-            try:
-                mail_from_state = ses_identity.mail_from(mine["domain"])
-            except ses_identity.IdentityError as exc:
-                print(f"  [remitente] MAIL FROM de {mine['domain']}: {exc}", flush=True)
+                print(f"  [remitente] MAIL FROM de {one['name']}: {exc}", flush=True)
+        if changed:
+            # Leída otra vez de la base: la de la sesión es de antes.
+            account = accounts.by_id(db, account["_id"])
         return sender_screen(db, account, errors=errors, form={},
-                             done=request.args.get("done", ""),
-                             mail_from_state=mail_from_state)
+                             done=request.args.get("done", ""), states=states)
 
     if accounts.is_member(current_account()) or not csrf_ok(request.form.get("csrf_token")):
         return redirect(url_for("campaigns.sender_page"))
 
     action = request.form.get("action", "")
+    done = ""
+    anchor = ""
     if action == "handle":
         handle = accounts.clean_handle(request.form.get("handle", ""))
         if handle is None:
             errors["handle"] = t("sender_handle_bad", min=accounts.HANDLE_MIN,
                                  max=accounts.HANDLE_MAX)
-        elif handle == mine.get("handle"):
+        elif handle == accounts.sender_of(account).get("handle"):
             return redirect(url_for("campaigns.sender_page", same=1))
         elif not accounts.set_handle(db, account["_id"], handle):
             errors["handle"] = t("sender_handle_taken")
         else:
-            return redirect(url_for("campaigns.sender_page", done="handle"))
+            done, anchor = "handle", "#handle"
+
+    elif action == "from_add":
+        domain = request.form.get("domain", "")
+        new_id, wrong = accounts.add_from(db, account, name=request.form.get("name", ""),
+                                          local=request.form.get("local", ""),
+                                          domain="" if domain == "shared" else domain)
+        if new_id is None:
+            errors["from"] = t(FROM_ERRORS[wrong], n=accounts.FROM_LIMIT,
+                               domain=Config.SENDING_DOMAIN)
+        else:
+            done, anchor = "from_added", "#remitentes"
+
+    elif action in ("from_edit", "from_remove", "from_default"):
+        from_id = as_id(request.form.get("id", ""))
+        if action == "from_edit":
+            wrong = accounts.update_from(db, account, from_id,
+                                         name=request.form.get("name", ""),
+                                         local=request.form.get("local", ""))
+            if wrong == "same":
+                return redirect(url_for("campaigns.sender_page", same=1) + "#remitentes")
+            if wrong == "missing":
+                return redirect(url_for("campaigns.sender_page"))
+            if wrong:
+                errors["from_edit"] = t(FROM_ERRORS[wrong], n=accounts.FROM_LIMIT,
+                                        domain=Config.SENDING_DOMAIN)
+                return sender_screen(db, account, errors=errors, done="",
+                                     form=request.form, editing=from_id)
+            done, anchor = "from_saved", "#remitentes"
+        elif action == "from_remove":
+            if accounts.remove_from(db, account, from_id):
+                # Las plantillas que salían de él vuelven al predeterminado.
+                designs.forget_sending(db, account["_id"], froms=[from_id])
+                done, anchor = "from_removed", "#remitentes"
+        elif accounts.set_from_default(db, account, from_id):
+            done, anchor = "from_default", "#remitentes"
+        if not done:
+            return redirect(url_for("campaigns.sender_page"))
 
     elif action == "reply":
         typed = request.form.get("reply_to", "").strip()
         address = clean_email(typed) if typed else None
-        domain = mine.get("domain") if accounts.domain_ready(account) else ""
+        replies = accounts.reply_tos_of(account)
         if not address:
             errors["reply"] = t("error_email_invalid")
-        elif address.lower() == sender.reply_to(account).lower():
+        elif address.lower() in [one.lower() for one in replies]:
             errors["reply"] = t("sender_reply_same")
-        elif domain and address.lower().endswith("@" + domain):
-            # Una dirección de su propio dominio ya está probada: el dominio
+        elif len(replies) >= accounts.REPLY_LIMIT:
+            errors["reply"] = t("sender_reply_full", n=accounts.REPLY_LIMIT)
+        elif address.lower().rsplit("@", 1)[-1] in accounts.verified_domains(account):
+            # Una dirección de uno de sus dominios ya está probada: el dominio
             # entero se probó suyo con sus registros DNS.
-            accounts.set_reply_to(db, account["_id"], address)
-            return redirect(url_for("campaigns.sender_page", done="reply"))
+            accounts.add_reply_to(db, account["_id"], address)
+            done, anchor = "reply", "#reply"
         elif not rate_limit(db, f"reply:mail:{accounts.normalize_email(address)}",
                             *REGISTER_PER_EMAIL) \
                 or not rate_limit(db, f"reply:account:{account['_id']}",
@@ -703,82 +769,88 @@ def sender_page():
                 minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
             return redirect(url_for("campaigns.reply_code"))
 
+    elif action in ("reply_remove", "reply_default"):
+        address = request.form.get("address", "")
+        if action == "reply_remove" and accounts.remove_reply_to(db, account, address):
+            designs.forget_sending(db, account["_id"], replies=[address])
+            done, anchor = "reply_removed", "#reply"
+        elif action == "reply_default" and accounts.set_reply_default(db, account, address):
+            done, anchor = "reply_default", "#reply"
+        else:
+            return redirect(url_for("campaigns.sender_page"))
+
     elif action in ("domain", "check", "remove"):
+        name = request.form.get("domain", "")
+        found = accounts.domain_of(account, name)
+        if action != "domain" and found is None:
+            return redirect(url_for("campaigns.sender_page"))
         if not rate_limit(db, f"domain:account:{account['_id']}", *DOMAIN_PER_ACCOUNT):
             errors["domain"] = t("error_too_many")
         elif action == "domain":
-            domain = accounts.clean_domain(request.form.get("domain", ""))
-            if mine.get("domain"):
-                errors["domain"] = t("sender_domain_already")
-            elif domain is None:
+            domain = accounts.clean_domain(name)
+            if domain is None:
                 errors["domain"] = t("sender_domain_bad")
-            elif db.accounts.find_one({"sender.domain": domain}, {"_id": 1}):
+            elif accounts.domain_of(account, domain) is not None:
+                errors["domain"] = t("sender_domain_mine")
+            elif len(accounts.domains_of(account)) >= accounts.DOMAIN_LIMIT:
+                errors["domain"] = t("sender_domain_full", n=accounts.DOMAIN_LIMIT)
+            elif db.accounts.find_one({"sender.domains.name": domain}, {"_id": 1}):
                 # Antes de hablar con Amazon: el dominio de otra cuenta no se
                 # crea ni se toca desde aquí.
                 errors["domain"] = t("sender_domain_taken")
             else:
                 try:
-                    found = ses_identity.create(domain)
+                    created = ses_identity.create(domain)
                 except ses_identity.IdentityError as exc:
                     print(f"  [remitente] {domain}: {exc}", flush=True)
                     errors["domain"] = t("sender_domain_failed")
                 else:
-                    if accounts.set_domain(db, account["_id"], domain, found):
-                        return redirect(url_for("campaigns.sender_page",
-                                                done="domain") + "#domain")
-                    errors["domain"] = t("sender_domain_taken")
-        elif not mine.get("domain"):
-            return redirect(url_for("campaigns.sender_page"))
+                    if accounts.add_domain(db, account["_id"], domain, created):
+                        done, anchor = "domain", "#domain"
+                    else:
+                        errors["domain"] = t("sender_domain_taken")
         elif action == "check":
             try:
-                accounts.set_domain_status(db, account["_id"],
-                                           ses_identity.status(mine["domain"]))
-                return redirect(url_for("campaigns.sender_page", done="check")
-                                + "#domain")
+                accounts.set_domain_status(db, account["_id"], name,
+                                           ses_identity.status(name))
+                done, anchor = "check", "#domain"
             except ses_identity.IdentityError as exc:
-                print(f"  [remitente] {mine['domain']}: {exc}", flush=True)
+                print(f"  [remitente] {name}: {exc}", flush=True)
                 errors["domain"] = t("sender_domain_failed")
         else:
             try:
-                ses_identity.delete(mine["domain"])
+                ses_identity.delete(name)
             except ses_identity.IdentityError as exc:
-                print(f"  [remitente] {mine['domain']}: {exc}", flush=True)
+                print(f"  [remitente] {name}: {exc}", flush=True)
                 errors["domain"] = t("sender_domain_failed")
             else:
-                accounts.clear_domain(db, account["_id"])
-                # Un «Responder a» de ese dominio ya no lo prueba nada.
-                if sender.reply_to(account).lower().endswith("@" + mine["domain"]):
-                    accounts.clear_reply_to(db, account["_id"])
-                return redirect(url_for("campaigns.sender_page", done="removed"))
+                # Con el dominio se van sus remitentes y los «Responder a» que
+                # solo él probaba; las plantillas que los usaban vuelven al
+                # predeterminado.
+                gone = accounts.remove_domain(db, account, name)
+                designs.forget_sending(db, account["_id"], froms=gone["froms"],
+                                       replies=gone["replies"])
+                done, anchor = "removed", "#domain"
 
-    elif action == "local":
-        if mine.get("domain_status") != accounts.DOMAIN_VERIFIED:
-            return redirect(url_for("campaigns.sender_page"))
-        local = accounts.clean_local(request.form.get("local", ""))
-        if local is None:
-            errors["local"] = t("sender_local_bad")
-        elif local == mine.get("domain_local"):
-            return redirect(url_for("campaigns.sender_page", same=1) + "#domain")
-        else:
-            accounts.set_domain_local(db, account["_id"], local)
-            return redirect(url_for("campaigns.sender_page", done="local") + "#domain")
-
+    if done:
+        return redirect(url_for("campaigns.sender_page", done=done) + anchor)
     return sender_screen(db, account, errors=errors, done="", form=request.form)
 
 
-@bp.route("/campaigns/sender/records.txt")
-def sender_records():
-    """Los registros del dominio propio como archivo, para importarlos en
+@bp.route("/campaigns/sender/records/<domain>.txt")
+def sender_records(domain):
+    """Los registros de un dominio propio como archivo, para importarlos en
     Cloudflare de una vez en lugar de copiarlos uno por uno. Los ve quien ve la
-    pantalla del remitente; sin dominio, no hay archivo."""
+    pantalla del remitente; un dominio que no es de la cuenta no tiene
+    archivo."""
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
-    mine = accounts.sender_of(account)
-    if not mine.get("domain") or not mine.get("dkim_tokens"):
+    found = accounts.domain_of(account, domain)
+    if found is None or not found.get("dkim_tokens"):
         abort(404)
-    text = ses_identity.zone_file(mine["domain"], mine["dkim_tokens"])
-    name = f"registros-dns-{mine['domain']}.txt"
+    text = ses_identity.zone_file(found["name"], found["dkim_tokens"])
+    name = f"registros-dns-{found['name']}.txt"
     return Response(text, mimetype="text/plain", headers={
         "Content-Disposition": f'attachment; filename="{name}"',
         "Cache-Control": "no-store"})
@@ -787,7 +859,7 @@ def sender_records():
 @bp.route("/campaigns/sender/code", methods=["GET", "POST"])
 def reply_code():
     """El código que llegó al «Responder a» nuevo. Hasta que entra, las
-    respuestas siguen llegando a la dirección de antes."""
+    respuestas siguen llegando a donde iban."""
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
@@ -813,8 +885,8 @@ def reply_code():
             if reason == tokens.VALID and not tokens.spend(db, doc):
                 reason = tokens.USED
             if reason == tokens.VALID:
-                accounts.set_reply_to(db, account["_id"], waiting)
-                return redirect(url_for("campaigns.sender_page", done="reply"))
+                accounts.add_reply_to(db, account["_id"], waiting)
+                return redirect(url_for("campaigns.sender_page", done="reply") + "#reply")
             errors["form"] = t({tokens.USED: "error_code_used",
                                 tokens.TOO_MANY: "error_code_too_many"}.get(
                                     reason, "error_code_invalid"))

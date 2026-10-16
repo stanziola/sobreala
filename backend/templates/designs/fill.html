@@ -20,6 +20,8 @@
            value="{{ name }}" autocomplete="off">
     <p class="hint">{{ t('designs_name_hint_filled') }}</p>
 
+    {% include "designs/_sending.html" %}
+
     {% for field in fields %}
     {% if field.type == 'image' %}
     <p class="field-label">{{ field.label }}

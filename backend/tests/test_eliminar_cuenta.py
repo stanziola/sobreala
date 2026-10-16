@@ -143,8 +143,11 @@ def test_el_administrador_borra_desde_la_ficha(client, database, outbox):
 
 def test_lo_de_afuera_se_suelta(client, database, outbox, monkeypatch):
     browser, cuenta, _ = ready(client, database)
+    # Sus dominios, todos (octubre de 2026: puede tener varios).
     database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {
-        "sender.domain": "coop.com",
+        "sender.domains": [{"name": "coop.com", "status": "verified", "dkim_tokens": []},
+                           {"name": "coop-tienda.com", "status": "pending",
+                            "dkim_tokens": []}],
         "paypal_vaults": [{"id": "VAULT-1", "payer": "ana@coop.com"}],
         "subscription": {"id": "I-SUB", "status": "active"}}})
     soltado = []
@@ -155,5 +158,6 @@ def test_lo_de_afuera_se_suelta(client, database, outbox, monkeypatch):
     monkeypatch.setattr(renewals, "cancel",
                         lambda db, account, reason="": soltado.append(("sub", reason)) or True)
     assert borrar(browser).status_code == 302
-    assert ("ses", "coop.com") in soltado and ("vault", "VAULT-1") in soltado
+    assert ("ses", "coop.com") in soltado and ("ses", "coop-tienda.com") in soltado
+    assert ("vault", "VAULT-1") in soltado
     assert any(one[0] == "sub" for one in soltado)

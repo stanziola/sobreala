@@ -2,6 +2,11 @@
 {% block title %}{{ t('sender_title') }}{% endblock %}
 {% set pane_center = true %}
 
+{#- Remitente (octubre de 2026: varios). Los remitentes (nombre y dirección),
+    los «Responder a» y los dominios propios de la cuenta. Cada plantilla elige
+    su remitente y su «Responder a»; la que no elige, y lo escrito, salen con
+    los predeterminados, que son los de arriba. Lo cambia solo el dueño. -#}
+
 {% macro row(title, desc, id='') %}
 <div class="setting">
   <div class="setting__text">
@@ -12,26 +17,175 @@
 </div>
 {% endmacro %}
 
+{% macro small_form(action, label, fields={}, outline=True) %}
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="{{ action }}">
+  {% for key, value in fields.items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+  <button class="btn btn--small{{ ' btn--outline' if outline }}" type="submit">{{ label }}</button>
+</form>
+{% endmacro %}
+
 {% block pane %}
+{#- Lo que se escribió vuelve solo a su propio formulario, si la pantalla vuelve
+    con un error. -#}
+{% set adding = form if form.get('action') == 'from_add' else {} %}
+{% set changing = form if form.get('action') == 'from_edit' else {} %}
 <h1 class="settings__heading">{{ t('sender_title') }}</h1>
 <p class="settings__lead">{{ t('sender_lead') }}</p>
 
 {% if done %}<p class="notice notice--ok">{{ t('sender_done_' + done) }}</p>{% endif %}
 {% if not can_edit %}<p class="notice">{{ t('sender_owner_only') }}</p>{% endif %}
 
-{# Lo que va a ver quien reciba la campaña, arriba y tal cual. #}
+{# Lo predeterminado: lo que ve quien recibe una campaña cuya plantilla no
+   elige otro, arriba y tal cual. #}
 <div class="setting">
   <div class="setting__text">
     <h3 class="setting__title">{{ t('sender_now') }}</h3>
     <p class="setting__desc">
-      {% if from_email %}{{ t('sender_now_from', name=account.company_name, email=from_email) }}
+      {% if default_from %}{{ t('sender_now_from', name=default_from.label, email=default_from.address) }}
       {% else %}{{ t('sender_now_none') }}{% endif %}<br>
-      {{ t('sender_now_reply', email=reply) }}
+      {{ t('sender_now_reply', email=default_reply) }}
     </p>
   </div>
 </div>
 
+{# ----- los remitentes ----- #}
+<h2 class="settings__subtitle" id="remitentes">{{ t('sender_froms') }}</h2>
+<p class="settings__lead">{{ t('sender_froms_lead', domain=sending_domain) }}</p>
+{% if errors.from_edit %}<p class="error error--form">{{ errors.from_edit }}</p>{% endif %}
+
+{% for one in froms %}
+{% if can_edit and editing and one.id == editing %}
+{#- Editar en su sitio: el nombre y, en un dominio propio, la parte de antes
+    de la @. -#}
+<form class="setting setting--edit" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="from_edit">
+  <input type="hidden" name="id" value="{{ one.id }}">
+  <div class="setting__text">
+    <label for="remitente-nombre">{{ t('sender_from_name') }}</label>
+    <input id="remitente-nombre" name="name" type="text" maxlength="60" autocomplete="off"
+           value="{{ changing.get('name', one.name or '') }}" placeholder="{{ account.company_name }}">
+    {% if not one.shared %}
+    <label for="remitente-local">{{ t('sender_from_address') }}</label>
+    <span class="handle-row">
+      <input id="remitente-local" class="handle-field" name="local" type="text" maxlength="64"
+             autocomplete="off" spellcheck="false" value="{{ changing.get('local', one.local) }}">
+      <span class="setting__value">@{{ one.domain }}</span>
+    </span>
+    {% endif %}
+  </div>
+  <div class="setting__action">
+    <button class="btn btn--small" type="submit">{{ t('sender_save') }}</button>
+    <a class="btn btn--small btn--outline" data-keep-scroll
+       href="{{ url_for('campaigns.sender_page') }}">{{ t('settings_cancel') }}</a>
+  </div>
+</form>
+{% else %}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ one.label }}</h3>
+    <p class="setting__desc">{{ one.address or t('sender_none') }}
+      {% if not one.ready %}<br><span class="table__quiet">{{ t('sender_from_waiting') }}</span>{% endif %}</p>
+  </div>
+  <div class="setting__action setting__action--row">
+    {% if default_from and one.id == default_from.id %}
+    <span class="tag tag--on">{{ t('sender_default') }}</span>
+    {% elif can_edit and one.ready %}
+    {{ small_form('from_default', t('sender_make_default'), {'id': one.id}) }}
+    {% endif %}
+    {% if can_edit %}
+    <a class="btn btn--small btn--outline" data-keep-scroll
+       href="{{ url_for('campaigns.sender_page', editar=one.id) }}#remitentes">{{ t('sender_edit') }}</a>
+    {{ small_form('from_remove', t('sender_from_remove'), {'id': one.id}) }}
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% else %}
+<p class="hint">{{ t('sender_froms_none') }}</p>
+{% endfor %}
+
+{% if can_edit %}
+{% if froms|length < limits.froms %}
+<form class="sender-add" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="from_add">
+  <h3 class="setting__title">{{ t('sender_from_add') }}</h3>
+  <label for="nuevo-nombre">{{ t('sender_from_name') }}</label>
+  <input id="nuevo-nombre" name="name" type="text" maxlength="60" autocomplete="off"
+         value="{{ adding.get('name', '') }}" placeholder="{{ account.company_name }}">
+  <p class="hint">{{ t('sender_from_name_hint', name=account.company_name) }}</p>
+  <label for="nuevo-local">{{ t('sender_from_address') }}</label>
+  <span class="handle-row">
+    <input id="nuevo-local" class="handle-field" name="local" type="text" maxlength="64"
+           autocomplete="off" spellcheck="false" value="{{ adding.get('local', '') }}"
+           aria-describedby="nuevo-local-ayuda">
+    <label class="visually-hidden" for="nuevo-dominio">{{ t('sender_from_domain') }}</label>
+    <select id="nuevo-dominio" name="domain">
+      {% if mine.handle %}<option value="shared">{{ mine.handle }}@{{ sending_domain }}</option>{% endif %}
+      {% for name in verified %}
+      <option value="{{ name }}"{% if adding.get('domain') == name %} selected{% endif %}>@{{ name }}</option>
+      {% endfor %}
+    </select>
+  </span>
+  <p class="hint" id="nuevo-local-ayuda">{{ t('sender_from_local_hint', domain=sending_domain) }}</p>
+  {% if errors.from %}<p class="error">{{ errors.from }}</p>{% endif %}
+  <button class="btn btn--small btn--icon" type="submit">{% include "_icon-plus.svg" %}<span>{{ t('sender_from_add_button') }}</span></button>
+</form>
+{% else %}
+<p class="hint">{{ t('sender_from_full', n=limits.froms) }}</p>
+{% endif %}
+{% endif %}
+
+{# ----- responder a ----- #}
+<h2 class="settings__subtitle" id="reply">{{ t('sender_reply') }}</h2>
+<p class="settings__lead">{{ t('sender_reply_hint', email=account.email) }}</p>
+
+{% for one in replies %}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ one }}</h3>
+  </div>
+  <div class="setting__action setting__action--row">
+    {% if one == default_reply %}
+    <span class="tag tag--on">{{ t('sender_default') }}</span>
+    {% elif can_edit %}
+    {{ small_form('reply_default', t('sender_make_default'), {'address': one}) }}
+    {% endif %}
+    {% if can_edit %}{{ small_form('reply_remove', t('sender_reply_remove'), {'address': one}) }}{% endif %}
+  </div>
+</div>
+{% else %}
+{% call row(account.email, t('sender_reply_owner')) %}
+<span class="tag tag--on">{{ t('sender_default') }}</span>
+{% endcall %}
+{% endfor %}
+
+{% if mine.reply_to_pending %}
+<p class="hint">{{ t('sender_reply_waiting', email=mine.reply_to_pending) }}
+  {% if can_edit %}<a href="{{ url_for('campaigns.reply_code') }}">{{ t('sender_reply_code_link') }}</a>{% endif %}</p>
+{% endif %}
+
+{% if can_edit %}
+{% if replies|length < limits.replies %}
+<form class="setting__form sender-add" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="reply">
+  <label class="visually-hidden" for="sender-reply">{{ t('sender_reply') }}</label>
+  <input id="sender-reply" name="reply_to" type="email" autocomplete="email"
+         value="{{ form.get('reply_to', '') }}" placeholder="{{ t('sender_reply_placeholder') }}">
+  <button class="btn btn--small btn--icon" type="submit">{% include "_icon-plus.svg" %}<span>{{ t('sender_reply_add') }}</span></button>
+  {% if errors.reply %}<p class="error">{{ errors.reply }}</p>{% endif %}
+</form>
+{% else %}
+<p class="hint">{{ t('sender_reply_full', n=limits.replies) }}</p>
+{% endif %}
+{% endif %}
+
 {# ----- el usuario en el subdominio de envíos ----- #}
+<h2 class="settings__subtitle">{{ t('sender_handle_title', domain=sending_domain) }}</h2>
 {% call row(t('sender_handle'), t('sender_handle_hint', domain=sending_domain), id='handle') %}
 {% if can_edit %}
 <form class="setting__form" method="post">
@@ -49,78 +203,46 @@
 {% endif %}
 {% endcall %}
 
-{# ----- responder a ----- #}
-{% call row(t('sender_reply'), t('sender_reply_hint'), id='reply') %}
-{% if can_edit %}
-<form class="setting__form" method="post">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="action" value="reply">
-  <label class="visually-hidden" for="sender-reply">{{ t('sender_reply') }}</label>
-  <input id="sender-reply" name="reply_to" type="email" autocomplete="email"
-         value="{{ form.get('reply_to', reply) }}">
-  <button class="btn btn--small" type="submit">{{ t('sender_reply_save') }}</button>
-  {% if errors.reply %}<p class="error">{{ errors.reply }}</p>{% endif %}
-  {% if mine.reply_to_pending %}
-  <p class="hint">{{ t('sender_reply_waiting', email=mine.reply_to_pending) }}
-    <a href="{{ url_for('campaigns.reply_code') }}">{{ t('sender_reply_code_link') }}</a></p>
-  {% endif %}
-</form>
-{% else %}
-<span class="setting__value">{{ reply }}</span>
-{% endif %}
-{% endcall %}
-
-{# ----- el dominio propio ----- #}
+{# ----- los dominios propios ----- #}
 <h2 class="settings__subtitle" id="domain">{{ t('sender_domain') }}</h2>
-<p class="settings__lead">{{ t('sender_domain_lead') }}</p>
+<p class="settings__lead">{{ t('sender_domain_lead', n=limits.domains) }}</p>
 {% if errors.domain %}<p class="error error--form">{{ errors.domain }}</p>{% endif %}
 
-{% if not mine.domain %}
-  {% if can_edit %}
-  <form class="setting__form" method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="action" value="domain">
-    <label for="sender-domain">{{ t('sender_domain_field') }}</label>
-    <input id="sender-domain" name="domain" type="text" autocomplete="off" spellcheck="false"
-           placeholder="tuempresa.com" value="{{ form.get('domain', '') }}">
-    <button class="btn btn--small" type="submit">{{ t('sender_domain_connect') }}</button>
-  </form>
-  {% else %}
-  <p class="setting__value setting__value--muted">{{ t('sender_domain_none') }}</p>
-  {% endif %}
-
-{% else %}
-  {% call row(mine.domain, '') %}
-  <span class="tag{% if mine.domain_status == 'verified' %} tag--on{% else %} tag--warn{% endif %}">
-    {{ t('sender_status_' + (mine.domain_status or 'pending')) }}</span>
+{% for one in domains %}
+<section class="sender-domain">
+  {% call row(one.name, '') %}
+  <span class="tag{% if one.status == 'verified' %} tag--on{% else %} tag--warn{% endif %}">
+    {{ t('sender_status_' + (one.status or 'pending')) }}</span>
   {% endcall %}
 
   {# «Enviado por» (octubre de 2026): el dominio del sobre, que Gmail enseña
      debajo del remitente. Sin sus dos registros dice el de Amazon, y se envía
      igual. #}
-  {% if mail_from_state %}
-  {% call row(t('sender_mail_from'), t('sender_mail_from_hint', domain=mail_from_domain)) %}
-  <span class="tag{% if mail_from_state == 'verified' %} tag--on{% else %} tag--warn{% endif %}">
-    {{ t('sender_mail_from_' + mail_from_state) }}</span>
+  {% if one.mail_from_state %}
+  {% call row(t('sender_mail_from'), t('sender_mail_from_hint', domain=one.mail_from_domain)) %}
+  <span class="tag{% if one.mail_from_state == 'verified' %} tag--on{% else %} tag--warn{% endif %}">
+    {{ t('sender_mail_from_' + one.mail_from_state) }}</span>
   {% endcall %}
   {% endif %}
 
-  {% if mine.domain_status != 'verified' %}
+  {% if one.status != 'verified' or (one.mail_from_state and one.mail_from_state != 'verified') %}
   {# Los cinco registros (los tres CNAME de DKIM y el MX y el TXT del MAIL
-     FROM), cada uno en un campo de solo lectura: se seleccionan y se copian
-     enteros, también sin JavaScript. #}
-  <p>{{ t('sender_records_lead') }}</p>
+     FROM) mientras falte verificarlo; ya verificado, solo los dos del MAIL
+     FROM si faltan. Cada uno en un campo de solo lectura: se seleccionan y se
+     copian enteros, también sin JavaScript. #}
+  {% set shown = one.records if one.status != 'verified' else one.mail_from_records %}
+  <p>{{ t('sender_records_lead') if one.status != 'verified' else t('sender_mail_from_lead') }}</p>
   <div class="table-wrap">
     <table class="table">
       <thead><tr><th>{{ t('sender_records_type') }}</th><th>{{ t('sender_records_name') }}</th>
         <th>{{ t('sender_records_value') }}</th></tr></thead>
       <tbody>
-      {% for one in records %}
+      {% for record in shown %}
       <tr>
-        <td>{{ one.type }}{% if one.priority %}<br><span class="table__quiet">{{ t('sender_records_priority', n=one.priority) }}</span>{% endif %}</td>
-        <td><input class="copy-field" type="text" readonly value="{{ one.name }}"
+        <td>{{ record.type }}{% if record.priority %}<br><span class="table__quiet">{{ t('sender_records_priority', n=record.priority) }}</span>{% endif %}</td>
+        <td><input class="copy-field" type="text" readonly value="{{ record.name }}"
                    aria-label="{{ t('sender_records_name') }} {{ loop.index }}"></td>
-        <td><input class="copy-field" type="text" readonly value="{{ one.value }}"
+        <td><input class="copy-field" type="text" readonly value="{{ record.value }}"
                    aria-label="{{ t('sender_records_value') }} {{ loop.index }}"></td>
       </tr>
       {% endfor %}
@@ -130,72 +252,38 @@
   {# Los mismos registros como archivo, para Cloudflare: se importan de una vez
      y entran sin proxy, como los pide Amazon. #}
   <div class="setting__form">
-    <a class="btn btn--small btn--outline" href="{{ url_for('campaigns.sender_records') }}"
+    <a class="btn btn--small btn--outline" href="{{ url_for('campaigns.sender_records', domain=one.name) }}"
        download data-download>{{ t('sender_records_download') }}</a>
   </div>
-  <p class="hint">{{ t('sender_records_download_hint') }}</p>
+  {% if one.status != 'verified' %}<p class="hint">{{ t('sender_records_download_hint') }}</p>{% endif %}
   <p class="hint">{{ t('sender_records_hint') }}</p>
-  {% elif mail_from_state and mail_from_state != 'verified' %}
-  {# Verificado, pero sin el MAIL FROM: solo faltan sus dos registros. #}
-  <p>{{ t('sender_mail_from_lead') }}</p>
-  <div class="table-wrap">
-    <table class="table">
-      <thead><tr><th>{{ t('sender_records_type') }}</th><th>{{ t('sender_records_name') }}</th>
-        <th>{{ t('sender_records_value') }}</th></tr></thead>
-      <tbody>
-      {% for one in mail_from_records %}
-      <tr>
-        <td>{{ one.type }}{% if one.priority %}<br><span class="table__quiet">{{ t('sender_records_priority', n=one.priority) }}</span>{% endif %}</td>
-        <td><input class="copy-field" type="text" readonly value="{{ one.name }}"
-                   aria-label="{{ t('sender_records_name') }} {{ loop.index }}"></td>
-        <td><input class="copy-field" type="text" readonly value="{{ one.value }}"
-                   aria-label="{{ t('sender_records_value') }} {{ loop.index }}"></td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div class="setting__form">
-    <a class="btn btn--small btn--outline" href="{{ url_for('campaigns.sender_records') }}"
-       download data-download>{{ t('sender_records_download') }}</a>
-  </div>
-  <p class="hint">{{ t('sender_records_hint') }}</p>
-  {% endif %}
-
-  {% if mine.domain_status == 'verified' %}
-  {% call row(t('sender_local'), t('sender_local_hint', domain=mine.domain)) %}
-  {% if can_edit %}
-  <form class="setting__form" method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="action" value="local">
-    <label class="visually-hidden" for="sender-local">{{ t('sender_local') }}</label>
-    <input id="sender-local" class="handle-field" name="local" type="text" maxlength="64" autocomplete="off"
-           spellcheck="false" value="{{ form.get('local', mine.domain_local or '') }}">
-    <span class="setting__value">@{{ mine.domain }}</span>
-    <button class="btn btn--small" type="submit">{{ t('sender_save') }}</button>
-    {% if errors.local %}<p class="error">{{ errors.local }}</p>{% endif %}
-  </form>
-  {% else %}
-  <span class="setting__value">{{ (mine.domain_local ~ '@' ~ mine.domain) if mine.domain_local else t('sender_none') }}</span>
-  {% endif %}
-  {% endcall %}
   {% endif %}
 
   {% if can_edit %}
   <div class="setting__form">
-    {% if mine.domain_status != 'verified' %}
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="action" value="check">
-      <button class="btn btn--small" type="submit">{{ t('sender_check') }}</button>
-    </form>
+    {% if one.status != 'verified' %}
+    {{ small_form('check', t('sender_check'), {'domain': one.name}, outline=False) }}
     {% endif %}
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="action" value="remove">
-      <button class="btn btn--small btn--outline" type="submit">{{ t('sender_remove') }}</button>
-    </form>
+    {{ small_form('remove', t('sender_remove'), {'domain': one.name}) }}
   </div>
   {% endif %}
+</section>
+{% else %}
+{% if not can_edit %}<p class="setting__value setting__value--muted">{{ t('sender_domain_none') }}</p>{% endif %}
+{% endfor %}
+
+{% if can_edit %}
+{% if domains|length < limits.domains %}
+<form class="setting__form sender-add" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="domain">
+  <label for="sender-domain">{{ t('sender_domain_field') if not domains else t('sender_domain_another') }}</label>
+  <input id="sender-domain" name="domain" type="text" autocomplete="off" spellcheck="false"
+         placeholder="tuempresa.com" value="{{ form.get('domain', '') if form.get('action') == 'domain' else '' }}">
+  <button class="btn btn--small" type="submit">{{ t('sender_domain_connect') }}</button>
+</form>
+{% else %}
+<p class="hint">{{ t('sender_domain_full', n=limits.domains) }}</p>
+{% endif %}
 {% endif %}
 {% endblock %}

@@ -856,6 +856,38 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
               font-size: 0.85rem; }
 .setting__value--muted { font-weight: 500; color: var(--color-ink-soft); }
 
+/* Remitente (octubre de 2026: varios). Cada fila lleva sus botones juntos, el
+   que se edita abre sus campos en su sitio, y lo que se agrega va debajo de su
+   lista. Cada dominio es un bloque con su estado, sus registros y sus botones. */
+.setting__action--row { flex-wrap: wrap; justify-content: flex-end; }
+.setting__action form { margin: 0; }
+.setting--edit { align-items: flex-end; }
+.setting--edit .setting__text label:first-child { margin-top: 0; }
+.handle-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.handle-row input.handle-field { width: min(200px, 100%); margin: 0; }
+.handle-row select { width: auto; margin: 0; }
+.sender-add {
+  margin-top: 16px; padding: 16px 18px; border: 1px dashed var(--color-border);
+  border-radius: 12px;
+}
+.sender-add.setting__form { justify-content: flex-start; }
+.sender-add .setting__title + label { margin-top: 10px; }
+.sender-add > .btn { margin-top: 12px; }
+.sender-add.setting__form > .btn { margin-top: 0; }
+.sender-add.setting__form input[type="email"] { margin: 0; width: min(340px, 100%); }
+.sender-domain { padding: 4px 0 14px; border-bottom: 1px solid var(--color-border); }
+.sender-domain .setting:last-child { padding-bottom: 16px; }
+.sender-domain > .setting__form { justify-content: flex-start; margin-top: 10px; }
+
+/* «Sale de» y «Responder a» en los editores de plantillas: las dos listas una
+   al lado de la otra, y su nota debajo. En el Lienzo van en su propia fila,
+   debajo del nombre y los botones. */
+.sending { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: flex-end; }
+.editor__head > .sending { flex: 1 1 100%; }
+.sending__one { flex: 1 1 260px; min-width: 0; }
+.sending__one select { width: 100%; }
+.sending__hint { flex: 1 1 100%; margin-top: 2px; }
+
 /* The notices that carry no switch, and say so. */
 .fixed { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
 .fixed__item {
