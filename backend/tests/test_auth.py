@@ -30,10 +30,12 @@ def ask_recovery(client, email):
 
 # ------------------------------------------------------------------ registration
 
-def test_el_pie_del_registro_lleva_a_iniciar_sesion(client, database):
-    pie = client.get("/signup").get_data(as_text=True).split('class="foot"')[1]
-    assert "¿Ya tienes una cuenta?" in pie
-    assert '<a href="/login">Iniciar sesión</a>' in pie
+def test_el_registro_lleva_a_iniciar_sesion(client, database):
+    """Debajo del título (octubre de 2026; antes iba al pie)."""
+    arriba = client.get("/signup").get_data(as_text=True).split(
+        'class="lead auth__lead"')[1].split("</p>")[0]
+    assert "¿Ya tienes una cuenta?" in arriba
+    assert '<a href="/login">Iniciar sesión</a>' in arriba
 
 
 def test_register_creates_account_and_sends_a_code(client, database, outbox):

@@ -263,6 +263,10 @@ cosa está como está, y lo que ya se probó y se quitó.
   botón oscuro, pie con la dirección, las redes y la ayuda).
 - `sessions`: un documento por dispositivo, con hash del testigo. Entrar desde
   un dispositivo nuevo avisa por correo.
+- **Entrar, registrarse y sus pasos van a dos columnas** (`_auth.html`), sin la
+  barra: a la izquierda el ala y cuatro dibujos de «Funciones» del sitio que
+  rotan (`_art-*.svg`, que genera `build_assets.py`), y a la derecha el
+  formulario.
 - **Entrar y registrarse con Google** (`services/google_auth.py`): quién es lo
   dice Google al servidor, nunca la vuelta. Tras Google pasa lo mismo que tras
   la contraseña (`finish_sign_in()`: doble factor incluido). Sin cuenta, se

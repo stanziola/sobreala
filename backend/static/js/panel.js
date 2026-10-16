@@ -1054,3 +1054,54 @@
     keep(link.getAttribute("href"));
   });
 })();
+
+/* Las funciones que rotan al lado de entrar y registrarse (octubre de 2026,
+   _auth.html). Cada 6 s pasa a la siguiente, y los puntitos eligen una y
+   vuelven a contar. Se para con el ratón encima, con el foco dentro, con la
+   pestaña escondida y en el teléfono, donde no se ven; con «reducir
+   movimiento» no avanza sola. Sin JavaScript se queda la primera. */
+(function () {
+  var tour = document.querySelector("[data-auth-tour]");
+  var row = tour && tour.querySelector("[data-dots]");
+  var slides = tour ? tour.querySelectorAll("[data-slide]") : [];
+  if (!row || slides.length < 2) return;
+  var dots = row.querySelectorAll("[data-dot]");
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var current = 0;
+  var held = false;
+  var timer = null;
+  row.hidden = false;
+
+  function show(n) {
+    current = (n + slides.length) % slides.length;
+    Array.prototype.forEach.call(slides, function (slide, i) {
+      slide.classList.toggle("is-on", i === current);
+      if (i === current) slide.removeAttribute("aria-hidden");
+      else slide.setAttribute("aria-hidden", "true");
+    });
+    Array.prototype.forEach.call(dots, function (dot, i) {
+      dot.setAttribute("aria-pressed", i === current ? "true" : "false");
+    });
+  }
+
+  function plan() {
+    if (still) return;
+    window.clearTimeout(timer);
+    timer = window.setTimeout(function () {
+      if (!held && !document.hidden && tour.offsetParent !== null) show(current + 1);
+      plan();
+    }, 6000);
+  }
+
+  Array.prototype.forEach.call(dots, function (dot) {
+    dot.addEventListener("click", function () {
+      show(Number(dot.getAttribute("data-dot")));
+      plan();
+    });
+  });
+  tour.addEventListener("mouseenter", function () { held = true; });
+  tour.addEventListener("mouseleave", function () { held = false; });
+  tour.addEventListener("focusin", function () { held = true; });
+  tour.addEventListener("focusout", function () { held = false; });
+  plan();
+})();

@@ -1,23 +1,28 @@
-{% extends "base.html" %}
+{% extends "_auth.html" %}
 {% from "_phone.html" import phone, company_phones with context %}
 {% block title %}{{ t('register_title') }}{% endblock %}
-{% block content %}
-{# «Iniciar sesión», en el pie y en el aviso de un correo que ya tiene cuenta.
-   Creando otra desde una abierta lleva la marca: sin ella, entrar con una
-   sesión abierta devuelve a la portada. #}
+{% block auth %}
+{# «Iniciar sesión», debajo del título y en el aviso de un correo que ya tiene
+   cuenta. Creando otra desde una abierta lleva la marca: sin ella, entrar con
+   una sesión abierta devuelve a la portada. #}
 {% set to_login = url_for('auth.login', add=1) if adding else url_for('auth.login') %}
-<div class="card">
   <h1>{{ t('register_title') }}</h1>
+  <p class="lead auth__lead">{{ t('register_have_account') }}
+    <a href="{{ to_login }}">{{ t('register_login_link') }}</a></p>
 
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
   {# Entrar o registrarse con Google (octubre de 2026): el mismo botón para
-     los dos. Solo sale con el cliente de Google puesto. #}
+     los dos. Solo sale con el cliente de Google puesto. Aquí va arriba, al
+     revés que en entrar: el formulario es largo, y quien viene a usar Google
+     no tiene que bajar hasta el final para encontrarlo. #}
   {% if google_ready %}
-  <a class="btn btn--google" href="{{ url_for('auth.google_start', add=1) if adding
-                                     else url_for('auth.google_start') }}">
-    {% include "_google-g.svg" %}<span>{{ t('google_button') }}</span></a>
-  <p class="or-line"><span>{{ t('google_or') }}</span></p>
+  <div class="providers">
+    <a class="btn btn--provider" href="{{ url_for('auth.google_start', add=1) if adding
+                                          else url_for('auth.google_start') }}">
+      {% include "_google-g.svg" %}<span>{{ t('google_button') }}</span></a>
+  </div>
+  <p class="or-line"><span>{{ t('auth_or_email') }}</span></p>
   {% endif %}
 
   {# Una sola vez: con un doble clic, la segunda respuesta decía que el correo
@@ -106,8 +111,4 @@
       {{ t('register_legal_join') }}
       <a href="{{ site_url }}/privacy/" target="_blank" rel="noopener">{{ t('register_legal_privacy') }}</a>.</p>
   </form>
-
-  <p class="foot">{{ t('register_have_account') }}
-    <a href="{{ to_login }}">{{ t('register_login_link') }}</a></p>
-</div>
 {% endblock %}

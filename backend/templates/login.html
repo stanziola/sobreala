@@ -1,56 +1,63 @@
-{% extends "base.html" %}
+{% extends "_auth.html" %}
 {% block title %}{{ t('login_adding_title') if adding else t('login_title') }}{% endblock %}
-{% block content %}
-<div class="card card--narrow">
-  <h1>{{ t('login_adding_title') if adding else t('login_title') }}</h1>
+{% block auth %}
+{# Como la imagen de referencia (octubre de 2026): el saludo y, debajo, el
+   camino a registrarse; el formulario; «Recordarme» y «¿Olvidaste tu
+   contraseña?» en una fila; el botón a todo el ancho; y después de la raya,
+   los proveedores. #}
+<h1>{{ t('login_adding_title') if adding else t('login_hello') }}</h1>
+{# El enlace se lleva la marca: sin ella, la pantalla de registro devolvería a
+   la portada a quien ya tiene sesión abierta. #}
+<p class="lead auth__lead">{{ t('login_no_account_adding') if adding else t('login_no_account') }}
+  <a href="{{ url_for('auth.register', add=1) if adding
+              else url_for('auth.register') }}">{{ t('login_register_link') if adding
+                                                   else t('login_register_short') }}</a></p>
 
-  {% if switched %}<p class="notice notice--ok">{{ t('login_switched') }}</p>{% endif %}
-  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+{% if switched %}<p class="notice notice--ok">{{ t('login_switched') }}</p>{% endif %}
+{% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
-  {# Entrar o registrarse con Google (octubre de 2026): el mismo botón para
-     los dos. Solo sale con el cliente de Google puesto. #}
-  {% if google_ready %}
-  <a class="btn btn--google" href="{{ url_for('auth.google_start', add=1) if adding
-                                     else url_for('auth.google_start') }}">
-    {% include "_google-g.svg" %}<span>{{ t('google_button') }}</span></a>
-  <p class="or-line"><span>{{ t('google_or') }}</span></p>
-  {% endif %}
+{# data-once: un doble clic abría dos sesiones, y la que se quedaba sin
+   galleta seguía viva en Seguridad como otro dispositivo. #}
+<form method="post" novalidate data-once>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  {# data-once: un doble clic abría dos sesiones, y la que se quedaba sin
-     galleta seguía viva en Seguridad como otro dispositivo. #}
-  <form method="post" novalidate data-once>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="email">{{ t('login_email') }}</label>
+  <input id="email" name="email" type="email" value="{{ email }}"
+         placeholder="{{ t('login_email_placeholder') }}" autocomplete="email" required>
 
-    <label for="email">{{ t('login_email') }}</label>
-    <input id="email" name="email" type="email" value="{{ email }}"
-           autocomplete="email" required>
+  <label for="password">{{ t('login_password') }}</label>
+  <div class="field">
+    <input id="password" name="password" type="password"
+           placeholder="{{ t('login_password_placeholder') }}"
+           autocomplete="current-password" required>
+    <button class="field__eye" type="button" hidden
+            data-reveal="password" aria-pressed="false"
+            data-show="{{ t('password_show') }}" data-hide="{{ t('password_hide') }}"
+            aria-label="{{ t('password_show') }}">
+      <span class="field__eye-on">{% include "_icon-eye.svg" %}</span>
+      <span class="field__eye-off">{% include "_icon-eye-off.svg" %}</span>
+    </button>
+  </div>
 
-    <label for="password">{{ t('login_password') }}</label>
-    <div class="field">
-      <input id="password" name="password" type="password"
-             autocomplete="current-password" required>
-      <button class="field__eye" type="button" hidden
-              data-reveal="password" aria-pressed="false"
-              data-show="{{ t('password_show') }}" data-hide="{{ t('password_hide') }}"
-              aria-label="{{ t('password_show') }}">
-        <span class="field__eye-on">{% include "_icon-eye.svg" %}</span>
-        <span class="field__eye-off">{% include "_icon-eye-off.svg" %}</span>
-      </button>
-    </div>
-
+  <div class="auth__row">
     <label class="check">
       <input type="checkbox" name="remember" value="1"{% if remember %} checked{% endif %}>
       <span>{{ t('login_remember') }}</span>
     </label>
+    <a href="{{ url_for('auth.recover') }}">{{ t('login_forgot') }}</a>
+  </div>
 
-    <button class="btn" type="submit">{{ t('login_submit') }}</button>
-  </form>
+  <button class="btn" type="submit">{{ t('login_submit') }}</button>
+</form>
 
-  <p class="foot"><a href="{{ url_for('auth.recover') }}">{{ t('login_forgot') }}</a></p>
-  {# El enlace se lleva la marca: sin ella, la pantalla de registro devolvería
-     a la portada a quien ya tiene sesión abierta. #}
-  <p class="foot">{{ t('login_no_account_adding') if adding else t('login_no_account') }}
-    <a href="{{ url_for('auth.register', add=1) if adding
-                else url_for('auth.register') }}">{{ t('login_register_link') }}</a></p>
+{# Entrar o registrarse con Google (octubre de 2026): el mismo botón para los
+   dos. Solo sale con el cliente de Google puesto. #}
+{% if google_ready %}
+<p class="or-line"><span>{{ t('google_or') }}</span></p>
+<div class="providers">
+  <a class="btn btn--provider" href="{{ url_for('auth.google_start', add=1) if adding
+                                        else url_for('auth.google_start') }}">
+    {% include "_google-g.svg" %}<span>{{ t('google_button') }}</span></a>
 </div>
+{% endif %}
 {% endblock %}

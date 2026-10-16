@@ -68,6 +68,9 @@
 <link rel="stylesheet" href="/static/css/panel.css?v={{ asset_version }}">
 </head>
 <body>
+{# Entrar, registrarse y sus pasos van sin la barra (`_auth.html`, octubre de
+   2026): el ala está a su izquierda. #}
+{% block bar %}
 <header class="bar{% if bar_search %} bar--search{% endif %}">
   {# Dentro de la cuenta el logo lleva al panel, que es lo que espera quien
      está trabajando. Fuera, al sitio público: desde entrar o registro no había
@@ -88,6 +91,7 @@
     {% include "_menu.html" %}
   </div>
 </header>
+{% endblock %}
 
 <span class="visually-hidden" role="status" id="theme-status"></span>
 

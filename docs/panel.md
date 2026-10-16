@@ -351,6 +351,9 @@ botón era lo que decía en cuál se estaba. El botón mide 42 px igual que el d
 nombre, así que la barra no cambia de alto. Sin logo, el nombre con su flecha,
 como siempre. El sitio hace lo mismo (`docs/sitio.md`).
 
+Entrar, registrarse y sus pasos **no llevan la barra** (octubre de 2026): van
+a dos columnas con el ala a la izquierda (`_auth.html`, ver `docs/cuenta.md`).
+
 La barra de arriba lleva el logo, el nombre de la empresa y un desplegable con
 las mismas cosas en el sitio público y en el panel, en este orden: Dashboard,
 configuración, modo, idioma, cambiar de cuenta y cerrar sesión. Hasta octubre de

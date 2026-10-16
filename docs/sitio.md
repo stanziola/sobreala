@@ -447,6 +447,11 @@ es el único título de Cómo funciona; en el código sigue siendo `features`.
   noche. Los `id` llevan el prefijo de su dibujo (`fc-`, `ft-`, `ff-`, `fe-`,
   `fs-`, `fr-`, `fb-`, `fu-` y `fus-`), por lo mismo que los de las
   ilustraciones.
+- **Cuatro también salen en el panel** (octubre de 2026): contactos, editor,
+  envío y resultados rotan al lado de entrar y registrarse. Los convierte
+  `backend/build_assets.py` desde estos mismos archivos y sus palabras, así que
+  **cambiar uno de esos cuatro pide correr también `build_assets.py`**; su
+  `--check` (y `test_generated`) lo avisa. Ver `docs/cuenta.md`.
 - **Las palabras que llevan dentro viven en `content.py`** (`words`), como todo
   el español del sitio. `alt` es lo que oye un lector de pantalla
   (`aria-label` del SVG): el listón es la etiqueta de su botón de radio, y sin

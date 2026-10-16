@@ -724,10 +724,11 @@ def test_se_crea_otra_cuenta_y_la_primera_sigue_abierta(client, database, outbox
     assert formulario.status_code == 200
     assert "Vas a crear otra cuenta" not in formulario.get_data(as_text=True)
     assert "Con tu cuenta puedes" not in formulario.get_data(as_text=True)
-    # El pie es el del registro de siempre, y entrar sigue siendo agregar.
-    pie = formulario.get_data(as_text=True).split('class="foot"')[1]
-    assert "¿Ya tienes una cuenta?" in pie and "Esa cuenta ya existe" not in pie
-    assert '<a href="/login?add=1">Iniciar sesión</a>' in pie
+    # Debajo del título, el camino a entrar, que sigue siendo agregar.
+    arriba = formulario.get_data(as_text=True).split(
+        'class="lead auth__lead"')[1].split("</p>")[0]
+    assert "¿Ya tienes una cuenta?" in arriba and "Esa cuenta ya existe" not in arriba
+    assert '<a href="/login?add=1">Iniciar sesión</a>' in arriba
 
     register_another(browser, "dos@ejemplo.com")
     confirm(browser, code_from_outbox(outbox))

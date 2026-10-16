@@ -1,10 +1,9 @@
-{% extends "base.html" %}
+{% extends "_auth.html" %}
 {% from "_phone.html" import phone, company_phones with context %}
 {% block title %}{{ t('google_signup_title') }}{% endblock %}
-{% block content %}
+{% block auth %}
 {# Quien entró con Google y no tenía cuenta: el correo y el nombre los dio
    Google; aquí se pide lo mismo que en el registro, menos la contraseña. #}
-<div class="card">
   <h1>{{ t('google_signup_title') }}</h1>
   <p class="lead">{{ t('google_signup_lead', email=email) }}</p>
 
@@ -48,5 +47,4 @@
       {{ t('register_legal_join') }}
       <a href="{{ site_url }}/privacy/" target="_blank" rel="noopener">{{ t('register_legal_privacy') }}</a>.</p>
   </form>
-</div>
 {% endblock %}

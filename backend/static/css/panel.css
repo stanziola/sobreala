@@ -1255,21 +1255,101 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   text-decoration: none; text-underline-offset: 3px;
 }
 .link-button:hover { text-decoration: underline; }
-/* «Continuar con Google»: el botón claro de su marca, con la G a color. */
-.btn--google {
-  display: flex; width: 100%; gap: 10px; align-items: center; justify-content: center;
-  background: var(--color-surface); color: var(--color-ink);
-  border: 1px solid var(--color-border);
+/* «Continuar con Google»: un botón claro con la G a color, y al lado los de
+   los demás proveedores, del mismo tamaño (octubre de 2026). Uno solo ocupa
+   todo el ancho. */
+.providers {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px; margin-top: 16px;
 }
-.btn--google:hover { background: var(--color-surface-alt); color: var(--color-ink); }
+.btn--provider {
+  display: flex; gap: 10px; align-items: center; justify-content: center;
+  margin-top: 0; min-height: 52px; padding: 10px 14px; line-height: 1.25;
+  background: var(--color-surface); color: var(--color-ink);
+  border: 1px solid var(--color-field); border-radius: 10px;
+}
+.btn--provider:hover { background: var(--color-surface-alt); color: var(--color-ink); }
 .google-g { flex: none; }
-/* La raya con «o» entre Google y el formulario. */
+/* La raya con «o» entre el formulario y los proveedores. */
 .or-line {
-  display: flex; align-items: center; gap: 12px; margin: 18px 0 4px;
+  display: flex; align-items: center; gap: 12px; margin: 26px 0 4px;
   color: var(--color-ink-soft); font-size: .9rem;
 }
 .or-line::before, .or-line::after {
   content: ""; flex: 1; height: 1px; background: var(--color-border);
+}
+
+/* ------------------------------------------------- entrar y registrarse
+   A dos columnas, como la imagen de referencia (octubre de 2026, _auth.html):
+   a la izquierda, en el azul de la barra, el ala y las funciones que rotan;
+   a la derecha, el formulario. Sin la barra de arriba. La izquierda es alta
+   como la pantalla y se queda quieta, así acompaña al registro, que es largo.
+   En el teléfono queda una franja azul con el ala, y el formulario a todo el
+   ancho. */
+.wrap--auth { width: 100%; margin: 0; }
+.auth {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 100vh; min-height: 100dvh;
+}
+.auth__side {
+  position: sticky; top: 0; height: 100vh; height: 100dvh;
+  display: flex; flex-direction: column; gap: 28px; overflow: hidden;
+  padding: clamp(24px, 4vw, 44px);
+  color: var(--color-on-dark); background: var(--color-background);
+}
+.auth__side > .bar__brand { align-self: flex-start; }
+.auth__tour {
+  flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 24px;
+  width: 100%; max-width: 560px; margin: 0 auto;
+}
+/* Las cuatro en la misma celda: el bloque mide lo que la más alta y no salta
+   al cambiar. La que no toca se esconde con visibility, que no se lee. */
+.auth__slides { display: grid; }
+.auth__slide {
+  grid-area: 1 / 1; margin: 0; opacity: 0; visibility: hidden; transform: translateY(10px);
+  transition: opacity .5s var(--ease), transform .5s var(--ease), visibility .5s;
+}
+.auth__slide.is-on { opacity: 1; visibility: visible; transform: none; }
+.auth__art {
+  aspect-ratio: 16 / 9; overflow: hidden; border-radius: 18px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, .28);
+}
+.auth__art svg { display: block; width: 100%; height: 100%; }
+.auth__title { margin-top: 24px; font-size: 1.35rem; font-weight: 700; line-height: 1.3; }
+.auth__line { margin-top: 6px; color: var(--color-on-dark-soft); }
+.auth__dots { display: flex; gap: 8px; }
+.auth__dot {
+  width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgba(255, 255, 255, .4);
+  transition: width var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+.auth__dot:hover { background: rgba(255, 255, 255, .7); }
+.auth__dot[aria-pressed="true"] { width: 24px; background: var(--color-on-dark); }
+.auth__main {
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(32px, 6vw, 72px) clamp(20px, 5vw, 64px);
+  background: var(--color-surface);
+}
+.auth__box { width: 100%; max-width: 420px; }
+.auth__box h1 { margin: 0; font-size: clamp(1.8rem, 2.6vw, 2.2rem); letter-spacing: -.02em; }
+.auth__box .lead { margin-top: 8px; }
+.auth__box input:not([type="checkbox"]):not(.code__box), .auth__box select {
+  min-height: 46px; border-radius: 10px;
+}
+/* El botón de cada formulario, a todo el ancho y más alto. */
+.auth__box form > .btn { display: block; width: 100%; min-height: 48px; border-radius: 10px; }
+/* «Recordarme» y «¿Olvidaste tu contraseña?» en la misma fila. */
+.auth__row {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 8px 16px; margin-top: 16px; font-size: .95rem;
+}
+.auth__row .check { margin: 0; }
+@media (max-width: 899px) {
+  /* La franja a su medida: el alto que sobra es del formulario. */
+  .auth { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  .auth__side { position: static; height: auto; padding: 14px clamp(16px, 4vw, 28px); }
+  .auth__tour { display: none; }
+  .auth__main { align-items: flex-start; padding-top: 32px; }
 }
 
 /* --------------------------------------------------------------- plantillas
@@ -1870,3 +1950,46 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
                 justify-content: flex-end; }
 .verify__form input[type="file"] { width: min(300px, 100%); margin: 0; }
 .verify__form .error { flex: 1 1 100%; margin: 0; text-align: right; }
+
+/* GENERATED from landing/src/site.css: the colours of the «Funciones»
+   drawings, which also turn beside the sign in and sign up pages. */
+.art-stage { fill: var(--art-stage); }
+.art-floor { fill: var(--art-floor); }
+.art-card { fill: var(--art-card); }
+.art-card-edge { fill: var(--art-card-edge); }
+.art-paper { fill: var(--art-paper); }
+.art-paper-shade { fill: var(--art-paper-shade); }
+.art-line { fill: var(--art-line); }
+.art-ink { fill: var(--art-ink); }
+.art-blue { fill: var(--art-blue); }
+.art-blue-deep { fill: var(--art-blue-deep); }
+.art-blue-soft { fill: var(--art-blue-soft); }
+.art-green { fill: var(--art-green); }
+.art-purple { fill: var(--art-purple); }
+.art-amber { fill: var(--art-amber); }
+.art-red { fill: var(--art-red); }
+.art-navy { fill: var(--art-navy); }
+.art-sweater { fill: var(--art-sweater); }
+.art-silver { fill: var(--art-silver); }
+.art-skin { fill: var(--art-skin); }
+.art-skin-shade { fill: var(--art-skin-shade); }
+.art-hair { fill: var(--art-hair); }
+.art-ginger { fill: var(--art-ginger); }
+.art-yellow { fill: var(--art-yellow); }
+.art-pink { fill: var(--art-pink); }
+.art-leaf { fill: var(--art-leaf); }
+.art-leaf-deep { fill: var(--art-leaf-deep); }
+.art-s-edge { stroke: var(--art-card-edge); }
+.art-s-shade { stroke: var(--art-paper-shade); }
+.art-s-line { stroke: var(--art-line); }
+.art-s-dash { stroke: var(--art-dash); }
+.art-s-paper { stroke: var(--art-paper); }
+.art-s-blue { stroke: var(--art-blue); }
+.art-s-blue-deep { stroke: var(--art-blue-deep); }
+.art-s-blue-soft { stroke: var(--art-blue-soft); }
+.art-s-green { stroke: var(--art-green); }
+.art-s-navy { stroke: var(--art-navy); }
+.art-s-hair { stroke: var(--art-hair); }
+.art-s-skin-shade { stroke: var(--art-skin-shade); }
+.art-glow { stop-color: var(--art-glow); }
+.art-drop { flood-color: var(--art-shadow); }

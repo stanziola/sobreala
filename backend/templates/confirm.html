@@ -1,7 +1,6 @@
-{% extends "base.html" %}
+{% extends "_auth.html" %}
 {% block title %}{{ t('confirm_title') }}{% endblock %}
-{% block content %}
-<div class="card card--narrow">
+{% block auth %}
   <h1>{{ t('confirm_title') }}</h1>
   <p class="lead">{{ t('confirm_lead_one') if minutes == 1
                       else t('confirm_lead', minutes=minutes) }}</p>
@@ -18,5 +17,4 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="link-button" type="submit">{{ t('confirm_resend') }}</button>
   </form>
-</div>
 {% endblock %}

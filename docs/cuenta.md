@@ -600,6 +600,46 @@ historial se conserva hasta que se decida otra cosa. `auth_events` registra la
 verdad, `already_registered` incluido; la regla 7 gobierna lo que se le dice al
 visitante, no lo que la plataforma sabe de su propio tráfico.
 
+## Entrar y registrarse, a dos columnas (octubre de 2026)
+
+Como la imagen de referencia que se dio: **a la izquierda**, media pantalla en
+el azul de la barra; **a la derecha**, el formulario sobre blanco. Lo comparten
+entrar, registrarse y sus pasos (el código del doble factor, el del correo,
+recuperar la contraseña en sus tres pantallas, completar la cuenta tras Google
+y aceptar una invitación), con el marco `_auth.html`, para que el flujo no
+cambie de cara a la mitad.
+
+- **Sin la barra de arriba:** `base.html` la tiene en `{% block bar %}` y
+  `_auth.html` lo deja vacío. Su ala está arriba del lado izquierdo y lleva al
+  sitio, como la de la barra. El modo claro u oscuro sale de lo ya elegido o
+  del sistema: estas pantallas no tienen el botón para cambiarlo.
+- **A la izquierda, las funciones que rotan:** Contactos, Editor, Envío y
+  Resultados, una a la vez, con su dibujo en una tarjeta, un título y una línea
+  (`auth_feature_*` en `i18n.py`). `panel.js` (`data-auth-tour`) cambia cada
+  6 s y los puntitos eligen una; se para con el ratón encima, con el foco
+  dentro o con la pestaña escondida, y con «reducir movimiento» no avanza sola.
+  Sin JavaScript se queda la primera, sin puntitos. Es `sticky` y alta como la
+  pantalla, así acompaña al registro, que es largo.
+- **Los dibujos son los de «Funciones» del sitio**, no copias:
+  `build_assets.py` convierte cuatro de `landing/src/partials/feature-*.svg.j2`,
+  con sus palabras de `landing/content.py`, en `templates/_art-*.svg`
+  (GENERADO), y copia a `panel.css` las reglas `.art-*` de
+  `landing/src/site.css`. Cambiar un dibujo del sitio pide correr también
+  `build_assets.py`, y su `--check` lo avisa.
+- **Entrar:** «Hola de nuevo» (la pestaña sigue diciendo «Entra a tu cuenta») y
+  debajo «¿Todavía no tienes cuenta? Regístrate»; correo y contraseña con un
+  ejemplo dentro; en una fila, «Recordarme 30 días» y «¿Olvidaste tu
+  contraseña?»; el botón a todo el ancho; y después de la raya con «o», los
+  proveedores. Agregando otra cuenta (`?add=1`) siguen los textos de antes.
+- **Registrarse:** «Crea tu cuenta» y debajo «¿Ya tienes una cuenta? Iniciar
+  sesión» (antes iba al pie). **Los proveedores van arriba**, con la raya «o con
+  tu correo» debajo, al revés que en entrar: el formulario es largo, y quien
+  viene a usar Google no tiene que bajar hasta el final para encontrarlo.
+- **Los proveedores** (`.providers`) van lado a lado y del mismo tamaño; uno solo
+  ocupa todo el ancho.
+- **En el teléfono** (por debajo de 900 px) la izquierda es una franja azul con
+  el ala, sin las funciones, y el formulario va a todo el ancho.
+
 ## Entrar y registrarse con Google (octubre de 2026)
 
 - **Un solo botón, «Continuar con Google»**, en entrar y en el registro. Sale solo

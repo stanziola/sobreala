@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{#- Entrar, registrarse y sus pasos (octubre de 2026): a dos columnas, como la
+    imagen de referencia. A la izquierda, en el azul de la barra, el ala, que
+    lleva al sitio, y las funciones principales, una a la vez, con los dibujos
+    de «Funciones» del sitio (`_art-*.svg`, que genera build_assets.py). A la
+    derecha, el formulario de cada pantalla (su bloque `auth`).
+
+    Sin la barra de arriba: su ala está aquí. El modo claro u oscuro sale de lo
+    ya elegido o del sistema, como en la página de una descarga. -#}
+{% block bar %}{% endblock %}
+{% block wrap_class %}wrap--auth{% endblock %}
+{% block content %}
+{% set features = ['contacts', 'editor', 'schedule', 'results'] %}
+<div class="auth">
+  <aside class="auth__side">
+    <a class="bar__brand" href="{{ site_url }}/" title="{{ t('back_to_site') }}">
+      <span class="bar__wing">{% include "_wing.svg" %}</span>
+      <span class="bar__name">{{ t('brand') }}</span>
+    </a>
+    {#- Cambia sola cada pocos segundos y los puntitos eligen una (`panel.js`,
+        data-auth-tour). Sin JavaScript se queda la primera, sin puntitos. -#}
+    <div class="auth__tour" role="group" aria-label="{{ t('auth_tour_label') }}" data-auth-tour>
+      <div class="auth__slides">
+        {% for one in features %}
+        <figure class="auth__slide{% if loop.first %} is-on{% endif %}" data-slide
+                {%- if not loop.first %} aria-hidden="true"{% endif %}>
+          <div class="auth__art">{% include "_art-" ~ one ~ ".svg" %}</div>
+          <figcaption>
+            <p class="auth__title">{{ t('auth_feature_' ~ one ~ '_title') }}</p>
+            <p class="auth__line">{{ t('auth_feature_' ~ one ~ '_text') }}</p>
+          </figcaption>
+        </figure>
+        {% endfor %}
+      </div>
+      <div class="auth__dots" data-dots hidden>
+        {% for one in features %}
+        <button class="auth__dot" type="button" data-dot="{{ loop.index0 }}"
+                aria-pressed="{{ 'true' if loop.first else 'false' }}"
+                aria-label="{{ t('auth_tour_pick', name=t('auth_feature_' ~ one ~ '_title')) }}"></button>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+
+  <section class="auth__main">
+    <div class="auth__box">
+      {% block auth %}{% endblock %}
+    </div>
+  </section>
+</div>
+{% endblock %}

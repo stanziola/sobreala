@@ -277,12 +277,31 @@ TEXTS = {
                        "contraseña.",
     "google_needs_password": "Para desconectar Google, crea primero una "
                              "contraseña con «¿Olvidaste tu contraseña?».",
-    "login_remember": "Mantener mi sesión iniciada 30 días",
+    # Corto, para que quepa al lado de «¿Olvidaste tu contraseña?».
+    "login_remember": "Recordarme 30 días",
     "login_no_account": "¿Todavía no tienes cuenta?",
     # Estando dentro de una cuenta y agregando otra, «todavía no tienes cuenta»
     # es mentira: la tiene, lo que quiere es otra.
     "login_no_account_adding": "¿Te gustaría crear otra cuenta?",
     "login_register_link": "Créala aquí",
+
+    # Entrar y registrarse a dos columnas (octubre de 2026): el saludo, los
+    # ejemplos dentro de los campos y, a la izquierda, las funciones que rotan.
+    "login_hello": "Hola de nuevo",
+    "login_register_short": "Regístrate",
+    "login_email_placeholder": "tu@empresa.com",
+    "login_password_placeholder": "Tu contraseña",
+    "auth_or_email": "o con tu correo",
+    "auth_tour_label": "Lo que puedes hacer con Sobreala",
+    "auth_tour_pick": "Ver «{name}»",
+    "auth_feature_contacts_title": "Tu lista, en orden",
+    "auth_feature_contacts_text": "Importa tu archivo CSV y organízala con etiquetas.",
+    "auth_feature_editor_title": "Arma tu correo",
+    "auth_feature_editor_text": "Textos, botones e imágenes donde quieras.",
+    "auth_feature_schedule_title": "Ahora o cuando quieras",
+    "auth_feature_schedule_text": "Envía de inmediato o programa el día y la hora.",
+    "auth_feature_results_title": "Mira cómo le fue",
+    "auth_feature_results_text": "Aperturas, clics, rebotes y bajas de cada envío.",
 
     # --- devices -----------------------------------------------------------
     "devices_title": "Tus dispositivos",

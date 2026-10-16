@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "_auth.html" %}
 {% block title %}{{ t('invite_title') }}{% endblock %}
 
 {#- Aceptar la invitación: la persona pone **su** contraseña y entra.
@@ -6,8 +6,7 @@
     El enlace vale una vez y vence. Gastado o vencido dicen lo mismo, como los
     demás enlaces del panel: quien lo tiene en la mano no se entera de cuál de
     las dos cosas pasó. -#}
-{% block content %}
-<div class="card card--narrow">
+{% block auth %}
   {% if gone %}
   <h1>{{ t('invite_gone_title') }}</h1>
   <p class="lead">{{ t('invite_gone_lead') }}</p>
@@ -43,5 +42,4 @@
     <button class="btn" type="submit">{{ t('invite_action') }}</button>
   </form>
   {% endif %}
-</div>
 {% endblock %}

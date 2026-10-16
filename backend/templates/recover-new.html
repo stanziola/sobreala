@@ -1,7 +1,6 @@
-{% extends "base.html" %}
+{% extends "_auth.html" %}
 {% block title %}{{ t('recover_new_title') }}{% endblock %}
-{% block content %}
-<div class="card card--narrow">
+{% block auth %}
   <h1>{{ t('recover_new_title') }}</h1>
   <p class="lead">{{ t('recover_new_lead') }}</p>
 
@@ -53,5 +52,4 @@
 
     <button class="btn" type="submit">{{ t('recover_new_submit') }}</button>
   </form>
-</div>
 {% endblock %}
