@@ -3,7 +3,7 @@
 
 Lo que fijan estas pruebas: que una carpeta se crea, cambia de nombre y de
 color, y se elimina sin borrar sus plantillas; que una plantilla solo se mueve a
-una carpeta de su cuenta; que al pasar el ratón asoman las cuatro más recientes,
+una carpeta de su cuenta; que al pasar el ratón asoman las tres más recientes,
 cada una con el enlace a su editor, y que el cristal entra a la carpeta; que la
 carpeta de otra cuenta no se abre; que sin JavaScript cada bandeja llega
 abierta; y que Mis plantillas ya no tiene arriba Crear, Cargar ni las notas,
@@ -138,6 +138,64 @@ def test_se_mueve_solo_a_una_carpeta_de_su_cuenta(client, database, outbox):
     assert "folder_id" not in database.designs.find_one({"_id": plantilla})
 
 
+def test_se_mueven_varias_de_una_vez(client, database, outbox):
+    """Las que se arrastran juntas (octubre de 2026): llegan en un solo envío,
+    con una `id` por plantilla. La de otra cuenta se ignora."""
+    browser = inside(client)
+    nueva(browser, "Cobros")
+    suya = la_carpeta(database, "Cobros")
+    una, otra = hoja(database, "Cuota de enero"), hoja(database, "Cuota de febrero")
+    inside(client, "bea@ejemplo.com")
+    ajena = hoja(database, "De Bea", email="bea@ejemplo.com")
+
+    respuesta = browser.post("/templates/move", data={
+        "csrf_token": csrf(browser), "folder": str(suya["id"]), "back": "",
+        "id": [str(una), str(otra), str(ajena)]})
+    assert respuesta.headers["Location"].endswith("/templates?movida=2")
+    for uno in (una, otra):
+        assert database.designs.find_one({"_id": uno})["folder_id"] == suya["id"]
+    assert "folder_id" not in database.designs.find_one({"_id": ajena})
+    assert "Listo, se movieron 2 plantillas." in browser.get(
+        "/templates?movida=2").get_data(as_text=True)
+
+
+def test_se_arrastra_desde_las_tarjetas_y_las_hojas(client, database, outbox):
+    """Lo que el arrastre necesita en la página (octubre de 2026): qué se
+    arrastra, dónde se suelta y el formulario que se manda al soltar."""
+    browser = inside(client)
+    nueva(browser, "Eventos")
+    suya = la_carpeta(database, "Eventos")
+    dentro = hoja(database, "Asamblea", folder_id=suya["id"])
+    suelta = hoja(database, "Suelta")
+
+    lista = browser.get("/templates").get_data(as_text=True)
+    assert f'data-drag-template="{suelta}"' in lista
+    assert f'data-drag-template="{dentro}"' in lista  # su hoja, que asoma
+    assert f'data-drop-folder="{suya["id"]}"' in lista
+    assert 'class="shelf__loose" data-drop-folder=""' in lista
+    assert 'data-drag-form' in lista and 'data-move-to="Mover a «{name}»"' in lista
+
+    # Con todas en carpetas, «Sin carpeta» sigue ahí para soltar, y lo dice.
+    database.designs.update_one({"_id": suelta}, {"$set": {"folder_id": suya["id"]}})
+    lista = browser.get("/templates").get_data(as_text=True)
+    assert "Todas tus plantillas están en carpetas." in lista
+
+    # Dentro de la carpeta, «← Mis plantillas» saca lo que se le suelta.
+    carpeta = browser.get(f"/templates/folders/{suya['id']}").get_data(as_text=True)
+    assert 'data-drop-folder="" data-drop-name=""' in carpeta.split('class="crumb"')[1]
+    assert f'data-drag-folder="{suya["id"]}"' in carpeta
+    assert 'name="back" value="{}"'.format(suya["id"]) in carpeta.split("data-drag-form")[1]
+
+
+def test_el_sobre_puede_ser_blanco(client, database, outbox):
+    browser = inside(client)
+    assert nueva(browser, "Avisos", "white").status_code == 302
+    assert la_carpeta(database, "Avisos")["color"] == "white"
+    pantalla = browser.get("/templates").get_data(as_text=True)
+    assert 'class="folder folder--white"' in pantalla
+    assert 'value="white"' in pantalla and "Blanco" in pantalla
+
+
 def test_duplicar_la_deja_en_la_misma_carpeta(client, database, outbox):
     browser = inside(client)
     nueva(browser, "Eventos")
@@ -184,7 +242,7 @@ def test_una_carpeta_vacia_lo_dice(client, database, outbox):
     assert "Vacía</span>" in browser.get("/templates").get_data(as_text=True)
 
 
-def test_asoman_las_cuatro_mas_recientes_y_cada_una_abre_su_editor(client, database, outbox):
+def test_asoman_las_tres_mas_recientes_y_cada_una_abre_su_editor(client, database, outbox):
     browser = inside(client)
     nueva(browser, "Boletines")
     suya = la_carpeta(database)
@@ -203,15 +261,26 @@ def test_asoman_las_cuatro_mas_recientes_y_cada_una_abre_su_editor(client, datab
 
     pantalla = browser.get("/templates").get_data(as_text=True)
     carpeta = pantalla.split('class="folder folder--blue"')[1].split("</details>")[0]
-    hojas = carpeta.split('class="folder__files folder__files--4"')[1].split("</ul>")[0]
-    # De la más vieja a la más nueva: la última queda delante del cristal.
-    nombres = [one.split("</span>")[0]
-               for one in hojas.split('class="folder__sheet-name">')[1:]]
-    assert nombres == ["Boletín 4", "Boletín 5", "De antes", "Cargada"]
+    hojas = carpeta.split('class="folder__files folder__files--3"')[1].split("</ul>")[0]
+    # Tres (pedido así: para entrar rápido a una), de la más vieja a la más
+    # nueva: la última queda delante del cristal.
+    nombres = [one.split('"')[0] for one in hojas.split('data-drag-name="')[1:]]
+    assert nombres == ["Boletín 5", "De antes", "Cargada"]
     assert f'href="/templates/canvas/{ids[5]}"' in hojas
     assert f'href="/templates/piece/{vieja}"' in hojas
     assert f'href="/templates/html/{html}"' in hojas
-    assert f'href="/templates/canvas/{ids[0]}"' not in hojas
+    assert f'href="/templates/canvas/{ids[4]}"' not in hojas
+    # Cada hoja es su plantilla: su vista, que se pide al pasar el ratón
+    # (`data-src`), fuera del enlace, y se puede arrastrar a otra carpeta.
+    for uno in (ids[5], vieja, html):
+        assert f'data-src="/templates/{uno}/preview"' in hojas
+        assert f'data-drag-template="{uno}"' in hojas
+    enlace = hojas.split('class="folder__sheet-link"')[1].split("</a>")[0]
+    assert "<iframe" not in enlace
+    # Sin su nombre a la vista: se lee dentro de la carpeta. Lo oye quien no
+    # ve la hoja.
+    assert 'class="visually-hidden">Boletín 5</span>' in enlace
+    assert "hace " not in hojas
     # El cristal entra a la carpeta, y dice cuántas tiene.
     assert f'class="folder__front" href="/templates/folders/{suya["id"]}"' in carpeta
     assert "8 plantillas" in carpeta

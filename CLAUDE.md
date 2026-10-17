@@ -309,11 +309,15 @@ cosa está como está, y lo que ya se probó y se quitó.
   y cargar viven en el **Lienzo** (la fila que se llamó «Crear», octubre de
   2026).
 - **Mis plantillas son carpetas** (octubre de 2026): `accounts.design_folders`
-  y `designs.folder_id`, un nivel, ocho colores, dibujadas como la carpeta de
-  cristal de un componente de React rehecho en Jinja y CSS. Al pasar el ratón
-  asoman las cuatro más recientes (pulsar una la abre; el cristal entra a la
-  carpeta), y su menú ⋮ cambia nombre y color o la elimina **sin borrar sus
-  plantillas**.
+  y `designs.folder_id`, un nivel, nueve colores (con el blanco), dibujadas
+  como la carpeta de cristal de un componente de React rehecho en Jinja y CSS.
+  Al pasar el ratón asoman las tres más recientes, **cada hoja con su
+  plantilla de verdad y sin su nombre**, que se lee dentro de la carpeta
+  (pulsar una la abre; el cristal entra a la carpeta), y
+  su menú ⋮ cambia nombre y color o la elimina **sin borrar sus plantillas**.
+  **Se arrastran como en Windows**, solo con ratón: Ctrl y Mayús eligen
+  varias, y se sueltan en una carpeta, en «Sin carpeta» o en «← Mis
+  plantillas».
 - Las imágenes viven en la colección `images`, se achican al entrar y las sirve
   `/img/<nombre>` sin sesión. **Una que salió en un envío no se borra**: se
   retira con TTL a doce meses.
@@ -356,10 +360,11 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Al entrar se aterriza en el sitio público. Una cuenta nueva ve `/welcome`.
 - **El Dashboard** (`services/dashboard.py`, `_dashboard.html`): Estadísticas,
   Correos (Enviar → Redactar, Masivo y Enviados), Plantillas (Mis plantillas y
-  Lienzo), Contactos (Lista y Supresiones) y Configuración de envío (Remitente
-  y, en la demostración, las direcciones de prueba) en un árbol a la izquierda,
-  y la pantalla a la derecha. **La configuración de la cuenta es aparte**
-  (`_settings_frame.html`, desde el menú de arriba). Las direcciones de siempre no cambiaron. Importar, Etiquetas y
+  Lienzo), Contactos (Lista y Supresiones), Configuración de envío (Remitente
+  y, en la demostración, las direcciones de prueba) y **Configuración, la de la
+  cuenta, como rama aparte** (Cuenta, Seguridad, Notificaciones y Facturación)
+  en un árbol a la izquierda, y la pantalla a la derecha. El administrador ve
+  su Configuración en su página (`_settings_frame.html`). Las direcciones de siempre no cambiaron. Importar, Etiquetas y
   Columnas se abren desde la lista de Contactos. **Pegado a la izquierda**
   (`.wrap--left`): el árbol arranca donde el ala, y lo de la derecha se lleva
   el resto; Administración igual, y Configuración arranca ahí con su ancho.
@@ -393,7 +398,7 @@ cosa está como está, y lo que ya se probó y se quitó.
   al lado del ala, que ahí va sin la palabra (`bar_search`). Las pantallas
   salen del árbol del Dashboard, **cada una con su sitio al lado** («Lista ·
   Estadísticas», «Lista · Contactos»), más sus campañas, envíos, plantillas y
-  etiquetas por nombre; la configuración de la cuenta no sale. Sugiere
+  etiquetas por nombre. Sugiere
   mientras se escribe (`/search/suggest`), sin JavaScript manda a `/search`, y
   sin sesión da 404.
 - La ficha de administración enseña cifras y orígenes, **nunca la lista de

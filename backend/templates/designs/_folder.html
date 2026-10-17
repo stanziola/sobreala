@@ -48,12 +48,16 @@
 </details>
 {% endmacro %}
 
-{#- Una carpeta en la cuadrícula. `peek` son sus cuatro de cambio más reciente,
+{#- Una carpeta en la cuadrícula. `peek` son sus tres de cambio más reciente,
     de la más vieja a la más nueva: la última queda delante, pegada al cristal.
     En el orden del teclado va primero el cristal y después las hojas. -#}
 {% macro folder_card(folder, count, peek) %}
 {% set shown = peek|length %}
-<div class="folder folder--{{ folder.color }}">
+{#- `data-drop-folder`: aquí se sueltan las plantillas que se arrastran
+    (octubre de 2026, panel.js). `data-folder-peek`: al entrar el ratón,
+    panel.js carga la vista de sus hojas. -#}
+<div class="folder folder--{{ folder.color }}" data-drop-folder="{{ folder.id }}"
+     data-drop-name="{{ folder.name }}" data-folder-peek>
   <div class="folder__stage">
     <div class="folder__shadow" aria-hidden="true"></div>
     <div class="folder__back" aria-hidden="true"><div class="folder__sheen"></div></div>
@@ -61,7 +65,7 @@
       <path d="{{ back_path }}"/>
     </svg>
 
-    <a class="folder__front" href="{{ url_for('designs.folder', raw=folder.id) }}"
+    <a class="folder__front" href="{{ url_for('designs.folder', raw=folder.id) }}" draggable="false"
        aria-label="{{ t('folders_open_aria', name=folder.name, count=count_text(count)) }}">
       <span class="folder__tint" aria-hidden="true"></span>
       <span class="folder__spec" aria-hidden="true"></span>
@@ -78,17 +82,29 @@
     {#- Dónde va cada hoja lo dice el CSS por su lugar en la lista y por cuántas
         son (`folder__files--N`): el panel no deja estilos escritos en el HTML.
         Cada una lleva además un desorden pequeño y fijo, como hojas de verdad
-        (`folder__sheet--jN`, de su id: no baila de una visita a otra). -#}
+        (`folder__sheet--jN`, de su id: no baila de una visita a otra).
+
+        Cada hoja es la plantilla (octubre de 2026): su correo, achicado, en un
+        marco aislado que panel.js carga la primera vez que el ratón entra a la
+        carpeta (`data-src`). Hasta entonces, y sin JavaScript, es papel con
+        rayas. Sin su nombre a la vista: las hojas son para entrar rápido a
+        una, y los nombres se leen dentro de la carpeta; el nombre queda para
+        quien no ve la hoja. El enlace va encima del marco y no lo envuelve: un
+        marco no puede ir dentro de un enlace. La hoja se puede arrastrar a
+        otra carpeta (`data-drag-template`). -#}
     <ul class="folder__files folder__files--{{ shown }}" aria-label="{{ t('folders_peek_aria', name=folder.name) }}">
       {% for one in peek %}
       <li class="folder__slot">
-        <a class="folder__sheet folder__sheet--j{{ ((one._id|string)[-4:]|int(0, 16)) % 8 }}" href="{{ editor_url(one) }}">
+        <div class="folder__sheet folder__sheet--j{{ ((one._id|string)[-4:]|int(0, 16)) % 8 }}"
+             data-drag-template="{{ one._id }}" data-drag-name="{{ one.name }}"
+             data-drag-folder="{{ folder.id }}">
           <span class="folder__lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-          <span class="folder__sheet-head">
-            <span class="folder__sheet-name">{{ one.name }}</span>
-            <span class="folder__sheet-meta">{{ (one.updated_at or one.created_at)|ago }}</span>
-          </span>
-        </a>
+          <iframe class="folder__preview" data-src="{{ url_for('designs.piece_view', raw=one._id) }}"
+                  sandbox scrolling="no" tabindex="-1" aria-hidden="true"
+                  title="{{ one.name }}"></iframe>
+          <a class="folder__sheet-link" href="{{ editor_url(one) }}" draggable="false"><span
+             class="visually-hidden">{{ one.name }}</span></a>
+        </div>
       </li>
       {% endfor %}
     </ul>

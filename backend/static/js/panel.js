@@ -586,6 +586,274 @@
   });
 })();
 
+/* Las hojas que asoman de una carpeta son sus plantillas (octubre de 2026): la
+   primera vez que el ratón entra, o llega el foco, cada hoja pide su vista, y
+   al cargar deja de ser papel con rayas. Así la página no pide todas de
+   golpe. */
+(function () {
+  Array.prototype.forEach.call(document.querySelectorAll("[data-folder-peek]"), function (folder) {
+    function load() {
+      folder.removeEventListener("pointerenter", load);
+      folder.removeEventListener("focusin", load);
+      Array.prototype.forEach.call(folder.querySelectorAll("iframe[data-src]"), function (frame) {
+        var sheet = frame.closest(".folder__sheet");
+        frame.addEventListener("load", function () {
+          if (sheet) sheet.classList.add("is-previewed");
+        });
+        frame.src = frame.getAttribute("data-src");
+        frame.removeAttribute("data-src");
+      });
+    }
+    folder.addEventListener("pointerenter", load);
+    folder.addEventListener("focusin", load);
+  });
+})();
+
+/* Arrastrar plantillas hasta una carpeta, como en Windows (octubre de 2026).
+
+   Elegir: un clic en una tarjeta (fuera de sus botones) la elige sola, Ctrl
+   suma o quita una, Mayús elige el tramo desde la última, y un clic en lo
+   vacío o Esc quita la elección. Arrastrar: con el botón apretado y unos
+   píxeles de movimiento; van las elegidas si la tarjeta lo estaba, y si no,
+   solo ella. También se arrastran las hojas que asoman de una carpeta. Se
+   suelta en una carpeta, en «Sin carpeta» o en «← Mis plantillas»
+   (`data-drop-folder`); la que recibe se abre y se marca, y la tarjetita que
+   sigue al ratón dice adónde van. Al soltar se manda el formulario escondido
+   (`data-drag-form`) y la página vuelve con su aviso. Esc o soltar fuera
+   cancelan. Solo con ratón: en el teléfono el dedo desplaza la página, y ahí
+   está «Mover a…».
+
+   Con eventos de puntero y no con el arrastre del navegador, para dibujar la
+   tarjetita y la carpeta como se quiere; el del navegador se apaga. */
+(function () {
+  var form = document.querySelector("[data-drag-form]");
+  if (!form || !window.requestAnimationFrame) return;
+  var list = document.querySelector("[data-drag-list]");
+  // Lo que no es para arrastrar dentro de una tarjeta: sus botones y menús.
+  var CONTROLS = "a, button, input, select, textarea, summary, label, details, form";
+  var selected = [];
+  var anchor = null;
+  var press = null;
+  var drag = null;
+  var swallow = false;
+
+  function cards() {
+    return list ? Array.prototype.slice.call(list.querySelectorAll("[data-drag-template]")) : [];
+  }
+  function paint() {
+    cards().forEach(function (card) {
+      card.classList.toggle("is-selected", selected.indexOf(card) !== -1);
+    });
+  }
+  function clear() {
+    selected = [];
+    anchor = null;
+    paint();
+  }
+  function folderOf(item) { return item.getAttribute("data-drag-folder") || ""; }
+
+  // El clic que viene después de soltar no es un clic: no abre la hoja.
+  document.addEventListener("click", function (e) {
+    if (!swallow) return;
+    swallow = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+
+  // Elegir, como en Windows.
+  document.addEventListener("click", function (e) {
+    if (!list || !e.target.closest) return;
+    var card = e.target.closest(".card-piece[data-drag-template]");
+    if (!card) {
+      if (selected.length && !e.target.closest("dialog, .folder-menu")) clear();
+      return;
+    }
+    if (e.target.closest(CONTROLS)) return;
+    if (e.ctrlKey || e.metaKey) {
+      var at = selected.indexOf(card);
+      if (at === -1) selected.push(card); else selected.splice(at, 1);
+      anchor = card;
+    } else if (e.shiftKey && anchor) {
+      var all = cards();
+      var from = all.indexOf(anchor);
+      var to = all.indexOf(card);
+      selected = all.slice(Math.min(from, to), Math.max(from, to) + 1);
+    } else {
+      selected = [card];
+      anchor = card;
+    }
+    paint();
+  });
+
+  // El arrastre del navegador (el de los enlaces de las hojas) se apaga.
+  document.addEventListener("dragstart", function (e) {
+    if (e.target.closest && e.target.closest("[data-drag-template]")) e.preventDefault();
+  });
+
+  document.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "mouse" || e.button !== 0 || drag || !e.target.closest) return;
+    var item = e.target.closest("[data-drag-template]");
+    if (!item) return;
+    // El enlace de una hoja es la hoja: se arrastra. Los demás controles actúan.
+    var control = e.target.closest(CONTROLS);
+    if (control && !control.classList.contains("folder__sheet-link")) return;
+    e.preventDefault();
+    press = {item: item, x: e.clientX, y: e.clientY};
+  });
+
+  document.addEventListener("pointermove", function (e) {
+    if (!press) return;
+    if (!drag) {
+      if (Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) < 6) return;
+      start(press.item);
+    }
+    follow(e.clientX, e.clientY);
+  });
+
+  document.addEventListener("pointerup", function () {
+    if (drag) {
+      drop();
+      swallow = true;
+      // Si no llega ningún clic (se soltó fuera), el siguiente sí cuenta.
+      window.setTimeout(function () { swallow = false; }, 0);
+    }
+    press = null;
+  });
+  document.addEventListener("pointercancel", cancel);
+  window.addEventListener("blur", cancel);
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (drag) {
+      cancel();
+      e.preventDefault();
+    } else if (selected.length) {
+      clear();
+    }
+  });
+
+  function start(item) {
+    var items;
+    if (item.classList.contains("card-piece")) {
+      if (selected.indexOf(item) === -1) {
+        selected = [item];
+        anchor = item;
+        paint();
+      }
+      items = selected.slice();
+    } else {
+      items = [item];
+    }
+    var ghost = document.createElement("div");
+    ghost.className = "drag-ghost";
+    var card = document.createElement("div");
+    card.className = "drag-ghost__card" + (items.length > 1 ? " drag-ghost__card--many" : "");
+    var name = document.createElement("span");
+    name.className = "drag-ghost__name";
+    name.textContent = items[0].getAttribute("data-drag-name") || "";
+    card.appendChild(name);
+    if (items.length > 1) {
+      var count = document.createElement("span");
+      count.className = "drag-ghost__count";
+      count.textContent = String(items.length);
+      card.appendChild(count);
+    }
+    var hint = document.createElement("div");
+    hint.className = "drag-ghost__hint";
+    hint.hidden = true;
+    ghost.appendChild(card);
+    ghost.appendChild(hint);
+    document.body.appendChild(ghost);
+    items.forEach(function (one) { one.classList.add("is-dragged"); });
+    document.documentElement.classList.add("is-dragging");
+    drag = {items: items, ghost: ghost, hint: hint, target: null, x: press.x, y: press.y};
+    window.requestAnimationFrame(scroll);
+  }
+
+  // Si al menos una cambia de carpeta, ahí se puede soltar.
+  function moves(target) {
+    var to = target.getAttribute("data-drop-folder");
+    return drag.items.some(function (one) { return folderOf(one) !== to; });
+  }
+
+  function follow(x, y) {
+    drag.x = x;
+    drag.y = y;
+    drag.ghost.style.transform = "translate(" + (x + 14) + "px, " + (y + 16) + "px)";
+    var under = document.elementFromPoint(x, y);
+    var target = under && under.closest ? under.closest("[data-drop-folder]") : null;
+    if (target && !moves(target)) target = null;
+    if (target === drag.target) return;
+    if (drag.target) drag.target.classList.remove("is-drop");
+    drag.target = target;
+    if (!target) {
+      drag.hint.hidden = true;
+      return;
+    }
+    target.classList.add("is-drop");
+    drag.hint.textContent = target.getAttribute("data-drop-folder")
+      ? form.getAttribute("data-move-to").replace("{name}", target.getAttribute("data-drop-name") || "")
+      : form.getAttribute("data-out");
+    drag.hint.hidden = false;
+  }
+
+  // Cerca del borde de la ventana, la página se desplaza sola.
+  function scroll() {
+    if (!drag) return;
+    var edge = 56;
+    var speed = 0;
+    if (drag.y < edge) speed = -Math.ceil((edge - drag.y) / 3);
+    else if (drag.y > window.innerHeight - edge) speed = Math.ceil((drag.y - (window.innerHeight - edge)) / 3);
+    if (speed) {
+      window.scrollBy(0, speed);
+      follow(drag.x, drag.y);
+    }
+    window.requestAnimationFrame(scroll);
+  }
+
+  function drop() {
+    var target = drag.target;
+    if (!target) {
+      cancel();
+      return;
+    }
+    var to = target.getAttribute("data-drop-folder");
+    Array.prototype.forEach.call(form.querySelectorAll('input[name="id"]'), function (old) {
+      old.parentNode.removeChild(old);
+    });
+    drag.items.forEach(function (one) {
+      if (folderOf(one) === to) return;
+      var input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "id";
+      input.value = one.getAttribute("data-drag-template");
+      form.appendChild(input);
+    });
+    form.querySelector('input[name="folder"]').value = to;
+    // Cae dentro de la carpeta, y después se manda.
+    var box = target.getBoundingClientRect();
+    var ghost = drag.ghost;
+    ghost.classList.add("is-dropping");
+    ghost.style.transform = "translate(" + (box.left + box.width / 2) + "px, " +
+      (box.top + box.height / 2) + "px) scale(.3)";
+    drag = null;
+    var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.setTimeout(function () {
+      if (typeof form.requestSubmit === "function") form.requestSubmit();
+      else form.submit();
+    }, still ? 0 : 220);
+  }
+
+  function cancel() {
+    press = null;
+    if (!drag) return;
+    if (drag.target) drag.target.classList.remove("is-drop");
+    drag.items.forEach(function (one) { one.classList.remove("is-dragged"); });
+    if (drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
+    document.documentElement.classList.remove("is-dragging");
+    drag = null;
+  }
+})();
+
 /* La vista previa que se refresca sola al escribir. Pulsa por su cuenta el
    botón de ver cómo queda, que manda al marco de al lado: la respuesta trae
    su propia cabecera de correo, cosa que un marco llenado desde aquí no

@@ -4,10 +4,15 @@
     reconoce mirándolo. Cada una enseña el correo tal como sale, en un marco
     aislado y achicado, que se pide solo cuando se acerca (`loading="lazy"`).
     Espera: mine, named, folders, editor_url y folder (la carpeta abierta, o
-    nada), que es a donde vuelve cada botón. -#}
-<ul class="cards">
+    nada), que es a donde vuelve cada botón.
+
+    Cada tarjeta se elige con un clic (Ctrl suma, Mayús un tramo) y se arrastra
+    hasta una carpeta, como en Windows (octubre de 2026, panel.js:
+    `data-drag-template`). Con el teclado y en el teléfono está «Mover a…». -#}
+<ul class="cards" data-drag-list>
   {% for one in mine %}
-  <li class="card-piece">
+  <li class="card-piece" data-drag-template="{{ one._id }}" data-drag-name="{{ one.name }}"
+      data-drag-folder="{{ one.folder_id or '' }}">
     <div class="card-piece__view">
       {#- `scrolling="no"`: el correo es más alto que el marco y el navegador le
           dibujaba su barra, que achicada es una rayita gris al lado. Desde

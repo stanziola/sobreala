@@ -1,11 +1,9 @@
 {% extends "base.html" %}
-{#- La configuración de la cuenta (octubre de 2026): Cuenta, Seguridad,
-    Notificaciones y Facturación, con su menú de secciones a la izquierda,
-    pegada al borde y con el ancho de siempre. Es la del menú de arriba, aparte
-    del Dashboard; las direcciones de prueba, que son del envío, viven en su
-    rama «Configuración de envío» y no salen en este menú. La usan
-    `settings.html` (salvo esa sección) y la página de eliminar la cuenta, y es
-    también la del administrador. -#}
+{#- La configuración del administrador (octubre de 2026): no tiene Dashboard,
+    así que la suya va con su menú de secciones a la izquierda, pegada al borde
+    y con el ancho de siempre. La de un cliente va dentro del Dashboard, en sus
+    ramas «Configuración de envío» y «Configuración»; `settings.html` elige el
+    marco. -#}
 {% block wrap_class %}wrap--wide wrap--left wrap--rows{% endblock %}
 {% block content %}
 <h1 class="settings__heading">{{ t('settings_title') }}</h1>

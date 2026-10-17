@@ -105,8 +105,10 @@ sido un segundo sistema de construcción para un solo dibujo.
   `accounts.design_folders`, una lista de `{id, name, color}`, y cada plantilla
   dice la suya en `designs.folder_id`. Un solo nivel; hasta 50 (`FOLDER_LIMIT`);
   el nombre, de 1 a 40, no se repite sin mirar mayúsculas; el color es uno de
-  ocho (`FOLDER_COLORS`: gris, que es el de siempre, azul, verde, ámbar, rojo,
-  morado, rosa y turquesa). Lo hace `models/design.py`.
+  nueve (`FOLDER_COLORS`: gris, que es el de siempre, blanco, azul, verde,
+  ámbar, rojo, morado, rosa y turquesa). El blanco se pidió aparte, y en oscuro
+  sigue claro: detrás del cristal ahumado se ve en la pestaña. Lo hace
+  `models/design.py`.
 - **El dibujo** (`designs/_folder.html` y «La carpeta de cristal» en
   `_panel.src.css`): el fondo del color de la carpeta, las plantillas en medio y
   delante un cristal esmerilado (`backdrop-filter`) con su bisagra abajo; sus
@@ -114,13 +116,38 @@ sido un segundo sistema de construcción para un solo dibujo.
   340 × 272 y se achica entera con `--k`, por eso sus letras van más grandes que
   en el componente. En oscuro, el cristal es ahumado.
 - **Al pasar el ratón** (o con el foco dentro) el cristal se inclina y asoman
-  **las cuatro de cambio más reciente** (`changed_at()`), separadas lo justo
-  para leer su nombre; **pulsar una abre esa plantilla** en su editor, y
+  **las tres de cambio más reciente** (`changed_at()`, `PEEK`; fueron cuatro
+  hasta que se pidieron tres, para entrar rápido a una); **pulsar una abre esa
+  plantilla** en su editor, y
   **pulsar el cristal entra a la carpeta** (`/templates/folders/<id>`, con todas
   como tarjetas; la de otra cuenta da 404). Sin ratón, tocar la carpeta entra.
   El panel no deja estilos escritos en el HTML (`style-src 'self'`), así que
   dónde va cada hoja lo dice el CSS por su lugar en la lista
   (`folder__files--N`), con un desorden fijo de ocho (`folder__sheet--jN`).
+- **Cada hoja es su plantilla**: el correo de verdad, achicado al ancho de la
+  hoja, **sin su nombre a la vista**: las hojas son para entrar rápido a una, y
+  los nombres se leen dentro de la carpeta (el nombre queda escondido para
+  quien no ve la hoja). Llevó el nombre en blanco encima unas horas, y se
+  quitó a pedido. Es la vista de las tarjetas (`/templates/<id>/preview`) en un
+  marco aislado, que `panel.js` pide la primera vez que el ratón (o el foco)
+  entra a la carpeta (`data-src`), para que la página no pida todas de golpe;
+  hasta que carga, y sin JavaScript, la hoja es papel con rayas. El enlace al
+  editor va encima del marco y no lo envuelve, porque un marco no puede ir
+  dentro de un enlace.
+- **Se arrastra, como en Windows** (`panel.js`). Las tarjetas se eligen con un
+  clic (Ctrl suma, Mayús un tramo, Esc o un clic en lo vacío lo quita) y las
+  elegidas se arrastran juntas; también se arrastran las hojas que asoman, para
+  pasarlas a otra carpeta. Se sueltan en una carpeta (`data-drop-folder`), que
+  se abre y se marca en azul; en «Sin carpeta», que con carpetas sale siempre;
+  o, dentro de una carpeta, en «← Mis plantillas». Una tarjetita sigue al ratón
+  con el nombre, cuántas son y adónde van, y cerca del borde la página se
+  desplaza sola. Al soltar se manda el formulario escondido de la página
+  (`designs/_drag_form.html`, a `POST /templates/move` con una `id` por
+  plantilla) y se vuelve con «Listo, se movieron 3 plantillas.». Esc o soltar
+  fuera cancelan. Va con eventos de puntero y no con el arrastre del navegador,
+  para dibujar la tarjetita y la carpeta como se quiere, y **solo con ratón**:
+  en el teléfono el dedo desplaza la página, y ahí, como con el teclado, está
+  «Mover a…».
 - **El menú ⋮**, en vertical: Abrir, Cambiar nombre, Cambiar color y Eliminar.
   Es un `<details>`, y cada opción abre su bandeja, que `panel.js` llena con la
   carpeta pulsada (`data-folder-tray`); sin JavaScript, el mismo enlace abre la
@@ -129,10 +156,11 @@ sido un segundo sistema de construcción para un solo dibujo.
   con su `action`.
 - **Eliminar una carpeta nunca borra sus plantillas**: quedan sin carpeta, y la
   bandeja lo dice antes.
-- **Se entra a una carpeta** con «Mover a…» en cada tarjeta (`POST
-  /templates/move`, solo a una carpeta de la misma cuenta) o eligiéndola en la
-  lista «Carpeta» del Lienzo al guardar. Duplicar deja la copia en la misma.
-  Mover no cuenta como un cambio: no la vuelve de las más recientes.
+- **Se entra a una carpeta** arrastrando, con «Mover a…» en cada tarjeta
+  (`POST /templates/move`, `designs.move_many()`, solo a una carpeta de la misma
+  cuenta) o eligiéndola en la lista «Carpeta» del Lienzo al guardar. Duplicar
+  deja la copia en la misma. Mover no cuenta como un cambio: no la vuelve de las
+  más recientes.
 - **Se vuelve a donde se estaba**: guardar una plantilla que está en una
   carpeta, duplicarla, moverla o borrarla vuelve a esa carpeta (`listed_at()`).
 

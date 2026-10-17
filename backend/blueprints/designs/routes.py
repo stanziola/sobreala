@@ -211,7 +211,8 @@ def shelf_screen(db, account, *, folder=None, editing=None):
         "saved": bool(request.args.get("saved")),
         "updated": bool(request.args.get("changed")),
         "copied": bool(request.args.get("copy")),
-        "moved": bool(request.args.get("movida")),
+        # Cuántas se movieron: una con «Mover a…», o varias arrastrándolas.
+        "moved": request.args.get("movida", default=0, type=int),
         "folder_done": FOLDER_DONE.get(request.args.get("carpeta_hecha", "")),
         "folder_limit": designs.FOLDER_LIMIT,
     }
@@ -294,20 +295,28 @@ def folders():
     return shelf_screen(db, account, folder=here, editing=editing)
 
 
+# Cuántas se mueven en un solo envío: las que caben elegidas en una lista.
+MOVE_MAX = 200
+
+
 @bp.route("/templates/move", methods=["POST"])
 def move():
-    """Pasar una plantilla a una carpeta, o sacarla («Sin carpeta»)."""
+    """Pasar plantillas a una carpeta, o sacarlas («Sin carpeta»). Una desde
+    «Mover a…», o varias arrastrándolas juntas (octubre de 2026). Las que no
+    son de la cuenta se ignoran."""
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
     back = as_id(request.form.get("back"))
     raw = request.form.get("folder", "")
     target = as_id(raw) if raw else None
-    design_id = as_id(request.form.get("id"))
-    if (csrf_ok(request.form.get("csrf_token")) and design_id
-            and (not raw or target is not None)
-            and designs.move(get_db(), account, design_id, target)):
-        return redirect(listed_at(account, back, movida=1))
+    if not csrf_ok(request.form.get("csrf_token")) or (raw and target is None):
+        return redirect(listed_at(account, back))
+    moved = designs.move_many(get_db(), account,
+                              [as_id(one) for one in request.form.getlist("id")[:MOVE_MAX]
+                               if one], target)
+    if moved:
+        return redirect(listed_at(account, back, movida=moved))
     return redirect(listed_at(account, back))
 
 

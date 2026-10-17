@@ -55,6 +55,8 @@ TEXTS = {
     "dash_templates_mine": "Mis plantillas",
     "dash_templates_new": "Lienzo",
     "dash_send_settings": "Configuración de envío",
+    # La de la cuenta, su propia rama a la izquierda (octubre de 2026).
+    "dash_settings": "Configuración",
     "dash_sent": "Enviados",
     "dash_sender": "Remitente",
     "dash_contacts": "Contactos",
@@ -1489,12 +1491,19 @@ TEXTS = {
     "folders_done_deleted": "Listo, se eliminó la carpeta. Sus plantillas "
                             "quedaron sin carpeta.",
     "folders_done_moved": "Listo, se movió la plantilla.",
+    "folders_done_moved_many": "Listo, se movieron {n} plantillas.",
+    # Arrastrar plantillas hasta una carpeta (octubre de 2026): lo que dice la
+    # tarjetita que sigue al ratón.
+    "folders_drag_move_to": "Mover a «{name}»",
+    "folders_drag_out": "Sacar de la carpeta",
+    "folders_loose_empty": "Todas tus plantillas están en carpetas.",
     "folders_error_taken": "Ya tienes una carpeta con ese nombre.",
     "folders_error_full": "Ya tienes {n} carpetas, que es el máximo.",
     "folders_error_color": "Elige uno de los colores.",
     "folders_move": "Mover a…",
     "folders_move_none": "Sin carpeta",
     "folders_color_gray": "Gris",
+    "folders_color_white": "Blanco",
     "folders_color_blue": "Azul",
     "folders_color_green": "Verde",
     "folders_color_amber": "Ámbar",

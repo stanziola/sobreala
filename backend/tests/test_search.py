@@ -84,15 +84,14 @@ def test_sin_javascript_la_pagina_dice_lo_mismo(client, database, outbox):
 def test_cada_resultado_dice_donde_esta(client, database, outbox):
     """Las pantallas salen del árbol del Dashboard con su camino al lado (16 de
     octubre de 2026): «Lista» de Estadísticas y «Lista» de Contactos no se
-    confunden. Remitente sale en Configuración de envío; la configuración de la
-    cuenta no, porque es aparte del Dashboard."""
+    confunden. Remitente sale en Configuración de envío, y las secciones de la
+    cuenta en Configuración, que también es una rama del Dashboard."""
     browser, _, _ = ready(client, database)
     listas = {(one["label"], one["hint"]) for one in sugerencias(browser, "lista")}
     assert ("Lista", "Estadísticas") in listas and ("Lista", "Contactos") in listas
     assert ("Importar contactos", "Contactos") in listas
-    for q in ("factura", "dos pasos", "contrasena", "notificaciones"):
-        assert not any(one["url"].startswith("/settings")
-                       for one in sugerencias(browser, q)), q
+    assert any(one["url"] == "/settings/billing" and one["hint"] == "Configuración"
+               for one in sugerencias(browser, "factura"))
     assert any(one["url"] == "/campaigns/sender"
                and one["hint"] == "Configuración de envío"
                for one in sugerencias(browser, "remitente"))

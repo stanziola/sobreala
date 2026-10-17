@@ -37,12 +37,15 @@
 </ul>
 {% endif %}
 
-{% if mine or not folders %}
-<h2 class="settings__subtitle">{{ t('folders_loose') if folders else t('designs_mine_title') }}</h2>
-{% if mine %}
-{% include "designs/_cards.html" %}
-{% else %}
-<p class="hint">{{ t('designs_mine_empty') }}</p>
-{% endif %}
-{% endif %}
+{#- Las sueltas. Con carpetas, la sección sale siempre: es donde se suelta una
+    plantilla que se saca de su carpeta arrastrándola (octubre de 2026). -#}
+<section class="shelf__loose"{% if folders %} data-drop-folder="" data-drop-name=""{% endif %}>
+  <h2 class="settings__subtitle">{{ t('folders_loose') if folders else t('designs_mine_title') }}</h2>
+  {% if mine %}
+  {% include "designs/_cards.html" %}
+  {% else %}
+  <p class="hint">{{ t('folders_loose_empty') if folders else t('designs_mine_empty') }}</p>
+  {% endif %}
+</section>
+{% include "designs/_drag_form.html" %}
 {% endblock %}

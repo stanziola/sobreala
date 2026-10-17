@@ -1964,9 +1964,8 @@ SECTIONS = ("account", "security", "notifications", "billing")
 # hacen los clientes, no de lo que pasa en su cuenta.
 ADMIN_SECTIONS = ("security", "notifications")
 
-# El nombre de cada sección: en el menú de la configuración de la cuenta y, el
-# de las direcciones de prueba, en el árbol del Dashboard y en el buscador
-# (octubre de 2026).
+# El nombre de cada sección: en el árbol del Dashboard y en el buscador, y en
+# el menú de la configuración del administrador (octubre de 2026).
 SECTION_LABELS = {"account": "settings_section_account",
                   "security": "settings_section_security",
                   "notifications": "settings_section_notifications",

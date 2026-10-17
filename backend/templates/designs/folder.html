@@ -6,7 +6,10 @@
     Se llega pulsando el cristal de la carpeta; desde las hojas que asoman se
     va directo a una plantilla. -#}
 {% block pane %}
-<p class="crumb"><a href="{{ url_for('designs.index') }}"><span aria-hidden="true">← </span>{{ t('folders_back') }}</a></p>
+{#- Soltar aquí una plantilla arrastrada la saca de la carpeta (octubre de
+    2026), como la barra de direcciones de Windows. -#}
+<p class="crumb"><a href="{{ url_for('designs.index') }}" draggable="false"
+   data-drop-folder="" data-drop-name=""><span aria-hidden="true">← </span>{{ t('folders_back') }}</a></p>
 <div class="shelf__head">
   <h1 class="settings__heading shelf__title">
     <span class="swatch swatch--{{ folder.color }}" aria-hidden="true"></span>{{ folder.name }}</h1>
@@ -21,4 +24,5 @@
 {% else %}
 <p class="hint">{{ t('folders_empty') }}</p>
 {% endif %}
+{% include "designs/_drag_form.html" %}
 {% endblock %}

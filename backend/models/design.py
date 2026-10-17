@@ -248,10 +248,12 @@ def remove(db, account_id, design_id) -> dict[str, Any] | None:
 FOLDER_NAME_MAX = 40
 FOLDER_LIMIT = 50
 # The palette, in the order the picker shows it. Gray is the folder of the
-# design it came from.
-FOLDER_COLORS = ("gray", "blue", "green", "amber", "red", "purple", "pink", "teal")
-# How many templates peek out of a folder when the pointer is on it.
-PEEK = 4
+# design it came from; white came after, asked for (octubre de 2026).
+FOLDER_COLORS = ("gray", "white", "blue", "green", "amber", "red", "purple", "pink",
+                 "teal")
+# How many templates peek out of a folder when the pointer is on it: three,
+# asked for (octubre de 2026), to get into one of them quickly.
+PEEK = 3
 # What a list of templates needs: neither the HTML nor the canvas of each.
 LISTED = {"name": 1, "source": 1, "bytes": 1, "template": 1, "folder_id": 1,
           "created_at": 1, "updated_at": 1}
@@ -343,16 +345,21 @@ def remove_folder(db, account: dict[str, Any], folder_id) -> bool:
     return True
 
 
-def move(db, account: dict[str, Any], design_id, folder_id) -> bool:
-    """Pasar una plantilla a una carpeta de la misma cuenta, o sacarla con
-    None. False si la plantilla o la carpeta no son de esa cuenta. No cuenta
-    como un cambio: no la vuelve de las más recientes."""
+def move_many(db, account: dict[str, Any], design_ids, folder_id) -> int:
+    """Pasar plantillas a una carpeta de la misma cuenta, o sacarlas con None:
+    una desde «Mover a…», o varias arrastradas juntas (octubre de 2026).
+    Devuelve cuántas eran de la cuenta; las de otra no se tocan, y nada se
+    mueve a la carpeta de otra. No cuenta como un cambio: no las vuelve de las
+    más recientes."""
     if folder_id is not None and folder_of(account, folder_id) is None:
-        return False
+        return 0
+    ids = [one for one in design_ids if one is not None]
+    if not ids:
+        return 0
     update = ({"$unset": {"folder_id": ""}} if folder_id is None
               else {"$set": {"folder_id": folder_id}})
-    return db.designs.update_one({"_id": design_id, "account_id": account["_id"]},
-                                 update).matched_count == 1
+    return db.designs.update_many({"_id": {"$in": ids}, "account_id": account["_id"]},
+                                  update).matched_count
 
 
 def changed_at(one: dict[str, Any]):

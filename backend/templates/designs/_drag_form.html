@@ -1,0 +1,11 @@
+{#- El formulario que manda panel.js al soltar plantillas arrastradas en una
+    carpeta (octubre de 2026): llena `folder` y una `id` por plantilla. Los
+    textos de la tarjetita que sigue al ratón van aquí, en español, como los de
+    #toasts. `folder` es la carpeta abierta, a la que se vuelve. -#}
+<form method="post" action="{{ url_for('designs.move') }}" hidden data-drag-form
+      data-move-to="{{ t('folders_drag_move_to', name='{name}') }}"
+      data-out="{{ t('folders_drag_out') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="back" value="{{ folder.id if folder else '' }}">
+  <input type="hidden" name="folder" value="">
+</form>

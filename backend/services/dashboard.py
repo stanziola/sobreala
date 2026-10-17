@@ -39,6 +39,8 @@ ENDPOINT_ROWS = {
     "designs.folder": "templates",
     "designs.folders": "templates",
     "designs.create": "templates-new",
+    # Eliminar la cuenta cuelga de Configuración → Cuenta.
+    "auth.delete_account": "settings-account",
     "contacts.blocked": "suppressions",
     "contacts.remove_suppressed": "suppressions",
 }
@@ -64,10 +66,10 @@ def here() -> str:
         return "stats-" + ((request.view_args or {}).get("section") or STATS_SECTIONS[0])
     if endpoint in ENDPOINT_ROWS:
         return ENDPOINT_ROWS[endpoint]
-    # The test addresses are a row of Configuración de envío (octubre de 2026);
-    # the account's own settings are not part of the Dashboard.
-    if endpoint == "auth.settings" and (request.view_args or {}).get("section") == "test":
-        return "settings-test"
+    # Each section of the settings is its row (octubre de 2026): the test
+    # addresses in Configuración de envío, the account's own in Configuración.
+    if endpoint == "auth.settings":
+        return "settings-" + (request.view_args or {}).get("section", "account")
     # The rest of Contacts (importing, columns, tags, one contact) lives
     # under the list: they are reached from its buttons.
     if endpoint.startswith("contacts."):
@@ -128,9 +130,7 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
                  "url": url_for("contacts.blocked")}]})
 
     # Configuración de envío (octubre de 2026): what sending needs, Remitente
-    # (which was in Correos) and, during the demo, the test addresses. The
-    # account's own settings (Cuenta, Seguridad, Notificaciones, Facturación)
-    # are not here: they keep their page, from the menu at the top.
+    # (which was in Correos) and, during the demo, the test addresses.
     from blueprints.auth.routes import SECTION_LABELS, sections_for
 
     sending = []
@@ -143,6 +143,17 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
     if sending:
         branches.append({"key": "send-settings", "label": "dash_send_settings",
                          "icon": "_icon-gear.svg", "rows": sending})
+
+    # And the account's own settings, apart from the sending ones but on the
+    # left too (octubre de 2026): the sections this person may open (a user of
+    # the company, only Seguridad). An admin has no Dashboard and keeps the
+    # page with its own menu.
+    mine = [{"key": "settings-" + slug, "label": SECTION_LABELS[slug],
+             "url": url_for("auth.settings", section=slug)}
+            for slug in sections_for(account) if slug != "test"]
+    if mine:
+        branches.append({"key": "settings-branch", "label": "dash_settings",
+                         "icon": "_icon-user.svg", "rows": mine})
     for branch in branches:
         _point(branch)
     return branches

@@ -8,9 +8,9 @@ escribe sugiere dos clases de resultados:
     Contactos», «Remitente · Configuración de envío» (16 de octubre de 2026: antes
     salían de una lista aparte, sin decir dónde estaban). El árbol ya trae
     los permisos de quien mira. Además, lo que se hace desde una pantalla sin
-    ser fila (importar, agregar un contacto, etiquetas, columnas). La
-    configuración de la cuenta no sale: es aparte del Dashboard, y se llega
-    por el menú de arriba. Se buscan por su nombre, el de
+    ser fila (importar, agregar un contacto, etiquetas, columnas). Las
+    secciones de la cuenta salen con «Configuración» al lado, que también es
+    una rama del árbol. Se buscan por su nombre, el de
     su rama y palabras con que la gente las pide («csv», «bajas»). Un
     administrador busca en lo suyo;
   * **lo suyo por nombre**: campañas, envíos, plantillas y etiquetas de su

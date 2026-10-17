@@ -62,6 +62,7 @@ Correos                ▸ Enviar ▸ Redactar · Masivo · Enviados
 Plantillas             ▸ Mis plantillas · Lienzo
 Contactos              ▸ Lista · Supresiones
 Configuración de envío ▸ Remitente · Direcciones de prueba (en la demostración)
+Configuración          ▸ Cuenta · Seguridad · Notificaciones · Facturación
 ```
 
 **Plantillas y Configuración de envío son ramas desde el 16 de octubre de
@@ -75,14 +76,16 @@ regla de `sections_for()`), que son los correos verificados a los que puede
 enviar. Sus dos pantallas van en medio de lo que deja el árbol, con el ancho de
 antes (`pane_center`, 1180 px): tienen filas, no tablas.
 
-**La configuración de la cuenta es aparte del Dashboard**: Cuenta, Seguridad,
-Notificaciones y Facturación, en su página con su menú de secciones
-(`_settings_frame.html`), a la que se llega por «Configuración» en el menú de
-arriba. Es la misma del administrador, y la página de eliminar la cuenta cuelga
-de ella. Unas horas del 16 de octubre estuvo dentro del Dashboard, como rama
-«Configuración» junto a Remitente; se sacó porque se había entendido mal el
-pedido, y la rama del Dashboard pasó a llamarse «Configuración de envío» para no
-confundirse con la de la cuenta.
+**La configuración de la cuenta es su propia rama, «Configuración»**, aparte de
+la del envío y a la izquierda también: Cuenta, Seguridad, Notificaciones y
+Facturación, las que esa persona puede abrir (`sections_for()`: un usuario de la
+empresa, solo Seguridad). Sus pantallas se abren en el Dashboard, en medio de lo
+que deja el árbol, y la de eliminar la cuenta marca Cuenta. El administrador, que
+no tiene Dashboard, la ve en su página con su menú de secciones
+(`_settings_frame.html`). Historia del 16 de octubre: primero fue una sola rama
+«Configuración» con Remitente y la cuenta; después la de la cuenta salió del
+Dashboard a una página aparte, y eso fue un error (lo que se pedía era
+separarla de la del envío, no del árbol), así que volvió como rama propia.
 
 - El árbol lo arma `services/dashboard.py` (`tree()`) con los permisos de quien
   mira, y la fila marcada la decide el endpoint (`here()`), así que el menú y
@@ -257,9 +260,8 @@ lado: al lado del ala y del nombre de la empresa no cabe.
   envío». Antes salían de una lista aparte (`CLIENT_PAGES`) y sin decir dónde
   estaban, y dos «Lista» no se distinguían. Además, lo que se hace desde una
   pantalla sin ser fila (`CLIENT_ACTIONS`: importar, agregar un contacto,
-  etiquetas, columnas). **La configuración de la cuenta no sale**: es aparte del
-  Dashboard, y se llega por el menú de arriba (salió unas horas del 16 de
-  octubre, mientras fue una rama del Dashboard).
+  etiquetas, columnas). Las secciones de la cuenta salen con «Configuración» al
+  lado, porque son una rama del árbol; sus partes (las anclas) no.
   Se buscan por su nombre, el de su rama y palabras con que se piden
   (`SEARCH_WORDS` por clave del árbol, «csv», «bajas»); y **lo suyo por
   nombre**: campañas, envíos, plantillas y etiquetas de su empresa, cinco de
