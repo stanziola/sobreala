@@ -23,7 +23,9 @@ Tres decisiones que se notan en todo el archivo:
 
 from __future__ import annotations
 
+import json
 import re
+import secrets
 import unicodedata
 from datetime import datetime
 from typing import Any
@@ -39,6 +41,19 @@ NUMBER = "number"
 DATE = "date"
 YESNO = "yesno"
 TYPES = (TEXT, NUMBER, DATE, YESNO)
+
+# Una columna de tipo lista (octubre de 2026): varias filas dentro de un mismo
+# contacto, como sus transacciones, cada fila con sus datos (de los cuatro tipos
+# de arriba). Vive dentro del contacto, así que va con topes.
+LIST = "list"
+LIST_ITEMS_MAX = 6
+LIST_ROWS_MAX = 50
+LIST_BYTES_MAX = 3 * 1024
+LISTS_MAX = 2
+# Cada fila lleva su propio id, para cambiar o borrar esa y no otra aunque entre
+# una nueva en ese momento.
+ROW_ID = "id"
+ROW_ID_SHAPE = re.compile(r"^[0-9a-f]{6}$")
 
 LABEL_MAX = 40
 KEY_MAX = 24
@@ -125,6 +140,77 @@ def parse(raw: str, kind: str) -> str | None:
     return value
 
 
+def is_list(one: dict[str, Any] | None) -> bool:
+    return (one or {}).get("type") == LIST
+
+
+def scalars(definitions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Las columnas de un solo valor: las que piden el formulario y el CSV."""
+    return [one for one in definitions if not is_list(one)]
+
+
+def new_row_id() -> str:
+    return secrets.token_hex(3)
+
+
+def rows_size(rows: list[dict[str, Any]]) -> int:
+    return len(json.dumps(rows, ensure_ascii=False).encode("utf-8"))
+
+
+def parse_row(raw: Any, items: list[dict[str, Any]], *,
+              keep_id: str | None = None) -> tuple[dict[str, str] | None, str]:
+    """Una fila de una lista, cada dato por su tipo. Devuelve (fila, por qué
+    no): `bad_row`, `empty`, `unknown:<CLAVE>` o `value:<CLAVE>`."""
+    if not isinstance(raw, dict):
+        return None, "bad_row"
+    known = {one["key"]: one for one in items}
+    row: dict[str, str] = {}
+    for key, value in raw.items():
+        if key == ROW_ID:
+            continue
+        one = known.get(key)
+        if one is None:
+            return None, f"unknown:{str(key)[:KEY_MAX]}"
+        if value is None:
+            continue
+        if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+            return None, f"value:{key}"
+        parsed = parse(str(value), one.get("type", TEXT))
+        if parsed is None:
+            return None, f"value:{key}"
+        if parsed:
+            row[key] = parsed
+    if not row:
+        return None, "empty"
+    given = raw.get(ROW_ID)
+    row[ROW_ID] = keep_id or (given if isinstance(given, str)
+                              and ROW_ID_SHAPE.match(given) else new_row_id())
+    return row, ""
+
+
+def parse_rows(raw: Any, items: list[dict[str, Any]]) -> tuple[list[dict[str, str]] | None, str]:
+    """Todas las filas de una lista. Devuelve (filas, por qué no): además de
+    los de `parse_row`, `too_many` (más de `LIST_ROWS_MAX`) y `too_big` (más de
+    `LIST_BYTES_MAX`)."""
+    if not isinstance(raw, list):
+        return None, "bad_row"
+    if len(raw) > LIST_ROWS_MAX:
+        return None, "too_many"
+    out: list[dict[str, str]] = []
+    ids: set[str] = set()
+    for one in raw:
+        row, wrong = parse_row(one, items)
+        if row is None:
+            return None, wrong
+        while row[ROW_ID] in ids:
+            row[ROW_ID] = new_row_id()
+        ids.add(row[ROW_ID])
+        out.append(row)
+    if rows_size(out) > LIST_BYTES_MAX:
+        return None, "too_big"
+    return out, ""
+
+
 def show(value: str, kind: str) -> str:
     """Cómo se escribe ese valor dentro del correo."""
     if not value:
@@ -157,12 +243,57 @@ def mark(key: str) -> str:
     return f"*|{key}|*"
 
 
-def values_of(contact: dict[str, Any] | None) -> dict[str, str]:
+def values_of(contact: dict[str, Any] | None) -> dict[str, Any]:
+    """Lo escrito en sus columnas: texto, y las filas de sus listas."""
     return dict((contact or {}).get("fields") or {})
 
 
+# Una marca suelta, o un bloque: `*|#LISTA|* … *|/LISTA|*` se repite por cada
+# fila de la lista, y `*|^LISTA|* … *|/LISTA|*` sale solo cuando está vacía. En
+# una sola expresión, para que todo se cambie en una pasada: lo que se pone
+# nunca se vuelve a leer, así un dato que diga `*|CORREO|*` sale tal cual.
+TOKEN = re.compile(r"\*\|([#^])([A-Z0-9_]{1,%d})\|\*(.*?)\*\|/\2\|\*"
+                   r"|\*\|([A-Z0-9_]{1,%d})\|\*" % (KEY_MAX, KEY_MAX), re.S)
+BLOCK = re.compile(r"\*\|([#^])([A-Z0-9_]{1,%d})\|\*(.*?)\*\|/\2\|\*" % KEY_MAX, re.S)
+# Lo que queda de un bloque dentro de otro, o de uno sin cerrar: no se repite.
+LOOSE_BLOCK = re.compile(r"\*\|[#^/][A-Z0-9_]{1,%d}\|\*" % KEY_MAX)
+
+# La tabla de una lista en el correo: en tablas y con estilos en línea, que es
+# lo único que entienden todos los lectores de correo.
+TABLE = ('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+         'style="border-collapse:collapse;margin:8px 0;font-size:inherit">')
+CELL = "padding:6px 8px;border-bottom:1px solid #E4E4E7;text-align:left;"
+HEAD = "padding:6px 8px;border-bottom:2px solid #D4D4D8;text-align:left;font-weight:700;"
+
+
+def pretty_key(key: str) -> str:
+    """El nombre de un dato que llegó por la API sin columna: «PRECIO_UNITARIO»
+    se lee «Precio unitario»."""
+    return key.replace("_", " ").strip().capitalize()
+
+
+def table_html(rows: list[dict[str, Any]], items: list[dict[str, Any]],
+               cell=None) -> str:
+    """Una lista como tabla: los nombres de sus datos arriba y una fila por
+    elemento. Cada valor escapado, y los números a la derecha."""
+    def align(one) -> str:
+        return "text-align:right;" if one.get("type") == NUMBER else ""
+
+    head = "".join(f'<th style="{HEAD}{align(one)}">{escape(one.get("label", one["key"]))}</th>'
+                   for one in items)
+    body = "".join(
+        "<tr>" + "".join(
+            f'<td style="{CELL}{align(one)}">'
+            + (cell(one) if cell else str(escape(show(str(row.get(one["key"], "")),
+                                                      one.get("type", TEXT)))))
+            + "</td>" for one in items) + "</tr>"
+        for row in rows)
+    return f"{TABLE}<tr>{head}</tr>{body}</table>"
+
+
 def fill(text: str, contact: dict[str, Any] | None,
-         definitions: list[dict[str, Any]], *, html: bool = True) -> str:
+         definitions: list[dict[str, Any]], *, html: bool = True,
+         data: dict[str, Any] | None = None) -> str:
     """Cambiar cada marca por lo que dice ese contacto.
 
     **El valor se escapa** cuando va dentro de un correo: lo escribió otro y el
@@ -172,24 +303,136 @@ def fill(text: str, contact: dict[str, Any] | None,
     Una marca que nombra una columna que ya no existe se queda en blanco. Es lo
     que pasa cuando se borra una columna que alguna pieza todavía nombra, y
     dejar la marca a la vista sería mandar `*|CIUDAD|*` a mil personas.
+
+    **Las listas** (octubre de 2026): una marca sola arma su tabla, y un bloque
+    `*|#LISTA|* … *|/LISTA|*` se repite por cada fila, con las marcas de la fila
+    (y las del contacto) dentro; `*|^LISTA|* … *|/LISTA|*` sale cuando está
+    vacía. Con una columna de un valor, el mismo bloque sale si tiene algo
+    escrito, y `^` si no. En el asunto, una lista no escribe nada.
+
+    `data` son los datos de un correo de la API, que mandan sobre los del
+    contacto y pueden traer sus propias listas.
     """
     if not text or "*|" not in text:
         return text
     known = {one["key"]: one for one in definitions}
     values = values_of(contact)
+    data = data or {}
+
+    def out(value: str) -> str:
+        return str(escape(value)) if html else value
+
+    def rows_of(key: str):
+        """Las filas y los datos de esa marca, si es una lista; si no, None."""
+        given = data.get(key)
+        if isinstance(given, list):
+            rows = [one for one in given if isinstance(one, dict)]
+            keys: list[str] = []
+            for one in rows:
+                keys += [name for name in one if name != ROW_ID and name not in keys]
+            return rows, [{"key": name, "label": pretty_key(name), "type": TEXT}
+                          for name in keys]
+        one = known.get(key)
+        if is_list(one) and key not in data:
+            rows = [row for row in (values.get(key) or []) if isinstance(row, dict)]
+            return rows, list(one.get("items") or [])
+        return None
+
+    def scalar_of(key: str) -> str | None:
+        if key in data:
+            return str(data[key])
+        one = known.get(key)
+        if one is not None:
+            return show(values.get(key, ""), one.get("type", TEXT))
+        if key in BUILT_IN:
+            return str((contact or {}).get(BUILT_IN[key][0]) or "")
+        return None
+
+    def single(key: str, row=None, row_items=None) -> str:
+        if row is not None and key in row_items:
+            return out(show(str(row.get(key, "")), row_items[key].get("type", TEXT)))
+        found = rows_of(key)
+        if found is not None:
+            return table_html(*found) if html else ""
+        value = scalar_of(key)
+        return out(value) if value is not None else ""
+
+    def inside(inner: str, row=None, row_items=None) -> str:
+        return MARK.sub(lambda found: single(found.group(1), row, row_items),
+                        LOOSE_BLOCK.sub("", inner))
 
     def swap(found: re.Match) -> str:
-        key = found.group(1)
-        one = known.get(key)
-        if one is None:
-            if key in BUILT_IN:
-                written = str((contact or {}).get(BUILT_IN[key][0]) or "")
-                return str(escape(written)) if html else written
-            return ""
-        written = show(values.get(key, ""), one.get("type", TEXT))
-        return str(escape(written)) if html else written
+        if found.group(4) is not None:
+            return single(found.group(4))
+        kind, key, inner = found.group(1), found.group(2), found.group(3)
+        listed = rows_of(key)
+        if listed is not None:
+            rows, items = listed
+            if kind == "^":
+                return "" if rows else inside(inner)
+            by_key = {one["key"]: one for one in items}
+            return "".join(inside(inner, row, by_key) for row in rows)
+        written = bool(scalar_of(key))
+        if kind == "^":
+            return "" if written else inside(inner)
+        return inside(inner) if written else ""
 
-    return MARK.sub(swap, text)
+    return TOKEN.sub(swap, text)
+
+
+def marks_in(text: str, definitions: list[dict[str, Any]],
+             data: dict[str, Any] | None = None) -> tuple[list[str], list[str]]:
+    """Lo que nombra un texto (octubre de 2026): sus marcas sueltas y las
+    claves de sus bloques, cada lista en orden y sin repetir. Dentro de un
+    bloque, las marcas de la fila son de la lista y no cuentan; las demás sí."""
+    known = {one["key"]: one for one in definitions}
+    data = data or {}
+    marks: list[str] = []
+    blocks: list[str] = []
+
+    def add(where: list[str], key: str) -> None:
+        if key not in where:
+            where.append(key)
+
+    def scan(found: re.Match) -> str:
+        if found.group(4) is not None:
+            add(marks, found.group(4))
+            return ""
+        key, inner = found.group(2), found.group(3)
+        add(blocks, key)
+        given = data.get(key)
+        if isinstance(given, list):
+            row = {name for one in given if isinstance(one, dict) for name in one}
+        else:
+            row = {item["key"] for item in (known.get(key) or {}).get("items") or []}
+        for inside in MARK.findall(LOOSE_BLOCK.sub("", inner)):
+            if inside not in row:
+                add(marks, inside)
+        return ""
+
+    TOKEN.sub(scan, text or "")
+    return marks, blocks
+
+
+def lacking(text: str, contact: dict[str, Any] | None,
+            definitions: list[dict[str, Any]],
+            data: dict[str, Any] | None = None) -> list[str]:
+    """Las marcas sueltas de un texto que no tienen con qué llenarse: ni en
+    `data`, ni en una columna llena del contacto, ni en su nombre. Una lista
+    nunca falta, que puede ir vacía; un bloque tampoco, que sin datos no sale."""
+    data = data or {}
+    known = {one["key"]: one for one in definitions}
+    values = values_of(contact)
+    out: list[str] = []
+    for key in marks_in(text, definitions, data)[0]:
+        if key in data or is_list(known.get(key)):
+            continue
+        if key in known and values.get(key):
+            continue
+        if key in BUILT_IN and (contact or {}).get(BUILT_IN[key][0]):
+            continue
+        out.append(key)
+    return out
 
 
 # Cómo se ve una marca en la vista previa: una pastilla con el nombre del dato,
@@ -200,29 +443,47 @@ PILL = ("background:#E0F2FE;color:#075985;border-radius:6px;padding:0 6px;"
 TAG = re.compile(r"(<[^>]*>)")
 
 
+def _pill(label: str) -> str:
+    return f'<span style="{PILL}">{escape(label)}</span>'
+
+
 def preview_fill(html: str, definitions: list[dict[str, Any]]) -> str:
     """El correo de la vista previa, con cada marca como pastilla.
 
     Solo en el texto: una marca dentro de un atributo (el enlace de un botón)
     se llena con el nombre a secas, porque una etiqueta ahí dentro rompería el
-    atributo.
+    atributo. Una lista sale como su tabla con dos filas de pastillas, y un
+    bloque, una vez, con las marcas de la fila en pastillas.
     """
     names = {one["key"]: one.get("label", one["key"]) for one in definitions}
     names.update({key: label for key, (_, label) in BUILT_IN.items()
                   if key not in names})
+    lists = {one["key"]: one for one in definitions if is_list(one)}
 
-    def pill(found: re.Match) -> str:
-        label = names.get(found.group(1))
-        if label is None:
-            return ""
-        return f'<span style="{PILL}">{escape(label)}</span>'
+    def marks(text: str, here: dict[str, str]) -> str:
+        def pill(found: re.Match) -> str:
+            key = found.group(1)
+            if key in lists:
+                items = list(lists[key].get("items") or [])
+                return table_html([{}, {}], items,
+                                  cell=lambda one: _pill(one.get("label", one["key"])))
+            label = here.get(key)
+            return "" if label is None else _pill(label)
 
-    def plain(found: re.Match) -> str:
-        return str(escape(names.get(found.group(1), "")))
+        def plain(found: re.Match) -> str:
+            key = found.group(1)
+            return "" if key in lists else str(escape(here.get(key, "")))
 
-    parts = TAG.split(html or "")
-    return "".join(MARK.sub(plain if part.startswith("<") else pill, part)
-                   for part in parts)
+        return "".join(MARK.sub(plain if part.startswith("<") else pill, part)
+                       for part in TAG.split(text))
+
+    def block(found: re.Match) -> str:
+        one = lists.get(found.group(2))
+        items = {item["key"]: item.get("label", item["key"])
+                 for item in (one or {}).get("items") or []}
+        return marks(LOOSE_BLOCK.sub("", found.group(3)), {**names, **items})
+
+    return marks(BLOCK.sub(block, html or ""), names)
 
 
 def sample(definitions: list[dict[str, Any]]) -> dict[str, Any]:
@@ -230,8 +491,11 @@ def sample(definitions: list[dict[str, Any]]) -> dict[str, Any]:
 
     Cada marca se dibuja con **el nombre de su columna**, que enseña dónde va
     cada dato sin inventarse un valor que después no se parezca al de nadie.
+    Una lista, con una fila con el nombre de cada dato.
     """
-    return {"fields": {one["key"]: one.get("label", one["key"])
+    return {"fields": {one["key"]: ([{item["key"]: item.get("label", item["key"])
+                                      for item in one.get("items") or []}]
+                                    if is_list(one) else one.get("label", one["key"]))
                        for one in definitions}}
 
 
@@ -240,7 +504,7 @@ def missing(contact: dict[str, Any] | None,
     """Qué columnas le faltan a ese contacto. Vacío es que está completo.
 
     Es lo que decide quién recibe un correo y quién no: al que le falte un dato
-    no se le manda nada hasta que lo tenga.
+    no se le manda nada hasta que lo tenga. Una lista puede ir vacía.
     """
     values = values_of(contact)
-    return [one["label"] for one in definitions if not values.get(one["key"])]
+    return [one["label"] for one in scalars(definitions) if not values.get(one["key"])]

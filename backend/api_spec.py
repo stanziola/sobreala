@@ -71,6 +71,8 @@ ERRORS = [
     ("unknown_tag", 422, "Hay etiquetas que no existen; `tags` dice cuáles. Se crean "
                          "antes con `POST /tags`."),
     ("email_taken", 409, "Esa dirección ya la tiene otro contacto de la cuenta."),
+    ("external_id_taken", 409, "Ese id de tu sistema ya lo tiene otro contacto de la "
+                               "cuenta."),
     ("tag_exists", 409, "Esa etiqueta ya existe."),
     ("limit_reached", 409, "Se llegó al tope de tu plan (etiquetas, columnas, "
                            "plantillas, carpetas o fotos)."),
@@ -183,6 +185,61 @@ GUIDES: list[dict[str, Any]] = [
          "de la tarde en Panamá. Una sin zona se rechaza, porque no se sabe de "
          "dónde es.",
      ]},
+    {"id": "listas", "title": "Listas dentro de un contacto",
+     "paragraphs": [
+         "Además de columnas de un valor (la ciudad, el número de socio), un "
+         "contacto puede llevar **listas**: varias filas con los mismos datos, como "
+         "las transacciones de un socio (fecha, descripción y monto) o los pedidos "
+         "de un cliente. Se crean como una columna de tipo `list` con sus datos, "
+         "caben 2 por cuenta, y cada una guarda hasta 50 filas y 3 KB por "
+         "contacto. Una lista puede ir vacía: no deja incompleto a nadie.",
+         "Cada fila lleva su `id`, que se pone solo al crearla y sirve para "
+         "cambiarla o borrarla sin tocar las demás. Al agregar filas, si pasan de "
+         "50, se van las más viejas.",
+         "En una plantilla, `*|TRANSACCIONES|*` sola escribe una tabla con todas "
+         "las filas. Para armar cada fila a tu manera, lo que va entre "
+         "`*|#TRANSACCIONES|*` y `*|/TRANSACCIONES|*` se repite una vez por fila, "
+         "con los datos de esa fila por su clave; lo que va entre "
+         "`*|^TRANSACCIONES|*` y `*|/TRANSACCIONES|*` sale solo cuando no hay "
+         "filas. En el asunto, una lista no escribe nada.",
+     ],
+     "code": "*|#TRANSACCIONES|*\n*|FECHA|*: *|DESCRIPCION|*, B/. *|MONTO|*\n"
+             "*|/TRANSACCIONES|*\n*|^TRANSACCIONES|*\n"
+             "Este mes no tuviste movimientos.\n*|/TRANSACCIONES|*"},
+    {"id": "lienzo", "title": "El lienzo en JSON",
+     "paragraphs": [
+         "Una plantilla del lienzo es una hoja de 600 px de ancho que crece hacia "
+         "abajo: `h` es su alto (de 80 a 4,000), `bg` su color y `items` lo que "
+         "lleva encima, hasta 60 cosas. Cada una dice qué es en `t` y dónde va en "
+         "`x`, `y`, `w` y `h`, en píxeles y dentro de la hoja. El correo se arma "
+         "en tablas al enviarlo, así que lo que se encima tiene que poder cortarse "
+         "en franjas y columnas.",
+         "**text**: `text` (hasta 2,000 caracteres, con saltos de línea y "
+         "marcas), `font` (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, "
+         "Georgia, Times New Roman, Courier New, Palatino, Garamond, Lucida Sans o "
+         "Century Gothic), `size` (de 14 a 72), `color` (#RRGGBB), `bold`, "
+         "`italic`, `align` (left, center o right), `line` (de 1 a 2.5) y `list` "
+         "(con viñetas). **button**: `text` (hasta 60), `href` (https:// o "
+         "mailto:), `bg`, `radius` (de 0 a 60) y la misma letra que un texto. "
+         "**image**: `name` (el que devuelve `POST /images`), `alt` (obligatorio), "
+         "`href`, `fit` (cover o contain), `crop` ([x, y, ancho, alto], de 0 a 1) "
+         "y `rot` (grados). **shape**: `shape` (rect, line, ellipse, triangle, "
+         "star o arrow), `bg`, `radius` y `rot`; una línea mide de 1 a 12 px de "
+         "alto.",
+         "Se guarda solo si arma bien el correo y pasa la revisión antispam, igual "
+         "que en el panel: entre otras cosas, al menos 200 caracteres de texto, "
+         "poca imagen, pocos enlaces y nada de acortadores. `POST /templates/check` "
+         "dice cómo va cada regla sin guardar nada. Lo más cómodo es armarla en el "
+         "panel y leerla después con `GET /templates/{template_id}`.",
+     ],
+     "code": "{\n  \"h\": 420,\n  \"bg\": \"#FFFFFF\",\n  \"items\": [\n"
+             "    {\"t\": \"text\", \"x\": 40, \"y\": 40, \"w\": 520, \"h\": 120,\n"
+             "     \"text\": \"Hola *|NOMBRE|*, estos son tus movimientos.\",\n"
+             "     \"font\": \"Arial\", \"size\": 18, \"color\": \"#18181B\"},\n"
+             "    {\"t\": \"button\", \"x\": 40, \"y\": 320, \"w\": 240, \"h\": 48,\n"
+             "     \"text\": \"Ver mi cuenta\", \"href\": \"https://coopejemplo.com/cuenta\",\n"
+             "     \"font\": \"Arial\", \"size\": 16, \"color\": \"#FFFFFF\", \"bg\": \"#31A9E8\"}\n"
+             "  ]\n}"},
     {"id": "fuera", "title": "Lo que la API no hace",
      "paragraphs": [
          "Hay cosas que se hacen solo en el panel, porque son de una persona y no "
@@ -191,6 +248,38 @@ GUIDES: list[dict[str, Any]] = [
          "y avisos, y eliminar la cuenta.",
      ]},
 ]
+
+# Los ejemplos que se repiten: un contacto con una lista, y esa lista.
+_ITEMS = [{"key": "FECHA", "label": "Fecha", "type": "date"},
+          {"key": "DESCRIPCION", "label": "Descripción", "type": "text"},
+          {"key": "MONTO", "label": "Monto", "type": "number"}]
+_ROWS = [{"FECHA": "2026-10-01", "DESCRIPCION": "Depósito", "MONTO": "150", "id": "3fa9c1"},
+         {"FECHA": "2026-10-09", "DESCRIPCION": "Pago de préstamo", "MONTO": "85.5",
+          "id": "b07e42"}]
+_LIST = {"key": "TRANSACCIONES", "label": "Transacciones", "items": _ITEMS, "rows": _ROWS}
+_CONTACT = {
+    "id": "6531f5c2a1b2c3d4e5f60801", "external_id": "1043", "email": "ana@ejemplo.com",
+    "name": "Ana Pérez", "tags": ["Socios"],
+    "fields": {"CIUDAD": "Santiago", "TRANSACCIONES": _ROWS},
+    "status": "active", "suppression": None, "complete": True,
+    "consent": {"source": "members", "note": "Lista de socios 2026",
+                "recorded_at": "2026-10-01T15:20:00Z"},
+    "added_by": "api", "created_at": "2026-10-01T15:20:00Z",
+    "updated_at": "2026-10-12T13:05:44Z"}
+_TEMPLATE = {"id": "6533b1d2a1b2c3d4e5f60901", "name": "Estado de cuenta", "source": "canvas",
+             "folder_id": "6533b0aaa1b2c3d4e5f60900", "send_from": None, "reply_to": None,
+             "created_at": "2026-10-02T14:00:00Z", "updated_at": "2026-10-15T16:30:00Z"}
+_CANVAS = {"v": 2, "h": 420, "bg": "#FFFFFF", "items": [
+    {"t": "text", "x": 40, "y": 40, "w": 520, "h": 120,
+     "text": "Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*",
+     "font": "Arial", "size": 18, "color": "#18181B", "bold": False, "italic": False,
+     "align": "left", "line": 1.4},
+    {"t": "button", "x": 40, "y": 320, "w": 240, "h": 48, "text": "Ver mi cuenta",
+     "font": "Arial", "size": 16, "color": "#FFFFFF", "bold": True, "italic": False,
+     "align": "center", "href": "https://coopejemplo.com/cuenta", "bg": "#31A9E8",
+     "radius": 8}]}
+_FOLDER = {"id": "6533b0aaa1b2c3d4e5f60900", "name": "Cobros", "color": "blue",
+           "templates": 4}
 
 # Las rutas, por grupo, en el orden de la página.
 GROUPS: list[dict[str, Any]] = [
@@ -242,16 +331,23 @@ GROUPS: list[dict[str, Any]] = [
               "etiquetas y tus columnas. Cargar es actualizar: si la dirección ya "
               "está, se le suma lo nuevo y no se duplica. Las etiquetas y las "
               "columnas se crean antes de usarse, y las columnas son obligatorias: "
-              "a un contacto sin todas no se le envía nada.",
+              "a un contacto sin todas no se le envía nada (las listas no cuentan: "
+              "pueden ir vacías). Cada contacto tiene su `id`, y puede llevar además "
+              "**el id de tu sistema** (`external_id`: tu número de socio o de "
+              "cliente, hasta 64 letras, números y . _ : @ -), único en la cuenta, "
+              "para encontrarlo por él aunque cambie de correo.",
      "endpoints": [
          {"method": "GET", "path": "/contacts", "scope": "contacts:read",
           "title": "Listar contactos",
           "description": "De los más nuevos a los más viejos. Cada uno dice si "
                          "puede recibir (`status`: active, suppressed o invalid) y si "
-                         "tiene todas sus columnas (`complete`).",
+                         "tiene todas sus columnas (`complete`). Sus listas vienen "
+                         "enteras dentro de `fields`.",
           "test": "sí",
           "query": [
               {"name": "email", "type": "texto", "description": "Uno exacto."},
+              {"name": "external_id", "type": "texto",
+               "description": "El que tiene ese id de tu sistema."},
               {"name": "search", "type": "texto",
                "description": "Los que empiezan así: `ana@` o `ana@coop`."},
               {"name": "tag", "type": "texto", "description": "Los que llevan esa etiqueta."},
@@ -259,44 +355,36 @@ GROUPS: list[dict[str, Any]] = [
               {"name": "cursor", "type": "texto", "description": "El `next_cursor` de la página anterior."},
           ],
           "query_example": "tag=Socios&limit=50",
-          "response": {"data": [{
-              "id": "6531f5c2a1b2c3d4e5f60801", "email": "ana@ejemplo.com",
-              "name": "Ana Pérez", "tags": ["Socios"],
-              "fields": {"CIUDAD": "Santiago", "NUMERO_DE_SOCIO": "1043"},
-              "status": "active", "suppression": None, "complete": True,
-              "consent": {"source": "members", "note": "Lista de socios 2026",
-                          "recorded_at": "2026-10-01T15:20:00Z"},
-              "added_by": "api", "created_at": "2026-10-01T15:20:00Z",
-              "updated_at": "2026-10-12T13:05:44Z"}],
-              "next_cursor": "ZTFfwqLLPOX2BgEA"}},
+          "response": {"data": [_CONTACT], "next_cursor": "ZTFfwqLLPOX2BgEA"}},
          {"method": "GET", "path": "/contacts/{contact_id}", "scope": "contacts:read",
           "title": "Un contacto", "description": "El mismo que sale en la lista.",
           "test": "sí",
-          "response": {"id": "6531f5c2a1b2c3d4e5f60801", "email": "ana@ejemplo.com",
-                       "name": "Ana Pérez", "tags": ["Socios"],
-                       "fields": {"CIUDAD": "Santiago", "NUMERO_DE_SOCIO": "1043"},
-                       "status": "active", "suppression": None, "complete": True,
-                       "consent": {"source": "members", "note": "Lista de socios 2026",
-                                   "recorded_at": "2026-10-01T15:20:00Z"},
-                       "added_by": "api", "created_at": "2026-10-01T15:20:00Z",
-                       "updated_at": "2026-10-12T13:05:44Z"}},
+          "response": _CONTACT},
          {"method": "POST", "path": "/contacts", "scope": "contacts:write",
           "title": "Cargar contactos",
           "description": "De 1 a 1,000 por vez. Los nuevos entran si caben en tu "
                          "plan y traen todas tus columnas; los que ya están se "
-                         "actualizan (las etiquetas se suman, nunca se quitan). Cada "
-                         "fila dice qué le pasó en `results`, en el orden en que "
-                         "llegó: `added`, `updated` o `rejected` con su motivo "
-                         "(invalid_email, duplicate, unknown_tag, unknown_field, "
-                         "bad_value, incomplete, limit). Una dirección dada de baja se "
-                         "guarda pero no recibe (`warning: suppressed`), y una de un "
-                         "dominio que no recibe correo entra marcada (`warning: "
-                         "undeliverable`). Hasta 5,000 filas por minuto.",
+                         "actualizan (las etiquetas se suman, nunca se quitan, y una "
+                         "lista que llega reemplaza la que tenía). A quien ya está se "
+                         "le encuentra por su `external_id` si lo traes y existe (y "
+                         "entonces su correo puede cambiar), y si no, por su correo. "
+                         "Cada fila dice qué le pasó en `results`, en el orden en que "
+                         "llegó: `added`, `updated` o `rejected` con su motivo: "
+                         "bad_row, invalid_email, duplicate, bad_name, bad_tags, "
+                         "unknown_tag, bad_external_id, unknown_field, bad_value, "
+                         "bad_list, incomplete (con `missing`), limit, "
+                         "external_id_conflict (ese correo ya es de un contacto con "
+                         "otro id de tu sistema) o email_taken (el contacto de ese id "
+                         "pasaría a un correo que ya es de otro). Una dirección dada "
+                         "de baja se guarda pero no recibe (`warning: suppressed`), y "
+                         "una de un dominio que no recibe correo entra marcada "
+                         "(`warning: undeliverable`). Hasta 5,000 filas por minuto.",
           "test": "no",
           "fields": [
               {"name": "contacts", "type": "lista", "required": True,
                "description": "Cada uno con `email`, y si quieres `name`, `tags` (etiquetas "
-                              "que ya existen) y `fields` (tus columnas por su clave)."},
+                              "que ya existen), `external_id` y `fields` (tus columnas por "
+                              "su clave; una lista va entera, con sus filas)."},
               {"name": "consent", "type": "objeto", "required": True,
                "description": "De dónde salieron: `source` es own_form (tu formulario), "
                               "members (socios), customers (clientes), event (un evento) u "
@@ -305,10 +393,13 @@ GROUPS: list[dict[str, Any]] = [
               {"name": "tags", "type": "lista de textos",
                "description": "Etiquetas para todos los de esta carga."},
           ],
-          "request": {"consent": {"source": "customers", "note": "Clientes de la tienda"},
-                      "tags": ["Clientes"],
+          "request": {"consent": {"source": "members", "note": "Sistema de socios"},
+                      "tags": ["Socios"],
                       "contacts": [{"email": "ana@ejemplo.com", "name": "Ana Pérez",
-                                    "fields": {"CIUDAD": "Santiago"}},
+                                    "external_id": "1043",
+                                    "fields": {"CIUDAD": "Santiago", "TRANSACCIONES": [
+                                        {"FECHA": "2026-10-01", "DESCRIPCION": "Depósito",
+                                         "MONTO": 150}]}},
                                    {"email": "luis@ejemplo", "name": "Luis"}]},
           "response": {"added": 1, "updated": 0, "rejected": 1, "results": [
               {"index": 0, "email": "ana@ejemplo.com", "result": "added"},
@@ -316,24 +407,24 @@ GROUPS: list[dict[str, Any]] = [
                "reason": "invalid_email"}]}},
          {"method": "PATCH", "path": "/contacts/{contact_id}", "scope": "contacts:write",
           "title": "Cambiar un contacto",
-          "description": "Solo lo que mandes: `email`, `name`, `tags` (reemplazan las que "
-                         "tenía) y `fields` (se mezclan con las que tenía). Como en el "
-                         "panel, queda con todas sus columnas llenas. De dónde salió y "
-                         "cuándo entró no se cambian.",
+          "description": "Solo lo que mandes: `email`, `name`, `external_id` (null lo "
+                         "quita), `tags` (reemplazan las que tenía) y `fields` (las "
+                         "columnas se mezclan con las que tenía, y una lista que llega "
+                         "reemplaza la suya). Como en el panel, queda con todas sus "
+                         "columnas llenas. De dónde salió y cuándo entró no se cambian.",
           "test": "no",
           "fields": [
               {"name": "email", "type": "texto", "description": "Si ya es de otro contacto: 409."},
               {"name": "name", "type": "texto", "description": "Hasta 120 caracteres."},
+              {"name": "external_id", "type": "texto o null",
+               "description": "Si ya es de otro contacto: 409 `external_id_taken`."},
               {"name": "tags", "type": "lista de textos", "description": "Etiquetas que ya existen."},
-              {"name": "fields", "type": "objeto", "description": "Tus columnas por su clave."},
+              {"name": "fields", "type": "objeto",
+               "description": "Tus columnas por su clave, y tus listas enteras."},
           ],
           "request": {"tags": ["Socios", "Asamblea 2026"], "fields": {"CIUDAD": "Las Palmas"}},
-          "response": {"id": "6531f5c2a1b2c3d4e5f60801", "email": "ana@ejemplo.com",
-                       "name": "Ana Pérez", "tags": ["Socios", "Asamblea 2026"],
-                       "fields": {"CIUDAD": "Las Palmas", "NUMERO_DE_SOCIO": "1043"},
-                       "status": "active", "suppression": None, "complete": True,
-                       "consent": None, "added_by": "api",
-                       "created_at": "2026-10-01T15:20:00Z",
+          "response": {**_CONTACT, "tags": ["Socios", "Asamblea 2026"],
+                       "fields": {"CIUDAD": "Las Palmas", "TRANSACCIONES": _ROWS},
                        "updated_at": "2026-10-17T19:02:10Z"}},
          {"method": "DELETE", "path": "/contacts/{contact_id}", "scope": "contacts:write",
           "title": "Borrar un contacto",
@@ -365,37 +456,56 @@ GROUPS: list[dict[str, Any]] = [
           "title": "Columnas",
           "description": "Tus columnas: la clave con que se nombran (`*|CIUDAD|*` en una "
                          "plantilla), el nombre, el tipo y cuántos contactos la tienen "
-                         "llena.",
+                         "llena. Una lista trae sus datos en `items`, y `filled` cuenta "
+                         "a los que tienen al menos una fila.",
           "test": "sí",
           "response": {"data": [{"key": "CIUDAD", "label": "Ciudad", "type": "text",
-                                 "filled": 790}], "limit": 5}},
+                                 "filled": 790},
+                                {"key": "TRANSACCIONES", "label": "Transacciones",
+                                 "type": "list", "filled": 412, "items": _ITEMS}],
+                       "limit": 5, "lists_max": 2}},
          {"method": "POST", "path": "/fields", "scope": "contacts:write",
           "title": "Crear una columna",
           "description": "La clave sale del nombre: «Número de socio» es NUMERO_DE_SOCIO. "
                          "Recién creada, todos tus contactos quedan incompletos hasta "
-                         "que la tengan.",
+                         "que la tengan. Una lista (`type: list`) lleva sus datos en "
+                         "`items`, cuenta como una columna de tu plan y no deja "
+                         "incompleto a nadie.",
           "test": "no", "status": 201,
           "fields": [{"name": "label", "type": "texto", "required": True,
                       "description": "Hasta 40 caracteres."},
                      {"name": "type", "type": "texto", "required": True,
-                      "description": "text, number, date o yesno."}],
-          "request": {"label": "Número de socio", "type": "text"},
-          "response": {"key": "NUMERO_DE_SOCIO", "label": "Número de socio",
-                       "type": "text", "filled": 0}},
+                      "description": "text, number, date, yesno o list."},
+                     {"name": "items", "type": "lista",
+                      "description": "Solo para una lista: de 1 a 6 datos, cada uno con "
+                                     "`label` y `type` (text, number, date o yesno)."}],
+          "request": {"label": "Transacciones", "type": "list", "items": [
+              {"label": "Fecha", "type": "date"}, {"label": "Descripción", "type": "text"},
+              {"label": "Monto", "type": "number"}]},
+          "response": {"key": "TRANSACCIONES", "label": "Transacciones", "type": "list",
+                       "filled": 0, "items": _ITEMS}},
          {"method": "PATCH", "path": "/fields/{key}", "scope": "contacts:write",
-          "title": "Cambiar el tipo de una columna",
-          "description": "Solo el tipo, y solo si todo lo escrito encaja en el nuevo: si "
-                         "no, 409 dice cuántos contactos lo impiden. El nombre no se "
-                         "cambia, porque es lo que nombran tus plantillas.",
+          "title": "Cambiar una columna",
+          "description": "A una columna, el tipo, y solo si todo lo escrito encaja en el "
+                         "nuevo: si no, 409 dice cuántos contactos lo impiden. A una "
+                         "lista, un dato por vez: `add` lo agrega y `remove` lo quita "
+                         "(y lo borra de todas las filas de todos tus contactos). El "
+                         "nombre no se cambia, porque es lo que nombran tus plantillas.",
           "test": "no",
-          "fields": [{"name": "type", "type": "texto", "required": True,
-                      "description": "text, number, date o yesno."}],
+          "fields": [{"name": "type", "type": "texto",
+                      "description": "A una columna: text, number, date o yesno."},
+                     {"name": "add", "type": "objeto",
+                      "description": "A una lista: el dato nuevo, con `label` y `type`."},
+                     {"name": "remove", "type": "texto",
+                      "description": "A una lista: la clave del dato que se quita. Le "
+                                     "queda al menos uno."}],
           "request": {"type": "number"},
           "response": {"key": "NUMERO_DE_SOCIO", "label": "Número de socio",
                        "type": "number", "filled": 790}},
          {"method": "DELETE", "path": "/fields/{key}", "scope": "contacts:write",
           "title": "Borrar una columna",
-          "description": "Y lo que los contactos tenían escrito en ella.",
+          "description": "Y lo que los contactos tenían escrito en ella (de una lista, "
+                         "todas sus filas).",
           "test": "no",
           "response": {"key": "NUMERO_DE_SOCIO", "deleted": True, "contacts": 790}},
          {"method": "GET", "path": "/suppressions", "scope": "contacts:read",
@@ -413,6 +523,291 @@ GROUPS: list[dict[str, Any]] = [
                                  "source": "enlace del correo",
                                  "created_at": "2026-10-11T22:40:03Z"}],
                        "next_cursor": None}},
+     ]},
+    {"id": "filas", "title": "Las filas de una lista",
+     "intro": "Las filas de una lista de un contacto, sin tocar lo demás: verlas, "
+              "cambiarlas enteras, agregar al final, o cambiar y borrar una por su "
+              "`id`. `{key}` es la clave de la lista (TRANSACCIONES). Cómo se crea "
+              "una lista y cómo sale en un correo está en «Listas dentro de un "
+              "contacto».",
+     "endpoints": [
+         {"method": "GET", "path": "/contacts/{contact_id}/lists/{key}",
+          "scope": "contacts:read",
+          "title": "Ver una lista",
+          "description": "Sus datos y sus filas, de la más vieja a la más nueva.",
+          "test": "sí",
+          "response": _LIST},
+         {"method": "PUT", "path": "/contacts/{contact_id}/lists/{key}",
+          "scope": "contacts:write",
+          "title": "Cambiar la lista entera",
+          "description": "Las filas que mandes reemplazan a todas las que tenía, y `[]` "
+                         "la vacía. Una fila que trae su `id` lo conserva.",
+          "test": "no",
+          "fields": [{"name": "rows", "type": "lista", "required": True,
+                      "description": "Hasta 50 filas, cada una con sus datos por su "
+                                     "clave y al menos uno."}],
+          "request": {"rows": [{"FECHA": "2026-10-01", "DESCRIPCION": "Depósito",
+                                "MONTO": 150}]},
+          "response": {**_LIST, "rows": [_ROWS[0]]}},
+         {"method": "POST", "path": "/contacts/{contact_id}/lists/{key}",
+          "scope": "contacts:write",
+          "title": "Agregar filas",
+          "description": "Al final, en una sola escritura. Si la lista pasa de 50 filas "
+                         "(o de `keep_last`), se van las más viejas.",
+          "test": "no", "status": 201,
+          "fields": [{"name": "rows", "type": "lista", "required": True,
+                      "description": "Las filas nuevas."},
+                     {"name": "keep_last", "type": "entero",
+                      "description": "Cuántas dejar, de 1 a 50. 50 si no se dice."}],
+          "request": {"rows": [{"FECHA": "2026-10-09", "DESCRIPCION": "Pago de préstamo",
+                                "MONTO": 85.5}]},
+          "response": _LIST},
+         {"method": "PATCH", "path": "/contacts/{contact_id}/lists/{key}/{row_id}",
+          "scope": "contacts:write",
+          "title": "Cambiar una fila",
+          "description": "Los datos que mandes, sobre los que tenía; null borra uno. La "
+                         "fila se queda en su sitio y con su `id`.",
+          "test": "no",
+          "fields": [{"name": "MONTO", "type": "texto o número",
+                      "description": "Cada dato por su clave, como en la lista."}],
+          "request": {"MONTO": 90},
+          "response": {**_ROWS[1], "MONTO": "90"}},
+         {"method": "DELETE", "path": "/contacts/{contact_id}/lists/{key}/{row_id}",
+          "scope": "contacts:write",
+          "title": "Borrar una fila",
+          "description": "Las demás se quedan como estaban.",
+          "test": "no",
+          "response": {"id": "b07e42", "deleted": True}},
+     ]},
+    {"id": "plantillas", "title": "Plantillas",
+     "intro": "Las plantillas de tu cuenta, las mismas de Mis plantillas. Las del "
+              "lienzo (`source: canvas`) se crean, se cambian y se cargan en ZIP "
+              "por aquí, con las mismas reglas que al guardar en el panel; las "
+              "cargadas en HTML (`upload`) y las prediseñadas de antes (`builtin`) "
+              "se leen, se arman, se mueven, se duplican y se borran. Cada una "
+              "puede elegir de quién sale (`send_from`, el id de un remitente de "
+              "`GET /senders`) y a dónde se responde (`reply_to`); sin elegir, van "
+              "los predeterminados. Caben 300 por cuenta.",
+     "endpoints": [
+         {"method": "GET", "path": "/templates", "scope": "templates:read",
+          "title": "Listar plantillas",
+          "description": "De las más nuevas a las más viejas, sin su contenido.",
+          "test": "sí",
+          "query": [
+              {"name": "folder_id", "type": "texto",
+               "description": "Las de esa carpeta, o `none` para las que no tienen."},
+              {"name": "source", "type": "texto", "description": "canvas, upload o builtin."},
+              {"name": "limit", "type": "entero", "description": "De 1 a 100. 25 si no se dice."},
+              {"name": "cursor", "type": "texto", "description": "Para la página siguiente."},
+          ],
+          "query_example": "folder_id=none",
+          "response": {"data": [_TEMPLATE], "next_cursor": None, "limit": 300}},
+         {"method": "GET", "path": "/templates/{template_id}", "scope": "templates:read",
+          "title": "Una plantilla",
+          "description": "Con las marcas que nombra (`marks`), los bloques que repite "
+                         "o esconden (`blocks`) y lo que tiene dentro: el `canvas` y la "
+                         "dirección de cada foto en `images` si es del lienzo, el `html` "
+                         "si se cargó en HTML, o `template` y `fields` si es una "
+                         "prediseñada.",
+          "test": "sí",
+          "response": {**_TEMPLATE, "marks": ["NOMBRE", "TRANSACCIONES"], "blocks": [],
+                       "canvas": _CANVAS, "images": {}}},
+         {"method": "POST", "path": "/templates/{template_id}/render",
+          "scope": "templates:read",
+          "title": "Ver cómo sale",
+          "description": "El correo armado, con los datos de un contacto (`contact_id`), "
+                         "los que mandes en `data` (que mandan sobre los del contacto) o "
+                         "los dos. Transaccional sale sin baja ni marca de agua; "
+                         "promocional, con las dos, y el enlace de baja es de ejemplo. "
+                         "`missing` dice qué marcas se quedarían en blanco. No envía ni "
+                         "guarda nada.",
+          "test": "sí",
+          "fields": [
+              {"name": "type", "type": "texto",
+               "description": "transactional o promotional. promotional si no se dice."},
+              {"name": "contact_id", "type": "texto", "description": "Un contacto de la cuenta."},
+              {"name": "subject", "type": "texto",
+               "description": "Un asunto con marcas, hasta 150 caracteres, para verlo lleno."},
+              {"name": "data", "type": "objeto",
+               "description": "Cada marca por su clave: texto o un número de hasta 1,000 "
+                              "caracteres, o una lista de hasta 50 filas (cada una con "
+                              "hasta 10 datos de hasta 200 caracteres). Hasta 50 claves y "
+                              "32 KB, en una línea cada valor. CORREO no se manda: es la "
+                              "dirección."},
+          ],
+          "request": {"type": "transactional", "contact_id": "6531f5c2a1b2c3d4e5f60801",
+                      "subject": "Tu estado de cuenta, *|NOMBRE|*",
+                      "data": {"SALDO": "1,250.00"}},
+          "response": {"type": "transactional",
+                       "subject": "Tu estado de cuenta, Ana Pérez",
+                       "html": "<!doctype html><html>...</html>",
+                       "text": "Hola Ana Pérez, estos son tus movimientos de octubre. ...",
+                       "bytes": 18432, "marks": ["NOMBRE", "TRANSACCIONES", "SALDO"],
+                       "blocks": [], "missing": []}},
+         {"method": "POST", "path": "/templates/check", "scope": "templates:read",
+          "title": "Revisar un lienzo",
+          "description": "La revisión del editor, sin guardar: `ok` dice si se podría "
+                         "guardar, `issues` lo que falta y `rules` cómo va cada regla, "
+                         "en el orden de la ventana de requisitos del panel.",
+          "test": "sí",
+          "fields": [{"name": "canvas", "type": "objeto", "required": True,
+                      "description": "El lienzo, como en «El lienzo en JSON»."},
+                     {"name": "name", "type": "texto",
+                      "description": "Su nombre, que es la primera regla."}],
+          "request": {"name": "Estado de cuenta", "canvas": {
+              "h": 420, "bg": "#FFFFFF", "items": [
+                  {"t": "text", "x": 40, "y": 40, "w": 520, "h": 80,
+                   "text": "Hola *|NOMBRE|*", "font": "Arial", "size": 22}]}},
+          "response": {"ok": False, "bytes": 9120, "max": 104448,
+                       "issues": ["Tiene muy poco texto (4 caracteres). Escribe al menos "
+                                  "200: un correo casi sin texto es de lo que más va a "
+                                  "spam."],
+                       "rules": [{"group": "build", "ok": True, "text": "Tiene nombre."},
+                                 {"group": "spam", "ok": False,
+                                  "text": "Al menos 200 caracteres de texto (tiene 4)."}]}},
+         {"method": "GET", "path": "/templates/{template_id}/zip",
+          "scope": "templates:read",
+          "title": "Bajar el ZIP",
+          "description": "El mismo ZIP que baja el editor: el lienzo con sus fotos, que "
+                         "se vuelve a cargar en cualquier cuenta, y el HTML con sus "
+                         "imágenes. Solo de las del lienzo. Responde el archivo, no JSON. "
+                         "Cuenta para el límite de 5 plantillas por minuto.",
+          "test": "sí", "returns": "application/zip",
+          "response": None},
+         {"method": "POST", "path": "/templates", "scope": "templates:write",
+          "title": "Crear una plantilla del lienzo",
+          "description": "Con la misma revisión que Guardar: si algo no se cumple, 422 "
+                         "dice qué en `fields.canvas`. Las fotos que nombra tienen que "
+                         "ser tuyas (súbelas antes con `POST /images`). Hasta 5 por "
+                         "minuto.",
+          "test": "no", "status": 201,
+          "fields": [
+              {"name": "name", "type": "texto", "required": True,
+               "description": "Hasta 80 caracteres."},
+              {"name": "canvas", "type": "objeto", "required": True,
+               "description": "El lienzo, como en «El lienzo en JSON»."},
+              {"name": "folder_id", "type": "texto", "description": "Una carpeta tuya."},
+              {"name": "send_from", "type": "texto",
+               "description": "El id de un remitente listo. Sin él, el predeterminado."},
+              {"name": "reply_to", "type": "texto",
+               "description": "Uno de tus «Responder a». Sin él, el predeterminado."},
+          ],
+          "request": {"name": "Estado de cuenta", "folder_id": "6533b0aaa1b2c3d4e5f60900",
+                      "canvas": {"h": 420, "bg": "#FFFFFF", "items": _CANVAS["items"]}},
+          "response": {**_TEMPLATE, "marks": ["NOMBRE", "TRANSACCIONES"], "blocks": [],
+                       "canvas": _CANVAS, "images": {}}},
+         {"method": "POST", "path": "/templates/import", "scope": "templates:write",
+          "title": "Cargar un ZIP",
+          "description": "El ZIP que baja el Lienzo, de esta cuenta o de otra, en "
+                         "multipart: `file`, y si quieres `name` y `folder_id`. Sus fotos "
+                         "entran a tu cuenta y cuentan contra tu tope. Hasta 5 MB.",
+          "test": "no", "status": 201,
+          "upload": "file=@estado-de-cuenta.zip",
+          "fields": [{"name": "file", "type": "archivo", "required": True,
+                      "description": "El ZIP, en multipart/form-data."},
+                     {"name": "name", "type": "texto",
+                      "description": "Su nombre. Sin él, el que trae el ZIP."},
+                     {"name": "folder_id", "type": "texto", "description": "Una carpeta tuya."}],
+          "response": {**_TEMPLATE, "marks": ["NOMBRE", "TRANSACCIONES"], "blocks": [],
+                       "canvas": _CANVAS, "images": {}}},
+         {"method": "PATCH", "path": "/templates/{template_id}", "scope": "templates:write",
+          "title": "Cambiar una plantilla",
+          "description": "Solo lo que mandes: `name`, `folder_id` (null la saca de su "
+                         "carpeta), `send_from` y `reply_to` (null vuelve al "
+                         "predeterminado) y, en una del lienzo, `canvas` entero, con la "
+                         "revisión de Guardar.",
+          "test": "no",
+          "fields": [
+              {"name": "name", "type": "texto", "description": "Hasta 80 caracteres."},
+              {"name": "folder_id", "type": "texto o null", "description": "Una carpeta tuya."},
+              {"name": "send_from", "type": "texto o null", "description": "Un remitente listo."},
+              {"name": "reply_to", "type": "texto o null",
+               "description": "Uno de tus «Responder a»."},
+              {"name": "canvas", "type": "objeto",
+               "description": "Solo en una del lienzo: el lienzo entero."},
+          ],
+          "request": {"name": "Estado de cuenta de noviembre", "folder_id": None},
+          "response": {**_TEMPLATE, "name": "Estado de cuenta de noviembre",
+                       "folder_id": None, "marks": ["NOMBRE", "TRANSACCIONES"],
+                       "blocks": [], "canvas": _CANVAS, "images": {}}},
+         {"method": "POST", "path": "/templates/{template_id}/duplicate",
+          "scope": "templates:write",
+          "title": "Duplicar una plantilla",
+          "description": "Queda en la misma carpeta, con el nombre que mandes o «Copia "
+                         "de…».",
+          "test": "no", "status": 201,
+          "fields": [{"name": "name", "type": "texto", "description": "Hasta 80 caracteres."}],
+          "request": {"name": "Estado de cuenta (socios nuevos)"},
+          "response": {**_TEMPLATE, "id": "6533b9f0a1b2c3d4e5f60955",
+                       "name": "Estado de cuenta (socios nuevos)",
+                       "marks": ["NOMBRE", "TRANSACCIONES"], "blocks": [],
+                       "canvas": _CANVAS, "images": {}}},
+         {"method": "DELETE", "path": "/templates/{template_id}", "scope": "templates:write",
+          "title": "Borrar una plantilla",
+          "description": "Y las fotos que ninguna otra nombra. Una foto que ya salió en "
+                         "un correo se sigue viendo un año.",
+          "test": "no",
+          "response": {"id": "6533b1d2a1b2c3d4e5f60901", "deleted": True}},
+         {"method": "POST", "path": "/templates/move", "scope": "templates:write",
+          "title": "Mover plantillas",
+          "description": "Hasta 200 a una carpeta, o a ninguna con `folder_id: null`. "
+                         "Las que no son tuyas no se tocan; `moved` dice cuántas sí.",
+          "test": "no",
+          "fields": [{"name": "ids", "type": "lista", "required": True,
+                      "description": "Los ids de las plantillas."},
+                     {"name": "folder_id", "type": "texto o null", "required": True,
+                      "description": "La carpeta, o null."}],
+          "request": {"ids": ["6533b1d2a1b2c3d4e5f60901"],
+                      "folder_id": "6533b0aaa1b2c3d4e5f60900"},
+          "response": {"moved": 1}},
+         {"method": "POST", "path": "/images", "scope": "templates:write",
+          "title": "Subir una foto",
+          "description": "Una foto para un lienzo, en multipart (`file`, hasta 5 MB): "
+                         "se revisa, se le quitan los bordes transparentes y se achica. "
+                         "Su `name` es el que va en una imagen del lienzo. Cuenta contra "
+                         "el tope de fotos de tu plan, y hasta 20 por minuto.",
+          "test": "no", "status": 201,
+          "upload": "file=@foto.jpg",
+          "fields": [{"name": "file", "type": "archivo", "required": True,
+                      "description": "JPG, PNG o GIF, en multipart/form-data."}],
+          "response": {"name": "k3J9xQ2mP0aZr8VbT1cW4d.jpg",
+                       "url": "https://app.sobreala.com/img/k3J9xQ2mP0aZr8VbT1cW4d.jpg",
+                       "width": 1200, "height": 800}},
+     ]},
+    {"id": "carpetas", "title": "Carpetas",
+     "intro": "Las carpetas de Mis plantillas: un solo nivel, con nombre y color. "
+              "Borrar una no borra sus plantillas, que quedan sin carpeta.",
+     "endpoints": [
+         {"method": "GET", "path": "/folders", "scope": "templates:read",
+          "title": "Listar carpetas",
+          "description": "Por nombre, con cuántas plantillas tiene cada una, cuántas "
+                         "caben y los colores que hay.",
+          "test": "sí",
+          "response": {"data": [_FOLDER], "limit": 50,
+                       "colors": ["gray", "white", "blue", "green", "amber", "red",
+                                  "purple", "pink", "teal"]}},
+         {"method": "POST", "path": "/folders", "scope": "templates:write",
+          "title": "Crear una carpeta",
+          "description": "El nombre no se repite (sin fijarse en mayúsculas).",
+          "test": "no", "status": 201,
+          "fields": [{"name": "name", "type": "texto", "required": True,
+                      "description": "Hasta 40 caracteres."},
+                     {"name": "color", "type": "texto", "description": "gray si no se dice."}],
+          "request": {"name": "Cobros", "color": "blue"},
+          "response": {**_FOLDER, "templates": 0}},
+         {"method": "PATCH", "path": "/folders/{folder_id}", "scope": "templates:write",
+          "title": "Cambiar una carpeta",
+          "description": "Su nombre, su color o los dos.",
+          "test": "no",
+          "fields": [{"name": "name", "type": "texto", "description": "Hasta 40 caracteres."},
+                     {"name": "color", "type": "texto", "description": "Uno de los colores."}],
+          "request": {"color": "green"},
+          "response": {**_FOLDER, "color": "green"}},
+         {"method": "DELETE", "path": "/folders/{folder_id}", "scope": "templates:write",
+          "title": "Borrar una carpeta",
+          "description": "Sus plantillas se quedan, sin carpeta.",
+          "test": "no",
+          "response": {"id": "6533b0aaa1b2c3d4e5f60900", "deleted": True}},
      ]},
 ]
 
@@ -448,6 +843,12 @@ def _schema(value: Any) -> dict[str, Any]:
             "properties": {key: _schema(one) for key, one in value.items()}}
 
 
+# Los tipos de la página, como los nombra OpenAPI.
+OPENAPI_TYPES = {"texto": "string", "entero": "integer", "número": "number",
+                 "sí o no": "boolean", "lista": "array", "lista de textos": "array",
+                 "objeto": "object"}
+
+
 def openapi() -> dict[str, Any]:
     """La descripción en OpenAPI 3.1."""
     paths: dict[str, Any] = {}
@@ -464,9 +865,12 @@ def openapi() -> dict[str, Any]:
             "responses": {
                 str(one.get("status", 200)): {
                     "description": "Bien",
-                    "content": {"application/json": {
-                        "schema": _schema(one.get("response")),
-                        "example": one.get("response")}}},
+                    "content": ({one["returns"]: {"schema": {"type": "string",
+                                                              "format": "binary"}}}
+                                if one.get("returns") else
+                                {"application/json": {
+                                    "schema": _schema(one.get("response")),
+                                    "example": one.get("response")}})},
                 "default": {"description": "Error",
                             "content": {"application/json": {"schema": error_schema}}},
             },
@@ -483,10 +887,18 @@ def openapi() -> dict[str, Any]:
             parameters.append({"name": param["name"], "in": "query",
                                "required": bool(param.get("required")),
                                "description": param.get("description", ""),
-                               "schema": {"type": param.get("type", "string")}})
+                               "schema": {"type": OPENAPI_TYPES.get(param.get("type"),
+                                                                    "string")}})
         if parameters:
             operation["parameters"] = parameters
-        if one.get("request") is not None:
+        if one.get("upload"):
+            # Un archivo y sus campos de texto, en multipart.
+            operation["requestBody"] = {"required": True, "content": {
+                "multipart/form-data": {"schema": {"type": "object", "properties": {
+                    field["name"]: ({"type": "string", "format": "binary"}
+                                    if field["type"] == "archivo" else {"type": "string"})
+                    for field in one.get("fields", [])}, "required": ["file"]}}}}
+        elif one.get("request") is not None:
             operation["requestBody"] = {"required": True, "content": {
                 one.get("content", "application/json"): {
                     "schema": _schema(one["request"]), "example": one["request"]}}}

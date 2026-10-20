@@ -20,8 +20,105 @@
   {% include "contacts/_tags-picker.html" %}
 {% include "contacts/_fields.html" %}
 
+  {# El id de su sistema (octubre de 2026): su número de socio o de cliente, con
+     el que la API lo encuentra aunque cambie el correo. Opcional. #}
+  <label for="external-id">{{ t('contacts_external') }}</label>
+  <input id="external-id" name="external_id" type="text" maxlength="64" autocomplete="off"
+         spellcheck="false" value="{{ request.form.get('external_id', row.external_id or '') }}"
+         aria-describedby="external-id-hint">
+  <p class="hint" id="external-id-hint">{{ t('contacts_external_hint') }}</p>
+  {% if errors.external_id %}<p class="error">{{ errors.external_id }}</p>{% endif %}
+
   <button class="btn" type="submit">{{ t('contacts_edit_submit') }}</button>
 </form>
+
+{#- Sus listas (octubre de 2026), como sus transacciones: cada fila con su
+    formulario, debajo de sus datos. Agregar va al final, y si ya tiene las que
+    caben se va la más vieja. Editar abre la fila en su sitio (también sin
+    JavaScript, con la dirección), y borrar pregunta en su menú. -#}
+{% set row_errors = row_errors|default({}) %}
+{% for one in lists %}
+<h3 class="settings__subtitle" id="lista-{{ one.key }}">{{ one.label }}</h3>
+<p class="hint">{{ t('contacts_rows_hint', n=rows_max, mark='*|' ~ one.key ~ '|*') }}</p>
+{% if row_errors.get('list') == one.key and row_errors.get('form') %}
+<p class="error error--form">{{ row_errors.form }}</p>{% endif %}
+{% if one.rows %}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr>{% for item in one['items'] %}<th>{{ item.label }}</th>{% endfor %}<th></th></tr></thead>
+    <tbody>
+    {% for r in one.rows %}
+    {% if (editing_list == one.key and editing_row == r.id)
+          or (row_errors.get('list') == one.key and row_errors.get('row') == r.id) %}
+    <tr><td colspan="{{ one['items']|length + 1 }}">
+      <form class="row-form" method="post" action="{{ url_for('contacts.rows', raw=row._id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="lista" value="{{ one.key }}">
+        <input type="hidden" name="fila" value="{{ r.id }}">
+        <input type="hidden" name="action" value="save">
+        {% for item in one['items'] %}
+        <label for="fila-{{ r.id }}-{{ item.key }}">{{ item.label }}</label>
+        <input id="fila-{{ r.id }}-{{ item.key }}" name="item-{{ item.key }}" maxlength="120"
+               autocomplete="off" value="{{ request.form.get('item-' + item.key, r.get(item.key, '')) }}"
+               type="{% if item.type == 'date' %}date{% else %}text{% endif %}"
+               {% if item.type == 'number' %}inputmode="decimal"{% endif %}>
+        {% if row_errors.get('item-' + item.key) %}<p class="error">{{ row_errors['item-' + item.key] }}</p>{% endif %}
+        {% endfor %}
+        <div class="row-form__actions">
+          <button class="btn btn--small" type="submit">{{ t('contacts_row_save') }}</button>
+          <a class="btn btn--small btn--outline" data-keep-scroll
+             href="{{ url_for('contacts.edit', raw=row._id) }}#lista-{{ one.key }}">{{ t('settings_cancel') }}</a>
+        </div>
+      </form>
+    </td></tr>
+    {% else %}
+    <tr>
+      {% for item in one['items'] %}<td>{{ show(r.get(item.key, ''), item.type) or '—' }}</td>{% endfor %}
+      <td>
+        <div class="table__actions">
+          <a class="btn btn--small btn--outline" data-keep-scroll
+             href="{{ url_for('contacts.edit', raw=row._id, lista=one.key, fila=r.id) }}#lista-{{ one.key }}">{{ t('contacts_edit') }}</a>
+          <details class="move row-delete">
+            <summary class="btn btn--small btn--outline">{{ t('contacts_row_delete') }}</summary>
+            <form class="move__list" method="post" action="{{ url_for('contacts.rows', raw=row._id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="lista" value="{{ one.key }}">
+              <input type="hidden" name="fila" value="{{ r.id }}">
+              <input type="hidden" name="action" value="delete">
+              <p class="hint">{{ t('contacts_row_delete_ask') }}</p>
+              <button class="btn btn--small btn--danger" type="submit">{{ t('contacts_row_delete_yes') }}</button>
+            </form>
+          </details>
+        </div>
+      </td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('contacts_rows_none') }}</p>
+{% endif %}
+
+<form class="row-form row-form--add" method="post" action="{{ url_for('contacts.rows', raw=row._id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="lista" value="{{ one.key }}">
+  <input type="hidden" name="action" value="add">
+  <p class="field-label">{{ t('contacts_row_add_title') }}</p>
+  {% set adding = row_errors.get('list') == one.key and not row_errors.get('row') %}
+  {% for item in one['items'] %}
+  <label for="nueva-{{ one.key }}-{{ item.key }}">{{ item.label }}</label>
+  <input id="nueva-{{ one.key }}-{{ item.key }}" name="item-{{ item.key }}" maxlength="120"
+         autocomplete="off" value="{{ request.form.get('item-' + item.key, '') if adding else '' }}"
+         type="{% if item.type == 'date' %}date{% else %}text{% endif %}"
+         {% if item.type == 'number' %}inputmode="decimal"{% endif %}>
+  {% if adding and row_errors.get('item-' + item.key) %}<p class="error">{{ row_errors['item-' + item.key] }}</p>{% endif %}
+  {% endfor %}
+  {% if one.rows|length >= rows_max %}<p class="hint">{{ t('contacts_rows_full', n=rows_max) }}</p>{% endif %}
+  <button class="btn btn--small btn--icon" type="submit">{% include "_icon-plus.svg" %}<span>{{ t('contacts_row_add') }}</span></button>
+</form>
+{% endfor %}
 
 {# Lo que esta pantalla no toca. Es historia, no datos: si se pudiera editar
    dejaría de servir para lo único que sirve, que es responder cuando alguien

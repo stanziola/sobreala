@@ -386,7 +386,8 @@ def marks_missing(account, design, subject: str, contact) -> list[str]:
         return []
     lacking = []
     values = fields.values_of(contact)
-    for one in accounts.fields_of(account):
+    # Una lista puede ir vacía (octubre de 2026): no falta.
+    for one in fields.scalars(accounts.fields_of(account)):
         if one["key"] in used and not values.get(one["key"]):
             lacking.append(one["label"])
     for key, (where, label) in fields.BUILT_IN.items():

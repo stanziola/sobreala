@@ -29,8 +29,33 @@
             {%- if request.form.get('type') == kind %} selected{% endif %}>
       {{ t('fields_type_' + kind) }}</option>
     {% endfor %}
+    <option value="list"{% if request.form.get('type') == 'list' %} selected{% endif %}>
+      {{ t('fields_type_list') }}</option>
   </select>
   <p class="hint">{{ t('fields_type_hint') }}</p>
+
+  {#- Los datos de cada fila de una lista (octubre de 2026), como Fecha,
+      Descripción y Monto. Solo cuentan si el tipo es Lista. -#}
+  <fieldset class="list-items">
+    <legend class="field-label">{{ t('fields_list_items') }}</legend>
+    <p class="hint">{{ t('fields_list_items_hint', n=items_max) }}</p>
+    {% for n in range(items_max) %}
+    <div class="list-items__row">
+      <label class="visually-hidden" for="dato-{{ n }}">{{ t('fields_list_item_name', n=n + 1) }}</label>
+      <input id="dato-{{ n }}" name="dato-{{ n }}" type="text" maxlength="40" autocomplete="off"
+             value="{{ request.form.get('dato-' ~ n, '') }}"
+             placeholder="{{ t('fields_list_item_example_' ~ n) if n < 3 else '' }}">
+      <label class="visually-hidden" for="dato-tipo-{{ n }}">{{ t('fields_list_item_type', n=n + 1) }}</label>
+      <select id="dato-tipo-{{ n }}" name="dato-tipo-{{ n }}">
+        {% for kind in types %}
+        <option value="{{ kind }}"{% if request.form.get('dato-tipo-' ~ n, ('date' if n == 0 else 'number' if n == 2 else 'text')) == kind %} selected{% endif %}>
+          {{ t('fields_type_' + kind) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endfor %}
+    {% if errors['items'] %}<p class="error">{{ errors['items'] }}</p>{% endif %}
+  </fieldset>
 
   <p class="hint">
     {% if fields_free %}{{ t('fields_room_free') }}

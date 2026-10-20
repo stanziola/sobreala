@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from datetime import date
 
 from bson import ObjectId
@@ -89,9 +90,10 @@ def values_written(account, errors: dict[str, str]) -> dict[str, str]:
 
     **Todas son obligatorias**, y lo que no encaja en su tipo cuenta como que
     falta: un contacto sin sus datos no entra, y si ya estaba, no recibe nada.
+    Las listas (octubre de 2026) no van en este formulario: tienen el suyo.
     """
     written: dict[str, str] = {}
-    for one in accounts.fields_of(account):
+    for one in columns.scalars(accounts.fields_of(account)):
         raw = request.form.get(f"col-{one['key']}", "")
         value = columns.parse(raw, one.get("type", columns.TEXT))
         if value:
@@ -257,17 +259,30 @@ def edit(raw):
     if request.method == "POST":
         address = importer.clean(request.form.get("email", ""))
         written = values_written(account, errors)
+        # El id de su sistema (octubre de 2026): opcional, y único en la cuenta.
+        # Va en la misma escritura que lo demás, así un id ocupado no deja la
+        # mitad guardada.
+        external = request.form.get("external_id", "").strip()
+        other = (contacts.by_external_id(db, account["_id"], external)
+                 if external and contacts.EXTERNAL_ID.match(external) else None)
+        if external and not contacts.EXTERNAL_ID.match(external):
+            errors["external_id"] = t("contacts_external_bad")
+        elif other is not None and other["_id"] != contact_id:
+            errors["external_id"] = t("contacts_external_taken")
 
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         elif not address:
             errors["email"] = t("error_contact_email")
         elif errors:
-            errors["form"] = t("error_fields_required")
+            if any(key.startswith("col-") for key in errors):
+                errors["form"] = t("error_fields_required")
         elif not contacts.update(db, account["_id"], contact_id, email=address,
                                  name=request.form.get("name", ""),
                                  tags=tags_chosen(account),
-                                 values=written):
+                                 values=written,
+                                 extra={"external_id": external} if external else None,
+                                 unset=() if external else ("external_id",)):
             # Lo dice el índice único, no una consulta previa.
             errors["email"] = t("error_contact_taken")
         else:
@@ -277,6 +292,97 @@ def edit(raw):
     return render_template("contacts/edit.html", section="lista", errors=errors,
                            row=row, chosen=row.get("tags") or [],
                            written=columns.values_of(row),
+                           **list_context(account, row),
+                           **shared(db, account))
+
+
+# ------------------------------------------------ las listas (octubre de 2026)
+#
+# Las filas de cada lista de un contacto se agregan, se cambian y se borran en
+# su ficha, debajo de sus datos, cada una con su formulario. Cada fila tiene su
+# id, así que cambiar o borrar una no se equivoca aunque la API agregue otra
+# en ese momento.
+
+def list_context(account, row) -> dict:
+    """Las listas de la cuenta con las filas de ese contacto, y qué fila se
+    está editando (`?lista=…&fila=…`)."""
+    values = columns.values_of(row)
+    return {
+        "lists": [{**one, "rows": [r for r in (values.get(one["key"]) or [])
+                                   if isinstance(r, dict)]}
+                  for one in accounts.fields_of(account) if columns.is_list(one)],
+        "editing_list": request.args.get("lista", ""),
+        "editing_row": request.args.get("fila", ""),
+        "rows_max": columns.LIST_ROWS_MAX,
+    }
+
+
+def row_written(one, errors: dict[str, str]) -> dict[str, str]:
+    """Lo que el formulario escribió en cada dato de una fila."""
+    written: dict[str, str] = {}
+    for item in one.get("items") or []:
+        raw = request.form.get(f"item-{item['key']}", "")
+        value = columns.parse(raw, item.get("type", columns.TEXT))
+        if value is None:
+            errors[f"item-{item['key']}"] = t("error_field_value")
+        elif value:
+            written[item["key"]] = value
+    if not written and not errors:
+        errors["form"] = t("contacts_row_empty")
+    return written
+
+
+@bp.route("/contacts/edit/<raw>/rows", methods=["POST"])
+def rows(raw):
+    """Agregar, cambiar o borrar una fila de una lista de ese contacto."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    db = get_db()
+    contact_id = as_id(raw)
+    row = contacts.by_id(db, account["_id"], contact_id) if contact_id else None
+    one = accounts.field_by_key(account, request.form.get("lista", ""))
+    if row is None or not columns.is_list(one):
+        abort(404)
+    back = url_for("contacts.edit", raw=raw) + f"#lista-{one['key']}"
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(back)
+
+    action = request.form.get("action", "")
+    current = [r for r in (columns.values_of(row).get(one["key"]) or [])
+               if isinstance(r, dict)]
+    row_id = request.form.get("fila", "")
+    errors: dict[str, str] = {}
+    if action == "delete":
+        contacts.remove_row(db, account["_id"], contact_id, one["key"], row_id)
+        return redirect(url_for("contacts.edit", raw=raw, fila_borrada=1)
+                        + f"#lista-{one['key']}")
+    written = row_written(one, errors)
+    if not errors:
+        if action == "save" and any(r.get("id") == row_id for r in current):
+            fresh = {**written, "id": row_id}
+            after = [fresh if r.get("id") == row_id else r for r in current]
+            if columns.rows_size(after) > columns.LIST_BYTES_MAX:
+                errors["form"] = t("contacts_rows_big")
+            else:
+                contacts.update_row(db, account["_id"], contact_id, one["key"], fresh)
+                return redirect(back)
+        elif action == "add":
+            fresh = {**written, "id": columns.new_row_id()}
+            after = (current + [fresh])[-columns.LIST_ROWS_MAX:]
+            if columns.rows_size(after) > columns.LIST_BYTES_MAX:
+                errors["form"] = t("contacts_rows_big")
+            else:
+                contacts.append_rows(db, account["_id"], contact_id, one["key"], [fresh],
+                                     keep=columns.LIST_ROWS_MAX)
+                return redirect(back)
+        else:
+            return redirect(back)
+    return render_template("contacts/edit.html", section="lista", errors={},
+                           row_errors={"list": one["key"], "row": row_id, **errors},
+                           row=row, chosen=row.get("tags") or [],
+                           written=columns.values_of(row),
+                           **list_context(account, row),
                            **shared(db, account))
 
 
@@ -374,11 +480,21 @@ def csv_lines(account, rows, blocked):
     # por el título, que es lo que hace que exportar sirva de copia.
     mine = accounts.fields_of(account)
 
+    def written(row, one) -> str:
+        value = columns.values_of(row).get(one["key"], "")
+        if columns.is_list(one):
+            # Una lista sale entera, en JSON, para que la copia no pierda nada
+            # (octubre de 2026). Sin el id de cada fila, que es nuestro.
+            return json.dumps([{key: cell for key, cell in item.items() if key != "id"}
+                               for item in (value or []) if isinstance(item, dict)],
+                              ensure_ascii=False) if value else ""
+        return columns.show(value, one.get("type", columns.TEXT))
+
     yield "\ufeff"
     writer.writerow([t("contacts_col_email"), t("contacts_col_name"),
                      t("contacts_col_tags"), t("contacts_col_how"),
                      t("contacts_col_added"), t("contacts_col_status")]
-                    + [one["label"] for one in mine])
+                    + [one["label"] for one in mine] + [t("contacts_external")])
     yield flush()
     for row in rows:
         how = row.get("added_by")
@@ -392,9 +508,8 @@ def csv_lines(account, rows, blocked):
             t("contacts_status_blocked")
             if row["email_normalized"] in blocked
             else t("contacts_status_active"),
-            *[columns.show(columns.values_of(row).get(one["key"], ""),
-                           one.get("type", columns.TEXT))
-              for one in mine],
+            *[written(row, one) for one in mine],
+            row.get("external_id", ""),
         ])
         yield flush()
 
@@ -514,6 +629,7 @@ def fields():
         **shared(db, account, types=columns.TYPES,
                  room=limit - len(accounts.fields_of(account)),
                  fields_free=limit >= plans.UNLIMITED,
+                 items_max=columns.LIST_ITEMS_MAX,
                  counts=contacts.count_by_field(
                      db, account["_id"], accounts.fields_of(account))))
 
@@ -536,15 +652,26 @@ def add_field():
     room = limit - len(accounts.fields_of(account))
 
     if request.method == "POST":
+        kind = request.form.get("type", "")
+        # Los datos de una lista (octubre de 2026): una fila de nombre y tipo
+        # por dato; las vacías no cuentan.
+        items = [(label, request.form.get(f"dato-tipo-{n}", columns.TEXT))
+                 for n, label in ((n, request.form.get(f"dato-{n}", "").strip())
+                                  for n in range(columns.LIST_ITEMS_MAX)) if label]
+        lists_now = sum(1 for one in accounts.fields_of(account) if columns.is_list(one))
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         elif room <= 0:
             # Se comprueba aquí y no solo en el botón: apagar un botón no es un
             # permiso.
             errors["form"] = t("fields_full")
+        elif kind == columns.LIST and lists_now >= columns.LISTS_MAX:
+            errors["form"] = t("fields_lists_full", n=columns.LISTS_MAX)
+        elif kind == columns.LIST and accounts.list_items(items) is None:
+            errors["items"] = t("fields_list_items_bad", n=columns.LIST_ITEMS_MAX)
         elif not accounts.add_field(db, account["_id"],
                                     label=request.form.get("nombre", ""),
-                                    kind=request.form.get("type", "")):
+                                    kind=kind, items=items):
             errors["nombre"] = t("error_field")
         else:
             return redirect(url_for("contacts.fields", saved=1))
@@ -552,8 +679,34 @@ def add_field():
     return render_template(
         "contacts/field-new.html", section="columnas", errors=errors,
         **shared(db, account, types=columns.TYPES, room=room,
-                 field_limit=limit,
+                 field_limit=limit, items_max=columns.LIST_ITEMS_MAX,
                  fields_free=limit >= plans.UNLIMITED))
+
+
+@bp.route("/contacts/columns/items", methods=["POST"])
+def list_items():
+    """Agregarle un dato a una lista, o quitárselo (y con él, lo escrito en ese
+    dato en todas las filas de todos los contactos). Octubre de 2026."""
+    account = signed_in()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    if not csrf_ok(request.form.get("csrf_token")):
+        return redirect(url_for("contacts.fields"))
+    db = get_db()
+    key = request.form.get("columna", "").strip()[:columns.KEY_MAX]
+    if not columns.is_list(accounts.field_by_key(account, key)):
+        return redirect(url_for("contacts.fields"))
+    if request.form.get("action") == "remove":
+        item = request.form.get("dato", "").strip()[:columns.KEY_MAX]
+        if accounts.remove_list_item(db, account["_id"], key, item):
+            contacts.drop_list_item(db, account["_id"], key, item)
+            return redirect(url_for("contacts.fields", saved=1))
+        return redirect(url_for("contacts.fields", error="items"))
+    if accounts.add_list_item(db, account["_id"], key,
+                              label=request.form.get("nombre", ""),
+                              kind=request.form.get("type", columns.TEXT)) is None:
+        return redirect(url_for("contacts.fields", error="items"))
+    return redirect(url_for("contacts.fields", saved=1))
 
 
 @bp.route("/contacts/columns/type", methods=["POST"])
@@ -577,7 +730,8 @@ def field_type():
     key = request.form.get("columna", "").strip()[:columns.KEY_MAX]
     kind = columns.clean_kind(request.form.get("type", ""))
     one = accounts.field_by_key(account, key)
-    if one is None:
+    # Una lista no cambia de tipo: se le agregan o quitan datos.
+    if one is None or columns.is_list(one):
         return redirect(url_for("contacts.fields"))
 
     wrong = contacts.values_not_of_type(db, account["_id"], key, kind)
@@ -622,7 +776,7 @@ def chosen_columns(db, account, head: list[str]):
               for index in range(len(head))}
     marked = {i: what for i, what in marked.items() if what}
     if not marked:
-        return importer.matching(head, accounts.fields_of(account)), None
+        return importer.matching(head, columns.scalars(accounts.fields_of(account))), None
 
     existing = accounts.fields_of(account)
     limit = accounts.field_limit(account)
@@ -638,7 +792,8 @@ def chosen_columns(db, account, head: list[str]):
             return {}, t("error_field")
 
     account = accounts.by_id(db, account["_id"])
-    known = {one["key"]: one for one in accounts.fields_of(account)}
+    # Las listas no entran por el archivo (octubre de 2026).
+    known = {one["key"]: one for one in columns.scalars(accounts.fields_of(account))}
     take: dict[int, dict] = {}
     for index, what in marked.items():
         key = (columns.key_from(head[index]) if what == NEW_COLUMN else what)
@@ -707,7 +862,7 @@ def upload():
                 counts, stopped = importer.run(
                     db, account["_id"], archivo.stream, tags=tags,
                     consent=consent, limit=accounts.contact_limit(account),
-                    take=take, required=accounts.fields_of(account))
+                    take=take, required=columns.scalars(accounts.fields_of(account)))
             except Exception as exc:  # noqa: BLE001 - written down, not hidden
                 imports.finish(db, job, status=imports.FAILED, counts={},
                                error=f"{type(exc).__name__}: {exc}")

@@ -87,7 +87,8 @@
         {% set written = values_of(row) %}
         {% for one in fields %}
         <td class="table__quiet">
-          {{ show(written.get(one.key, ''), one.type) or '—' }}</td>
+          {%- if one.type == 'list' %}{{ t('contacts_rows_count', n=(written.get(one.key) or [])|length) }}
+          {%- else %}{{ show(written.get(one.key, ''), one.type) or '—' }}{% endif %}</td>
         {% endfor %}
         <td>
           {# Los anulados no llegan hasta aquí: la consulta los deja fuera y se

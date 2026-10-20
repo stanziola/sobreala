@@ -315,12 +315,19 @@ def _idempotent(view, kwargs):
 
 # ------------------------------------------------------------ el cuerpo
 
+def _not_json(constant: str):
+    """NaN e Infinity no son JSON, aunque Python los lea: un número infinito
+    revienta donde se espera uno de verdad."""
+    raise ValueError(constant)
+
+
 def body(allowed, required=()) -> dict[str, Any]:
     """El cuerpo JSON: un objeto, sin campos que la ruta no conozca."""
     if request.mimetype != "application/json":
         fail("unsupported_media_type", 415)
     try:
-        data = json.loads(request.get_data(cache=True) or b"null")
+        data = json.loads(request.get_data(cache=True) or b"null",
+                          parse_constant=_not_json)
     except (ValueError, RecursionError, UnicodeDecodeError):
         fail("bad_json", 400)
     if not isinstance(data, dict):
@@ -404,9 +411,81 @@ class Fields:
             self.errors[name] = t("api_field_id")
         return found
 
+    def fill_data(self, name: str = "data") -> dict[str, Any]:
+        """Los datos de un correo: marcas por su clave, con texto o un número,
+        o una lista de filas (los productos de un pedido). Sin controles ni
+        saltos de línea, que en el asunto romperían la cabecera, y `CORREO` no:
+        es la dirección a la que va. Null es un valor vacío."""
+        value = self.data.get(name)
+        if value is None:
+            return {}
+        wrong = data_problem(value)
+        if wrong:
+            self.errors[name] = t("api_data_" + wrong, n=DATA_KEYS, rows=DATA_ROWS,
+                                  cells=DATA_CELLS, chars=DATA_CHARS,
+                                  cell_chars=DATA_CELL_CHARS, kb=DATA_BYTES // 1024)
+            return {}
+        return {key: ([{cell: _plain(one) for cell, one in row.items()} for row in item]
+                      if isinstance(item, list) else _plain(item))
+                for key, item in value.items()}
+
     def check(self) -> None:
         if self.errors:
             fail("validation_failed", 422, fields=self.errors)
+
+
+# Los datos de un correo (`Fields.data`): cuántas claves, cuántas filas por
+# lista y datos por fila, y cuánto puede medir cada valor y todo junto.
+DATA_KEY = re.compile(r"^[A-Z0-9_]{1,24}$")
+DATA_KEYS = 50
+DATA_ROWS = 50
+DATA_CELLS = 10
+DATA_CHARS = 1000
+DATA_CELL_CHARS = 200
+DATA_BYTES = 32 * 1024
+# Lo que una cabecera de correo lee como fin de línea, además de los controles.
+LINE_BREAKS = ("\x7f", "\u0085", " ", " ")
+
+
+def one_line(text: str) -> bool:
+    """Sin controles ni saltos de línea: lo que puede ir en un asunto o en un
+    nombre sin romper una cabecera."""
+    return not any(c < " " or c in LINE_BREAKS for c in text)
+
+
+def _clean_value(value, limit: int) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        return False
+    text = str(value)
+    return len(text) <= limit and one_line(text)
+
+
+def _plain(value) -> str:
+    return "" if value is None else str(value)
+
+
+def data_problem(value) -> str:
+    """Qué no está bien en los datos de un correo, o vacío."""
+    if not isinstance(value, dict):
+        return "shape"
+    if len(value) > DATA_KEYS:
+        return "keys"
+    if len(json.dumps(value, ensure_ascii=False).encode("utf-8")) > DATA_BYTES:
+        return "size"
+    for key, item in value.items():
+        if not DATA_KEY.match(key) or key == "CORREO":
+            return "key"
+        if isinstance(item, list):
+            if len(item) > DATA_ROWS:
+                return "rows"
+            for row in item:
+                if (not isinstance(row, dict) or not 1 <= len(row) <= DATA_CELLS
+                        or not all(DATA_KEY.match(cell) for cell in row)
+                        or not all(_clean_value(one, DATA_CELL_CHARS) for one in row.values())):
+                    return "row"
+        elif item is not None and not _clean_value(item, DATA_CHARS):
+            return "value"
+    return ""
 
 
 def parse_id(raw: str | None):

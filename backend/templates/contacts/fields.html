@@ -27,6 +27,9 @@
 {% if request.args.get('error') == 'type' %}
 <p class="notice">{{ t('error_field_type', n=request.args.get('n', '0')) }}</p>
 {% endif %}
+{% if request.args.get('error') == 'items' %}
+<p class="notice">{{ t('fields_list_items_bad', n=items_max) }}</p>
+{% endif %}
 
 {% if fields %}
 <div class="table-wrap">
@@ -48,6 +51,45 @@
            tal cual se escribe y no explicada con palabras. #}
         <td><code class="mark">*|{{ one.key }}|*</code></td>
         <td>
+          {% if one.type == 'list' %}
+          {#- Una lista (octubre de 2026) no cambia de tipo: se le agregan o
+              quitan datos. Quitar uno lo borra de todas las filas. -#}
+          <span class="tag tag--quiet">{{ t('fields_type_list') }}</span>
+          <ul class="list-items__now">
+            {% for item in one['items'] %}
+            <li><code class="mark">*|{{ item.key }}|*</code> {{ item.label }}
+              <span class="table__quiet">{{ t('fields_type_' + item.type) }}</span>
+              {% if one['items']|length > 1 %}
+              <details class="move row-delete">
+                <summary class="btn btn--small btn--outline">{{ t('fields_list_item_remove') }}</summary>
+                <form class="move__list" method="post" action="{{ url_for('contacts.list_items') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="columna" value="{{ one.key }}">
+                  <input type="hidden" name="dato" value="{{ item.key }}">
+                  <input type="hidden" name="action" value="remove">
+                  <p class="hint">{{ t('fields_list_item_remove_ask', name=item.label) }}</p>
+                  <button class="btn btn--small btn--danger" type="submit">{{ t('fields_list_item_remove_yes') }}</button>
+                </form>
+              </details>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          {% if one['items']|length < items_max %}
+          <form class="filters" method="post" action="{{ url_for('contacts.list_items') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="columna" value="{{ one.key }}">
+            <label class="visually-hidden" for="dato-nuevo-{{ one.key }}">{{ t('fields_list_item_new') }}</label>
+            <input id="dato-nuevo-{{ one.key }}" name="nombre" type="text" maxlength="40"
+                   autocomplete="off" placeholder="{{ t('fields_list_item_new') }}">
+            <label class="visually-hidden" for="dato-nuevo-tipo-{{ one.key }}">{{ t('fields_type') }}</label>
+            <select id="dato-nuevo-tipo-{{ one.key }}" name="type">
+              {% for kind in types %}<option value="{{ kind }}">{{ t('fields_type_' + kind) }}</option>{% endfor %}
+            </select>
+            <button class="btn btn--small btn--outline" type="submit">{{ t('fields_list_item_add') }}</button>
+          </form>
+          {% endif %}
+          {% else %}
           {# El tipo es lo único que se puede corregir: el nombre es lo que las
              piezas ya tienen escrito dentro. #}
           <form class="filters" method="post"
@@ -65,6 +107,7 @@
             <button class="btn btn--small btn--outline" type="submit">
               {{ t('fields_type_save') }}</button>
           </form>
+          {% endif %}
         </td>
         <td class="table__quiet">
           {# Quién la tiene llena, que es quién puede recibir un correo. #}

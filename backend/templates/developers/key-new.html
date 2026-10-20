@@ -1,4 +1,5 @@
 {% extends "_dashboard.html" %}
+{% from "_fields.html" import proof with context %}
 {% block title %}{{ t('api_keys_new_title') }}{% endblock %}
 {% set pane_center = true %}
 
@@ -78,7 +79,7 @@
     <p class="hint">{{ t('api_keys_proof_lead') }}</p>
     {% if with_password %}
     <label for="key-password">{{ t('api_keys_password') }}</label>
-    <input id="key-password" name="password" type="password" autocomplete="current-password">
+    {{ proof('key-password', 'password') }}
     {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
     {% else %}
     <label for="key-email-code">{{ t('api_keys_email_code') }}</label>

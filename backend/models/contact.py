@@ -145,10 +145,11 @@ def _complete(definitions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Las condiciones que cumple un contacto con todas sus columnas llenas.
 
     Una por columna: el campo existe y no está vacío. Con diez columnas son
-    diez condiciones sobre el mismo documento, no diez consultas.
+    diez condiciones sobre el mismo documento, no diez consultas. Las listas
+    (octubre de 2026) pueden ir vacías y no cuentan.
     """
     return [{f"fields.{one['key']}": {"$exists": True, "$nin": ["", None]}}
-            for one in definitions]
+            for one in fields.scalars(definitions)]
 
 
 def _matching(account_id, search: str, tag: str,
@@ -257,7 +258,9 @@ def count_by_field(db, account_id,
     """
     return {one["key"]: db.contacts.count_documents(
         {"account_id": account_id,
-         f"fields.{one['key']}": {"$exists": True, "$nin": ["", None]}})
+         # De una lista, los que tienen al menos una fila.
+         **({f"fields.{one['key']}.0": {"$exists": True}} if fields.is_list(one) else
+            {f"fields.{one['key']}": {"$exists": True, "$nin": ["", None]}})})
         for one in definitions}
 
 
@@ -376,12 +379,17 @@ def upsert_many(db, account_id, rows: Iterable[tuple], *,
     Cada fila es `(correo, nombre)` o `(correo, nombre, columnas)`. Las
     columnas se escriben una por una y no como un bloque: así una importación
     que trae la ciudad no le borra el monto a quien ya lo tenía.
+
+    Una cuarta parte, `(…, otros)`, son más campos que escribir tal cual: el id
+    de su sistema y las listas enteras que trae la API (octubre de 2026), ya
+    revisados por quien llama.
     """
     moment = now()
     operations = []
     for row in rows:
         email, name = row[0], row[1]
         values = row[2] if len(row) > 2 else {}
+        extra = row[3] if len(row) > 3 else {}
         normalized = normalize_email(email)
         fresh = {"email": email.strip(), "updated_at": moment}
         if name:
@@ -389,6 +397,7 @@ def upsert_many(db, account_id, rows: Iterable[tuple], *,
         for key, value in (values or {}).items():
             if value != "":
                 fresh[f"fields.{key}"] = value
+        fresh.update(extra or {})
         born = {"account_id": account_id, "email_normalized": normalized,
                 "consent": consent, "added_by": added_by, "created_at": moment}
         update: dict[str, Any] = {"$set": fresh, "$setOnInsert": born}
@@ -451,7 +460,9 @@ def by_id(db, account_id, contact_id) -> dict[str, Any] | None:
 
 
 def update(db, account_id, contact_id, *, email: str, name: str,
-           tags: list[str], values: dict[str, str] | None = None) -> bool:
+           tags: list[str], values: dict[str, str] | None = None,
+           extra: dict[str, Any] | None = None,
+           unset: tuple[str, ...] = ()) -> bool:
     """Cambiar la dirección, el nombre y las etiquetas. False si esa dirección
     ya la tiene otro contacto de la cuenta.
 
@@ -463,21 +474,84 @@ def update(db, account_id, contact_id, *, email: str, name: str,
     previa: entre preguntar y escribir hay sitio para otra escritura, y solo el
     índice ve las dos a la vez.
     """
+    changes: dict[str, Any] = {"email": email.strip(),
+                               "email_normalized": normalize_email(email),
+                               "name": name.strip()[:120],
+                               "tags": tags,
+                               "updated_at": now()}
+    # Columna por columna y no el bloque entero (octubre de 2026): dentro
+    # viven también las listas, que este formulario no trae y no puede borrar.
+    for key, value in (values or {}).items():
+        changes[f"fields.{key}"] = value
+    # Lo que trae la API además (octubre de 2026): listas enteras y el id de su
+    # sistema, ya revisados por quien llama, en la misma escritura.
+    changes.update(extra or {})
+    update: dict[str, Any] = {"$set": changes}
+    if unset:
+        update["$unset"] = {field: "" for field in unset}
     try:
         result = db.contacts.update_one(
-            {"_id": contact_id, "account_id": account_id},
-            {"$set": {"email": email.strip(),
-                      "email_normalized": normalize_email(email),
-                      "name": name.strip()[:120],
-                      "tags": tags,
-                      # El formulario trae todas las columnas, así que aquí sí
-                      # se escribe el bloque entero: vaciar una es dejarla en
-                      # blanco a propósito.
-                      "fields": values or {},
-                      "updated_at": now()}})
+            {"_id": contact_id, "account_id": account_id}, update)
     except DuplicateKeyError:
         return False
     return result.matched_count == 1
+
+
+# ------------------------------------------------------ las listas (octubre de 2026)
+#
+# Varias filas dentro de un mismo contacto (`fields.<LISTA>`), cada una con su
+# id. Las revisa `services/fields.py` antes de llegar aquí; aquí se escriben, y
+# siempre con la cuenta en la consulta.
+
+def set_rows(db, account_id, contact_id, key: str, rows: list[dict[str, Any]]) -> bool:
+    """Reemplazar la lista entera."""
+    return db.contacts.update_one(
+        {"_id": contact_id, "account_id": account_id},
+        {"$set": {f"fields.{key}": rows, "updated_at": now()}}).matched_count == 1
+
+
+def append_rows(db, account_id, contact_id, key: str, rows: list[dict[str, Any]], *,
+                keep: int) -> bool:
+    """Agregar filas al final, dejando las `keep` más nuevas: las de antes se
+    van solas, en la misma escritura."""
+    return db.contacts.update_one(
+        {"_id": contact_id, "account_id": account_id},
+        {"$push": {f"fields.{key}": {"$each": rows, "$slice": -keep}},
+         "$set": {"updated_at": now()}}).matched_count == 1
+
+
+def update_row(db, account_id, contact_id, key: str, row: dict[str, Any]) -> bool:
+    """Cambiar una fila por su id. False si ya no está."""
+    return db.contacts.update_one(
+        {"_id": contact_id, "account_id": account_id, f"fields.{key}.id": row["id"]},
+        {"$set": {f"fields.{key}.$": row, "updated_at": now()}}).matched_count == 1
+
+
+def remove_row(db, account_id, contact_id, key: str, row_id: str) -> bool:
+    """Borrar una fila por su id. False si no estaba."""
+    return db.contacts.update_one(
+        {"_id": contact_id, "account_id": account_id, f"fields.{key}.id": row_id},
+        {"$pull": {f"fields.{key}": {"id": row_id}},
+         "$set": {"updated_at": now()}}).modified_count == 1
+
+
+def drop_list_item(db, account_id, key: str, item_key: str) -> int:
+    """Quitar un dato de todas las filas de una lista, en todos los contactos."""
+    return db.contacts.update_many(
+        {"account_id": account_id, f"fields.{key}.{item_key}": {"$exists": True}},
+        {"$unset": {f"fields.{key}.$[].{item_key}": ""},
+         "$set": {"updated_at": now()}}).modified_count
+
+
+# ------------------------------------------- el id de su sistema (octubre de 2026)
+
+EXTERNAL_ID = re.compile(r"^[A-Za-z0-9._:@-]{1,64}$")
+
+
+def by_external_id(db, account_id, external_id: str) -> dict[str, Any] | None:
+    """Ponerlo y quitarlo va en `update()`, con lo demás del contacto: el
+    índice único dice si ya es de otro."""
+    return db.contacts.find_one({"account_id": account_id, "external_id": external_id})
 
 
 def delete(db, account_id, email: str) -> bool:

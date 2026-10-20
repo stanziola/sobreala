@@ -182,6 +182,8 @@
         <li><a class="api-docs__link" href="#paginacion">Listas largas</a></li>
         <li><a class="api-docs__link" href="#idempotencia">Reintentar sin repetir</a></li>
         <li><a class="api-docs__link" href="#fechas">Fechas y horas</a></li>
+        <li><a class="api-docs__link" href="#listas">Listas dentro de un contacto</a></li>
+        <li><a class="api-docs__link" href="#lienzo">El lienzo en JSON</a></li>
         <li><a class="api-docs__link" href="#fuera">Lo que la API no hace</a></li>
       </ul>
       <p class="api-docs__nav-title">Tu cuenta</p>
@@ -205,6 +207,36 @@
         <li><a class="api-docs__link" href="#patch-fields-key"><span class="api-method api-method--patch">PATCH</span> /fields/{key}</a></li>
         <li><a class="api-docs__link" href="#delete-fields-key"><span class="api-method api-method--delete">DELETE</span> /fields/{key}</a></li>
         <li><a class="api-docs__link" href="#get-suppressions"><span class="api-method api-method--get">GET</span> /suppressions</a></li>
+      </ul>
+      <p class="api-docs__nav-title">Las filas de una lista</p>
+      <ul>
+        <li><a class="api-docs__link" href="#get-contacts-contact_id-lists-key"><span class="api-method api-method--get">GET</span> /contacts/{contact_id}/lists/{key}</a></li>
+        <li><a class="api-docs__link" href="#put-contacts-contact_id-lists-key"><span class="api-method api-method--put">PUT</span> /contacts/{contact_id}/lists/{key}</a></li>
+        <li><a class="api-docs__link" href="#post-contacts-contact_id-lists-key"><span class="api-method api-method--post">POST</span> /contacts/{contact_id}/lists/{key}</a></li>
+        <li><a class="api-docs__link" href="#patch-contacts-contact_id-lists-key-row_id"><span class="api-method api-method--patch">PATCH</span> /contacts/{contact_id}/lists/{key}/{row_id}</a></li>
+        <li><a class="api-docs__link" href="#delete-contacts-contact_id-lists-key-row_id"><span class="api-method api-method--delete">DELETE</span> /contacts/{contact_id}/lists/{key}/{row_id}</a></li>
+      </ul>
+      <p class="api-docs__nav-title">Plantillas</p>
+      <ul>
+        <li><a class="api-docs__link" href="#get-templates"><span class="api-method api-method--get">GET</span> /templates</a></li>
+        <li><a class="api-docs__link" href="#get-templates-template_id"><span class="api-method api-method--get">GET</span> /templates/{template_id}</a></li>
+        <li><a class="api-docs__link" href="#post-templates-template_id-render"><span class="api-method api-method--post">POST</span> /templates/{template_id}/render</a></li>
+        <li><a class="api-docs__link" href="#post-templates-check"><span class="api-method api-method--post">POST</span> /templates/check</a></li>
+        <li><a class="api-docs__link" href="#get-templates-template_id-zip"><span class="api-method api-method--get">GET</span> /templates/{template_id}/zip</a></li>
+        <li><a class="api-docs__link" href="#post-templates"><span class="api-method api-method--post">POST</span> /templates</a></li>
+        <li><a class="api-docs__link" href="#post-templates-import"><span class="api-method api-method--post">POST</span> /templates/import</a></li>
+        <li><a class="api-docs__link" href="#patch-templates-template_id"><span class="api-method api-method--patch">PATCH</span> /templates/{template_id}</a></li>
+        <li><a class="api-docs__link" href="#post-templates-template_id-duplicate"><span class="api-method api-method--post">POST</span> /templates/{template_id}/duplicate</a></li>
+        <li><a class="api-docs__link" href="#delete-templates-template_id"><span class="api-method api-method--delete">DELETE</span> /templates/{template_id}</a></li>
+        <li><a class="api-docs__link" href="#post-templates-move"><span class="api-method api-method--post">POST</span> /templates/move</a></li>
+        <li><a class="api-docs__link" href="#post-images"><span class="api-method api-method--post">POST</span> /images</a></li>
+      </ul>
+      <p class="api-docs__nav-title">Carpetas</p>
+      <ul>
+        <li><a class="api-docs__link" href="#get-folders"><span class="api-method api-method--get">GET</span> /folders</a></li>
+        <li><a class="api-docs__link" href="#post-folders"><span class="api-method api-method--post">POST</span> /folders</a></li>
+        <li><a class="api-docs__link" href="#patch-folders-folder_id"><span class="api-method api-method--patch">PATCH</span> /folders/{folder_id}</a></li>
+        <li><a class="api-docs__link" href="#delete-folders-folder_id"><span class="api-method api-method--delete">DELETE</span> /folders/{folder_id}</a></li>
       </ul>
       <p class="api-docs__nav-title">OpenAPI</p>
       <ul><li><a class="api-docs__link" href="https://app.sobreala.com/api/v1/openapi.json">openapi.json</a></li></ul>
@@ -294,6 +326,7 @@
               <tr><th scope="row"><code>busy</code></th><td>409</td><td>Ya hay una carga de contactos en curso en la cuenta (por la API o una importación del panel). Reintenta en unos segundos.</td></tr>
               <tr><th scope="row"><code>unknown_tag</code></th><td>422</td><td>Hay etiquetas que no existen; <code>tags</code> dice cuáles. Se crean antes con <code>POST /tags</code>.</td></tr>
               <tr><th scope="row"><code>email_taken</code></th><td>409</td><td>Esa dirección ya la tiene otro contacto de la cuenta.</td></tr>
+              <tr><th scope="row"><code>external_id_taken</code></th><td>409</td><td>Ese id de tu sistema ya lo tiene otro contacto de la cuenta.</td></tr>
               <tr><th scope="row"><code>tag_exists</code></th><td>409</td><td>Esa etiqueta ya existe.</td></tr>
               <tr><th scope="row"><code>limit_reached</code></th><td>409</td><td>Se llegó al tope de tu plan (etiquetas, columnas, plantillas, carpetas o fotos).</td></tr>
               <tr><th scope="row"><code>field_exists</code></th><td>409</td><td>Ya hay una columna con esa clave, o es Nombre o Correo, que todo contacto ya trae.</td></tr>
@@ -328,6 +361,56 @@
       <section class="api-doc" id="fechas">
         <h2 class="api-doc__title">Fechas y horas</h2>
 <p>Las fechas salen en UTC, como <strong>2026-10-20T20:00:00Z</strong>. Las que mandas van en ISO 8601 <strong>con su zona</strong>: 2026-10-20T15:00:00-05:00 son las tres de la tarde en Panamá. Una sin zona se rechaza, porque no se sabe de dónde es.</p>      </section>
+      <section class="api-doc" id="listas">
+        <h2 class="api-doc__title">Listas dentro de un contacto</h2>
+<p>Además de columnas de un valor (la ciudad, el número de socio), un contacto puede llevar <strong>listas</strong>: varias filas con los mismos datos, como las transacciones de un socio (fecha, descripción y monto) o los pedidos de un cliente. Se crean como una columna de tipo <code>list</code> con sus datos, caben 2 por cuenta, y cada una guarda hasta 50 filas y 3 KB por contacto. Una lista puede ir vacía: no deja incompleto a nadie.</p><p>Cada fila lleva su <code>id</code>, que se pone solo al crearla y sirve para cambiarla o borrarla sin tocar las demás. Al agregar filas, si pasan de 50, se van las más viejas.</p><p>En una plantilla, <code>*|TRANSACCIONES|*</code> sola escribe una tabla con todas las filas. Para armar cada fila a tu manera, lo que va entre <code>*|#TRANSACCIONES|*</code> y <code>*|/TRANSACCIONES|*</code> se repite una vez por fila, con los datos de esa fila por su clave; lo que va entre <code>*|^TRANSACCIONES|*</code> y <code>*|/TRANSACCIONES|*</code> sale solo cuando no hay filas. En el asunto, una lista no escribe nada.</p><div class="api-code" data-copy-box>
+  <pre><code>*|#TRANSACCIONES|*
+*|FECHA|*: *|DESCRIPCION|*, B/. *|MONTO|*
+*|/TRANSACCIONES|*
+*|^TRANSACCIONES|*
+Este mes no tuviste movimientos.
+*|/TRANSACCIONES|*</code></pre>
+  <button class="api-code__copy" type="button" data-copy="*|#TRANSACCIONES|*
+*|FECHA|*: *|DESCRIPCION|*, B/. *|MONTO|*
+*|/TRANSACCIONES|*
+*|^TRANSACCIONES|*
+Este mes no tuviste movimientos.
+*|/TRANSACCIONES|*"
+          data-copy-done="Copiado" aria-label="Copiar Listas dentro de un contacto">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+      </section>
+      <section class="api-doc" id="lienzo">
+        <h2 class="api-doc__title">El lienzo en JSON</h2>
+<p>Una plantilla del lienzo es una hoja de 600 px de ancho que crece hacia abajo: <code>h</code> es su alto (de 80 a 4,000), <code>bg</code> su color y <code>items</code> lo que lleva encima, hasta 60 cosas. Cada una dice qué es en <code>t</code> y dónde va en <code>x</code>, <code>y</code>, <code>w</code> y <code>h</code>, en píxeles y dentro de la hoja. El correo se arma en tablas al enviarlo, así que lo que se encima tiene que poder cortarse en franjas y columnas.</p><p><strong>text</strong>: <code>text</code> (hasta 2,000 caracteres, con saltos de línea y marcas), <code>font</code> (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, Georgia, Times New Roman, Courier New, Palatino, Garamond, Lucida Sans o Century Gothic), <code>size</code> (de 14 a 72), <code>color</code> (#RRGGBB), <code>bold</code>, <code>italic</code>, <code>align</code> (left, center o right), <code>line</code> (de 1 a 2.5) y <code>list</code> (con viñetas). <strong>button</strong>: <code>text</code> (hasta 60), <code>href</code> (https:// o mailto:), <code>bg</code>, <code>radius</code> (de 0 a 60) y la misma letra que un texto. <strong>image</strong>: <code>name</code> (el que devuelve <code>POST /images</code>), <code>alt</code> (obligatorio), <code>href</code>, <code>fit</code> (cover o contain), <code>crop</code> ([x, y, ancho, alto], de 0 a 1) y <code>rot</code> (grados). <strong>shape</strong>: <code>shape</code> (rect, line, ellipse, triangle, star o arrow), <code>bg</code>, <code>radius</code> y <code>rot</code>; una línea mide de 1 a 12 px de alto.</p><p>Se guarda solo si arma bien el correo y pasa la revisión antispam, igual que en el panel: entre otras cosas, al menos 200 caracteres de texto, poca imagen, pocos enlaces y nada de acortadores. <code>POST /templates/check</code> dice cómo va cada regla sin guardar nada. Lo más cómodo es armarla en el panel y leerla después con <code>GET /templates/{template_id}</code>.</p><div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;h&#34;: 420,
+  &#34;bg&#34;: &#34;#FFFFFF&#34;,
+  &#34;items&#34;: [
+    {&#34;t&#34;: &#34;text&#34;, &#34;x&#34;: 40, &#34;y&#34;: 40, &#34;w&#34;: 520, &#34;h&#34;: 120,
+     &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos.&#34;,
+     &#34;font&#34;: &#34;Arial&#34;, &#34;size&#34;: 18, &#34;color&#34;: &#34;#18181B&#34;},
+    {&#34;t&#34;: &#34;button&#34;, &#34;x&#34;: 40, &#34;y&#34;: 320, &#34;w&#34;: 240, &#34;h&#34;: 48,
+     &#34;text&#34;: &#34;Ver mi cuenta&#34;, &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+     &#34;font&#34;: &#34;Arial&#34;, &#34;size&#34;: 16, &#34;color&#34;: &#34;#FFFFFF&#34;, &#34;bg&#34;: &#34;#31A9E8&#34;}
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;h&#34;: 420,
+  &#34;bg&#34;: &#34;#FFFFFF&#34;,
+  &#34;items&#34;: [
+    {&#34;t&#34;: &#34;text&#34;, &#34;x&#34;: 40, &#34;y&#34;: 40, &#34;w&#34;: 520, &#34;h&#34;: 120,
+     &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos.&#34;,
+     &#34;font&#34;: &#34;Arial&#34;, &#34;size&#34;: 18, &#34;color&#34;: &#34;#18181B&#34;},
+    {&#34;t&#34;: &#34;button&#34;, &#34;x&#34;: 40, &#34;y&#34;: 320, &#34;w&#34;: 240, &#34;h&#34;: 48,
+     &#34;text&#34;: &#34;Ver mi cuenta&#34;, &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+     &#34;font&#34;: &#34;Arial&#34;, &#34;size&#34;: 16, &#34;color&#34;: &#34;#FFFFFF&#34;, &#34;bg&#34;: &#34;#31A9E8&#34;}
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar El lienzo en JSON">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+      </section>
       <section class="api-doc" id="fuera">
         <h2 class="api-doc__title">Lo que la API no hace</h2>
 <p>Hay cosas que se hacen solo en el panel, porque son de una persona y no de un sistema: la contraseña y el segundo factor, los usuarios, pagar y cambiar de plan, conectar dominios y confirmar remitentes, crear llaves y avisos, y eliminar la cuenta.</p>      </section>
@@ -566,13 +649,13 @@ No pide llave.
       </section>
       <section class="api-doc" id="contactos">
         <h2 class="api-doc__title">Contactos</h2>
-        <p>Tu lista: cada persona una sola vez por su correo, con sus etiquetas y tus columnas. Cargar es actualizar: si la dirección ya está, se le suma lo nuevo y no se duplica. Las etiquetas y las columnas se crean antes de usarse, y las columnas son obligatorias: a un contacto sin todas no se le envía nada.</p>
+        <p>Tu lista: cada persona una sola vez por su correo, con sus etiquetas y tus columnas. Cargar es actualizar: si la dirección ya está, se le suma lo nuevo y no se duplica. Las etiquetas y las columnas se crean antes de usarse, y las columnas son obligatorias: a un contacto sin todas no se le envía nada (las listas no cuentan: pueden ir vacías). Cada contacto tiene su <code>id</code>, y puede llevar además <strong>el id de tu sistema</strong> (<code>external_id</code>: tu número de socio o de cliente, hasta 64 letras, números y . _ : @ -), único en la cuenta, para encontrarlo por él aunque cambie de correo.</p>
 
         <article class="api-endpoint" id="get-contacts">
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/contacts</code></h3>
           <p class="api-endpoint__title">Listar contactos</p>
-          <p>De los más nuevos a los más viejos. Cada uno dice si puede recibir (<code>status</code>: active, suppressed o invalid) y si tiene todas sus columnas (<code>complete</code>).</p>
+          <p>De los más nuevos a los más viejos. Cada uno dice si puede recibir (<code>status</code>: active, suppressed o invalid) y si tiene todas sus columnas (<code>complete</code>). Sus listas vienen enteras dentro de <code>fields</code>.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </p>
 <p class="api-endpoint__label">En la dirección</p>
@@ -583,6 +666,11 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
         <th scope="row"><code>email</code><br>
           <span class="api-type">texto</span></th>
         <td>Uno exacto.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>external_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>El que tiene ese id de tu sistema.</td>
       </tr>
       <tr>
         <th scope="row"><code>search</code><br>
@@ -623,6 +711,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
   &#34;data&#34;: [
     {
       &#34;id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+      &#34;external_id&#34;: &#34;1043&#34;,
       &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
       &#34;name&#34;: &#34;Ana Pérez&#34;,
       &#34;tags&#34;: [
@@ -630,7 +719,20 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
       ],
       &#34;fields&#34;: {
         &#34;CIUDAD&#34;: &#34;Santiago&#34;,
-        &#34;NUMERO_DE_SOCIO&#34;: &#34;1043&#34;
+        &#34;TRANSACCIONES&#34;: [
+          {
+            &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+            &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+            &#34;MONTO&#34;: &#34;150&#34;,
+            &#34;id&#34;: &#34;3fa9c1&#34;
+          },
+          {
+            &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+            &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+            &#34;MONTO&#34;: &#34;85.5&#34;,
+            &#34;id&#34;: &#34;b07e42&#34;
+          }
+        ]
       },
       &#34;status&#34;: &#34;active&#34;,
       &#34;suppression&#34;: null,
@@ -651,6 +753,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
   &#34;data&#34;: [
     {
       &#34;id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+      &#34;external_id&#34;: &#34;1043&#34;,
       &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
       &#34;name&#34;: &#34;Ana Pérez&#34;,
       &#34;tags&#34;: [
@@ -658,7 +761,20 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
       ],
       &#34;fields&#34;: {
         &#34;CIUDAD&#34;: &#34;Santiago&#34;,
-        &#34;NUMERO_DE_SOCIO&#34;: &#34;1043&#34;
+        &#34;TRANSACCIONES&#34;: [
+          {
+            &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+            &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+            &#34;MONTO&#34;: &#34;150&#34;,
+            &#34;id&#34;: &#34;3fa9c1&#34;
+          },
+          {
+            &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+            &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+            &#34;MONTO&#34;: &#34;85.5&#34;,
+            &#34;id&#34;: &#34;b07e42&#34;
+          }
+        ]
       },
       &#34;status&#34;: &#34;active&#34;,
       &#34;suppression&#34;: null,
@@ -701,6 +817,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
           <div class="api-code" data-copy-box>
   <pre><code>{
   &#34;id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+  &#34;external_id&#34;: &#34;1043&#34;,
   &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
   &#34;name&#34;: &#34;Ana Pérez&#34;,
   &#34;tags&#34;: [
@@ -708,7 +825,20 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
   ],
   &#34;fields&#34;: {
     &#34;CIUDAD&#34;: &#34;Santiago&#34;,
-    &#34;NUMERO_DE_SOCIO&#34;: &#34;1043&#34;
+    &#34;TRANSACCIONES&#34;: [
+      {
+        &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+        &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+        &#34;MONTO&#34;: &#34;150&#34;,
+        &#34;id&#34;: &#34;3fa9c1&#34;
+      },
+      {
+        &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+        &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+        &#34;MONTO&#34;: &#34;85.5&#34;,
+        &#34;id&#34;: &#34;b07e42&#34;
+      }
+    ]
   },
   &#34;status&#34;: &#34;active&#34;,
   &#34;suppression&#34;: null,
@@ -724,6 +854,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
 }</code></pre>
   <button class="api-code__copy" type="button" data-copy="{
   &#34;id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+  &#34;external_id&#34;: &#34;1043&#34;,
   &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
   &#34;name&#34;: &#34;Ana Pérez&#34;,
   &#34;tags&#34;: [
@@ -731,7 +862,20 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
   ],
   &#34;fields&#34;: {
     &#34;CIUDAD&#34;: &#34;Santiago&#34;,
-    &#34;NUMERO_DE_SOCIO&#34;: &#34;1043&#34;
+    &#34;TRANSACCIONES&#34;: [
+      {
+        &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+        &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+        &#34;MONTO&#34;: &#34;150&#34;,
+        &#34;id&#34;: &#34;3fa9c1&#34;
+      },
+      {
+        &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+        &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+        &#34;MONTO&#34;: &#34;85.5&#34;,
+        &#34;id&#34;: &#34;b07e42&#34;
+      }
+    ]
   },
   &#34;status&#34;: &#34;active&#34;,
   &#34;suppression&#34;: null,
@@ -754,7 +898,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/contacts</code></h3>
           <p class="api-endpoint__title">Cargar contactos</p>
-          <p>De 1 a 1,000 por vez. Los nuevos entran si caben en tu plan y traen todas tus columnas; los que ya están se actualizan (las etiquetas se suman, nunca se quitan). Cada fila dice qué le pasó en <code>results</code>, en el orden en que llegó: <code>added</code>, <code>updated</code> o <code>rejected</code> con su motivo (invalid_email, duplicate, unknown_tag, unknown_field, bad_value, incomplete, limit). Una dirección dada de baja se guarda pero no recibe (<code>warning: suppressed</code>), y una de un dominio que no recibe correo entra marcada (<code>warning: undeliverable</code>). Hasta 5,000 filas por minuto.</p>
+          <p>De 1 a 1,000 por vez. Los nuevos entran si caben en tu plan y traen todas tus columnas; los que ya están se actualizan (las etiquetas se suman, nunca se quitan, y una lista que llega reemplaza la que tenía). A quien ya está se le encuentra por su <code>external_id</code> si lo traes y existe (y entonces su correo puede cambiar), y si no, por su correo. Cada fila dice qué le pasó en <code>results</code>, en el orden en que llegó: <code>added</code>, <code>updated</code> o <code>rejected</code> con su motivo: bad_row, invalid_email, duplicate, bad_name, bad_tags, unknown_tag, bad_external_id, unknown_field, bad_value, bad_list, incomplete (con <code>missing</code>), limit, external_id_conflict (ese correo ya es de un contacto con otro id de tu sistema) o email_taken (el contacto de ese id pasaría a un correo que ya es de otro). Una dirección dada de baja se guarda pero no recibe (<code>warning: suppressed</code>), y una de un dominio que no recibe correo entra marcada (<code>warning: undeliverable</code>). Hasta 5,000 filas por minuto.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -764,7 +908,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
       <tr>
         <th scope="row"><code>contacts</code> <span class="api-required">obligatorio</span><br>
           <span class="api-type">lista</span></th>
-        <td>Cada uno con <code>email</code>, y si quieres <code>name</code>, <code>tags</code> (etiquetas que ya existen) y <code>fields</code> (tus columnas por su clave).</td>
+        <td>Cada uno con <code>email</code>, y si quieres <code>name</code>, <code>tags</code> (etiquetas que ya existen), <code>external_id</code> y <code>fields</code> (tus columnas por su clave; una lista va entera, con sus filas).</td>
       </tr>
       <tr>
         <th scope="row"><code>consent</code> <span class="api-required">obligatorio</span><br>
@@ -786,18 +930,26 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   -H &#34;Content-Type: application/json&#34; \
   -d &#39;{
   &#34;consent&#34;: {
-    &#34;source&#34;: &#34;customers&#34;,
-    &#34;note&#34;: &#34;Clientes de la tienda&#34;
+    &#34;source&#34;: &#34;members&#34;,
+    &#34;note&#34;: &#34;Sistema de socios&#34;
   },
   &#34;tags&#34;: [
-    &#34;Clientes&#34;
+    &#34;Socios&#34;
   ],
   &#34;contacts&#34;: [
     {
       &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
       &#34;name&#34;: &#34;Ana Pérez&#34;,
+      &#34;external_id&#34;: &#34;1043&#34;,
       &#34;fields&#34;: {
-        &#34;CIUDAD&#34;: &#34;Santiago&#34;
+        &#34;CIUDAD&#34;: &#34;Santiago&#34;,
+        &#34;TRANSACCIONES&#34;: [
+          {
+            &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+            &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+            &#34;MONTO&#34;: 150
+          }
+        ]
       }
     },
     {
@@ -811,18 +963,26 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   -H &#34;Content-Type: application/json&#34; \
   -d &#39;{
   &#34;consent&#34;: {
-    &#34;source&#34;: &#34;customers&#34;,
-    &#34;note&#34;: &#34;Clientes de la tienda&#34;
+    &#34;source&#34;: &#34;members&#34;,
+    &#34;note&#34;: &#34;Sistema de socios&#34;
   },
   &#34;tags&#34;: [
-    &#34;Clientes&#34;
+    &#34;Socios&#34;
   ],
   &#34;contacts&#34;: [
     {
       &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
       &#34;name&#34;: &#34;Ana Pérez&#34;,
+      &#34;external_id&#34;: &#34;1043&#34;,
       &#34;fields&#34;: {
-        &#34;CIUDAD&#34;: &#34;Santiago&#34;
+        &#34;CIUDAD&#34;: &#34;Santiago&#34;,
+        &#34;TRANSACCIONES&#34;: [
+          {
+            &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+            &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+            &#34;MONTO&#34;: 150
+          }
+        ]
       }
     },
     {
@@ -882,7 +1042,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <h3 class="api-endpoint__route"><span class="api-method api-method--patch">PATCH</span>
             <code>/contacts/{contact_id}</code></h3>
           <p class="api-endpoint__title">Cambiar un contacto</p>
-          <p>Solo lo que mandes: <code>email</code>, <code>name</code>, <code>tags</code> (reemplazan las que tenía) y <code>fields</code> (se mezclan con las que tenía). Como en el panel, queda con todas sus columnas llenas. De dónde salió y cuándo entró no se cambian.</p>
+          <p>Solo lo que mandes: <code>email</code>, <code>name</code>, <code>external_id</code> (null lo quita), <code>tags</code> (reemplazan las que tenía) y <code>fields</code> (las columnas se mezclan con las que tenía, y una lista que llega reemplaza la suya). Como en el panel, queda con todas sus columnas llenas. De dónde salió y cuándo entró no se cambian.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -900,6 +1060,11 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
         <td>Hasta 120 caracteres.</td>
       </tr>
       <tr>
+        <th scope="row"><code>external_id</code><br>
+          <span class="api-type">texto o null</span></th>
+        <td>Si ya es de otro contacto: 409 <code>external_id_taken</code>.</td>
+      </tr>
+      <tr>
         <th scope="row"><code>tags</code><br>
           <span class="api-type">lista de textos</span></th>
         <td>Etiquetas que ya existen.</td>
@@ -907,7 +1072,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
       <tr>
         <th scope="row"><code>fields</code><br>
           <span class="api-type">objeto</span></th>
-        <td>Tus columnas por su clave.</td>
+        <td>Tus columnas por su clave, y tus listas enteras.</td>
       </tr>
     </tbody>
   </table>
@@ -946,6 +1111,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <div class="api-code" data-copy-box>
   <pre><code>{
   &#34;id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+  &#34;external_id&#34;: &#34;1043&#34;,
   &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
   &#34;name&#34;: &#34;Ana Pérez&#34;,
   &#34;tags&#34;: [
@@ -954,18 +1120,36 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   ],
   &#34;fields&#34;: {
     &#34;CIUDAD&#34;: &#34;Las Palmas&#34;,
-    &#34;NUMERO_DE_SOCIO&#34;: &#34;1043&#34;
+    &#34;TRANSACCIONES&#34;: [
+      {
+        &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+        &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+        &#34;MONTO&#34;: &#34;150&#34;,
+        &#34;id&#34;: &#34;3fa9c1&#34;
+      },
+      {
+        &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+        &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+        &#34;MONTO&#34;: &#34;85.5&#34;,
+        &#34;id&#34;: &#34;b07e42&#34;
+      }
+    ]
   },
   &#34;status&#34;: &#34;active&#34;,
   &#34;suppression&#34;: null,
   &#34;complete&#34;: true,
-  &#34;consent&#34;: null,
+  &#34;consent&#34;: {
+    &#34;source&#34;: &#34;members&#34;,
+    &#34;note&#34;: &#34;Lista de socios 2026&#34;,
+    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;
+  },
   &#34;added_by&#34;: &#34;api&#34;,
   &#34;created_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
   &#34;updated_at&#34;: &#34;2026-10-17T19:02:10Z&#34;
 }</code></pre>
   <button class="api-code__copy" type="button" data-copy="{
   &#34;id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+  &#34;external_id&#34;: &#34;1043&#34;,
   &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
   &#34;name&#34;: &#34;Ana Pérez&#34;,
   &#34;tags&#34;: [
@@ -974,12 +1158,29 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   ],
   &#34;fields&#34;: {
     &#34;CIUDAD&#34;: &#34;Las Palmas&#34;,
-    &#34;NUMERO_DE_SOCIO&#34;: &#34;1043&#34;
+    &#34;TRANSACCIONES&#34;: [
+      {
+        &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+        &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+        &#34;MONTO&#34;: &#34;150&#34;,
+        &#34;id&#34;: &#34;3fa9c1&#34;
+      },
+      {
+        &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+        &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+        &#34;MONTO&#34;: &#34;85.5&#34;,
+        &#34;id&#34;: &#34;b07e42&#34;
+      }
+    ]
   },
   &#34;status&#34;: &#34;active&#34;,
   &#34;suppression&#34;: null,
   &#34;complete&#34;: true,
-  &#34;consent&#34;: null,
+  &#34;consent&#34;: {
+    &#34;source&#34;: &#34;members&#34;,
+    &#34;note&#34;: &#34;Lista de socios 2026&#34;,
+    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;
+  },
   &#34;added_by&#34;: &#34;api&#34;,
   &#34;created_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
   &#34;updated_at&#34;: &#34;2026-10-17T19:02:10Z&#34;
@@ -1153,7 +1354,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/fields</code></h3>
           <p class="api-endpoint__title">Columnas</p>
-          <p>Tus columnas: la clave con que se nombran (<code>*|CIUDAD|*</code> en una plantilla), el nombre, el tipo y cuántos contactos la tienen llena.</p>
+          <p>Tus columnas: la clave con que se nombran (<code>*|CIUDAD|*</code> en una plantilla), el nombre, el tipo y cuántos contactos la tienen llena. Una lista trae sus datos en <code>items</code>, y <code>filled</code> cuenta a los que tienen al menos una fila.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </p>
           <p class="api-endpoint__label">Pedido</p>
@@ -1175,9 +1376,33 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
       &#34;label&#34;: &#34;Ciudad&#34;,
       &#34;type&#34;: &#34;text&#34;,
       &#34;filled&#34;: 790
+    },
+    {
+      &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+      &#34;label&#34;: &#34;Transacciones&#34;,
+      &#34;type&#34;: &#34;list&#34;,
+      &#34;filled&#34;: 412,
+      &#34;items&#34;: [
+        {
+          &#34;key&#34;: &#34;FECHA&#34;,
+          &#34;label&#34;: &#34;Fecha&#34;,
+          &#34;type&#34;: &#34;date&#34;
+        },
+        {
+          &#34;key&#34;: &#34;DESCRIPCION&#34;,
+          &#34;label&#34;: &#34;Descripción&#34;,
+          &#34;type&#34;: &#34;text&#34;
+        },
+        {
+          &#34;key&#34;: &#34;MONTO&#34;,
+          &#34;label&#34;: &#34;Monto&#34;,
+          &#34;type&#34;: &#34;number&#34;
+        }
+      ]
     }
   ],
-  &#34;limit&#34;: 5
+  &#34;limit&#34;: 5,
+  &#34;lists_max&#34;: 2
 }</code></pre>
   <button class="api-code__copy" type="button" data-copy="{
   &#34;data&#34;: [
@@ -1186,9 +1411,33 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
       &#34;label&#34;: &#34;Ciudad&#34;,
       &#34;type&#34;: &#34;text&#34;,
       &#34;filled&#34;: 790
+    },
+    {
+      &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+      &#34;label&#34;: &#34;Transacciones&#34;,
+      &#34;type&#34;: &#34;list&#34;,
+      &#34;filled&#34;: 412,
+      &#34;items&#34;: [
+        {
+          &#34;key&#34;: &#34;FECHA&#34;,
+          &#34;label&#34;: &#34;Fecha&#34;,
+          &#34;type&#34;: &#34;date&#34;
+        },
+        {
+          &#34;key&#34;: &#34;DESCRIPCION&#34;,
+          &#34;label&#34;: &#34;Descripción&#34;,
+          &#34;type&#34;: &#34;text&#34;
+        },
+        {
+          &#34;key&#34;: &#34;MONTO&#34;,
+          &#34;label&#34;: &#34;Monto&#34;,
+          &#34;type&#34;: &#34;number&#34;
+        }
+      ]
     }
   ],
-  &#34;limit&#34;: 5
+  &#34;limit&#34;: 5,
+  &#34;lists_max&#34;: 2
 }"
           data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>
@@ -1199,7 +1448,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/fields</code></h3>
           <p class="api-endpoint__title">Crear una columna</p>
-          <p>La clave sale del nombre: «Número de socio» es NUMERO_DE_SOCIO. Recién creada, todos tus contactos quedan incompletos hasta que la tengan.</p>
+          <p>La clave sale del nombre: «Número de socio» es NUMERO_DE_SOCIO. Recién creada, todos tus contactos quedan incompletos hasta que la tengan. Una lista (<code>type: list</code>) lleva sus datos en <code>items</code>, cuenta como una columna de tu plan y no deja incompleto a nadie.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -1214,7 +1463,12 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
       <tr>
         <th scope="row"><code>type</code> <span class="api-required">obligatorio</span><br>
           <span class="api-type">texto</span></th>
-        <td>text, number, date o yesno.</td>
+        <td>text, number, date, yesno o list.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>items</code><br>
+          <span class="api-type">lista</span></th>
+        <td>Solo para una lista: de 1 a 6 datos, cada uno con <code>label</code> y <code>type</code> (text, number, date o yesno).</td>
       </tr>
     </tbody>
   </table>
@@ -1225,15 +1479,43 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
   -H &#34;Content-Type: application/json&#34; \
   -d &#39;{
-  &#34;label&#34;: &#34;Número de socio&#34;,
-  &#34;type&#34;: &#34;text&#34;
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;type&#34;: &#34;list&#34;,
+  &#34;items&#34;: [
+    {
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ]
 }&#39;</code></pre>
   <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/fields \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
   -H &#34;Content-Type: application/json&#34; \
   -d &#39;{
-  &#34;label&#34;: &#34;Número de socio&#34;,
-  &#34;type&#34;: &#34;text&#34;
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;type&#34;: &#34;list&#34;,
+  &#34;items&#34;: [
+    {
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ]
 }&#39;"
           data-copy-done="Copiado" aria-label="Copiar POST /fields">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>
@@ -1242,16 +1524,50 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <p class="api-endpoint__label">Respuesta 201</p>
           <div class="api-code" data-copy-box>
   <pre><code>{
-  &#34;key&#34;: &#34;NUMERO_DE_SOCIO&#34;,
-  &#34;label&#34;: &#34;Número de socio&#34;,
-  &#34;type&#34;: &#34;text&#34;,
-  &#34;filled&#34;: 0
+  &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;type&#34;: &#34;list&#34;,
+  &#34;filled&#34;: 0,
+  &#34;items&#34;: [
+    {
+      &#34;key&#34;: &#34;FECHA&#34;,
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;key&#34;: &#34;DESCRIPCION&#34;,
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;key&#34;: &#34;MONTO&#34;,
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ]
 }</code></pre>
   <button class="api-code__copy" type="button" data-copy="{
-  &#34;key&#34;: &#34;NUMERO_DE_SOCIO&#34;,
-  &#34;label&#34;: &#34;Número de socio&#34;,
-  &#34;type&#34;: &#34;text&#34;,
-  &#34;filled&#34;: 0
+  &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;type&#34;: &#34;list&#34;,
+  &#34;filled&#34;: 0,
+  &#34;items&#34;: [
+    {
+      &#34;key&#34;: &#34;FECHA&#34;,
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;key&#34;: &#34;DESCRIPCION&#34;,
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;key&#34;: &#34;MONTO&#34;,
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ]
 }"
           data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>
@@ -1261,8 +1577,8 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
         <article class="api-endpoint" id="patch-fields-key">
           <h3 class="api-endpoint__route"><span class="api-method api-method--patch">PATCH</span>
             <code>/fields/{key}</code></h3>
-          <p class="api-endpoint__title">Cambiar el tipo de una columna</p>
-          <p>Solo el tipo, y solo si todo lo escrito encaja en el nuevo: si no, 409 dice cuántos contactos lo impiden. El nombre no se cambia, porque es lo que nombran tus plantillas.</p>
+          <p class="api-endpoint__title">Cambiar una columna</p>
+          <p>A una columna, el tipo, y solo si todo lo escrito encaja en el nuevo: si no, 409 dice cuántos contactos lo impiden. A una lista, un dato por vez: <code>add</code> lo agrega y <code>remove</code> lo quita (y lo borra de todas las filas de todos tus contactos). El nombre no se cambia, porque es lo que nombran tus plantillas.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -1270,9 +1586,19 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   <table>
     <tbody>
       <tr>
-        <th scope="row"><code>type</code> <span class="api-required">obligatorio</span><br>
+        <th scope="row"><code>type</code><br>
           <span class="api-type">texto</span></th>
-        <td>text, number, date o yesno.</td>
+        <td>A una columna: text, number, date o yesno.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>add</code><br>
+          <span class="api-type">objeto</span></th>
+        <td>A una lista: el dato nuevo, con <code>label</code> y <code>type</code>.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>remove</code><br>
+          <span class="api-type">texto</span></th>
+        <td>A una lista: la clave del dato que se quita. Le queda al menos uno.</td>
       </tr>
     </tbody>
   </table>
@@ -1318,7 +1644,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <h3 class="api-endpoint__route"><span class="api-method api-method--delete">DELETE</span>
             <code>/fields/{key}</code></h3>
           <p class="api-endpoint__title">Borrar una columna</p>
-          <p>Y lo que los contactos tenían escrito en ella.</p>
+          <p>Y lo que los contactos tenían escrito en ella (de una lista, todas sus filas).</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
           <p class="api-endpoint__label">Pedido</p>
@@ -1415,6 +1741,2008 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
     }
   ],
   &#34;next_cursor&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+      </section>
+      <section class="api-doc" id="filas">
+        <h2 class="api-doc__title">Las filas de una lista</h2>
+        <p>Las filas de una lista de un contacto, sin tocar lo demás: verlas, cambiarlas enteras, agregar al final, o cambiar y borrar una por su <code>id</code>. <code>{key}</code> es la clave de la lista (TRANSACCIONES). Cómo se crea una lista y cómo sale en un correo está en «Listas dentro de un contacto».</p>
+
+        <article class="api-endpoint" id="get-contacts-contact_id-lists-key">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/contacts/{contact_id}/lists/{key}</code></h3>
+          <p class="api-endpoint__title">Ver una lista</p>
+          <p>Sus datos y sus filas, de la más vieja a la más nueva.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /contacts/{contact_id}/lists/{key}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;items&#34;: [
+    {
+      &#34;key&#34;: &#34;FECHA&#34;,
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;key&#34;: &#34;DESCRIPCION&#34;,
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;key&#34;: &#34;MONTO&#34;,
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ],
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+      &#34;MONTO&#34;: &#34;150&#34;,
+      &#34;id&#34;: &#34;3fa9c1&#34;
+    },
+    {
+      &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+      &#34;MONTO&#34;: &#34;85.5&#34;,
+      &#34;id&#34;: &#34;b07e42&#34;
+    }
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;items&#34;: [
+    {
+      &#34;key&#34;: &#34;FECHA&#34;,
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;key&#34;: &#34;DESCRIPCION&#34;,
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;key&#34;: &#34;MONTO&#34;,
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ],
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+      &#34;MONTO&#34;: &#34;150&#34;,
+      &#34;id&#34;: &#34;3fa9c1&#34;
+    },
+    {
+      &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+      &#34;MONTO&#34;: &#34;85.5&#34;,
+      &#34;id&#34;: &#34;b07e42&#34;
+    }
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="put-contacts-contact_id-lists-key">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--put">PUT</span>
+            <code>/contacts/{contact_id}/lists/{key}</code></h3>
+          <p class="api-endpoint__title">Cambiar la lista entera</p>
+          <p>Las filas que mandes reemplazan a todas las que tenía, y <code>[]</code> la vacía. Una fila que trae su <code>id</code> lo conserva.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>rows</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">lista</span></th>
+        <td>Hasta 50 filas, cada una con sus datos por su clave y al menos uno.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X PUT https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+      &#34;MONTO&#34;: 150
+    }
+  ]
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X PUT https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+      &#34;MONTO&#34;: 150
+    }
+  ]
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar PUT /contacts/{contact_id}/lists/{key}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;items&#34;: [
+    {
+      &#34;key&#34;: &#34;FECHA&#34;,
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;key&#34;: &#34;DESCRIPCION&#34;,
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;key&#34;: &#34;MONTO&#34;,
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ],
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+      &#34;MONTO&#34;: &#34;150&#34;,
+      &#34;id&#34;: &#34;3fa9c1&#34;
+    }
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;items&#34;: [
+    {
+      &#34;key&#34;: &#34;FECHA&#34;,
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;key&#34;: &#34;DESCRIPCION&#34;,
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;key&#34;: &#34;MONTO&#34;,
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ],
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+      &#34;MONTO&#34;: &#34;150&#34;,
+      &#34;id&#34;: &#34;3fa9c1&#34;
+    }
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-contacts-contact_id-lists-key">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/contacts/{contact_id}/lists/{key}</code></h3>
+          <p class="api-endpoint__title">Agregar filas</p>
+          <p>Al final, en una sola escritura. Si la lista pasa de 50 filas (o de <code>keep_last</code>), se van las más viejas.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>rows</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">lista</span></th>
+        <td>Las filas nuevas.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>keep_last</code><br>
+          <span class="api-type">entero</span></th>
+        <td>Cuántas dejar, de 1 a 50. 50 si no se dice.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+      &#34;MONTO&#34;: 85.5
+    }
+  ]
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+      &#34;MONTO&#34;: 85.5
+    }
+  ]
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /contacts/{contact_id}/lists/{key}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 201</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;items&#34;: [
+    {
+      &#34;key&#34;: &#34;FECHA&#34;,
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;key&#34;: &#34;DESCRIPCION&#34;,
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;key&#34;: &#34;MONTO&#34;,
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ],
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+      &#34;MONTO&#34;: &#34;150&#34;,
+      &#34;id&#34;: &#34;3fa9c1&#34;
+    },
+    {
+      &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+      &#34;MONTO&#34;: &#34;85.5&#34;,
+      &#34;id&#34;: &#34;b07e42&#34;
+    }
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;key&#34;: &#34;TRANSACCIONES&#34;,
+  &#34;label&#34;: &#34;Transacciones&#34;,
+  &#34;items&#34;: [
+    {
+      &#34;key&#34;: &#34;FECHA&#34;,
+      &#34;label&#34;: &#34;Fecha&#34;,
+      &#34;type&#34;: &#34;date&#34;
+    },
+    {
+      &#34;key&#34;: &#34;DESCRIPCION&#34;,
+      &#34;label&#34;: &#34;Descripción&#34;,
+      &#34;type&#34;: &#34;text&#34;
+    },
+    {
+      &#34;key&#34;: &#34;MONTO&#34;,
+      &#34;label&#34;: &#34;Monto&#34;,
+      &#34;type&#34;: &#34;number&#34;
+    }
+  ],
+  &#34;rows&#34;: [
+    {
+      &#34;FECHA&#34;: &#34;2026-10-01&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Depósito&#34;,
+      &#34;MONTO&#34;: &#34;150&#34;,
+      &#34;id&#34;: &#34;3fa9c1&#34;
+    },
+    {
+      &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+      &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+      &#34;MONTO&#34;: &#34;85.5&#34;,
+      &#34;id&#34;: &#34;b07e42&#34;
+    }
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="patch-contacts-contact_id-lists-key-row_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--patch">PATCH</span>
+            <code>/contacts/{contact_id}/lists/{key}/{row_id}</code></h3>
+          <p class="api-endpoint__title">Cambiar una fila</p>
+          <p>Los datos que mandes, sobre los que tenía; null borra uno. La fila se queda en su sitio y con su <code>id</code>.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>MONTO</code><br>
+          <span class="api-type">texto o número</span></th>
+        <td>Cada dato por su clave, como en la lista.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key}/{row_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;MONTO&#34;: 90
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X PATCH https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key}/{row_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;MONTO&#34;: 90
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar PATCH /contacts/{contact_id}/lists/{key}/{row_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+  &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+  &#34;MONTO&#34;: &#34;90&#34;,
+  &#34;id&#34;: &#34;b07e42&#34;
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;FECHA&#34;: &#34;2026-10-09&#34;,
+  &#34;DESCRIPCION&#34;: &#34;Pago de préstamo&#34;,
+  &#34;MONTO&#34;: &#34;90&#34;,
+  &#34;id&#34;: &#34;b07e42&#34;
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="delete-contacts-contact_id-lists-key-row_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--delete">DELETE</span>
+            <code>/contacts/{contact_id}/lists/{key}/{row_id}</code></h3>
+          <p class="api-endpoint__title">Borrar una fila</p>
+          <p>Las demás se quedan como estaban.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key}/{row_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X DELETE https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key}/{row_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar DELETE /contacts/{contact_id}/lists/{key}/{row_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;b07e42&#34;,
+  &#34;deleted&#34;: true
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;b07e42&#34;,
+  &#34;deleted&#34;: true
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+      </section>
+      <section class="api-doc" id="plantillas">
+        <h2 class="api-doc__title">Plantillas</h2>
+        <p>Las plantillas de tu cuenta, las mismas de Mis plantillas. Las del lienzo (<code>source: canvas</code>) se crean, se cambian y se cargan en ZIP por aquí, con las mismas reglas que al guardar en el panel; las cargadas en HTML (<code>upload</code>) y las prediseñadas de antes (<code>builtin</code>) se leen, se arman, se mueven, se duplican y se borran. Cada una puede elegir de quién sale (<code>send_from</code>, el id de un remitente de <code>GET /senders</code>) y a dónde se responde (<code>reply_to</code>); sin elegir, van los predeterminados. Caben 300 por cuenta.</p>
+
+        <article class="api-endpoint" id="get-templates">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/templates</code></h3>
+          <p class="api-endpoint__title">Listar plantillas</p>
+          <p>De las más nuevas a las más viejas, sin su contenido.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>folder_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Las de esa carpeta, o <code>none</code> para las que no tienen.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>source</code><br>
+          <span class="api-type">texto</span></th>
+        <td>canvas, upload o builtin.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>limit</code><br>
+          <span class="api-type">entero</span></th>
+        <td>De 1 a 100. 25 si no se dice.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>cursor</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Para la página siguiente.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/templates?folder_id=none \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/templates?folder_id=none \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /templates">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+      &#34;name&#34;: &#34;Estado de cuenta&#34;,
+      &#34;source&#34;: &#34;canvas&#34;,
+      &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+      &#34;send_from&#34;: null,
+      &#34;reply_to&#34;: null,
+      &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+      &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;
+    }
+  ],
+  &#34;next_cursor&#34;: null,
+  &#34;limit&#34;: 300
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+      &#34;name&#34;: &#34;Estado de cuenta&#34;,
+      &#34;source&#34;: &#34;canvas&#34;,
+      &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+      &#34;send_from&#34;: null,
+      &#34;reply_to&#34;: null,
+      &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+      &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;
+    }
+  ],
+  &#34;next_cursor&#34;: null,
+  &#34;limit&#34;: 300
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-templates-template_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/templates/{template_id}</code></h3>
+          <p class="api-endpoint__title">Una plantilla</p>
+          <p>Con las marcas que nombra (<code>marks</code>), los bloques que repite o esconden (<code>blocks</code>) y lo que tiene dentro: el <code>canvas</code> y la dirección de cada foto en <code>images</code> si es del lienzo, el <code>html</code> si se cargó en HTML, o <code>template</code> y <code>fields</code> si es una prediseñada.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/templates/{template_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/templates/{template_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /templates/{template_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-templates-template_id-render">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/templates/{template_id}/render</code></h3>
+          <p class="api-endpoint__title">Ver cómo sale</p>
+          <p>El correo armado, con los datos de un contacto (<code>contact_id</code>), los que mandes en <code>data</code> (que mandan sobre los del contacto) o los dos. Transaccional sale sin baja ni marca de agua; promocional, con las dos, y el enlace de baja es de ejemplo. <code>missing</code> dice qué marcas se quedarían en blanco. No envía ni guarda nada.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>type</code><br>
+          <span class="api-type">texto</span></th>
+        <td>transactional o promotional. promotional si no se dice.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>contact_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Un contacto de la cuenta.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>subject</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Un asunto con marcas, hasta 150 caracteres, para verlo lleno.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>data</code><br>
+          <span class="api-type">objeto</span></th>
+        <td>Cada marca por su clave: texto o un número de hasta 1,000 caracteres, o una lista de hasta 50 filas (cada una con hasta 10 datos de hasta 200 caracteres). Hasta 50 claves y 32 KB, en una línea cada valor. CORREO no se manda: es la dirección.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/{template_id}/render \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;contact_id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+  &#34;subject&#34;: &#34;Tu estado de cuenta, *|NOMBRE|*&#34;,
+  &#34;data&#34;: {
+    &#34;SALDO&#34;: &#34;1,250.00&#34;
+  }
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/templates/{template_id}/render \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;contact_id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+  &#34;subject&#34;: &#34;Tu estado de cuenta, *|NOMBRE|*&#34;,
+  &#34;data&#34;: {
+    &#34;SALDO&#34;: &#34;1,250.00&#34;
+  }
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /templates/{template_id}/render">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;subject&#34;: &#34;Tu estado de cuenta, Ana Pérez&#34;,
+  &#34;html&#34;: &#34;&lt;!doctype html&gt;&lt;html&gt;...&lt;/html&gt;&#34;,
+  &#34;text&#34;: &#34;Hola Ana Pérez, estos son tus movimientos de octubre. ...&#34;,
+  &#34;bytes&#34;: 18432,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;,
+    &#34;SALDO&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;missing&#34;: []
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;subject&#34;: &#34;Tu estado de cuenta, Ana Pérez&#34;,
+  &#34;html&#34;: &#34;&lt;!doctype html&gt;&lt;html&gt;...&lt;/html&gt;&#34;,
+  &#34;text&#34;: &#34;Hola Ana Pérez, estos son tus movimientos de octubre. ...&#34;,
+  &#34;bytes&#34;: 18432,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;,
+    &#34;SALDO&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;missing&#34;: []
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-templates-check">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/templates/check</code></h3>
+          <p class="api-endpoint__title">Revisar un lienzo</p>
+          <p>La revisión del editor, sin guardar: <code>ok</code> dice si se podría guardar, <code>issues</code> lo que falta y <code>rules</code> cómo va cada regla, en el orden de la ventana de requisitos del panel.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>canvas</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">objeto</span></th>
+        <td>El lienzo, como en «El lienzo en JSON».</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>name</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Su nombre, que es la primera regla.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/check \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;canvas&#34;: {
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 80,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 22
+      }
+    ]
+  }
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/templates/check \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;canvas&#34;: {
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 80,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 22
+      }
+    ]
+  }
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /templates/check">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;ok&#34;: false,
+  &#34;bytes&#34;: 9120,
+  &#34;max&#34;: 104448,
+  &#34;issues&#34;: [
+    &#34;Tiene muy poco texto (4 caracteres). Escribe al menos 200: un correo casi sin texto es de lo que más va a spam.&#34;
+  ],
+  &#34;rules&#34;: [
+    {
+      &#34;group&#34;: &#34;build&#34;,
+      &#34;ok&#34;: true,
+      &#34;text&#34;: &#34;Tiene nombre.&#34;
+    },
+    {
+      &#34;group&#34;: &#34;spam&#34;,
+      &#34;ok&#34;: false,
+      &#34;text&#34;: &#34;Al menos 200 caracteres de texto (tiene 4).&#34;
+    }
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;ok&#34;: false,
+  &#34;bytes&#34;: 9120,
+  &#34;max&#34;: 104448,
+  &#34;issues&#34;: [
+    &#34;Tiene muy poco texto (4 caracteres). Escribe al menos 200: un correo casi sin texto es de lo que más va a spam.&#34;
+  ],
+  &#34;rules&#34;: [
+    {
+      &#34;group&#34;: &#34;build&#34;,
+      &#34;ok&#34;: true,
+      &#34;text&#34;: &#34;Tiene nombre.&#34;
+    },
+    {
+      &#34;group&#34;: &#34;spam&#34;,
+      &#34;ok&#34;: false,
+      &#34;text&#34;: &#34;Al menos 200 caracteres de texto (tiene 4).&#34;
+    }
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-templates-template_id-zip">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/templates/{template_id}/zip</code></h3>
+          <p class="api-endpoint__title">Bajar el ZIP</p>
+          <p>El mismo ZIP que baja el editor: el lienzo con sus fotos, que se vuelve a cargar en cualquier cuenta, y el HTML con sus imágenes. Solo de las del lienzo. Responde el archivo, no JSON. Cuenta para el límite de 5 plantillas por minuto.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/templates/{template_id}/zip \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/templates/{template_id}/zip \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /templates/{template_id}/zip">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-templates">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/templates</code></h3>
+          <p class="api-endpoint__title">Crear una plantilla del lienzo</p>
+          <p>Con la misma revisión que Guardar: si algo no se cumple, 422 dice qué en <code>fields.canvas</code>. Las fotos que nombra tienen que ser tuyas (súbelas antes con <code>POST /images</code>). Hasta 5 por minuto.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>name</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta 80 caracteres.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>canvas</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">objeto</span></th>
+        <td>El lienzo, como en «El lienzo en JSON».</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>folder_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Una carpeta tuya.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>send_from</code><br>
+          <span class="api-type">texto</span></th>
+        <td>El id de un remitente listo. Sin él, el predeterminado.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>reply_to</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Uno de tus «Responder a». Sin él, el predeterminado.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;canvas&#34;: {
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  }
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/templates \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;canvas&#34;: {
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  }
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /templates">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 201</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-templates-import">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/templates/import</code></h3>
+          <p class="api-endpoint__title">Cargar un ZIP</p>
+          <p>El ZIP que baja el Lienzo, de esta cuenta o de otra, en multipart: <code>file</code>, y si quieres <code>name</code> y <code>folder_id</code>. Sus fotos entran a tu cuenta y cuentan contra tu tope. Hasta 5 MB.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>file</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">archivo</span></th>
+        <td>El ZIP, en multipart/form-data.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>name</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Su nombre. Sin él, el que trae el ZIP.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>folder_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Una carpeta tuya.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/import \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -F &#34;file=@estado-de-cuenta.zip&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/templates/import \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -F &#34;file=@estado-de-cuenta.zip&#34;"
+          data-copy-done="Copiado" aria-label="Copiar POST /templates/import">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 201</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="patch-templates-template_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--patch">PATCH</span>
+            <code>/templates/{template_id}</code></h3>
+          <p class="api-endpoint__title">Cambiar una plantilla</p>
+          <p>Solo lo que mandes: <code>name</code>, <code>folder_id</code> (null la saca de su carpeta), <code>send_from</code> y <code>reply_to</code> (null vuelve al predeterminado) y, en una del lienzo, <code>canvas</code> entero, con la revisión de Guardar.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>name</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta 80 caracteres.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>folder_id</code><br>
+          <span class="api-type">texto o null</span></th>
+        <td>Una carpeta tuya.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>send_from</code><br>
+          <span class="api-type">texto o null</span></th>
+        <td>Un remitente listo.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>reply_to</code><br>
+          <span class="api-type">texto o null</span></th>
+        <td>Uno de tus «Responder a».</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>canvas</code><br>
+          <span class="api-type">objeto</span></th>
+        <td>Solo en una del lienzo: el lienzo entero.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/templates/{template_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Estado de cuenta de noviembre&#34;,
+  &#34;folder_id&#34;: null
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X PATCH https://app.sobreala.com/api/v1/templates/{template_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Estado de cuenta de noviembre&#34;,
+  &#34;folder_id&#34;: null
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar PATCH /templates/{template_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta de noviembre&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: null,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta de noviembre&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: null,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-templates-template_id-duplicate">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/templates/{template_id}/duplicate</code></h3>
+          <p class="api-endpoint__title">Duplicar una plantilla</p>
+          <p>Queda en la misma carpeta, con el nombre que mandes o «Copia de…».</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>name</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta 80 caracteres.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/{template_id}/duplicate \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Estado de cuenta (socios nuevos)&#34;
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/templates/{template_id}/duplicate \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Estado de cuenta (socios nuevos)&#34;
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /templates/{template_id}/duplicate">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 201</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b9f0a1b2c3d4e5f60955&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta (socios nuevos)&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b9f0a1b2c3d4e5f60955&#34;,
+  &#34;name&#34;: &#34;Estado de cuenta (socios nuevos)&#34;,
+  &#34;source&#34;: &#34;canvas&#34;,
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;send_from&#34;: null,
+  &#34;reply_to&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-02T14:00:00Z&#34;,
+  &#34;updated_at&#34;: &#34;2026-10-15T16:30:00Z&#34;,
+  &#34;marks&#34;: [
+    &#34;NOMBRE&#34;,
+    &#34;TRANSACCIONES&#34;
+  ],
+  &#34;blocks&#34;: [],
+  &#34;canvas&#34;: {
+    &#34;v&#34;: 2,
+    &#34;h&#34;: 420,
+    &#34;bg&#34;: &#34;#FFFFFF&#34;,
+    &#34;items&#34;: [
+      {
+        &#34;t&#34;: &#34;text&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 40,
+        &#34;w&#34;: 520,
+        &#34;h&#34;: 120,
+        &#34;text&#34;: &#34;Hola *|NOMBRE|*, estos son tus movimientos de octubre.\n*|TRANSACCIONES|*&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 18,
+        &#34;color&#34;: &#34;#18181B&#34;,
+        &#34;bold&#34;: false,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;left&#34;,
+        &#34;line&#34;: 1.4
+      },
+      {
+        &#34;t&#34;: &#34;button&#34;,
+        &#34;x&#34;: 40,
+        &#34;y&#34;: 320,
+        &#34;w&#34;: 240,
+        &#34;h&#34;: 48,
+        &#34;text&#34;: &#34;Ver mi cuenta&#34;,
+        &#34;font&#34;: &#34;Arial&#34;,
+        &#34;size&#34;: 16,
+        &#34;color&#34;: &#34;#FFFFFF&#34;,
+        &#34;bold&#34;: true,
+        &#34;italic&#34;: false,
+        &#34;align&#34;: &#34;center&#34;,
+        &#34;href&#34;: &#34;https://coopejemplo.com/cuenta&#34;,
+        &#34;bg&#34;: &#34;#31A9E8&#34;,
+        &#34;radius&#34;: 8
+      }
+    ]
+  },
+  &#34;images&#34;: {}
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="delete-templates-template_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--delete">DELETE</span>
+            <code>/templates/{template_id}</code></h3>
+          <p class="api-endpoint__title">Borrar una plantilla</p>
+          <p>Y las fotos que ninguna otra nombra. Una foto que ya salió en un correo se sigue viendo un año.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/templates/{template_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X DELETE https://app.sobreala.com/api/v1/templates/{template_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar DELETE /templates/{template_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;deleted&#34;: true
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;deleted&#34;: true
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-templates-move">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/templates/move</code></h3>
+          <p class="api-endpoint__title">Mover plantillas</p>
+          <p>Hasta 200 a una carpeta, o a ninguna con <code>folder_id: null</code>. Las que no son tuyas no se tocan; <code>moved</code> dice cuántas sí.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>ids</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">lista</span></th>
+        <td>Los ids de las plantillas.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>folder_id</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">texto o null</span></th>
+        <td>La carpeta, o null.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/move \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;ids&#34;: [
+    &#34;6533b1d2a1b2c3d4e5f60901&#34;
+  ],
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/templates/move \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;ids&#34;: [
+    &#34;6533b1d2a1b2c3d4e5f60901&#34;
+  ],
+  &#34;folder_id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /templates/move">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;moved&#34;: 1
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;moved&#34;: 1
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-images">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/images</code></h3>
+          <p class="api-endpoint__title">Subir una foto</p>
+          <p>Una foto para un lienzo, en multipart (<code>file</code>, hasta 5 MB): se revisa, se le quitan los bordes transparentes y se achica. Su <code>name</code> es el que va en una imagen del lienzo. Cuenta contra el tope de fotos de tu plan, y hasta 20 por minuto.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>file</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">archivo</span></th>
+        <td>JPG, PNG o GIF, en multipart/form-data.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/images \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -F &#34;file=@foto.jpg&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/images \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -F &#34;file=@foto.jpg&#34;"
+          data-copy-done="Copiado" aria-label="Copiar POST /images">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 201</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;name&#34;: &#34;k3J9xQ2mP0aZr8VbT1cW4d.jpg&#34;,
+  &#34;url&#34;: &#34;https://app.sobreala.com/img/k3J9xQ2mP0aZr8VbT1cW4d.jpg&#34;,
+  &#34;width&#34;: 1200,
+  &#34;height&#34;: 800
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;name&#34;: &#34;k3J9xQ2mP0aZr8VbT1cW4d.jpg&#34;,
+  &#34;url&#34;: &#34;https://app.sobreala.com/img/k3J9xQ2mP0aZr8VbT1cW4d.jpg&#34;,
+  &#34;width&#34;: 1200,
+  &#34;height&#34;: 800
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+      </section>
+      <section class="api-doc" id="carpetas">
+        <h2 class="api-doc__title">Carpetas</h2>
+        <p>Las carpetas de Mis plantillas: un solo nivel, con nombre y color. Borrar una no borra sus plantillas, que quedan sin carpeta.</p>
+
+        <article class="api-endpoint" id="get-folders">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/folders</code></h3>
+          <p class="api-endpoint__title">Listar carpetas</p>
+          <p>Por nombre, con cuántas plantillas tiene cada una, cuántas caben y los colores que hay.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/folders \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/folders \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /folders">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+      &#34;name&#34;: &#34;Cobros&#34;,
+      &#34;color&#34;: &#34;blue&#34;,
+      &#34;templates&#34;: 4
+    }
+  ],
+  &#34;limit&#34;: 50,
+  &#34;colors&#34;: [
+    &#34;gray&#34;,
+    &#34;white&#34;,
+    &#34;blue&#34;,
+    &#34;green&#34;,
+    &#34;amber&#34;,
+    &#34;red&#34;,
+    &#34;purple&#34;,
+    &#34;pink&#34;,
+    &#34;teal&#34;
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+      &#34;name&#34;: &#34;Cobros&#34;,
+      &#34;color&#34;: &#34;blue&#34;,
+      &#34;templates&#34;: 4
+    }
+  ],
+  &#34;limit&#34;: 50,
+  &#34;colors&#34;: [
+    &#34;gray&#34;,
+    &#34;white&#34;,
+    &#34;blue&#34;,
+    &#34;green&#34;,
+    &#34;amber&#34;,
+    &#34;red&#34;,
+    &#34;purple&#34;,
+    &#34;pink&#34;,
+    &#34;teal&#34;
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-folders">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/folders</code></h3>
+          <p class="api-endpoint__title">Crear una carpeta</p>
+          <p>El nombre no se repite (sin fijarse en mayúsculas).</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>name</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta 40 caracteres.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>color</code><br>
+          <span class="api-type">texto</span></th>
+        <td>gray si no se dice.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/folders \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Cobros&#34;,
+  &#34;color&#34;: &#34;blue&#34;
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/folders \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;name&#34;: &#34;Cobros&#34;,
+  &#34;color&#34;: &#34;blue&#34;
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /folders">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 201</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;name&#34;: &#34;Cobros&#34;,
+  &#34;color&#34;: &#34;blue&#34;,
+  &#34;templates&#34;: 0
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;name&#34;: &#34;Cobros&#34;,
+  &#34;color&#34;: &#34;blue&#34;,
+  &#34;templates&#34;: 0
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="patch-folders-folder_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--patch">PATCH</span>
+            <code>/folders/{folder_id}</code></h3>
+          <p class="api-endpoint__title">Cambiar una carpeta</p>
+          <p>Su nombre, su color o los dos.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>name</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta 40 caracteres.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>color</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Uno de los colores.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/folders/{folder_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;color&#34;: &#34;green&#34;
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X PATCH https://app.sobreala.com/api/v1/folders/{folder_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;color&#34;: &#34;green&#34;
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar PATCH /folders/{folder_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;name&#34;: &#34;Cobros&#34;,
+  &#34;color&#34;: &#34;green&#34;,
+  &#34;templates&#34;: 4
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;name&#34;: &#34;Cobros&#34;,
+  &#34;color&#34;: &#34;green&#34;,
+  &#34;templates&#34;: 4
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="delete-folders-folder_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--delete">DELETE</span>
+            <code>/folders/{folder_id}</code></h3>
+          <p class="api-endpoint__title">Borrar una carpeta</p>
+          <p>Sus plantillas se quedan, sin carpeta.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/folders/{folder_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X DELETE https://app.sobreala.com/api/v1/folders/{folder_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar DELETE /folders/{folder_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;deleted&#34;: true
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
+  &#34;deleted&#34;: true
 }"
           data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>

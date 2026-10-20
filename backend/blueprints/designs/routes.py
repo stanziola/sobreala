@@ -21,12 +21,6 @@ en su lista y se editan con el formulario de siempre.
 
 from __future__ import annotations
 
-import io
-import json
-import re
-import unicodedata
-import zipfile
-from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -46,7 +40,7 @@ from models import contact as contacts
 from models import design as designs
 from models import image as images
 from services import fields as columns
-from services import canvas, html_check, imaging, plans, render
+from services import canvas, html_check, imaging, pieces, plans, render
 from services import canvas_pdf as canvas_pdf_service
 from services.security import csrf_ok
 
@@ -347,8 +341,8 @@ def upload():
             if not imaging.is_zip(raw):
                 errors["archivo"] = t("designs_only_zip")
             else:
-                new_id, wrong = canvas_from_pack(db, account, raw, name=name,
-                                                 filename=archivo.filename)
+                new_id, wrong = pieces.canvas_from_pack(db, account, raw, name=name,
+                                                        filename=archivo.filename)
                 if new_id is None:
                     errors["archivo"] = wrong
                 else:
@@ -397,8 +391,8 @@ def sample(slug):
         return Response(status=204)
 
     db = get_db()
-    new_id, wrong = canvas_from_pack(db, account, path.read_bytes(), name="",
-                                     filename=slug)
+    new_id, wrong = pieces.canvas_from_pack(db, account, path.read_bytes(), name="",
+                                            filename=slug)
     if new_id is None:
         # Lo que no se deja cargar se dice donde se cargan los ZIP.
         return render_template("designs/upload.html", section="plantillas",
@@ -482,7 +476,7 @@ def edit_html(raw):
                 images.keep(db, account["_id"], imaging.names_in(html))
                 # Las que el HTML de antes nombraba y este ya no (una foto
                 # cambiada con «Cambiar», por ejemplo).
-                drop_unused(db, account["_id"], images_in(found))
+                pieces.drop_unused(db, account["_id"], pieces.images_in(found))
                 return redirect(listed_at(account, found.get("folder_id"), changed=1))
 
     return render_template(
@@ -573,98 +567,6 @@ def html_images(db, account_id, html: str) -> list[dict]:
     return out
 
 
-def canvas_from_pack(db, account, raw: bytes, *, name: str,
-                     filename: str) -> tuple[ObjectId | None, str]:
-    """Un lienzo nuevo a partir del ZIP que baja el editor. Devuelve (id, "")
-    o (None, por qué no).
-
-    Sus fotos entran **a la cuenta que carga**, por la misma revisión y el
-    mismo achique que una foto del lienzo, y cuentan contra sus veinte: así
-    cada cuenta es dueña de las suyas y ninguna depende de otra. Después el
-    lienzo pasa exactamente lo que pasa Guardar (`canvas_refused()` y
-    `canvas_fused()`): del JSON no se fía nada, y si una regla no se cumple no
-    se carga. Si algo falla no queda nada guardado.
-    """
-    try:
-        page, files = imaging.unpack(raw, most=photo_limit(account))
-    except imaging.PackError as exc:
-        return None, t("designs_" + str(exc), n=photo_limit(account),
-                       mb=imaging.MAX_UPLOAD // (1024 * 1024))
-    try:
-        data = json.loads(page.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError):
-        data = None
-    if not isinstance(data, dict) or not isinstance(data.get("items"), list):
-        return None, t("designs_zip_canvas_bad")
-
-    photos = [one for one in data["items"]
-              if isinstance(one, dict) and one.get("t") == "image" and one.get("name")]
-    wanted = list(dict.fromkeys(str(one["name"]) for one in photos))
-    missing = [one for one in wanted if one not in files]
-    if missing:
-        return None, t("designs_zip_missing", what=missing[0])
-    if not photo_room(db, account, len(wanted)):
-        free = photo_limit(account) - images.count(db, account["_id"])
-        return None, t("designs_zip_limit", n=len(wanted), free=max(free, 0),
-                       limit=photo_limit(account))
-
-    ready = []
-    for one in wanted:
-        try:
-            ready.append((one, *imaging.shrink(files[one], width=CANVAS_PHOTO_WIDTH)))
-        except imaging.ImageError as exc:
-            return None, one + ": " + t(IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
-                                        kb=imaging.STORED_MAX // 1024)
-    saved: dict[str, str] = {}
-    for one, content, ext, mime in ready:
-        saved[one] = images.save(db, account["_id"], data=content, ext=ext, mime=mime)
-    for one in photos:
-        one["name"] = saved[str(one["name"])]
-
-    doc = canvas.parse(json.dumps(data))
-    refused = canvas_refused(db, account, doc) if doc else t("designs_zip_canvas_bad")
-    fused = None if refused else canvas_fused(db, account, doc)
-    if fused is None:
-        images.remove(db, account["_id"], list(saved.values()))
-        return None, refused or canvas_explain(["too_big"])
-    grounds, shades = fused
-    title = name or designs.clean_name(str(data.get("name") or "")) or filename
-    return designs.save_canvas(db, account["_id"], name=title, doc=doc,
-                               backgrounds=grounds, shades=shades), ""
-
-
-def images_in(found) -> list[str]:
-    """Las imágenes que nombra una pieza guardada.
-
-    En un lienzo, sus fotos y sus fondos fundidos. En una prediseñada, se le
-    pregunta a la plantilla cuáles de sus casillas son imágenes, en vez de
-    adivinarlo mirando el contenido: la plantilla es quien lo sabe. En una
-    cargada, las del panel que nombra su HTML, que es el caso del HTML bajado
-    de un lienzo y vuelto a cargar.
-    """
-    if found.get("source") == designs.CANVAS:
-        return (canvas.images_of(found.get("canvas"))
-                + [one for one in found.get("backgrounds") or [] if one])
-    if found.get("source") == designs.UPLOAD:
-        return imaging.names_in(found.get("html", ""))
-    fields = found.get("fields") or {}
-    return [fields[one["name"]]
-            for one in render.fields_of(found.get("template", ""))
-            if one.get("type") == "image" and fields.get(one["name"])]
-
-
-# Qué se le dice al cliente por cada motivo por el que una imagen no entra.
-# Los motivos los pone services/imaging.py como claves y no como frases, para
-# que la misma razón se lea igual desde cualquier pantalla.
-IMAGE_PROBLEMS = {
-    "not_image": "designs_image_bad",
-    "unreadable": "designs_image_bad",
-    "too_many_pixels": "designs_image_bad",
-    "gif_too_big": "designs_image_gif",
-    "too_big": "designs_image_big",
-}
-
-
 def keep_image(db, account, which: str, current: str,
                errors: dict[str, str]) -> str:
     """Guardar la imagen que acaba de elegir, y decir qué pasó si no se pudo.
@@ -677,8 +579,8 @@ def keep_image(db, account, which: str, current: str,
         errors[which] = t("error_required")
         return current
 
-    if not photo_room(db, account):
-        errors[which] = t("designs_image_limit", n=photo_limit(account))
+    if not pieces.photo_room(db, account):
+        errors[which] = t("designs_image_limit", n=pieces.photo_limit(account))
         return current
 
     raw = archivo.read(imaging.MAX_UPLOAD + 1)
@@ -692,7 +594,7 @@ def keep_image(db, account, which: str, current: str,
         # dibuja la plantilla, que es lo que hace que quepa en la base.
         data, ext, mime = imaging.shrink(raw)
     except imaging.ImageError as exc:
-        errors[which] = t(IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
+        errors[which] = t(pieces.IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
                           kb=imaging.STORED_MAX // 1024)
         return current
     return images.save(db, account["_id"], data=data, ext=ext, mime=mime)
@@ -834,10 +736,10 @@ def piece_view(raw):
             return Response("", mimetype="text/html")
         grounds = found.get("backgrounds") or []
         shades = found.get("shades") or []
-        email = canvas_email(
+        email = pieces.canvas_email(
             doc, plan,
             [imaging.url_of(one) if one else None for one in grounds],
-            shades, preview=True)
+            shades, preview=True, postal=accounts.postal_of(account))
         return Response(filled_for(db, account, email), mimetype="text/html")
     if not render.known(found.get("template", "")):
         abort(404)
@@ -847,141 +749,6 @@ def piece_view(raw):
 
 
 # --------------------------------------------------------------- el lienzo
-
-# Cuánto espera una foto subida sin guardar en ninguna plantilla antes de que
-# se la pueda recoger: un día, para no quitarle a nadie la que acaba de subir y
-# todavía no guarda.
-ORPHAN_AFTER = timedelta(hours=24)
-
-
-def photo_limit(account) -> int:
-    """Cuántas fotos caben en la cuenta: lo dice su plan (`docs/pricing.md`)."""
-    return plans.image_limit(accounts.plan_of(account))
-
-
-def photo_room(db, account, wanted: int = 1) -> bool:
-    """Si caben `wanted` fotos más. Si no caben, antes de decir que no se
-    recogen las que quedaron fuera de toda plantilla hace más de un día: una
-    foto subida en el editor cuenta desde que se sube, aunque la plantilla no
-    se guarde nunca, y es lo que dejaba el tope lleno después de borrar."""
-    limit = photo_limit(account)
-    if images.count(db, account["_id"]) + wanted <= limit:
-        return True
-    free_orphans(db, account["_id"])
-    return images.count(db, account["_id"]) + wanted <= limit
-
-
-def free_orphans(db, account_id) -> int:
-    """Quitar las fotos que no nombra ninguna plantilla de la cuenta y tienen
-    más de un día. Pasan por `images.remove()`, así que una que salió en un
-    envío se retira y no se borra."""
-    still = {name for one in designs.for_account(db, account_id, limit=0)
-             for name in images_in(one)}
-    stale = images.uploaded_before(db, account_id, datetime.now(timezone.utc) - ORPHAN_AFTER)
-    return images.remove(db, account_id, [one for one in stale if one not in still])
-
-
-def drop_unused(db, account_id, names) -> None:
-    """Borrar las imágenes que ya no nombra ninguna pieza de la cuenta.
-
-    Se pregunta a todas y no solo a la que cambió: al duplicar, la copia y la
-    original nombran las mismas.
-    """
-    still = {name for one in designs.for_account(db, account_id, limit=0)
-             for name in images_in(one)}
-    images.remove(db, account_id, [one for one in names if one and one not in still])
-
-
-def canvas_refused(db, account, doc) -> str:
-    """Por qué no se puede guardar este lienzo, en la frase del cliente, o
-    vacío si se puede: las reglas para armar el correo y la revisión antispam.
-    Lo mismo al guardarlo en el editor y al cargarlo de un ZIP."""
-    problems = canvas_problems(db, account["_id"], doc)
-    if problems:
-        return canvas_explain(problems)
-    spam = canvas.review(doc, canvas_size(doc, accounts.plan_of(account),
-                                          sample_grounds(doc)),
-                         limit=html_check.MAX_BYTES)
-    return " ".join(review_texts(spam))
-
-
-def canvas_fused(db, account, doc):
-    """Las imágenes fundidas de un lienzo que ya pasó `canvas_refused()`, y sus
-    colores. None si el correo armado pasa de los 102 KB, y entonces no queda
-    ninguna guardada."""
-    load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
-    grounds, shades = canvas.store(db, account["_id"], doc, load)
-    html = canvas.to_html(doc, [imaging.url_of(one) if one else None
-                                for one in grounds], shades)
-    if len(html.encode("utf-8")) > html_check.MAX_BYTES:
-        images.remove(db, account["_id"], grounds)
-        return None
-    return grounds, shades
-
-
-def canvas_problems(db, account_id, doc) -> list[str]:
-    return canvas.problems(
-        doc, owns=lambda name: (imaging.valid_name(name)
-                                and images.owns(db, account_id, name)))
-
-
-def canvas_explain(problems: list[str]) -> str:
-    return " ".join(t("canvas_bad_" + one, kb=html_check.MAX_BYTES // 1024)
-                    for one in problems)
-
-
-def canvas_email(doc, plan, urls: list[str | None], shades=None, *,
-                 unsubscribe: str = "#", preview: bool = False) -> str:
-    """El correo entero de un lienzo: el cuerpo, el sobre y las reglas del modo
-    oscuro. Lo mismo que arma el envío (`sender.Piece`)."""
-    return render.email_from_body(canvas.to_html(doc, urls, shades), plan=plan,
-                                  unsubscribe=unsubscribe, preview=preview,
-                                  style=canvas.dark_css(doc, shades),
-                                  postal=accounts.postal_of(current_workspace()))
-
-
-def canvas_size(doc, plan, urls: list[str | None]) -> int:
-    """Lo que pesa el correo entero, con el sobre y la baja, que es lo que
-    cuenta Gmail para recortarlo."""
-    email = canvas_email(doc, plan, urls, [doc["bg"]] * len(urls),
-                         unsubscribe=UNSUBSCRIBE_SAMPLE)
-    return len(email.encode("utf-8"))
-
-
-# Una dirección de baja del largo de las de verdad, para pesar el correo.
-UNSUBSCRIBE_SAMPLE = "https://app.sobreala.com/unsubscribe/" + "x" * 96
-
-
-def sample_grounds(doc) -> list[str | None]:
-    """Direcciones de imagen del mismo largo que las que tendrá al guardarse."""
-    sample = imaging.url_of("x" * 22 + ".jpg")
-    return [sample if one["kind"] in ("picture", "backdrop") else None
-            for one in canvas.groups(doc)]
-
-
-def review_texts(found: list[dict]) -> list[str]:
-    return [t("canvas_spam_" + one["key"], **{k: v for k, v in one.items() if k != "key"})
-            for one in found]
-
-
-def rule_texts(doc, size: int, problems: list[str], found: list[dict]) -> list[dict]:
-    """La ventana de requisitos: cada regla, si se cumple y su frase con las
-    cifras de ahora. El nombre va primero y se mira aquí, que no es del lienzo:
-    viaja en el formulario, como al guardar."""
-    named = bool(designs.clean_name(request.form.get("nombre", "")))
-    rules = [{"group": "build", "ok": named, "text": t("canvas_rule_name")}]
-    for one in canvas.checklist(doc, size, limit=html_check.MAX_BYTES,
-                                failed=problems, found=found):
-        # Los miles con coma, como se escriben en Panamá: 4,000 px.
-        values = {k: (f"{v:,}" if isinstance(v, int) else v) for k, v in one.items()
-                  if k not in ("key", "group", "ok")}
-        text = t("canvas_rule_" + one["key"], **values)
-        if not one["ok"] and one.get("what"):
-            # Qué palabra o qué acortador: lo que hay que cambiar.
-            text += " " + t("canvas_rule_found", what=one["what"])
-        rules.append({"group": one["group"], "ok": one["ok"], "text": text})
-    return rules
-
 
 def canvas_editor(account, found):
     """El lienzo, el mismo para una nueva y para una guardada.
@@ -1012,15 +779,15 @@ def canvas_editor(account, found):
         else:
             # Solo se guarda lo que arma bien el correo y tiene pocas
             # probabilidades de ir a spam.
-            refused = canvas_refused(db, account, posted)
+            refused = pieces.canvas_refused(db, account, posted)
             if not name:
                 errors["nombre"] = t("error_required")
             if refused:
                 errors["form"] = refused
             elif not errors:
-                fused = canvas_fused(db, account, posted)
+                fused = pieces.canvas_fused(db, account, posted)
                 if fused is None:
-                    errors["form"] = canvas_explain(["too_big"])
+                    errors["form"] = pieces.canvas_explain(["too_big"])
                 else:
                     grounds, shades = fused
                     if found is None:
@@ -1037,7 +804,7 @@ def canvas_editor(account, found):
                         designs.set_sending(db, account["_id"], found["_id"], **choice)
                     # Lo que la versión de antes nombraba y esta ya no: sus
                     # imágenes fundidas y las fotos que se quitaron del lienzo.
-                    drop_unused(db, account["_id"], images_in(found))
+                    pieces.drop_unused(db, account["_id"], pieces.images_in(found))
                     return redirect(listed_at(account, folder_id, changed=1))
 
     return render_template(
@@ -1088,19 +855,10 @@ def canvas_review():
     account = signed_in()
     if account is None or not csrf_ok(request.form.get("csrf_token")):
         abort(403)
-    db = get_db()
     doc = canvas.parse(request.form.get("lienzo", ""))
-    if doc is None:
-        return jsonify(ok=False, bytes=0, max=html_check.MAX_BYTES,
-                       issues=[canvas_explain(["broken"])], rules=[])
-    size = canvas_size(doc, accounts.plan_of(account), sample_grounds(doc))
-    problems = canvas_problems(db, account["_id"], doc)
-    found = canvas.review(doc, size, limit=html_check.MAX_BYTES)
-    issues = [canvas_explain([one]) for one in problems] + review_texts(found)
-    # `ok` sigue siendo lo que apaga Guardar; el nombre no cuenta ahí, que se
-    # pide al pulsarlo con su propio aviso.
-    return jsonify(ok=not issues, bytes=size, max=html_check.MAX_BYTES,
-                   issues=issues, rules=rule_texts(doc, size, problems, found))
+    # El nombre se mira aquí, que no es del lienzo: viaja en el formulario.
+    named = bool(designs.clean_name(request.form.get("nombre", "")))
+    return jsonify(**pieces.review(get_db(), account, doc, named=named))
 
 
 @bp.route("/templates/canvas/preview", methods=["POST"])
@@ -1118,10 +876,11 @@ def canvas_preview():
     # Solo las imágenes de esta cuenta: `data_of` pregunta con ella.
     load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
     made = canvas.parts(doc, load)
-    email = canvas_email(doc, accounts.plan_of(account),
-                         [canvas.data_url(raw) if raw else None for raw in made],
-                         [canvas.average(raw, doc["bg"]) if raw else None
-                          for raw in made], preview=True)
+    email = pieces.canvas_email(doc, accounts.plan_of(account),
+                                [canvas.data_url(raw) if raw else None for raw in made],
+                                [canvas.average(raw, doc["bg"]) if raw else None
+                                 for raw in made], preview=True,
+                                postal=accounts.postal_of(account))
     return Response(filled_for(db, account, email), mimetype="text/html")
 
 
@@ -1148,7 +907,7 @@ def canvas_pdf():
     load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
     made = canvas_pdf_service.to_pdf(doc, load, title=name)
     return Response(made, mimetype="application/pdf", headers={
-        "Content-Disposition": f'attachment; filename="{file_name(name, "pdf")}"'})
+        "Content-Disposition": f'attachment; filename="{pieces.file_name(name, "pdf")}"'})
 
 
 @bp.route("/templates/canvas/<raw>/html")
@@ -1177,67 +936,11 @@ def canvas_html(raw):
     found = designs.by_id(db, account["_id"], design_id) if design_id else None
     if found is None or found.get("source") != designs.CANVAS:
         abort(404)
-    name, data = canvas_zip(db, account, found)
+    # La cabecera de un correo, como la vista previa: el ZIP lleva su HTML.
+    g.email_preview = True
+    name, data = pieces.canvas_zip(db, account, found)
     return Response(data, mimetype="application/zip", headers={
         "Content-Disposition": f'attachment; filename="{name}"'})
-
-
-def canvas_zip(db, account, found) -> tuple[str, bytes]:
-    """El ZIP de una plantilla del lienzo y su nombre de archivo. Lo usa la
-    descarga."""
-    if (found.get("canvas") or {}).get("v") != canvas.VERSION:
-        # Guardada por diapositivas: sus imágenes eran de otra forma. Se
-        # rehacen como antes del primer correo.
-        found = designs.upgrade_canvas(db, account["_id"], found)
-    doc = canvas.read(found.get("canvas")) or canvas.blank()
-    urls, files = [], []
-    for i, one in enumerate(found.get("backgrounds") or [], 1):
-        data = images.data_of(db, account["_id"], one) if one else None
-        path = f"{imaging.ZIP_FOLDER}{i}.{one.rsplit('.', 1)[-1]}" if data else None
-        urls.append(path)
-        if data:
-            files.append((path, data))
-    shades = found.get("shades") or []
-    g.email_preview = True
-    email = render.email_from_body(canvas.to_html(doc, urls, shades),
-                                   plan=accounts.plan_of(account),
-                                   style=canvas.dark_css(doc, shades), bare=True)
-    name = found.get("name", "")
-    # Las fotos del lienzo, cada una con un nombre corto: el de verdad es la
-    # dirección de la imagen en esta cuenta, y en otra no significa nada.
-    photos: dict[str, str] = {}
-    for one in canvas.images_of(doc):
-        data = images.data_of(db, account["_id"], one)
-        if data and one not in photos:
-            photos[one] = f"{imaging.ZIP_PHOTOS}{len(photos) + 1}.{one.rsplit('.', 1)[-1]}"
-            files.append((photos[one], data))
-    items = [{**one, "name": photos.get(one["name"], one["name"])} if one["t"] == "image"
-             else one for one in doc["items"]]
-    board = {"name": name, **doc, "items": items}
-    out = io.BytesIO()
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as pack:
-        pack.writestr(file_name(name, "html"), email.encode("utf-8"))
-        pack.writestr(imaging.ZIP_CANVAS, json.dumps(board, ensure_ascii=False, indent=1))
-        for path, data in files:
-            # Ya van comprimidas: guardarlas tal cual es más rápido e igual de
-            # liviano.
-            pack.writestr(path, data, compress_type=zipfile.ZIP_STORED)
-    return file_name(name, "zip"), out.getvalue()
-
-
-# Lo que puede ir en el nombre de un archivo sin romper la cabecera ni el disco
-# de nadie. Lo que no, se cae; sin nada legible queda «plantilla».
-FILE_NAME = re.compile(r"[^A-Za-z0-9 ._-]+")
-
-
-def file_name(name: str, ext: str) -> str:
-    clean = FILE_NAME.sub("", unicodedata.normalize("NFKD", name)).strip()
-    return f"{clean or 'plantilla'}.{ext}"
-
-
-# El ancho al que se guardan las fotos del lienzo: al doble de lo que se ven, para
-# que el fondo fundido salga nítido en un teléfono.
-CANVAS_PHOTO_WIDTH = canvas.WIDTH * canvas.SCALE
 
 
 @bp.route("/templates/canvas/image", methods=["POST"])
@@ -1248,30 +951,14 @@ def canvas_image():
         abort(403)
     if not csrf_ok(request.form.get("csrf_token")):
         return jsonify(error=t("error_csrf")), 400
-    db = get_db()
     archivo = request.files.get("archivo")
     if not archivo or not archivo.filename:
         return jsonify(error=t("error_required")), 400
-    if not photo_room(db, account):
-        return jsonify(error=t("designs_image_limit", n=photo_limit(account))), 400
-    raw = archivo.read(imaging.MAX_UPLOAD + 1)
-    if len(raw) > imaging.MAX_UPLOAD:
-        return jsonify(error=t("designs_image_heavy",
-                               mb=imaging.MAX_UPLOAD // (1024 * 1024))), 400
-    try:
-        # Sin los bordes transparentes: la caja queda justo en lo que se ve.
-        data, ext, mime = imaging.shrink(imaging.trim(raw), width=CANVAS_PHOTO_WIDTH)
-    except imaging.ImageError as exc:
-        return jsonify(error=t(IMAGE_PROBLEMS.get(str(exc), "designs_image_bad"),
-                               kb=imaging.STORED_MAX // 1024)), 400
-    from io import BytesIO
-
-    from PIL import Image
-
-    with Image.open(BytesIO(data)) as opened:
-        width, height = opened.size
-    name = images.save(db, account["_id"], data=data, ext=ext, mime=mime)
-    return jsonify(name=name, url=imaging.url_of(name), width=width, height=height)
+    photo, wrong = pieces.save_photo(get_db(), account,
+                                     archivo.read(imaging.MAX_UPLOAD + 1))
+    if photo is None:
+        return jsonify(error=wrong), 400
+    return jsonify(**photo)
 
 
 @bp.route("/templates/canvas/logo", methods=["POST"])
@@ -1294,8 +981,8 @@ def canvas_logo():
     data = images.data_of(db, account["_id"], logo) if logo else None
     if not data:
         return jsonify(error=t("canvas_logo_none")), 400
-    if not photo_room(db, account):
-        return jsonify(error=t("designs_image_limit", n=photo_limit(account))), 400
+    if not pieces.photo_room(db, account):
+        return jsonify(error=t("designs_image_limit", n=pieces.photo_limit(account))), 400
     from io import BytesIO
 
     from PIL import Image
@@ -1344,5 +1031,5 @@ def remove():
                 # para siempre lo que alguien pidió borrar. Menos las que
                 # todavía nombra otra, que es lo que deja una copia al
                 # duplicar.
-                drop_unused(db, account["_id"], images_in(gone))
+                pieces.drop_unused(db, account["_id"], pieces.images_in(gone))
     return redirect(listed_at(account, as_id(request.form.get("back"))))

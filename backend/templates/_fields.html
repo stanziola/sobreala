@@ -1,9 +1,9 @@
 {# El campo de contraseña que sirve para demostrar quién eres.
 
-   Aparece en tres pantallas —cambiar la contraseña, y activar o administrar el
-   doble factor— y las tres necesitan lo mismo: el ojo que la enseña, y la
-   defensa contra el relleno automático. Aquí una vez en vez de tres copias que
-   se separan con el tiempo.
+   Aparece en cuatro pantallas —cambiar la contraseña, activar o administrar el
+   doble factor, y crear una llave de la API— y todas necesitan lo mismo: el ojo
+   que la enseña, y la defensa contra el relleno automático. Aquí una vez en vez
+   de copias que se separan con el tiempo.
 
    Se importa con `with context`, porque necesita t() y el nonce de la página. #}
 {% macro proof(id, name) %}

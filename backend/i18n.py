@@ -3062,8 +3062,9 @@ TEXTS = {
     "api_limit_tags": "etiquetas",
     "api_limit_fields": "columnas",
     "api_suppressions_reason": "reason es uno de {reasons}.",
-    "api_error_busy": "Hay otra carga de contactos en curso en esta cuenta. Intenta "
-                      "en unos segundos.",
+    "api_error_busy": "Hay otra operación como esta en curso en tu cuenta (una "
+                      "carga de contactos, o guardar o bajar una plantilla). "
+                      "Intenta en unos segundos.",
     "api_error_unknown_tag": "Hay etiquetas que no existen: las dice tags. Créalas "
                              "antes con POST /tags.",
     "api_error_email_taken": "Esa dirección ya la tiene otro contacto de la cuenta.",
@@ -3073,6 +3074,93 @@ TEXTS = {
                               "dato que todo contacto ya trae (Nombre, Correo).",
     "api_error_field_values": "{n} contactos tienen en esa columna algo que no es de "
                               "ese tipo. Corrígelos antes de cambiarlo.",
+
+    # --- las listas dentro de un contacto y el id de su sistema (octubre de 2026)
+    "contacts_external": "Id en tu sistema",
+    "contacts_external_hint": "Opcional: su número de socio o de cliente. Con él "
+                              "tu sistema lo encuentra por la API aunque cambie "
+                              "el correo. Letras, números y . _ : @ -, hasta 64.",
+    "contacts_external_bad": "Solo letras, números y . _ : @ -, hasta 64.",
+    "contacts_external_taken": "Ese id ya lo tiene otro contacto.",
+    "contacts_rows_hint": "Hasta {n} filas: si llega una más, se va la más vieja. "
+                          "En una plantilla, {mark} arma la tabla.",
+    "contacts_rows_none": "Todavía no tiene filas.",
+    "contacts_rows_full": "Ya tiene {n} filas: al agregar otra se borra la más "
+                          "vieja.",
+    "contacts_rows_count": "{n} filas",
+    "contacts_row_save": "Guardar la fila",
+    "contacts_row_delete": "Borrar",
+    "contacts_row_delete_ask": "¿Borrar esta fila? No se puede deshacer.",
+    "contacts_row_delete_yes": "Sí, borrarla",
+    "contacts_row_add_title": "Agregar una fila",
+    "contacts_row_add": "Agregar la fila",
+    "contacts_row_empty": "Escribe al menos un dato de la fila.",
+    "contacts_rows_big": "La lista pasa del tamaño que cabe en un contacto: borra "
+                         "filas viejas o acorta lo escrito.",
+    "fields_type_list": "Lista",
+    "fields_list_items": "Los datos de cada fila (solo para una lista)",
+    "fields_list_items_hint": "Por ejemplo, para las transacciones de un socio: "
+                              "Fecha, Descripción y Monto. De 1 a {n}.",
+    "fields_list_item_name": "Nombre del dato {n}",
+    "fields_list_item_type": "Tipo del dato {n}",
+    "fields_list_item_example_0": "Fecha",
+    "fields_list_item_example_1": "Descripción",
+    "fields_list_item_example_2": "Monto",
+    "fields_list_items_bad": "Una lista necesita de 1 a {n} datos, cada uno con su "
+                             "nombre y sin repetir.",
+    "fields_lists_full": "Ya tienes {n} listas, que es lo que cabe.",
+    "fields_list_item_remove": "Quitar",
+    "fields_list_item_remove_ask": "¿Quitar «{name}»? Se borra lo escrito en ese "
+                                   "dato en todas las filas de todos tus contactos.",
+    "fields_list_item_remove_yes": "Sí, quitarlo",
+    "fields_list_item_new": "Dato nuevo",
+    "fields_list_item_add": "Agregar dato",
+
+    # --- la API: las listas de un contacto y el id de su sistema (octubre de 2026)
+    "api_contacts_field_bad_list": "Una lista no está bien ({what}): cada fila "
+                                   "lleva al menos uno de sus datos y cada valor "
+                                   "de su tipo, sin pasar de las filas ni del "
+                                   "tamaño que caben.",
+    "api_lists_rows_bad": "Las filas no están bien ({what}): caben {n}, cada una "
+                          "con al menos uno de sus datos y cada valor de su tipo.",
+    "api_lists_too_big": "La lista pasaría del tamaño que cabe en un contacto: "
+                         "borra filas viejas o acorta lo escrito.",
+    "api_fields_items": "Una lista lleva de 1 a {n} datos, cada uno con label (su "
+                        "nombre, sin repetir) y type ({types}).",
+    "api_fields_add_or_remove": "Va uno de los dos: add para agregar un dato, o "
+                                "remove con la clave del que se quita.",
+    "api_fields_remove": "Ese dato no es de esta lista, o es el único que le queda.",
+    "api_limit_lists": "listas",
+    "api_error_external_id_taken": "Ese id de tu sistema ya lo tiene otro "
+                                   "contacto de la cuenta.",
+
+    # --- la API: plantillas, carpetas y fotos (octubre de 2026)
+    "api_field_ref": "No existe, o no es de esta cuenta.",
+    "api_field_one_line": "Va en una sola línea, sin caracteres de control.",
+    "api_templates_send_from": "Tiene que ser el id de uno de tus remitentes listos "
+                               "(GET /senders), o null para el predeterminado.",
+    "api_templates_reply_to": "Tiene que ser uno de tus «Responder a» confirmados "
+                              "(GET /senders), o null para el predeterminado.",
+    "api_templates_source": "source es uno de {sources}.",
+    "api_templates_not_canvas": "Solo una plantilla del lienzo tiene lienzo.",
+    "api_templates_ids": "ids es una lista de 1 a {n} ids de plantillas.",
+    "api_emails_type": "type es uno de {types}.",
+    "api_folders_taken": "Ya tienes una carpeta con ese nombre.",
+    "api_folders_color": "color es uno de {colors}.",
+    "api_limit_templates": "plantillas",
+    "api_limit_folders": "carpetas",
+    "api_limit_images": "fotos",
+    "api_data_shape": "data es un objeto, con cada marca por su clave.",
+    "api_data_keys": "data lleva hasta {n} marcas.",
+    "api_data_size": "data pasa de {kb} KB.",
+    "api_data_key": "Cada clave de data va en mayúsculas, números y _ (hasta 24), "
+                    "como en la plantilla. CORREO no: es la dirección a la que va.",
+    "api_data_value": "Cada valor de data es texto o un número de hasta {chars} "
+                      "caracteres, en una sola línea, o una lista de filas.",
+    "api_data_rows": "Una lista de data lleva hasta {rows} filas.",
+    "api_data_row": "Cada fila de una lista es un objeto de 1 a {cells} datos, con "
+                    "claves como las de data y valores de texto o número de hasta "
+                    "{cell_chars} caracteres, en una sola línea.",
 }
 
 

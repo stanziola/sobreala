@@ -5,10 +5,12 @@
     ninguna no dibuja nada, ni un título.
 
     **Todas son obligatorias.** Un contacto sin sus datos no entra, y si ya
-    estaba, no recibe correos hasta completarlo. -#}
-{% if fields %}
+    estaba, no recibe correos hasta completarlo. Las listas (octubre de 2026)
+    no van aquí: tienen su propio formulario en la ficha del contacto. -#}
+{% set single_fields = fields|rejectattr('type', 'equalto', 'list')|list %}
+{% if single_fields %}
 <p class="field-label">{{ t('fields_on_contact') }}</p>
-{% for one in fields %}
+{% for one in single_fields %}
 {% set value = request.form.get('col-' + one.key, written.get(one.key, '')) %}
 <label for="col-{{ one.key }}">{{ one.label }}</label>
 {% if one.type == 'yesno' %}

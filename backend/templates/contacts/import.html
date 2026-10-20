@@ -92,7 +92,8 @@
   <template data-map-choice>
     <select>
       <option value="">{{ t('import_map_skip') }}</option>
-      {% for one in fields %}
+      {#- Las listas no entran por el archivo (octubre de 2026). -#}
+      {% for one in fields if one.type != 'list' %}
       <option value="{{ one.key }}">{{ one.label }}</option>
       {% endfor %}
       <option value="{{ new_column }}">{{ t('import_map_new') }}</option>

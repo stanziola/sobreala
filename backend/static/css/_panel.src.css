@@ -2182,3 +2182,20 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 .api-presets .check { margin-top: 10px; }
 /* Una llave revocada o vencida sigue en la lista, apagada. */
 .table__row--off { opacity: .6; }
+
+/* ---------------------------------------- las listas de un contacto
+   Octubre de 2026. Los datos de una lista al crearla (nombre y tipo, uno por
+   fila), los que ya tiene en Columnas, y en la ficha del contacto sus filas
+   con su formulario de agregar, editar y borrar. */
+.list-items { margin: 18px 0 0; padding: 0; border: 0; }
+.list-items__row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.list-items__row input { flex: 1 1 200px; margin: 0; }
+.list-items__row select { flex: 0 1 160px; margin: 0; }
+.list-items__now { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.list-items__now li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.row-form { margin-top: 10px; }
+.row-form--add { margin-top: 16px; padding: 14px; border: 1px solid var(--color-border);
+                 border-radius: 12px; }
+.row-form__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.row-form__actions .btn { margin-top: 0; }
+.row-delete .move__list { min-width: 200px; }

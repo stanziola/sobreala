@@ -128,6 +128,10 @@ class Stripper(HTMLParser):
             self.skipping = True
         elif tag in ("p", "br", "div", "tr", "h1", "h2", "h3", "li"):
             self.parts.append("\n")
+        elif tag in ("td", "th"):
+            # Las celdas de una fila, separadas: la tabla de una lista
+            # (octubre de 2026) se leía «1 de octubre150Depósito».
+            self.parts.append(" ")
 
     def handle_endtag(self, tag):
         if tag in ("style", "script", "head"):

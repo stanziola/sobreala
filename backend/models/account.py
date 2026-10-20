@@ -334,12 +334,32 @@ def field_by_key(account: dict[str, Any] | None, key: str):
     return next((one for one in fields_of(account) if one["key"] == key), None)
 
 
-def add_field(db, account_id, *, label: str, kind: str) -> str | None:
+def list_items(raw_items) -> list[dict[str, str]] | None:
+    """Los datos de cada fila de una lista (octubre de 2026): de 1 a
+    `fields.LIST_ITEMS_MAX`, cada uno con nombre y uno de los cuatro tipos, sin
+    claves repetidas. None si no sirven."""
+    items: list[dict[str, str]] = []
+    for label, kind in raw_items or []:
+        name = fields.clean_label(label)
+        key = fields.key_from(name)
+        if not name or not key or kind not in fields.TYPES:
+            return None
+        if any(one["key"] == key for one in items):
+            return None
+        items.append({"key": key, "label": name, "type": kind})
+    return items if 1 <= len(items) <= fields.LIST_ITEMS_MAX else None
+
+
+def add_field(db, account_id, *, label: str, kind: str,
+              items=None) -> str | None:
     """Crear una columna. Devuelve su clave, o None si no se pudo.
 
     No se pudo quiere decir: sin nombre, un nombre que da la misma clave que
     otra, o que ya no caben más en el plan. El límite se mira aquí y no solo en
     la pantalla, porque un formulario se puede escribir a mano.
+
+    Una de tipo lista (octubre de 2026) lleva sus datos en `items`, pares de
+    nombre y tipo (`list_items`), y caben `fields.LISTS_MAX`.
     """
     name = fields.clean_label(label)
     key = fields.key_from(name)
@@ -353,12 +373,50 @@ def add_field(db, account_id, *, label: str, kind: str) -> str | None:
         # Una columna «Nombre» o «Correo» chocaría con los datos que ya trae
         # todo contacto.
         return None
+    column = {"key": key, "label": name, "type": fields.clean_kind(kind)}
+    if kind == fields.LIST:
+        parsed = list_items(items)
+        if parsed is None or sum(1 for one in existing
+                                 if fields.is_list(one)) >= fields.LISTS_MAX:
+            return None
+        column = {"key": key, "label": name, "type": fields.LIST, "items": parsed}
     db.accounts.update_one(
         {"_id": account_id},
-        {"$push": {"contact_fields": {"key": key, "label": name,
-                                      "type": fields.clean_kind(kind)}},
+        {"$push": {"contact_fields": column},
          "$set": {"updated_at": now()}})
     return key
+
+
+def add_list_item(db, account_id, key: str, *, label: str, kind: str) -> str | None:
+    """Agregarle un dato a una lista. Devuelve su clave, o None si esa lista no
+    existe, ya tiene todos los que caben, o ese nombre ya está."""
+    found = field_by_key(by_id(db, account_id), key)
+    if not fields.is_list(found):
+        return None
+    items = list(found.get("items") or [])
+    parsed = list_items([(one["label"], one["type"]) for one in items] + [(label, kind)])
+    if parsed is None:
+        return None
+    db.accounts.update_one({"_id": account_id, "contact_fields.key": key},
+                           {"$set": {"contact_fields.$.items": parsed,
+                                     "updated_at": now()}})
+    return parsed[-1]["key"]
+
+
+def remove_list_item(db, account_id, key: str, item_key: str) -> bool:
+    """Quitarle un dato a una lista. Borrarlo de las filas de cada contacto es
+    cosa de models/contact.py, y el que quita hace las dos. Una lista se queda
+    con al menos uno."""
+    found = field_by_key(by_id(db, account_id), key)
+    items = list((found or {}).get("items") or [])
+    if not fields.is_list(found) or len(items) <= 1 \
+            or not any(one["key"] == item_key for one in items):
+        return False
+    db.accounts.update_one({"_id": account_id, "contact_fields.key": key},
+                           {"$set": {"contact_fields.$.items":
+                                     [one for one in items if one["key"] != item_key],
+                                     "updated_at": now()}})
+    return True
 
 
 def set_field_type(db, account_id, key: str, kind: str) -> bool:
@@ -367,10 +425,14 @@ def set_field_type(db, account_id, key: str, kind: str) -> bool:
     Lo único que se puede corregir de una columna ya creada. El nombre no: es lo
     que se escribe dentro de las piezas, y cambiarlo dejaría a las que la
     nombran escribiendo en blanco. Que los valores encajen en el tipo nuevo lo
-    comprueba quien llama, antes de tocar nada.
+    comprueba quien llama, antes de tocar nada. Una lista no cambia de tipo, ni
+    una columna pasa a ser lista (octubre de 2026).
     """
+    if kind not in fields.TYPES:
+        return False
     return db.accounts.update_one(
-        {"_id": account_id, "contact_fields.key": key},
+        {"_id": account_id, "contact_fields": {"$elemMatch": {
+            "key": key, "type": {"$ne": fields.LIST}}}},
         {"$set": {"contact_fields.$.type": fields.clean_kind(kind),
                   "updated_at": now()}}).matched_count == 1
 

@@ -295,6 +295,11 @@ def ensure_indexes(db: Database | None = None) -> None:
                              name="by_account_id")
     db.suppressions.create_index([("account_id", ASCENDING), ("_id", DESCENDING)],
                                  name="by_account_id")
+    # El id de su sistema (octubre de 2026): no se repite en una cuenta. Parcial,
+    # porque casi ningún contacto lo tiene.
+    db.contacts.create_index([("account_id", ASCENDING), ("external_id", ASCENDING)],
+                             unique=True, name="uniq_account_external_id",
+                             partialFilterExpression={"external_id": {"$type": "string"}})
     # Los candados cortos (`models/lock.py`): Mongo borra los vencidos.
     db.locks.create_index([("until", ASCENDING)], expireAfterSeconds=0,
                           name="ttl_until")
