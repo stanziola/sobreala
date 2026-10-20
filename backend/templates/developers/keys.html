@@ -1,0 +1,55 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('api_keys_title') }}{% endblock %}
+
+{#- Las llaves de la API (octubre de 2026). Cada una con su nombre, cómo se
+    reconoce (nunca su valor, que no se guarda), su clase, sus permisos, su
+    último uso y cuándo vence. Revocar pasa por una pantalla que pregunta. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('api_keys_title') }}</h1>
+<p class="settings__lead">{{ t('api_keys_lead') }}
+  <a href="{{ docs }}">{{ t('api_keys_docs') }}</a></p>
+
+{% if done == 'revoked' %}<p class="notice notice--ok">{{ t('api_keys_done_revoked') }}</p>{% endif %}
+
+<div class="row">
+  {% if active < limit %}
+  <a class="btn btn--icon" href="{{ url_for('developers.new_key') }}">{% include "_icon-plus.svg" %}<span>{{ t('api_keys_new') }}</span></a>
+  {% else %}
+  <p class="hint">{{ t('api_keys_full', n=limit) }}</p>
+  {% endif %}
+</div>
+
+{% if keys %}
+<p class="hint">{{ t('api_keys_active', n=active, limit=limit) }}</p>
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr>
+      <th>{{ t('api_keys_col_name') }}</th><th>{{ t('api_keys_col_key') }}</th>
+      <th>{{ t('api_keys_col_scopes') }}</th><th>{{ t('api_keys_col_used') }}</th>
+      <th>{{ t('api_keys_col_expires') }}</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for one in keys %}
+    <tr{% if not one.live %} class="table__row--off"{% endif %}>
+      <td><b>{{ one.name }}</b><br>
+        <span class="tag{{ ' tag--warn' if one.mode == 'test' else ' tag--quiet' }}">{{ t('api_keys_mode_' + one.mode) }}</span></td>
+      <td><code class="api-key">{{ one.prefix }}…{{ one.last4 }}</code>
+        {% if one.ips %}<br><span class="table__quiet">{{ t('api_keys_ips_some', n=one.ips|length) }}</span>{% endif %}</td>
+      <td class="table__quiet">{% for scope in one.scopes %}{{ t('api_scope_' + scope.replace(':', '_')) }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+      <td class="table__quiet">{% if one.last_used_at %}{{ t('api_keys_used', when=one.last_used_at|ago, ip=one.last_used_ip) }}{% else %}{{ t('api_keys_never_used') }}{% endif %}</td>
+      <td class="table__quiet">
+        {% if one.revoked_at %}{{ t('api_keys_revoked') }}
+        {% elif one.expired %}{{ t('api_keys_expired') }}
+        {% elif one.expires_at %}{{ one.expires_at|on_date }}
+        {% else %}{{ t('api_keys_expires_never') }}{% endif %}</td>
+      <td>{% if one.live %}<a class="btn btn--small btn--outline"
+             href="{{ url_for('developers.revoke_key', raw=one._id) }}">{{ t('api_keys_revoke') }}</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('api_keys_none') }}</p>
+{% endif %}
+{% endblock %}

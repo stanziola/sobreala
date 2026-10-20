@@ -219,6 +219,8 @@ def all_of(db, account_id, *, search: str = "", tag: str = ""):
 # dónde entró cada uno, y una raya es mejor que inventarlo.
 MANUAL = "manual"
 IMPORT = "import"
+# Cargado por la API pública (octubre de 2026).
+API = "api"
 
 
 def tags_in_use(db, account_id) -> list[str]:

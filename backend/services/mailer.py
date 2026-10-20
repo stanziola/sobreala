@@ -152,10 +152,10 @@ def _send_file(to: str, subject: str, html: str, text: str) -> str:
 
 
 def _send_ses(to: str, subject: str, html: str, text: str) -> str:
-    # Imported here so development without AWS credentials never needs boto3.
-    import boto3
+    # Created one at a time: gunicorn serves with threads (services/aws.py).
+    from services import aws
 
-    client = boto3.client("ses", region_name=Config.AWS_REGION)
+    client = aws.client("ses")
     kwargs = {
         "Source": _sender(),
         "Destination": {"ToAddresses": [to]},

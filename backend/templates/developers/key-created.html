@@ -1,0 +1,29 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('api_keys_created_title') }}{% endblock %}
+{% set pane_center = true %}
+
+{#- La llave entera, una sola vez (octubre de 2026). Es la respuesta del POST que
+    la crea y no pasa por ningún otro sitio: ni la sesión, ni la dirección. La
+    base guarda solo su hash, así que después no se puede volver a enseñar. Va en
+    un campo de solo lectura, que se selecciona y se copia entero también sin
+    JavaScript. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('api_keys_created_title') }}</h1>
+<div class="settings__pane">
+  <p class="lead">{{ t('api_keys_created_lead') }}</p>
+
+  <label for="key-raw">{{ t('api_keys_created_label', name=made.name) }}</label>
+  <input id="key-raw" class="copy-field api-key-raw" type="text" readonly value="{{ raw }}"
+         autocomplete="off" spellcheck="false">
+  <p class="hint">{{ t('api_keys_created_where') }}</p>
+
+  <p class="field-label">{{ t('api_keys_created_try') }}</p>
+  <pre class="api-snippet"><code>curl {{ base }}/me \
+  -H "Authorization: Bearer {{ raw }}"</code></pre>
+
+  <div class="erase__actions">
+    <a class="btn" href="{{ url_for('developers.keys') }}">{{ t('api_keys_created_done') }}</a>
+    <a class="btn btn--outline" href="{{ docs }}">{{ t('api_keys_docs') }}</a>
+  </div>
+</div>
+{% endblock %}

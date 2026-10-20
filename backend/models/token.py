@@ -49,6 +49,9 @@ TEST_ADDRESS = "test_address"
 # Eliminar la cuenta sin contraseña (entró con Google o GitHub): el código
 # va a su correo (octubre de 2026).
 ERASE = "erase"
+# Lo mismo para crear una llave de la API o un aviso a su sistema, quien no
+# tiene contraseña (octubre de 2026).
+API_ACCESS = "api_access"
 
 # Why a code was refused, so the visitor gets a useful message instead of a
 # generic error. UNKNOWN is "there is no code waiting for this account"; INVALID

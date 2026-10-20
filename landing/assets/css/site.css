@@ -1619,3 +1619,77 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 @media print {
   .js-reveal .reveal-words .word, .js-reveal .reveal-rise { opacity: 1; transform: none; }
 }
+
+/* ------------------------------------------------- la API (octubre de 2026)
+   /api/: el índice a la izquierda, fijo al bajar en pantalla ancha, y a la
+   derecha las guías y cada ruta con su método, sus campos y sus ejemplos. En
+   el teléfono el índice va arriba y los bloques de código se desplazan a lo
+   ancho en vez de ensanchar la página. */
+.api-docs { display: grid; gap: clamp(28px, 5vw, 56px); }
+@media (min-width: 960px) {
+  .api-docs { grid-template-columns: 250px minmax(0, 1fr); align-items: start; }
+  .api-docs__nav {
+    position: sticky; top: calc(var(--header-h) + 20px);
+    max-height: calc(100vh - var(--header-h) - 40px); overflow-y: auto;
+  }
+}
+.api-docs__nav { font-size: .9rem; }
+.api-docs__nav-title {
+  margin: 18px 0 6px; font-size: .78rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--color-ink-soft);
+}
+.api-docs__nav-title:first-child { margin-top: 0; }
+.api-docs__link {
+  display: block; padding: 4px 8px; border-radius: var(--radius-sm);
+  color: var(--color-ink); overflow-wrap: anywhere;
+}
+.api-docs__link:hover { background: var(--color-surface-alt); }
+.api-docs__body { display: grid; gap: clamp(40px, 6vw, 64px); min-width: 0; }
+.api-doc, .api-endpoint { scroll-margin-top: calc(var(--header-h) + 16px); }
+.api-doc__title { font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; margin-bottom: 12px; }
+.api-doc > p, .api-endpoint > p { font-size: 1rem; line-height: 1.7; }
+.api-doc > p + p { margin-top: 12px; }
+.api-docs code {
+  font-family: ui-monospace, Consolas, Menlo, monospace; font-size: .9em;
+  overflow-wrap: anywhere;
+}
+.api-doc p code, .api-table code { padding: 1px 5px; border-radius: 5px; background: var(--color-surface-alt); }
+.api-endpoint {
+  margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--color-border);
+  display: grid; gap: 10px; min-width: 0;
+}
+.api-endpoint__route { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 1.1rem; }
+.api-endpoint__title { font-weight: 700; }
+.api-endpoint__scope { font-size: .92rem; color: var(--color-ink-soft); }
+.api-endpoint__label { margin-top: 6px; font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--color-ink-soft); }
+.api-method {
+  display: inline-block; min-width: 3.6em; padding: 2px 7px; border-radius: 6px;
+  font-family: ui-monospace, Consolas, Menlo, monospace; font-size: .75rem; font-weight: 700;
+  text-align: center; color: var(--color-ink); background: var(--color-accent-soft);
+}
+.api-method--post, .api-method--put, .api-method--patch { background: var(--color-action); color: var(--color-on-action); }
+.api-method--delete { background: var(--color-deep); color: var(--color-on-dark); }
+.api-code { position: relative; min-width: 0; }
+.api-code pre {
+  margin: 0; padding: 14px 16px; padding-right: 84px; overflow-x: auto;
+  font-size: .85rem; line-height: 1.55; color: var(--color-ink);
+  background: var(--color-surface-alt); border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.api-code__copy {
+  position: absolute; top: 8px; right: 8px; padding: 4px 10px; cursor: pointer;
+  font-size: .78rem; font-weight: 600; color: var(--color-ink);
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 6px;
+}
+.api-code__copy:hover { background: var(--color-hover); }
+.api-code__copy.is-done { color: var(--color-on-action); background: var(--color-action); }
+.api-table { overflow-x: auto; }
+.api-table table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.api-table th, .api-table td {
+  padding: 10px 12px; text-align: left; vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+.api-table thead th { font-size: .8rem; color: var(--color-ink-soft); }
+.api-table tbody th { font-weight: 600; white-space: nowrap; }
+.api-type { font-size: .8rem; font-weight: 500; color: var(--color-ink-soft); }
+.api-required { font-size: .72rem; font-weight: 700; color: var(--color-accent-strong); }

@@ -34,10 +34,10 @@ class IdentityError(Exception):
 
 
 def _client():
-    # Importado aquí para que desarrollar sin boto3 nunca lo necesite.
-    import boto3
+    # De uno en uno: gunicorn atiende con hilos (services/aws.py).
+    from services import aws
 
-    return boto3.client("sesv2", region_name=Config.AWS_REGION)
+    return aws.client("sesv2")
 
 
 def _fake() -> bool:

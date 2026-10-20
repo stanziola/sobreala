@@ -654,3 +654,59 @@ def erased_to_admins(db, client) -> int:
                    foot=switch_off_hint()):
             sent += 1
     return sent
+
+
+def keys_url() -> str:
+    return f"{Config.APP_BASE_URL}{url_for('developers.keys')}"
+
+
+# ------------------------------------------------------------- la API
+#
+# Octubre de 2026. **De seguridad, sin interruptor**, como el de un dispositivo
+# nuevo: una llave abre la cuenta sin contraseña, y es justo lo primero que haría
+# alguien que entró sin permiso.
+
+def api_access_code(account, code: str) -> bool:
+    """El código para crear una llave o un aviso, a quien no tiene contraseña."""
+    return deliver(account, purpose=mail_log.API_CODE,
+                   subject=t("mail_api_code_subject"),
+                   heading=t("mail_api_code_heading"),
+                   paragraphs=[t("mail_api_code_body")], code=code)
+
+
+def api_key_created(account, *, found, ip: str) -> bool:
+    from models import api_key as api_keys
+
+    mode = t("api_keys_mode_" + found.get("mode", api_keys.LIVE))
+    return deliver(account, purpose=mail_log.API_KEY,
+                   subject=t("mail_api_key_subject"),
+                   heading=t("mail_api_key_heading"),
+                   paragraphs=[t("mail_api_key_body", name=found.get("name", ""),
+                                 mode=mode, ip=ip or "-"),
+                               t("mail_api_key_scopes", scopes=", ".join(
+                                   t("api_scope_" + one.replace(":", "_"))
+                                   for one in found.get("scopes") or [])),
+                               t("mail_api_key_not_you")],
+                   button={"href": keys_url(), "label": t("mail_api_key_button")})
+
+
+def api_key_revoked(account, *, name: str, reason: str = "") -> bool:
+    paragraphs = [t("mail_api_revoked_body", name=name)]
+    if reason:
+        paragraphs.append(reason)
+    return deliver(account, purpose=mail_log.API_KEY,
+                   subject=t("mail_api_revoked_subject"),
+                   heading=t("mail_api_revoked_heading"),
+                   paragraphs=paragraphs,
+                   button={"href": keys_url(), "label": t("mail_api_key_button")})
+
+
+def api_key_exposed(account, *, name: str) -> bool:
+    """Que se revocó sola porque llegó en la dirección de una petición, donde
+    queda escrita en registros ajenos."""
+    return deliver(account, purpose=mail_log.API_KEY,
+                   subject=t("mail_api_exposed_subject"),
+                   heading=t("mail_api_exposed_heading"),
+                   paragraphs=[t("mail_api_exposed_body", name=name),
+                               t("mail_api_exposed_fix")],
+                   button={"href": keys_url(), "label": t("mail_api_key_button")})

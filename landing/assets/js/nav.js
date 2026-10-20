@@ -211,7 +211,8 @@
     btn.addEventListener("click", function () {
       copyText(btn.dataset.copy).then(function () {
         btn.classList.add("is-done");
-        if (status) status.textContent = "Correo copiado";
+        // Los ejemplos de la API dicen lo suyo (octubre de 2026).
+        if (status) status.textContent = btn.dataset.copyDone || "Correo copiado";
         clearTimeout(timer);
         timer = setTimeout(function () {
           btn.classList.remove("is-done");
@@ -220,7 +221,9 @@
       }).catch(function () {
         // Clipboard refused: select the text so it can be copied by hand.
         var range = document.createRange();
-        range.selectNodeContents(btn.querySelector(".copy-inline__text") || btn);
+        var box = btn.closest("[data-copy-box]");
+        range.selectNodeContents((box && box.querySelector("code"))
+                                 || btn.querySelector(".copy-inline__text") || btn);
         var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);

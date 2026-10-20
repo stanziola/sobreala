@@ -27,6 +27,7 @@ VERIFY = "verify"        # se verificó o se rechazó la identificación o la di
 LIMIT = "limit"          # se limitó la cuenta, o se le quitó el límite
 NOTIFY = "notify"        # se le mandó al cliente el resultado de sus verificaciones
 ERASE = "erase"          # se eliminó la cuenta y sus datos (por ella misma o por un admin)
+API_KEY = "api_key"      # se le revocó una llave de la API (octubre de 2026)
 
 
 def now() -> datetime:

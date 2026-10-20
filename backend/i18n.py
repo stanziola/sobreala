@@ -1124,6 +1124,8 @@ TEXTS = {
     "contacts_col_status": "Estado",
     "contacts_how_manual": "A mano",
     "contacts_how_import": "Importado",
+    # Por la API (octubre de 2026).
+    "contacts_how_api": "Por la API",
     "contacts_status_active": "Activo",
     "contacts_status_blocked": "Anulado",
     "contacts_status_incomplete": "Incompleto",
@@ -2823,6 +2825,254 @@ TEXTS = {
     "mail_invoice_body": "La factura de tu pago del {when} ya está lista. La "
                          "descargas desde Configuración, en Facturación.",
     "mail_invoice_button": "Ir a Facturación",
+
+    # --- la API (octubre de 2026) ------------------------------------------
+    "dash_api": "API",
+    "dash_api_keys": "Llaves",
+    "dash_api_log": "Registro",
+    "dash_api_docs": "Documentación",
+
+    "api_keys_title": "Llaves de la API",
+    "api_keys_lead": "Con una llave, el sistema de tu negocio (tu tienda en línea, "
+                     "tu programa de socios) habla con Sobreala sin entrar al panel: "
+                     "carga contactos, usa tus plantillas y tus remitentes, y envía "
+                     "correos. Cada llave tiene sus permisos, y la puedes revocar "
+                     "cuando quieras.",
+    "api_keys_docs": "Cómo se usa: la documentación",
+    "api_keys_new": "Crear una llave",
+    "api_keys_none": "Todavía no tienes ninguna llave.",
+    "api_keys_full": "Ya tienes {n} llaves activas, que es el máximo. Revoca una "
+                     "que no uses para crear otra.",
+    "api_keys_active": "{n} de {limit} activas",
+    "api_keys_col_name": "Nombre",
+    "api_keys_col_key": "Llave",
+    "api_keys_col_scopes": "Permisos",
+    "api_keys_col_used": "Último uso",
+    "api_keys_col_expires": "Vence",
+    "api_keys_mode_live": "de verdad",
+    "api_keys_mode_test": "de prueba",
+    "api_keys_never_used": "Sin usar",
+    "api_keys_used": "{when} · {ip}",
+    "api_keys_expires_never": "Nunca",
+    "api_keys_revoked": "Revocada",
+    "api_keys_expired": "Vencida",
+    "api_keys_ips_some": "Solo desde {n} IP o rangos",
+    "api_keys_revoke": "Revocar",
+    "api_keys_done_revoked": "Listo, la llave quedó revocada: lo que la use ya no "
+                             "entra.",
+    "api_keys_new_title": "Crear una llave",
+    "api_keys_new_lead": "La llave se enseña una sola vez, al crearla. Va en el "
+                         "servidor de tu sistema, nunca en una página web, en una "
+                         "aplicación que se descarga ni en un repositorio.",
+    "api_keys_name": "Nombre",
+    "api_keys_name_hint": "Para reconocerla después: «Tienda en línea», «Sistema "
+                          "de socios».",
+    "api_keys_mode": "Clase",
+    "api_keys_mode_live_title": "De verdad",
+    "api_keys_mode_live_desc": "Hace lo que le permitas. Los correos salen de "
+                               "verdad y gastan cuota.",
+    "api_keys_mode_test_title": "De prueba",
+    "api_keys_mode_test_desc": "Para que un programador ensaye: solo lee, y los "
+                               "envíos se simulan (no sale nada ni se gasta "
+                               "cuota). Si se filtra, no puede cambiar ni mandar "
+                               "nada.",
+    "api_keys_scopes": "Permisos",
+    "api_keys_preset_send": "Solo enviar correos",
+    "api_keys_preset_read": "Solo leer",
+    "api_keys_preset_all": "Todo",
+    "api_keys_preset_custom": "A mi medida",
+    "api_keys_scope_required": "Marca al menos un permiso.",
+    "api_keys_test_scope_note": "Una llave de prueba solo se queda con los "
+                                "permisos de leer y los de enviar, que con ella se "
+                                "simulan.",
+    "api_keys_days": "Vence",
+    "api_keys_days_0": "Nunca",
+    "api_keys_days_30": "En 30 días",
+    "api_keys_days_90": "En 90 días",
+    "api_keys_days_365": "En un año",
+    "api_keys_ips": "Solo desde estas IP (opcional)",
+    "api_keys_ips_hint": "Una por línea, o un rango como 203.0.113.0/24. Vacío "
+                         "deja entrar desde donde sea. Hasta 10.",
+    "api_keys_ips_bad": "Esto no es una IP ni un rango: {what}.",
+    "api_keys_ips_full": "Caben hasta {n} IP o rangos.",
+    "api_keys_proof_title": "Confirma que eres tú",
+    "api_keys_proof_lead": "Una llave abre tu cuenta sin contraseña, así que antes "
+                           "de crearla te pedimos la tuya. Después, por 10 "
+                           "minutos, no te la volvemos a pedir.",
+    "api_keys_password": "Tu contraseña",
+    "api_keys_email_code": "El código que te llegó al correo",
+    "api_keys_send_code": "Enviarme un código",
+    "api_keys_code_hint": "Entraste con Google o GitHub y no tienes contraseña: te "
+                          "mandamos un código a tu correo.",
+    "api_keys_code_sent": "Listo, te mandamos el código.",
+    "api_keys_app_code": "El código de tu app de autenticación",
+    "api_keys_create": "Crear la llave",
+    "api_keys_cancel": "Cancelar",
+    "api_keys_created_title": "Tu llave nueva",
+    "api_keys_created_lead": "Cópiala ahora: es la única vez que la vas a ver. "
+                             "Nosotros guardamos solo una huella de ella y no la "
+                             "podemos volver a enseñar. Si la pierdes, crea otra y "
+                             "revoca esta.",
+    "api_keys_created_label": "La llave «{name}»",
+    "api_keys_created_where": "Va en la cabecera Authorization de cada petición, "
+                              "desde el servidor de tu sistema. Nunca en una página "
+                              "web, en una aplicación que se descarga ni en un "
+                              "repositorio.",
+    "api_keys_created_try": "Para probarla, desde una terminal:",
+    "api_keys_created_done": "Ya la guardé",
+    "api_keys_revoke_title": "¿Revocar «{name}»?",
+    "api_keys_revoke_lead": "Lo que use esta llave deja de entrar desde ya, y no se "
+                            "puede deshacer. Si la necesitas otra vez, crea una "
+                            "nueva.",
+    "api_keys_revoke_yes": "Sí, revocarla",
+    "api_key_revoked_by_owner": "La revocó el dueño de la cuenta.",
+    "api_key_exposed_reason": "Llegó en la dirección de una petición, donde queda "
+                              "escrita en registros ajenos.",
+
+    "api_scope_contacts_read": "Ver contactos",
+    "api_scope_contacts_read_desc": "Contactos, etiquetas, columnas y supresiones.",
+    "api_scope_contacts_write": "Cambiar contactos",
+    "api_scope_contacts_write_desc": "Crear, cambiar y borrar contactos, sus "
+                                     "listas, etiquetas y columnas.",
+    "api_scope_templates_read": "Ver plantillas",
+    "api_scope_templates_read_desc": "Plantillas, carpetas y cómo queda cada correo.",
+    "api_scope_templates_write": "Cambiar plantillas",
+    "api_scope_templates_write_desc": "Crear, cambiar y borrar plantillas, "
+                                      "carpetas y fotos.",
+    "api_scope_emails_send": "Enviar correos",
+    "api_scope_emails_send_desc": "Mandar un correo a una persona y ver los que "
+                                  "mandó la API.",
+    "api_scope_campaigns_read": "Ver campañas",
+    "api_scope_campaigns_read_desc": "Campañas, lo que salió y a quién.",
+    "api_scope_campaigns_write": "Cambiar campañas",
+    "api_scope_campaigns_write_desc": "Crear, cambiar y borrar campañas.",
+    "api_scope_campaigns_send": "Mandar campañas",
+    "api_scope_campaigns_send_desc": "Enviar y programar campañas.",
+    "api_scope_stats_read": "Ver estadísticas",
+    "api_scope_stats_read_desc": "Las cifras y los eventos de tus correos.",
+
+    "api_log_title": "Registro de la API",
+    "api_log_lead": "Las peticiones que fallaron en los últimos {days} días, para "
+                    "ver por qué algo no entró. Lo que salió bien se ve en el "
+                    "último uso de cada llave.",
+    "api_log_none": "Nada falló en estos días.",
+    "api_log_all": "Todas las llaves",
+    "api_log_show": "Ver",
+    "api_log_key": "Llave",
+    "api_log_col_when": "Cuándo",
+    "api_log_col_key": "Llave",
+    "api_log_col_request": "Petición",
+    "api_log_col_result": "Resultado",
+    "api_log_col_from": "Desde",
+
+    "admin_api_title": "API",
+    "admin_api_none": "No tiene llaves.",
+    "admin_api_revoke": "Revocar",
+    "admin_api_reason": "Motivo",
+    "admin_api_done": "Listo, la llave quedó revocada y el cliente recibió un "
+                      "correo.",
+
+    "mail_api_code_subject": "Tu código para la API",
+    "mail_api_code_heading": "Tu código para la API",
+    "mail_api_code_body": "Alguien con tu sesión abierta pidió crear una llave de "
+                          "la API o un aviso a otro sistema. Si fuiste tú, escribe "
+                          "este código. Si no, no hagas nada: sin el código no se "
+                          "crea nada.",
+    "mail_api_key_subject": "Se creó una llave de la API en tu cuenta",
+    "mail_api_key_heading": "Se creó una llave de la API",
+    "mail_api_key_body": "Se creó la llave «{name}» ({mode}) desde la IP {ip}.",
+    "mail_api_key_scopes": "Puede: {scopes}.",
+    "mail_api_key_not_you": "Si no fuiste tú, revócala ahora y cambia tu "
+                            "contraseña: con esa llave se puede usar tu cuenta sin "
+                            "entrar al panel.",
+    "mail_api_key_button": "Ver mis llaves",
+    "mail_api_revoked_subject": "Se revocó una llave de la API",
+    "mail_api_revoked_heading": "Se revocó una llave de la API",
+    "mail_api_revoked_body": "La llave «{name}» quedó revocada: lo que la usaba ya "
+                             "no entra.",
+    "mail_api_exposed_subject": "Revocamos una llave de la API",
+    "mail_api_exposed_heading": "Revocamos una de tus llaves",
+    "mail_api_exposed_body": "La llave «{name}» llegó escrita en la dirección de "
+                             "una petición. Ahí queda guardada en los registros de "
+                             "los servidores por donde pasa, así que la revocamos "
+                             "para que nadie más la use.",
+    "mail_api_exposed_fix": "Crea una nueva y mándala en la cabecera "
+                            "Authorization, como dice la documentación.",
+
+    "api_error_unauthorized": "Falta la llave, o no es válida. Va en la cabecera "
+                              "Authorization: Bearer y tu llave.",
+    "api_error_key_in_url": "La llave no va en la dirección: va en la cabecera "
+                            "Authorization. Si era una llave buena, la revocamos, "
+                            "porque en la dirección queda escrita en registros "
+                            "ajenos.",
+    "api_error_ip_not_allowed": "Esta llave no se puede usar desde esta IP.",
+    "api_error_account_suspended": "La cuenta está suspendida.",
+    "api_error_account_closed": "La cuenta todavía no está abierta: le falta la "
+                                "demostración o un plan.",
+    "api_error_test_key_cannot": "Una llave de prueba solo puede leer y simular "
+                                 "envíos.",
+    "api_error_missing_scope": "Esta llave no tiene el permiso {scope}.",
+    "api_error_rate_limited": "Demasiadas peticiones. Espera los segundos que dice "
+                              "Retry-After y vuelve a intentar.",
+    "api_error_not_found": "No existe, o no es de esta cuenta.",
+    "api_error_method_not_allowed": "Esta dirección no acepta ese método.",
+    "api_error_too_large": "La petición es demasiado grande.",
+    "api_error_unavailable": "El servicio no está disponible en este momento. "
+                             "Intenta de nuevo en unos segundos.",
+    "api_error_internal_error": "Algo falló de nuestro lado. Si se repite, "
+                                "escríbenos con el request_id.",
+    "api_error_unsupported_media_type": "El cuerpo va en JSON, con Content-Type: "
+                                        "application/json.",
+    "api_error_bad_json": "El cuerpo no es un objeto JSON válido.",
+    "api_error_validation_failed": "Hay campos que no están bien: los dice fields.",
+    "api_error_bad_cursor": "El cursor no es válido: usa el next_cursor de la "
+                            "respuesta anterior.",
+    "api_error_bad_idempotency_key": "Idempotency-Key tiene que ser texto de hasta "
+                                     "100 caracteres, sin espacios.",
+    "api_error_idempotency_mismatch": "Esa Idempotency-Key ya se usó con otro "
+                                      "cuerpo.",
+    "api_error_idempotency_busy": "Hay otra petición con esa Idempotency-Key en "
+                                  "curso. Espera y vuelve a intentar.",
+
+    "api_field_unknown": "Este campo no existe.",
+    "api_field_required": "Falta este campo.",
+    "api_field_text": "Tiene que ser texto.",
+    "api_field_long": "Tiene más de {n} caracteres.",
+    "api_field_bool": "Tiene que ser true o false.",
+    "api_field_int": "Tiene que ser un número entero de {low} a {high}.",
+    "api_field_strings": "Tiene que ser una lista de textos, de hasta {n}.",
+    "api_field_id": "No es un id válido.",
+    "api_field_when": "Tiene que ser fecha y hora ISO 8601 con su zona, como "
+                      "2026-10-20T15:00:00-05:00.",
+
+    # --- la API: contactos (octubre de 2026) ----------------------------------
+    "api_contacts_rows": "Van de 1 a {n} contactos por carga.",
+    "api_contacts_consent": "Falta de dónde salieron: source es uno de {sources}, "
+                            "y note (opcional) hasta 300 caracteres.",
+    "api_contacts_email": "Ese correo no parece válido.",
+    "api_contacts_unknown_tags": "Estas etiquetas no existen: {what}. Créalas antes "
+                                 "con POST /tags.",
+    "api_contacts_field_bad_fields": "fields tiene que ser un objeto con la clave de "
+                                     "cada columna.",
+    "api_contacts_field_unknown_field": "La columna {what} no existe. Créala antes "
+                                        "con POST /fields.",
+    "api_contacts_field_bad_value": "El valor de {what} no es de su tipo.",
+    "api_contacts_missing": "Le faltan columnas: {what}. Todas son obligatorias.",
+    "api_fields_type": "type es uno de {types}.",
+    "api_limit_tags": "etiquetas",
+    "api_limit_fields": "columnas",
+    "api_suppressions_reason": "reason es uno de {reasons}.",
+    "api_error_busy": "Hay otra carga de contactos en curso en esta cuenta. Intenta "
+                      "en unos segundos.",
+    "api_error_unknown_tag": "Hay etiquetas que no existen: las dice tags. Créalas "
+                             "antes con POST /tags.",
+    "api_error_email_taken": "Esa dirección ya la tiene otro contacto de la cuenta.",
+    "api_error_tag_exists": "Esa etiqueta ya existe.",
+    "api_error_limit_reached": "Llegaste al tope de {what} de tu plan: {n}.",
+    "api_error_field_exists": "Ese nombre ya lo tiene otra columna, o es el de un "
+                              "dato que todo contacto ya trae (Nombre, Correo).",
+    "api_error_field_values": "{n} contactos tienen en esa columna algo que no es de "
+                              "ese tipo. Corrígelos antes de cambiarlo.",
 }
 
 

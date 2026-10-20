@@ -296,6 +296,42 @@
 </ul>
 <p class="hint">{{ t('admin_privacy_note') }}</p>
 
+{# La API (octubre de 2026): sus llaves, sin el valor (que no se guarda), y
+   revocar con motivo, para cortar una que se filtró o que abusa. El cliente
+   recibe un correo con el motivo. #}
+<h3 class="settings__subtitle" id="api">{{ t('admin_api_title') }}</h3>
+{% if request.args.get('api') == 'revoked' %}<p class="notice notice--ok">{{ t('admin_api_done') }}</p>{% endif %}
+{% if api_keys %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for one in api_keys %}
+      <tr{% if not one.live %} class="table__row--off"{% endif %}>
+        <td><b>{{ one.name }}</b> <span class="tag tag--quiet">{{ t('api_keys_mode_' + one.mode) }}</span><br>
+          <code class="api-key">{{ one.prefix }}…{{ one.last4 }}</code></td>
+        <td class="table__quiet">{% for scope in one.scopes %}{{ t('api_scope_' + scope.replace(':', '_')) }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+        <td class="table__quiet">{% if one.last_used_at %}{{ t('api_keys_used', when=one.last_used_at|ago, ip=one.last_used_ip) }}{% else %}{{ t('api_keys_never_used') }}{% endif %}</td>
+        <td>
+          {% if one.live %}
+          <form class="setting__form" method="post"
+                action="{{ url_for('admin.revoke_api_key', raw=client._id, key=one._id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="visually-hidden" for="api-motivo-{{ one._id }}">{{ t('admin_api_reason') }}</label>
+            <input id="api-motivo-{{ one._id }}" name="reason" type="text" maxlength="300"
+                   autocomplete="off" required placeholder="{{ t('admin_api_reason') }}">
+            <button class="btn btn--small btn--outline" type="submit">{{ t('admin_api_revoke') }}</button>
+          </form>
+          {% elif one.revoked_at %}{{ t('api_keys_revoked') }}{% else %}{{ t('api_keys_expired') }}{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('admin_api_none') }}</p>
+{% endif %}
+
 {# Los pagos cobrados, y la factura de cada uno. Las facturas se emiten a
    mano: aquí se sube el PDF y el cliente lo baja desde Facturación. #}
 {% if invoices_shown %}

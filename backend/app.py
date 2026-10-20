@@ -9,7 +9,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from flask import Flask, g, jsonify, render_template, request, session
+from flask.sessions import SecureCookieSessionInterface
 from pymongo.errors import PyMongoError
+from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
@@ -67,6 +69,26 @@ def hint_domain() -> str | None:
     return f".{host}"
 
 
+def is_api() -> bool:
+    """Si esta petición es de la API pública (octubre de 2026)."""
+    return request.path.startswith("/api/")
+
+
+class PanelSessions(SecureCookieSessionInterface):
+    """La galleta de siempre, menos bajo `/api/`.
+
+    La API entra con una llave y nunca con la sesión del navegador. Ahí la
+    sesión es la vacía de Flask (`NullSession`): no lee la galleta, revienta si
+    algo intenta escribirle, y no se guarda, así que ninguna respuesta de la API
+    pone una galleta.
+    """
+
+    def open_session(self, app, request):
+        if request.path.startswith("/api/"):
+            return self.make_null_session(app)
+        return super().open_session(app, request)
+
+
 def asset_version() -> str:
     """A short stamp that changes when the stylesheet or the script does.
 
@@ -89,6 +111,7 @@ def create_app(overrides: dict | None = None) -> Flask:
     app.config.from_object(Config)
     if overrides:
         app.config.update(overrides)
+    app.session_interface = PanelSessions()
 
     app.permanent_session_lifetime = timedelta(
         seconds=app.config["PERMANENT_SESSION_LIFETIME"]
@@ -122,6 +145,8 @@ def create_app(overrides: dict | None = None) -> Flask:
     from blueprints.downloads import bp as downloads_bp
     from blueprints.search import bp as search_bp
     from blueprints.webhooks import bp as webhooks_bp
+    from blueprints.api import bp as api_bp
+    from blueprints.developers import bp as developers_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(contacts_bp)
     app.register_blueprint(designs_bp)
@@ -141,6 +166,10 @@ def create_app(overrides: dict | None = None) -> Flask:
     # Los avisos de Amazon. Tampoco llevan sesion: quien llama es SNS, y lo que
     # lo autoriza es el secreto de la direccion.
     app.register_blueprint(webhooks_bp)
+    # La API pública (octubre de 2026): entra con una llave, nunca con la
+    # sesión. Y la rama «API» del Dashboard, donde el dueño maneja sus llaves.
+    app.register_blueprint(api_bp)
+    app.register_blueprint(developers_bp)
 
     # The size limit on an imported file, enforced by Flask before the request
     # reaches any code of ours: an oversized upload is refused without being
@@ -207,8 +236,9 @@ def create_app(overrides: dict | None = None) -> Flask:
         """
         # Primero si es un archivo: solo entonces se lee el formulario. Leerlo
         # en cualquier otra respuesta volvería a pasar por el cuerpo, y en una
-        # que Flask ya cortó por grande (413) eso rompería la respuesta.
-        if not response.headers.get("Content-Disposition", "").startswith("attachment"):
+        # que Flask ya cortó por grande (413) eso rompería la respuesta. La API
+        # no pone galletas.
+        if is_api() or not response.headers.get("Content-Disposition", "").startswith("attachment"):
             return response
         token = request.args.get("dl") or (request.form.get("dl") if request.method == "POST" else "")
         if token and DOWNLOAD_TOKEN.fullmatch(token):
@@ -229,6 +259,9 @@ def create_app(overrides: dict | None = None) -> Flask:
 
         from blueprints.auth.routes import current_account, current_workspace
 
+        # La API no tiene sesión ni pone galletas.
+        if is_api():
+            return response
         signed_in = bool(session.get(SESSION_KEY))
         # Se compara contra el valor que debería tener, no contra su presencia:
         # así el día que una cuenta pasa a administrador la galleta se reescribe
@@ -286,6 +319,17 @@ def create_app(overrides: dict | None = None) -> Flask:
         from this same origin, so anything injected into a page — a script tag,
         a remote stylesheet, a form pointed somewhere else — has nowhere to go.
         """
+        if is_api():
+            # La API responde JSON (o un archivo), nunca una página: nada se
+            # dibuja, nada se enmarca y nada se guarda. Va antes que la del
+            # correo, que una ruta del lienzo puede encender.
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'none'; frame-ancestors 'none'; sandbox")
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            response.headers.setdefault("Cache-Control", "no-store")
+            return response
         if g.get("email_preview", False):
             # Esta respuesta no es una página del panel: es un correo, y va
             # dentro de un marco aislado. Necesita justo lo contrario que el
@@ -362,10 +406,27 @@ def create_app(overrides: dict | None = None) -> Flask:
     # "Internal Server Error", which tells the visitor nothing and whoever has
     # to fix it even less. 503 rather than 500 because it is temporary, and the
     # exception text stays in the platform log, never on the screen.
+    def api_error(status: int):
+        """Bajo `/api/`, los errores van en JSON y no como página."""
+        from blueprints.api.core import json_error_for
+
+        return json_error_for(status)
+
     @app.errorhandler(PyMongoError)
     def database_unavailable(exc):
         app.logger.exception("base de datos inaccesible en %s", request.path)
+        if is_api():
+            return api_error(503)
         return error_page("error_db_title", "error_db_lead"), 503
+
+    @app.errorhandler(404)
+    @app.errorhandler(405)
+    def not_routed(exc: HTTPException):
+        """Una dirección que no existe o un método que no va: en la API, en
+        JSON; en el panel, la página de siempre de Werkzeug."""
+        if is_api():
+            return api_error(exc.code)
+        return exc
 
     @app.errorhandler(413)
     def file_too_big(exc):
@@ -376,11 +437,15 @@ def create_app(overrides: dict | None = None) -> Flask:
         the limit is that a five megabyte cap is not enforced by reading five
         megabytes first.
         """
+        if is_api():
+            return api_error(413)
         return error_page("error_upload_big_title", "error_upload_big_lead"), 413
 
     @app.errorhandler(500)
     def internal_error(exc):
         app.logger.exception("error no manejado en %s", request.path)
+        if is_api():
+            return api_error(500)
         return error_page("error_unknown_title", "error_unknown_lead"), 500
 
     @app.get("/health")

@@ -2387,6 +2387,24 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 .verify__form input[type="file"] { width: min(300px, 100%); margin: 0; }
 .verify__form .error { flex: 1 1 100%; margin: 0; text-align: right; }
 
+/* ------------------------------------------------------------- la API
+   Octubre de 2026. Las llaves se reconocen por su prefijo y sus cuatro últimos,
+   en letra de máquina; la nueva se enseña una vez en un campo de solo lectura,
+   y el ejemplo de `curl` en un bloque que se desplaza a lo ancho en el
+   teléfono en vez de romper la pantalla. */
+.api-key { font-family: Consolas, Menlo, monospace; font-size: .85rem; word-break: break-all; }
+.api-key-raw { font-size: .9rem; }
+.api-snippet {
+  margin: 8px 0 0; padding: 12px 14px; overflow-x: auto;
+  font-family: Consolas, Menlo, monospace; font-size: .82rem; line-height: 1.5;
+  color: var(--color-ink); background: var(--color-surface-alt);
+  border: 1px solid var(--color-border); border-radius: 10px;
+}
+.api-presets { display: flex; flex-wrap: wrap; gap: 0 22px; }
+.api-presets .check { margin-top: 10px; }
+/* Una llave revocada o vencida sigue en la lista, apagada. */
+.table__row--off { opacity: .6; }
+
 /* GENERATED from landing/src/site.css: the colours of the «Funciones»
    drawings, which also turn beside the sign in and sign up pages. */
 .art-stage { fill: var(--art-stage); }

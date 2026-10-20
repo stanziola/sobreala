@@ -262,11 +262,13 @@ def deliver(message: EmailMessage) -> str:
         print(f"  [campana] {message['To']}: {path}", flush=True)
         return path
 
-    # Importado aquí para que desarrollar sin boto3 nunca lo necesite.
-    import boto3
+    from services import aws
 
-    client = boto3.client("ses", region_name=Config.AWS_REGION)
-    kwargs: dict[str, Any] = {"RawMessage": {"Data": bytes(message)}}
+    client = aws.client("ses")
+    # La dirección va explícita (octubre de 2026): aunque algo se colara en
+    # una cabecera, SES no se lo entrega a nadie más.
+    kwargs: dict[str, Any] = {"RawMessage": {"Data": bytes(message)},
+                              "Destinations": [str(message["To"])]}
     if Config.SES_CONFIGURATION_SET:
         kwargs["ConfigurationSetName"] = Config.SES_CONFIGURATION_SET
     return client.send_raw_email(**kwargs)["MessageId"]

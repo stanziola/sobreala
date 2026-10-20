@@ -68,6 +68,10 @@ SEARCH_WORDS = {
     "contacts": "personas socios clientes",
     "suppressions": "bajas anulados rebotes quejas",
     "settings-test": "demostracion correos verificados prueba",
+    # La API (octubre de 2026).
+    "api-keys": "api llave llaves clave token integracion programador desarrollador sistema",
+    "api-log": "registro errores peticiones log api",
+    "api-docs": "documentacion api referencia programador integracion",
 }
 # Lo que se hace desde una pantalla y no es fila del árbol: (texto, ruta,
 # permiso, la fila donde vive, palabras con que se pide).

@@ -37,6 +37,8 @@ LOGOUT = "logout"
 SETTINGS = "settings"
 IMPORT = "import"
 PAYMENT = "payment"
+# Las llaves de la API (octubre de 2026): creada o revocada.
+API_KEY = "api_key"
 
 # How it went. Which ones are possible depends on the kind.
 CREATED = "created"                    # register: a new account exists
@@ -58,6 +60,7 @@ REGENERATED = "regenerated"            # two-step: new recovery codes
 MAIL_FAILED = "mail_failed"            # the account is fine, the email did not go out
 FAILED = "failed"                      # import: the file could not be read
 SUSPENDED = "suspended"                # login: la contraseña era buena, la cuenta no
+REVOKED = "revoked"                    # api_key: se revocó
 
 # What the confirm route writes down, keyed by the reason models/token.py gave.
 # The screen collapses most of these into one message, on purpose; the log keeps

@@ -13,6 +13,8 @@ time: the platform then served an opaque 502 with nothing readable anywhere.
 
 from __future__ import annotations
 
+import threading
+
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.database import Database
 from pymongo.errors import OperationFailure
@@ -25,17 +27,22 @@ SERVER_SELECTION_TIMEOUT_MS = 5000
 
 _client: MongoClient | None = None
 _indexes_ready = False
+# Con hilos (octubre de 2026), dos peticiones a la vez podían crear dos
+# clientes, cada uno con su propio grupo de conexiones.
+_client_lock = threading.Lock()
 
 
 def get_client() -> MongoClient:
     global _client
     if _client is None:
-        _client = MongoClient(
-            Config.MONGODB_URI,
-            tz_aware=True,
-            serverSelectionTimeoutMS=SERVER_SELECTION_TIMEOUT_MS,
-            connectTimeoutMS=SERVER_SELECTION_TIMEOUT_MS,
-        )
+        with _client_lock:
+            if _client is None:
+                _client = MongoClient(
+                    Config.MONGODB_URI,
+                    tz_aware=True,
+                    serverSelectionTimeoutMS=SERVER_SELECTION_TIMEOUT_MS,
+                    connectTimeoutMS=SERVER_SELECTION_TIMEOUT_MS,
+                )
     return _client
 
 
@@ -259,6 +266,38 @@ def ensure_indexes(db: Database | None = None) -> None:
     # borran al verificarse o rechazarse (models/verification_doc.py).
     db.verification_docs.create_index([("account_id", ASCENDING), ("kind", ASCENDING)],
                                       unique=True, name="by_account_kind")
+
+    # La API (octubre de 2026). Una llave se busca por el hash de lo que llega
+    # en `Authorization`, y ese hash no se repite.
+    db.api_keys.create_index([("token_hash", ASCENDING)], unique=True,
+                             name="uniq_token_hash")
+    db.api_keys.create_index([("account_id", ASCENDING), ("created_at", DESCENDING)],
+                             name="by_account_created")
+    # Lo que falló, que Mongo borra solo a la semana (`models/api_log.py`).
+    from models import api_log
+
+    db.api_log.create_index([("account_id", ASCENDING), ("created_at", DESCENDING)],
+                            name="by_account_created")
+    db.api_log.create_index([("created_at", ASCENDING)],
+                            expireAfterSeconds=api_log.KEEP_DAYS * 86400,
+                            name="ttl_created_at")
+    # Una respuesta por cuenta, llave, método, ruta e `Idempotency-Key`; se van
+    # solas al día (`models/idempotency.py`).
+    db.api_idempotency.create_index([("account_id", ASCENDING), ("key_id", ASCENDING),
+                                     ("method", ASCENDING), ("path", ASCENDING),
+                                     ("key", ASCENDING)],
+                                    unique=True, name="uniq_request")
+    db.api_idempotency.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
+                                    name="ttl_expires_at")
+    # La lista de contactos y la de supresiones, por la API, se recorren por
+    # `_id`, con cursor.
+    db.contacts.create_index([("account_id", ASCENDING), ("_id", DESCENDING)],
+                             name="by_account_id")
+    db.suppressions.create_index([("account_id", ASCENDING), ("_id", DESCENDING)],
+                                 name="by_account_id")
+    # Los candados cortos (`models/lock.py`): Mongo borra los vencidos.
+    db.locks.create_index([("until", ASCENDING)], expireAfterSeconds=0,
+                          name="ttl_until")
 
 
 def indexes_ready() -> bool:

@@ -195,6 +195,91 @@ def _cell(row: list[str], index: int | None) -> str:
     return row[index][:MAX_FIELD]
 
 
+def new_counts() -> dict[str, Any]:
+    return {"read": 0, "added": 0, "updated": 0, "invalid": 0,
+            "suppressed": 0, "incomplete": 0,
+            # Revisadas antes de enviar (`services/address_check.py`): las de
+            # un dominio que no recibe correo entran marcadas, y los errores
+            # de dedo se cuentan con su sugerencia (las primeras cinco).
+            "undeliverable": 0, "typos": 0, "typos_sample": []}
+
+
+# Lo que le pasó a cada dirección de una tanda (`write_batch`).
+ADDED = "added"
+UPDATED = "updated"
+INCOMPLETE = "incomplete"
+NO_ROOM = "limit"
+
+
+def write_batch(db, account_id, batch: list[tuple[str, str, dict[str, str]]], *,
+                tags: list[str], consent: dict[str, Any], required: list[str],
+                room: int, counts: dict[str, Any], domains_seen: set[str],
+                added_by: str = contacts.IMPORT, stop_when_full: bool = True,
+                max_domains: int = address_check.MAX_DOMAINS) -> dict[str, Any]:
+    """Escribir una tanda, con las reglas de importar: quien ya está no ocupa
+    sitio, un nuevo necesita sitio en el plan y todas sus columnas, y lo escrito
+    se revisa (dominios que no reciben, errores de dedo). Las dos preguntas en
+    lote, una consulta cada una (regla 10).
+
+    La usan el CSV (`run()`) y la API (octubre de 2026). Devuelve el sitio que
+    queda, si se llenó, y qué le pasó a cada dirección normalizada: `added`,
+    `updated`, `incomplete` o `limit`, con las que no reciben (`bad`) y los
+    errores de dedo (`typos`, dirección y sugerencia). El CSV para en el primero
+    que no cabe (`stop_when_full`); la API sigue, porque a quien ya está se le
+    puede actualizar igual.
+    """
+    keys = [normalize_email(one[0]) for one in batch]
+
+    # The two bulk questions, one query each: who is already here, and who
+    # may not be written to.
+    known = {d["email_normalized"] for d in db.contacts.find(
+        {"account_id": account_id, "email_normalized": {"$in": keys}},
+        {"email_normalized": 1})}
+    counts["suppressed"] += len(suppressions.among(db, account_id, keys))
+
+    # Somebody already in the account costs no room; a new one does. What
+    # does not fit is left out, in the order the file had them.
+    fits, full = [], False
+    outcome: dict[str, str] = {}
+    for one, key in zip(batch, keys):
+        if key not in known and any(not one[2].get(name) for name in required):
+            # Nuevo y sin todas sus columnas: no entra, y se cuenta aparte
+            # para poder decir cuántos se quedaron fuera y por qué.
+            counts["incomplete"] += 1
+            outcome[key] = INCOMPLETE
+            continue
+        if key in known:
+            fits.append(one)
+            outcome[key] = UPDATED
+        elif room > 0:
+            room -= 1
+            fits.append(one)
+            outcome[key] = ADDED
+        else:
+            full = True
+            outcome[key] = NO_ROOM
+            if stop_when_full:
+                break
+
+    added, updated = contacts.upsert_many(db, account_id, fits, tags=tags,
+                                          consent=consent, added_by=added_by)
+    counts["added"] += added
+    counts["updated"] += updated
+    bad = address_check.undeliverable([one[0] for one in fits], seen=domains_seen,
+                                      max_domains=max_domains)
+    counts["undeliverable"] += contacts.mark_invalid(
+        db, account_id, [normalize_email(one) for one in bad])
+    typos = []
+    for one in fits:
+        better = address_check.suggestion(one[0])
+        if better and one[0] not in bad:
+            counts["typos"] += 1
+            typos.append((one[0], better))
+            if len(counts["typos_sample"]) < 5:
+                counts["typos_sample"].append([one[0], better])
+    return {"room": room, "full": full, "outcome": outcome, "bad": bad, "typos": typos}
+
+
 def run(db, account_id, stream: Any, *, tags: list[str],
         consent: dict[str, Any], limit: int,
         take: dict[int, dict[str, Any]] | None = None,
@@ -206,12 +291,7 @@ def run(db, account_id, stream: Any, *, tags: list[str],
     is what docs/pricing.md promises. The caller says so on the screen and
     invites them to move up a plan.
     """
-    counts = {"read": 0, "added": 0, "updated": 0, "invalid": 0,
-              "suppressed": 0, "incomplete": 0,
-              # Revisadas antes de enviar (`services/address_check.py`): las de
-              # un dominio que no recibe correo entran marcadas, y los errores
-              # de dedo se cuentan con su sugerencia (las primeras cinco).
-              "undeliverable": 0, "typos": 0, "typos_sample": []}
+    counts = new_counts()
     domains_seen: set[str] = set()
     # Las columnas de la cuenta. Un contacto **nuevo** solo entra con todas
     # llenas: sin ellas no podría recibir nada, así que entrar sería entrar de
@@ -228,49 +308,13 @@ def run(db, account_id, stream: Any, *, tags: list[str],
         nonlocal room
         if not batch:
             return False
-        keys = [normalize_email(one[0]) for one in batch]
-
-        # The two bulk questions, one query each: who is already here, and who
-        # may not be written to.
-        known = {d["email_normalized"] for d in db.contacts.find(
-            {"account_id": account_id, "email_normalized": {"$in": keys}},
-            {"email_normalized": 1})}
-        counts["suppressed"] += len(suppressions.among(db, account_id, keys))
-
-        # Somebody already in the account costs no room; a new one does. What
-        # does not fit is left out, in the order the file had them.
-        fits, full = [], False
-        for one, key in zip(batch, keys):
-            if key not in known and any(not one[2].get(name) for name in wanted):
-                # Nuevo y sin todas sus columnas: no entra, y se cuenta aparte
-                # para poder decir cuántos se quedaron fuera y por qué.
-                counts["incomplete"] += 1
-                continue
-            if key in known:
-                fits.append(one)
-            elif room > 0:
-                room -= 1
-                fits.append(one)
-            else:
-                full = True
-                break
-
-        added, updated = contacts.upsert_many(db, account_id, fits,
-                                              tags=tags, consent=consent)
-        counts["added"] += added
-        counts["updated"] += updated
-        bad = address_check.undeliverable([one[0] for one in fits], seen=domains_seen)
-        counts["undeliverable"] += contacts.mark_invalid(
-            db, account_id, [normalize_email(one) for one in bad])
-        for one in fits:
-            better = address_check.suggestion(one[0])
-            if better and one[0] not in bad:
-                counts["typos"] += 1
-                if len(counts["typos_sample"]) < 5:
-                    counts["typos_sample"].append([one[0], better])
+        done = write_batch(db, account_id, batch, tags=tags, consent=consent,
+                           required=wanted, room=room, counts=counts,
+                           domains_seen=domains_seen)
+        room = done["room"]
         batch.clear()
         seen.clear()
-        return full
+        return done["full"]
 
     for raw_email, name, values in rows(stream, take):
         counts["read"] += 1

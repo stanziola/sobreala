@@ -501,7 +501,74 @@ PAGES = [
     ("index.html", "index.html.j2", "/", content.HOME),
     ("privacy/index.html", "legal.html.j2", "/privacy/", content.PRIVACY),
     ("terms/index.html", "legal.html.j2", "/terms/", content.TERMS),
+    # La documentación de la API (octubre de 2026), de backend/api_spec.py.
+    ("api/index.html", "api.html.j2", "/api/", content.API_PAGE),
 ]
+
+# La descripción de la API: la misma que la API sirve en /api/v1/openapi.json.
+API_SPEC = ROOT / "backend" / "api_spec.py"
+
+
+def load_api_spec():
+    """backend/api_spec.py, cargado por su ruta: son solo datos, sin Flask."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("sobreala_api_spec", API_SPEC)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def curl_of(base: str, one: dict) -> str:
+    """El ejemplo de `curl` de una ruta: el método, la llave y su cuerpo."""
+    import json
+
+    url = base + one["path"] + (("?" + one["query_example"]) if one.get("query_example") else "")
+    first = f"curl -X {one['method']} {url}" if one["method"] != "GET" else f"curl {url}"
+    lines = [first]
+    if one["scope"] != "public":
+        lines.append('-H "Authorization: Bearer sa_live_tu_llave"')
+    if one.get("upload"):
+        lines.append(f'-F "{one["upload"]}"')
+    elif one.get("request") is not None:
+        lines.append('-H "Content-Type: application/json"')
+        body = json.dumps(one["request"], ensure_ascii=False, indent=2)
+        lines.append("-d '" + body.replace("'", "'\\''") + "'")
+    return " \\\n  ".join(lines)
+
+
+def api_page_data() -> dict:
+    """Lo que dibuja /api/: las guías y cada ruta con su ancla y su `curl`."""
+    api = load_api_spec()
+    # Lo que una guía o una ruta puede no traer, con su valor vacío: la
+    # plantilla va con StrictUndefined.
+    guide_defaults = {"code": "", "scopes": False, "errors": False}
+    endpoint_defaults = {"test": "", "query": [], "fields": [], "response": None}
+    return {
+        "guides": [{**guide_defaults, **one} for one in api.GUIDES],
+        "scopes": api.SCOPES,
+        "errors": api.ERRORS,
+        "openapi_url": api.BASE_URL + "/openapi.json",
+        "groups": [{**group, "endpoints": [
+            {**endpoint_defaults, **one, "anchor": api.anchor(one),
+             "curl": curl_of(api.BASE_URL, one), "status": one.get("status", 200)}
+            for one in group["endpoints"]]} for group in api.GROUPS],
+    }
+
+
+def rich(text: str) -> "Markup":
+    """Lo de `strong`, y además `código` entre acentos graves. Escapa primero,
+    así que el texto sigue sin poder meter HTML."""
+    from markupsafe import Markup, escape
+
+    done = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", str(escape(text)))
+    return Markup(re.sub(r"`([^`]+)`", r"<code>\1</code>", done))
+
+
+def pretty_json(value) -> str:
+    import json
+
+    return json.dumps(value, ensure_ascii=False, indent=2)
 
 # The pages that became sections of the home page, and the anchor each one
 # lands on. They still answer, because the panel, saved links and search
@@ -573,6 +640,8 @@ def build() -> list[Path]:
         lstrip_blocks=True,
     )
     env.filters["strong"] = strong
+    env.filters["rich"] = rich
+    env.filters["pretty_json"] = pretty_json
 
     shared = {
         "site": content.SITE,
@@ -596,6 +665,7 @@ def build() -> list[Path]:
         "social_icons": social,
         "wing_svg": Markup(read_wing_svg()),  # trusted: our own generated SVG
         "pricing_data": pricing,
+        "api": api_page_data(),
     }
 
     written = [css]

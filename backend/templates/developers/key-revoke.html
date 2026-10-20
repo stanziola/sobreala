@@ -1,0 +1,20 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('api_keys_revoke_title', name=found.name) }}{% endblock %}
+{% set pane_center = true %}
+
+{#- Revocar pregunta antes, como borrar: lo que use la llave deja de entrar al
+    momento y no se puede deshacer. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('api_keys_revoke_title', name=found.name) }}</h1>
+<div class="settings__pane">
+  <p class="lead">{{ t('api_keys_revoke_lead') }}</p>
+  <p><code class="api-key">{{ found.prefix }}…{{ found.last4 }}</code></p>
+  <form method="post" data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="erase__actions">
+      <button class="btn btn--danger" type="submit">{{ t('api_keys_revoke_yes') }}</button>
+      <a class="btn btn--outline" href="{{ url_for('developers.keys') }}">{{ t('api_keys_cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

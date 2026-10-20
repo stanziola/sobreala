@@ -1,0 +1,132 @@
+{% extends "base.html.j2" %}
+
+{#- La documentación de la API (octubre de 2026). Sale entera de
+    backend/api_spec.py, la misma descripción que la API sirve en
+    /api/v1/openapi.json: las guías primero y después cada ruta con su permiso,
+    sus campos y un ejemplo de pedido y de respuesta. A la izquierda, el índice,
+    fijo al bajar en una pantalla ancha; en el teléfono va arriba. -#}
+
+{% macro code_box(text, label) %}
+<div class="api-code" data-copy-box>
+  <pre><code>{{ text }}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{{ text }}"
+          data-copy-done="Copiado" aria-label="Copiar {{ label }}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+{% endmacro %}
+
+{% macro fields_table(rows, title) %}
+<p class="api-endpoint__label">{{ title }}</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      {% for one in rows %}
+      <tr>
+        <th scope="row"><code>{{ one.name }}</code>{% if one.get('required') %} <span class="api-required">obligatorio</span>{% endif %}<br>
+          <span class="api-type">{{ one.type }}</span></th>
+        <td>{{ one.description | rich }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% block main %}
+
+<section class="page-hero">
+  <div class="shell">
+    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
+    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
+    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell api-docs">
+    <nav class="api-docs__nav" aria-label="En esta página">
+      <p class="api-docs__nav-title">Guías</p>
+      <ul>
+        {% for guide in api.guides %}
+        <li><a class="api-docs__link" href="#{{ guide.id }}">{{ guide.title }}</a></li>
+        {% endfor %}
+      </ul>
+      {% for group in api.groups %}
+      <p class="api-docs__nav-title">{{ group.title }}</p>
+      <ul>
+        {% for one in group.endpoints %}
+        <li><a class="api-docs__link" href="#{{ one.anchor }}"><span class="api-method api-method--{{ one.method|lower }}">{{ one.method }}</span> {{ one.path }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+      <p class="api-docs__nav-title">OpenAPI</p>
+      <ul><li><a class="api-docs__link" href="{{ api.openapi_url }}">openapi.json</a></li></ul>
+    </nav>
+
+    <div class="api-docs__body">
+      {% for guide in api.guides %}
+      <section class="api-doc" id="{{ guide.id }}">
+        <h2 class="api-doc__title">{{ guide.title }}</h2>
+        {% for p in guide.paragraphs %}<p>{{ p | rich }}</p>{% endfor %}
+        {% if guide.code %}{{ code_box(guide.code, guide.title) }}{% endif %}
+        {% if guide.scopes %}
+        <div class="api-table">
+          <table>
+            <thead><tr><th scope="col">Permiso</th><th scope="col">Qué abre</th></tr></thead>
+            <tbody>
+              {% for code, name, desc in api.scopes %}
+              <tr><th scope="row"><code>{{ code }}</code><br><span class="api-type">{{ name }}</span></th><td>{{ desc }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+        {% if guide.errors %}
+        <div class="api-table">
+          <table>
+            <thead><tr><th scope="col">Código</th><th scope="col">Estado</th><th scope="col">Qué quiere decir</th></tr></thead>
+            <tbody>
+              {% for code, status, desc in api.errors %}
+              <tr><th scope="row"><code>{{ code }}</code></th><td>{{ status }}</td><td>{{ desc | rich }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </section>
+      {% endfor %}
+
+      {% for group in api.groups %}
+      <section class="api-doc" id="{{ group.id }}">
+        <h2 class="api-doc__title">{{ group.title }}</h2>
+        <p>{{ group.intro | rich }}</p>
+
+        {% for one in group.endpoints %}
+        <article class="api-endpoint" id="{{ one.anchor }}">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--{{ one.method|lower }}">{{ one.method }}</span>
+            <code>{{ one.path }}</code></h3>
+          <p class="api-endpoint__title">{{ one.title }}</p>
+          <p>{{ one.description | rich }}</p>
+          <p class="api-endpoint__scope">
+            {% if one.scope == 'public' %}No pide llave.
+            {% elif one.scope == 'any' %}Cualquier llave.
+            {% else %}Permiso: <code>{{ one.scope }}</code>{% endif %}
+            {% if one.test %} · Con una llave de prueba: {{ one.test }}.{% endif %}
+          </p>
+          {% if one.query %}{{ fields_table(one.query, 'En la dirección') }}{% endif %}
+          {% if one.fields %}{{ fields_table(one.fields, 'En el cuerpo') }}{% endif %}
+          <p class="api-endpoint__label">Pedido</p>
+          {{ code_box(one.curl, one.method ~ ' ' ~ one.path) }}
+          {% if one.response is not none %}
+          <p class="api-endpoint__label">Respuesta {{ one.status }}</p>
+          {{ code_box(one.response | pretty_json, 'la respuesta') }}
+          {% endif %}
+        </article>
+        {% endfor %}
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% endblock %}

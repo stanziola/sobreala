@@ -43,6 +43,11 @@ ENDPOINT_ROWS = {
     "auth.delete_account": "settings-account",
     "contacts.blocked": "suppressions",
     "contacts.remove_suppressed": "suppressions",
+    # La rama API (octubre de 2026).
+    "developers.keys": "api-keys",
+    "developers.new_key": "api-keys",
+    "developers.revoke_key": "api-keys",
+    "developers.log": "api-log",
 }
 
 
@@ -143,6 +148,19 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
     if sending:
         branches.append({"key": "send-settings", "label": "dash_send_settings",
                          "icon": "_icon-gear.svg", "rows": sending})
+
+    # La API (octubre de 2026): solo del dueño, que es quien puede dar una llave
+    # de la empresa. La documentación vive en el sitio público.
+    if not accounts.is_member(account):
+        from config import Config
+
+        branches.append({"key": "api-branch", "label": "dash_api", "icon": "_icon-code.svg",
+                         "rows": [{"key": "api-keys", "label": "dash_api_keys",
+                                   "url": url_for("developers.keys")},
+                                  {"key": "api-log", "label": "dash_api_log",
+                                   "url": url_for("developers.log")},
+                                  {"key": "api-docs", "label": "dash_api_docs",
+                                   "url": f"{Config.PUBLIC_SITE_URL}/api/"}]})
 
     # And the account's own settings, apart from the sending ones but on the
     # left too (octubre de 2026): the sections this person may open (a user of

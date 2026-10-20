@@ -30,7 +30,10 @@ from models import admin_event as decisions
 
 # Todo lo que guarda `account_id` y se va con la cuenta.
 ERASED = ("contacts", "campaigns", "campaign_runs", "events", "designs", "images",
-          "imports", "downloads", "sessions", "account_tokens", "verification_docs")
+          "imports", "downloads", "sessions", "account_tokens", "verification_docs",
+          # La API (octubre de 2026): sus llaves, lo que falló y las respuestas
+          # guardadas para no repetir.
+          "api_keys", "api_log", "api_idempotency")
 # Lo que se queda, a propósito (ver arriba).
 KEPT = ("suppressions", "payments", "invoices", "auth_events", "mail_log",
         "admin_events")

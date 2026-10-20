@@ -68,6 +68,11 @@ REPLY_TO_CODE = "reply_to_code"
 ERASE_CODE = "erase_code"
 ERASED = "erased"
 ADMIN_ERASED = "admin_erased"
+# La API (octubre de 2026): una llave creada, revocada o revocada sola, el código
+# para crearla sin contraseña, y los avisos a su sistema.
+API_KEY = "api_key"
+API_CODE = "api_code"
+WEBHOOK = "webhook"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"
 

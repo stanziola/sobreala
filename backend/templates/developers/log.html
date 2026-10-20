@@ -1,0 +1,50 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('api_log_title') }}{% endblock %}
+
+{#- El registro de la API (octubre de 2026): solo lo que falló con una llave
+    buena, los últimos días (`models/api_log.py`). Se filtra por llave sin
+    JavaScript, con un formulario GET. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('api_log_title') }}</h1>
+<p class="settings__lead">{{ t('api_log_lead', days=days) }}
+  <a href="{{ docs }}">{{ t('api_keys_docs') }}</a></p>
+
+{% if keys %}
+<form class="setting__form" method="get">
+  <label class="visually-hidden" for="log-key">{{ t('api_log_key') }}</label>
+  <select id="log-key" name="llave">
+    <option value="">{{ t('api_log_all') }}</option>
+    {% for one in keys %}
+    <option value="{{ one._id }}"{% if one._id == chosen %} selected{% endif %}>{{ one.name }} ({{ one.prefix }}…)</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn--small btn--outline" type="submit">{{ t('api_log_show') }}</button>
+</form>
+{% endif %}
+
+{% if rows %}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr>
+      <th>{{ t('api_log_col_when') }}</th><th>{{ t('api_log_col_key') }}</th>
+      <th>{{ t('api_log_col_request') }}</th><th>{{ t('api_log_col_result') }}</th>
+      <th>{{ t('api_log_col_from') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for one in rows %}
+    <tr>
+      <td class="table__quiet">{{ one.created_at|ago }}</td>
+      <td>{{ names.get(one.key_id, '') }}</td>
+      <td><code class="api-key">{{ one.method }} {{ one.path }}</code></td>
+      <td><b>{{ one.status }}</b> <span class="table__quiet">{{ one.code }}</span><br>
+        <span class="table__quiet">{{ one.request_id }}</span></td>
+      <td class="table__quiet">{{ one.ip }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('api_log_none') }}</p>
+{% endif %}
+{% endblock %}

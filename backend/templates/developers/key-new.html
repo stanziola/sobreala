@@ -1,0 +1,103 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('api_keys_new_title') }}{% endblock %}
+{% set pane_center = true %}
+
+{#- Crear una llave (octubre de 2026): su nombre, su clase, sus permisos, cuándo
+    vence y desde qué IP. Si en los últimos diez minutos no demostró quién es,
+    el mismo formulario pide la contraseña (o el código del correo) y el de la
+    app, como eliminar la cuenta. Los atajos de permisos son botones de radio
+    que mandan sobre las casillas; «A mi medida» deja las casillas. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('api_keys_new_title') }}</h1>
+<div class="settings__pane">
+  <p class="lead">{{ t('api_keys_new_lead') }}</p>
+  {% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
+
+  {% if needs_proof and not with_password %}
+  {% if sent %}<p class="notice notice--ok">{{ t('api_keys_code_sent') }}</p>{% endif %}
+  <form class="erase__code" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="hint">{{ t('api_keys_code_hint') }}</p>
+    <button class="btn btn--small btn--outline" type="submit" name="action" value="code">{{ t('api_keys_send_code') }}</button>
+  </form>
+  {% endif %}
+
+  <form method="post" novalidate data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="once" value="{{ once }}">
+
+    <label for="key-name">{{ t('api_keys_name') }}</label>
+    <input id="key-name" name="name" type="text" maxlength="60" autocomplete="off"
+           value="{{ values.name }}" aria-describedby="key-name-hint">
+    <p class="hint" id="key-name-hint">{{ t('api_keys_name_hint') }}</p>
+    {% if errors.name %}<p class="error">{{ errors.name }}</p>{% endif %}
+
+    <p class="field-label">{{ t('api_keys_mode') }}</p>
+    {% for mode in ('live', 'test') %}
+    <label class="check">
+      <input type="radio" name="mode" value="{{ mode }}"{% if values.mode == mode %} checked{% endif %}>
+      <span>{{ t('api_keys_mode_' + mode + '_title') }} <span class="hint">{{ t('api_keys_mode_' + mode + '_desc') }}</span></span>
+    </label>
+    {% endfor %}
+
+    <p class="field-label">{{ t('api_keys_scopes') }}</p>
+    <div class="api-presets">
+      {% for preset in ('send', 'read', 'all', 'custom') %}
+      <label class="check">
+        <input type="radio" name="preset" value="{{ preset if preset != 'custom' else '' }}"{% if preset == 'custom' %} checked{% endif %}>
+        <span>{{ t('api_keys_preset_' + preset) }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% for scope in scopes %}
+    <label class="check">
+      <input type="checkbox" name="scope" value="{{ scope }}"{% if scope in values.scopes %} checked{% endif %}>
+      <span>{{ t('api_scope_' + scope.replace(':', '_')) }}
+        <span class="hint">{{ t('api_scope_' + scope.replace(':', '_') + '_desc') }}</span></span>
+    </label>
+    {% endfor %}
+    <p class="hint">{{ t('api_keys_test_scope_note') }}</p>
+    {% if errors.scope %}<p class="error">{{ errors.scope }}</p>{% endif %}
+
+    <label for="key-days">{{ t('api_keys_days') }}</label>
+    <select id="key-days" name="days">
+      {% for days in expiry %}
+      <option value="{{ days }}"{% if values.days == days %} selected{% endif %}>{{ t('api_keys_days_' ~ days) }}</option>
+      {% endfor %}
+    </select>
+    {% if errors.days %}<p class="error">{{ errors.days }}</p>{% endif %}
+
+    <label for="key-ips">{{ t('api_keys_ips') }}</label>
+    <textarea id="key-ips" name="ips" rows="3" spellcheck="false"
+              aria-describedby="key-ips-hint">{{ values.ips_raw }}</textarea>
+    <p class="hint" id="key-ips-hint">{{ t('api_keys_ips_hint') }}</p>
+    {% if errors.ips %}<p class="error">{{ errors.ips }}</p>{% endif %}
+
+    {% if needs_proof %}
+    <h2 class="settings__subtitle">{{ t('api_keys_proof_title') }}</h2>
+    <p class="hint">{{ t('api_keys_proof_lead') }}</p>
+    {% if with_password %}
+    <label for="key-password">{{ t('api_keys_password') }}</label>
+    <input id="key-password" name="password" type="password" autocomplete="current-password">
+    {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
+    {% else %}
+    <label for="key-email-code">{{ t('api_keys_email_code') }}</label>
+    <input id="key-email-code" name="email_code" type="text" inputmode="numeric"
+           maxlength="6" autocomplete="one-time-code">
+    {% if errors.email_code %}<p class="error">{{ errors.email_code }}</p>{% endif %}
+    {% endif %}
+    {% if two_step %}
+    <label for="key-app-code">{{ t('api_keys_app_code') }}</label>
+    <input id="key-app-code" name="app_code" type="text" inputmode="numeric"
+           maxlength="6" autocomplete="one-time-code">
+    {% if errors.app_code %}<p class="error">{{ errors.app_code }}</p>{% endif %}
+    {% endif %}
+    {% endif %}
+
+    <div class="erase__actions">
+      <button class="btn" type="submit">{{ t('api_keys_create') }}</button>
+      <a class="btn btn--outline" href="{{ url_for('developers.keys') }}">{{ t('api_keys_cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

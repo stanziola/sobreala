@@ -172,3 +172,28 @@ def rate_limit(db, key: str, limit: int, per_seconds: int) -> bool:
         })
         return True
     return doc["count"] <= limit
+
+
+def rate_state(db, key: str, limit: int, per_seconds: int,
+               amount: int = 1) -> tuple[bool, int, int]:
+    """Lo mismo que `rate_limit()`, diciendo además cuántos quedan y en cuántos
+    segundos vuelve a empezar. Es lo que la API pone en `Retry-After`. `amount`
+    cuenta varios de una vez (las filas de una carga de contactos)."""
+    moment = now()
+    doc = db.rate_limits.find_one_and_update(
+        {"key": key, "expires_at": {"$gt": moment}},
+        {"$inc": {"count": amount}},
+        return_document=ReturnDocument.AFTER,
+    )
+    if doc is None:
+        db.rate_limits.insert_one({
+            "key": key,
+            "count": amount,
+            "expires_at": moment + timedelta(seconds=per_seconds),
+        })
+        return amount <= limit, max(0, limit - amount), per_seconds
+    expires = doc["expires_at"]
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    reset = max(1, int((expires - moment).total_seconds()) + 1)
+    return doc["count"] <= limit, max(0, limit - doc["count"]), reset

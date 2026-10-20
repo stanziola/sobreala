@@ -30,6 +30,7 @@ from db import get_db
 from i18n import t
 from models import account as accounts
 from models import admin_event as decisions
+from models import api_key as api_keys
 from models import auth_event as events
 from models import campaign_run as sendings
 from models import contact as contacts
@@ -417,7 +418,10 @@ def account_page(account, raw):
         verify_kinds=accounts.VERIFY_KINDS,
         documents=verification_docs.present(db, client["_id"]),
         limited=accounts.limited_of(client),
-        limit_reasons=accounts.LIMIT_REASONS)
+        limit_reasons=accounts.LIMIT_REASONS,
+        # Sus llaves de la API, sin el valor (octubre de 2026).
+        api_keys=[{**one, "live": api_keys.is_live(one)}
+                  for one in api_keys.for_account(db, client["_id"])])
 
 
 @bp.route("/accounts/<raw>/update", methods=["POST"])
@@ -735,6 +739,29 @@ def limit_account(account, raw):
                          reason=note or t("admin_limit_reason_" + reason))
         notices.limited(client, reason=reason)
     return redirect(url_for("admin.account_page", raw=raw, done=1) + "#limite")
+
+
+@bp.route("/accounts/<raw>/api-keys/<key>/revoke", methods=["POST"])
+@only_admins
+def revoke_api_key(account, raw, key):
+    """Revocar una llave de la API de esa cuenta, con su motivo (octubre de
+    2026): una que se filtró o que se usa para abusar. Queda en `admin_events`
+    y al cliente le llega un correo con el motivo."""
+    db = get_db()
+    client = wanted(raw)
+    back = url_for("admin.account_page", raw=raw) + "#api"
+    reason = request.form.get("reason", "").strip()
+    if not csrf_ok(request.form.get("csrf_token")) or not reason:
+        return redirect(back)
+    found = api_keys.by_id(db, client["_id"], as_id(key))
+    if found is None:
+        return redirect(back)
+    if api_keys.revoke(db, client["_id"], found["_id"], by=account["_id"], reason=reason):
+        decisions.record(db, kind=decisions.API_KEY, admin_id=account["_id"],
+                         account_id=client["_id"], before=found.get("prefix", ""),
+                         after="revoked", reason=reason)
+        notices.api_key_revoked(client, name=found.get("name", ""), reason=reason)
+    return redirect(url_for("admin.account_page", raw=raw, api="revoked") + "#api")
 
 
 @bp.route("/accounts/<raw>/erase", methods=["POST"])

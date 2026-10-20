@@ -1439,6 +1439,26 @@ TERMS = {
 }
 
 
+# --------------------------------------------------------------------------- la API
+
+# La documentación de la API (octubre de 2026). El contenido sale de
+# backend/api_spec.py, que es también lo que la API sirve como OpenAPI; aquí
+# solo va lo que la presenta.
+API_PAGE = {
+    "meta_title": "API de Sobreala: conecta tu tienda o tu sistema",
+    "meta_description": "Documentación de la API de Sobreala: llaves, contactos y "
+                        "sus listas, plantillas, correos transaccionales y "
+                        "promocionales, campañas y estadísticas.",
+    "hero": {
+        "eyebrow": "Para programadores",
+        "title": "La API de Sobreala",
+        "subtitle": "Conecta tu tienda o tu sistema: carga tus contactos, usa tus "
+                    "plantillas y tus remitentes, y envía correos desde tu propio "
+                    "programa.",
+    },
+}
+
+
 # --------------------------------------------------------------------------- footer
 
 FOOTER = {
@@ -1449,6 +1469,8 @@ FOOTER = {
             "links": [
                 {"label": "Planes", "url": "/#planes"},
                 {"label": "Cómo funciona", "url": "/#como-funciona"},
+                # La documentación de la API (octubre de 2026).
+                {"label": "API", "url": "/api/"},
             ],
         },
         {

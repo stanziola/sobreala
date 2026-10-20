@@ -31,6 +31,7 @@ from models import account as accounts
 from models import auth_event as events
 from models import contact as contacts
 from models import import_job as imports
+from models import lock as locks
 from models import suppression as suppressions
 from services import address_check
 from services import fields as columns
@@ -665,9 +666,11 @@ def upload():
 
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
-        elif imports.running(db, account["_id"]):
+        elif (imports.running(db, account["_id"])
+              or locks.held(db, f"contacts:{account['_id']}")):
             # One at a time per account: two files landing at once would race
-            # each other for the same room under the limit.
+            # each other for the same room under the limit. Also a load from
+            # the API (octubre de 2026), which takes the same lock.
             errors["form"] = t("error_import_running")
         elif imports.today(db, account["_id"]) >= Config.IMPORTS_PER_DAY:
             errors["form"] = t("error_import_too_many", n=Config.IMPORTS_PER_DAY)
