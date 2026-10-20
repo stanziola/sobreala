@@ -313,6 +313,14 @@ def ensure_indexes(db: Database | None = None) -> None:
                              partialFilterExpression={"request_key": {"$type": "string"}})
     db.messages.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
                              name="ttl_expires_at")
+    # Lo que busca el proceso en segundo plano en cada vuelta: las que salen
+    # solas y están esperando su hora.
+    db.campaigns.create_index([("auto_send", ASCENDING), ("status", ASCENDING),
+                               ("scheduled_at", ASCENDING)], name="by_auto_send")
+    # Las campañas de antes del proceso de fondo (`campaigns.migrate_auto_send`):
+    # solo toca las que no tienen el campo, así que correrla otra vez no cambia nada.
+    from models import campaign as campaigns
+    campaigns.migrate_auto_send(db)
 
 
 def indexes_ready() -> bool:

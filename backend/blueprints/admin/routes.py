@@ -32,6 +32,7 @@ from models import account as accounts
 from models import admin_event as decisions
 from models import api_key as api_keys
 from models import message as messages
+from services import background
 from models import auth_event as events
 from models import campaign_run as sendings
 from models import contact as contacts
@@ -317,7 +318,10 @@ def clients_list(account):
         month=reputation.overall(db),
         window=reputation.WINDOW_DAYS, percent=reputation.percent,
         bounce_min=reputation.BOUNCE_MIN_SENT,
-        complaint_min=reputation.COMPLAINT_MIN_SENT)
+        complaint_min=reputation.COMPLAINT_MIN_SENT,
+        # El proceso en segundo plano (octubre de 2026): si da vueltas y con qué
+        # llave. Caído, no sale nada programado.
+        worker=background.status(db))
 
 
 # ------------------------------------------------------------- los eventos

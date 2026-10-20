@@ -11,6 +11,7 @@
 {% if done == 'partial' %}<p class="notice notice--ok">{{ t('send_done_some') }}</p>{% endif %}
 {% if done == 'blocked' %}<p class="notice">{{ t('send_done_blocked') }}</p>{% endif %}
 {% if done == 'late' %}<p class="notice">{{ t('send_already_out') }}</p>{% endif %}
+{% if done == 'busy' %}<p class="notice">{{ t('send_done_busy') }}</p>{% endif %}
 {% if done == 'single_failed' %}<p class="notice">{{ t('single_failed') }}</p>{% endif %}
 {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 
@@ -74,10 +75,17 @@
           {% else %}
           {{ t('send_times_one', when=(veces.last if veces else one.finished_at)|ago) }}
           {% endif %}
+          {% elif one.waiting %}
+          {# El proceso en segundo plano no pudo mandarla (octubre de 2026):
+             por qué, y que lo vuelve a intentar solo. #}
+          {{ t('send_state_waiting', why=t('send_blocked_' + one.waiting[0])) }}
           {% elif one.status == 'sending' %}
           {{ t('send_state_going', done=one.position, total=one.total) }}
+          {% if one.auto_send %}<br>{{ t('send_state_going_auto') }}{% endif %}
           {% elif due(one) %}
           {{ t('send_state_ready') }}
+          {% elif one.auto_send %}
+          {{ t('send_state_scheduled_auto', when=one.scheduled_at|at_moment) }}
           {% else %}
           {{ t('send_state_scheduled', when=one.scheduled_at|at_moment) }}
           {% endif %}

@@ -94,6 +94,8 @@ ERRORS = [
     ("throttled", 503, "Amazon pidió esperar. No salió ni gastó cuota: reintenta tras "
                        "Retry-After."),
     ("delivery_failed", 502, "No se pudo entregar a Amazon. No gastó cuota."),
+    ("campaign_sending", 409, "La campaña está saliendo: no se cambia, no se borra ni "
+                              "se reprograma hasta que termine."),
     ("unavailable", 503, "No disponible por un momento; reintenta tras Retry-After."),
     ("internal_error", 500, "Algo falló de nuestro lado. Escríbenos con el "
                             "request_id."),
@@ -312,6 +314,14 @@ _CANVAS = {"v": 2, "h": 420, "bg": "#FFFFFF", "items": [
      "font": "Arial", "size": 16, "color": "#FFFFFF", "bold": True, "italic": False,
      "align": "center", "href": "https://coopejemplo.com/cuenta", "bg": "#31A9E8",
      "radius": 8}]}
+_CAMPAIGN = {"id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios",
+             "source": "template", "template_id": "6533b1d2a1b2c3d4e5f60901",
+             "text": None, "logo": False, "tags": ["Socios"], "status": "scheduled",
+             "auto_send": True, "scheduled_at": "2026-10-20T13:00:00Z",
+             "progress": {"position": 0, "total": 0, "sent": 0, "skipped": 0,
+                          "failed": 0},
+             "waiting": [], "send_id": None, "created_at": "2026-10-17T19:40:00Z",
+             "started_at": None, "finished_at": None}
 _FOLDER = {"id": "6533b0aaa1b2c3d4e5f60900", "name": "Cobros", "color": "blue",
            "templates": 4}
 
@@ -925,6 +935,99 @@ GROUPS: list[dict[str, Any]] = [
                        "events": {"delivery": "2026-10-17T19:20:03Z",
                                   "open": "2026-10-17T19:31:40Z",
                                   "sent": "2026-10-17T19:20:01Z"}}},
+     ]},
+    {"id": "campanas", "title": "Campañas",
+     "intro": "Las campañas de Masivo: a todos tus contactos o a los de unas "
+              "etiquetas, con una plantilla o un texto, y las veces que haga falta. "
+              "Llevan siempre su enlace de baja (y la marca de agua del Básico), se "
+              "saltan a los suprimidos sin gastar cuota y no salen a un contacto sin "
+              "todas sus columnas. **Las manda el proceso en segundo plano**, por "
+              "tandas: mandar o programar responde enseguida, y la campaña dice cómo "
+              "va en `status` y `progress`. Si no puede salir (sin cuota, en pausa), "
+              "`waiting` dice por qué, y se vuelve a intentar sola cada 15 minutos.",
+     "endpoints": [
+         {"method": "GET", "path": "/campaigns", "scope": "campaigns:read",
+          "title": "Listar campañas",
+          "description": "De las más nuevas a las más viejas. `status` es scheduled "
+                         "(esperando), sending (saliendo) o sent (salió); con "
+                         "`auto_send`, sale sola a su hora.",
+          "test": "sí",
+          "query": [{"name": "status", "type": "texto",
+                     "description": "scheduled, sending o sent."},
+                    {"name": "limit", "type": "entero", "description": "De 1 a 100."},
+                    {"name": "cursor", "type": "texto", "description": "Para la página siguiente."}],
+          "response": {"data": [_CAMPAIGN], "next_cursor": None}},
+         {"method": "GET", "path": "/campaigns/{campaign_id}", "scope": "campaigns:read",
+          "title": "Una campaña",
+          "description": "Con a cuántos saldría hoy (`audience`) y qué frena a la cuenta "
+                         "(`blocked`).",
+          "test": "sí",
+          "response": {**_CAMPAIGN, "audience": 812, "blocked": []}},
+         {"method": "POST", "path": "/campaigns", "scope": "campaigns:write",
+          "title": "Crear una campaña",
+          "description": "Con `scheduled_at` queda programada y sale sola a esa hora; "
+                         "sin él espera a que la mandes con `send`.",
+          "test": "no", "status": 201,
+          "fields": [
+              {"name": "subject", "type": "texto", "required": True,
+               "description": "Hasta 150 caracteres, con marcas."},
+              {"name": "template_id", "type": "texto",
+               "description": "Una plantilla tuya. Va esto o `text`."},
+              {"name": "text", "type": "texto", "description": "Lo que dice, hasta 20,000."},
+              {"name": "logo", "type": "sí o no", "description": "Con `text`: tu logo arriba."},
+              {"name": "tags", "type": "lista de textos",
+               "description": "A quién: los que lleven cualquiera de estas etiquetas. Sin "
+                              "ellas, a todos tus contactos."},
+              {"name": "scheduled_at", "type": "texto",
+               "description": "Una hora que no pasó, con su zona."},
+          ],
+          "request": {"subject": "Asamblea anual de socios",
+                      "template_id": "6533b1d2a1b2c3d4e5f60901", "tags": ["Socios"],
+                      "scheduled_at": "2026-10-20T08:00:00-05:00"},
+          "response": _CAMPAIGN},
+         {"method": "PATCH", "path": "/campaigns/{campaign_id}", "scope": "campaigns:write",
+          "title": "Cambiar una campaña",
+          "description": "El asunto, lo que dice o a quién va; la hora, con `schedule`. "
+                         "No mientras está saliendo (409).",
+          "test": "no",
+          "fields": [{"name": "subject", "type": "texto", "description": "Hasta 150."},
+                     {"name": "template_id", "type": "texto", "description": "O `text`."},
+                     {"name": "text", "type": "texto", "description": "O `template_id`."},
+                     {"name": "logo", "type": "sí o no", "description": "Con `text`."},
+                     {"name": "tags", "type": "lista de textos", "description": "A quién."}],
+          "request": {"subject": "Asamblea anual: cambio de salón"},
+          "response": {**_CAMPAIGN, "subject": "Asamblea anual: cambio de salón"}},
+         {"method": "DELETE", "path": "/campaigns/{campaign_id}", "scope": "campaigns:write",
+          "title": "Borrar una campaña",
+          "description": "Lo que ya salió sigue en sus envíos. No mientras está saliendo.",
+          "test": "no",
+          "response": {"id": "6534d0a1a1b2c3d4e5f61101", "deleted": True}},
+         {"method": "POST", "path": "/campaigns/{campaign_id}/send",
+          "scope": "campaigns:send",
+          "title": "Mandarla ya",
+          "description": "Responde 202 enseguida y la campaña empieza a salir por tandas. "
+                         "Una que ya salió sale otra vez entera. Si hoy la cuenta no puede "
+                         "enviar, 409 `cannot_send`. Con una llave de prueba dice a cuántos "
+                         "saldría y qué la frena, sin mandar nada.",
+          "test": "simulado", "status": 202,
+          "response": {**_CAMPAIGN, "status": "scheduled",
+                       "scheduled_at": "2026-10-17T19:45:00Z"}},
+         {"method": "POST", "path": "/campaigns/{campaign_id}/schedule",
+          "scope": "campaigns:send",
+          "title": "Programarla",
+          "description": "Sale sola a esa hora. Una que ya salió queda lista para salir "
+                         "otra vez entonces.",
+          "test": "simulado",
+          "fields": [{"name": "at", "type": "texto", "required": True,
+                      "description": "Una hora que no pasó, con su zona."}],
+          "request": {"at": "2026-10-20T08:00:00-05:00"},
+          "response": _CAMPAIGN},
+         {"method": "DELETE", "path": "/campaigns/{campaign_id}/schedule",
+          "scope": "campaigns:send",
+          "title": "Desprogramarla",
+          "description": "Ya no sale sola: espera a que la mandes.",
+          "test": "simulado",
+          "response": {**_CAMPAIGN, "auto_send": False}},
      ]},
 ]
 

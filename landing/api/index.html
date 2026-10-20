@@ -245,6 +245,17 @@
         <li><a class="api-docs__link" href="#get-emails"><span class="api-method api-method--get">GET</span> /emails</a></li>
         <li><a class="api-docs__link" href="#get-emails-email_id"><span class="api-method api-method--get">GET</span> /emails/{email_id}</a></li>
       </ul>
+      <p class="api-docs__nav-title">Campañas</p>
+      <ul>
+        <li><a class="api-docs__link" href="#get-campaigns"><span class="api-method api-method--get">GET</span> /campaigns</a></li>
+        <li><a class="api-docs__link" href="#get-campaigns-campaign_id"><span class="api-method api-method--get">GET</span> /campaigns/{campaign_id}</a></li>
+        <li><a class="api-docs__link" href="#post-campaigns"><span class="api-method api-method--post">POST</span> /campaigns</a></li>
+        <li><a class="api-docs__link" href="#patch-campaigns-campaign_id"><span class="api-method api-method--patch">PATCH</span> /campaigns/{campaign_id}</a></li>
+        <li><a class="api-docs__link" href="#delete-campaigns-campaign_id"><span class="api-method api-method--delete">DELETE</span> /campaigns/{campaign_id}</a></li>
+        <li><a class="api-docs__link" href="#post-campaigns-campaign_id-send"><span class="api-method api-method--post">POST</span> /campaigns/{campaign_id}/send</a></li>
+        <li><a class="api-docs__link" href="#post-campaigns-campaign_id-schedule"><span class="api-method api-method--post">POST</span> /campaigns/{campaign_id}/schedule</a></li>
+        <li><a class="api-docs__link" href="#delete-campaigns-campaign_id-schedule"><span class="api-method api-method--delete">DELETE</span> /campaigns/{campaign_id}/schedule</a></li>
+      </ul>
       <p class="api-docs__nav-title">OpenAPI</p>
       <ul><li><a class="api-docs__link" href="https://app.sobreala.com/api/v1/openapi.json">openapi.json</a></li></ul>
     </nav>
@@ -348,6 +359,7 @@
               <tr><th scope="row"><code>bad_subject</code></th><td>422</td><td>El asunto lleno trae un salto de línea de un dato del contacto.</td></tr>
               <tr><th scope="row"><code>throttled</code></th><td>503</td><td>Amazon pidió esperar. No salió ni gastó cuota: reintenta tras Retry-After.</td></tr>
               <tr><th scope="row"><code>delivery_failed</code></th><td>502</td><td>No se pudo entregar a Amazon. No gastó cuota.</td></tr>
+              <tr><th scope="row"><code>campaign_sending</code></th><td>409</td><td>La campaña está saliendo: no se cambia, no se borra ni se reprograma hasta que termine.</td></tr>
               <tr><th scope="row"><code>unavailable</code></th><td>503</td><td>No disponible por un momento; reintenta tras Retry-After.</td></tr>
               <tr><th scope="row"><code>internal_error</code></th><td>500</td><td>Algo falló de nuestro lado. Escríbenos con el request_id.</td></tr>
             </tbody>
@@ -4030,6 +4042,726 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
     &#34;open&#34;: &#34;2026-10-17T19:31:40Z&#34;,
     &#34;sent&#34;: &#34;2026-10-17T19:20:01Z&#34;
   }
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+      </section>
+      <section class="api-doc" id="campanas">
+        <h2 class="api-doc__title">Campañas</h2>
+        <p>Las campañas de Masivo: a todos tus contactos o a los de unas etiquetas, con una plantilla o un texto, y las veces que haga falta. Llevan siempre su enlace de baja (y la marca de agua del Básico), se saltan a los suprimidos sin gastar cuota y no salen a un contacto sin todas sus columnas. <strong>Las manda el proceso en segundo plano</strong>, por tandas: mandar o programar responde enseguida, y la campaña dice cómo va en <code>status</code> y <code>progress</code>. Si no puede salir (sin cuota, en pausa), <code>waiting</code> dice por qué, y se vuelve a intentar sola cada 15 minutos.</p>
+
+        <article class="api-endpoint" id="get-campaigns">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/campaigns</code></h3>
+          <p class="api-endpoint__title">Listar campañas</p>
+          <p>De las más nuevas a las más viejas. <code>status</code> es scheduled (esperando), sending (saliendo) o sent (salió); con <code>auto_send</code>, sale sola a su hora.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>status</code><br>
+          <span class="api-type">texto</span></th>
+        <td>scheduled, sending o sent.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>limit</code><br>
+          <span class="api-type">entero</span></th>
+        <td>De 1 a 100.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>cursor</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Para la página siguiente.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/campaigns \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/campaigns \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /campaigns">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+      &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+      &#34;source&#34;: &#34;template&#34;,
+      &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+      &#34;text&#34;: null,
+      &#34;logo&#34;: false,
+      &#34;tags&#34;: [
+        &#34;Socios&#34;
+      ],
+      &#34;status&#34;: &#34;scheduled&#34;,
+      &#34;auto_send&#34;: true,
+      &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+      &#34;progress&#34;: {
+        &#34;position&#34;: 0,
+        &#34;total&#34;: 0,
+        &#34;sent&#34;: 0,
+        &#34;skipped&#34;: 0,
+        &#34;failed&#34;: 0
+      },
+      &#34;waiting&#34;: [],
+      &#34;send_id&#34;: null,
+      &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+      &#34;started_at&#34;: null,
+      &#34;finished_at&#34;: null
+    }
+  ],
+  &#34;next_cursor&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+      &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+      &#34;source&#34;: &#34;template&#34;,
+      &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+      &#34;text&#34;: null,
+      &#34;logo&#34;: false,
+      &#34;tags&#34;: [
+        &#34;Socios&#34;
+      ],
+      &#34;status&#34;: &#34;scheduled&#34;,
+      &#34;auto_send&#34;: true,
+      &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+      &#34;progress&#34;: {
+        &#34;position&#34;: 0,
+        &#34;total&#34;: 0,
+        &#34;sent&#34;: 0,
+        &#34;skipped&#34;: 0,
+        &#34;failed&#34;: 0
+      },
+      &#34;waiting&#34;: [],
+      &#34;send_id&#34;: null,
+      &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+      &#34;started_at&#34;: null,
+      &#34;finished_at&#34;: null
+    }
+  ],
+  &#34;next_cursor&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-campaigns-campaign_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/campaigns/{campaign_id}</code></h3>
+          <p class="api-endpoint__title">Una campaña</p>
+          <p>Con a cuántos saldría hoy (<code>audience</code>) y qué frena a la cuenta (<code>blocked</code>).</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /campaigns/{campaign_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null,
+  &#34;audience&#34;: 812,
+  &#34;blocked&#34;: []
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null,
+  &#34;audience&#34;: 812,
+  &#34;blocked&#34;: []
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-campaigns">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/campaigns</code></h3>
+          <p class="api-endpoint__title">Crear una campaña</p>
+          <p>Con <code>scheduled_at</code> queda programada y sale sola a esa hora; sin él espera a que la mandes con <code>send</code>.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>subject</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta 150 caracteres, con marcas.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>template_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Una plantilla tuya. Va esto o <code>text</code>.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>text</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Lo que dice, hasta 20,000.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>logo</code><br>
+          <span class="api-type">sí o no</span></th>
+        <td>Con <code>text</code>: tu logo arriba.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>tags</code><br>
+          <span class="api-type">lista de textos</span></th>
+        <td>A quién: los que lleven cualquiera de estas etiquetas. Sin ellas, a todos tus contactos.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>scheduled_at</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Una hora que no pasó, con su zona.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/campaigns \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;scheduled_at&#34;: &#34;2026-10-20T08:00:00-05:00&#34;
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/campaigns \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;scheduled_at&#34;: &#34;2026-10-20T08:00:00-05:00&#34;
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /campaigns">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 201</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="patch-campaigns-campaign_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--patch">PATCH</span>
+            <code>/campaigns/{campaign_id}</code></h3>
+          <p class="api-endpoint__title">Cambiar una campaña</p>
+          <p>El asunto, lo que dice o a quién va; la hora, con <code>schedule</code>. No mientras está saliendo (409).</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>subject</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta 150.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>template_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>O <code>text</code>.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>text</code><br>
+          <span class="api-type">texto</span></th>
+        <td>O <code>template_id</code>.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>logo</code><br>
+          <span class="api-type">sí o no</span></th>
+        <td>Con <code>text</code>.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>tags</code><br>
+          <span class="api-type">lista de textos</span></th>
+        <td>A quién.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;subject&#34;: &#34;Asamblea anual: cambio de salón&#34;
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X PATCH https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;subject&#34;: &#34;Asamblea anual: cambio de salón&#34;
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar PATCH /campaigns/{campaign_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual: cambio de salón&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual: cambio de salón&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="delete-campaigns-campaign_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--delete">DELETE</span>
+            <code>/campaigns/{campaign_id}</code></h3>
+          <p class="api-endpoint__title">Borrar una campaña</p>
+          <p>Lo que ya salió sigue en sus envíos. No mientras está saliendo.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X DELETE https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar DELETE /campaigns/{campaign_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;deleted&#34;: true
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;deleted&#34;: true
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-campaigns-campaign_id-send">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/campaigns/{campaign_id}/send</code></h3>
+          <p class="api-endpoint__title">Mandarla ya</p>
+          <p>Responde 202 enseguida y la campaña empieza a salir por tandas. Una que ya salió sale otra vez entera. Si hoy la cuenta no puede enviar, 409 <code>cannot_send</code>. Con una llave de prueba dice a cuántos saldría y qué la frena, sin mandar nada.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/campaigns/{campaign_id}/send \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/campaigns/{campaign_id}/send \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar POST /campaigns/{campaign_id}/send">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 202</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-17T19:45:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-17T19:45:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="post-campaigns-campaign_id-schedule">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/campaigns/{campaign_id}/schedule</code></h3>
+          <p class="api-endpoint__title">Programarla</p>
+          <p>Sale sola a esa hora. Una que ya salió queda lista para salir otra vez entonces.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>at</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">texto</span></th>
+        <td>Una hora que no pasó, con su zona.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/campaigns/{campaign_id}/schedule \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;at&#34;: &#34;2026-10-20T08:00:00-05:00&#34;
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/campaigns/{campaign_id}/schedule \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;at&#34;: &#34;2026-10-20T08:00:00-05:00&#34;
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /campaigns/{campaign_id}/schedule">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: true,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="delete-campaigns-campaign_id-schedule">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--delete">DELETE</span>
+            <code>/campaigns/{campaign_id}/schedule</code></h3>
+          <p class="api-endpoint__title">Desprogramarla</p>
+          <p>Ya no sale sola: espera a que la mandes.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/campaigns/{campaign_id}/schedule \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X DELETE https://app.sobreala.com/api/v1/campaigns/{campaign_id}/schedule \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar DELETE /campaigns/{campaign_id}/schedule">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: false,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;source&#34;: &#34;template&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;text&#34;: null,
+  &#34;logo&#34;: false,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;status&#34;: &#34;scheduled&#34;,
+  &#34;auto_send&#34;: false,
+  &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
+  &#34;progress&#34;: {
+    &#34;position&#34;: 0,
+    &#34;total&#34;: 0,
+    &#34;sent&#34;: 0,
+    &#34;skipped&#34;: 0,
+    &#34;failed&#34;: 0
+  },
+  &#34;waiting&#34;: [],
+  &#34;send_id&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
+  &#34;started_at&#34;: null,
+  &#34;finished_at&#34;: null
 }"
           data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>

@@ -20,6 +20,7 @@ POST sí.
 
 from __future__ import annotations
 
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
@@ -235,13 +236,16 @@ def save(db, account, campaign) -> dict[str, str]:
     if errors:
         return errors
 
+    # Con fecha sale sola a esa hora (octubre de 2026, el proceso en segundo
+    # plano); «ahora mismo» sigue pidiendo Enviar y su pantalla que pregunta.
     if campaign is None:
         campaigns.create(db, account["_id"], subject=subject,
                          design_id=design_id, tags=tags, scheduled_at=when,
-                         body=body, logo=logo)
+                         body=body, logo=logo, auto_send=not now_wanted)
     elif not campaigns.update(db, account["_id"], campaign["_id"],
                               subject=subject, design_id=design_id, tags=tags,
-                              scheduled_at=when, body=body, logo=logo):
+                              scheduled_at=when, body=body, logo=logo,
+                              auto_send=not now_wanted):
         return {"form": t("send_already_out")}
     return {}
 
@@ -591,7 +595,20 @@ def send(raw):
             return redirect(url_for("campaigns.index", done="late"))
         found = campaigns.by_id(db, account["_id"], found["_id"])
 
-    result = sender.run(db, account, found)
+    # La primera tanda sale aquí, con el turno: si lo tiene el proceso en
+    # segundo plano, es que ya está saliendo. El resto lo manda él, solo.
+    by = "web:" + secrets.token_hex(6)
+    if not campaigns.take(db, account["_id"], found["_id"], by):
+        return redirect(url_for("campaigns.index", done="busy"))
+    try:
+        result = sender.run(db, account, campaigns.by_id(db, account["_id"], found["_id"]),
+                            lease_by=by)
+        if result["left"] and not result["blocked"]:
+            campaigns.set_auto(db, account["_id"], found["_id"], True)
+    finally:
+        campaigns.release(db, account["_id"], found["_id"], by)
+    if result["blocked"] == ["busy"]:
+        return redirect(url_for("campaigns.index", done="busy"))
     if result["blocked"]:
         return redirect(url_for("campaigns.index", done="blocked"))
     return redirect(url_for("campaigns.index",

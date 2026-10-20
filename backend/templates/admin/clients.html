@@ -47,6 +47,9 @@
   {% endfor %}
 </ul>
 <p class="hint">{{ t('admin_health_note') }}</p>
+<p class="{{ 'hint' if worker.worker == 'up' and worker.worker_key == 'ok' else 'notice' }}">
+  {{ t('admin_worker_' + worker.worker) }}{% if worker.worker != 'never' and worker.worker_key != 'ok' %}
+  {{ t('admin_worker_key_' + worker.worker_key) }}{% endif %}</p>
 
 {# ------------------------------------------------------------- la tabla #}
 <h3 class="settings__subtitle">{{ t('admin_clients_title') }}</h3>

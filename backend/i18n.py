@@ -1900,8 +1900,7 @@ TEXTS = {
     "send_edit": "Editar",
     "send_delete": "Borrar",
     "send_done_all": "Se envió. Ya salieron todos.",
-    "send_done_some": "Va saliendo. Pulsa «seguir enviando» para la siguiente "
-                      "tanda.",
+    "send_done_some": "Va saliendo: el resto sale solo, por tandas.",
     "send_done_blocked": "Todavía no se puede enviar. Mira lo que falta arriba.",
 
     # Por qué una cuenta todavía no puede mandar. Se enseñan arriba del todo.
@@ -3216,6 +3215,30 @@ TEXTS = {
 
     "admin_api_sent": "Este mes mandó por la API {transactional} transaccionales y "
                       "{promotional} promocionales.",
+
+    # --- el proceso en segundo plano (octubre de 2026)
+    "send_state_scheduled_auto": "Programada para el {when}: sale sola",
+    "send_state_going_auto": "El resto sale solo, por tandas.",
+    "send_state_waiting": "No pudo salir: {why} Se vuelve a intentar sola.",
+    "send_done_busy": "Esa campaña ya está saliendo.",
+    "send_blocked_busy": "Ya está saliendo.",
+
+    "send_blocked_suspended": "La cuenta está suspendida.",
+
+    # --- la API: las campañas (octubre de 2026)
+    "api_campaigns_past": "Esa hora ya pasó: para mandarla ya, usa send.",
+    "api_error_campaign_sending": "Esa campaña está saliendo ahora: no se cambia, no "
+                                  "se borra ni se reprograma hasta que termine.",
+
+    "admin_worker_up": "El proceso en segundo plano está dando vueltas: lo "
+                       "programado sale solo.",
+    "admin_worker_down": "El proceso en segundo plano no da señales desde hace más "
+                         "de un minuto: lo programado no está saliendo.",
+    "admin_worker_never": "El proceso en segundo plano nunca ha arrancado: lo "
+                          "programado no sale. Ver docs/api.md.",
+    "admin_worker_key_mismatch": "Su SECRET_KEY no es la del web, y así no manda "
+                                 "nada.",
+    "admin_worker_key_unknown": "Todavía no comprobó su SECRET_KEY.",
 }
 
 

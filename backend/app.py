@@ -18,7 +18,7 @@ from config import Config
 
 # La ficha que manda un botón de descarga (`_download_arrived`).
 DOWNLOAD_TOKEN = re.compile(r"[A-Za-z0-9]{8,32}")
-from db import ensure_indexes_once, health, indexes_ready
+from db import ensure_indexes_once, get_db, health, indexes_ready
 from i18n import ago, at_moment, on_date, t
 from models.account import (current_plan, is_admin, is_open, plan_cycle,
                             status_of as account_status_of)
@@ -187,6 +187,15 @@ def create_app(overrides: dict | None = None) -> Flask:
         # skipped just because the database was down when the process started.
         if not app.config.get("TESTING") and not indexes_ready():
             ensure_indexes_once()
+        # La huella de la llave, para que el proceso en segundo plano compruebe
+        # que firma los enlaces de baja con la misma (octubre de 2026).
+        if not app.config.get("TESTING") and not app.config.get("_KEY_PUBLISHED"):
+            try:
+                from services import background
+                background.publish_web_key(get_db())
+                app.config["_KEY_PUBLISHED"] = True
+            except Exception:  # noqa: BLE001 - sin base, el próximo lo intenta
+                pass
 
     # Templates hold no Spanish of their own: they ask i18n for it.
     app.jinja_env.globals.update(t=t, csrf_token=csrf_token,
@@ -461,6 +470,11 @@ def create_app(overrides: dict | None = None) -> Flask:
         # tell from outside whether the new variables were picked up, and it
         # names a mode, never a credential.
         payload = {"app": "up", "mail": Config.MAIL_BACKEND, **state}
+        # El proceso en segundo plano: si da vueltas y si su llave es la del
+        # web (octubre de 2026). No cambia el estado HTTP: el web sirve igual.
+        if state["database"] == "up":
+            from services import background
+            payload.update(background.status(get_db()))
         return jsonify(payload), (200 if state["database"] == "up" else 503)
 
     return app

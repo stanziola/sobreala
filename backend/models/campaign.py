@@ -9,11 +9,15 @@ una vez y sale doce. Los contadores de aquí son los de la vuelta en curso;
 cuando una termina queda escrita en `campaign_runs` con sus cifras, y
 `restart()` los devuelve a cero para la siguiente.
 
-Esa posición no es un adorno de hoy. Mientras no exista el proceso en segundo
-plano, el envío sale por tandas dentro de la petición y la pantalla ofrece
-continuar; el día que exista, ese proceso llama a la misma función en bucle y
-lee la misma posición. Es también lo que va a permitir pausar por cuota y
-retomar, que es para lo que CLAUDE.md la pedía.
+**El proceso en segundo plano** (`worker.py`, octubre de 2026) manda las que
+tienen `auto_send`: las programadas cuando les llega la hora, y el resto de las
+que se empezaron a mandar desde el panel o la API. Para que nadie reciba dos
+veces, cada tanda la manda **quien tiene el turno** (`lease_by` hasta
+`lease_until`), y avanzar o cerrar solo escribe si el turno sigue siendo suyo.
+La lista se recorre por `_id` (`cursor_id`, el último que se procesó) y no por
+posición: si se borran contactos a mitad de camino, nadie se salta. Una que no
+puede salir (sin cuota, en pausa) anota por qué en `waiting` y se vuelve a
+intentar en `retry_at`.
 
 **Editar y borrar solo mientras no esté saliendo ahora mismo.** Cambiar el
 asunto de algo que va por la mitad es mandarle dos cosas distintas a dos mitades
@@ -28,8 +32,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from datetime import timedelta
+
 from bson import ObjectId
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
 from models import campaign_run as runs
 
@@ -98,6 +105,8 @@ def create_single(db, account_id, *, subject: str, body: str, contact_id, to: st
         "download_id": None,
         "tags": [],
         "scheduled_at": now(),
+        # Sale en la misma petición que lo crea, no por el proceso de fondo.
+        "auto_send": False,
         "status": SCHEDULED,
         "position": 0,
         "total": 0,
@@ -111,11 +120,13 @@ def create_single(db, account_id, *, subject: str, body: str, contact_id, to: st
 
 
 def create(db, account_id, *, subject: str, design_id, tags: list[str],
-           scheduled_at: datetime, body: str = "", logo: bool = False) -> Any:
+           scheduled_at: datetime, body: str = "", logo: bool = False,
+           auto_send: bool = False) -> Any:
     """Dejar la campaña en cola. Devuelve su id.
 
     Sale de una plantilla (`design_id`) o, desde octubre de 2026, de un texto
-    escrito (`body`, con el logo de la empresa arriba si `logo`)."""
+    escrito (`body`, con el logo de la empresa arriba si `logo`). Con
+    `auto_send` sale sola a su hora; sin él espera a que alguien la mande."""
     return db.campaigns.insert_one({
         "account_id": account_id,
         "subject": clean_subject(subject),
@@ -126,6 +137,7 @@ def create(db, account_id, *, subject: str, design_id, tags: list[str],
         # etiquetas y no sus posiciones: las etiquetas se pueden reordenar.
         "tags": list(tags or []),
         "scheduled_at": scheduled_at,
+        "auto_send": bool(auto_send),
         "status": SCHEDULED,
         # Hasta qué destinatario se llegó, contando también los que se saltaron.
         "position": 0,
@@ -169,7 +181,7 @@ def editable(campaign: dict[str, Any] | None) -> bool:
 
 def update(db, account_id, campaign_id, *, subject: str, design_id,
            tags: list[str], scheduled_at: datetime, body: str = "",
-           logo: bool = False) -> bool:
+           logo: bool = False, auto_send: bool = False) -> bool:
     """Cambiarla. False si en este momento está saliendo.
 
     El estado va en la consulta y no en una comprobación previa: entre mirar y
@@ -182,7 +194,7 @@ def update(db, account_id, campaign_id, *, subject: str, design_id,
                   "body": "" if design_id else body[:BODY_MAX],
                   "logo": bool(logo) and not design_id,
                   "tags": list(tags or []), "scheduled_at": scheduled_at,
-                  "updated_at": now()},
+                  "auto_send": bool(auto_send), "updated_at": now()},
          # Una campaña de antes llevaba una sola etiqueta en otro campo. Se
          # quita al guardar, o seguiría mandando por su cuenta.
          "$unset": {"tag": ""}}).matched_count == 1
@@ -230,17 +242,23 @@ def start(db, account_id, campaign_id, total: int):
 
 
 def advance(db, account_id, campaign_id, *, position: int, sent: int,
-            skipped: int, failed: int, errors: list[dict[str, str]]) -> None:
-    """Anotar lo que hizo una tanda."""
-    db.campaigns.update_one(
-        {"_id": campaign_id, "account_id": account_id},
-        {"$set": {"position": position, "updated_at": now()},
+            skipped: int, failed: int, errors: list[dict[str, str]],
+            cursor_id=None, by: str | None = None) -> bool:
+    """Anotar lo que hizo una tanda. Con `by`, solo si el turno sigue siendo
+    de ese proceso: uno que se quedó dormido y perdió el turno no pisa lo que
+    anotó el siguiente. `cursor_id` es el último contacto que se procesó."""
+    changes: dict[str, Any] = {"position": position, "updated_at": now()}
+    if cursor_id is not None:
+        changes["cursor_id"] = cursor_id
+    return db.campaigns.update_one(
+        _turn({"_id": campaign_id, "account_id": account_id}, by),
+        {"$set": changes,
          "$inc": {"sent": sent, "skipped": skipped, "failed": failed},
          "$push": {"errors": {"$each": errors[:ERRORS_KEPT],
-                              "$slice": ERRORS_KEPT}}})
+                              "$slice": ERRORS_KEPT}}}).matched_count == 1
 
 
-def finish(db, account_id, campaign_id) -> None:
+def finish(db, account_id, campaign_id, *, by: str | None = None) -> None:
     """Cerrar la vuelta y dejarla escrita en el historial.
 
     El envío se anota aquí y no en `services/sender.py` porque por aquí pasa
@@ -248,18 +266,25 @@ def finish(db, account_id, campaign_id) -> None:
     no hay forma de cerrar una sin que quede escrita.
     """
     done = db.campaigns.find_one_and_update(
-        {"_id": campaign_id, "account_id": account_id},
-        {"$set": {"status": SENT, "finished_at": now(), "updated_at": now()}},
+        _turn({"_id": campaign_id, "account_id": account_id}, by),
+        {"$set": {"status": SENT, "finished_at": now(), "updated_at": now(),
+                  "auto_send": False},
+         "$unset": {"lease_until": "", "lease_by": "", "waiting": "", "retry_at": ""}},
         return_document=ReturnDocument.AFTER)
     # Una que nunca llegó a empezar —se le borró la pieza antes de la primera
     # tanda— no es un envío: no salió un solo correo y anotarla sería llenar el
     # historial de líneas en cero.
     if done and done.get("started_at"):
-        runs.record(db, {**done, "tags": tags_of(done)},
-                    run_id=done.get("run_id"))
+        try:
+            runs.record(db, {**done, "tags": tags_of(done)},
+                        run_id=done.get("run_id"))
+        except DuplicateKeyError:
+            # Dos que cerraron la misma vuelta: la primera ya la escribió.
+            pass
 
 
-def restart(db, account_id, campaign_id, *, when: datetime) -> bool:
+def restart(db, account_id, campaign_id, *, when: datetime,
+            auto_send: bool = False) -> bool:
     """Dejar una campaña que ya salió lista para salir otra vez.
 
     Los contadores vuelven a cero porque son los de la vuelta en curso; lo que
@@ -276,7 +301,8 @@ def restart(db, account_id, campaign_id, *, when: datetime) -> bool:
                   "total": 0, "sent": 0, "skipped": 0, "failed": 0,
                   "errors": [], "started_at": None, "finished_at": None,
                   # El envío que viene es otro, con su propio id.
-                  "run_id": None,
+                  "run_id": None, "cursor_id": None,
+                  "auto_send": bool(auto_send),
                   "updated_at": now()}}).matched_count == 1
 
 
@@ -288,3 +314,87 @@ def attach_download(db, account_id, campaign_id, download_id) -> None:
     """Atar el archivo guardado a su correo individual."""
     db.campaigns.update_one({"_id": campaign_id, "account_id": account_id},
                             {"$set": {"download_id": download_id, "updated_at": now()}})
+
+
+# ------------------------------------------- el proceso en segundo plano (octubre de 2026)
+
+# Cuánto dura un turno: más que cualquier tanda, para que nadie se lo quite a
+# quien todavía está mandando, y poco, para que uno que murió no la trabe.
+LEASE_SECONDS = 10 * 60
+# Cuándo se vuelve a intentar una que no pudo salir (sin cuota, en pausa...).
+RETRY_SECONDS = 15 * 60
+
+
+def _turn(query: dict[str, Any], by: str | None) -> dict[str, Any]:
+    """La consulta, y además que el turno sea de `by` si se pide."""
+    return {**query, "lease_by": by} if by else query
+
+
+def take(db, account_id, campaign_id, by: str, *, seconds: int = LEASE_SECONDS) -> bool:
+    """Tomar el turno de mandar. False si lo tiene otro y no se le venció."""
+    moment = now()
+    return db.campaigns.update_one(
+        {"_id": campaign_id, "account_id": account_id,
+         "$or": [{"lease_until": {"$exists": False}}, {"lease_until": None},
+                 {"lease_until": {"$lt": moment}}, {"lease_by": by}]},
+        {"$set": {"lease_by": by, "lease_until": moment + timedelta(seconds=seconds)}}
+    ).matched_count == 1
+
+
+def release(db, account_id, campaign_id, by: str) -> None:
+    db.campaigns.update_one({"_id": campaign_id, "account_id": account_id, "lease_by": by},
+                            {"$unset": {"lease_by": "", "lease_until": ""}})
+
+
+def wait(db, account_id, campaign_id, reasons: list[str], *,
+         seconds: int = RETRY_SECONDS) -> None:
+    """No pudo salir: por qué, y cuándo se vuelve a intentar sola."""
+    db.campaigns.update_one({"_id": campaign_id, "account_id": account_id},
+                            {"$set": {"waiting": list(reasons),
+                                      "retry_at": now() + timedelta(seconds=seconds)}})
+
+
+def clear_wait(db, account_id, campaign_id) -> None:
+    db.campaigns.update_one({"_id": campaign_id, "account_id": account_id,
+                             "waiting": {"$exists": True}},
+                            {"$unset": {"waiting": "", "retry_at": ""}})
+
+
+def set_auto(db, account_id, campaign_id, on: bool) -> bool:
+    """Encender o apagar que salga sola. Una que está saliendo sigue igual."""
+    return db.campaigns.update_one(
+        {"_id": campaign_id, "account_id": account_id},
+        {"$set": {"auto_send": bool(on), "updated_at": now()},
+         **({} if on else {"$unset": {"waiting": "", "retry_at": ""}})}).matched_count == 1
+
+
+def ready_to_go(db, *, limit: int = 20) -> list[dict[str, Any]]:
+    """Las que el proceso de fondo tiene que mandar ahora: con `auto_send`,
+    programadas o a medias, con la hora cumplida, sin turno vigente y sin
+    reintento pendiente. Las más atrasadas primero, de cuentas distintas
+    turnándose (una tanda por campaña y vuelta)."""
+    moment = now()
+    return list(db.campaigns.find({
+        "auto_send": True, "status": {"$in": [SCHEDULED, SENDING]},
+        "scheduled_at": {"$lte": moment},
+        "$and": [{"$or": [{"lease_until": {"$exists": False}}, {"lease_until": None},
+                          {"lease_until": {"$lt": moment}}]},
+                 {"$or": [{"retry_at": {"$exists": False}}, {"retry_at": None},
+                          {"retry_at": {"$lte": moment}}]}],
+    }).sort("updated_at", 1).limit(limit))
+
+
+def migrate_auto_send(db) -> int:
+    """Las campañas de antes del proceso de fondo no tienen `auto_send`. Las
+    programadas para más adelante pasan a salir solas a su hora; las demás
+    (las que ya pasaron su hora, las que salieron) no, para que nadie reciba de
+    golpe campañas viejas el día del despliegue. Solo toca las que no tienen el
+    campo, así que nunca rearma una que alguien desprogramó."""
+    moment = now()
+    later = db.campaigns.update_many(
+        {"auto_send": {"$exists": False}, "status": SCHEDULED,
+         "kind": {"$ne": SINGLE}, "scheduled_at": {"$gt": moment}},
+        {"$set": {"auto_send": True}}).modified_count
+    db.campaigns.update_many({"auto_send": {"$exists": False}},
+                             {"$set": {"auto_send": False}})
+    return later

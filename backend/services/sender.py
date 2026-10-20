@@ -18,13 +18,15 @@ Cuatro cosas que pasan aquí y que la pantalla no puede saltarse:
     mitad —porque se acabó la cuota, porque falló la red— no le manda a nadie
     dos veces.
 
-Sale por tandas dentro de la petición porque todavía no hay proceso en segundo
-plano. El día que lo haya, llama a `run()` en bucle y no cambia nada más.
+Sale por tandas: la primera dentro de la petición que pulsa Enviar, y las
+demás (y las programadas) desde el proceso en segundo plano (`worker.py`,
+octubre de 2026), que llama a `run()` en bucle con su turno.
 """
 
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime
 from email import policy
 from email.message import EmailMessage
@@ -362,12 +364,28 @@ def blocked(account: dict[str, Any]) -> list[str]:
 
 
 def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
-        limit: int | None = None) -> dict[str, Any]:
+        limit: int | None = None, lease_by: str | None = None,
+        stop=None, pace: float = 0.0) -> dict[str, Any]:
     """Mandar una tanda. Devuelve qué pasó y si queda algo pendiente.
 
     El tope se lee aquí y no en la firma: así se puede cambiar el de arriba y
     esta función obedece, que es lo que hace falta para probarla con tandas de
     dos y para ajustarlo el día que se sepa cuánto aguanta el servidor.
+
+    Desde octubre de 2026 la llama también el proceso en segundo plano, y nadie
+    recibe dos veces aunque dos la manden a la vez o una se caiga a la mitad:
+
+      * si `start()` dice que otro la arrancó primero, no se manda nada;
+      * la lista se recorre por `_id` desde el último que se procesó
+        (`cursor_id`), así borrar contactos a mitad de camino no salta a nadie;
+      * quien ya tiene su correo de este envío no lo vuelve a recibir;
+      * la cuota se **aparta antes** de mandar y lo que no salió se devuelve;
+      * con `lease_by`, avanzar y cerrar solo escriben si el turno sigue siendo
+        de ese proceso; `stop()` corta entre un correo y otro (al apagarse), y
+        si SES pide esperar la tanda para ahí sin dar a nadie por fallado.
+
+    `pace` son los segundos entre un correo y otro: el proceso de fondo no pasa
+    del ritmo que Amazon le permite a la cuenta.
     """
     limit = BATCH if limit is None else limit
     account_id = account["_id"]
@@ -384,7 +402,7 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         piece = designs.by_id(db, account_id, campaign["design_id"])
     if piece is None:
         # La pieza se borró después de programar la campaña.
-        campaigns.finish(db, account_id, campaign["_id"])
+        campaigns.finish(db, account_id, campaign["_id"], by=lease_by)
         return {"blocked": ["piece"], "sent": 0, "left": 0}
 
     wanted = campaigns.tags_of(campaign)
@@ -398,10 +416,15 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
                                         complete=fields)
     if campaign["status"] == campaigns.SCHEDULED:
         run_id = campaigns.start(db, account_id, campaign["_id"], total)
+        if run_id is None:
+            # Otro la arrancó primero (dos clics en Enviar, o el proceso de
+            # fondo): mandar aquí también sería mandar la tanda dos veces.
+            return {"blocked": ["busy"], "sent": 0, "left": 0}
         # El envío tiene su id desde que arranca, y cada correo sale con él.
-        campaign = {**campaign, "run_id": run_id}
+        campaign = {**campaign, "run_id": run_id, "position": 0, "cursor_id": None}
 
     position = int(campaign.get("position", 0))
+    cursor_id = campaign.get("cursor_id")
     # La cuota manda sobre el tope de la tanda: no se arma lo que no puede salir.
     # En la demostración, la cuota son los correos de prueba que le quedan; la
     # tanda se arma igual de larga, porque casi todos se van a saltar.
@@ -417,10 +440,15 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         to = campaign.get("to", "")
         who = who or ({"_id": None, "email": to, "email_normalized": to} if to else None)
         people = [who] if who and position == 0 and room > 0 else []
+    elif cursor_id is None and position > 0:
+        # A medias desde antes del cursor (octubre de 2026): sigue por posición
+        # esta vez, y desde la próxima por `_id`.
+        people = contacts.batch_for_sending(db, account_id, tags=wanted,
+                                            complete=fields, skip=position, limit=room)
     else:
         people = contacts.batch_for_sending(db, account_id, tags=wanted,
-                                            complete=fields,
-                                            skip=position, limit=room)
+                                            complete=fields, after_id=cursor_id,
+                                            limit=room)
     if (piece.get("source") == designs.CANVAS
             and (piece.get("canvas") or {}).get("v") != canvas.VERSION):
         # Guardada cuando el lienzo iba por diapositivas: sus imágenes son de
@@ -429,36 +457,80 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     ready = Piece(piece, single=single,
                   download=download_of(db, campaign) if single else None,
                   logo=logo_block(db, account) if campaign.get("logo") else "")
+
+    def key_of(one: dict[str, Any]) -> str:
+        return one.get("email_normalized") or normalize(one["email"])
+
     among = suppressions.among(db, account_id,
                                [one["email"] for one in people])
-    sent = skipped = failed = 0
-    errors: list[dict[str, str]] = []
+    # Quien ya tiene su correo de este envío (una tanda que se cortó después de
+    # entregar y antes de anotar), en una consulta.
+    already = {row["email_normalized"] for row in db.events.find(
+        {"account_id": account_id, "run_id": campaign.get("run_id"), "kind": events.SENT,
+         "email_normalized": {"$in": [key_of(one) for one in people]}},
+        {"email_normalized": 1})} if people and campaign.get("run_id") else set()
+    # Quién de esta tanda va a salir. Regla 1: el suprimido se salta y no gasta
+    # cuota. Lo mismo una dirección de un dominio que no recibe correo, que es
+    # un rebote seguro (`services/address_check.py`). En la demostración solo
+    # sale a las direcciones de prueba, y hasta lo que le queda.
+    going: set[int] = set()
+    skipped = 0
+    for index, one in enumerate(people):
+        key = key_of(one)
+        if key in already:
+            continue
+        if one["email"] in among or key in among or one.get("invalid"):
+            skipped += 1
+        elif demo and (key not in testers or len(going) >= accounts.demo_left(account)):
+            skipped += 1
+        else:
+            going.add(index)
+    # La cuota se aparta antes de mandar: dos envíos a la vez no se pasan.
+    if demo:
+        reserved = accounts.reserve_demo(db, account_id, len(going))
+    else:
+        reserved = accounts.reserve_quota(
+            db, account_id, len(going), plans.emails_a_month(accounts.plan_of(account)))
+    if not reserved:
+        return {"blocked": ["demo_used" if demo else "quota"], "sent": 0,
+                "left": max(0, total - position)}
 
-    for one in people:
-        # Regla 1: el suprimido se salta y no gasta cuota. Lo mismo una
-        # dirección de un dominio que no recibe correo: es un rebote seguro
-        # (`services/address_check.py`).
-        if (one["email"] in among or one.get("email_normalized") in among
-                or one.get("invalid")):
-            skipped += 1
-            continue
-        # En la demostración solo sale a las direcciones de prueba, y hasta lo
-        # que le queda.
-        if demo and ((one.get("email_normalized") or one["email"].lower()) not in testers
-                     or sent >= accounts.demo_left(account)):
-            skipped += 1
-            continue
-        try:
-            deliver(build(account, campaign, ready, one, fields))
-        except Exception as exc:  # noqa: BLE001 - se anota y se sigue
-            failed += 1
-            errors.append({"email": one["email"],
-                           "error": f"{type(exc).__name__}: {str(exc)[:200]}"})
-            continue
-        sent += 1
-        events.record(db, account_id, kind=events.SENT,
-                      campaign_id=campaign["_id"],
-                      run_id=campaign.get("run_id"), email=one["email"])
+    sent = failed = done = 0
+    last_id = cursor_id
+    throttled = stopped = False
+    errors: list[dict[str, str]] = []
+    for index, one in enumerate(people):
+        if stop is not None and stop():
+            stopped = True
+            break
+        if index in going:
+            try:
+                deliver(build(account, campaign, ready, one, fields))
+            except Exception as exc:  # noqa: BLE001 - se anota y se sigue
+                if _throttled(exc):
+                    # Amazon pidió esperar: este y los que siguen salen en la
+                    # vuelta siguiente, sin darlos por fallados.
+                    throttled = True
+                    break
+                failed += 1
+                errors.append({"email": one["email"],
+                               "error": f"{type(exc).__name__}: {str(exc)[:200]}"})
+            else:
+                sent += 1
+                events.record(db, account_id, kind=events.SENT,
+                              campaign_id=campaign["_id"],
+                              run_id=campaign.get("run_id"), email=one["email"])
+                if pace:
+                    time.sleep(pace)
+        done += 1
+        last_id = one.get("_id") if one.get("_id") is not None else last_id
+
+    # Lo apartado que no salió vuelve al mismo mes.
+    if demo:
+        accounts.release_demo(db, account_id, len(going) - sent)
+        accounts.add_sent(db, account_id, sent)
+    else:
+        accounts.release_quota(db, account_id, len(going) - sent)
 
     if sent:
         # Estos correos van a pedir sus imágenes cada vez que alguien los abra:
@@ -468,21 +540,26 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         images.mark_sent(db, account_id, imaging.names_in(
             ready.html(plan=accounts.plan_of(account), unsubscribe_url="")))
 
-    position += len(people)
-    campaigns.advance(db, account_id, campaign["_id"], position=position,
-                      sent=sent, skipped=skipped, failed=failed, errors=errors)
-    accounts.add_sent(db, account_id, sent)
-    if demo:
-        accounts.add_demo_sent(db, account_id, sent)
+    position += done
+    if not campaigns.advance(db, account_id, campaign["_id"], position=position,
+                             sent=sent, skipped=skipped, failed=failed, errors=errors,
+                             cursor_id=None if single else last_id, by=lease_by):
+        # Perdió el turno a mitad de la tanda: lo que sigue lo anota quien lo tiene.
+        return {"blocked": ["busy"], "sent": sent, "skipped": skipped, "failed": failed,
+                "left": max(0, total - position), "errors": errors}
 
+    # Se termina cuando la lista se acaba: una tanda que trajo menos de los que
+    # pidió, o ninguno. No por el conteo, que se encoge si alguien borra
+    # contactos a mitad de camino y cerraría la campaña con gente sin recibir.
+    finished = not (stopped or throttled) and (not people or len(people) < room)
     left = max(0, total - position)
-    # Sin gente en la tanda no queda nada por hacer aunque el conteo diga otra
-    # cosa: la lista se encogió mientras la campaña iba por la mitad.
-    if left <= 0 or not people:
-        campaigns.finish(db, account_id, campaign["_id"])
+    if finished:
+        campaigns.finish(db, account_id, campaign["_id"], by=lease_by)
         left = 0
+    else:
+        left = max(1, left)
     return {"blocked": [], "sent": sent, "skipped": skipped, "failed": failed,
-            "left": left, "errors": errors}
+            "left": left, "errors": errors, "throttled": throttled, "stopped": stopped}
 
 
 # ------------------------------------------------- un correo de la API (octubre de 2026)

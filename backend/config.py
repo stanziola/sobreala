@@ -126,6 +126,14 @@ class Config:
     IMPORT_MAX_BYTES = int(os.getenv("IMPORT_MAX_BYTES", str(5 * 1024 * 1024)))
     IMPORTS_PER_DAY = int(os.getenv("IMPORTS_PER_DAY", "10"))
 
+    # --- el proceso en segundo plano (worker.py, octubre de 2026) ------------
+    # Cuántos correos por segundo manda como mucho: el ritmo que Amazon le da a
+    # la cuenta (se ve en la consola de SES). Pasarse hace que Amazon pida
+    # esperar, y eso frena el envío entero.
+    SES_MAX_PER_SECOND = max(1, int(os.getenv("SES_MAX_PER_SECOND", "10")))
+    # Cuánto duerme entre vueltas cuando no hay nada que mandar.
+    WORKER_TICK_SECONDS = max(1, int(os.getenv("WORKER_TICK_SECONDS", "5")))
+
     # --- payments ----------------------------------------------------------
     # sandbox mueve dinero falso, live cobra tarjetas de verdad. Cada uno tiene
     # su propio par de llaves en developer.paypal.com y no son intercambiables.

@@ -193,17 +193,21 @@ def matching_count(db, account_id, *, search: str = "", tag: str = "",
 def batch_for_sending(db, account_id, *, tag: str = "",
                       tags: list[str] | None = None,
                       complete: list[dict[str, Any]] | None = None,
-                      skip: int = 0,
+                      skip: int = 0, after_id=None,
                       limit: int = 100) -> list[dict[str, Any]]:
     """Un tramo de la lista, en orden fijo, para mandarle una campaña.
 
     Por `_id` y no por fecha, que es como ordena la pantalla: es el único orden
     que no se mueve si alguien importa contactos mientras la campaña va por la
-    mitad, y de eso depende que la posición guardada signifique lo mismo en la
-    tanda siguiente.
+    mitad. Desde octubre de 2026 se sigue **desde el último `_id`** que se
+    procesó (`after_id`) y no saltando una cantidad: si se borran contactos
+    mientras la campaña espera, saltar contaría mal y dejaría gente fuera.
     """
-    return list(db.contacts.find(_matching(account_id, "", tag, tags, complete))
-                .sort("_id", 1).skip(skip).limit(limit))
+    query = _matching(account_id, "", tag, tags, complete)
+    if after_id is not None:
+        query["_id"] = {"$gt": after_id}
+        skip = 0
+    return list(db.contacts.find(query).sort("_id", 1).skip(skip).limit(limit))
 
 
 def all_of(db, account_id, *, search: str = "", tag: str = ""):
