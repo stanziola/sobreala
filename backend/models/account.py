@@ -1965,6 +1965,51 @@ def add_sent(db, account_id, many: int, when: datetime | None = None) -> None:
          "$set": {"updated_at": now()}})
 
 
+def reserve_quota(db, account_id, many: int, allowed: int,
+                  when: datetime | None = None) -> bool:
+    """Apartar `many` correos de la cuota del mes **antes** de mandarlos
+    (octubre de 2026). Una sola escritura condicional: dos envíos a la vez no
+    se pasan, porque el segundo ve lo que apartó el primero. Lo apartado ya
+    cuenta como enviado; lo que no salió se devuelve con `release_quota`.
+
+    `$ifNull` porque el día 1 el contador del mes todavía no existe, y la base
+    de una mejora de plan se descuenta solo si es de este mes, como en
+    `used_this_month`."""
+    if many <= 0:
+        return True
+    month = quota_month(when)
+    used = {"$subtract": [
+        {"$ifNull": [f"$sent_counts.{month}", 0]},
+        {"$cond": [{"$eq": ["$quota_base.month", month]},
+                   {"$ifNull": ["$quota_base.sent", 0]}, 0]}]}
+    return db.accounts.update_one(
+        {"_id": account_id, "$expr": {"$lte": [{"$add": [used, many]}, allowed]}},
+        {"$inc": {f"sent_counts.{month}": many},
+         "$set": {"updated_at": now()}}).modified_count == 1
+
+
+def release_quota(db, account_id, many: int, when: datetime | None = None) -> None:
+    """Devolver lo apartado que no salió, al mismo mes."""
+    if many > 0:
+        db.accounts.update_one({"_id": account_id},
+                               {"$inc": {f"sent_counts.{quota_month(when)}": -many}})
+
+
+def reserve_demo(db, account_id, many: int) -> bool:
+    """Lo mismo con los correos de la demostración (`DEMO_SENDS`)."""
+    if many <= 0:
+        return True
+    return db.accounts.update_one(
+        {"_id": account_id, "$expr": {"$lte": [
+            {"$add": [{"$ifNull": ["$demo_sent", 0]}, many]}, DEMO_SENDS]}},
+        {"$inc": {"demo_sent": many}}).modified_count == 1
+
+
+def release_demo(db, account_id, many: int) -> None:
+    if many > 0:
+        db.accounts.update_one({"_id": account_id}, {"$inc": {"demo_sent": -many}})
+
+
 def plan_of(account: dict[str, Any] | None) -> str | None:
     """The plan this account pays for, or None while it pays for none.
 

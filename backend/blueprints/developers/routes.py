@@ -1,4 +1,5 @@
-"""La rama «API» del Dashboard (octubre de 2026): las llaves y el registro.
+"""La rama «API» del Dashboard (octubre de 2026): las llaves, los correos que
+mandó y el registro.
 
 **Solo el dueño.** Una llave habla con los datos de la empresa sin sesión, así
 que crearla es como dar una copia de la contraseña: un usuario de la empresa no
@@ -37,6 +38,8 @@ from models import account as accounts
 from models import api_key as api_keys
 from models import api_log
 from models import auth_event as events
+from models import event as mail_events
+from models import message as messages
 from models import token as tokens
 from services import api_auth, notices, totp
 from services.security import csrf_ok, rate_limit, verify_password
@@ -261,3 +264,35 @@ def log():
     return render_template(
         "developers/log.html", rows=api_log.recent(db, account["_id"], key_id=chosen),
         keys=mine, chosen=chosen, names=names, days=api_log.KEEP_DAYS, docs=docs_url())
+
+
+# ------------------------------------------------------------ los correos
+
+EMAILS_PER_PAGE = 50
+# Lo que más dice de cada correo, de lo peor a lo mejor: lo primero que tenga.
+OUTCOMES = (mail_events.COMPLAINT, mail_events.BOUNCE, mail_events.CLICK,
+            mail_events.OPEN, mail_events.DELIVERED)
+
+
+@bp.route("/emails")
+def emails():
+    """Los correos que mandó la API (octubre de 2026), 50 por página, con lo
+    que pasó con cada uno. El asunto sale como se escribió: los datos de cada
+    correo no se guardan."""
+    account = current_account()
+    db = get_db()
+    query: dict = {"account_id": account["_id"]}
+    before = as_id(request.args.get("antes"))
+    if before is not None:
+        query["_id"] = {"$lt": before}
+    rows = list(db.messages.find(query).sort("_id", -1).limit(EMAILS_PER_PAGE + 1))
+    more = len(rows) > EMAILS_PER_PAGE
+    rows = rows[:EMAILS_PER_PAGE]
+    counted = mail_events.counts_by_run(db, account["_id"], [one["_id"] for one in rows])
+    for one in rows:
+        seen = counted.get(one["_id"], {})
+        one["outcome"] = next((kind for kind in OUTCOMES if seen.get(kind)), one["status"])
+    return render_template(
+        "developers/emails.html", rows=rows, docs=docs_url(),
+        days=messages.KEEP_DAYS, next_page=rows[-1]["_id"] if more else None,
+        paged=before is not None)

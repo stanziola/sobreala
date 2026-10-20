@@ -102,9 +102,13 @@ def _mail(db, kinds, account_id, since, limit) -> list[dict[str, Any]]:
     found = list(db.events.find(query).sort("created_at", -1).limit(limit))
     # El asunto de cada campaña y si cada rebote fue permanente, en una
     # consulta cada uno: la supresión por rebote permanente es lo que lo dice.
+    ids = list({row.get("campaign_id") for row in found} - {None})
     subjects = {one["_id"]: one.get("subject", "") for one in db.campaigns.find(
-        {"_id": {"$in": list({row.get("campaign_id") for row in found} - {None})}},
-        {"subject": 1})}
+        {"_id": {"$in": ids}}, {"subject": 1})}
+    # Los correos de la API (octubre de 2026) no son campañas: su asunto está en
+    # `messages`, sin llenar, que es lo único que se guarda de él.
+    subjects.update({one["_id"]: one.get("subject", "") for one in db.messages.find(
+        {"_id": {"$in": [one for one in ids if one not in subjects]}}, {"subject": 1})})
     bounced = [row for row in found if row["kind"] == events.BOUNCE]
     hard = {(one["account_id"], one["email_normalized"]) for one in db.suppressions.find(
         {"account_id": {"$in": list({row["account_id"] for row in bounced})},

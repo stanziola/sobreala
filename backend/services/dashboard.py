@@ -48,6 +48,7 @@ ENDPOINT_ROWS = {
     "developers.new_key": "api-keys",
     "developers.revoke_key": "api-keys",
     "developers.log": "api-log",
+    "developers.emails": "api-emails",
 }
 
 
@@ -157,6 +158,8 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
         branches.append({"key": "api-branch", "label": "dash_api", "icon": "_icon-code.svg",
                          "rows": [{"key": "api-keys", "label": "dash_api_keys",
                                    "url": url_for("developers.keys")},
+                                  {"key": "api-emails", "label": "dash_api_emails",
+                                   "url": url_for("developers.emails")},
                                   {"key": "api-log", "label": "dash_api_log",
                                    "url": url_for("developers.log")},
                                   {"key": "api-docs", "label": "dash_api_docs",

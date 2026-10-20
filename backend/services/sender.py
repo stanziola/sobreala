@@ -42,7 +42,7 @@ from models import event as events
 from models import image as images
 from models import suppression as suppressions
 from services import fields as columns
-from services import canvas, downloads, imaging, render, unsubscribe
+from services import canvas, downloads, imaging, plans, render, unsubscribe
 
 # Cuántos destinatarios por vuelta. El tope existe porque esto corre dentro de
 # una petición y Railway la corta: mejor mandar cien y decir que faltan que
@@ -76,9 +76,12 @@ class Piece:
     """
 
     def __init__(self, design: dict[str, Any], *, single: bool = False,
-                 download: dict[str, str] | None = None, logo: str = ""):
+                 download: dict[str, str] | None = None, logo: str = "",
+                 untracked: bool = False):
         self.design = design
         self.single = single
+        # Sin contar clics (`render.no_track`): el transaccional de la API.
+        self.untracked = untracked
         self.download = download
         self.logo = logo
         self.built_in = design.get("source") == designs.BUILT_IN
@@ -198,7 +201,8 @@ def reply_to(account: dict[str, Any], design: dict[str, Any] | None = None) -> s
 
 def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
           contact: dict[str, Any],
-          fields: list[dict[str, Any]] | None = None) -> EmailMessage:
+          fields: list[dict[str, Any]] | None = None, *,
+          data: dict[str, Any] | None = None) -> EmailMessage:
     """El correo de un destinatario, entero, con sus cabeceras.
 
     Aquí es donde el correo deja de ser el mismo para todos: las marcas de la
@@ -217,7 +221,12 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     url = "" if single else unsubscribe.link(contact["_id"])
     html = piece.html(plan=accounts.plan_of(account), unsubscribe_url=url,
                       postal=accounts.postal_of(account))
-    html = columns.fill(html, contact, fields)
+    html = columns.fill(html, contact, fields, data=data)
+    if piece.untracked:
+        # Un transaccional de la API (octubre de 2026): sus enlaces suelen ser
+        # privados (cambiar la contraseña, ver una factura) y el contador de
+        # clics de SES los guardaría.
+        html = render.no_track(html)
 
     message = EmailMessage(policy=POLICY)
     # De quién sale y a dónde se responde los elige la plantilla (octubre de
@@ -226,7 +235,7 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     message["To"] = contact["email"]
     # Sin escapar: un asunto es texto, y ahí «&» es «&» y no «&amp;».
     message["Subject"] = columns.fill(campaign["subject"], contact, fields,
-                                      html=False)
+                                      html=False, data=data)
     # Responder le llega al cliente, no a nosotros: la conversación es suya.
     answer = reply_to(account, piece.design)
     if answer:
@@ -474,3 +483,156 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         left = 0
     return {"blocked": [], "sent": sent, "skipped": skipped, "failed": failed,
             "left": left, "errors": errors}
+
+
+# ------------------------------------------------- un correo de la API (octubre de 2026)
+
+# Lo único que frena un transaccional: quien no existe y quien dijo que es spam.
+# Quien se dio de baja de las promociones sigue necesitando su recibo.
+TRANSACTIONAL_STOPS = (suppressions.HARD_BOUNCE, suppressions.COMPLAINT)
+# Lo que dice SES cuando hay que esperar: no es un fallo del correo.
+THROTTLED = ("Throttling", "ThrottlingException", "MaxSendingRateExceeded")
+# En el envío de un correo de la API, la campaña es el propio mensaje.
+API = "api"
+
+
+def lacking(account: dict[str, Any], piece: Piece, subject: str,
+            contact: dict[str, Any] | None, data: dict[str, Any] | None) -> list[str]:
+    """Las marcas de la plantilla y del asunto que se quedarían en blanco: ni
+    en los datos, ni en el contacto. A diferencia de una campaña, un correo de
+    la API con una marca vacía no sale."""
+    html = piece.html(plan=None, unsubscribe_url="")
+    return columns.lacking(html + "\n" + subject, contact, accounts.fields_of(account), data)
+
+
+def _throttled(exc: Exception) -> bool:
+    code = (getattr(exc, "response", None) or {}).get("Error", {}).get("Code", "")
+    return code in THROTTLED
+
+
+def send_one(db, account: dict[str, Any], *, kind: str, to: str, design: dict[str, Any],
+             subject: str, data: dict[str, Any] | None = None, logo: bool = False,
+             key_id=None, request_key: str | None = None,
+             simulate: bool = False) -> dict[str, Any]:
+    """Un correo de la API a una persona, transaccional o promocional.
+
+    Devuelve `{"refused": motivo, ...}` si no puede salir (nada se gasta ni se
+    guarda), `{"status": "simulated", "preview": ...}` con una llave de prueba,
+    o el mensaje guardado (`{"status": "sent" | "failed", "message": ...}`).
+
+    El transaccional va sin baja ni marca de agua y sin contar clics, a
+    cualquier dirección; solo lo frenan un rebote permanente o una queja en
+    esta cuenta, o un dominio que no recibe correo. El promocional es como una
+    campaña de una persona: a un contacto completo y sin ninguna supresión, con
+    su baja y la marca de su plan. Los dos gastan cuota, respetan la pausa y,
+    en la demostración, solo van a sus direcciones de prueba.
+    """
+    from models import message as messages
+    from services import address_check
+
+    why = blocked(account)
+    if why:
+        return {"refused": "cannot_send", "blocked": why}
+    account_id = account["_id"]
+    fields = accounts.fields_of(account)
+    promotional = kind == messages.PROMOTIONAL
+    contact = contacts.by_email(db, account_id, to)
+    if promotional:
+        if contact is None:
+            return {"refused": "not_a_contact"}
+        if contact.get("invalid"):
+            return {"refused": "undeliverable"}
+        if suppressions.among(db, account_id, [to]):
+            return {"refused": "suppressed"}
+        missing = columns.missing(contact, fields)
+        if missing:
+            return {"refused": "contact_incomplete", "missing": missing}
+    else:
+        if suppressions.among(db, account_id, [to], reasons=TRANSACTIONAL_STOPS):
+            return {"refused": "suppressed"}
+        if (contact or {}).get("invalid") or address_check.undeliverable([to], max_domains=1):
+            return {"refused": "undeliverable"}
+    demo = accounts.in_demo(account)
+    if demo and normalize(to) not in accounts.confirmed_test_addresses(account):
+        return {"refused": "demo_address"}
+
+    piece = Piece(design, single=not promotional, untracked=not promotional,
+                  logo=logo_block(db, account) if logo else "")
+    absent = lacking(account, piece, subject, contact, data)
+    if absent:
+        return {"refused": "missing_data", "missing": absent}
+    who = contact or {"_id": None, "email": to, "email_normalized": normalize(to)}
+    if simulate:
+        made = _built(account, {"_id": None, "subject": subject,
+                                "kind": API if promotional else campaigns.SINGLE},
+                      piece, who, fields, data)
+        if isinstance(made, dict):
+            return made
+        return {"status": "simulated", "preview": {
+            "subject": str(made["Subject"]),
+            "html": made.get_body(("html",)).get_content(),
+            "text": made.get_body(("plain",)).get_content()}}
+
+    message_id = messages.start(
+        db, account_id=account_id, key_id=key_id, kind=kind, to=to,
+        contact_id=(contact or {}).get("_id"), subject=subject,
+        template_id=design.get("_id"), sent_from=sender_email(account, design),
+        reply_to=reply_to(account, design), request_key=request_key)
+    if message_id is None:
+        return {"refused": "replay"}
+    # La cuota se aparta antes de mandar: dos a la vez no se pasan.
+    if demo:
+        reserved = accounts.reserve_demo(db, account_id, 1)
+    else:
+        reserved = accounts.reserve_quota(
+            db, account_id, 1, plans.emails_a_month(accounts.plan_of(account)))
+    if not reserved:
+        messages.failed(db, message_id, error="quota")
+        messages.forget(db, message_id)
+        return {"refused": "cannot_send", "blocked": ["demo_used" if demo else "quota"]}
+
+    def give_back() -> None:
+        if demo:
+            accounts.release_demo(db, account_id, 1)
+        else:
+            accounts.release_quota(db, account_id, 1)
+
+    made = _built(account, {"_id": message_id, "run_id": message_id, "subject": subject,
+                            "kind": API if promotional else campaigns.SINGLE},
+                  piece, who, fields, data)
+    if isinstance(made, dict):
+        give_back()
+        messages.failed(db, message_id, error=made["refused"])
+        messages.forget(db, message_id)
+        return made
+    try:
+        ses_id = deliver(made)
+    except Exception as exc:  # noqa: BLE001 - se anota y se dice
+        give_back()
+        if _throttled(exc):
+            messages.failed(db, message_id, error="throttled")
+            messages.forget(db, message_id)
+            return {"refused": "throttled"}
+        messages.failed(db, message_id, error=f"{type(exc).__name__}: {str(exc)[:200]}")
+        return {"status": messages.FAILED, "message": messages.by_id(db, account_id, message_id)}
+    messages.sent(db, message_id, ses_id=str(ses_id))
+    if demo:
+        accounts.add_sent(db, account_id, 1)
+    events.record(db, account_id, kind=events.SENT, campaign_id=message_id,
+                  run_id=message_id, email=to)
+    images.mark_sent(db, account_id, imaging.names_in(
+        piece.html(plan=accounts.plan_of(account), unsubscribe_url="")))
+    return {"status": messages.SENT, "message": messages.by_id(db, account_id, message_id)}
+
+
+def normalize(email: str) -> str:
+    return accounts.normalize_email(email)
+
+
+def _built(account, campaign, piece, who, fields, data):
+    """El correo armado, o `{"refused": "bad_subject"}` si el asunto lleno no
+    cabe en una cabecera (un dato del contacto con un salto de línea)."""
+    try:
+        return build(account, campaign, piece, who, fields, data=data)
+    except ValueError:
+        return {"refused": "bad_subject"}

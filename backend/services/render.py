@@ -255,6 +255,16 @@ def email_from_html(html: str, *, plan: str | None, unsubscribe: str = "#",
     return html[:last.start()] + pie + html[last.start():]
 
 
+# Un enlace que todavía no le dice a SES que no lo cuente.
+_LINK = re.compile(r"<a\b(?![^>]*\bses:no-track\b)", re.IGNORECASE)
+
+
+def no_track(html: str) -> str:
+    """Cada enlace con `ses:no-track`, para que SES no cuente sus clics (ni
+    guarde la dirección pulsada). Las aperturas se siguen contando."""
+    return _LINK.sub("<a ses:no-track", html)
+
+
 def as_json(filled: dict[str, str]) -> str:
     """Lo escrito, para guardarlo tal cual y poder reabrirlo."""
     return json.dumps(filled, ensure_ascii=False)

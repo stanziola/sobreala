@@ -183,6 +183,7 @@
         <li><a class="api-docs__link" href="#idempotencia">Reintentar sin repetir</a></li>
         <li><a class="api-docs__link" href="#fechas">Fechas y horas</a></li>
         <li><a class="api-docs__link" href="#listas">Listas dentro de un contacto</a></li>
+        <li><a class="api-docs__link" href="#clases">Transaccional o promocional</a></li>
         <li><a class="api-docs__link" href="#lienzo">El lienzo en JSON</a></li>
         <li><a class="api-docs__link" href="#fuera">Lo que la API no hace</a></li>
       </ul>
@@ -237,6 +238,12 @@
         <li><a class="api-docs__link" href="#post-folders"><span class="api-method api-method--post">POST</span> /folders</a></li>
         <li><a class="api-docs__link" href="#patch-folders-folder_id"><span class="api-method api-method--patch">PATCH</span> /folders/{folder_id}</a></li>
         <li><a class="api-docs__link" href="#delete-folders-folder_id"><span class="api-method api-method--delete">DELETE</span> /folders/{folder_id}</a></li>
+      </ul>
+      <p class="api-docs__nav-title">Correos</p>
+      <ul>
+        <li><a class="api-docs__link" href="#post-emails"><span class="api-method api-method--post">POST</span> /emails</a></li>
+        <li><a class="api-docs__link" href="#get-emails"><span class="api-method api-method--get">GET</span> /emails</a></li>
+        <li><a class="api-docs__link" href="#get-emails-email_id"><span class="api-method api-method--get">GET</span> /emails/{email_id}</a></li>
       </ul>
       <p class="api-docs__nav-title">OpenAPI</p>
       <ul><li><a class="api-docs__link" href="https://app.sobreala.com/api/v1/openapi.json">openapi.json</a></li></ul>
@@ -331,6 +338,16 @@
               <tr><th scope="row"><code>limit_reached</code></th><td>409</td><td>Se llegó al tope de tu plan (etiquetas, columnas, plantillas, carpetas o fotos).</td></tr>
               <tr><th scope="row"><code>field_exists</code></th><td>409</td><td>Ya hay una columna con esa clave, o es Nombre o Correo, que todo contacto ya trae.</td></tr>
               <tr><th scope="row"><code>field_values</code></th><td>409</td><td>Hay contactos con valores que no encajan en el tipo nuevo; <code>contacts</code> dice cuántos.</td></tr>
+              <tr><th scope="row"><code>cannot_send</code></th><td>409</td><td>Hoy la cuenta no puede enviar (sin plan o sin cuota, en pausa, sin dirección postal...); <code>blocked</code> dice por qué.</td></tr>
+              <tr><th scope="row"><code>not_a_contact</code></th><td>422</td><td>Un promocional va solo a un contacto de la cuenta.</td></tr>
+              <tr><th scope="row"><code>contact_incomplete</code></th><td>422</td><td>Al contacto le faltan columnas; <code>missing</code> dice cuáles.</td></tr>
+              <tr><th scope="row"><code>suppressed</code></th><td>422</td><td>A esa dirección ya no se le escribe (en un transaccional, solo por rebote permanente o queja).</td></tr>
+              <tr><th scope="row"><code>undeliverable</code></th><td>422</td><td>El dominio de esa dirección no recibe correo.</td></tr>
+              <tr><th scope="row"><code>demo_address</code></th><td>422</td><td>En la demostración solo se envía a las direcciones de prueba confirmadas.</td></tr>
+              <tr><th scope="row"><code>missing_data</code></th><td>422</td><td>Hay marcas sin dato; <code>missing</code> dice cuáles.</td></tr>
+              <tr><th scope="row"><code>bad_subject</code></th><td>422</td><td>El asunto lleno trae un salto de línea de un dato del contacto.</td></tr>
+              <tr><th scope="row"><code>throttled</code></th><td>503</td><td>Amazon pidió esperar. No salió ni gastó cuota: reintenta tras Retry-After.</td></tr>
+              <tr><th scope="row"><code>delivery_failed</code></th><td>502</td><td>No se pudo entregar a Amazon. No gastó cuota.</td></tr>
               <tr><th scope="row"><code>unavailable</code></th><td>503</td><td>No disponible por un momento; reintenta tras Retry-After.</td></tr>
               <tr><th scope="row"><code>internal_error</code></th><td>500</td><td>Algo falló de nuestro lado. Escríbenos con el request_id.</td></tr>
             </tbody>
@@ -380,6 +397,9 @@ Este mes no tuviste movimientos.
   <span class="visually-hidden" role="status" data-copy-status></span>
 </div>
       </section>
+      <section class="api-doc" id="clases">
+        <h2 class="api-doc__title">Transaccional o promocional</h2>
+<p>Cada correo dice qué es en <code>type</code>, y eso decide sus reglas. Elegir mal no es un atajo: un promocional disfrazado de transaccional se nota en las quejas, y las quejas pausan la cuenta.</p><p><strong>transactional</strong>: lo que alguien espera porque hizo algo (su recibo, su código, el estado de su pedido). Va a cualquier dirección, esté o no en tus contactos, sin enlace de baja ni marca de agua. Solo lo frenan un rebote permanente o una queja de esa dirección en tu cuenta, o un dominio que no recibe correo: quien se dio de baja de tus promociones sigue recibiendo su recibo. Se cuentan las aperturas, pero <strong>no los clics</strong>, porque sus enlaces suelen ser privados.</p><p><strong>promotional</strong>: una oferta, una invitación, un boletín. Es una campaña de una persona: va solo a un contacto de tu cuenta con todas sus columnas y sin ninguna supresión, con su enlace de baja y la marca de agua de tu plan.</p><p>Los dos gastan un correo de la cuota de tu mes, llevan tu dirección postal al pie, salen de uno de tus remitentes y no salen si la cuenta está en pausa. En la demostración solo van a tus direcciones de prueba.</p>      </section>
       <section class="api-doc" id="lienzo">
         <h2 class="api-doc__title">El lienzo en JSON</h2>
 <p>Una plantilla del lienzo es una hoja de 600 px de ancho que crece hacia abajo: <code>h</code> es su alto (de 80 a 4,000), <code>bg</code> su color y <code>items</code> lo que lleva encima, hasta 60 cosas. Cada una dice qué es en <code>t</code> y dónde va en <code>x</code>, <code>y</code>, <code>w</code> y <code>h</code>, en píxeles y dentro de la hoja. El correo se arma en tablas al enviarlo, así que lo que se encima tiene que poder cortarse en franjas y columnas.</p><p><strong>text</strong>: <code>text</code> (hasta 2,000 caracteres, con saltos de línea y marcas), <code>font</code> (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, Georgia, Times New Roman, Courier New, Palatino, Garamond, Lucida Sans o Century Gothic), <code>size</code> (de 14 a 72), <code>color</code> (#RRGGBB), <code>bold</code>, <code>italic</code>, <code>align</code> (left, center o right), <code>line</code> (de 1 a 2.5) y <code>list</code> (con viñetas). <strong>button</strong>: <code>text</code> (hasta 60), <code>href</code> (https:// o mailto:), <code>bg</code>, <code>radius</code> (de 0 a 60) y la misma letra que un texto. <strong>image</strong>: <code>name</code> (el que devuelve <code>POST /images</code>), <code>alt</code> (obligatorio), <code>href</code>, <code>fit</code> (cover o contain), <code>crop</code> ([x, y, ancho, alto], de 0 a 1) y <code>rot</code> (grados). <strong>shape</strong>: <code>shape</code> (rect, line, ellipse, triangle, star o arrow), <code>bg</code>, <code>radius</code> y <code>rot</code>; una línea mide de 1 a 12 px de alto.</p><p>Se guarda solo si arma bien el correo y pasa la revisión antispam, igual que en el panel: entre otras cosas, al menos 200 caracteres de texto, poca imagen, pocos enlaces y nada de acortadores. <code>POST /templates/check</code> dice cómo va cada regla sin guardar nada. Lo más cómodo es armarla en el panel y leerla después con <code>GET /templates/{template_id}</code>.</p><div class="api-code" data-copy-box>
@@ -3743,6 +3763,273 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
   <button class="api-code__copy" type="button" data-copy="{
   &#34;id&#34;: &#34;6533b0aaa1b2c3d4e5f60900&#34;,
   &#34;deleted&#34;: true
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+      </section>
+      <section class="api-doc" id="correos">
+        <h2 class="api-doc__title">Correos</h2>
+        <p>Un correo a una persona, con una de tus plantillas o con un texto, y lo que pasó con él. Las reglas de cada clase están en «Transaccional o promocional». Si la plantilla o el asunto nombran una marca que no llega en <code>data</code> ni está en el contacto, no sale: 422 con <code>missing</code>. Los correos se guardan 30 días, sin sus datos ni su HTML.</p>
+
+        <article class="api-endpoint" id="post-emails">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
+            <code>/emails</code></h3>
+          <p class="api-endpoint__title">Enviar un correo</p>
+          <p>Sale en el momento: 201 con el correo guardado. Con una llave de prueba se revisa y se arma todo, pero no sale, no gasta cuota y no se guarda: responde 200 con <code>status: simulated</code> y el correo armado en <code>preview</code>. Reintenta con la misma Idempotency-Key si no sabes si salió. Hasta 120 por minuto.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>emails:send</code> · Con una llave de prueba: simulado.          </p>
+<p class="api-endpoint__label">En el cuerpo</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>to</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">texto</span></th>
+        <td>A quién.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>type</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">texto</span></th>
+        <td>transactional o promotional.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>subject</code> <span class="api-required">obligatorio</span><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta 150 caracteres, en una línea, con marcas.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>template_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Una plantilla tuya. Va esto o <code>text</code>.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>text</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Lo que dice el correo, hasta 20,000 caracteres: cada línea en blanco es un párrafo.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>logo</code><br>
+          <span class="api-type">sí o no</span></th>
+        <td>Con <code>text</code>: tu logo arriba.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>data</code><br>
+          <span class="api-type">objeto</span></th>
+        <td>Los datos de las marcas, como en «Ver cómo sale». Mandan sobre los del contacto.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>from_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>El id de un remitente listo. Sin él, el de la plantilla o el predeterminado.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>reply_to</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Uno de tus «Responder a». Sin él, el de la plantilla o el predeterminado.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl -X POST https://app.sobreala.com/api/v1/emails \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;to&#34;: &#34;ana@ejemplo.com&#34;,
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;subject&#34;: &#34;Tu pedido *|PEDIDO|* va en camino&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;data&#34;: {
+    &#34;PEDIDO&#34;: &#34;A-1043&#34;,
+    &#34;PRODUCTOS&#34;: [
+      {
+        &#34;PRODUCTO&#34;: &#34;Café de altura&#34;,
+        &#34;CANTIDAD&#34;: 2
+      }
+    ]
+  }
+}&#39;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/emails \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
+  -H &#34;Content-Type: application/json&#34; \
+  -d &#39;{
+  &#34;to&#34;: &#34;ana@ejemplo.com&#34;,
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;subject&#34;: &#34;Tu pedido *|PEDIDO|* va en camino&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;data&#34;: {
+    &#34;PEDIDO&#34;: &#34;A-1043&#34;,
+    &#34;PRODUCTOS&#34;: [
+      {
+        &#34;PRODUCTO&#34;: &#34;Café de altura&#34;,
+        &#34;CANTIDAD&#34;: 2
+      }
+    ]
+  }
+}&#39;"
+          data-copy-done="Copiado" aria-label="Copiar POST /emails">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 201</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534c2e1a1b2c3d4e5f61001&#34;,
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;to&#34;: &#34;ana@ejemplo.com&#34;,
+  &#34;contact_id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+  &#34;subject&#34;: &#34;Tu pedido *|PEDIDO|* va en camino&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;from&#34;: &#34;coop@envios.sobreala.com&#34;,
+  &#34;reply_to&#34;: &#34;atencion@coopejemplo.com&#34;,
+  &#34;status&#34;: &#34;sent&#34;,
+  &#34;error&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:20:01Z&#34;,
+  &#34;sent_at&#34;: &#34;2026-10-17T19:20:01Z&#34;
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534c2e1a1b2c3d4e5f61001&#34;,
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;to&#34;: &#34;ana@ejemplo.com&#34;,
+  &#34;contact_id&#34;: &#34;6531f5c2a1b2c3d4e5f60801&#34;,
+  &#34;subject&#34;: &#34;Tu pedido *|PEDIDO|* va en camino&#34;,
+  &#34;template_id&#34;: &#34;6533b1d2a1b2c3d4e5f60901&#34;,
+  &#34;from&#34;: &#34;coop@envios.sobreala.com&#34;,
+  &#34;reply_to&#34;: &#34;atencion@coopejemplo.com&#34;,
+  &#34;status&#34;: &#34;sent&#34;,
+  &#34;error&#34;: null,
+  &#34;created_at&#34;: &#34;2026-10-17T19:20:01Z&#34;,
+  &#34;sent_at&#34;: &#34;2026-10-17T19:20:01Z&#34;
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-emails">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/emails</code></h3>
+          <p class="api-endpoint__title">Listar correos</p>
+          <p>Los que mandó la API en los últimos 30 días, de los más nuevos a los más viejos. El asunto sale como se escribió, con sus marcas.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>status</code><br>
+          <span class="api-type">texto</span></th>
+        <td>pending, sent o failed.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>type</code><br>
+          <span class="api-type">texto</span></th>
+        <td>transactional o promotional.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>to</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Una dirección exacta.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>limit</code><br>
+          <span class="api-type">entero</span></th>
+        <td>De 1 a 100.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>cursor</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Para la página siguiente.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/emails?type=transactional&amp;limit=50 \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/emails?type=transactional&amp;limit=50 \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /emails">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6534c2e1a1b2c3d4e5f61001&#34;,
+      &#34;type&#34;: &#34;transactional&#34;,
+      &#34;to&#34;: &#34;ana@ejemplo.com&#34;,
+      &#34;status&#34;: &#34;sent&#34;,
+      &#34;subject&#34;: &#34;Tu pedido *|PEDIDO|* va en camino&#34;
+    }
+  ],
+  &#34;next_cursor&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6534c2e1a1b2c3d4e5f61001&#34;,
+      &#34;type&#34;: &#34;transactional&#34;,
+      &#34;to&#34;: &#34;ana@ejemplo.com&#34;,
+      &#34;status&#34;: &#34;sent&#34;,
+      &#34;subject&#34;: &#34;Tu pedido *|PEDIDO|* va en camino&#34;
+    }
+  ],
+  &#34;next_cursor&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-emails-email_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/emails/{email_id}</code></h3>
+          <p class="api-endpoint__title">Un correo y lo que pasó</p>
+          <p>Con <code>events</code>: cuándo se entregó (delivery), se abrió (open), se pulsó (click, nunca en un transaccional), rebotó (bounce), se marcó como spam (complaint) o se rechazó (reject). Lo primero de cada cosa. <code>pending</code> es uno que no se sabe si salió: no lo repitas, consúltalo.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/emails/{email_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/emails/{email_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /emails/{email_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534c2e1a1b2c3d4e5f61001&#34;,
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;to&#34;: &#34;ana@ejemplo.com&#34;,
+  &#34;status&#34;: &#34;sent&#34;,
+  &#34;events&#34;: {
+    &#34;delivery&#34;: &#34;2026-10-17T19:20:03Z&#34;,
+    &#34;open&#34;: &#34;2026-10-17T19:31:40Z&#34;,
+    &#34;sent&#34;: &#34;2026-10-17T19:20:01Z&#34;
+  }
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534c2e1a1b2c3d4e5f61001&#34;,
+  &#34;type&#34;: &#34;transactional&#34;,
+  &#34;to&#34;: &#34;ana@ejemplo.com&#34;,
+  &#34;status&#34;: &#34;sent&#34;,
+  &#34;events&#34;: {
+    &#34;delivery&#34;: &#34;2026-10-17T19:20:03Z&#34;,
+    &#34;open&#34;: &#34;2026-10-17T19:31:40Z&#34;,
+    &#34;sent&#34;: &#34;2026-10-17T19:20:01Z&#34;
+  }
 }"
           data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>

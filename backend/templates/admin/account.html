@@ -300,6 +300,8 @@
    revocar con motivo, para cortar una que se filtró o que abusa. El cliente
    recibe un correo con el motivo. #}
 <h3 class="settings__subtitle" id="api">{{ t('admin_api_title') }}</h3>
+<p class="hint">{{ t('admin_api_sent', transactional=api_sent.transactional,
+                     promotional=api_sent.promotional) }}</p>
 {% if request.args.get('api') == 'revoked' %}<p class="notice notice--ok">{{ t('admin_api_done') }}</p>{% endif %}
 {% if api_keys %}
 <div class="table-wrap">

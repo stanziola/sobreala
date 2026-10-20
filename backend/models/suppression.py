@@ -54,18 +54,24 @@ def add(db, account_id, email: str, *, reason: str = MANUAL,
     return True
 
 
-def among(db, account_id, emails: Iterable[str]) -> set[str]:
+def among(db, account_id, emails: Iterable[str], *,
+          reasons: Iterable[str] | None = None) -> set[str]:
     """Which of these addresses are suppressed, asked in one query.
 
     Rule 10 of CLAUDE.md lives here: the import and the list screen both call
     this with a whole batch, and never once per contact.
+
+    `reasons` keeps only some of them: a transactional email from the API
+    (octubre de 2026) is stopped by a hard bounce or a complaint, not by an
+    unsubscribe from the promotions.
     """
     wanted = [normalize_email(e) for e in emails]
     if not wanted:
         return set()
-    found = db.suppressions.find(
-        {"account_id": account_id, "email_normalized": {"$in": wanted}},
-        {"email_normalized": 1})
+    query: dict = {"account_id": account_id, "email_normalized": {"$in": wanted}}
+    if reasons is not None:
+        query["reason"] = {"$in": list(reasons)}
+    found = db.suppressions.find(query, {"email_normalized": 1})
     return {doc["email_normalized"] for doc in found}
 
 

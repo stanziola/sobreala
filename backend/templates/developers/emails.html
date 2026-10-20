@@ -1,0 +1,41 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('api_emails_title') }}{% endblock %}
+
+{#- Los correos que mandó la API (octubre de 2026): los últimos 30 días, de los
+    más nuevos, con lo que pasó con cada uno. No están en Enviados, que es de
+    las campañas. El asunto va como se escribió, con sus marcas. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('api_emails_title') }}</h1>
+<p class="settings__lead">{{ t('api_emails_lead', days=days) }}
+  <a href="{{ docs }}">{{ t('api_keys_docs') }}</a></p>
+
+{% if rows %}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr>
+      <th>{{ t('api_emails_col_when') }}</th><th>{{ t('api_emails_col_to') }}</th>
+      <th>{{ t('api_emails_col_subject') }}</th><th>{{ t('api_emails_col_kind') }}</th>
+      <th>{{ t('api_emails_col_outcome') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for one in rows %}
+    <tr>
+      <td class="table__quiet">{{ one.created_at|ago }}</td>
+      <td>{{ one.to }}<br><span class="table__quiet">{{ t('api_emails_from', address=one['from']) }}</span></td>
+      <td>{{ one.subject }}</td>
+      <td>{{ t('api_emails_kind_' + one.kind) }}</td>
+      <td><b>{{ t('api_emails_outcome_' + one.outcome) }}</b>
+        {% if one.error %}<br><span class="table__quiet">{{ one.error }}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="foot">
+  {% if paged %}<a href="{{ url_for('developers.emails') }}">{{ t('api_emails_newest') }}</a>{% endif %}
+  {% if next_page %}<a href="{{ url_for('developers.emails', antes=next_page) }}">{{ t('api_emails_older') }}</a>{% endif %}
+</p>
+{% else %}
+<p class="hint">{{ t('api_emails_none') }}</p>
+{% endif %}
+{% endblock %}

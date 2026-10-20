@@ -80,6 +80,20 @@ ERRORS = [
                           "que todo contacto ya trae."),
     ("field_values", 409, "Hay contactos con valores que no encajan en el tipo nuevo; "
                           "`contacts` dice cuántos."),
+    ("cannot_send", 409, "Hoy la cuenta no puede enviar (sin plan o sin cuota, en pausa, "
+                         "sin dirección postal...); `blocked` dice por qué."),
+    ("not_a_contact", 422, "Un promocional va solo a un contacto de la cuenta."),
+    ("contact_incomplete", 422, "Al contacto le faltan columnas; `missing` dice cuáles."),
+    ("suppressed", 422, "A esa dirección ya no se le escribe (en un transaccional, solo "
+                        "por rebote permanente o queja)."),
+    ("undeliverable", 422, "El dominio de esa dirección no recibe correo."),
+    ("demo_address", 422, "En la demostración solo se envía a las direcciones de prueba "
+                          "confirmadas."),
+    ("missing_data", 422, "Hay marcas sin dato; `missing` dice cuáles."),
+    ("bad_subject", 422, "El asunto lleno trae un salto de línea de un dato del contacto."),
+    ("throttled", 503, "Amazon pidió esperar. No salió ni gastó cuota: reintenta tras "
+                       "Retry-After."),
+    ("delivery_failed", 502, "No se pudo entregar a Amazon. No gastó cuota."),
     ("unavailable", 503, "No disponible por un momento; reintenta tras Retry-After."),
     ("internal_error", 500, "Algo falló de nuestro lado. Escríbenos con el "
                             "request_id."),
@@ -206,6 +220,26 @@ GUIDES: list[dict[str, Any]] = [
      "code": "*|#TRANSACCIONES|*\n*|FECHA|*: *|DESCRIPCION|*, B/. *|MONTO|*\n"
              "*|/TRANSACCIONES|*\n*|^TRANSACCIONES|*\n"
              "Este mes no tuviste movimientos.\n*|/TRANSACCIONES|*"},
+    {"id": "clases", "title": "Transaccional o promocional",
+     "paragraphs": [
+         "Cada correo dice qué es en `type`, y eso decide sus reglas. Elegir mal "
+         "no es un atajo: un promocional disfrazado de transaccional se nota en "
+         "las quejas, y las quejas pausan la cuenta.",
+         "**transactional**: lo que alguien espera porque hizo algo (su recibo, "
+         "su código, el estado de su pedido). Va a cualquier dirección, esté o no "
+         "en tus contactos, sin enlace de baja ni marca de agua. Solo lo frenan un "
+         "rebote permanente o una queja de esa dirección en tu cuenta, o un "
+         "dominio que no recibe correo: quien se dio de baja de tus promociones "
+         "sigue recibiendo su recibo. Se cuentan las aperturas, pero **no los "
+         "clics**, porque sus enlaces suelen ser privados.",
+         "**promotional**: una oferta, una invitación, un boletín. Es una campaña "
+         "de una persona: va solo a un contacto de tu cuenta con todas sus "
+         "columnas y sin ninguna supresión, con su enlace de baja y la marca de "
+         "agua de tu plan.",
+         "Los dos gastan un correo de la cuota de tu mes, llevan tu dirección "
+         "postal al pie, salen de uno de tus remitentes y no salen si la cuenta "
+         "está en pausa. En la demostración solo van a tus direcciones de prueba.",
+     ]},
     {"id": "lienzo", "title": "El lienzo en JSON",
      "paragraphs": [
          "Una plantilla del lienzo es una hoja de 600 px de ancho que crece hacia "
@@ -808,6 +842,89 @@ GROUPS: list[dict[str, Any]] = [
           "description": "Sus plantillas se quedan, sin carpeta.",
           "test": "no",
           "response": {"id": "6533b0aaa1b2c3d4e5f60900", "deleted": True}},
+     ]},
+    {"id": "correos", "title": "Correos",
+     "intro": "Un correo a una persona, con una de tus plantillas o con un texto, y "
+              "lo que pasó con él. Las reglas de cada clase están en «Transaccional o "
+              "promocional». Si la plantilla o el asunto nombran una marca que no "
+              "llega en `data` ni está en el contacto, no sale: 422 con `missing`. "
+              "Los correos se guardan 30 días, sin sus datos ni su HTML.",
+     "endpoints": [
+         {"method": "POST", "path": "/emails", "scope": "emails:send",
+          "title": "Enviar un correo",
+          "description": "Sale en el momento: 201 con el correo guardado. Con una llave "
+                         "de prueba se revisa y se arma todo, pero no sale, no gasta "
+                         "cuota y no se guarda: responde 200 con `status: simulated` y "
+                         "el correo armado en `preview`. Reintenta con la misma "
+                         "Idempotency-Key si no sabes si salió. Hasta 120 por minuto.",
+          "test": "simulado",
+          "fields": [
+              {"name": "to", "type": "texto", "required": True, "description": "A quién."},
+              {"name": "type", "type": "texto", "required": True,
+               "description": "transactional o promotional."},
+              {"name": "subject", "type": "texto", "required": True,
+               "description": "Hasta 150 caracteres, en una línea, con marcas."},
+              {"name": "template_id", "type": "texto",
+               "description": "Una plantilla tuya. Va esto o `text`."},
+              {"name": "text", "type": "texto",
+               "description": "Lo que dice el correo, hasta 20,000 caracteres: cada línea "
+                              "en blanco es un párrafo."},
+              {"name": "logo", "type": "sí o no",
+               "description": "Con `text`: tu logo arriba."},
+              {"name": "data", "type": "objeto",
+               "description": "Los datos de las marcas, como en «Ver cómo sale». Mandan "
+                              "sobre los del contacto."},
+              {"name": "from_id", "type": "texto",
+               "description": "El id de un remitente listo. Sin él, el de la plantilla o "
+                              "el predeterminado."},
+              {"name": "reply_to", "type": "texto",
+               "description": "Uno de tus «Responder a». Sin él, el de la plantilla o el "
+                              "predeterminado."},
+          ],
+          "request": {"to": "ana@ejemplo.com", "type": "transactional",
+                      "subject": "Tu pedido *|PEDIDO|* va en camino",
+                      "template_id": "6533b1d2a1b2c3d4e5f60901",
+                      "data": {"PEDIDO": "A-1043", "PRODUCTOS": [
+                          {"PRODUCTO": "Café de altura", "CANTIDAD": 2}]}},
+          "status": 201,
+          "response": {"id": "6534c2e1a1b2c3d4e5f61001", "type": "transactional",
+                       "to": "ana@ejemplo.com", "contact_id": "6531f5c2a1b2c3d4e5f60801",
+                       "subject": "Tu pedido *|PEDIDO|* va en camino",
+                       "template_id": "6533b1d2a1b2c3d4e5f60901",
+                       "from": "coop@envios.sobreala.com",
+                       "reply_to": "atencion@coopejemplo.com", "status": "sent",
+                       "error": None, "created_at": "2026-10-17T19:20:01Z",
+                       "sent_at": "2026-10-17T19:20:01Z"}},
+         {"method": "GET", "path": "/emails", "scope": "emails:send",
+          "title": "Listar correos",
+          "description": "Los que mandó la API en los últimos 30 días, de los más nuevos "
+                         "a los más viejos. El asunto sale como se escribió, con sus "
+                         "marcas.",
+          "test": "sí",
+          "query": [{"name": "status", "type": "texto", "description": "pending, sent o failed."},
+                    {"name": "type", "type": "texto",
+                     "description": "transactional o promotional."},
+                    {"name": "to", "type": "texto", "description": "Una dirección exacta."},
+                    {"name": "limit", "type": "entero", "description": "De 1 a 100."},
+                    {"name": "cursor", "type": "texto", "description": "Para la página siguiente."}],
+          "query_example": "type=transactional&limit=50",
+          "response": {"data": [{"id": "6534c2e1a1b2c3d4e5f61001", "type": "transactional",
+                                 "to": "ana@ejemplo.com", "status": "sent",
+                                 "subject": "Tu pedido *|PEDIDO|* va en camino"}],
+                       "next_cursor": None}},
+         {"method": "GET", "path": "/emails/{email_id}", "scope": "emails:send",
+          "title": "Un correo y lo que pasó",
+          "description": "Con `events`: cuándo se entregó (delivery), se abrió (open), se "
+                         "pulsó (click, nunca en un transaccional), rebotó (bounce), se "
+                         "marcó como spam (complaint) o se rechazó (reject). Lo primero "
+                         "de cada cosa. `pending` es uno que no se sabe si salió: no lo "
+                         "repitas, consúltalo.",
+          "test": "sí",
+          "response": {"id": "6534c2e1a1b2c3d4e5f61001", "type": "transactional",
+                       "to": "ana@ejemplo.com", "status": "sent",
+                       "events": {"delivery": "2026-10-17T19:20:03Z",
+                                  "open": "2026-10-17T19:31:40Z",
+                                  "sent": "2026-10-17T19:20:01Z"}}},
      ]},
 ]
 

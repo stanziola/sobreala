@@ -303,6 +303,16 @@ def ensure_indexes(db: Database | None = None) -> None:
     # Los candados cortos (`models/lock.py`): Mongo borra los vencidos.
     db.locks.create_index([("until", ASCENDING)], expireAfterSeconds=0,
                           name="ttl_until")
+    # Los correos de la API (`models/message.py`): se listan por cuenta, de los
+    # más nuevos; una `Idempotency-Key` tiene uno solo; se van a los 30 días.
+    db.messages.create_index([("account_id", ASCENDING), ("_id", DESCENDING)],
+                             name="by_account_id")
+    db.messages.create_index([("account_id", ASCENDING), ("key_id", ASCENDING),
+                              ("request_key", ASCENDING)],
+                             unique=True, name="uniq_request_key",
+                             partialFilterExpression={"request_key": {"$type": "string"}})
+    db.messages.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
+                             name="ttl_expires_at")
 
 
 def indexes_ready() -> bool:

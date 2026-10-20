@@ -3161,6 +3161,61 @@ TEXTS = {
     "api_data_row": "Cada fila de una lista es un objeto de 1 a {cells} datos, con "
                     "claves como las de data y valores de texto o número de hasta "
                     "{cell_chars} caracteres, en una sola línea.",
+
+    # --- la API: los correos transaccionales y promocionales (octubre de 2026)
+    "api_emails_one_body": "Va template_id (una plantilla tuya) o text (lo que "
+                           "dice el correo), uno de los dos.",
+    "api_emails_logo": "logo va solo con text: una plantilla ya trae lo suyo.",
+    "api_emails_status": "status es uno de {statuses}.",
+    "api_error_cannot_send": "Hoy esta cuenta no puede enviar: los motivos van en "
+                             "blocked.",
+    "api_error_not_a_contact": "Un promocional va solo a un contacto de tu cuenta. "
+                               "Agrégalo antes con POST /contacts, o mándale un "
+                               "transaccional.",
+    "api_error_contact_incomplete": "A ese contacto le faltan columnas (van en "
+                                    "missing): sin ellas no recibe promocionales.",
+    "api_error_suppressed": "A esa dirección ya no se le escribe: se dio de baja, "
+                            "no existe o marcó un correo como spam.",
+    "api_error_undeliverable": "El dominio de esa dirección no recibe correo.",
+    "api_error_demo_address": "En la demostración solo se envía a tus direcciones "
+                              "de prueba confirmadas.",
+    "api_error_missing_data": "La plantilla o el asunto nombran marcas sin dato "
+                              "(van en missing): mándalas en data.",
+    "api_error_bad_subject": "El asunto lleno trae un salto de línea, de un dato "
+                             "del contacto: corrígelo y vuelve a enviar.",
+    "api_error_throttled": "Amazon pidió esperar un momento. No salió ni se gastó "
+                           "cuota: reintenta tras Retry-After.",
+    "api_error_delivery_failed": "No se pudo entregar a Amazon. No se gastó cuota: "
+                                 "el detalle va en email.",
+
+    # --- API → Correos en el panel (octubre de 2026)
+    "dash_api_emails": "Correos",
+    "api_emails_title": "Correos de la API",
+    "api_emails_lead": "Lo que tu sistema mandó por la API en los últimos {days} "
+                       "días, y qué pasó con cada uno. Las campañas siguen en "
+                       "Enviados.",
+    "api_emails_col_when": "Cuándo",
+    "api_emails_col_to": "Para",
+    "api_emails_col_subject": "Asunto",
+    "api_emails_col_kind": "Clase",
+    "api_emails_col_outcome": "Qué pasó",
+    "api_emails_from": "de {address}",
+    "api_emails_kind_transactional": "Transaccional",
+    "api_emails_kind_promotional": "Promocional",
+    "api_emails_outcome_pending": "Sin confirmar",
+    "api_emails_outcome_sent": "Salió",
+    "api_emails_outcome_failed": "No salió",
+    "api_emails_outcome_delivery": "Entregado",
+    "api_emails_outcome_open": "Abierto",
+    "api_emails_outcome_click": "Pulsado",
+    "api_emails_outcome_bounce": "Rebotó",
+    "api_emails_outcome_complaint": "Marcado como spam",
+    "api_emails_newest": "Los más nuevos",
+    "api_emails_older": "Más viejos",
+    "api_emails_none": "Tu sistema todavía no ha mandado correos por la API.",
+
+    "admin_api_sent": "Este mes mandó por la API {transactional} transaccionales y "
+                      "{promotional} promocionales.",
 }
 
 
