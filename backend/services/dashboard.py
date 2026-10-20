@@ -49,6 +49,11 @@ ENDPOINT_ROWS = {
     "developers.revoke_key": "api-keys",
     "developers.log": "api-log",
     "developers.emails": "api-emails",
+    "developers.webhooks_list": "api-webhooks",
+    "developers.webhook_form": "api-webhooks",
+    "developers.webhook": "api-webhooks",
+    "developers.webhook_secret": "api-webhooks",
+    "developers.webhook_delete": "api-webhooks",
 }
 
 
@@ -158,6 +163,8 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
         branches.append({"key": "api-branch", "label": "dash_api", "icon": "_icon-code.svg",
                          "rows": [{"key": "api-keys", "label": "dash_api_keys",
                                    "url": url_for("developers.keys")},
+                                  {"key": "api-webhooks", "label": "dash_api_webhooks",
+                                   "url": url_for("developers.webhooks_list")},
                                   {"key": "api-emails", "label": "dash_api_emails",
                                    "url": url_for("developers.emails")},
                                   {"key": "api-log", "label": "dash_api_log",

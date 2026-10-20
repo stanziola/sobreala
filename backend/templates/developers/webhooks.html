@@ -1,0 +1,47 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('webhooks_title') }}{% endblock %}
+
+{#- Los avisos a su sistema (octubre de 2026): a dónde se manda lo que pasa con
+    sus correos, encendido o no, y cómo le fue la última vez. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('webhooks_title') }}</h1>
+<p class="settings__lead">{{ t('webhooks_lead') }}
+  <a href="{{ docs }}#avisos">{{ t('api_keys_docs') }}</a></p>
+
+{% if done == 'deleted' %}<p class="notice notice--ok">{{ t('webhooks_done_deleted') }}</p>{% endif %}
+
+<div class="row">
+  {% if hooks|length < limit %}
+  <a class="btn btn--icon" href="{{ url_for('developers.webhook_form') }}">{% include "_icon-plus.svg" %}<span>{{ t('webhooks_new') }}</span></a>
+  {% else %}
+  <p class="hint">{{ t('webhooks_full', n=limit) }}</p>
+  {% endif %}
+</div>
+
+{% if hooks %}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr>
+      <th>{{ t('webhooks_col_url') }}</th><th>{{ t('webhooks_col_events') }}</th>
+      <th>{{ t('webhooks_col_last') }}</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for one in hooks %}
+    <tr{% if not one.enabled %} class="table__row--off"{% endif %}>
+      <td><b>{{ one.host }}</b>{% if one.description %}<br><span class="table__quiet">{{ one.description }}</span>{% endif %}<br>
+        <span class="tag{{ ' tag--on' if one.enabled else ' tag--quiet' }}">{{ t('webhooks_on' if one.enabled else 'webhooks_off') }}</span></td>
+      <td class="table__quiet">{{ t('webhooks_events_n', n=one.events|length) }}</td>
+      <td class="table__quiet">
+        {% if one.failing_since %}{{ t('webhooks_failing', when=one.failing_since|ago) }}
+        {% elif one.last_at %}{{ t('webhooks_last', status=one.last_status, when=one.last_at|ago) }}
+        {% else %}{{ t('webhooks_never') }}{% endif %}</td>
+      <td><a class="btn btn--small btn--outline" href="{{ url_for('developers.webhook', raw=one._id) }}">{{ t('webhooks_open') }}</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('webhooks_none') }}</p>
+{% endif %}
+{% endblock %}

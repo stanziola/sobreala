@@ -280,7 +280,19 @@ def finish(db, account_id, campaign_id, *, by: str | None = None) -> None:
                         run_id=done.get("run_id"))
         except DuplicateKeyError:
             # Dos que cerraron la misma vuelta: la primera ya la escribió.
-            pass
+            return
+        # El aviso a su sistema (octubre de 2026): una campaña terminó de salir.
+        from models import webhook as hooks
+        from services import webhooks
+        webhooks.emit(db, account_id, hooks.CAMPAIGN_FINISHED, {
+            "campaign_id": str(campaign_id),
+            "send_id": str(done["run_id"]) if done.get("run_id") else None,
+            "subject": done.get("subject", ""), "single": done.get("kind") == SINGLE,
+            "sent": done.get("sent", 0), "skipped": done.get("skipped", 0),
+            "failed": done.get("failed", 0),
+            "started_at": webhooks.iso(done.get("started_at")),
+            "finished_at": webhooks.iso(done.get("finished_at"))},
+            key=f"campaign.finished:{done.get('run_id')}")
 
 
 def restart(db, account_id, campaign_id, *, when: datetime,

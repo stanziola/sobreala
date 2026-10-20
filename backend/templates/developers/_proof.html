@@ -1,0 +1,24 @@
+{#- La prueba de quién es (octubre de 2026), dentro del formulario que la pide:
+    la contraseña (o el código del correo) y el de la app. Crear una llave o un
+    aviso, cambiar su dirección o su secreto. -#}
+{% from "_fields.html" import proof with context %}
+{% if needs_proof %}
+<h2 class="settings__subtitle">{{ t('api_keys_proof_title') }}</h2>
+<p class="hint">{{ t('api_keys_proof_lead') }}</p>
+{% if with_password %}
+<label for="key-password">{{ t('api_keys_password') }}</label>
+{{ proof('key-password', 'password') }}
+{% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
+{% else %}
+<label for="key-email-code">{{ t('api_keys_email_code') }}</label>
+<input id="key-email-code" name="email_code" type="text" inputmode="numeric"
+       maxlength="6" autocomplete="one-time-code">
+{% if errors.email_code %}<p class="error">{{ errors.email_code }}</p>{% endif %}
+{% endif %}
+{% if two_step %}
+<label for="key-app-code">{{ t('api_keys_app_code') }}</label>
+<input id="key-app-code" name="app_code" type="text" inputmode="numeric"
+       maxlength="6" autocomplete="one-time-code">
+{% if errors.app_code %}<p class="error">{{ errors.app_code }}</p>{% endif %}
+{% endif %}
+{% endif %}

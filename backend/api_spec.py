@@ -101,6 +101,37 @@ ERRORS = [
                             "request_id."),
 ]
 
+# Cómo comprobar la firma de un aviso, en tres lenguajes.
+_VERIFY = r'''# Python
+import hashlib, hmac, time
+
+def es_de_sobreala(cuerpo: bytes, cabecera: str, secreto: str) -> bool:
+    partes = dict(p.split("=", 1) for p in cabecera.split(","))
+    if abs(time.time() - int(partes.get("t", 0))) > 300:
+        return False
+    esperada = hmac.new(secreto.encode(), partes["t"].encode() + b"." + cuerpo,
+                        hashlib.sha256).hexdigest()
+    return hmac.compare_digest(esperada, partes.get("v1", ""))
+
+// Node
+const crypto = require("crypto");
+function esDeSobreala(cuerpo, cabecera, secreto) {
+  const partes = Object.fromEntries(cabecera.split(",").map((p) => p.split("=")));
+  if (Math.abs(Date.now() / 1000 - Number(partes.t)) > 300) return false;
+  const esperada = crypto.createHmac("sha256", secreto)
+    .update(`${partes.t}.${cuerpo}`).digest("hex");
+  return typeof partes.v1 === "string" && partes.v1.length === esperada.length &&
+    crypto.timingSafeEqual(Buffer.from(esperada), Buffer.from(partes.v1));
+}
+
+// PHP
+function es_de_sobreala(string $cuerpo, string $cabecera, string $secreto): bool {
+    parse_str(str_replace(',', '&', $cabecera), $partes);
+    if (abs(time() - (int) ($partes['t'] ?? 0)) > 300) return false;
+    $esperada = hash_hmac('sha256', ($partes['t'] ?? '') . '.' . $cuerpo, $secreto);
+    return hash_equals($esperada, $partes['v1'] ?? '');
+}'''
+
 # Las guías: lo que hay que leer antes de las rutas.
 GUIDES: list[dict[str, Any]] = [
     {"id": "empezar", "title": "Empezar",
@@ -242,6 +273,33 @@ GUIDES: list[dict[str, Any]] = [
          "postal al pie, salen de uno de tus remitentes y no salen si la cuenta "
          "está en pausa. En la demostración solo van a tus direcciones de prueba.",
      ]},
+    {"id": "avisos", "title": "Avisos a tu sistema",
+     "paragraphs": [
+         "En vez de preguntar cada rato, tu servidor puede recibir lo que pasa con "
+         "tus correos en cuanto pasa. Los avisos se crean en el panel (**Dashboard → "
+         "API → Avisos**): una dirección https de tu servidor y los eventos que "
+         "quieres. Caben 5.",
+         "Los eventos: **email.delivered** (llegó), **email.bounced** (rebotó; "
+         "`permanent` dice si la dirección no existe), **email.complained** (lo "
+         "marcaron como spam), **email.rejected** (Amazon no lo mandó), "
+         "**email.opened** y **email.clicked** (la primera vez; nunca un clic de un "
+         "transaccional), **email.downloaded** (bajaron el archivo de un correo "
+         "individual), **contact.unsubscribed** y **campaign.finished** (con sus "
+         "cifras). Cada uno dice de dónde vino en `source`: campaign, single o api, "
+         "con sus ids.",
+         "Cada aviso es un POST en JSON con `id`, `type`, `created_at` y `data`, y "
+         "tres cabeceras: **Sobreala-Event-Id**, **Sobreala-Event-Type** y "
+         "**Sobreala-Signature** (`t=<segundos>,v1=<firma>`). La firma es un "
+         "HMAC-SHA256, con el secreto del aviso, de `t`, un punto y el cuerpo tal "
+         "como llegó. Compruébala siempre, y rechaza las de más de 5 minutos.",
+         "Tu servidor tiene que responder un 2xx en menos de 5 segundos (las "
+         "redirecciones no se siguen). Si no, se reintenta al minuto, a los 5 y 30 "
+         "minutos, a las 2, 6, 12 y 24 horas, y los demás avisos de esa dirección "
+         "esperan con él. Tras 72 horas fallando se apaga y te escribimos. Un mismo "
+         "evento puede llegar dos veces y en otro orden: usa Sobreala-Event-Id para "
+         "no contarlo dos veces.",
+     ],
+     "code": _VERIFY},
     {"id": "lienzo", "title": "El lienzo en JSON",
      "paragraphs": [
          "Una plantilla del lienzo es una hoja de 600 px de ancho que crece hacia "

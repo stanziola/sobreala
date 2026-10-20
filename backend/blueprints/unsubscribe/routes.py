@@ -52,9 +52,18 @@ def page(token):
     logo = accounts.logo_of(account)
 
     if request.method == "POST":
-        suppressions.add(db, contact["account_id"], contact["email"],
-                         reason=suppressions.UNSUBSCRIBE,
-                         source="enlace del correo")
+        if suppressions.add(db, contact["account_id"], contact["email"],
+                            reason=suppressions.UNSUBSCRIBE,
+                            source="enlace del correo"):
+            # El aviso a su sistema (octubre de 2026), solo si la baja es nueva.
+            from models import webhook as hooks
+            from services import webhooks
+            webhooks.emit(db, contact["account_id"], hooks.CONTACT_UNSUBSCRIBED,
+                          {"email": contact["email_normalized"],
+                           "contact_id": str(contact["_id"]),
+                           "external_id": contact.get("external_id"),
+                           "at": webhooks.iso(webhooks.now())},
+                          key=f"contact.unsubscribed:{contact['_id']}")
         return render_template("unsubscribe/done.html",
                                email=contact["email"], company=company, logo=logo)
 

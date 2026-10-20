@@ -166,6 +166,28 @@ def record(db, account_id, *, kind: str, campaign_id=None, run_id=None,
     return found["_id"]
 
 
+def record_new(db, account_id, *, kind: str, campaign_id=None, run_id=None,
+               email: str = "", at: datetime | None = None, link: str = "") -> bool:
+    """Lo mismo que `record()`, diciendo si el evento es nuevo (octubre de
+    2026): los avisos a su sistema salen solo la primera vez, así mil aperturas
+    de la misma persona son un aviso."""
+    email = (email or "").strip().lower()
+    if run_id is None or not email:
+        record(db, account_id, kind=kind, campaign_id=campaign_id, run_id=run_id,
+               email=email, at=at, link=link)
+        return True
+    doc = {"account_id": account_id, "campaign_id": campaign_id, "run_id": run_id,
+           "kind": kind, "email_normalized": email, "created_at": at or now()}
+    write: dict[str, Any] = {"$setOnInsert": doc}
+    link = (link or "").strip()[:LINK_MAX]
+    if link:
+        write["$addToSet"] = {"links": link}
+    result = db.events.update_one({"account_id": account_id, "run_id": run_id,
+                                   "email_normalized": email, "kind": kind},
+                                  write, upsert=True)
+    return result.upserted_id is not None
+
+
 def top_links(db, account_id, *, period: str = DEFAULT_PERIOD, tag: str = "",
               campaign=None, zone=None, limit: int = 8) -> list[dict[str, Any]]:
     """Qué enlaces pulsó más gente en el periodo.

@@ -1,0 +1,64 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ found.host }}{% endblock %}
+
+{#- Un aviso (octubre de 2026): a dónde va, si está encendido, sus botones (probar,
+    encender o apagar, cambiarlo, cambiar el secreto, borrarlo) y las últimas 50
+    entregas con lo que respondió su servidor. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ found.host }}</h1>
+<p class="settings__lead"><code class="api-key">{{ found.url }}</code>
+  {% if found.description %}<br>{{ found.description }}{% endif %}</p>
+
+{% if done == 'saved' %}<p class="notice notice--ok">{{ t('webhooks_done_saved') }}</p>{% endif %}
+{% if done == 'on' %}<p class="notice notice--ok">{{ t('webhooks_done_on') }}</p>{% endif %}
+{% if done == 'off' %}<p class="notice notice--ok">{{ t('webhooks_done_off') }}</p>{% endif %}
+{% if tested == 'ok' %}<p class="notice notice--ok">{{ t('webhooks_test_ok', status=tested_status, ms=tested_ms) }}</p>{% endif %}
+{% if tested == 'bad' %}<p class="notice">{{ t('webhooks_test_bad', status=tested_status or '-', error=tested_error, ms=tested_ms) }}</p>{% endif %}
+{% if tested == 'many' %}<p class="notice">{{ t('webhooks_test_many') }}</p>{% endif %}
+{% if not found.enabled and found.disabled_reason == 'failing' %}
+<p class="notice">{{ t('webhooks_switched_off') }}</p>{% endif %}
+
+<div class="row">
+  <form method="post" action="{{ url_for('developers.webhook_test', raw=found._id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn--small" type="submit">{{ t('webhooks_test') }}</button>
+  </form>
+  <form method="post" action="{{ url_for('developers.webhook_switch', raw=found._id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn--small btn--outline" type="submit">{{ t('webhooks_turn_off' if found.enabled else 'webhooks_turn_on') }}</button>
+  </form>
+  <a class="btn btn--small btn--outline" href="{{ url_for('developers.webhook_form', raw=found._id) }}">{{ t('webhooks_edit') }}</a>
+  <a class="btn btn--small btn--outline" href="{{ url_for('developers.webhook_secret', raw=found._id) }}">{{ t('webhooks_rotate') }}</a>
+  <a class="btn btn--small btn--outline" href="{{ url_for('developers.webhook_delete', raw=found._id) }}">{{ t('webhooks_delete') }}</a>
+</div>
+
+<p class="field-label">{{ t('webhooks_events') }}</p>
+<p class="table__quiet">{% for one in found.events %}<code>{{ one }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+
+<h3 class="settings__subtitle">{{ t('webhooks_deliveries') }}</h3>
+{% if deliveries %}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr>
+      <th>{{ t('api_emails_col_when') }}</th><th>{{ t('webhooks_col_event') }}</th>
+      <th>{{ t('webhooks_col_result') }}</th><th>{{ t('webhooks_col_attempts') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for one in deliveries %}
+    <tr>
+      <td class="table__quiet">{{ one.created_at|ago }}</td>
+      <td><code>{{ one.kind }}</code></td>
+      <td><b>{{ t('webhooks_status_' + one.status) }}</b>
+        {% if one.last_status %} <span class="table__quiet">{{ one.last_status }}</span>{% endif %}
+        {% if one.last_error %}<br><span class="table__quiet">{{ one.last_error }}</span>{% endif %}</td>
+      <td class="table__quiet">{{ one.attempts }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('webhooks_no_deliveries') }}</p>
+{% endif %}
+<p class="foot"><a href="{{ url_for('developers.webhooks_list') }}">{{ t('two_step_back') }}</a></p>
+{% endblock %}

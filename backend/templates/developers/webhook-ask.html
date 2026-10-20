@@ -1,0 +1,22 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('webhooks_ask_' + what + '_title', host=found.host) }}{% endblock %}
+{% set pane_center = true %}
+
+{#- Lo que pregunta antes (octubre de 2026): borrar un aviso, o cambiarle el
+    secreto, que pide además la prueba de quién es. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('webhooks_ask_' + what + '_title', host=found.host) }}</h1>
+<div class="settings__pane">
+  <p class="lead">{{ t('webhooks_ask_' + what + '_lead') }}</p>
+  {% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
+  {% include "developers/_proof_code.html" %}
+  <form method="post" novalidate data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% include "developers/_proof.html" %}
+    <div class="erase__actions">
+      <button class="btn{{ ' btn--danger' if what == 'delete' else '' }}" type="submit">{{ t('webhooks_ask_' + what + '_yes') }}</button>
+      <a class="btn btn--outline" href="{{ url_for('developers.webhook', raw=found._id) }}">{{ t('api_keys_cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

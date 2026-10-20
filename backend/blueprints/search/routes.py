@@ -70,6 +70,7 @@ SEARCH_WORDS = {
     "settings-test": "demostracion correos verificados prueba",
     # La API (octubre de 2026).
     "api-keys": "api llave llaves clave token integracion programador desarrollador sistema",
+    "api-webhooks": "avisos webhook webhooks notificaciones servidor eventos integracion",
     "api-emails": "correos api transaccionales promocionales enviados recibos",
     "api-log": "registro errores peticiones log api",
     "api-docs": "documentacion api referencia programador integracion",

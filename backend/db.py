@@ -313,6 +313,19 @@ def ensure_indexes(db: Database | None = None) -> None:
                              partialFilterExpression={"request_key": {"$type": "string"}})
     db.messages.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
                              name="ttl_expires_at")
+    # Los avisos a su sistema (`models/webhook.py`): uno por destino y evento,
+    # los que tocan por su hora, y se van solos (3 días entregados, 30 los demás).
+    db.webhook_endpoints.create_index([("account_id", ASCENDING), ("enabled", ASCENDING)],
+                                      name="by_account_enabled")
+    db.webhook_deliveries.create_index([("endpoint_id", ASCENDING), ("event_key", ASCENDING)],
+                                       unique=True, name="uniq_endpoint_event",
+                                       partialFilterExpression={"event_key": {"$type": "string"}})
+    db.webhook_deliveries.create_index([("status", ASCENDING), ("next_at", ASCENDING)],
+                                       name="by_status_next")
+    db.webhook_deliveries.create_index([("account_id", ASCENDING), ("endpoint_id", ASCENDING),
+                                        ("created_at", DESCENDING)], name="by_endpoint_created")
+    db.webhook_deliveries.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0,
+                                       name="ttl_expires_at")
     # Lo que busca el proceso en segundo plano en cada vuelta: las que salen
     # solas y están esperando su hora.
     db.campaigns.create_index([("auto_send", ASCENDING), ("status", ASCENDING),

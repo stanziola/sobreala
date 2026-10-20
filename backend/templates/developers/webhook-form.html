@@ -1,0 +1,46 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('webhooks_edit_title' if found else 'webhooks_new_title') }}{% endblock %}
+{% set pane_center = true %}
+
+{#- Crear un aviso o cambiarlo (octubre de 2026): la dirección de su servidor, una
+    descripción y qué eventos quiere. Al crearlo y al cambiar la dirección se pide
+    la prueba de quién es, como al crear una llave. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('webhooks_edit_title' if found else 'webhooks_new_title') }}</h1>
+<div class="settings__pane">
+  <p class="lead">{{ t('webhooks_new_lead') }}</p>
+  {% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
+  {% include "developers/_proof_code.html" %}
+
+  <form method="post" novalidate data-once>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="hook-url">{{ t('webhooks_url') }}</label>
+    <input id="hook-url" name="url" type="url" maxlength="500" autocomplete="off"
+           spellcheck="false" value="{{ values.url }}" placeholder="https://"
+           aria-describedby="hook-url-hint">
+    <p class="hint" id="hook-url-hint">{{ t('webhooks_url_hint') }}</p>
+    {% if errors.url %}<p class="error">{{ errors.url }}</p>{% endif %}
+
+    <label for="hook-description">{{ t('webhooks_description') }}</label>
+    <input id="hook-description" name="description" type="text" maxlength="120"
+           autocomplete="off" value="{{ values.description }}">
+
+    <p class="field-label">{{ t('webhooks_events') }}</p>
+    {% for one in events %}
+    <label class="check">
+      <input type="checkbox" name="event" value="{{ one }}"{% if one in values.events %} checked{% endif %}>
+      <span><code>{{ one }}</code> <span class="hint">{{ t('webhooks_event_' + one.replace('.', '_')) }}</span></span>
+    </label>
+    {% endfor %}
+    {% if errors.event %}<p class="error">{{ errors.event }}</p>{% endif %}
+
+    {% include "developers/_proof.html" %}
+
+    <div class="erase__actions">
+      <button class="btn" type="submit">{{ t('webhooks_save' if found else 'webhooks_create') }}</button>
+      <a class="btn btn--outline" href="{{ url_for('developers.webhook', raw=found._id) if found else url_for('developers.webhooks_list') }}">{{ t('api_keys_cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -3239,6 +3239,111 @@ TEXTS = {
     "admin_worker_key_mismatch": "Su SECRET_KEY no es la del web, y así no manda "
                                  "nada.",
     "admin_worker_key_unknown": "Todavía no comprobó su SECRET_KEY.",
+
+    # --- los avisos a su sistema, webhooks (octubre de 2026)
+    "dash_api_webhooks": "Avisos",
+    "webhooks_title": "Avisos a tu sistema",
+    "webhooks_lead": "Cuando pasa algo con tus correos (se entregó, rebotó, alguien "
+                     "se dio de baja, terminó una campaña), te lo mandamos a tu "
+                     "servidor, firmado, sin que tengas que preguntar.",
+    "webhooks_done_deleted": "Se borró el aviso.",
+    "webhooks_new": "Agregar un aviso",
+    "webhooks_full": "Ya tienes {n} avisos, que es lo que cabe.",
+    "webhooks_col_url": "A dónde",
+    "webhooks_col_events": "Eventos",
+    "webhooks_col_last": "La última vez",
+    "webhooks_on": "Encendido",
+    "webhooks_off": "Apagado",
+    "webhooks_events_n": "{n} eventos",
+    "webhooks_failing": "Fallando desde {when}",
+    "webhooks_last": "Respondió {status}, {when}",
+    "webhooks_never": "Todavía no se ha mandado nada.",
+    "webhooks_open": "Abrir",
+    "webhooks_none": "Todavía no tienes avisos.",
+    "webhooks_new_title": "Agregar un aviso",
+    "webhooks_edit_title": "Cambiar el aviso",
+    "webhooks_new_lead": "Tu servidor recibe un POST en JSON por cada evento, con la "
+                         "firma en la cabecera Sobreala-Signature. Tiene que "
+                         "responder un 2xx en menos de 5 segundos.",
+    "webhooks_url": "La dirección de tu servidor",
+    "webhooks_url_hint": "https://, con un nombre (no una IP) y sin puerto. No puede "
+                         "ser una dirección de una red interna.",
+    "webhooks_url_url": "Tiene que ser una dirección https:// completa, sin usuario "
+                        "ni contraseña, de hasta 500 caracteres.",
+    "webhooks_url_port": "Va sin puerto: solo el 443 de https.",
+    "webhooks_url_ip": "Va con un nombre, no con una IP.",
+    "webhooks_url_host": "Ese nombre no es de internet.",
+    "webhooks_description": "Para qué es (opcional)",
+    "webhooks_events": "Qué eventos",
+    "webhooks_events_required": "Elige al menos un evento.",
+    "webhooks_event_email_delivered": "Un correo llegó al buzón.",
+    "webhooks_event_email_bounced": "Un correo rebotó (con permanent si la dirección "
+                                    "no existe).",
+    "webhooks_event_email_complained": "Alguien marcó un correo como spam.",
+    "webhooks_event_email_rejected": "Amazon no lo mandó (traía un virus, por ejemplo).",
+    "webhooks_event_email_opened": "Alguien abrió un correo (la primera vez).",
+    "webhooks_event_email_clicked": "Alguien pulsó un enlace (nunca en un "
+                                    "transaccional).",
+    "webhooks_event_email_downloaded": "Alguien bajó el archivo de un correo individual.",
+    "webhooks_event_contact_unsubscribed": "Un contacto se dio de baja.",
+    "webhooks_event_campaign_finished": "Una campaña terminó de salir, con sus cifras.",
+    "webhooks_save": "Guardar",
+    "webhooks_create": "Agregar el aviso",
+    "webhooks_secret_title": "El secreto del aviso",
+    "webhooks_created_lead": "Ya está: los avisos van a {host}. Este es su secreto, con "
+                             "el que tu servidor comprueba que cada aviso es nuestro.",
+    "webhooks_rotated_lead": "Este es el secreto nuevo de {host}. El de antes ya no "
+                             "sirve: cámbialo en tu servidor.",
+    "webhooks_secret_label": "Secreto",
+    "webhooks_secret_where": "Se ve solo ahora. Guárdalo en tu servidor, nunca en una "
+                             "página web ni en un repositorio. Si lo pierdes, cámbialo "
+                             "por otro.",
+    "webhooks_how_verify": "Cómo comprobar la firma",
+    "webhooks_done_saved": "Se guardó el aviso.",
+    "webhooks_done_on": "El aviso está encendido.",
+    "webhooks_done_off": "El aviso está apagado: no se manda nada.",
+    "webhooks_test_ok": "Tu servidor respondió {status} en {ms} ms.",
+    "webhooks_test_bad": "No salió bien: respondió {status} ({error}) en {ms} ms.",
+    "webhooks_test_many": "Ya mandaste varios de prueba en la última hora. Espera un "
+                          "poco.",
+    "webhooks_switched_off": "Lo apagamos porque tu servidor llevaba 72 horas sin "
+                             "responder bien. Arréglalo y enciéndelo otra vez.",
+    "webhooks_test": "Enviar uno de prueba",
+    "webhooks_turn_off": "Apagar",
+    "webhooks_turn_on": "Encender",
+    "webhooks_edit": "Cambiar",
+    "webhooks_rotate": "Cambiar el secreto",
+    "webhooks_delete": "Borrar",
+    "webhooks_deliveries": "Las últimas entregas",
+    "webhooks_col_event": "Evento",
+    "webhooks_col_result": "Qué pasó",
+    "webhooks_col_attempts": "Intentos",
+    "webhooks_status_pending": "Por entregar",
+    "webhooks_status_delivered": "Entregado",
+    "webhooks_status_failed": "No se pudo",
+    "webhooks_no_deliveries": "Todavía no se ha mandado nada a este aviso.",
+    "webhooks_ask_secret_title": "Cambiar el secreto de {host}",
+    "webhooks_ask_secret_lead": "El de ahora deja de servir en ese momento: los avisos "
+                                "que lleguen con la firma vieja tu servidor los va a "
+                                "rechazar hasta que pongas el nuevo.",
+    "webhooks_ask_secret_yes": "Cambiar el secreto",
+    "webhooks_ask_delete_title": "Borrar el aviso a {host}",
+    "webhooks_ask_delete_lead": "No se le manda nada más, y se borran sus entregas "
+                                "pendientes. No se puede deshacer.",
+    "webhooks_ask_delete_yes": "Sí, borrarlo",
+    "mail_webhook_added_subject": "Se agregó un aviso a tu sistema",
+    "mail_webhook_added_heading": "Tus datos van a un servidor nuevo",
+    "mail_webhook_added_body": "Desde ahora, lo que pasa con tus correos se manda a "
+                               "{host}. Se agregó desde la IP {ip}.",
+    "mail_webhook_button": "Ver mis avisos",
+    "mail_webhook_off_subject": "Apagamos uno de tus avisos",
+    "mail_webhook_off_heading": "Tu servidor no responde",
+    "mail_webhook_off_body": "Lo de tus correos se mandaba a {host}, que lleva 72 "
+                             "horas sin responder bien, así que lo apagamos.",
+    "mail_webhook_off_fix": "Cuando tu servidor esté listo, enciéndelo otra vez desde "
+                            "el panel.",
+
+    "admin_api_hooks": "Manda sus avisos a:",
 }
 
 

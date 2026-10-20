@@ -32,6 +32,7 @@ from models import account as accounts
 from models import admin_event as decisions
 from models import api_key as api_keys
 from models import message as messages
+from models import webhook as hooks
 from services import background
 from models import auth_event as events
 from models import campaign_run as sendings
@@ -429,7 +430,9 @@ def account_page(account, raw):
                   for one in api_keys.for_account(db, client["_id"])],
         # Cuántos de cada clase mandó por la API este mes: un promocional
         # disfrazado de transaccional se nota aquí.
-        api_sent=messages.count_this_month(db, client["_id"]))
+        api_sent=messages.count_this_month(db, client["_id"]),
+        # A qué servidores manda sus avisos: datos de la cuenta que salen.
+        api_hooks=hooks.for_account(db, client["_id"]))
 
 
 @bp.route("/accounts/<raw>/update", methods=["POST"])

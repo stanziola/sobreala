@@ -302,6 +302,10 @@
 <h3 class="settings__subtitle" id="api">{{ t('admin_api_title') }}</h3>
 <p class="hint">{{ t('admin_api_sent', transactional=api_sent.transactional,
                      promotional=api_sent.promotional) }}</p>
+{% if api_hooks %}
+<p class="hint">{{ t('admin_api_hooks') }}
+  {% for one in api_hooks %}<code>{{ one.host }}</code>{% if not one.enabled %} ({{ t('webhooks_off')|lower }}){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+{% endif %}
 {% if request.args.get('api') == 'revoked' %}<p class="notice notice--ok">{{ t('admin_api_done') }}</p>{% endif %}
 {% if api_keys %}
 <div class="table-wrap">

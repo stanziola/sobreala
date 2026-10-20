@@ -1,0 +1,10 @@
+{#- Pedir el código al correo, para quien entró con Google o GitHub y no
+    tiene contraseña. Un formulario aparte, antes del que lo pide. -#}
+{% if needs_proof and not with_password %}
+{% if sent %}<p class="notice notice--ok">{{ t('api_keys_code_sent') }}</p>{% endif %}
+<form class="erase__code" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <p class="hint">{{ t('api_keys_code_hint') }}</p>
+  <button class="btn btn--small btn--outline" type="submit" name="action" value="code">{{ t('api_keys_send_code') }}</button>
+</form>
+{% endif %}

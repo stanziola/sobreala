@@ -33,7 +33,8 @@ ERASED = ("contacts", "campaigns", "campaign_runs", "events", "designs", "images
           "imports", "downloads", "sessions", "account_tokens", "verification_docs",
           # La API (octubre de 2026): sus llaves, lo que falló, las respuestas
           # guardadas para no repetir y los correos que mandó.
-          "api_keys", "api_log", "api_idempotency", "messages")
+          "api_keys", "api_log", "api_idempotency", "messages",
+          "webhook_endpoints", "webhook_deliveries")
 # Lo que se queda, a propósito (ver arriba).
 KEPT = ("suppressions", "payments", "invoices", "auth_events", "mail_log",
         "admin_events")

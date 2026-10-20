@@ -1,5 +1,5 @@
-"""La rama «API» del Dashboard (octubre de 2026): las llaves, los correos que
-mandó y el registro.
+"""La rama «API» del Dashboard (octubre de 2026): las llaves, los avisos a su
+sistema, los correos que mandó y el registro.
 
 **Solo el dueño.** Una llave habla con los datos de la empresa sin sesión, así
 que crearla es como dar una copia de la contraseña: un usuario de la empresa no
@@ -40,8 +40,9 @@ from models import api_log
 from models import auth_event as events
 from models import event as mail_events
 from models import message as messages
+from models import webhook as hooks
 from models import token as tokens
-from services import api_auth, notices, totp
+from services import api_auth, notices, safe_http, totp, webhooks
 from services.security import csrf_ok, rate_limit, verify_password
 
 bp = Blueprint("developers", __name__, url_prefix="/developers")
@@ -296,3 +297,203 @@ def emails():
         "developers/emails.html", rows=rows, docs=docs_url(),
         days=messages.KEEP_DAYS, next_page=rows[-1]["_id"] if more else None,
         paged=before is not None)
+
+
+# ------------------------------------------------------------ los avisos a su sistema
+#
+# Los webhooks (octubre de 2026): a dónde manda la cuenta lo que pasa con sus
+# correos. Crear uno, cambiarle la dirección o el secreto pide la misma prueba
+# que crear una llave: un aviso manda datos de la cuenta a un servidor, y quien
+# encontró una sesión abierta no puede poner el suyo. El secreto se enseña una
+# vez, en la respuesta que lo crea.
+
+TESTS_PER_HOUR = 10
+
+
+def code_asked(db, account) -> bool:
+    """El código al correo, para quien no tiene contraseña. True si salió."""
+    if account.get("password_hash") or not rate_limit(
+            db, f"apiproof:code:{account['_id']}", 5, 3600):
+        return False
+    return notices.api_access_code(account, tokens.issue(db, account["_id"],
+                                                         tokens.API_ACCESS))
+
+
+def hook_form_values(form) -> dict:
+    return {"url": form.get("url", "").strip()[:safe_http.URL_MAX + 1],
+            "description": " ".join(form.get("description", "").split())[
+                :hooks.DESCRIPTION_MAX],
+            "events": [one for one in hooks.EVENTS if one in form.getlist("event")]}
+
+
+def hook_errors(values: dict) -> dict[str, str]:
+    errors: dict[str, str] = {}
+    try:
+        safe_http.check_url(values["url"])
+    except safe_http.Refused as exc:
+        errors["url"] = t("webhooks_url_" + str(exc))
+    if not values["events"]:
+        errors["event"] = t("webhooks_events_required")
+    return errors
+
+
+def secret_page(found, *, created: bool):
+    """La única vez que se ve el secreto."""
+    response = Response(render_template(
+        "developers/webhook-secret.html", found=found, created=created,
+        secret=webhooks.secret_of(found), docs=docs_url()))
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+def own_hook(db, account, raw):
+    return hooks.by_id(db, account["_id"], as_id(raw))
+
+
+@bp.route("/webhooks")
+def webhooks_list():
+    account = current_account()
+    db = get_db()
+    return render_template(
+        "developers/webhooks.html", hooks=hooks.for_account(db, account["_id"]),
+        limit=hooks.LIMIT, docs=docs_url(), done=request.args.get("done", ""))
+
+
+@bp.route("/webhooks/new", methods=["GET", "POST"])
+@bp.route("/webhooks/<raw>/edit", methods=["GET", "POST"])
+def webhook_form(raw=None):
+    """Crear un aviso, o cambiarle la dirección, la descripción y los eventos.
+    La prueba se pide al crear y al cambiar la dirección."""
+    account = current_account()
+    db = get_db()
+    found = own_hook(db, account, raw) if raw else None
+    if raw and found is None:
+        return redirect(url_for("developers.webhooks_list"))
+    errors: dict[str, str] = {}
+    sent = False
+    values = (hook_form_values(request.form) if request.method == "POST" else
+              {"url": (found or {}).get("url", ""),
+               "description": (found or {}).get("description", ""),
+               "events": list((found or {}).get("events") or hooks.EVENTS)})
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif request.form.get("action") == "code":
+            sent = code_asked(db, account)
+        elif found is None and len(hooks.for_account(db, account["_id"])) >= hooks.LIMIT:
+            errors["form"] = t("webhooks_full", n=hooks.LIMIT)
+        else:
+            errors.update(hook_errors(values))
+            moved = found is None or values["url"] != found.get("url")
+            if moved and not proved(account) and not errors:
+                errors.update(check_proof(db, account, request.form))
+            if not errors:
+                host = safe_http.check_url(values["url"])[0]
+                if found is None:
+                    new_id = hooks.create(db, account["_id"], url=values["url"], host=host,
+                                          events=values["events"],
+                                          description=values["description"])
+                    notices.webhook_added(account, host=host, ip=client_ip())
+                    return secret_page(hooks.by_id(db, account["_id"], new_id), created=True)
+                hooks.update(db, account["_id"], found["_id"], url=values["url"], host=host,
+                             events=values["events"], description=values["description"])
+                if moved:
+                    notices.webhook_added(account, host=host, ip=client_ip())
+                return redirect(url_for("developers.webhook", raw=found["_id"], done="saved"))
+    # La prueba se pide al guardar si la dirección cambió; cambiar los eventos
+    # o la descripción no la pide.
+    context = proof_context(account)
+    return render_template(
+        "developers/webhook-form.html", found=found, values=values, errors=errors,
+        sent=sent, events=hooks.EVENTS, docs=docs_url(), **context)
+
+
+@bp.route("/webhooks/<raw>")
+def webhook(raw):
+    """Un aviso: su estado, sus botones y las últimas 50 entregas."""
+    account = current_account()
+    db = get_db()
+    found = own_hook(db, account, raw)
+    if found is None:
+        return redirect(url_for("developers.webhooks_list"))
+    return render_template(
+        "developers/webhook.html", found=found, docs=docs_url(),
+        deliveries=hooks.recent(db, account["_id"], found["_id"]),
+        done=request.args.get("done", ""), tested=request.args.get("prueba", ""),
+        tested_status=request.args.get("estado", "")[:3],
+        tested_ms=request.args.get("ms", "")[:6],
+        tested_error=request.args.get("error", "")[:60])
+
+
+@bp.route("/webhooks/<raw>/switch", methods=["POST"])
+def webhook_switch(raw):
+    account = current_account()
+    db = get_db()
+    found = own_hook(db, account, raw)
+    if found is not None and csrf_ok(request.form.get("csrf_token")):
+        on = not found.get("enabled")
+        changes = {"enabled": on, "disabled_reason": None}
+        if on:
+            changes.update(failing_since=None, next_try_at=None)
+        hooks.update(db, account["_id"], found["_id"], **changes)
+        return redirect(url_for("developers.webhook", raw=found["_id"],
+                                done="on" if on else "off"))
+    return redirect(url_for("developers.webhooks_list"))
+
+
+@bp.route("/webhooks/<raw>/test", methods=["POST"])
+def webhook_test(raw):
+    """Un aviso de prueba, en el momento: dice qué respondió y cuánto tardó."""
+    account = current_account()
+    db = get_db()
+    found = own_hook(db, account, raw)
+    if found is None or not csrf_ok(request.form.get("csrf_token")):
+        return redirect(url_for("developers.webhooks_list"))
+    if not rate_limit(db, f"webhooktest:{account['_id']}", TESTS_PER_HOUR, 3600):
+        return redirect(url_for("developers.webhook", raw=found["_id"], prueba="many"))
+    answer = webhooks.attempt(found, webhooks.test_payload())
+    return redirect(url_for("developers.webhook", raw=found["_id"],
+                            prueba="ok" if answer.ok else "bad",
+                            estado=answer.status or "", ms=answer.ms,
+                            error=answer.error[:60]))
+
+
+@bp.route("/webhooks/<raw>/secret", methods=["GET", "POST"])
+def webhook_secret(raw):
+    """Cambiar el secreto (el de antes deja de servir) y verlo una vez."""
+    account = current_account()
+    db = get_db()
+    found = own_hook(db, account, raw)
+    if found is None:
+        return redirect(url_for("developers.webhooks_list"))
+    errors: dict[str, str] = {}
+    sent = False
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif request.form.get("action") == "code":
+            sent = code_asked(db, account)
+        else:
+            if not proved(account):
+                errors.update(check_proof(db, account, request.form))
+            if not errors:
+                hooks.rotate(db, account["_id"], found["_id"])
+                return secret_page(hooks.by_id(db, account["_id"], found["_id"]),
+                                   created=False)
+    return render_template("developers/webhook-ask.html", found=found, errors=errors,
+                           sent=sent, what="secret", **proof_context(account))
+
+
+@bp.route("/webhooks/<raw>/delete", methods=["GET", "POST"])
+def webhook_delete(raw):
+    account = current_account()
+    db = get_db()
+    found = own_hook(db, account, raw)
+    if found is None:
+        return redirect(url_for("developers.webhooks_list"))
+    if request.method == "POST" and csrf_ok(request.form.get("csrf_token")):
+        hooks.remove(db, account["_id"], found["_id"])
+        return redirect(url_for("developers.webhooks_list", done="deleted"))
+    return render_template("developers/webhook-ask.html", found=found, errors={},
+                           sent=False, what="delete", needs_proof=False,
+                           with_password=False, two_step=False)

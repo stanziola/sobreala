@@ -710,3 +710,30 @@ def api_key_exposed(account, *, name: str) -> bool:
                    paragraphs=[t("mail_api_exposed_body", name=name),
                                t("mail_api_exposed_fix")],
                    button={"href": keys_url(), "label": t("mail_api_key_button")})
+
+
+# ------------------------------------------------------------ los avisos a su sistema
+
+def webhooks_url() -> str:
+    return f"{Config.APP_BASE_URL}{url_for('developers.webhooks_list')}"
+
+
+def webhook_added(account, *, host: str, ip: str) -> bool:
+    """Que se agregó (o cambió) un destino que manda los datos de la cuenta a
+    un servidor. De seguridad: no se apaga."""
+    return deliver(account, purpose=mail_log.WEBHOOK,
+                   subject=t("mail_webhook_added_subject"),
+                   heading=t("mail_webhook_added_heading"),
+                   paragraphs=[t("mail_webhook_added_body", host=host, ip=ip or "-"),
+                               t("mail_api_key_not_you")],
+                   button={"href": webhooks_url(), "label": t("mail_webhook_button")})
+
+
+def webhook_disabled(account, *, host: str) -> bool:
+    """Que se apagó un destino porque llevaba 72 horas fallando."""
+    return deliver(account, purpose=mail_log.WEBHOOK,
+                   subject=t("mail_webhook_off_subject"),
+                   heading=t("mail_webhook_off_heading"),
+                   paragraphs=[t("mail_webhook_off_body", host=host),
+                               t("mail_webhook_off_fix")],
+                   button={"href": webhooks_url(), "label": t("mail_webhook_button")})

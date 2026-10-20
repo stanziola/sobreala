@@ -50,9 +50,13 @@ def page(token):
                 "downloads/page.html", file=found, company=account.get("company_name", ""),
                 logo=logo, size=downloads.size_label(found["size"]), token=token), 400
         campaign = campaigns.by_id(db, found["account_id"], found["campaign_id"]) or {}
-        events.record(db, found["account_id"], kind=events.DOWNLOAD,
-                      campaign_id=found["campaign_id"], run_id=campaign.get("run_id"),
-                      email=campaign.get("to", ""))
+        if events.record_new(db, found["account_id"], kind=events.DOWNLOAD,
+                             campaign_id=found["campaign_id"], run_id=campaign.get("run_id"),
+                             email=campaign.get("to", "")):
+            from services import webhooks
+            webhooks.email_event(db, found["account_id"], kind=events.DOWNLOAD,
+                                 campaign_id=found["campaign_id"],
+                                 run_id=campaign.get("run_id"), email=campaign.get("to", ""))
         name = found["name"]
         return Response(bytes(found["data"]), mimetype=found["content_type"], headers={
             "Content-Disposition": f"attachment; filename*=UTF-8''{quote(name)}",

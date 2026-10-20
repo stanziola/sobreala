@@ -1,5 +1,4 @@
 {% extends "_dashboard.html" %}
-{% from "_fields.html" import proof with context %}
 {% block title %}{{ t('api_keys_new_title') }}{% endblock %}
 {% set pane_center = true %}
 
@@ -14,14 +13,7 @@
   <p class="lead">{{ t('api_keys_new_lead') }}</p>
   {% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
 
-  {% if needs_proof and not with_password %}
-  {% if sent %}<p class="notice notice--ok">{{ t('api_keys_code_sent') }}</p>{% endif %}
-  <form class="erase__code" method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <p class="hint">{{ t('api_keys_code_hint') }}</p>
-    <button class="btn btn--small btn--outline" type="submit" name="action" value="code">{{ t('api_keys_send_code') }}</button>
-  </form>
-  {% endif %}
+  {% include "developers/_proof_code.html" %}
 
   <form method="post" novalidate data-once>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -74,26 +66,7 @@
     <p class="hint" id="key-ips-hint">{{ t('api_keys_ips_hint') }}</p>
     {% if errors.ips %}<p class="error">{{ errors.ips }}</p>{% endif %}
 
-    {% if needs_proof %}
-    <h2 class="settings__subtitle">{{ t('api_keys_proof_title') }}</h2>
-    <p class="hint">{{ t('api_keys_proof_lead') }}</p>
-    {% if with_password %}
-    <label for="key-password">{{ t('api_keys_password') }}</label>
-    {{ proof('key-password', 'password') }}
-    {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
-    {% else %}
-    <label for="key-email-code">{{ t('api_keys_email_code') }}</label>
-    <input id="key-email-code" name="email_code" type="text" inputmode="numeric"
-           maxlength="6" autocomplete="one-time-code">
-    {% if errors.email_code %}<p class="error">{{ errors.email_code }}</p>{% endif %}
-    {% endif %}
-    {% if two_step %}
-    <label for="key-app-code">{{ t('api_keys_app_code') }}</label>
-    <input id="key-app-code" name="app_code" type="text" inputmode="numeric"
-           maxlength="6" autocomplete="one-time-code">
-    {% if errors.app_code %}<p class="error">{{ errors.app_code }}</p>{% endif %}
-    {% endif %}
-    {% endif %}
+    {% include "developers/_proof.html" %}
 
     <div class="erase__actions">
       <button class="btn" type="submit">{{ t('api_keys_create') }}</button>

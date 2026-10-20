@@ -29,6 +29,7 @@ from models import event as events
 from models import mail_log
 from models import suppression as suppressions
 from services import reputation
+from services import webhooks
 
 # Los nombres que usa SES en `eventType` (conjuntos de configuración) o en
 # `notificationType` (avisos de identidad), y el tipo de evento nuestro.
@@ -120,8 +121,12 @@ def _campaign(db, message, kind, ours, account_id, campaign_id, run_id,
     for one in people:
         if not one["email"]:
             continue
-        events.record(db, account_id, kind=ours, campaign_id=campaign_id,
-                      run_id=run_id, email=one["email"], at=at, link=link)
+        # El aviso a su sistema sale solo la primera vez (octubre de 2026).
+        if events.record_new(db, account_id, kind=ours, campaign_id=campaign_id,
+                             run_id=run_id, email=one["email"], at=at, link=link):
+            webhooks.email_event(db, account_id, kind=ours, campaign_id=campaign_id,
+                                 run_id=run_id, email=one["email"], at=at, link=link,
+                                 permanent=permanent if kind == "Bounce" else None)
         # Un rebote permanente es una dirección que no existe, y una queja es
         # alguien que dijo que esto es spam: las dos se anulan **en esa cuenta**
         # y no se pueden levantar. Un rebote pasajero (buzón lleno, servidor

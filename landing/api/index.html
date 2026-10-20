@@ -184,6 +184,7 @@
         <li><a class="api-docs__link" href="#fechas">Fechas y horas</a></li>
         <li><a class="api-docs__link" href="#listas">Listas dentro de un contacto</a></li>
         <li><a class="api-docs__link" href="#clases">Transaccional o promocional</a></li>
+        <li><a class="api-docs__link" href="#avisos">Avisos a tu sistema</a></li>
         <li><a class="api-docs__link" href="#lienzo">El lienzo en JSON</a></li>
         <li><a class="api-docs__link" href="#fuera">Lo que la API no hace</a></li>
       </ul>
@@ -412,6 +413,71 @@ Este mes no tuviste movimientos.
       <section class="api-doc" id="clases">
         <h2 class="api-doc__title">Transaccional o promocional</h2>
 <p>Cada correo dice qué es en <code>type</code>, y eso decide sus reglas. Elegir mal no es un atajo: un promocional disfrazado de transaccional se nota en las quejas, y las quejas pausan la cuenta.</p><p><strong>transactional</strong>: lo que alguien espera porque hizo algo (su recibo, su código, el estado de su pedido). Va a cualquier dirección, esté o no en tus contactos, sin enlace de baja ni marca de agua. Solo lo frenan un rebote permanente o una queja de esa dirección en tu cuenta, o un dominio que no recibe correo: quien se dio de baja de tus promociones sigue recibiendo su recibo. Se cuentan las aperturas, pero <strong>no los clics</strong>, porque sus enlaces suelen ser privados.</p><p><strong>promotional</strong>: una oferta, una invitación, un boletín. Es una campaña de una persona: va solo a un contacto de tu cuenta con todas sus columnas y sin ninguna supresión, con su enlace de baja y la marca de agua de tu plan.</p><p>Los dos gastan un correo de la cuota de tu mes, llevan tu dirección postal al pie, salen de uno de tus remitentes y no salen si la cuenta está en pausa. En la demostración solo van a tus direcciones de prueba.</p>      </section>
+      <section class="api-doc" id="avisos">
+        <h2 class="api-doc__title">Avisos a tu sistema</h2>
+<p>En vez de preguntar cada rato, tu servidor puede recibir lo que pasa con tus correos en cuanto pasa. Los avisos se crean en el panel (<strong>Dashboard → API → Avisos</strong>): una dirección https de tu servidor y los eventos que quieres. Caben 5.</p><p>Los eventos: <strong>email.delivered</strong> (llegó), <strong>email.bounced</strong> (rebotó; <code>permanent</code> dice si la dirección no existe), <strong>email.complained</strong> (lo marcaron como spam), <strong>email.rejected</strong> (Amazon no lo mandó), <strong>email.opened</strong> y <strong>email.clicked</strong> (la primera vez; nunca un clic de un transaccional), <strong>email.downloaded</strong> (bajaron el archivo de un correo individual), <strong>contact.unsubscribed</strong> y <strong>campaign.finished</strong> (con sus cifras). Cada uno dice de dónde vino en <code>source</code>: campaign, single o api, con sus ids.</p><p>Cada aviso es un POST en JSON con <code>id</code>, <code>type</code>, <code>created_at</code> y <code>data</code>, y tres cabeceras: <strong>Sobreala-Event-Id</strong>, <strong>Sobreala-Event-Type</strong> y <strong>Sobreala-Signature</strong> (<code>t=&lt;segundos&gt;,v1=&lt;firma&gt;</code>). La firma es un HMAC-SHA256, con el secreto del aviso, de <code>t</code>, un punto y el cuerpo tal como llegó. Compruébala siempre, y rechaza las de más de 5 minutos.</p><p>Tu servidor tiene que responder un 2xx en menos de 5 segundos (las redirecciones no se siguen). Si no, se reintenta al minuto, a los 5 y 30 minutos, a las 2, 6, 12 y 24 horas, y los demás avisos de esa dirección esperan con él. Tras 72 horas fallando se apaga y te escribimos. Un mismo evento puede llegar dos veces y en otro orden: usa Sobreala-Event-Id para no contarlo dos veces.</p><div class="api-code" data-copy-box>
+  <pre><code># Python
+import hashlib, hmac, time
+
+def es_de_sobreala(cuerpo: bytes, cabecera: str, secreto: str) -&gt; bool:
+    partes = dict(p.split(&#34;=&#34;, 1) for p in cabecera.split(&#34;,&#34;))
+    if abs(time.time() - int(partes.get(&#34;t&#34;, 0))) &gt; 300:
+        return False
+    esperada = hmac.new(secreto.encode(), partes[&#34;t&#34;].encode() + b&#34;.&#34; + cuerpo,
+                        hashlib.sha256).hexdigest()
+    return hmac.compare_digest(esperada, partes.get(&#34;v1&#34;, &#34;&#34;))
+
+// Node
+const crypto = require(&#34;crypto&#34;);
+function esDeSobreala(cuerpo, cabecera, secreto) {
+  const partes = Object.fromEntries(cabecera.split(&#34;,&#34;).map((p) =&gt; p.split(&#34;=&#34;)));
+  if (Math.abs(Date.now() / 1000 - Number(partes.t)) &gt; 300) return false;
+  const esperada = crypto.createHmac(&#34;sha256&#34;, secreto)
+    .update(`${partes.t}.${cuerpo}`).digest(&#34;hex&#34;);
+  return typeof partes.v1 === &#34;string&#34; &amp;&amp; partes.v1.length === esperada.length &amp;&amp;
+    crypto.timingSafeEqual(Buffer.from(esperada), Buffer.from(partes.v1));
+}
+
+// PHP
+function es_de_sobreala(string $cuerpo, string $cabecera, string $secreto): bool {
+    parse_str(str_replace(&#39;,&#39;, &#39;&amp;&#39;, $cabecera), $partes);
+    if (abs(time() - (int) ($partes[&#39;t&#39;] ?? 0)) &gt; 300) return false;
+    $esperada = hash_hmac(&#39;sha256&#39;, ($partes[&#39;t&#39;] ?? &#39;&#39;) . &#39;.&#39; . $cuerpo, $secreto);
+    return hash_equals($esperada, $partes[&#39;v1&#39;] ?? &#39;&#39;);
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="# Python
+import hashlib, hmac, time
+
+def es_de_sobreala(cuerpo: bytes, cabecera: str, secreto: str) -&gt; bool:
+    partes = dict(p.split(&#34;=&#34;, 1) for p in cabecera.split(&#34;,&#34;))
+    if abs(time.time() - int(partes.get(&#34;t&#34;, 0))) &gt; 300:
+        return False
+    esperada = hmac.new(secreto.encode(), partes[&#34;t&#34;].encode() + b&#34;.&#34; + cuerpo,
+                        hashlib.sha256).hexdigest()
+    return hmac.compare_digest(esperada, partes.get(&#34;v1&#34;, &#34;&#34;))
+
+// Node
+const crypto = require(&#34;crypto&#34;);
+function esDeSobreala(cuerpo, cabecera, secreto) {
+  const partes = Object.fromEntries(cabecera.split(&#34;,&#34;).map((p) =&gt; p.split(&#34;=&#34;)));
+  if (Math.abs(Date.now() / 1000 - Number(partes.t)) &gt; 300) return false;
+  const esperada = crypto.createHmac(&#34;sha256&#34;, secreto)
+    .update(`${partes.t}.${cuerpo}`).digest(&#34;hex&#34;);
+  return typeof partes.v1 === &#34;string&#34; &amp;&amp; partes.v1.length === esperada.length &amp;&amp;
+    crypto.timingSafeEqual(Buffer.from(esperada), Buffer.from(partes.v1));
+}
+
+// PHP
+function es_de_sobreala(string $cuerpo, string $cabecera, string $secreto): bool {
+    parse_str(str_replace(&#39;,&#39;, &#39;&amp;&#39;, $cabecera), $partes);
+    if (abs(time() - (int) ($partes[&#39;t&#39;] ?? 0)) &gt; 300) return false;
+    $esperada = hash_hmac(&#39;sha256&#39;, ($partes[&#39;t&#39;] ?? &#39;&#39;) . &#39;.&#39; . $cuerpo, $secreto);
+    return hash_equals($esperada, $partes[&#39;v1&#39;] ?? &#39;&#39;);
+}"
+          data-copy-done="Copiado" aria-label="Copiar Avisos a tu sistema">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+      </section>
       <section class="api-doc" id="lienzo">
         <h2 class="api-doc__title">El lienzo en JSON</h2>
 <p>Una plantilla del lienzo es una hoja de 600 px de ancho que crece hacia abajo: <code>h</code> es su alto (de 80 a 4,000), <code>bg</code> su color y <code>items</code> lo que lleva encima, hasta 60 cosas. Cada una dice qué es en <code>t</code> y dónde va en <code>x</code>, <code>y</code>, <code>w</code> y <code>h</code>, en píxeles y dentro de la hoja. El correo se arma en tablas al enviarlo, así que lo que se encima tiene que poder cortarse en franjas y columnas.</p><p><strong>text</strong>: <code>text</code> (hasta 2,000 caracteres, con saltos de línea y marcas), <code>font</code> (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, Georgia, Times New Roman, Courier New, Palatino, Garamond, Lucida Sans o Century Gothic), <code>size</code> (de 14 a 72), <code>color</code> (#RRGGBB), <code>bold</code>, <code>italic</code>, <code>align</code> (left, center o right), <code>line</code> (de 1 a 2.5) y <code>list</code> (con viñetas). <strong>button</strong>: <code>text</code> (hasta 60), <code>href</code> (https:// o mailto:), <code>bg</code>, <code>radius</code> (de 0 a 60) y la misma letra que un texto. <strong>image</strong>: <code>name</code> (el que devuelve <code>POST /images</code>), <code>alt</code> (obligatorio), <code>href</code>, <code>fit</code> (cover o contain), <code>crop</code> ([x, y, ancho, alto], de 0 a 1) y <code>rot</code> (grados). <strong>shape</strong>: <code>shape</code> (rect, line, ellipse, triangle, star o arrow), <code>bg</code>, <code>radius</code> y <code>rot</code>; una línea mide de 1 a 12 px de alto.</p><p>Se guarda solo si arma bien el correo y pasa la revisión antispam, igual que en el panel: entre otras cosas, al menos 200 caracteres de texto, poca imagen, pocos enlaces y nada de acortadores. <code>POST /templates/check</code> dice cómo va cada regla sin guardar nada. Lo más cómodo es armarla en el panel y leerla después con <code>GET /templates/{template_id}</code>.</p><div class="api-code" data-copy-box>
