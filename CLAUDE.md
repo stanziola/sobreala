@@ -612,6 +612,8 @@ no se descubra el día del lanzamiento.
 
 ## Pendientes de decisión
 
+**La lista completa de pendientes, ordenada por urgencia, está en
+`docs/pendientes.md`.** Lo de abajo son las decisiones de fondo.
 
 - Confirmar con Yappy (yappy@bgeneral.com / 800-5000) si soporta cobros
   recurrentes. Si no, el recurrente va solo por PayPal y a los de Yappy se les
