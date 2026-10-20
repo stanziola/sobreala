@@ -5,15 +5,15 @@ Google Fonts ni desde ningún tercero.
 
 ```
 fonts/
-├── changa-one/ChangaOne-Regular.ttf   # wordmark "Sobreala"
-├── changa-one/OFL.txt
+├── outfit/Outfit-VariableFont_wght.ttf  # la marca escrita "sobreala" (Medium, 500)
+├── outfit/OFL.txt
 ├── sora/Sora-VariableFont_wght.ttf    # todo lo demás (variable, todos los pesos)
 └── sora/OFL.txt
 ```
 
 | Familia | Dónde se usa |
 |---|---|
-| **Changa One** | Solo la palabra "Sobreala": header, footer y la marca escrita |
+| **Outfit** | Solo la marca escrita, en Medium (500) y en minúsculas: «sobreala» en la barra, el pie, los correos y la tarjeta para redes |
 | **Sora** | Todo lo demás: títulos, cuerpo, botones, navegación, tarjetas |
 
 ## Convención

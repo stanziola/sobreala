@@ -204,7 +204,7 @@ def read_pricing(path: Path = PRICING_MD) -> dict:
 
 FONT_FILES = [
     # (family name used in CSS, source file, css weight or range)
-    ("Changa One", BRAND_DIR / "fonts" / "changa-one" / "ChangaOne-Regular.ttf", "400"),
+    ("Outfit", BRAND_DIR / "fonts" / "outfit" / "Outfit-VariableFont_wght.ttf", "100 900"),
     ("Sora", BRAND_DIR / "fonts" / "sora" / "Sora-VariableFont_wght.ttf", "100 800"),
 ]
 
@@ -366,12 +366,12 @@ def build_social_cards() -> list[Path]:
     ala.thumbnail((300, 300), Image.LANCZOS)
 
     wordmark = ImageFont.truetype(
-        str(BRAND_DIR / "fonts" / "changa-one" / "ChangaOne-Regular.ttf"), 58)
+        str(BRAND_DIR / "fonts" / "outfit" / "Outfit-VariableFont_wght.ttf"), 58)
     titulo = ImageFont.truetype(
         str(BRAND_DIR / "fonts" / "sora" / "Sora-VariableFont_wght.ttf"), 66)
     pie = ImageFont.truetype(
         str(BRAND_DIR / "fonts" / "sora" / "Sora-VariableFont_wght.ttf"), 28)
-    for font, peso in ((titulo, 700), (pie, 500)):
+    for font, peso in ((titulo, 700), (pie, 500), (wordmark, 500)):
         try:
             font.set_variation_by_axes([peso])
         except Exception:  # noqa: BLE001 - sin ejes variables se usa el normal
@@ -386,7 +386,7 @@ def build_social_cards() -> list[Path]:
 
         lienzo.paste(ala, (margen, margen - 18), ala)
         draw.text((margen + ala.width + 20, margen + ala.height // 2),
-                  "Sobreala", font=wordmark, fill=marca, anchor="lm")
+                  "sobreala", font=wordmark, fill=marca, anchor="lm")
 
         lineas = wrap_text(draw, card_title(page), titulo, OG_SIZE[0] - margen * 2)
         alto = 86

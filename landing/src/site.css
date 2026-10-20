@@ -5,7 +5,7 @@
 /* ------------------------------------------------------------------ tokens */
 :root {
   --font-body: "Sora", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-brand: "Changa One", "Sora", system-ui, sans-serif;
+  --font-brand: "Outfit", "Sora", system-ui, sans-serif;
 
   --radius-sm: 8px;
   --radius: 14px;
@@ -172,9 +172,11 @@ button { font: inherit; color: inherit; }
 .brand__wing svg { width: 100%; height: auto; }
 .brand__wing .wing-fill { fill: var(--color-logo); }
 .brand__wing .wing-shadow { fill: var(--color-shadow); }
+/* La marca escrita: Outfit Medium y en minúsculas (octubre de 2026). En el HTML
+   sigue escrita «Sobreala», que es lo que lee un lector de pantalla. */
 .brand__name {
-  font-family: var(--font-brand); font-size: 1.7rem; line-height: 1; letter-spacing: .01em;
-  color: var(--color-logo);
+  font-family: var(--font-brand); font-size: 1.7rem; font-weight: 500; line-height: 1;
+  text-transform: lowercase; color: var(--color-logo);
 }
 
 /* Theme toggle. The icon shows the action, not the state: a sun while dark

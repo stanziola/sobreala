@@ -542,7 +542,8 @@ bienvenida, recuperación, dispositivo nuevo…— siguen teniendo cada uno el s
 **Los ocho comparten el mismo aspecto** (octubre de 2026): `email/_layout.html`
 es el sobre y `email/_parts.html` sus piezas (titular, párrafo, código, botón,
 recuadro y nota). Arriba, **una franja azul de lado a lado** con el ala y
-«Sobreala» en Changa One, la tipografía de la marca. La palabra va **dentro de
+«sobreala» en Outfit Medium y en minúsculas, la marca escrita (Changa One hasta
+octubre de 2026). La palabra va **dentro de
 una imagen** (`static/img/mail/header.png`, que genera `build_assets.py`),
 porque los lectores de correo no cargan fuentes propias, y **sin fondo**,
 porque en modo oscuro el lector repinta la celda y no la imagen. Se dibuja a
