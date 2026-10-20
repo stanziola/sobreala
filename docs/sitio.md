@@ -566,3 +566,13 @@ en octubre de 2026.
   `assets/img/payments/`. El kit sigue en `brand/payments/`, y el panel tiene su
   propia copia para el pago (`backend/build_assets.py`, recortada con
   `brand/payments/viewbox.json`), que no cambió.
+
+## La página de la API (octubre de 2026)
+
+`sobreala.com/api/` (`src/pages/api.html.j2`) sale entera de
+`backend/api_spec.py`, la misma descripción que sirve `/api/v1/openapi.json`:
+las guías y cada ruta con su permiso, sus campos, un `curl` y una respuesta de
+ejemplo. `build_site.py` la carga por ruta al construir, así que **cambiar la API
+pide regenerar el sitio** (`--check` y `test_generated.py` lo vigilan). El pie
+lleva «API» en Producto. Las pruebas comparan la descripción con las rutas de
+verdad y las claves de cada respuesta con su ejemplo.

@@ -340,6 +340,9 @@ GUIDES: list[dict[str, Any]] = [
          "de un sistema: la contraseña y el segundo factor, los usuarios, pagar y "
          "cambiar de plan, conectar dominios y confirmar remitentes, crear llaves "
          "y avisos, y eliminar la cuenta.",
+         "Tampoco, por ahora: importar un CSV (por la API se cargan contactos en "
+         "JSON), mandar un archivo adjunto, bajar el PDF de una plantilla ni las "
+         "estadísticas en PDF o CSV (por la API van en JSON).",
      ]},
 ]
 
@@ -1086,6 +1089,135 @@ GROUPS: list[dict[str, Any]] = [
           "description": "Ya no sale sola: espera a que la mandes.",
           "test": "simulado",
           "response": {**_CAMPAIGN, "auto_send": False}},
+     ]},
+    {"id": "envios", "title": "Envíos y estadísticas",
+     "intro": "Lo que salió y cómo le fue, contado como en Estadísticas: **personas y "
+              "no eventos** (quien abre tres veces es una apertura), y por envío. Un "
+              "envío es una vuelta de una campaña que terminó; la que está saliendo se "
+              "sigue en `/campaigns`. Los correos de la API cuentan en las cifras y en "
+              "los eventos, y se miran uno por uno en `/emails`. Las estadísticas, hasta "
+              "30 consultas por minuto.",
+     "endpoints": [
+         {"method": "GET", "path": "/sends", "scope": "campaigns:read",
+          "title": "Listar envíos",
+          "description": "De los más nuevos, cada uno con sus cifras y cuántas personas "
+                         "lo recibieron, rebotaron, abrieron, pulsaron o se quejaron.",
+          "test": "sí",
+          "query": [{"name": "campaign_id", "type": "texto", "description": "Los de esa campaña."},
+                    {"name": "limit", "type": "entero", "description": "De 1 a 100."},
+                    {"name": "cursor", "type": "texto", "description": "Para la página siguiente."}],
+          "response": {"data": [{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0, "download": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}], "next_cursor": None}},
+         {"method": "GET", "path": "/sends/{send_id}", "scope": "campaigns:read",
+          "title": "Un envío",
+          "description": "Con los primeros errores, si hubo.",
+          "test": "sí",
+          "response": {**{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0, "download": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}, "errors": []}},
+         {"method": "GET", "path": "/sends/{send_id}/recipients", "scope": "campaigns:read",
+          "title": "A quién le salió",
+          "description": "Cada persona con lo que pasó (`reached`: complaint, bounce, reject, "
+                         "delivery o sent) y cuándo pasó cada cosa, por orden de dirección. "
+                         "Se pagina con `offset`.",
+          "test": "sí",
+          "query": [{"name": "outcome", "type": "texto",
+                     "description": "delivered, bounced, rejected, complained, opened, "
+                                    "clicked o not_opened."},
+                    {"name": "email", "type": "texto", "description": "Una dirección exacta."},
+                    {"name": "limit", "type": "entero", "description": "De 1 a 100."},
+                    {"name": "offset", "type": "entero", "description": "Desde cuál, 0 si no se dice."}],
+          "query_example": "outcome=opened&limit=50",
+          "response": {"total": 402, "data": [{"email": "ana@ejemplo.com", "reached": "delivery",
+                                                "events": {"delivery": "2026-10-20T13:00:05Z",
+                                                           "open": "2026-10-20T14:12:31Z",
+                                                           "sent": "2026-10-20T13:00:03Z"}}],
+                       "next_offset": 50}},
+         {"method": "GET", "path": "/stats", "scope": "stats:read",
+          "title": "Cómo te fue",
+          "description": "Cada cifra con su porcentaje (`pct`), sobre cuántos (`of`) y su "
+                         "cambio contra el periodo anterior del mismo largo (`change`). "
+                         "Rebotes y entregados se miden contra lo que salió; aperturas, "
+                         "clics, quejas y bajas contra lo que llegó. Las bajas (`leave`) "
+                         "salen solo sin filtro.",
+          "test": "sí",
+          "query": [{"name": "period", "type": "texto",
+                     "description": "1h, today, 24h, 7d, 30d o 90d. 24h si no se dice."},
+                    {"name": "tz", "type": "texto",
+                     "description": "La zona, como America/Panama. Sin ella, la de tu cuenta."},
+                    {"name": "campaign_id", "type": "texto", "description": "Solo esa campaña."},
+                    {"name": "tag", "type": "texto",
+                     "description": "Solo los envíos a esa etiqueta."}],
+          "query_example": "period=30d",
+          "response": {"period": "30d", "tz": "America/Panama", "from": "2026-09-21T05:00:00Z",
+                       "rates": [{"key": "sent", "n": 2410, "pct": None, "of": None,
+                                  "change": {"pct": 12, "up": True, "good": True}},
+                                 {"key": "open", "n": 1104, "pct": 47, "of": 2350,
+                                  "change": None}]}},
+         {"method": "GET", "path": "/stats/series", "scope": "stats:read",
+          "title": "Por tramos",
+          "description": "Las personas de cada tipo en cada tramo del periodo (cada 5 minutos "
+                         "en 1h, cada hora en today y 24h, cada día en 7d y 30d, cada semana "
+                         "en 90d), todos, también los que van en cero.",
+          "test": "sí",
+          "query": [{"name": "period", "type": "texto",
+                     "description": "1h, today, 24h, 7d, 30d o 90d. 24h si no se dice."},
+                    {"name": "tz", "type": "texto",
+                     "description": "La zona, como America/Panama. Sin ella, la de tu cuenta."},
+                    {"name": "campaign_id", "type": "texto", "description": "Solo esa campaña."},
+                    {"name": "tag", "type": "texto",
+                     "description": "Solo los envíos a esa etiqueta."}],
+          "response": {"period": "24h", "tz": "America/Panama",
+                       "data": [{"at": "2026-10-19T19:00:00Z", "sent": 120, "delivery": 118,
+                                 "open": 40, "click": 9, "bounce": 1, "complaint": 0}]}},
+         {"method": "GET", "path": "/stats/links", "scope": "stats:read",
+          "title": "Los enlaces más pulsados",
+          "description": "Cuántas personas pulsó cada uno, hasta 20.",
+          "test": "sí",
+          "query": [{"name": "period", "type": "texto",
+                     "description": "1h, today, 24h, 7d, 30d o 90d. 24h si no se dice."},
+                    {"name": "tz", "type": "texto",
+                     "description": "La zona, como America/Panama. Sin ella, la de tu cuenta."},
+                    {"name": "campaign_id", "type": "texto", "description": "Solo esa campaña."},
+                    {"name": "tag", "type": "texto",
+                     "description": "Solo los envíos a esa etiqueta."}],
+          "response": {"period": "30d", "data": [{"link": "https://coopejemplo.com/asamblea",
+                                                  "n": 61}]}},
+         {"method": "GET", "path": "/stats/timing", "scope": "stats:read",
+          "title": "Cuándo abre tu lista",
+          "description": "Aperturas de los últimos 90 días por día de la semana (lunes "
+                         "primero) y por hora (de 0 a 23), en la zona pedida.",
+          "test": "sí",
+          "query": [{"name": "tz", "type": "texto", "description": "La zona."}],
+          "response": {"tz": "America/Panama", "days": [120, 98, 101, 87, 90, 40, 22],
+                       "hours": [0, 0, 0, 0, 0, 1, 8, 30, 52, 61, 44, 38, 35, 33, 30, 29,
+                                 31, 27, 20, 18, 12, 6, 3, 1], "days_counted": 90}},
+         {"method": "GET", "path": "/stats/growth", "scope": "stats:read",
+          "title": "Altas y bajas por mes",
+          "description": "Los contactos que entraron y las direcciones a las que se dejó de "
+                         "escribir (cualquier supresión), mes por mes, los últimos doce.",
+          "test": "sí",
+          "query": [{"name": "tz", "type": "texto", "description": "La zona."}],
+          "response": {"tz": "America/Panama",
+                       "data": [{"month": "2026-10", "added": 140, "left": 6}]}},
+         {"method": "GET", "path": "/events", "scope": "stats:read",
+          "title": "Los eventos",
+          "description": "Uno por correo, persona y tipo, de los más nuevos: sent, delivery, "
+                         "bounce, complaint, open, click, reject o download. `campaign_id` es "
+                         "el de la campaña o, en un correo de la API, el del correo.",
+          "test": "sí",
+          "query": [{"name": "type", "type": "texto", "description": "Solo ese tipo."},
+                    {"name": "campaign_id", "type": "texto", "description": "Solo esa campaña o correo."},
+                    {"name": "send_id", "type": "texto", "description": "Solo ese envío."},
+                    {"name": "email", "type": "texto", "description": "Una dirección exacta."},
+                    {"name": "from", "type": "texto", "description": "Desde, con su zona."},
+                    {"name": "to", "type": "texto", "description": "Hasta, con su zona."},
+                    {"name": "limit", "type": "entero", "description": "De 1 a 100."},
+                    {"name": "cursor", "type": "texto", "description": "Para la página siguiente."}],
+          "query_example": "type=bounce&limit=100",
+          "response": {"data": [{"id": "6535a0c1a1b2c3d4e5f61301", "type": "bounce",
+                                 "email": "luis@ejemplo.com",
+                                 "campaign_id": "6534d0a1a1b2c3d4e5f61101",
+                                 "send_id": "6534e1b2a1b2c3d4e5f61201", "links": [],
+                                 "at": "2026-10-20T13:01:10Z"}],
+                       "next_cursor": None}},
      ]},
 ]
 

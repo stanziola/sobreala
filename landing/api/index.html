@@ -188,74 +188,86 @@
         <li><a class="api-docs__link" href="#lienzo">El lienzo en JSON</a></li>
         <li><a class="api-docs__link" href="#fuera">Lo que la API no hace</a></li>
       </ul>
-      <p class="api-docs__nav-title">Tu cuenta</p>
-      <ul>
-        <li><a class="api-docs__link" href="#get-me"><span class="api-method api-method--get">GET</span> /me</a></li>
-        <li><a class="api-docs__link" href="#get-senders"><span class="api-method api-method--get">GET</span> /senders</a></li>
-        <li><a class="api-docs__link" href="#get-openapi-json"><span class="api-method api-method--get">GET</span> /openapi.json</a></li>
+      <p class="api-docs__nav-title"><a href="#cuenta">Tu cuenta</a></p>
+      <ul class="api-docs__routes">
+        <li><a class="api-docs__link" href="#get-me" title="GET /me"><span class="api-method api-method--get">GET</span> /me</a></li>
+        <li><a class="api-docs__link" href="#get-senders" title="GET /senders"><span class="api-method api-method--get">GET</span> /senders</a></li>
+        <li><a class="api-docs__link" href="#get-openapi-json" title="GET /openapi.json"><span class="api-method api-method--get">GET</span> /openapi.json</a></li>
       </ul>
-      <p class="api-docs__nav-title">Contactos</p>
-      <ul>
-        <li><a class="api-docs__link" href="#get-contacts"><span class="api-method api-method--get">GET</span> /contacts</a></li>
-        <li><a class="api-docs__link" href="#get-contacts-contact_id"><span class="api-method api-method--get">GET</span> /contacts/{contact_id}</a></li>
-        <li><a class="api-docs__link" href="#post-contacts"><span class="api-method api-method--post">POST</span> /contacts</a></li>
-        <li><a class="api-docs__link" href="#patch-contacts-contact_id"><span class="api-method api-method--patch">PATCH</span> /contacts/{contact_id}</a></li>
-        <li><a class="api-docs__link" href="#delete-contacts-contact_id"><span class="api-method api-method--delete">DELETE</span> /contacts/{contact_id}</a></li>
-        <li><a class="api-docs__link" href="#get-tags"><span class="api-method api-method--get">GET</span> /tags</a></li>
-        <li><a class="api-docs__link" href="#post-tags"><span class="api-method api-method--post">POST</span> /tags</a></li>
-        <li><a class="api-docs__link" href="#delete-tags-name"><span class="api-method api-method--delete">DELETE</span> /tags/{name}</a></li>
-        <li><a class="api-docs__link" href="#get-fields"><span class="api-method api-method--get">GET</span> /fields</a></li>
-        <li><a class="api-docs__link" href="#post-fields"><span class="api-method api-method--post">POST</span> /fields</a></li>
-        <li><a class="api-docs__link" href="#patch-fields-key"><span class="api-method api-method--patch">PATCH</span> /fields/{key}</a></li>
-        <li><a class="api-docs__link" href="#delete-fields-key"><span class="api-method api-method--delete">DELETE</span> /fields/{key}</a></li>
-        <li><a class="api-docs__link" href="#get-suppressions"><span class="api-method api-method--get">GET</span> /suppressions</a></li>
+      <p class="api-docs__nav-title"><a href="#contactos">Contactos</a></p>
+      <ul class="api-docs__routes">
+        <li><a class="api-docs__link" href="#get-contacts" title="GET /contacts"><span class="api-method api-method--get">GET</span> /contacts</a></li>
+        <li><a class="api-docs__link" href="#get-contacts-contact_id" title="GET /contacts/{contact_id}"><span class="api-method api-method--get">GET</span> /contacts/{contact_id}</a></li>
+        <li><a class="api-docs__link" href="#post-contacts" title="POST /contacts"><span class="api-method api-method--post">POST</span> /contacts</a></li>
+        <li><a class="api-docs__link" href="#patch-contacts-contact_id" title="PATCH /contacts/{contact_id}"><span class="api-method api-method--patch">PATCH</span> /contacts/{contact_id}</a></li>
+        <li><a class="api-docs__link" href="#delete-contacts-contact_id" title="DELETE /contacts/{contact_id}"><span class="api-method api-method--delete">DELETE</span> /contacts/{contact_id}</a></li>
+        <li><a class="api-docs__link" href="#get-tags" title="GET /tags"><span class="api-method api-method--get">GET</span> /tags</a></li>
+        <li><a class="api-docs__link" href="#post-tags" title="POST /tags"><span class="api-method api-method--post">POST</span> /tags</a></li>
+        <li><a class="api-docs__link" href="#delete-tags-name" title="DELETE /tags/{name}"><span class="api-method api-method--delete">DELETE</span> /tags/{name}</a></li>
+        <li><a class="api-docs__link" href="#get-fields" title="GET /fields"><span class="api-method api-method--get">GET</span> /fields</a></li>
+        <li><a class="api-docs__link" href="#post-fields" title="POST /fields"><span class="api-method api-method--post">POST</span> /fields</a></li>
+        <li><a class="api-docs__link" href="#patch-fields-key" title="PATCH /fields/{key}"><span class="api-method api-method--patch">PATCH</span> /fields/{key}</a></li>
+        <li><a class="api-docs__link" href="#delete-fields-key" title="DELETE /fields/{key}"><span class="api-method api-method--delete">DELETE</span> /fields/{key}</a></li>
+        <li><a class="api-docs__link" href="#get-suppressions" title="GET /suppressions"><span class="api-method api-method--get">GET</span> /suppressions</a></li>
       </ul>
-      <p class="api-docs__nav-title">Las filas de una lista</p>
-      <ul>
-        <li><a class="api-docs__link" href="#get-contacts-contact_id-lists-key"><span class="api-method api-method--get">GET</span> /contacts/{contact_id}/lists/{key}</a></li>
-        <li><a class="api-docs__link" href="#put-contacts-contact_id-lists-key"><span class="api-method api-method--put">PUT</span> /contacts/{contact_id}/lists/{key}</a></li>
-        <li><a class="api-docs__link" href="#post-contacts-contact_id-lists-key"><span class="api-method api-method--post">POST</span> /contacts/{contact_id}/lists/{key}</a></li>
-        <li><a class="api-docs__link" href="#patch-contacts-contact_id-lists-key-row_id"><span class="api-method api-method--patch">PATCH</span> /contacts/{contact_id}/lists/{key}/{row_id}</a></li>
-        <li><a class="api-docs__link" href="#delete-contacts-contact_id-lists-key-row_id"><span class="api-method api-method--delete">DELETE</span> /contacts/{contact_id}/lists/{key}/{row_id}</a></li>
+      <p class="api-docs__nav-title"><a href="#filas">Las filas de una lista</a></p>
+      <ul class="api-docs__routes">
+        <li><a class="api-docs__link" href="#get-contacts-contact_id-lists-key" title="GET /contacts/{contact_id}/lists/{key}"><span class="api-method api-method--get">GET</span> /contacts/{contact_id}/lists/{key}</a></li>
+        <li><a class="api-docs__link" href="#put-contacts-contact_id-lists-key" title="PUT /contacts/{contact_id}/lists/{key}"><span class="api-method api-method--put">PUT</span> /contacts/{contact_id}/lists/{key}</a></li>
+        <li><a class="api-docs__link" href="#post-contacts-contact_id-lists-key" title="POST /contacts/{contact_id}/lists/{key}"><span class="api-method api-method--post">POST</span> /contacts/{contact_id}/lists/{key}</a></li>
+        <li><a class="api-docs__link" href="#patch-contacts-contact_id-lists-key-row_id" title="PATCH /contacts/{contact_id}/lists/{key}/{row_id}"><span class="api-method api-method--patch">PATCH</span> /contacts/{contact_id}/lists/{key}/{row_id}</a></li>
+        <li><a class="api-docs__link" href="#delete-contacts-contact_id-lists-key-row_id" title="DELETE /contacts/{contact_id}/lists/{key}/{row_id}"><span class="api-method api-method--delete">DELETE</span> /contacts/{contact_id}/lists/{key}/{row_id}</a></li>
       </ul>
-      <p class="api-docs__nav-title">Plantillas</p>
-      <ul>
-        <li><a class="api-docs__link" href="#get-templates"><span class="api-method api-method--get">GET</span> /templates</a></li>
-        <li><a class="api-docs__link" href="#get-templates-template_id"><span class="api-method api-method--get">GET</span> /templates/{template_id}</a></li>
-        <li><a class="api-docs__link" href="#post-templates-template_id-render"><span class="api-method api-method--post">POST</span> /templates/{template_id}/render</a></li>
-        <li><a class="api-docs__link" href="#post-templates-check"><span class="api-method api-method--post">POST</span> /templates/check</a></li>
-        <li><a class="api-docs__link" href="#get-templates-template_id-zip"><span class="api-method api-method--get">GET</span> /templates/{template_id}/zip</a></li>
-        <li><a class="api-docs__link" href="#post-templates"><span class="api-method api-method--post">POST</span> /templates</a></li>
-        <li><a class="api-docs__link" href="#post-templates-import"><span class="api-method api-method--post">POST</span> /templates/import</a></li>
-        <li><a class="api-docs__link" href="#patch-templates-template_id"><span class="api-method api-method--patch">PATCH</span> /templates/{template_id}</a></li>
-        <li><a class="api-docs__link" href="#post-templates-template_id-duplicate"><span class="api-method api-method--post">POST</span> /templates/{template_id}/duplicate</a></li>
-        <li><a class="api-docs__link" href="#delete-templates-template_id"><span class="api-method api-method--delete">DELETE</span> /templates/{template_id}</a></li>
-        <li><a class="api-docs__link" href="#post-templates-move"><span class="api-method api-method--post">POST</span> /templates/move</a></li>
-        <li><a class="api-docs__link" href="#post-images"><span class="api-method api-method--post">POST</span> /images</a></li>
+      <p class="api-docs__nav-title"><a href="#plantillas">Plantillas</a></p>
+      <ul class="api-docs__routes">
+        <li><a class="api-docs__link" href="#get-templates" title="GET /templates"><span class="api-method api-method--get">GET</span> /templates</a></li>
+        <li><a class="api-docs__link" href="#get-templates-template_id" title="GET /templates/{template_id}"><span class="api-method api-method--get">GET</span> /templates/{template_id}</a></li>
+        <li><a class="api-docs__link" href="#post-templates-template_id-render" title="POST /templates/{template_id}/render"><span class="api-method api-method--post">POST</span> /templates/{template_id}/render</a></li>
+        <li><a class="api-docs__link" href="#post-templates-check" title="POST /templates/check"><span class="api-method api-method--post">POST</span> /templates/check</a></li>
+        <li><a class="api-docs__link" href="#get-templates-template_id-zip" title="GET /templates/{template_id}/zip"><span class="api-method api-method--get">GET</span> /templates/{template_id}/zip</a></li>
+        <li><a class="api-docs__link" href="#post-templates" title="POST /templates"><span class="api-method api-method--post">POST</span> /templates</a></li>
+        <li><a class="api-docs__link" href="#post-templates-import" title="POST /templates/import"><span class="api-method api-method--post">POST</span> /templates/import</a></li>
+        <li><a class="api-docs__link" href="#patch-templates-template_id" title="PATCH /templates/{template_id}"><span class="api-method api-method--patch">PATCH</span> /templates/{template_id}</a></li>
+        <li><a class="api-docs__link" href="#post-templates-template_id-duplicate" title="POST /templates/{template_id}/duplicate"><span class="api-method api-method--post">POST</span> /templates/{template_id}/duplicate</a></li>
+        <li><a class="api-docs__link" href="#delete-templates-template_id" title="DELETE /templates/{template_id}"><span class="api-method api-method--delete">DELETE</span> /templates/{template_id}</a></li>
+        <li><a class="api-docs__link" href="#post-templates-move" title="POST /templates/move"><span class="api-method api-method--post">POST</span> /templates/move</a></li>
+        <li><a class="api-docs__link" href="#post-images" title="POST /images"><span class="api-method api-method--post">POST</span> /images</a></li>
       </ul>
-      <p class="api-docs__nav-title">Carpetas</p>
-      <ul>
-        <li><a class="api-docs__link" href="#get-folders"><span class="api-method api-method--get">GET</span> /folders</a></li>
-        <li><a class="api-docs__link" href="#post-folders"><span class="api-method api-method--post">POST</span> /folders</a></li>
-        <li><a class="api-docs__link" href="#patch-folders-folder_id"><span class="api-method api-method--patch">PATCH</span> /folders/{folder_id}</a></li>
-        <li><a class="api-docs__link" href="#delete-folders-folder_id"><span class="api-method api-method--delete">DELETE</span> /folders/{folder_id}</a></li>
+      <p class="api-docs__nav-title"><a href="#carpetas">Carpetas</a></p>
+      <ul class="api-docs__routes">
+        <li><a class="api-docs__link" href="#get-folders" title="GET /folders"><span class="api-method api-method--get">GET</span> /folders</a></li>
+        <li><a class="api-docs__link" href="#post-folders" title="POST /folders"><span class="api-method api-method--post">POST</span> /folders</a></li>
+        <li><a class="api-docs__link" href="#patch-folders-folder_id" title="PATCH /folders/{folder_id}"><span class="api-method api-method--patch">PATCH</span> /folders/{folder_id}</a></li>
+        <li><a class="api-docs__link" href="#delete-folders-folder_id" title="DELETE /folders/{folder_id}"><span class="api-method api-method--delete">DELETE</span> /folders/{folder_id}</a></li>
       </ul>
-      <p class="api-docs__nav-title">Correos</p>
-      <ul>
-        <li><a class="api-docs__link" href="#post-emails"><span class="api-method api-method--post">POST</span> /emails</a></li>
-        <li><a class="api-docs__link" href="#get-emails"><span class="api-method api-method--get">GET</span> /emails</a></li>
-        <li><a class="api-docs__link" href="#get-emails-email_id"><span class="api-method api-method--get">GET</span> /emails/{email_id}</a></li>
+      <p class="api-docs__nav-title"><a href="#correos">Correos</a></p>
+      <ul class="api-docs__routes">
+        <li><a class="api-docs__link" href="#post-emails" title="POST /emails"><span class="api-method api-method--post">POST</span> /emails</a></li>
+        <li><a class="api-docs__link" href="#get-emails" title="GET /emails"><span class="api-method api-method--get">GET</span> /emails</a></li>
+        <li><a class="api-docs__link" href="#get-emails-email_id" title="GET /emails/{email_id}"><span class="api-method api-method--get">GET</span> /emails/{email_id}</a></li>
       </ul>
-      <p class="api-docs__nav-title">Campañas</p>
-      <ul>
-        <li><a class="api-docs__link" href="#get-campaigns"><span class="api-method api-method--get">GET</span> /campaigns</a></li>
-        <li><a class="api-docs__link" href="#get-campaigns-campaign_id"><span class="api-method api-method--get">GET</span> /campaigns/{campaign_id}</a></li>
-        <li><a class="api-docs__link" href="#post-campaigns"><span class="api-method api-method--post">POST</span> /campaigns</a></li>
-        <li><a class="api-docs__link" href="#patch-campaigns-campaign_id"><span class="api-method api-method--patch">PATCH</span> /campaigns/{campaign_id}</a></li>
-        <li><a class="api-docs__link" href="#delete-campaigns-campaign_id"><span class="api-method api-method--delete">DELETE</span> /campaigns/{campaign_id}</a></li>
-        <li><a class="api-docs__link" href="#post-campaigns-campaign_id-send"><span class="api-method api-method--post">POST</span> /campaigns/{campaign_id}/send</a></li>
-        <li><a class="api-docs__link" href="#post-campaigns-campaign_id-schedule"><span class="api-method api-method--post">POST</span> /campaigns/{campaign_id}/schedule</a></li>
-        <li><a class="api-docs__link" href="#delete-campaigns-campaign_id-schedule"><span class="api-method api-method--delete">DELETE</span> /campaigns/{campaign_id}/schedule</a></li>
+      <p class="api-docs__nav-title"><a href="#campanas">Campañas</a></p>
+      <ul class="api-docs__routes">
+        <li><a class="api-docs__link" href="#get-campaigns" title="GET /campaigns"><span class="api-method api-method--get">GET</span> /campaigns</a></li>
+        <li><a class="api-docs__link" href="#get-campaigns-campaign_id" title="GET /campaigns/{campaign_id}"><span class="api-method api-method--get">GET</span> /campaigns/{campaign_id}</a></li>
+        <li><a class="api-docs__link" href="#post-campaigns" title="POST /campaigns"><span class="api-method api-method--post">POST</span> /campaigns</a></li>
+        <li><a class="api-docs__link" href="#patch-campaigns-campaign_id" title="PATCH /campaigns/{campaign_id}"><span class="api-method api-method--patch">PATCH</span> /campaigns/{campaign_id}</a></li>
+        <li><a class="api-docs__link" href="#delete-campaigns-campaign_id" title="DELETE /campaigns/{campaign_id}"><span class="api-method api-method--delete">DELETE</span> /campaigns/{campaign_id}</a></li>
+        <li><a class="api-docs__link" href="#post-campaigns-campaign_id-send" title="POST /campaigns/{campaign_id}/send"><span class="api-method api-method--post">POST</span> /campaigns/{campaign_id}/send</a></li>
+        <li><a class="api-docs__link" href="#post-campaigns-campaign_id-schedule" title="POST /campaigns/{campaign_id}/schedule"><span class="api-method api-method--post">POST</span> /campaigns/{campaign_id}/schedule</a></li>
+        <li><a class="api-docs__link" href="#delete-campaigns-campaign_id-schedule" title="DELETE /campaigns/{campaign_id}/schedule"><span class="api-method api-method--delete">DELETE</span> /campaigns/{campaign_id}/schedule</a></li>
+      </ul>
+      <p class="api-docs__nav-title"><a href="#envios">Envíos y estadísticas</a></p>
+      <ul class="api-docs__routes">
+        <li><a class="api-docs__link" href="#get-sends" title="GET /sends"><span class="api-method api-method--get">GET</span> /sends</a></li>
+        <li><a class="api-docs__link" href="#get-sends-send_id" title="GET /sends/{send_id}"><span class="api-method api-method--get">GET</span> /sends/{send_id}</a></li>
+        <li><a class="api-docs__link" href="#get-sends-send_id-recipients" title="GET /sends/{send_id}/recipients"><span class="api-method api-method--get">GET</span> /sends/{send_id}/recipients</a></li>
+        <li><a class="api-docs__link" href="#get-stats" title="GET /stats"><span class="api-method api-method--get">GET</span> /stats</a></li>
+        <li><a class="api-docs__link" href="#get-stats-series" title="GET /stats/series"><span class="api-method api-method--get">GET</span> /stats/series</a></li>
+        <li><a class="api-docs__link" href="#get-stats-links" title="GET /stats/links"><span class="api-method api-method--get">GET</span> /stats/links</a></li>
+        <li><a class="api-docs__link" href="#get-stats-timing" title="GET /stats/timing"><span class="api-method api-method--get">GET</span> /stats/timing</a></li>
+        <li><a class="api-docs__link" href="#get-stats-growth" title="GET /stats/growth"><span class="api-method api-method--get">GET</span> /stats/growth</a></li>
+        <li><a class="api-docs__link" href="#get-events" title="GET /events"><span class="api-method api-method--get">GET</span> /events</a></li>
       </ul>
       <p class="api-docs__nav-title">OpenAPI</p>
       <ul><li><a class="api-docs__link" href="https://app.sobreala.com/api/v1/openapi.json">openapi.json</a></li></ul>
@@ -511,7 +523,7 @@ function es_de_sobreala(string $cuerpo, string $cabecera, string $secreto): bool
       </section>
       <section class="api-doc" id="fuera">
         <h2 class="api-doc__title">Lo que la API no hace</h2>
-<p>Hay cosas que se hacen solo en el panel, porque son de una persona y no de un sistema: la contraseña y el segundo factor, los usuarios, pagar y cambiar de plan, conectar dominios y confirmar remitentes, crear llaves y avisos, y eliminar la cuenta.</p>      </section>
+<p>Hay cosas que se hacen solo en el panel, porque son de una persona y no de un sistema: la contraseña y el segundo factor, los usuarios, pagar y cambiar de plan, conectar dominios y confirmar remitentes, crear llaves y avisos, y eliminar la cuenta.</p><p>Tampoco, por ahora: importar un CSV (por la API se cargan contactos en JSON), mandar un archivo adjunto, bajar el PDF de una plantilla ni las estadísticas en PDF o CSV (por la API van en JSON).</p>      </section>
 
       <section class="api-doc" id="cuenta">
         <h2 class="api-doc__title">Tu cuenta</h2>
@@ -4828,6 +4840,790 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
   &#34;created_at&#34;: &#34;2026-10-17T19:40:00Z&#34;,
   &#34;started_at&#34;: null,
   &#34;finished_at&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+      </section>
+      <section class="api-doc" id="envios">
+        <h2 class="api-doc__title">Envíos y estadísticas</h2>
+        <p>Lo que salió y cómo le fue, contado como en Estadísticas: <strong>personas y no eventos</strong> (quien abre tres veces es una apertura), y por envío. Un envío es una vuelta de una campaña que terminó; la que está saliendo se sigue en <code>/campaigns</code>. Los correos de la API cuentan en las cifras y en los eventos, y se miran uno por uno en <code>/emails</code>. Las estadísticas, hasta 30 consultas por minuto.</p>
+
+        <article class="api-endpoint" id="get-sends">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/sends</code></h3>
+          <p class="api-endpoint__title">Listar envíos</p>
+          <p>De los más nuevos, cada uno con sus cifras y cuántas personas lo recibieron, rebotaron, abrieron, pulsaron o se quejaron.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>campaign_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Los de esa campaña.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>limit</code><br>
+          <span class="api-type">entero</span></th>
+        <td>De 1 a 100.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>cursor</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Para la página siguiente.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/sends \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/sends \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /sends">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6534e1b2a1b2c3d4e5f61201&#34;,
+      &#34;campaign_id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+      &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+      &#34;tags&#34;: [
+        &#34;Socios&#34;
+      ],
+      &#34;single&#34;: false,
+      &#34;to&#34;: null,
+      &#34;total&#34;: 812,
+      &#34;sent&#34;: 798,
+      &#34;skipped&#34;: 14,
+      &#34;failed&#34;: 0,
+      &#34;people&#34;: {
+        &#34;delivery&#34;: 790,
+        &#34;bounce&#34;: 6,
+        &#34;open&#34;: 402,
+        &#34;click&#34;: 77,
+        &#34;complaint&#34;: 0,
+        &#34;download&#34;: 0
+      },
+      &#34;started_at&#34;: &#34;2026-10-20T13:00:02Z&#34;,
+      &#34;finished_at&#34;: &#34;2026-10-20T13:09:40Z&#34;
+    }
+  ],
+  &#34;next_cursor&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6534e1b2a1b2c3d4e5f61201&#34;,
+      &#34;campaign_id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+      &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+      &#34;tags&#34;: [
+        &#34;Socios&#34;
+      ],
+      &#34;single&#34;: false,
+      &#34;to&#34;: null,
+      &#34;total&#34;: 812,
+      &#34;sent&#34;: 798,
+      &#34;skipped&#34;: 14,
+      &#34;failed&#34;: 0,
+      &#34;people&#34;: {
+        &#34;delivery&#34;: 790,
+        &#34;bounce&#34;: 6,
+        &#34;open&#34;: 402,
+        &#34;click&#34;: 77,
+        &#34;complaint&#34;: 0,
+        &#34;download&#34;: 0
+      },
+      &#34;started_at&#34;: &#34;2026-10-20T13:00:02Z&#34;,
+      &#34;finished_at&#34;: &#34;2026-10-20T13:09:40Z&#34;
+    }
+  ],
+  &#34;next_cursor&#34;: null
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-sends-send_id">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/sends/{send_id}</code></h3>
+          <p class="api-endpoint__title">Un envío</p>
+          <p>Con los primeros errores, si hubo.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/sends/{send_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/sends/{send_id} \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /sends/{send_id}">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;id&#34;: &#34;6534e1b2a1b2c3d4e5f61201&#34;,
+  &#34;campaign_id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;single&#34;: false,
+  &#34;to&#34;: null,
+  &#34;total&#34;: 812,
+  &#34;sent&#34;: 798,
+  &#34;skipped&#34;: 14,
+  &#34;failed&#34;: 0,
+  &#34;people&#34;: {
+    &#34;delivery&#34;: 790,
+    &#34;bounce&#34;: 6,
+    &#34;open&#34;: 402,
+    &#34;click&#34;: 77,
+    &#34;complaint&#34;: 0,
+    &#34;download&#34;: 0
+  },
+  &#34;started_at&#34;: &#34;2026-10-20T13:00:02Z&#34;,
+  &#34;finished_at&#34;: &#34;2026-10-20T13:09:40Z&#34;,
+  &#34;errors&#34;: []
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;id&#34;: &#34;6534e1b2a1b2c3d4e5f61201&#34;,
+  &#34;campaign_id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+  &#34;subject&#34;: &#34;Asamblea anual de socios&#34;,
+  &#34;tags&#34;: [
+    &#34;Socios&#34;
+  ],
+  &#34;single&#34;: false,
+  &#34;to&#34;: null,
+  &#34;total&#34;: 812,
+  &#34;sent&#34;: 798,
+  &#34;skipped&#34;: 14,
+  &#34;failed&#34;: 0,
+  &#34;people&#34;: {
+    &#34;delivery&#34;: 790,
+    &#34;bounce&#34;: 6,
+    &#34;open&#34;: 402,
+    &#34;click&#34;: 77,
+    &#34;complaint&#34;: 0,
+    &#34;download&#34;: 0
+  },
+  &#34;started_at&#34;: &#34;2026-10-20T13:00:02Z&#34;,
+  &#34;finished_at&#34;: &#34;2026-10-20T13:09:40Z&#34;,
+  &#34;errors&#34;: []
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-sends-send_id-recipients">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/sends/{send_id}/recipients</code></h3>
+          <p class="api-endpoint__title">A quién le salió</p>
+          <p>Cada persona con lo que pasó (<code>reached</code>: complaint, bounce, reject, delivery o sent) y cuándo pasó cada cosa, por orden de dirección. Se pagina con <code>offset</code>.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>outcome</code><br>
+          <span class="api-type">texto</span></th>
+        <td>delivered, bounced, rejected, complained, opened, clicked o not_opened.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>email</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Una dirección exacta.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>limit</code><br>
+          <span class="api-type">entero</span></th>
+        <td>De 1 a 100.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>offset</code><br>
+          <span class="api-type">entero</span></th>
+        <td>Desde cuál, 0 si no se dice.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/sends/{send_id}/recipients?outcome=opened&amp;limit=50 \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/sends/{send_id}/recipients?outcome=opened&amp;limit=50 \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /sends/{send_id}/recipients">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;total&#34;: 402,
+  &#34;data&#34;: [
+    {
+      &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
+      &#34;reached&#34;: &#34;delivery&#34;,
+      &#34;events&#34;: {
+        &#34;delivery&#34;: &#34;2026-10-20T13:00:05Z&#34;,
+        &#34;open&#34;: &#34;2026-10-20T14:12:31Z&#34;,
+        &#34;sent&#34;: &#34;2026-10-20T13:00:03Z&#34;
+      }
+    }
+  ],
+  &#34;next_offset&#34;: 50
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;total&#34;: 402,
+  &#34;data&#34;: [
+    {
+      &#34;email&#34;: &#34;ana@ejemplo.com&#34;,
+      &#34;reached&#34;: &#34;delivery&#34;,
+      &#34;events&#34;: {
+        &#34;delivery&#34;: &#34;2026-10-20T13:00:05Z&#34;,
+        &#34;open&#34;: &#34;2026-10-20T14:12:31Z&#34;,
+        &#34;sent&#34;: &#34;2026-10-20T13:00:03Z&#34;
+      }
+    }
+  ],
+  &#34;next_offset&#34;: 50
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-stats">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/stats</code></h3>
+          <p class="api-endpoint__title">Cómo te fue</p>
+          <p>Cada cifra con su porcentaje (<code>pct</code>), sobre cuántos (<code>of</code>) y su cambio contra el periodo anterior del mismo largo (<code>change</code>). Rebotes y entregados se miden contra lo que salió; aperturas, clics, quejas y bajas contra lo que llegó. Las bajas (<code>leave</code>) salen solo sin filtro.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>period</code><br>
+          <span class="api-type">texto</span></th>
+        <td>1h, today, 24h, 7d, 30d o 90d. 24h si no se dice.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>tz</code><br>
+          <span class="api-type">texto</span></th>
+        <td>La zona, como America/Panama. Sin ella, la de tu cuenta.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>campaign_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo esa campaña.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>tag</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo los envíos a esa etiqueta.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/stats?period=30d \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/stats?period=30d \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /stats">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;period&#34;: &#34;30d&#34;,
+  &#34;tz&#34;: &#34;America/Panama&#34;,
+  &#34;from&#34;: &#34;2026-09-21T05:00:00Z&#34;,
+  &#34;rates&#34;: [
+    {
+      &#34;key&#34;: &#34;sent&#34;,
+      &#34;n&#34;: 2410,
+      &#34;pct&#34;: null,
+      &#34;of&#34;: null,
+      &#34;change&#34;: {
+        &#34;pct&#34;: 12,
+        &#34;up&#34;: true,
+        &#34;good&#34;: true
+      }
+    },
+    {
+      &#34;key&#34;: &#34;open&#34;,
+      &#34;n&#34;: 1104,
+      &#34;pct&#34;: 47,
+      &#34;of&#34;: 2350,
+      &#34;change&#34;: null
+    }
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;period&#34;: &#34;30d&#34;,
+  &#34;tz&#34;: &#34;America/Panama&#34;,
+  &#34;from&#34;: &#34;2026-09-21T05:00:00Z&#34;,
+  &#34;rates&#34;: [
+    {
+      &#34;key&#34;: &#34;sent&#34;,
+      &#34;n&#34;: 2410,
+      &#34;pct&#34;: null,
+      &#34;of&#34;: null,
+      &#34;change&#34;: {
+        &#34;pct&#34;: 12,
+        &#34;up&#34;: true,
+        &#34;good&#34;: true
+      }
+    },
+    {
+      &#34;key&#34;: &#34;open&#34;,
+      &#34;n&#34;: 1104,
+      &#34;pct&#34;: 47,
+      &#34;of&#34;: 2350,
+      &#34;change&#34;: null
+    }
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-stats-series">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/stats/series</code></h3>
+          <p class="api-endpoint__title">Por tramos</p>
+          <p>Las personas de cada tipo en cada tramo del periodo (cada 5 minutos en 1h, cada hora en today y 24h, cada día en 7d y 30d, cada semana en 90d), todos, también los que van en cero.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>period</code><br>
+          <span class="api-type">texto</span></th>
+        <td>1h, today, 24h, 7d, 30d o 90d. 24h si no se dice.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>tz</code><br>
+          <span class="api-type">texto</span></th>
+        <td>La zona, como America/Panama. Sin ella, la de tu cuenta.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>campaign_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo esa campaña.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>tag</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo los envíos a esa etiqueta.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/stats/series \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/stats/series \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /stats/series">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;period&#34;: &#34;24h&#34;,
+  &#34;tz&#34;: &#34;America/Panama&#34;,
+  &#34;data&#34;: [
+    {
+      &#34;at&#34;: &#34;2026-10-19T19:00:00Z&#34;,
+      &#34;sent&#34;: 120,
+      &#34;delivery&#34;: 118,
+      &#34;open&#34;: 40,
+      &#34;click&#34;: 9,
+      &#34;bounce&#34;: 1,
+      &#34;complaint&#34;: 0
+    }
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;period&#34;: &#34;24h&#34;,
+  &#34;tz&#34;: &#34;America/Panama&#34;,
+  &#34;data&#34;: [
+    {
+      &#34;at&#34;: &#34;2026-10-19T19:00:00Z&#34;,
+      &#34;sent&#34;: 120,
+      &#34;delivery&#34;: 118,
+      &#34;open&#34;: 40,
+      &#34;click&#34;: 9,
+      &#34;bounce&#34;: 1,
+      &#34;complaint&#34;: 0
+    }
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-stats-links">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/stats/links</code></h3>
+          <p class="api-endpoint__title">Los enlaces más pulsados</p>
+          <p>Cuántas personas pulsó cada uno, hasta 20.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>period</code><br>
+          <span class="api-type">texto</span></th>
+        <td>1h, today, 24h, 7d, 30d o 90d. 24h si no se dice.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>tz</code><br>
+          <span class="api-type">texto</span></th>
+        <td>La zona, como America/Panama. Sin ella, la de tu cuenta.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>campaign_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo esa campaña.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>tag</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo los envíos a esa etiqueta.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/stats/links \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/stats/links \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /stats/links">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;period&#34;: &#34;30d&#34;,
+  &#34;data&#34;: [
+    {
+      &#34;link&#34;: &#34;https://coopejemplo.com/asamblea&#34;,
+      &#34;n&#34;: 61
+    }
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;period&#34;: &#34;30d&#34;,
+  &#34;data&#34;: [
+    {
+      &#34;link&#34;: &#34;https://coopejemplo.com/asamblea&#34;,
+      &#34;n&#34;: 61
+    }
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-stats-timing">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/stats/timing</code></h3>
+          <p class="api-endpoint__title">Cuándo abre tu lista</p>
+          <p>Aperturas de los últimos 90 días por día de la semana (lunes primero) y por hora (de 0 a 23), en la zona pedida.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>tz</code><br>
+          <span class="api-type">texto</span></th>
+        <td>La zona.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/stats/timing \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/stats/timing \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /stats/timing">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;tz&#34;: &#34;America/Panama&#34;,
+  &#34;days&#34;: [
+    120,
+    98,
+    101,
+    87,
+    90,
+    40,
+    22
+  ],
+  &#34;hours&#34;: [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    8,
+    30,
+    52,
+    61,
+    44,
+    38,
+    35,
+    33,
+    30,
+    29,
+    31,
+    27,
+    20,
+    18,
+    12,
+    6,
+    3,
+    1
+  ],
+  &#34;days_counted&#34;: 90
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;tz&#34;: &#34;America/Panama&#34;,
+  &#34;days&#34;: [
+    120,
+    98,
+    101,
+    87,
+    90,
+    40,
+    22
+  ],
+  &#34;hours&#34;: [
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    8,
+    30,
+    52,
+    61,
+    44,
+    38,
+    35,
+    33,
+    30,
+    29,
+    31,
+    27,
+    20,
+    18,
+    12,
+    6,
+    3,
+    1
+  ],
+  &#34;days_counted&#34;: 90
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-stats-growth">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/stats/growth</code></h3>
+          <p class="api-endpoint__title">Altas y bajas por mes</p>
+          <p>Los contactos que entraron y las direcciones a las que se dejó de escribir (cualquier supresión), mes por mes, los últimos doce.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>tz</code><br>
+          <span class="api-type">texto</span></th>
+        <td>La zona.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/stats/growth \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/stats/growth \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /stats/growth">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;tz&#34;: &#34;America/Panama&#34;,
+  &#34;data&#34;: [
+    {
+      &#34;month&#34;: &#34;2026-10&#34;,
+      &#34;added&#34;: 140,
+      &#34;left&#34;: 6
+    }
+  ]
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;tz&#34;: &#34;America/Panama&#34;,
+  &#34;data&#34;: [
+    {
+      &#34;month&#34;: &#34;2026-10&#34;,
+      &#34;added&#34;: 140,
+      &#34;left&#34;: 6
+    }
+  ]
+}"
+          data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+        </article>
+        <article class="api-endpoint" id="get-events">
+          <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
+            <code>/events</code></h3>
+          <p class="api-endpoint__title">Los eventos</p>
+          <p>Uno por correo, persona y tipo, de los más nuevos: sent, delivery, bounce, complaint, open, click, reject o download. <code>campaign_id</code> es el de la campaña o, en un correo de la API, el del correo.</p>
+          <p class="api-endpoint__scope">
+Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
+<p class="api-endpoint__label">En la dirección</p>
+<div class="api-table">
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row"><code>type</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo ese tipo.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>campaign_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo esa campaña o correo.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>send_id</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Solo ese envío.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>email</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Una dirección exacta.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>from</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Desde, con su zona.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>to</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Hasta, con su zona.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>limit</code><br>
+          <span class="api-type">entero</span></th>
+        <td>De 1 a 100.</td>
+      </tr>
+      <tr>
+        <th scope="row"><code>cursor</code><br>
+          <span class="api-type">texto</span></th>
+        <td>Para la página siguiente.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+          <p class="api-endpoint__label">Pedido</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>curl https://app.sobreala.com/api/v1/events?type=bounce&amp;limit=100 \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/events?type=bounce&amp;limit=100 \
+  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+          data-copy-done="Copiado" aria-label="Copiar GET /events">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+
+          <p class="api-endpoint__label">Respuesta 200</p>
+          <div class="api-code" data-copy-box>
+  <pre><code>{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6535a0c1a1b2c3d4e5f61301&#34;,
+      &#34;type&#34;: &#34;bounce&#34;,
+      &#34;email&#34;: &#34;luis@ejemplo.com&#34;,
+      &#34;campaign_id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+      &#34;send_id&#34;: &#34;6534e1b2a1b2c3d4e5f61201&#34;,
+      &#34;links&#34;: [],
+      &#34;at&#34;: &#34;2026-10-20T13:01:10Z&#34;
+    }
+  ],
+  &#34;next_cursor&#34;: null
+}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{
+  &#34;data&#34;: [
+    {
+      &#34;id&#34;: &#34;6535a0c1a1b2c3d4e5f61301&#34;,
+      &#34;type&#34;: &#34;bounce&#34;,
+      &#34;email&#34;: &#34;luis@ejemplo.com&#34;,
+      &#34;campaign_id&#34;: &#34;6534d0a1a1b2c3d4e5f61101&#34;,
+      &#34;send_id&#34;: &#34;6534e1b2a1b2c3d4e5f61201&#34;,
+      &#34;links&#34;: [],
+      &#34;at&#34;: &#34;2026-10-20T13:01:10Z&#34;
+    }
+  ],
+  &#34;next_cursor&#34;: null
 }"
           data-copy-done="Copiado" aria-label="Copiar la respuesta">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>

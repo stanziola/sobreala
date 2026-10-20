@@ -18,8 +18,11 @@ que se abre **con la demostración o con el pago**, el **panel de
 administración**, el
 **cobro de un plan con PayPal** y el **envío de campañas**, con su enlace de
 baja, **el aviso de Amazon** que cuenta qué pasó con cada correo después de
-salir, y **la pausa automática** de quien pasa del umbral de rebotes o quejas.
-Falta el proceso en segundo plano.
+salir, **la pausa automática** de quien pasa del umbral de rebotes o quejas, y
+**la API pública** (octubre de 2026: llaves, contactos con sus listas,
+plantillas, correos transaccionales y promocionales, campañas, estadísticas y
+avisos a su sistema), con **el proceso en segundo plano** que manda lo
+programado y entrega esos avisos.
 
 ---
 
@@ -27,7 +30,8 @@ Falta el proceso en segundo plano.
 
 | Componente | Tecnología | Dónde corre |
 |---|---|---|
-| Backend | Flask (Python) | Railway |
+| Backend | Flask (Python), gunicorn con hilos | Railway |
+| Proceso en segundo plano | `backend/worker.py` | Railway (servicio aparte, sin dominio) |
 | Base de datos | MongoDB Atlas (PyMongo) | AWS us-east-1 |
 | Envío de correo | **Amazon SES** (API HTTPS, no SMTP) | AWS |
 | Landing | HTML/CSS/JS estático | Cloudflare Pages |
@@ -55,6 +59,7 @@ sobreala/
 │   ├── arquitectura.md
 │   ├── decisiones.md
 │   ├── ses.md              # conectar SES con el panel, y la entrega a la UTP
+│   ├── api.md              # la API, el proceso en segundo plano y los avisos
 │   └── cuenta.md, contactos.md, plantillas.md, envios.md, panel.md, cobro.md,
 │       sitio.md            # el detalle de cada parte (ver «Cada parte, en corto»)
 ├── brand/
@@ -89,10 +94,14 @@ sobreala/
 │   ├── index.html          # GENERADO: la página única (precios leídos de
 │   │                       # docs/pricing.md al construir)
 │   ├── privacy/, terms/    # GENERADO: las dos legales
+│   ├── api/                # GENERADO: la documentación de la API, desde
+│   │                       # backend/api_spec.py
 │   └── pricing/, how-it-works/, about/, contact/
 │                           # GENERADO: páginas de paso a su sección
 └── backend/                # → Railway
     ├── wsgi.py
+    ├── worker.py           # el proceso en segundo plano (otro servicio en Railway)
+    ├── api_spec.py         # la descripción de la API: openapi.json y sobreala.com/api/
     ├── config.py
     ├── requirements.txt    # apunta al de la raíz, que es el de verdad
     ├── blueprints/
@@ -104,7 +113,9 @@ sobreala/
     │   ├── unsubscribe/    # la baja, sin sesión. HECHO
     │   ├── analytics/      # bajarse Estadísticas en CSV y en PDF. HECHO
     │   ├── billing/        # planes, cuota, acumulado
-    │   └── webhooks/       # SNS de SES. HECHO. PayPal y Yappy, no
+    │   ├── webhooks/       # SNS de SES. HECHO. PayPal y Yappy, no
+    │   ├── api/            # la API pública, /api/v1. HECHO
+    │   └── developers/     # la rama «API» del Dashboard. HECHO
     ├── models/
     ├── make_admin.py       # da el rol de administrador al primero, a mano
     ├── build_assets.py     # genera panel.css y _wing.svg; --check avisa si
@@ -129,6 +140,11 @@ sobreala/
     │   ├── canvas_pdf.py   # la pieza del lienzo, bajada como PDF
     │   ├── ses_events.py   # a dónde va cada aviso de SES: evento, supresión
     │   │                   # o la fila de mail_log
+    │   ├── pieces.py       # el lienzo fuera de la pantalla: lo usan el editor y la API
+    │   ├── background.py   # lo de cada vuelta del proceso en segundo plano
+    │   ├── webhooks.py     # los avisos a su sistema: anotar, firmar y entregar
+    │   ├── safe_http.py    # hablarle a un servidor ajeno sin entrar a la red interna
+    │   ├── api_auth.py     # la llave, la IP y los rangos de Cloudflare
     │   └── payments/
     ├── email_templates/    # plantillas prediseñadas del producto, una por
     │                       # archivo, con sus campos declarados arriba
@@ -218,6 +234,7 @@ cosa está como está, y lo que ya se probó y se quitó.
 | Estadísticas, la hora, varias cuentas abiertas, el menú, administración | `docs/panel.md` |
 | Pagos, PayPal, Paguélofácil, mejoras con prorrateo, recibo, `/checkout` | `docs/cobro.md` |
 | El sitio público: la página única, sus secciones, capturas y tutoriales | `docs/sitio.md` |
+| La API, sus llaves, los correos transaccionales, el proceso en segundo plano, los avisos a su sistema | `docs/api.md` |
 | Precios, límites por plan | `docs/pricing.md` (fuente de verdad) |
 | Conectar SES | `docs/ses.md` |
 
@@ -292,6 +309,10 @@ cosa está como está, y lo que ya se probó y se quitó.
 - La importación corre dentro del request, en streaming; hay que mudarla antes
   del primer cliente con más de unas 5,000 filas. `consent` guarda de dónde
   salió cada contacto.
+- **Listas dentro de un contacto** (octubre de 2026): una columna de tipo lista
+  guarda filas (las transacciones de un socio), 2 por cuenta y 50 filas, cada
+  una con su id; **pueden ir vacías** y no dejan incompleto a nadie. Y **el id de
+  su sistema** (`external_id`), único por cuenta.
 - **Las direcciones se revisan** (`services/address_check.py`): un dominio que
   no recibe correo entra marcado (`invalid`), se salta al enviar sin gastar
   cuota y se borra de una vez; los errores de dedo se sugieren. Si un buzón
@@ -354,6 +375,26 @@ cosa está como está, y lo que ya se probó y se quitó.
   dirección no tiene, no sale. Lleva la cuota, la supresión y sus cifras como
   todas. Su archivo va como enlace de descarga (`downloads`, 30 días), que
   dice si lo bajó, a una página sin la barra de Sobreala que lo baja sola.
+
+### La API (`docs/api.md`)
+
+- **`/api/v1`, solo con `Authorization: Bearer`**, sin sesión ni galletas,
+  denegada por omisión: cada ruta declara su permiso (`api_route`) y
+  `test_api_docs.py` la compara con `api_spec.py`, de donde salen
+  `openapi.json` y `sobreala.com/api/`. **Cambiar la API pide regenerar el
+  sitio.**
+- **Las llaves** guardan solo su hash, se enseñan una vez y se crean en el panel
+  (API → Llaves) con la contraseña y el segundo factor; una en la dirección se
+  revoca sola. Las de prueba solo leen y simulan.
+- **Dos clases de correo** (`sender.send_one`): **transaccional** (cualquier
+  dirección, sin baja ni marca, sin contar clics) y **promocional** (un contacto
+  completo, con su baja y su marca). Los dos gastan cuota, que se **aparta antes**
+  de mandar. Viven en `messages` (30 días), no en Enviados.
+- **El proceso en segundo plano** (`worker.py`) manda lo programado y el resto
+  de lo que empezó a salir, con un **turno** por campaña, y no manda nada si su
+  `SECRET_KEY` no es la del web. Hay que crearlo en Railway (`docs/api.md`).
+- **Los avisos a su sistema** (webhooks): firmados, una vez por evento, nunca a
+  la red interna (`services/safe_http.py`), y apagados tras 72 h fallando.
 
 ### El panel (`docs/panel.md`)
 
@@ -447,21 +488,27 @@ cosa está como está, y lo que ya se probó y se quitó.
 ## Reglas que no se pueden violar
 
 1. **Antes de enviar a cualquier dirección, verificar `suppressions`.** Los
-   suprimidos se saltan y **no consumen cuota**.
+   suprimidos se saltan y **no consumen cuota**. **La excepción es el correo
+   transaccional de la API** (octubre de 2026): solo lo frenan un rebote
+   permanente o una queja en esa cuenta, porque quien se dio de baja de las
+   promociones sigue necesitando su recibo.
 2. **Borrar un contacto no borra su supresión.** Reimportarlo no lo reactiva.
 3. **El enlace de baja se inyecta al enviar, no al guardar el HTML** — así el
    cliente no lo puede quitar. Es único por destinatario (con token). Va en
    todos los planes, sin excepción, más la cabecera `List-Unsubscribe`, en
-   **toda campaña**. La única excepción es el correo individual (octubre de
-   2026), que no es una campaña: un correo de una persona a otra.
+   **toda campaña** y en el **promocional de la API**. Las excepciones son el
+   correo individual (octubre de 2026), que no es una campaña: un correo de una
+   persona a otra, y el transaccional de la API.
 4. **La marca de agua "Enviado con Sobreala" se inyecta al enviar, solo en el
    plan Básico**, con el ala de la marca al lado (`static/img/email-logo.png`,
    que genera `build_assets.py` desde `brand/logo/logo.png`, en PNG porque Gmail
    y Outlook no dibujan SVG). Al subir de plan desaparece sola, y Negocio y
    Empresa no llevan ninguna mención. No la exige ninguna ley: es publicidad.
-   El correo individual no la lleva en ningún plan (octubre de 2026).
+   El correo individual y el transaccional de la API no la llevan en ningún
+   plan (octubre de 2026); el promocional de la API, sí.
 5. **Los contactos no se duplican.** Toda importación es un upsert sobre
-   `{account_id, email_normalized}`.
+   `{account_id, email_normalized}`. El id de su sistema (`external_id`, único
+   por cuenta) es una segunda forma de encontrar al mismo contacto, no otro.
 6. **De los tokens de correo solo se guarda su hash**, nunca el valor que va
    en el enlace, y valen una sola vez y con vencimiento.
 7. **Entrar y recuperar la cuenta nunca revelan si una dirección tiene cuenta.**
@@ -509,6 +556,8 @@ PAGUELOFACIL_WEBHOOK_SECRET  # va en la dirección del aviso; sin él, 404
 PAGUELOFACIL_CHECKOUT     # opcional: la página de pago, si no es la de siempre
 YAPPY_MERCHANT_ID
 YAPPY_SECRET
+SES_MAX_PER_SECOND        # opcional: el ritmo del proceso en segundo plano (10)
+WORKER_TICK_SECONDS       # opcional: cuánto duerme sin nada que hacer (5)
 ```
 
 Nunca commitear el `.env`. En Railway van como variables del servicio.

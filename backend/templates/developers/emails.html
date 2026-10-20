@@ -32,7 +32,7 @@
   </table>
 </div>
 <p class="foot">
-  {% if paged %}<a href="{{ url_for('developers.emails') }}">{{ t('api_emails_newest') }}</a>{% endif %}
+  {% if older %}<a href="{{ url_for('developers.emails') }}">{{ t('api_emails_newest') }}</a>{% endif %}
   {% if next_page %}<a href="{{ url_for('developers.emails', antes=next_page) }}">{{ t('api_emails_older') }}</a>{% endif %}
 </p>
 {% else %}

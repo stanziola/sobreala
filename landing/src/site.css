@@ -1403,7 +1403,9 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
    derecha las guías y cada ruta con su método, sus campos y sus ejemplos. En
    el teléfono el índice va arriba y los bloques de código se desplazan a lo
    ancho en vez de ensanchar la página. */
-.api-docs { display: grid; gap: clamp(28px, 5vw, 56px); }
+/* Una columna que no crece con lo de dentro: sin `minmax(0, 1fr)`, un bloque de
+   código o una ruta larga ensanchaban la página entera en el teléfono. */
+.api-docs { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(28px, 5vw, 56px); }
 @media (min-width: 960px) {
   .api-docs { grid-template-columns: 250px minmax(0, 1fr); align-items: start; }
   .api-docs__nav {
@@ -1419,10 +1421,19 @@ details[open] .faq__mark::after { transform: translate(-50%, -50%) rotate(90deg)
 .api-docs__nav-title:first-child { margin-top: 0; }
 .api-docs__link {
   display: block; padding: 4px 8px; border-radius: var(--radius-sm);
-  color: var(--color-ink); overflow-wrap: anywhere;
+  color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .api-docs__link:hover { background: var(--color-surface-alt); }
-.api-docs__body { display: grid; gap: clamp(40px, 6vw, 64px); min-width: 0; }
+.api-docs__nav-title a { color: inherit; }
+/* En el teléfono el índice va arriba: solo las guías y el nombre de cada grupo,
+   sin sus 57 rutas, que lo harían más largo que una pantalla. */
+@media (max-width: 959px) {
+  .api-docs__routes { display: none; }
+}
+.api-docs__body {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(40px, 6vw, 64px);
+  min-width: 0;
+}
 .api-doc, .api-endpoint { scroll-margin-top: calc(var(--header-h) + 16px); }
 .api-doc__title { font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; margin-bottom: 12px; }
 .api-doc > p, .api-endpoint > p { font-size: 1rem; line-height: 1.7; }

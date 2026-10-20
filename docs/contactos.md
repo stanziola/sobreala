@@ -191,3 +191,30 @@ títulos del archivo con las columnas que la cuenta ya tiene. Lo que se pierde e
 poder crear una columna desde ahí, y eso es a propósito: crear una columna es
 una decisión, no un efecto secundario de subir un archivo. El servidor vuelve a
 leer la cabecera y no se fía de nada de lo que mande la pantalla.
+
+## Las listas dentro de un contacto (octubre de 2026)
+
+Una columna de tipo **lista** (`fields.LIST`) guarda varias filas dentro de cada
+contacto, como las transacciones de un socio: `fields.TRANSACCIONES` es una
+lista de filas, cada una con sus datos (de 1 a 6, cada uno con su tipo) y su
+propio `id` de 6 caracteres. Caben **2 por cuenta**, 50 filas por lista y 3 KB
+por lista, porque viven dentro del documento.
+
+- **Pueden ir vacías**: `contacts._complete()` y `fields.missing()` las dejan
+  fuera, así un socio sin movimientos sigue recibiendo.
+- **En el panel**: Columnas crea la lista con sus datos y le agrega o quita
+  datos (quitar uno lo borra de todas las filas); la ficha del contacto agrega,
+  cambia y borra filas, cada una por su id. Pasada la fila 50, se va la más vieja.
+- **`contacts.update()` escribe columna por columna**, no el bloque entero: así
+  editar la ficha no borra las listas.
+- **Exportar** las saca en JSON dentro de su columna; **importar** no las ofrece
+  (una celda de CSV no lleva varias filas): entran por la API o a mano.
+- **En un correo**: ver `docs/plantillas.md`.
+
+## El id de su sistema (octubre de 2026)
+
+`external_id`: el número de socio o de cliente del sistema del comercio, hasta
+64 letras, números y `. _ : @ -`, **único por cuenta** (índice parcial: casi
+nadie lo tiene). La regla 5 no cambia: el correo sigue sin repetirse; el id es
+una segunda forma de encontrar al mismo contacto. Se pone en la ficha y por la
+API, y en la carga masiva decide a quién se actualiza (`docs/api.md`).

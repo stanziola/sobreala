@@ -147,8 +147,9 @@ tasa de quejas agregada bajo 0.1%.
 5. Enviar ahora  ó  programar fecha y hora
 ```
 
-Los envíos programados, las importaciones grandes y la reanudación de campañas
-pausadas corren en un **proceso en segundo plano**, no dentro del request.
+Los envíos programados y el resto de una campaña que empezó a salir los manda
+el **proceso en segundo plano** (`backend/worker.py`, octubre de 2026; ver
+`docs/api.md`). La importación CSV todavía corre dentro de la petición.
 
 ### HTML subido por el cliente
 
@@ -172,12 +173,17 @@ campañas de antes llevaban una sola en un campo suelto; `campaigns.tags_of()`
 lee las dos formas, así que no hubo nada que migrar, y guardar una campaña vieja
 la pasa al campo nuevo.
 
-**La posición es lo que hace que esto se pueda cortar.** El envío sale por tandas
-—cien destinatarios por vuelta— porque corre dentro de la petición y no hay
-proceso en segundo plano: cada tanda anota dónde quedó, así que cortar a la
-mitad no le manda a nadie dos veces, y la pantalla ofrece seguir. El día que
-exista ese proceso, llama a `sender.run()` en bucle y no cambia nada más. Es
-también lo que va a permitir pausar por cuota y retomar.
+**Hasta dónde llegó es lo que hace que esto se pueda cortar.** El envío sale por
+tandas de cien: la primera dentro de la petición que pulsa Enviar, y las demás
+desde el proceso en segundo plano, que llama a `sender.run()` en bucle con su
+**turno** (`lease_by`): avanzar y cerrar solo escriben si el turno sigue siendo
+suyo, y si `start()` dice que otro la arrancó primero no se manda nada. Desde
+octubre de 2026 la lista se recorre **por `_id`** (`cursor_id`, el último que se
+procesó) y no por posición, así borrar contactos a mitad de camino no salta a
+nadie; y antes de cada tanda se mira quién ya tiene su `sent` de este envío. La
+cuota se **aparta antes** de mandar y lo que no salió vuelve. Una que no puede
+salir (sin cuota, en pausa) anota por qué en `waiting` y se reintenta sola a los
+15 minutos.
 
 **Editar y borrar solo mientras no esté saliendo**, y el estado va dentro de la
 consulta que escribe: entre mirar y guardar hay sitio para que el envío
@@ -187,8 +193,12 @@ cerrada: es la campaña guardada, y corregirle el asunto para la próxima vez es
 justo para lo que se guarda. Lo que ya salió no cambia con ella, porque vive
 aparte.
 
-**Lo programado no sale solo.** No hay quién lo despierte: cuando pasa su hora, la
-pantalla la enseña como lista para salir.
+**Lo programado sale solo** (octubre de 2026): guardar con fecha pone
+`auto_send`, y el proceso en segundo plano la manda a su hora. «Ahora mismo»
+sigue pidiendo Enviar y su pantalla que pregunta. Una que ya salió y se edita con
+otra fecha no se rearma sola: se vuelve a mandar con Enviar o con `schedule` por
+la API. Al desplegar el worker, las de antes con fecha futura pasaron a salir
+solas y las que ya habían pasado su hora no (`campaigns.migrate_auto_send`).
 
 ### `campaign_runs`
 Un documento **cada vez que una campaña sale**: la cuenta, la campaña, el asunto
@@ -467,3 +477,12 @@ pausa automática (`reputation.check()`, ver «La pausa automática»).
     404.
   - Hasta octubre de 2026 iba adjunto y no se guardaba; antes de eso se probó
     guardarlo en S3 y se quitó.
+
+## Los correos de la API (octubre de 2026)
+
+Un correo a una persona, **transaccional** (a cualquier dirección, sin baja ni
+marca de agua y sin contar clics; solo lo frenan un rebote permanente o una
+queja en esa cuenta) o **promocional** (a un contacto completo y sin ninguna
+supresión, con su baja y la marca de su plan). Sale por `sender.send_one()`, que
+sigue siendo el único sitio que le escribe a alguien, y vive en `messages`, no en
+Enviados. El detalle, en `docs/api.md`.

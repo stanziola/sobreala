@@ -721,3 +721,28 @@ diapositivas. Ahora:
 - **Si un HTML cargado la vuelve a nombrar, deja de estar retirada**
   (`images.keep()` al cargar y al guardar un HTML): si no, esa pieza la
   perdería el día que venciera.
+
+## Las listas en un correo (octubre de 2026)
+
+`fields.fill()` llena una lista de un contacto (`docs/contactos.md`) o de los
+datos de un correo de la API, **en una sola pasada**: lo que se pone nunca se
+vuelve a leer, así una descripción que diga `*|CORREO|*` sale tal cual.
+
+- `*|TRANSACCIONES|*` sola arma **una tabla**: el nombre de cada dato arriba y
+  una fila por elemento, cada valor escrito como en una columna y escapado, los
+  números a la derecha. En el asunto, una lista no escribe nada.
+- `*|#TRANSACCIONES|* … *|/TRANSACCIONES|*` se repite por cada fila, con las
+  marcas de la fila (y las del contacto) dentro; `*|^TRANSACCIONES|* …
+  *|/TRANSACCIONES|*` sale cuando está vacía. Un bloque dentro de otro no se
+  repite.
+- La vista previa dibuja la tabla con dos filas de pastillas.
+- `fields.marks_in()` dice qué marcas y qué bloques nombra un texto, y
+  `fields.lacking()` cuáles no tienen con qué llenarse (lo usa la API: un correo
+  con una marca vacía no sale).
+
+## Las funciones del lienzo, en `services/pieces.py` (octubre de 2026)
+
+Revisar, fundir, cargar y bajar el ZIP, subir una foto y armar el correo de un
+lienzo se mudaron de `blueprints/designs/routes.py` a `services/pieces.py`, que
+recibe la cuenta a mano y no mira la sesión ni `g`: lo usan el editor y la API.
+La cabecera de correo de la vista previa la sigue poniendo la ruta del panel.

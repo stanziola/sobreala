@@ -747,3 +747,15 @@ apartado.
   dirección de vuelta `https://app.sobreala.com/login/github/return`. Del
   resultado salen el Client ID y el secreto (que se genera ahí), que van en
   Railway como `GITHUB_CLIENT_ID` y `GITHUB_CLIENT_SECRET`.
+
+## La API y la cuenta (octubre de 2026)
+
+- **Avisos de seguridad que no se apagan**: se creó o se revocó una llave, se
+  revocó sola porque llegó en una dirección, se agregó (o cambió) un aviso que
+  manda datos a un servidor, y se apagó un aviso que llevaba 72 horas fallando.
+  Van por `services/notices.py` con `mail_log` `api_key` y `webhook`.
+- **La prueba de quién es** para crear una llave o un aviso queda atada a la
+  cuenta y a la sesión (`blueprints/developers/routes.py`); sin contraseña se
+  pide un código al correo (`tokens.API_ACCESS`).
+- **Eliminar la cuenta** se lleva también `api_keys`, `api_log`,
+  `api_idempotency`, `messages`, `webhook_endpoints` y `webhook_deliveries`.

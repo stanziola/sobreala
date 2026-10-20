@@ -3219,7 +3219,7 @@ TEXTS = {
     # --- el proceso en segundo plano (octubre de 2026)
     "send_state_scheduled_auto": "Programada para el {when}: sale sola",
     "send_state_going_auto": "El resto sale solo, por tandas.",
-    "send_state_waiting": "No pudo salir: {why} Se vuelve a intentar sola.",
+    "send_state_waiting": "No pudo salir. {why} Se vuelve a intentar sola.",
     "send_done_busy": "Esa campaña ya está saliendo.",
     "send_blocked_busy": "Ya está saliendo.",
 
@@ -3344,6 +3344,13 @@ TEXTS = {
                             "el panel.",
 
     "admin_api_hooks": "Manda sus avisos a:",
+
+    # --- la API: envíos, estadísticas y eventos (octubre de 2026)
+    "api_stats_tz": "tz es el nombre de una zona, como America/Panama.",
+    "api_stats_period": "period es uno de {periods}.",
+    "api_stats_outcome": "outcome es uno de {outcomes}.",
+    "api_stats_kind": "type es uno de {kinds}.",
+    "api_stats_offset": "offset es un número entero desde 0.",
 }
 
 

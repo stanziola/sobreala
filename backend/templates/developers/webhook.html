@@ -33,7 +33,7 @@
 </div>
 
 <p class="field-label">{{ t('webhooks_events') }}</p>
-<p class="table__quiet">{% for one in found.events %}<code>{{ one }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+<p class="hint">{% for one in found.events %}<code>{{ one }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
 
 <h3 class="settings__subtitle">{{ t('webhooks_deliveries') }}</h3>
 {% if deliveries %}

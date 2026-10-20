@@ -630,3 +630,23 @@ lo usaba nada más. El código está en el historial (`3a6b2a7`).
 Lo que sí falta es respaldar **la base entera** de Sobreala, y eso se hace en
 Atlas: el tier gratuito (M0) no tiene respaldos; Flex hace una copia diaria y
 M10 en adelante tiene Cloud Backup.
+
+## La rama «API» del Dashboard (octubre de 2026)
+
+Solo del dueño, entre Configuración de envío y Configuración
+(`blueprints/developers/`): **Llaves** (crear con la prueba de contraseña,
+revocar), **Avisos** (los webhooks: crear, probar, apagar, cambiar el secreto,
+las últimas entregas), **Correos** (lo que mandó la API, 30 días, con lo que pasó
+con cada uno; no están en Enviados), **Registro** (lo que falló, 7 días) y
+**Documentación** (el enlace a `sobreala.com/api/`). La búsqueda las encuentra
+por sus palabras (`SEARCH_WORDS`).
+
+**En Masivo**, una campaña programada dice «sale sola», una que va saliendo dice
+que el resto sale solo, y una que no pudo salir dice por qué y que se vuelve a
+intentar (`waiting`).
+
+**En administración**: la ficha enseña las llaves (y las revoca con motivo),
+cuántos correos de cada clase mandó por la API este mes y a qué servidores manda
+sus avisos; Clientes dice si el proceso en segundo plano está dando vueltas y si
+su llave es la del web; Eventos escribe el asunto (sin llenar) de los correos de
+la API.

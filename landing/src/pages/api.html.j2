@@ -52,10 +52,10 @@
         {% endfor %}
       </ul>
       {% for group in api.groups %}
-      <p class="api-docs__nav-title">{{ group.title }}</p>
-      <ul>
+      <p class="api-docs__nav-title"><a href="#{{ group.id }}">{{ group.title }}</a></p>
+      <ul class="api-docs__routes">
         {% for one in group.endpoints %}
-        <li><a class="api-docs__link" href="#{{ one.anchor }}"><span class="api-method api-method--{{ one.method|lower }}">{{ one.method }}</span> {{ one.path }}</a></li>
+        <li><a class="api-docs__link" href="#{{ one.anchor }}" title="{{ one.method }} {{ one.path }}"><span class="api-method api-method--{{ one.method|lower }}">{{ one.method }}</span> {{ one.path }}</a></li>
         {% endfor %}
       </ul>
       {% endfor %}
