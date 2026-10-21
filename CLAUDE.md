@@ -455,7 +455,8 @@ cosa está como está, y lo que ya se probó y se quitó.
   Estadísticas», «Lista · Contactos»), más sus campañas, envíos, plantillas y
   etiquetas por nombre. Sugiere
   mientras se escribe (`/search/suggest`), sin JavaScript manda a `/search`, y
-  sin sesión da 404.
+  sin sesión da 404. Al pulsarlo vacío enseña los **recientes** de esa cuenta,
+  guardados en el navegador y borrados al cerrar sesión.
 - La ficha de administración enseña cifras y orígenes, **nunca la lista de
   direcciones de un cliente**.
 - En administración, **Cuentas es para hacer cosas y Clientes para vigilar**:

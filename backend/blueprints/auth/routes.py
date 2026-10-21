@@ -1233,7 +1233,8 @@ def login():
                            # contraseña importa más que de dónde se venía.
                            switched=bool(request.args.get("change"))
                            and not errors,
-                           deleted=bool(request.args.get("deleted")) and not errors)
+                           deleted=bool(request.args.get("deleted")) and not errors,
+                           forget_recents=session.pop(FORGET_RECENTS, ""))
 
 
 # ------------------------------------------------------- la prueba de quién es
@@ -1742,8 +1743,17 @@ def logout():
             # Nadie la va a ver: la pidió el navegador, no la persona.
             return render_template("logout.html")
 
-    close_session()
+    if close_session():
+        # Los recientes del buscador viven en este navegador: en una
+        # computadora compartida no los tiene que ver el siguiente. La pantalla
+        # de entrar le dice a panel.js que los borre (octubre de 2026).
+        session[FORGET_RECENTS] = "all"
     return redirect(url_for("auth.login"))
+
+
+# Qué recientes del buscador borrar al dibujar la próxima pantalla: «all» al
+# cerrar sesión, o la clave de una cuenta al quitarla de este navegador.
+FORGET_RECENTS = "forget_recents"
 
 
 @bp.route("/switch-account", methods=["GET", "POST"])
@@ -1774,6 +1784,7 @@ def switch_account():
             return redirect(url_for("auth.switch_account"))
 
         if request.form.get("action") == "quitar":
+            session[FORGET_RECENTS] = dashboard.recent_key(chosen["account"])
             sessions.revoke(db, chosen["doc"]["account_id"],
                             chosen["doc"]["_id"])
             log_auth(db, events.LOGOUT, events.OK,
@@ -1795,7 +1806,8 @@ def switch_account():
     # saltar de cuenta, y no a las Estadísticas de la cuenta en uso.
     return render_template(
         "accounts.html", accounts=mine, max_accounts=MAX_ACCOUNTS,
-        back=landing(current_account()))
+        back=landing(current_account()),
+        forget_recents=session.pop(FORGET_RECENTS, ""))
 
 
 def close_session() -> bool:

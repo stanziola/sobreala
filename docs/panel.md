@@ -274,6 +274,19 @@ lado: al lado del ala y del nombre de la empresa no cabe.
   campo, sin nada a la vista que lo diga (el recuadro con la «/» se quitó
   porque no se entendía). Sin JavaScript el campo manda a `/search`, que enseña lo mismo en una
   página. Sin sesión, las dos dan 404.
+- **Dice solo «Buscar»** (octubre de 2026; decía «Buscar en el panel»), y **al
+  pulsarlo con el campo vacío enseña «Recientes»**: las seis últimas pantallas
+  a las que se fue, sin la que se está viendo. Las guarda el navegador
+  (`localStorage`, `sa_recent_<clave>`), **una lista por cuenta** con una clave
+  opaca que sale del id con la llave del servidor (`dashboard.recent_key()`),
+  así con varias cuentas abiertas no se mezclan. Se anota cada pantalla que el
+  buscador conoce (la barra la dice en `data-recent-*`, `search_recent()`) y lo
+  que se elige en las sugerencias; solo direcciones de aquí («/…»). **Cerrar
+  sesión las borra todas** (la pantalla de entrar trae `data-forget-recents`, y
+  panel.js borra ahí, porque se cierra sesión por el formulario del panel y por
+  el enlace del sitio), y «Quitar» una cuenta borra las suyas. No se usa
+  `Clear-Site-Data`, que borraría también el tema. Sin JavaScript no hay
+  recientes.
 - **No está en el sitio público**: sin sesión no hay nada que buscar. Es la
   única excepción a «lo que existe en los dos sitios se cambia en los dos».
 

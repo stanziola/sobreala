@@ -1099,8 +1099,15 @@
     }
   }
 
-  function draw(items) {
+  function draw(items, title) {
     list.innerHTML = "";
+    if (title) {
+      var head = document.createElement("li");
+      head.className = "search__group";
+      head.setAttribute("role", "presentation");
+      head.textContent = title;
+      list.appendChild(head);
+    }
     if (!items.length) {
       var none = document.createElement("li");
       none.className = "search__empty";
@@ -1131,9 +1138,63 @@
     mark(-1);
   }
 
+  /* Los recientes (octubre de 2026): las pantallas a las que fue, en este
+     navegador y por cuenta (`data-recent-key`, una clave opaca). Se anota la
+     pantalla al cargarla y lo que se elige en las sugerencias; solo direcciones
+     de aquí («/…», nunca «//…»). Al pulsar el buscador con el campo vacío, las
+     seis últimas, sin la pantalla en la que se está. */
+  var recentKey = form.getAttribute("data-recent-key");
+  var storeName = recentKey ? "sa_recent_" + recentKey : "";
+  var RECENT_MAX = 6;
+
+  function ours(url) { return typeof url === "string" && /^\/(?!\/)/.test(url); }
+
+  function recents() {
+    if (!storeName) return [];
+    try {
+      var all = JSON.parse(window.localStorage.getItem(storeName) || "[]");
+      return Array.isArray(all) ? all.filter(function (one) {
+        return one && ours(one.url) && typeof one.label === "string";
+      }) : [];
+    } catch (e) { return []; }
+  }
+
+  function remember(item) {
+    if (!storeName || !item || !ours(item.url) || !item.label) return;
+    var kept = recents().filter(function (one) { return one.url !== item.url; });
+    kept.unshift({ label: item.label, hint: item.hint || "", url: item.url });
+    try { window.localStorage.setItem(storeName, JSON.stringify(kept.slice(0, RECENT_MAX))); }
+    catch (e) { /* sin espacio o bloqueado: no pasa nada */ }
+  }
+
+  function showRecents() {
+    var here = form.getAttribute("data-recent-url");
+    var shown = recents().filter(function (one) { return one.url !== here; });
+    // Sin recientes no se abre: `draw([])` diría «Nada coincide».
+    if (!shown.length) { close(); return; }
+    draw(shown, form.getAttribute("data-recent-title"));
+  }
+
+  remember({ label: form.getAttribute("data-recent-label"),
+             hint: form.getAttribute("data-recent-hint"),
+             url: form.getAttribute("data-recent-url") });
+
+  list.addEventListener("click", function (e) {
+    var link = e.target.closest ? e.target.closest("a") : null;
+    if (!link) return;
+    var label = link.querySelector("span");
+    var hint = link.querySelector(".search__hint");
+    remember({ label: label ? label.textContent : "", hint: hint ? hint.textContent : "",
+               url: link.getAttribute("href") });
+  });
+
+  input.addEventListener("focus", function () {
+    if (!input.value.trim()) showRecents();
+  });
+
   function ask() {
     var q = input.value.trim();
-    if (!q) { close(); return; }
+    if (!q) { showRecents(); return; }
     var mine = ++asked;
     fetch(url + "?q=" + encodeURIComponent(q), {
       credentials: "same-origin", headers: { "Accept": "application/json" }
@@ -1161,7 +1222,13 @@
       mark(active > 0 ? active - 1 : all.length - 1);
     } else if (e.key === "Enter" && active >= 0 && all[active]) {
       e.preventDefault();
-      window.location.href = all[active].querySelector("a").href;
+      var picked = all[active].querySelector("a");
+      var pickedLabel = picked.querySelector("span");
+      var pickedHint = picked.querySelector(".search__hint");
+      remember({ label: pickedLabel ? pickedLabel.textContent : "",
+                 hint: pickedHint ? pickedHint.textContent : "",
+                 url: picked.getAttribute("href") });
+      window.location.href = picked.href;
     } else if (e.key === "Escape") {
       close();
       input.blur();
@@ -1179,6 +1246,24 @@
     e.preventDefault();
     input.focus();
   });
+})();
+
+/* Borrar los recientes del buscador (octubre de 2026): al cerrar sesión, los
+   de todas las cuentas de este navegador; al quitar una cuenta, los suyos. La
+   pantalla que sigue lo pide con `data-forget-recents` en el <body>. */
+(function () {
+  var forget = document.body.getAttribute("data-forget-recents");
+  if (!forget) return;
+  try {
+    if (forget === "all") {
+      for (var i = window.localStorage.length - 1; i >= 0; i--) {
+        var name = window.localStorage.key(i);
+        if (name && name.indexOf("sa_recent_") === 0) window.localStorage.removeItem(name);
+      }
+    } else {
+      window.localStorage.removeItem("sa_recent_" + forget);
+    }
+  } catch (e) { /* sin almacenamiento, no hay nada que borrar */ }
 })();
 
 /* Los botones que trabajan (octubre de 2026). Al mandar un formulario, el botón

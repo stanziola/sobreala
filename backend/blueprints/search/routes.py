@@ -119,6 +119,25 @@ def leaves(rows: list[dict], path: list[str]):
             yield row, path
 
 
+@bp.app_context_processor
+def _recent_place():
+    """`search_recent()` para el buscador de la barra (octubre de 2026): la
+    clave de los recientes de quien mira y la pantalla en la que está, si es una
+    de las que el buscador encuentra. panel.js la anota al cargar y las enseña
+    al pulsar el buscador con el campo vacío."""
+    def search_recent() -> dict[str, Any]:
+        account = current_account()
+        if account is None:
+            return {}
+        place = next((one for one in pages_for(account) if one["url"] == request.path),
+                     None)
+        return {"key": dashboard.recent_key(account),
+                "label": place["label"] if place else "",
+                "hint": place["hint"] if place else "",
+                "url": request.path if place else ""}
+    return {"search_recent": search_recent}
+
+
 def pages_for(account: dict) -> list[dict[str, Any]]:
     """Las pantallas que esta cuenta puede abrir, cada una con su sitio.
 

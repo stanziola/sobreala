@@ -3465,6 +3465,9 @@ TEXTS = {
     "mail_footer_need_help": "¿Necesitas ayuda?",
     "mail_footer_help_center": "Visita el centro de ayuda",
     "mail_footer_terms": "Términos",
+
+    # --- los recientes del buscador (octubre de 2026)
+    "search_recent": "Recientes",
 }
 
 

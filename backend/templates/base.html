@@ -67,7 +67,7 @@
 <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/css/panel.css?v={{ asset_version }}">
 </head>
-<body>
+<body{% if forget_recents is defined and forget_recents %} data-forget-recents="{{ forget_recents }}"{% endif %}>
 {# Entrar, registrarse y sus pasos van sin la barra (`_auth.html`, octubre de
    2026): el ala está a su izquierda. #}
 {% block bar %}

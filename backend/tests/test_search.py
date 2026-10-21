@@ -133,3 +133,32 @@ def test_va_en_la_barra_al_lado_del_ala(client, database, outbox):
     for url in ("/admin/accounts", "/admin/clients", "/search?q=cuentas"):
         html = admin.get(url).get_data(as_text=True)
         assert "data-search" in barra(html) and html.count("data-search") == 1, url
+
+
+# ------------------------------------------------------------ los recientes
+
+def test_el_buscador_anota_la_pantalla_con_una_clave_por_cuenta(client, database):
+    """Los recientes (octubre de 2026) los guarda el navegador, uno por cuenta:
+    la barra dice la clave (opaca, no el id) y la pantalla en la que se está."""
+    from services import dashboard
+
+    browser, cuenta, _ = ready(client, database)
+    pagina = browser.get("/contacts").get_data(as_text=True)
+    clave = dashboard.recent_key(cuenta)
+    assert f'data-recent-key="{clave}"' in pagina and str(cuenta["_id"]) not in clave
+    assert 'data-recent-url="/contacts"' in pagina and 'data-recent-label="Lista"' in pagina
+    assert 'data-recent-title="Recientes"' in pagina
+    assert 'placeholder="Buscar"' in pagina
+
+    otro, otra, _ = ready(client, database, email="otra@ejemplo.com")
+    assert dashboard.recent_key(otra) != clave
+
+
+def test_cerrar_sesion_pide_borrar_los_recientes(client, database):
+    browser, cuenta, _ = ready(client, database)
+    salida = browser.get("/logout")
+    assert salida.headers["Location"].endswith("/login")
+    entrar = browser.get("/login").get_data(as_text=True)
+    assert 'data-forget-recents="all"' in entrar
+    # Solo una vez: la siguiente pantalla ya no lo pide.
+    assert "data-forget-recents" not in browser.get("/login").get_data(as_text=True)

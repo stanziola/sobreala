@@ -4,9 +4,16 @@
    /search; con él sugiere mientras se escribe (`panel.js`, data-search). Es lo
    único de la barra que no tiene el sitio público: sin sesión no hay nada que
    buscar. #}
+{#- Los recientes (octubre de 2026): la clave de esta cuenta y la pantalla en
+    la que se está, para que panel.js la anote; al pulsar el buscador con el
+    campo vacío, enseña las últimas. -#}
+{% set recent = search_recent() %}
 <form class="search bar__search" role="search" method="get" action="{{ url_for('search.page') }}"
       data-search data-suggest="{{ url_for('search.suggest') }}"
-      data-none="{{ t('search_nothing') }}">
+      data-none="{{ t('search_nothing') }}"
+      data-recent-key="{{ recent.key }}" data-recent-title="{{ t('search_recent') }}"
+      {%- if recent.url %} data-recent-url="{{ recent.url }}" data-recent-label="{{ recent.label }}"
+      data-recent-hint="{{ recent.hint }}"{% endif %}>
   <div class="search__box">
     <span class="search__icon">{% include "_icon-search.svg" %}</span>
     <label class="visually-hidden" for="buscar">{{ t('search_label') }}</label>

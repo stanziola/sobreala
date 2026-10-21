@@ -349,6 +349,10 @@ a:not([class]):hover { text-decoration: underline; }
 .search__option a:hover, .search__option.is-active a { background: var(--color-surface-alt); }
 .search__hint { font-size: .8rem; color: var(--color-ink-soft); white-space: nowrap; }
 .search__empty { padding: 9px 12px; color: var(--color-ink-soft); font-size: .92rem; }
+/* «Recientes» (octubre de 2026): el rótulo de la lista que sale al pulsar el
+   buscador con el campo vacío. No es una opción: no se elige ni se marca. */
+.search__group { padding: 8px 12px 4px; color: var(--color-ink-soft); font-size: .78rem;
+                 font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 @media (prefers-reduced-motion: reduce) { .search__list { animation: none; } }
 @media (max-width: 480px) { .menu__who { max-width: 140px; } }
 /* La página de resultados, sin JavaScript. */

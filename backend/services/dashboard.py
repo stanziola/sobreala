@@ -70,6 +70,21 @@ def stats_url(section: str) -> str:
     return url_for("auth.panel", section=section, **kept)
 
 
+def recent_key(account: dict) -> str:
+    """La clave de los recientes del buscador de esta cuenta (octubre de 2026).
+
+    Los guarda el navegador (`localStorage`, panel.js), uno por cuenta para que
+    con varias abiertas no se mezclen. Es opaca: sale del id con la llave del
+    servidor, y no dice de quién es."""
+    import hashlib
+    import hmac
+
+    from config import Config
+
+    return hmac.new(Config.SECRET_KEY.encode(), b"recent:" + str(account["_id"]).encode(),
+                    hashlib.sha256).hexdigest()[:16]
+
+
 def here() -> str:
     """The row of the screen being drawn."""
     endpoint = request.endpoint or ""
