@@ -368,6 +368,18 @@ atrás.
   corta. **Hay que volver a correrlo cuando cambie un ZIP**, y
   `build_site.py` no construye si a una le falta la suya.
 - **Pulsarla abre su lienzo en el panel** (ver `designs`).
+- **Son dos tiras desde octubre de 2026**, por el campo `group` de `SAMPLES`:
+  - **las promociones** (`promo`), trece rubros, debajo del título de siempre.
+    Su vuelta dura 58 s (`.samples--long`), para que corra a la misma
+    velocidad que la de cuatro;
+  - **«Para tu sistema»** (`api`): factura, bienvenida, confirmación de pedido
+    y estado de cuenta, que manda el sistema de un comercio por la API. Corre
+    en sentido contrario (`.samples--reverse`), para que no parezca la misma, y
+    su entrada enlaza a `/api/`. Su miniatura sale **llena con datos de
+    ejemplo** (`EXAMPLES` en `samples.py`, por `fields.fill()`): con las marcas
+    a la vista se vería una plantilla vacía.
+  - **Todas miden 800 de alto**, así la miniatura las enseña enteras, sin corte
+    ni blanco debajo (lo comprueba `test_samples.py`).
 
 **Los tutoriales de «Cómo funciona» son capturas del panel que se recorren
 pulsando** (octubre de 2026), como Arcade: Contactos, Plantillas, Enviar correos,

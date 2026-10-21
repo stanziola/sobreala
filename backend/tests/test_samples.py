@@ -40,6 +40,21 @@ def test_cada_tarjeta_tiene_su_miniatura():
                         "Corre: python landing/samples.py")
 
 
+@pytest.mark.parametrize("one", site_samples(), ids=lambda one: one["slug"])
+def test_cada_muestra_mide_800_y_lleva_dos_fotos_como_mucho(one):
+    """Todas del mismo alto, para que la miniatura (3:4 de 600) las enseñe
+    enteras; y pocas fotos, que cuentan contra el tope de quien la abre."""
+    import json
+    import zipfile
+
+    with zipfile.ZipFile(SAMPLES_DIR / f"{one['slug']}.zip") as pack:
+        board = json.loads(pack.read("lienzo.json"))
+    fotos = {item["name"] for item in board["items"] if item["t"] == "image"}
+    assert board["h"] == 800
+    assert len(fotos) <= 2
+    assert one["group"] in ("promo", "api")
+
+
 @pytest.mark.parametrize("slug", [one["slug"] for one in site_samples()])
 def test_cada_muestra_abre_su_lienzo(client, database, outbox, slug):
     browser = inside(client)

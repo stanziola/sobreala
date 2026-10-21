@@ -416,6 +416,12 @@ HOME = {
     "steps": {
         "title": "¿Aún no sabes por dónde empezar?",
         "intro": "Prueba nuestras plantillas personalizadas.",
+        # La segunda tira (octubre de 2026): las que manda el sistema de un
+        # comercio por la API, con sus datos en las marcas.
+        "api_title": "Para tu sistema",
+        "api_intro": ("Facturas, bienvenidas, pedidos y estados de cuenta que tu "
+                      "sistema manda por la API, con los datos de cada persona."),
+        "api_link": "Ver la documentación de la API",
         # Lo que dice cada tarjeta a un lector de pantalla, con su nombre.
         "open": "Abrir la plantilla {name} en el editor",
     },
@@ -479,15 +485,29 @@ HOME = {
     },
 }
 
-# The sample templates of the home page strip. Each slug is a ZIP in
+# The sample templates of the home page strips. Each slug is a ZIP in
 # backend/sample_templates/ (a test checks both lists match), and clicking one
 # opens it in the editor. Each card shows its picture, made from that ZIP by
-# landing/samples.py.
+# landing/samples.py. `group` says which strip: "promo" (campaigns) or "api"
+# (what a shop's system sends through the API, with merge tags).
 SAMPLES = [
-    {"slug": "restaurant", "name": "Restaurante"},
-    {"slug": "perfume", "name": "Perfumería"},
-    {"slug": "hiring", "name": "Reclutamiento"},
-    {"slug": "real-estate", "name": "Bienes raíces"},
+    {"slug": "jewelry", "name": "Joyería", "group": "promo"},
+    {"slug": "bakery", "name": "Panadería", "group": "promo"},
+    {"slug": "sales", "name": "Ventas", "group": "promo"},
+    {"slug": "restaurant", "name": "Restaurante", "group": "promo"},
+    {"slug": "hotel", "name": "Hoteles", "group": "promo"},
+    {"slug": "perfume", "name": "Perfumería", "group": "promo"},
+    {"slug": "hiring", "name": "Reclutamiento", "group": "promo"},
+    {"slug": "clinic", "name": "Clínica", "group": "promo"},
+    {"slug": "car-rental", "name": "Alquiler de autos", "group": "promo"},
+    {"slug": "tech", "name": "Tecnología", "group": "promo"},
+    {"slug": "gym", "name": "Gimnasio", "group": "promo"},
+    {"slug": "construction", "name": "Construcción", "group": "promo"},
+    {"slug": "real-estate", "name": "Bienes raíces", "group": "promo"},
+    {"slug": "invoice", "name": "Factura", "group": "api"},
+    {"slug": "welcome", "name": "Bienvenida", "group": "api"},
+    {"slug": "order", "name": "Confirmación de pedido", "group": "api"},
+    {"slug": "statement", "name": "Estado de cuenta", "group": "api"},
 ]
 
 # The tutorials of the "cómo funciona" page: one per section of the panel. The

@@ -152,23 +152,17 @@
   </div>
 </section>
 
-<section class="section section--alt" aria-labelledby="pasos-title">
-  <div class="shell">
-    <div class="section__head">
-      <h2 class="section__title" id="pasos-title">{{ home.steps.title }}</h2>
-      <p class="section__intro">{{ home.steps.intro }}</p>
-    </div>
-  </div>
-  {#- La tira corre de lado a lado, fuera del shell. Va tres veces seguidas para
-      que el bucle no se note: con cuatro plantillas una lista mide menos que
-      una pantalla ancha, y con dos se vería su final. Las copias van escondidas
-      del lector de pantalla y del tabulador, así cada plantilla se recorre una
-      sola vez. Solo CSS. -#}
-  <div class="samples">
+{#- Una tira de muestras: corre de lado a lado, fuera del shell. Va tres veces
+    seguidas para que el bucle no se note: con cuatro plantillas una lista mide
+    menos que una pantalla ancha, y con dos se vería su final. Las copias van
+    escondidas del lector de pantalla y del tabulador, así cada plantilla se
+    recorre una sola vez. Solo CSS. -#}
+{% macro strip(cards, modifier) -%}
+  <div class="samples{{ modifier }}">
     <div class="samples__track">
       {% for copy in (0, 1, 2) %}
       <ul class="samples__list"{% if copy %} aria-hidden="true"{% endif %}>
-        {% for one in samples %}
+        {% for one in cards %}
         <li>
           <a class="sample" href="{{ panel.base_url }}/templates/sample/{{ one.slug }}"
              aria-label="{{ home.steps.open | replace('{name}', one.name) }}"
@@ -183,6 +177,26 @@
       {% endfor %}
     </div>
   </div>
+{%- endmacro %}
+
+{#- Dos tiras (octubre de 2026): las promociones de cada rubro, y debajo las que
+    manda el sistema de un comercio por la API, en sentido contrario. -#}
+<section class="section section--alt" aria-labelledby="pasos-title">
+  <div class="shell">
+    <div class="section__head">
+      <h2 class="section__title" id="pasos-title">{{ home.steps.title }}</h2>
+      <p class="section__intro">{{ home.steps.intro }}</p>
+    </div>
+  </div>
+  {{ strip(samples | selectattr("group", "equalto", "promo") | list, " samples--long") }}
+  <div class="shell">
+    <div class="section__head samples__head">
+      <h3 class="section__title">{{ home.steps.api_title }}</h3>
+      <p class="section__intro">{{ home.steps.api_intro }}
+        <a href="/api/">{{ home.steps.api_link }}</a></p>
+    </div>
+  </div>
+  {{ strip(samples | selectattr("group", "equalto", "api") | list, " samples--reverse") }}
 </section>
 
 {#- El dominio personalizado (octubre de 2026; antes era «El envío»): cómo se

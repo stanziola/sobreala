@@ -475,9 +475,52 @@ lienzo), porque un ZIP pequeño puede inflarse a gigas.
 - **Agregar una** es dejar su ZIP en la carpeta, su fila en `SAMPLES` y correr
   `python landing/samples.py`, que hace su miniatura. Una prueba comprueba que
   las dos listas coinciden y otra que cada una tiene su miniatura.
-- **Hoy son cuatro, de verdad** (octubre de 2026): restaurante, perfumería,
-  reclutamiento y bienes raíces, con sus fotos. Hubo ocho de relleno (un
-  rectángulo de color, su nombre y un texto) y se quitaron con sus ZIP.
+- **Hoy son diecisiete** (octubre de 2026), en dos grupos (`group` en
+  `SAMPLES`):
+  - **trece de promociones**: joyería, panadería, ventas, restaurante, hoteles,
+    perfumería, reclutamiento, clínica, alquiler de autos, tecnología,
+    gimnasio, construcción y bienes raíces;
+  - **cuatro para la API**: factura, bienvenida, confirmación de pedido y
+    estado de cuenta. Llevan las marcas que llena el sistema del comercio
+    (`*|NOMBRE|*`, `*|NUMERO|*`, `*|TOTAL|*`…) y sus tablas (`*|PRODUCTOS|*`,
+    `*|TRANSACCIONES|*`), cada una en un texto propio y no en lista, y un
+    rectángulo «Tu logo» para cambiar por «Mi logo».
+  Cada una tiene su paleta, su letra y su composición, para que no se vean
+  hechas en serie. Antes hubo cuatro hechas a mano (restaurante, perfumería,
+  reclutamiento y bienes raíces, cada una de su alto) y, antes, ocho de relleno.
+- **Las reglas de una muestra**, además de pasar la revisión como cualquier
+  lienzo:
+  - **800 de alto, todas**: la miniatura es el 3:4 de arriba a 600 de ancho, y
+    así enseña la plantilla entera;
+  - **dos fotos como mucho**: cada foto cuenta contra el tope de quien la abre
+    (20 en el Básico);
+  - los enlaces van a `tunegocio.com`, nunca a un negocio real, y ninguna foto
+    lleva una marca comercial a la vista.
+  `test_samples.py` comprueba las dos primeras.
+- **Las fotos son de Unsplash**, con su licencia (uso comercial, sin pedir
+  permiso ni nombrar al autor; se nombra igual). Las dos de la joyería son del
+  Cleveland Museum of Art, de dominio público.
+
+  | Muestra | Autor | Foto |
+  |---|---|---|
+  | jewelry | @clevelandart | https://unsplash.com/photos/octagonal-pendant-with-large-faceted-amethyst-and-diamond-accents-FR5gYrT4dfk |
+  | jewelry | @clevelandart | https://unsplash.com/photos/beaded-necklace-with-gold-and-teal-accents-vpEiDfZVoGo |
+  | bakery | @picoftasty | https://unsplash.com/photos/breads-on-wicker-basket-Ehtxtp9Ykvo |
+  | bakery | @isszvicky25 | https://unsplash.com/photos/a-croissant-sitting-on-top-of-a-cork-coaster-a4xoMVKzbak |
+  | sales | @pilipeichenko | https://unsplash.com/photos/hand-holding-colorful-shopping-bags-against-a-white-background-mS_QzcElEAo |
+  | restaurant | @focusedonyou | https://unsplash.com/photos/cooked-food-on-white-ceramic-plate-Y-CSSwcS5co |
+  | restaurant | @nimanaseri | https://unsplash.com/photos/a-person-pouring-sauce-on-a-plate-of-food-AqAyU5YAAyQ |
+  | hotel | @i_story_pictures | https://unsplash.com/photos/brown-wooden-lounge-chairs-near-body-of-water-during-daytime-oyxsG2Lh_uA |
+  | perfume | @siora18 | https://unsplash.com/photos/glass-perfume-bottle-LkT5-JCePUY |
+  | perfume | @scentspiracy | https://unsplash.com/photos/clear-glass-bottle-on-white-table-iDDGJt3veps |
+  | hiring | @silverkblack | https://unsplash.com/photos/man-with-arms-crossed-in-front-of-chalkboard-E4jeiHp2QHo |
+  | clinic | @silverkblack | https://unsplash.com/photos/doctor-wearing-a-stethoscope-sits-at-a-desk-JJEOuvnY1Tw |
+  | car-rental | @bbestamis | https://unsplash.com/photos/white-sedan-on-gray-asphalt-road-during-daytime-73XAgT8DOpo |
+  | tech | @aditya_sethia_97 | https://unsplash.com/photos/a-computer-desk-with-a-monitor-and-keyboard-GVYVTY9XOFg |
+  | gym | @johnarano | https://unsplash.com/photos/woman-doing-weight-lifting-h4i9G-de7Po |
+  | construction | @josholalde | https://unsplash.com/photos/construction-worker-in-hard-hat-on-building-frame-X1P1_EDNnok |
+  | real-estate | @webaliser | https://unsplash.com/photos/white-and-brown-concrete-building-under-blue-sky-during-daytime-_TPTXZd9mOo |
+  | real-estate | @spacejoy | https://unsplash.com/photos/a-living-room-filled-with-furniture-and-a-large-window-x3mSC1WnWhc |
 
 **Entre cuentas nunca se copia nada.** Hubo `adopt_images()`, que al cargar un
 HTML iba a buscar las imágenes de la otra cuenta y las copiaba; si esa ya las

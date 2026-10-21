@@ -148,7 +148,7 @@ sobreala/
     │   └── payments/
     ├── email_templates/    # plantillas prediseñadas del producto, una por
     │                       # archivo, con sus campos declarados arriba
-    ├── sample_templates/   # los ZIP de lienzo de la tira de la portada, uno
+    ├── sample_templates/   # los ZIP de lienzo de las dos tiras de la portada, uno
     │                       # por plantilla de SAMPLES (landing/content.py)
     ├── templates/          # Jinja: panel del cliente y admin
     ├── static/

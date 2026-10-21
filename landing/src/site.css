@@ -937,7 +937,10 @@ a.usermenu__item:hover, button.usermenu__item:hover {
    dura lo que da unos 70 px por segundo, lo de cuando eran doce. Se para con
    el ratón encima o el foco dentro, para poder pulsar una sin perseguirla, y
    con «reducir movimiento» no corre. Sin zoom al pasar el ratón: agrandar la
-   imagen se quitó de Features por lo mismo. */
+   imagen se quitó de Features por lo mismo.
+   Desde octubre de 2026 son dos tiras: la de promociones, con trece, dura más
+   para correr a la misma velocidad (`--long`), y la de la API va en sentido
+   contrario (`--reverse`), para que no parezcan la misma. */
 .samples {
   --sample-size: 200px; --sample-gap: 14px;
   overflow: hidden; padding-block: 6px;
@@ -949,8 +952,11 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .samples__list {
   display: flex; gap: var(--sample-gap); padding-right: var(--sample-gap);
   margin: 0; list-style: none;
-  animation: samples-run 18s linear infinite;
+  animation: samples-run var(--samples-time, 18s) linear infinite;
 }
+.samples--long { --samples-time: 58s; }
+.samples--reverse .samples__list { animation-direction: reverse; }
+.samples__head { margin-top: 48px; }
 .samples:hover .samples__list,
 .samples:focus-within .samples__list { animation-play-state: paused; }
 @keyframes samples-run { to { transform: translateX(-100%); } }

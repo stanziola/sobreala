@@ -12,6 +12,10 @@ que no se tocan a mano.
     python landing/samples.py            # rehacer las miniaturas
     python landing/samples.py --check    # decir si falta alguna, sin tocar nada
 
+Las de la API (`group: "api"`) llevan marcas que llena el sistema del comercio
+(`*|NOMBRE|*`, `*|PRODUCTOS|*`); en la miniatura se llenan con `EXAMPLES`, por
+el mismo `fields.fill()` que el envío, para que se vea una factura y no marcas.
+
 Hace falta Chrome instalado y Pillow. **Se corre a mano cuando cambie un ZIP o
 la lista `SAMPLES` de `content.py`**: si no, la tarjeta enseña otra cosa.
 """
@@ -30,6 +34,7 @@ import content
 from shots import CHROME
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "backend"))
 ZIPS = ROOT / "backend" / "sample_templates"
 OUT = ROOT / "landing" / "assets" / "img" / "samples"
 
@@ -38,8 +43,34 @@ OUT = ROOT / "landing" / "assets" / "img" / "samples"
 # (300 px), para que se lea nítida.
 WIDE, TALL = 600, 800
 
+# Lo que llena las marcas de las muestras de la API en su miniatura: lo que
+# mandaría un sistema en `data` (POST /api/v1/emails). Las listas salen en tabla.
+EXAMPLES = {
+    "invoice": {
+        "NUMERO": "F-00128", "FECHA": "20/10/2026", "NOMBRE": "Ana", "TOTAL": "48.15",
+        "PRODUCTOS": [
+            {"PRODUCTO": "Camisa de lino", "CANTIDAD": "1", "PRECIO": "B/. 24.00"},
+            {"PRODUCTO": "Medias de algodón", "CANTIDAD": "3", "PRECIO": "B/. 9.00"},
+            {"PRODUCTO": "Envío a domicilio", "CANTIDAD": "1", "PRECIO": "B/. 12.00"}]},
+    "welcome": {"NOMBRE": "Ana"},
+    "order": {
+        "PEDIDO": "#4821", "NOMBRE": "Luis", "ENTREGA": "jueves 23 de octubre",
+        "PRODUCTOS": [
+            {"PRODUCTO": "Audífonos inalámbricos", "CANTIDAD": "1", "PRECIO": "B/. 39.90"},
+            {"PRODUCTO": "Cargador USB-C", "CANTIDAD": "2", "PRECIO": "B/. 25.00"},
+            {"PRODUCTO": "Funda de silicona", "CANTIDAD": "1", "PRECIO": "B/. 8.50"}]},
+    "statement": {
+        "NOMBRE": "Marta", "MES": "Septiembre de 2026", "SALDO": "1,284.50",
+        "SOCIO": "00482",
+        "TRANSACCIONES": [
+            {"FECHA": "02/09", "CONCEPTO": "Depósito de planilla", "MONTO": "B/. 650.00"},
+            {"FECHA": "10/09", "CONCEPTO": "Abono a préstamo", "MONTO": "-B/. 210.00"},
+            {"FECHA": "18/09", "CONCEPTO": "Ahorro navideño", "MONTO": "-B/. 25.00"},
+            {"FECHA": "30/09", "CONCEPTO": "Intereses del mes", "MONTO": "B/. 3.12"}]},
+}
 
-def page_of(pack: zipfile.ZipFile, folder: Path) -> Path:
+
+def page_of(pack: zipfile.ZipFile, folder: Path, example: dict | None = None) -> Path:
     """El correo del ZIP en `folder`, con sus imágenes al lado.
 
     Debajo de un correo más corto que la miniatura asomaría el fondo del sobre;
@@ -54,6 +85,10 @@ def page_of(pack: zipfile.ZipFile, folder: Path) -> Path:
     sheet = json.loads(pack.read("lienzo.json")).get("bg") or "#FFFFFF"
     html = pack.read(page).decode("utf-8").replace(
         "</head>", f"<style>html,body{{background:{sheet} !important}}</style></head>", 1)
+    if example:
+        from services import fields
+
+        html = fields.fill(html, None, [], data=example)
     made = folder / "correo.html"
     made.write_text(html, encoding="utf-8")
     return made
@@ -66,7 +101,7 @@ def thumbnail(slug: str) -> bytes:
     with tempfile.TemporaryDirectory(prefix="sobreala-samples-") as tmp:
         work = Path(tmp)
         with zipfile.ZipFile(ZIPS / f"{slug}.zip") as pack:
-            page = page_of(pack, work)
+            page = page_of(pack, work, EXAMPLES.get(slug))
         shot = work / "shot.png"
         subprocess.run(
             [CHROME, "--headless=new", "--disable-gpu", "--no-first-run",
