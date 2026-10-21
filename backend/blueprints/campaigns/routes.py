@@ -857,8 +857,9 @@ def sender_page():
 
 @bp.route("/campaigns/sender/records/<domain>.txt")
 def sender_records(domain):
-    """Los registros de un dominio propio como archivo, para importarlos en
-    Cloudflare de una vez en lugar de copiarlos uno por uno. Los ve quien ve la
+    """Los registros de un dominio propio como archivo de zona, para importarlos
+    de una vez en el proveedor de DNS que lo permita (Cloudflare, Route 53 y
+    otros) en lugar de copiarlos uno por uno. Los ve quien ve la
     pantalla del remitente; un dominio que no es de la cuenta no tiene
     archivo."""
     account = signed_in()

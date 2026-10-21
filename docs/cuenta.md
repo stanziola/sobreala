@@ -751,9 +751,10 @@ apartado.
 
 ## La API y la cuenta (octubre de 2026)
 
-- **Avisos de seguridad que no se apagan**: se creó o se revocó una llave, se
-  revocó sola porque llegó en una dirección, se agregó (o cambió) un aviso que
-  manda datos a un servidor, y se apagó un aviso que llevaba 72 horas fallando.
+- **Avisos de seguridad que no se apagan**: se creó o se revocó una clave de
+  API, se revocó sola porque llegó en una URL, se agregó (o cambió) un webhook
+  que manda datos a un servidor, y se desactivó un webhook que llevaba 72 horas
+  fallando.
   Van por `services/notices.py` con `mail_log` `api_key` y `webhook`.
 - **La prueba de quién es** para crear una llave o un aviso queda atada a la
   cuenta y a la sesión (`blueprints/developers/routes.py`); sin contraseña se

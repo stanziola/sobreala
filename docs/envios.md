@@ -67,10 +67,13 @@ suyos** (`account.sender`, en `models/account.py`):
 - **Cada dominio propio lo conecta el cliente solo.** El panel crea su identidad
   en SES por la API v2 (`services/ses_identity.py`, con Easy DKIM), le enseña
   los tres CNAME para su DNS (también como archivo de zona para **importarlos
-  en Cloudflare de una vez**, `/campaigns/sender/records/<dominio>.txt`, sin
-  proxy con `cf_tags=cf-proxied:false`), y consulta si ya está verificado al
-  abrir la pantalla (cada uno que falte) y con «Comprobar ahora»: no hay
-  proceso que lo mire solo. Quitarlo borra la identidad de SES, y eliminar la
+  de una vez en el proveedor de DNS que lo permita**, Cloudflare, Route 53 y
+  otros, `/campaigns/sender/records/<dominio>.txt`; desde octubre de 2026 ni el
+  botón ni el archivo dan por hecho Cloudflare, que no todos usan. Cada CNAME
+  lleva al final el comentario `cf_tags=cf-proxied:false`, que los demás no
+  leen y que a Cloudflare le dice que entren sin proxy), y consulta si ya está
+  verificado al abrir la pantalla (cada uno que falte) y con «Comprobar
+  ahora»: no hay proceso que lo mire solo. Quitarlo borra la identidad de SES, y eliminar la
   cuenta borra la de todos. Los de correo gratis (gmail.com y compañía) no se
   pueden conectar, porque nadie puede ponerles registros. **Con su propio MAIL
   FROM** (octubre de 2026): `envios.<dominio>`, con un MX y un SPF más (cinco

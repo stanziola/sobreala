@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>API de Sobreala: conecta tu tienda o tu sistema</title>
-<meta name="description" content="Documentación de la API de Sobreala: llaves, contactos y sus listas, plantillas, correos transaccionales y promocionales, campañas y estadísticas.">
+<meta name="description" content="Documentación de la API de Sobreala: claves de API, contactos y sus listas, plantillas, correos transaccionales y promocionales, campañas y estadísticas.">
 <link rel="canonical" href="https://sobreala.com/api/">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sobreala">
 <meta property="og:locale" content="es">
 <meta property="og:title" content="API de Sobreala: conecta tu tienda o tu sistema">
-<meta property="og:description" content="Documentación de la API de Sobreala: llaves, contactos y sus listas, plantillas, correos transaccionales y promocionales, campañas y estadísticas.">
+<meta property="og:description" content="Documentación de la API de Sobreala: claves de API, contactos y sus listas, plantillas, correos transaccionales y promocionales, campañas y estadísticas.">
 <meta property="og:url" content="https://sobreala.com/api/"><meta property="og:image" content="https://sobreala.com/assets/img/logo.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -174,9 +174,9 @@
       <p class="api-docs__nav-title">Guías</p>
       <ul>
         <li><a class="api-docs__link" href="#empezar">Empezar</a></li>
-        <li><a class="api-docs__link" href="#autenticacion">La llave</a></li>
+        <li><a class="api-docs__link" href="#autenticacion">La clave de API</a></li>
         <li><a class="api-docs__link" href="#permisos">Permisos</a></li>
-        <li><a class="api-docs__link" href="#prueba">Llaves de prueba</a></li>
+        <li><a class="api-docs__link" href="#prueba">Claves de prueba</a></li>
         <li><a class="api-docs__link" href="#errores">Errores</a></li>
         <li><a class="api-docs__link" href="#limites">Límites</a></li>
         <li><a class="api-docs__link" href="#paginacion">Listas largas</a></li>
@@ -184,7 +184,7 @@
         <li><a class="api-docs__link" href="#fechas">Fechas y horas</a></li>
         <li><a class="api-docs__link" href="#listas">Listas dentro de un contacto</a></li>
         <li><a class="api-docs__link" href="#clases">Transaccional o promocional</a></li>
-        <li><a class="api-docs__link" href="#avisos">Avisos a tu sistema</a></li>
+        <li><a class="api-docs__link" href="#webhooks">Webhooks</a></li>
         <li><a class="api-docs__link" href="#lienzo">El lienzo en JSON</a></li>
         <li><a class="api-docs__link" href="#fuera">Lo que la API no hace</a></li>
       </ul>
@@ -276,40 +276,40 @@
     <div class="api-docs__body">
       <section class="api-doc" id="empezar">
         <h2 class="api-doc__title">Empezar</h2>
-<p>La API deja que el sistema de tu negocio (tu tienda en línea, tu programa de socios, tu sistema de cobros) hable con tu cuenta de Sobreala sin entrar al panel: carga y actualiza contactos, usa tus plantillas y tus remitentes, envía correos y lee lo que pasó con ellos.</p><p>Todas las direcciones empiezan por <strong>https://app.sobreala.com/api/v1</strong>. Se habla en JSON y en UTF-8, y siempre por HTTPS.</p><p>Lo primero es crear una llave en el panel: <strong>Dashboard → API → Llaves</strong>. Con ella, esta llamada dice de quién es la cuenta y si hoy se puede enviar:</p><div class="api-code" data-copy-box>
+<p>La API deja que el sistema de tu negocio (tu tienda en línea, tu programa de socios, tu sistema de cobros) se conecte con tu cuenta de Sobreala sin que entres a ella: carga y actualiza contactos, usa tus plantillas y tus remitentes, envía correos y lee lo que pasó con ellos.</p><p>Todas las direcciones empiezan por <strong>https://app.sobreala.com/api/v1</strong>. Se habla en JSON y en UTF-8, y siempre por HTTPS.</p><p>Lo primero es crear una clave de API: <strong>Dashboard → API → Claves de API</strong>. Con ella, esta llamada dice de quién es la cuenta y si hoy se puede enviar:</p><div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/me \
-  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
+  -H &#34;Authorization: Bearer sa_live_tu_clave&#34;</code></pre>
   <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/me \
-  -H &#34;Authorization: Bearer sa_live_tu_llave&#34;"
+  -H &#34;Authorization: Bearer sa_live_tu_clave&#34;"
           data-copy-done="Copiado" aria-label="Copiar Empezar">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>
 </div>
       </section>
       <section class="api-doc" id="autenticacion">
-        <h2 class="api-doc__title">La llave</h2>
-<p>Cada petición lleva la llave en la cabecera <strong>Authorization: Bearer</strong>. Nunca en la dirección: una llave que llega ahí se rechaza y se revoca sola, porque queda escrita en los registros de los servidores por donde pasa.</p><p><strong>La llave va en tu servidor</strong>, nunca en una página web, en una aplicación que se descarga ni en un repositorio. La API no acepta llamadas desde un navegador de otra página.</p><p>La llave se ve una sola vez, al crearla: nosotros guardamos solo una huella de ella. Si la pierdes, crea otra y revoca la vieja. Cada llave puede vencer, y puede quedar limitada a unas IP.</p><p>Crear una llave pide tu contraseña (o un código a tu correo) y el código de tu app si tienes segundo factor, y te llega un correo cada vez que se crea o se revoca una.</p>      </section>
+        <h2 class="api-doc__title">La clave de API</h2>
+<p>Cada petición lleva la clave de API en la cabecera <strong>Authorization: Bearer</strong>. Nunca en la URL: una clave que llega ahí se rechaza y se revoca sola, porque queda escrita en los logs de los servidores por donde pasa.</p><p><strong>La clave va en tu servidor</strong>, nunca en una página web, en una aplicación que se descarga ni en un repositorio. La API no acepta llamadas desde un navegador de otra página.</p><p>La clave se ve una sola vez, al crearla: nosotros guardamos solo su hash. Si la pierdes, crea otra y revoca la vieja. Cada clave puede vencer, y puede quedar limitada a unas IP.</p><p>Crear una clave pide tu contraseña (o un código a tu correo) y el código de tu app si tienes segundo factor, y te llega un correo cada vez que se crea o se revoca una.</p>      </section>
       <section class="api-doc" id="permisos">
         <h2 class="api-doc__title">Permisos</h2>
-<p>Cada llave tiene los permisos que le diste al crearla, y cada ruta dice cuál pide. <code>GET /me</code> y <code>GET /senders</code> responden a cualquier llave.</p>        <div class="api-table">
+<p>Cada clave tiene los permisos que le diste al crearla, y cada ruta dice cuál pide. <code>GET /me</code> y <code>GET /senders</code> responden a cualquier clave.</p>        <div class="api-table">
           <table>
             <thead><tr><th scope="col">Permiso</th><th scope="col">Qué abre</th></tr></thead>
             <tbody>
               <tr><th scope="row"><code>contacts:read</code><br><span class="api-type">Ver contactos</span></th><td>Contactos, etiquetas, columnas y supresiones.</td></tr>
-              <tr><th scope="row"><code>contacts:write</code><br><span class="api-type">Cambiar contactos</span></th><td>Crear, cambiar y borrar contactos, sus listas, etiquetas y columnas.</td></tr>
+              <tr><th scope="row"><code>contacts:write</code><br><span class="api-type">Editar contactos</span></th><td>Crear, editar y borrar contactos, sus listas, etiquetas y columnas.</td></tr>
               <tr><th scope="row"><code>templates:read</code><br><span class="api-type">Ver plantillas</span></th><td>Plantillas, carpetas y cómo queda cada correo.</td></tr>
-              <tr><th scope="row"><code>templates:write</code><br><span class="api-type">Cambiar plantillas</span></th><td>Crear, cambiar y borrar plantillas, carpetas y fotos.</td></tr>
-              <tr><th scope="row"><code>emails:send</code><br><span class="api-type">Enviar correos</span></th><td>Mandar un correo a una persona y ver los que mandó la API.</td></tr>
-              <tr><th scope="row"><code>campaigns:read</code><br><span class="api-type">Ver campañas</span></th><td>Campañas, lo que salió y a quién.</td></tr>
-              <tr><th scope="row"><code>campaigns:write</code><br><span class="api-type">Cambiar campañas</span></th><td>Crear, cambiar y borrar campañas.</td></tr>
-              <tr><th scope="row"><code>campaigns:send</code><br><span class="api-type">Mandar campañas</span></th><td>Enviar y programar campañas.</td></tr>
+              <tr><th scope="row"><code>templates:write</code><br><span class="api-type">Editar plantillas</span></th><td>Crear, editar y borrar plantillas, carpetas e imágenes.</td></tr>
+              <tr><th scope="row"><code>emails:send</code><br><span class="api-type">Enviar correos</span></th><td>Enviar un correo a una persona y ver los que se enviaron por la API.</td></tr>
+              <tr><th scope="row"><code>campaigns:read</code><br><span class="api-type">Ver campañas</span></th><td>Campañas, sus envíos y a quién.</td></tr>
+              <tr><th scope="row"><code>campaigns:write</code><br><span class="api-type">Editar campañas</span></th><td>Crear, editar y borrar campañas.</td></tr>
+              <tr><th scope="row"><code>campaigns:send</code><br><span class="api-type">Enviar campañas</span></th><td>Enviar y programar campañas.</td></tr>
               <tr><th scope="row"><code>stats:read</code><br><span class="api-type">Ver estadísticas</span></th><td>Las cifras y los eventos de tus correos.</td></tr>
             </tbody>
           </table>
         </div>
       </section>
       <section class="api-doc" id="prueba">
-        <h2 class="api-doc__title">Llaves de prueba</h2>
-<p>Una llave que empieza por <strong>sa_test_</strong> es para ensayar: <strong>lee todo lo que sus permisos dejen, y los envíos se simulan</strong>. <code>POST /emails</code> arma el correo, lo revisa y te lo devuelve armado, pero no sale nada, no se gasta cuota y no se guarda nada. Enviar o programar una campaña dice a cuántos saldría y qué la frena, sin cambiar nada.</p><p>Una llave de prueba <strong>no puede escribir</strong>: ni crear contactos ni plantillas ni campañas. Así, si se filtra desde un servidor de pruebas, no puede tocar tu lista. Para escribir hace falta una llave de verdad (<strong>sa_live_</strong>).</p>      </section>
+        <h2 class="api-doc__title">Claves de prueba</h2>
+<p>Una clave que empieza por <strong>sa_test_</strong> es para hacer pruebas: <strong>lee todo lo que sus permisos dejen, y los envíos se simulan</strong>. <code>POST /emails</code> arma el correo, lo revisa y te lo devuelve armado, pero no sale nada, no se gasta cuota y no se guarda nada. Enviar o programar una campaña dice a cuántos saldría y qué la frena, sin cambiar nada.</p><p>Una clave de prueba <strong>no puede escribir</strong>: ni crear contactos ni plantillas ni campañas. Así, si se filtra desde un servidor de pruebas, no puede tocar tu lista. Para escribir hace falta una clave de producción (<strong>sa_live_</strong>).</p>      </section>
       <section class="api-doc" id="errores">
         <h2 class="api-doc__title">Errores</h2>
 <p>Un error responde con su estado HTTP y un cuerpo como este. <code>code</code> es para tu programa y <code>message</code> para leerlo; <code>fields</code> aparece cuando hay campos que no están bien, y <code>request_id</code> es lo que nos dices si nos escribes.</p><div class="api-code" data-copy-box>
@@ -336,13 +336,13 @@
           <table>
             <thead><tr><th scope="col">Código</th><th scope="col">Estado</th><th scope="col">Qué quiere decir</th></tr></thead>
             <tbody>
-              <tr><th scope="row"><code>unauthorized</code></th><td>401</td><td>Falta la llave, o no es válida, está vencida o se revocó.</td></tr>
-              <tr><th scope="row"><code>key_in_url</code></th><td>400</td><td>La llave llegó en la dirección. Se rechaza y, si era buena, se revoca: ahí queda escrita en registros ajenos.</td></tr>
-              <tr><th scope="row"><code>ip_not_allowed</code></th><td>403</td><td>La llave tiene una lista de IP y esta no está.</td></tr>
+              <tr><th scope="row"><code>unauthorized</code></th><td>401</td><td>Falta la clave de API, o no es válida, está vencida o se revocó.</td></tr>
+              <tr><th scope="row"><code>key_in_url</code></th><td>400</td><td>La clave llegó en la URL. Se rechaza y, si era válida, se revoca: ahí queda escrita en logs ajenos.</td></tr>
+              <tr><th scope="row"><code>ip_not_allowed</code></th><td>403</td><td>La clave tiene una lista de IP y esta no está.</td></tr>
               <tr><th scope="row"><code>account_suspended</code></th><td>403</td><td>La cuenta está suspendida.</td></tr>
               <tr><th scope="row"><code>account_closed</code></th><td>403</td><td>La cuenta todavía no se abrió (falta la demostración o un plan).</td></tr>
-              <tr><th scope="row"><code>test_key_cannot</code></th><td>403</td><td>Una llave de prueba no puede hacer esto: solo lee y simula envíos.</td></tr>
-              <tr><th scope="row"><code>missing_scope</code></th><td>403</td><td>La llave no tiene el permiso que pide esta ruta.</td></tr>
+              <tr><th scope="row"><code>test_key_cannot</code></th><td>403</td><td>Una clave de prueba no puede hacer esto: solo lee y simula envíos.</td></tr>
+              <tr><th scope="row"><code>missing_scope</code></th><td>403</td><td>La clave no tiene el permiso que pide esta ruta.</td></tr>
               <tr><th scope="row"><code>rate_limited</code></th><td>429</td><td>Demasiadas peticiones. Espera lo que dice Retry-After.</td></tr>
               <tr><th scope="row"><code>not_found</code></th><td>404</td><td>No existe, o no es de esta cuenta. Las dos cosas responden igual.</td></tr>
               <tr><th scope="row"><code>method_not_allowed</code></th><td>405</td><td>La ruta no acepta ese método.</td></tr>
@@ -354,12 +354,12 @@
               <tr><th scope="row"><code>bad_idempotency_key</code></th><td>400</td><td>La Idempotency-Key no tiene la forma pedida.</td></tr>
               <tr><th scope="row"><code>idempotency_mismatch</code></th><td>422</td><td>Esa Idempotency-Key ya se usó con otro cuerpo.</td></tr>
               <tr><th scope="row"><code>idempotency_busy</code></th><td>409</td><td>La primera petición con esa Idempotency-Key sigue en curso.</td></tr>
-              <tr><th scope="row"><code>busy</code></th><td>409</td><td>Ya hay una carga de contactos en curso en la cuenta (por la API o una importación del panel). Reintenta en unos segundos.</td></tr>
+              <tr><th scope="row"><code>busy</code></th><td>409</td><td>Ya hay una carga de contactos en curso en la cuenta (por la API o una importación desde el Dashboard). Reintenta en unos segundos.</td></tr>
               <tr><th scope="row"><code>unknown_tag</code></th><td>422</td><td>Hay etiquetas que no existen; <code>tags</code> dice cuáles. Se crean antes con <code>POST /tags</code>.</td></tr>
               <tr><th scope="row"><code>email_taken</code></th><td>409</td><td>Esa dirección ya la tiene otro contacto de la cuenta.</td></tr>
               <tr><th scope="row"><code>external_id_taken</code></th><td>409</td><td>Ese id de tu sistema ya lo tiene otro contacto de la cuenta.</td></tr>
               <tr><th scope="row"><code>tag_exists</code></th><td>409</td><td>Esa etiqueta ya existe.</td></tr>
-              <tr><th scope="row"><code>limit_reached</code></th><td>409</td><td>Se llegó al tope de tu plan (etiquetas, columnas, plantillas, carpetas o fotos).</td></tr>
+              <tr><th scope="row"><code>limit_reached</code></th><td>409</td><td>Se llegó al tope de tu plan (etiquetas, columnas, plantillas, carpetas o imágenes).</td></tr>
               <tr><th scope="row"><code>field_exists</code></th><td>409</td><td>Ya hay una columna con esa clave, o es Nombre o Correo, que todo contacto ya trae.</td></tr>
               <tr><th scope="row"><code>field_values</code></th><td>409</td><td>Hay contactos con valores que no encajan en el tipo nuevo; <code>contacts</code> dice cuántos.</td></tr>
               <tr><th scope="row"><code>cannot_send</code></th><td>409</td><td>Hoy la cuenta no puede enviar (sin plan o sin cuota, en pausa, sin dirección postal...); <code>blocked</code> dice por qué.</td></tr>
@@ -368,11 +368,11 @@
               <tr><th scope="row"><code>suppressed</code></th><td>422</td><td>A esa dirección ya no se le escribe (en un transaccional, solo por rebote permanente o queja).</td></tr>
               <tr><th scope="row"><code>undeliverable</code></th><td>422</td><td>El dominio de esa dirección no recibe correo.</td></tr>
               <tr><th scope="row"><code>demo_address</code></th><td>422</td><td>En la demostración solo se envía a las direcciones de prueba confirmadas.</td></tr>
-              <tr><th scope="row"><code>missing_data</code></th><td>422</td><td>Hay marcas sin dato; <code>missing</code> dice cuáles.</td></tr>
+              <tr><th scope="row"><code>missing_data</code></th><td>422</td><td>Hay variables sin dato; <code>missing</code> dice cuáles.</td></tr>
               <tr><th scope="row"><code>bad_subject</code></th><td>422</td><td>El asunto lleno trae un salto de línea de un dato del contacto.</td></tr>
-              <tr><th scope="row"><code>throttled</code></th><td>503</td><td>Amazon pidió esperar. No salió ni gastó cuota: reintenta tras Retry-After.</td></tr>
+              <tr><th scope="row"><code>throttled</code></th><td>503</td><td>Amazon pidió esperar. No se envió ni gastó cuota: reintenta tras Retry-After.</td></tr>
               <tr><th scope="row"><code>delivery_failed</code></th><td>502</td><td>No se pudo entregar a Amazon. No gastó cuota.</td></tr>
-              <tr><th scope="row"><code>campaign_sending</code></th><td>409</td><td>La campaña está saliendo: no se cambia, no se borra ni se reprograma hasta que termine.</td></tr>
+              <tr><th scope="row"><code>campaign_sending</code></th><td>409</td><td>La campaña se está enviando: no se edita, no se borra ni se reprograma hasta que termine.</td></tr>
               <tr><th scope="row"><code>unavailable</code></th><td>503</td><td>No disponible por un momento; reintenta tras Retry-After.</td></tr>
               <tr><th scope="row"><code>internal_error</code></th><td>500</td><td>Algo falló de nuestro lado. Escríbenos con el request_id.</td></tr>
             </tbody>
@@ -381,7 +381,7 @@
       </section>
       <section class="api-doc" id="limites">
         <h2 class="api-doc__title">Límites</h2>
-<p>Por cuenta, sumando todas sus llaves: <strong>600 peticiones por minuto</strong>. Además, por minuto: 120 correos, 30 cargas de contactos (y 5,000 filas), 5 plantillas o ZIP, 20 fotos y 30 consultas de estadísticas. Pasado un límite responde 429 con la cabecera <strong>Retry-After</strong>, en segundos.</p><p>El cuerpo de una petición llega hasta 1 MB, y hasta 6 MB el ZIP de una plantilla y una foto. Lo pesado va de uno en uno por cuenta: dos cargas de contactos a la vez no se cruzan.</p><p>Los correos gastan la cuota de tu plan, como en el panel. En la demostración solo salen a tus direcciones de prueba.</p>      </section>
+<p>Por cuenta, sumando todas sus claves: <strong>600 peticiones por minuto</strong>. Además, por minuto: 120 correos, 30 cargas de contactos (y 5,000 filas), 5 plantillas o ZIP, 20 imágenes y 30 consultas de estadísticas. Pasado un límite responde 429 con la cabecera <strong>Retry-After</strong>, en segundos.</p><p>El cuerpo de una petición llega hasta 1 MB, y hasta 6 MB el ZIP de una plantilla y una imagen. Lo pesado va de uno en uno por cuenta: dos cargas de contactos a la vez no se cruzan.</p><p>Los correos gastan la cuota de tu plan, como desde el Dashboard. En la demostración solo salen a tus direcciones de prueba.</p>      </section>
       <section class="api-doc" id="paginacion">
         <h2 class="api-doc__title">Listas largas</h2>
 <p>Las rutas que devuelven listas aceptan <strong>limit</strong> (de 1 a 100, 25 si no se dice) y responden <code>data</code> y <code>next_cursor</code>. Para la página siguiente se pide la misma ruta con <strong>cursor</strong> igual a ese <code>next_cursor</code>; cuando viene null, no hay más.</p><div class="api-code" data-copy-box>
@@ -399,7 +399,7 @@
       </section>
       <section class="api-doc" id="idempotencia">
         <h2 class="api-doc__title">Reintentar sin repetir</h2>
-<p>Si la red se corta y no sabes si un envío salió, reintenta con la misma cabecera <strong>Idempotency-Key</strong> (hasta 100 caracteres sin espacios, por ejemplo un id de tu pedido). La segunda vez recibes la respuesta de la primera, con la cabecera Idempotent-Replayed: true, en vez de mandarlo otra vez.</p><p>La aceptan <code>POST /emails</code>, <code>POST /contacts</code>, <code>POST /campaigns</code> y enviar y programar una campaña. Se guarda 24 horas, para esa llave y esa ruta. Con otro cuerpo responde 422; mientras la primera sigue en curso, 409.</p>      </section>
+<p>Si la red se corta y no sabes si un envío salió, reintenta con la misma cabecera <strong>Idempotency-Key</strong> (hasta 100 caracteres sin espacios, por ejemplo un id de tu pedido). La segunda vez recibes la respuesta de la primera, con la cabecera Idempotent-Replayed: true, en vez de mandarlo otra vez.</p><p>La aceptan <code>POST /emails</code>, <code>POST /contacts</code>, <code>POST /campaigns</code> y enviar y programar una campaña. Se guarda 24 horas, para esa clave y esa ruta. Con otro cuerpo responde 422; mientras la primera sigue en curso, 409.</p>      </section>
       <section class="api-doc" id="fechas">
         <h2 class="api-doc__title">Fechas y horas</h2>
 <p>Las fechas salen en UTC, como <strong>2026-10-20T20:00:00Z</strong>. Las que mandas van en ISO 8601 <strong>con su zona</strong>: 2026-10-20T15:00:00-05:00 son las tres de la tarde en Panamá. Una sin zona se rechaza, porque no se sabe de dónde es.</p>      </section>
@@ -425,9 +425,9 @@ Este mes no tuviste movimientos.
       <section class="api-doc" id="clases">
         <h2 class="api-doc__title">Transaccional o promocional</h2>
 <p>Cada correo dice qué es en <code>type</code>, y eso decide sus reglas. Elegir mal no es un atajo: un promocional disfrazado de transaccional se nota en las quejas, y las quejas pausan la cuenta.</p><p><strong>transactional</strong>: lo que alguien espera porque hizo algo (su recibo, su código, el estado de su pedido). Va a cualquier dirección, esté o no en tus contactos, sin enlace de baja ni marca de agua. Solo lo frenan un rebote permanente o una queja de esa dirección en tu cuenta, o un dominio que no recibe correo: quien se dio de baja de tus promociones sigue recibiendo su recibo. Se cuentan las aperturas, pero <strong>no los clics</strong>, porque sus enlaces suelen ser privados.</p><p><strong>promotional</strong>: una oferta, una invitación, un boletín. Es una campaña de una persona: va solo a un contacto de tu cuenta con todas sus columnas y sin ninguna supresión, con su enlace de baja y la marca de agua de tu plan.</p><p>Los dos gastan un correo de la cuota de tu mes, llevan tu dirección postal al pie, salen de uno de tus remitentes y no salen si la cuenta está en pausa. En la demostración solo van a tus direcciones de prueba.</p>      </section>
-      <section class="api-doc" id="avisos">
-        <h2 class="api-doc__title">Avisos a tu sistema</h2>
-<p>En vez de preguntar cada rato, tu servidor puede recibir lo que pasa con tus correos en cuanto pasa. Los avisos se crean en el panel (<strong>Dashboard → API → Avisos</strong>): una dirección https de tu servidor y los eventos que quieres. Caben 5.</p><p>Los eventos: <strong>email.delivered</strong> (llegó), <strong>email.bounced</strong> (rebotó; <code>permanent</code> dice si la dirección no existe), <strong>email.complained</strong> (lo marcaron como spam), <strong>email.rejected</strong> (Amazon no lo mandó), <strong>email.opened</strong> y <strong>email.clicked</strong> (la primera vez; nunca un clic de un transaccional), <strong>email.downloaded</strong> (bajaron el archivo de un correo individual), <strong>contact.unsubscribed</strong> y <strong>campaign.finished</strong> (con sus cifras). Cada uno dice de dónde vino en <code>source</code>: campaign, single o api, con sus ids.</p><p>Cada aviso es un POST en JSON con <code>id</code>, <code>type</code>, <code>created_at</code> y <code>data</code>, y tres cabeceras: <strong>Sobreala-Event-Id</strong>, <strong>Sobreala-Event-Type</strong> y <strong>Sobreala-Signature</strong> (<code>t=&lt;segundos&gt;,v1=&lt;firma&gt;</code>). La firma es un HMAC-SHA256, con el secreto del aviso, de <code>t</code>, un punto y el cuerpo tal como llegó. Compruébala siempre, y rechaza las de más de 5 minutos.</p><p>Tu servidor tiene que responder un 2xx en menos de 5 segundos (las redirecciones no se siguen). Si no, se reintenta al minuto, a los 5 y 30 minutos, a las 2, 6, 12 y 24 horas, y los demás avisos de esa dirección esperan con él. Tras 72 horas fallando se apaga y te escribimos. Un mismo evento puede llegar dos veces y en otro orden: usa Sobreala-Event-Id para no contarlo dos veces.</p><div class="api-code" data-copy-box>
+      <section class="api-doc" id="webhooks">
+        <h2 class="api-doc__title">Webhooks</h2>
+<p>En vez de preguntar cada rato, tu servidor puede recibir lo que pasa con tus correos en cuanto pasa. Los webhooks se crean en <strong>Dashboard → API → Webhooks</strong>: la URL https de tu endpoint y los eventos que quieres. Caben 5.</p><p>Los eventos: <strong>email.delivered</strong> (llegó), <strong>email.bounced</strong> (rebotó; <code>permanent</code> dice si la dirección no existe), <strong>email.complained</strong> (lo marcaron como spam), <strong>email.rejected</strong> (Amazon no lo mandó), <strong>email.opened</strong> y <strong>email.clicked</strong> (la primera vez; nunca un clic de un transaccional), <strong>email.downloaded</strong> (bajaron el archivo de un correo individual), <strong>contact.unsubscribed</strong> y <strong>campaign.finished</strong> (con sus cifras). Cada uno dice de dónde vino en <code>source</code>: campaign, single o api, con sus ids.</p><p>Cada evento llega como un POST en JSON con <code>id</code>, <code>type</code>, <code>created_at</code> y <code>data</code>, y tres cabeceras: <strong>Sobreala-Event-Id</strong>, <strong>Sobreala-Event-Type</strong> y <strong>Sobreala-Signature</strong> (<code>t=&lt;segundos&gt;,v1=&lt;firma&gt;</code>). La firma es un HMAC-SHA256, con el secreto de firma del webhook, de <code>t</code>, un punto y el cuerpo tal como llegó. Compruébala siempre, y rechaza las de más de 5 minutos.</p><p>Tu servidor tiene que responder un 2xx en menos de 5 segundos (las redirecciones no se siguen). Si no, se reintenta al minuto, a los 5 y 30 minutos, a las 2, 6, 12 y 24 horas, y los demás eventos de ese webhook esperan con él. Tras 72 horas fallando se desactiva y te escribimos. Un mismo evento puede llegar dos veces y en otro orden: usa Sobreala-Event-Id para no contarlo dos veces.</p><div class="api-code" data-copy-box>
   <pre><code># Python
 import hashlib, hmac, time
 
@@ -486,13 +486,13 @@ function es_de_sobreala(string $cuerpo, string $cabecera, string $secreto): bool
     $esperada = hash_hmac(&#39;sha256&#39;, ($partes[&#39;t&#39;] ?? &#39;&#39;) . &#39;.&#39; . $cuerpo, $secreto);
     return hash_equals($esperada, $partes[&#39;v1&#39;] ?? &#39;&#39;);
 }"
-          data-copy-done="Copiado" aria-label="Copiar Avisos a tu sistema">Copiar</button>
+          data-copy-done="Copiado" aria-label="Copiar Webhooks">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>
 </div>
       </section>
       <section class="api-doc" id="lienzo">
         <h2 class="api-doc__title">El lienzo en JSON</h2>
-<p>Una plantilla del lienzo es una hoja de 600 px de ancho que crece hacia abajo: <code>h</code> es su alto (de 80 a 4,000), <code>bg</code> su color y <code>items</code> lo que lleva encima, hasta 60 cosas. Cada una dice qué es en <code>t</code> y dónde va en <code>x</code>, <code>y</code>, <code>w</code> y <code>h</code>, en píxeles y dentro de la hoja. El correo se arma en tablas al enviarlo, así que lo que se encima tiene que poder cortarse en franjas y columnas.</p><p><strong>text</strong>: <code>text</code> (hasta 2,000 caracteres, con saltos de línea y marcas), <code>font</code> (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, Georgia, Times New Roman, Courier New, Palatino, Garamond, Lucida Sans o Century Gothic), <code>size</code> (de 14 a 72), <code>color</code> (#RRGGBB), <code>bold</code>, <code>italic</code>, <code>align</code> (left, center o right), <code>line</code> (de 1 a 2.5) y <code>list</code> (con viñetas). <strong>button</strong>: <code>text</code> (hasta 60), <code>href</code> (https:// o mailto:), <code>bg</code>, <code>radius</code> (de 0 a 60) y la misma letra que un texto. <strong>image</strong>: <code>name</code> (el que devuelve <code>POST /images</code>), <code>alt</code> (obligatorio), <code>href</code>, <code>fit</code> (cover o contain), <code>crop</code> ([x, y, ancho, alto], de 0 a 1) y <code>rot</code> (grados). <strong>shape</strong>: <code>shape</code> (rect, line, ellipse, triangle, star o arrow), <code>bg</code>, <code>radius</code> y <code>rot</code>; una línea mide de 1 a 12 px de alto.</p><p>Se guarda solo si arma bien el correo y pasa la revisión antispam, igual que en el panel: entre otras cosas, al menos 200 caracteres de texto, poca imagen, pocos enlaces y nada de acortadores. <code>POST /templates/check</code> dice cómo va cada regla sin guardar nada. Lo más cómodo es armarla en el panel y leerla después con <code>GET /templates/{template_id}</code>.</p><div class="api-code" data-copy-box>
+<p>Una plantilla del lienzo es una hoja de 600 px de ancho que crece hacia abajo: <code>h</code> es su alto (de 80 a 4,000), <code>bg</code> su color y <code>items</code> lo que lleva encima, hasta 60 cosas. Cada una dice qué es en <code>t</code> y dónde va en <code>x</code>, <code>y</code>, <code>w</code> y <code>h</code>, en píxeles y dentro de la hoja. El correo se arma en tablas al enviarlo, así que lo que se encima tiene que poder cortarse en franjas y columnas.</p><p><strong>text</strong>: <code>text</code> (hasta 2,000 caracteres, con saltos de línea y variables), <code>font</code> (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, Georgia, Times New Roman, Courier New, Palatino, Garamond, Lucida Sans o Century Gothic), <code>size</code> (de 14 a 72), <code>color</code> (#RRGGBB), <code>bold</code>, <code>italic</code>, <code>align</code> (left, center o right), <code>line</code> (de 1 a 2.5) y <code>list</code> (con viñetas). <strong>button</strong>: <code>text</code> (hasta 60), <code>href</code> (https:// o mailto:), <code>bg</code>, <code>radius</code> (de 0 a 60) y la misma letra que un texto. <strong>image</strong>: <code>name</code> (el que devuelve <code>POST /images</code>), <code>alt</code> (obligatorio), <code>href</code>, <code>fit</code> (cover o contain), <code>crop</code> ([x, y, ancho, alto], de 0 a 1) y <code>rot</code> (grados). <strong>shape</strong>: <code>shape</code> (rect, line, ellipse, triangle, star o arrow), <code>bg</code>, <code>radius</code> y <code>rot</code>; una línea mide de 1 a 12 px de alto.</p><p>Se guarda solo si arma bien el correo y pasa la revisión antispam, igual que en el editor: entre otras cosas, al menos 200 caracteres de texto, poca imagen, pocos enlaces y nada de acortadores. <code>POST /templates/check</code> dice cómo va cada regla sin guardar nada. Lo más cómodo es armarla en el Lienzo y leerla después con <code>GET /templates/{template_id}</code>.</p><div class="api-code" data-copy-box>
   <pre><code>{
   &#34;h&#34;: 420,
   &#34;bg&#34;: &#34;#FFFFFF&#34;,
@@ -523,21 +523,21 @@ function es_de_sobreala(string $cuerpo, string $cabecera, string $secreto): bool
       </section>
       <section class="api-doc" id="fuera">
         <h2 class="api-doc__title">Lo que la API no hace</h2>
-<p>Hay cosas que se hacen solo en el panel, porque son de una persona y no de un sistema: la contraseña y el segundo factor, los usuarios, pagar y cambiar de plan, conectar dominios y confirmar remitentes, crear llaves y avisos, y eliminar la cuenta.</p><p>Tampoco, por ahora: importar un CSV (por la API se cargan contactos en JSON), mandar un archivo adjunto, bajar el PDF de una plantilla ni las estadísticas en PDF o CSV (por la API van en JSON).</p>      </section>
+<p>Hay cosas que se hacen solo desde el Dashboard, porque son de una persona y no de un sistema: la contraseña y el segundo factor, los usuarios, pagar y cambiar de plan, conectar dominios y confirmar remitentes, crear claves de API y webhooks, y eliminar la cuenta.</p><p>Tampoco, por ahora: importar un CSV (por la API se cargan contactos en JSON), mandar un archivo adjunto, bajar el PDF de una plantilla ni las estadísticas en PDF o CSV (por la API van en JSON).</p>      </section>
 
       <section class="api-doc" id="cuenta">
         <h2 class="api-doc__title">Tu cuenta</h2>
-        <p>De quién es la llave, qué puede hacer y desde qué direcciones se puede enviar.</p>
+        <p>De quién es la clave, qué puede hacer y desde qué direcciones se puede enviar.</p>
 
         <article class="api-endpoint" id="get-me">
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/me</code></h3>
-          <p class="api-endpoint__title">Tu cuenta y tu llave</p>
-          <p>La empresa, su plan, la cuota del mes, los límites, si hoy se puede enviar (y si no, por qué) y la llave con la que llamas.</p>
+          <p class="api-endpoint__title">Tu cuenta y tu clave</p>
+          <p>La empresa, su plan, la cuota del mes, los límites, si hoy se puede enviar (y si no, por qué) y la clave con la que llamas.</p>
           <p class="api-endpoint__scope">
 Cualquier llave.
           </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/me \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -632,11 +632,11 @@ Cualquier llave.
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/senders</code></h3>
           <p class="api-endpoint__title">Remitentes y «Responder a»</p>
-          <p>Desde qué direcciones puede salir un correo (<code>ready</code> dice si hoy puede), a dónde se responde, y tus dominios con su estado. Se conectan y se confirman en el panel, en Configuración de envío.</p>
+          <p>Desde qué direcciones puede salir un correo (<code>ready</code> dice si hoy puede), a dónde se responde, y tus dominios con su estado. Se conectan y se confirman en el Dashboard, en Configuración de envío.</p>
           <p class="api-endpoint__scope">
 Cualquier llave.
           </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/senders \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -723,11 +723,11 @@ Cualquier llave.
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/openapi.json</code></h3>
           <p class="api-endpoint__title">Esta descripción, en OpenAPI</p>
-          <p>Todo lo de esta página en OpenAPI 3.1, para generar un cliente o importarlo en Postman. No pide llave.</p>
+          <p>Todo lo de esta página en OpenAPI 3.1, para generar un cliente o importarlo en Postman. No pide clave.</p>
           <p class="api-endpoint__scope">
 No pide llave.
           </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/openapi.json</code></pre>
   <button class="api-code__copy" type="button" data-copy="curl https://app.sobreala.com/api/v1/openapi.json"
@@ -805,7 +805,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/contacts?tag=Socios&amp;limit=50 \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -913,7 +913,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
           <p>El mismo que sale en la lista.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/contacts/{contact_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -1033,7 +1033,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/contacts \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -1151,8 +1151,8 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
         <article class="api-endpoint" id="patch-contacts-contact_id">
           <h3 class="api-endpoint__route"><span class="api-method api-method--patch">PATCH</span>
             <code>/contacts/{contact_id}</code></h3>
-          <p class="api-endpoint__title">Cambiar un contacto</p>
-          <p>Solo lo que mandes: <code>email</code>, <code>name</code>, <code>external_id</code> (null lo quita), <code>tags</code> (reemplazan las que tenía) y <code>fields</code> (las columnas se mezclan con las que tenía, y una lista que llega reemplaza la suya). Como en el panel, queda con todas sus columnas llenas. De dónde salió y cuándo entró no se cambian.</p>
+          <p class="api-endpoint__title">Editar un contacto</p>
+          <p>Solo lo que mandes: <code>email</code>, <code>name</code>, <code>external_id</code> (null lo quita), <code>tags</code> (reemplazan las que tenía) y <code>fields</code> (las columnas se mezclan con las que tenía, y una lista que llega reemplaza la suya). Como en el Dashboard, queda con todas sus columnas llenas. De dónde salió y cuándo entró no se cambian.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -1187,7 +1187,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/contacts/{contact_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -1307,7 +1307,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <p>Si se había dado de baja, su supresión se queda: volver a cargarlo no le devuelve los correos.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/contacts/{contact_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -1339,7 +1339,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <p>Las de la cuenta, con cuántos contactos lleva cada una, y cuántas caben en tu plan.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/tags \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -1393,7 +1393,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/tags \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -1433,7 +1433,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <p>Sale de la cuenta y de los contactos que la llevaban; los contactos se quedan. El nombre va en la dirección, codificado (un espacio es %20).</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/tags/{name} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -1467,7 +1467,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <p>Tus columnas: la clave con que se nombran (<code>*|CIUDAD|*</code> en una plantilla), el nombre, el tipo y cuántos contactos la tienen llena. Una lista trae sus datos en <code>items</code>, y <code>filled</code> cuenta a los que tienen al menos una fila.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/fields \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -1583,7 +1583,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/fields \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -1713,7 +1713,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/fields/{key} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -1757,7 +1757,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <p>Y lo que los contactos tenían escrito en ella (de una lista, todas sus filas).</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/fields/{key} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -1818,7 +1818,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/suppressions \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -1869,7 +1869,7 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
           <p>Sus datos y sus filas, de la más vieja a la más nueva.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -1975,7 +1975,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X PUT https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -2094,7 +2094,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -2220,7 +2220,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key}/{row_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -2264,7 +2264,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
           <p>Las demás se quedan como estaban.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/contacts/{contact_id}/lists/{key}/{row_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -2292,7 +2292,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
       </section>
       <section class="api-doc" id="plantillas">
         <h2 class="api-doc__title">Plantillas</h2>
-        <p>Las plantillas de tu cuenta, las mismas de Mis plantillas. Las del lienzo (<code>source: canvas</code>) se crean, se cambian y se cargan en ZIP por aquí, con las mismas reglas que al guardar en el panel; las cargadas en HTML (<code>upload</code>) y las prediseñadas de antes (<code>builtin</code>) se leen, se arman, se mueven, se duplican y se borran. Cada una puede elegir de quién sale (<code>send_from</code>, el id de un remitente de <code>GET /senders</code>) y a dónde se responde (<code>reply_to</code>); sin elegir, van los predeterminados. Caben 300 por cuenta.</p>
+        <p>Las plantillas de tu cuenta, las mismas de Mis plantillas. Las del lienzo (<code>source: canvas</code>) se crean, se cambian y se cargan en ZIP por aquí, con las mismas reglas que al guardar en el editor; las cargadas en HTML (<code>upload</code>) y las prediseñadas de antes (<code>builtin</code>) se leen, se arman, se mueven, se duplican y se borran. Cada una puede elegir de quién sale (<code>send_from</code>, el id de un remitente de <code>GET /senders</code>) y a dónde se responde (<code>reply_to</code>); sin elegir, van los predeterminados. Caben 300 por cuenta.</p>
 
         <article class="api-endpoint" id="get-templates">
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
@@ -2328,7 +2328,7 @@ Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/templates?folder_id=none \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -2381,10 +2381,10 @@ Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/templates/{template_id}</code></h3>
           <p class="api-endpoint__title">Una plantilla</p>
-          <p>Con las marcas que nombra (<code>marks</code>), los bloques que repite o esconden (<code>blocks</code>) y lo que tiene dentro: el <code>canvas</code> y la dirección de cada foto en <code>images</code> si es del lienzo, el <code>html</code> si se cargó en HTML, o <code>template</code> y <code>fields</code> si es una prediseñada.</p>
+          <p>Con las variables que usa (<code>marks</code>), los bloques que repite o esconden (<code>blocks</code>) y lo que tiene dentro: el <code>canvas</code> y la URL de cada imagen en <code>images</code> si es del lienzo, el <code>html</code> si se cargó en HTML, o <code>template</code> y <code>fields</code> si es una prediseñada.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/templates/{template_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -2515,7 +2515,7 @@ Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/templates/{template_id}/render</code></h3>
           <p class="api-endpoint__title">Ver cómo sale</p>
-          <p>El correo armado, con los datos de un contacto (<code>contact_id</code>), los que mandes en <code>data</code> (que mandan sobre los del contacto) o los dos. Transaccional sale sin baja ni marca de agua; promocional, con las dos, y el enlace de baja es de ejemplo. <code>missing</code> dice qué marcas se quedarían en blanco. No envía ni guarda nada.</p>
+          <p>El correo armado, con los datos de un contacto (<code>contact_id</code>), los que mandes en <code>data</code> (que mandan sobre los del contacto) o los dos. Transaccional sale sin baja ni marca de agua; promocional, con las dos, y el enlace de baja es de ejemplo. <code>missing</code> dice qué variables se quedarían en blanco. No envía ni guarda nada.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -2535,17 +2535,17 @@ Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          <
       <tr>
         <th scope="row"><code>subject</code><br>
           <span class="api-type">texto</span></th>
-        <td>Un asunto con marcas, hasta 150 caracteres, para verlo lleno.</td>
+        <td>Un asunto con variables, hasta 150 caracteres, para verlo lleno.</td>
       </tr>
       <tr>
         <th scope="row"><code>data</code><br>
           <span class="api-type">objeto</span></th>
-        <td>Cada marca por su clave: texto o un número de hasta 1,000 caracteres, o una lista de hasta 50 filas (cada una con hasta 10 datos de hasta 200 caracteres). Hasta 50 claves y 32 KB, en una línea cada valor. CORREO no se manda: es la dirección.</td>
+        <td>Cada variable por su nombre: texto o un número de hasta 1,000 caracteres, o una lista de hasta 50 filas (cada una con hasta 10 datos de hasta 200 caracteres). Hasta 50 claves y 32 KB, en una línea cada valor. CORREO no se manda: es la dirección.</td>
       </tr>
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/{template_id}/render \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -2612,7 +2612,7 @@ Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/templates/check</code></h3>
           <p class="api-endpoint__title">Revisar un lienzo</p>
-          <p>La revisión del editor, sin guardar: <code>ok</code> dice si se podría guardar, <code>issues</code> lo que falta y <code>rules</code> cómo va cada regla, en el orden de la ventana de requisitos del panel.</p>
+          <p>La revisión del editor, sin guardar: <code>ok</code> dice si se podría guardar, <code>issues</code> lo que falta y <code>rules</code> cómo va cada regla, en el orden de la ventana de requisitos del editor.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -2632,7 +2632,7 @@ Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/check \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -2733,10 +2733,10 @@ Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/templates/{template_id}/zip</code></h3>
           <p class="api-endpoint__title">Bajar el ZIP</p>
-          <p>El mismo ZIP que baja el editor: el lienzo con sus fotos, que se vuelve a cargar en cualquier cuenta, y el HTML con sus imágenes. Solo de las del lienzo. Responde el archivo, no JSON. Cuenta para el límite de 5 plantillas por minuto.</p>
+          <p>El mismo ZIP que baja el editor: el lienzo con sus imágenes, que se vuelve a cargar en cualquier cuenta, y el HTML con sus imágenes. Solo de las del lienzo. Responde el archivo, no JSON. Cuenta para el límite de 5 plantillas por minuto.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/templates/{template_id}/zip \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -2751,7 +2751,7 @@ Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/templates</code></h3>
           <p class="api-endpoint__title">Crear una plantilla del lienzo</p>
-          <p>Con la misma revisión que Guardar: si algo no se cumple, 422 dice qué en <code>fields.canvas</code>. Las fotos que nombra tienen que ser tuyas (súbelas antes con <code>POST /images</code>). Hasta 5 por minuto.</p>
+          <p>Con la misma revisión que Guardar: si algo no se cumple, 422 dice qué en <code>fields.canvas</code>. Las imágenes que usa tienen que ser tuyas (súbelas antes con <code>POST /images</code>). Hasta 5 por minuto.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -2786,7 +2786,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -3003,7 +3003,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/templates/import</code></h3>
           <p class="api-endpoint__title">Cargar un ZIP</p>
-          <p>El ZIP que baja el Lienzo, de esta cuenta o de otra, en multipart: <code>file</code>, y si quieres <code>name</code> y <code>folder_id</code>. Sus fotos entran a tu cuenta y cuentan contra tu tope. Hasta 5 MB.</p>
+          <p>El ZIP que baja el Lienzo, de esta cuenta o de otra, en multipart: <code>file</code>, y si quieres <code>name</code> y <code>folder_id</code>. Sus imágenes entran a tu cuenta y cuentan contra tu tope. Hasta 5 MB.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -3028,7 +3028,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/import \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -3196,7 +3196,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/templates/{template_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -3352,7 +3352,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/{template_id}/duplicate \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -3491,10 +3491,10 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--delete">DELETE</span>
             <code>/templates/{template_id}</code></h3>
           <p class="api-endpoint__title">Borrar una plantilla</p>
-          <p>Y las fotos que ninguna otra nombra. Una foto que ya salió en un correo se sigue viendo un año.</p>
+          <p>Y las imágenes que ninguna otra usa. Una imagen que ya salió en un correo se sigue viendo un año.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/templates/{template_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -3543,7 +3543,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/templates/move \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -3583,8 +3583,8 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
         <article class="api-endpoint" id="post-images">
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/images</code></h3>
-          <p class="api-endpoint__title">Subir una foto</p>
-          <p>Una foto para un lienzo, en multipart (<code>file</code>, hasta 5 MB): se revisa, se le quitan los bordes transparentes y se achica. Su <code>name</code> es el que va en una imagen del lienzo. Cuenta contra el tope de fotos de tu plan, y hasta 20 por minuto.</p>
+          <p class="api-endpoint__title">Subir una imagen</p>
+          <p>Una imagen para un lienzo, en multipart (<code>file</code>, hasta 5 MB): se revisa, se le quitan los bordes transparentes y se achica. Su <code>name</code> es el que va en una imagen del lienzo. Cuenta contra el tope de imágenes de tu plan, y hasta 20 por minuto.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -3599,7 +3599,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/images \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -3642,7 +3642,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
           <p>Por nombre, con cuántas plantillas tiene cada una, cuántas caben y los colores que hay.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/folders \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -3727,7 +3727,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/folders \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -3790,7 +3790,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/folders/{folder_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -3834,7 +3834,7 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
           <p>Sus plantillas se quedan, sin carpeta.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>templates:write</code> · Con una llave de prueba: no.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/folders/{folder_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -3862,13 +3862,13 @@ Permiso: <code>templates:write</code> · Con una llave de prueba: no.          <
       </section>
       <section class="api-doc" id="correos">
         <h2 class="api-doc__title">Correos</h2>
-        <p>Un correo a una persona, con una de tus plantillas o con un texto, y lo que pasó con él. Las reglas de cada clase están en «Transaccional o promocional». Si la plantilla o el asunto nombran una marca que no llega en <code>data</code> ni está en el contacto, no sale: 422 con <code>missing</code>. Los correos se guardan 30 días, sin sus datos ni su HTML.</p>
+        <p>Un correo a una persona, con una de tus plantillas o con un texto, y lo que pasó con él. Las reglas de cada tipo están en «Transaccional o promocional». Si la plantilla o el asunto usan una variable que no llega en <code>data</code> ni está en el contacto, no sale: 422 con <code>missing</code>. Los correos se guardan 30 días, sin sus datos ni su HTML.</p>
 
         <article class="api-endpoint" id="post-emails">
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/emails</code></h3>
           <p class="api-endpoint__title">Enviar un correo</p>
-          <p>Sale en el momento: 201 con el correo guardado. Con una llave de prueba se revisa y se arma todo, pero no sale, no gasta cuota y no se guarda: responde 200 con <code>status: simulated</code> y el correo armado en <code>preview</code>. Reintenta con la misma Idempotency-Key si no sabes si salió. Hasta 120 por minuto.</p>
+          <p>Sale en el momento: 201 con el correo guardado. Con una clave de prueba se revisa y se arma todo, pero no sale, no gasta cuota y no se guarda: responde 200 con <code>status: simulated</code> y el correo armado en <code>preview</code>. Reintenta con la misma Idempotency-Key si no sabes si salió. Hasta 120 por minuto.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>emails:send</code> · Con una llave de prueba: simulado.          </p>
 <p class="api-endpoint__label">En el cuerpo</p>
@@ -3888,7 +3888,7 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: simulado.         
       <tr>
         <th scope="row"><code>subject</code> <span class="api-required">obligatorio</span><br>
           <span class="api-type">texto</span></th>
-        <td>Hasta 150 caracteres, en una línea, con marcas.</td>
+        <td>Hasta 150 caracteres, en una línea, con variables.</td>
       </tr>
       <tr>
         <th scope="row"><code>template_id</code><br>
@@ -3908,7 +3908,7 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: simulado.         
       <tr>
         <th scope="row"><code>data</code><br>
           <span class="api-type">objeto</span></th>
-        <td>Los datos de las marcas, como en «Ver cómo sale». Mandan sobre los del contacto.</td>
+        <td>Los datos de las variables, como en «Ver cómo sale». Mandan sobre los del contacto.</td>
       </tr>
       <tr>
         <th scope="row"><code>from_id</code><br>
@@ -3923,7 +3923,7 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: simulado.         
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/emails \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -4004,7 +4004,7 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: simulado.         
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/emails</code></h3>
           <p class="api-endpoint__title">Listar correos</p>
-          <p>Los que mandó la API en los últimos 30 días, de los más nuevos a los más viejos. El asunto sale como se escribió, con sus marcas.</p>
+          <p>Los que mandó la API en los últimos 30 días, de los más nuevos a los más viejos. El asunto sale como se escribió, con sus variables.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
 <p class="api-endpoint__label">En la dirección</p>
@@ -4039,7 +4039,7 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/emails?type=transactional&amp;limit=50 \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -4084,10 +4084,10 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/emails/{email_id}</code></h3>
           <p class="api-endpoint__title">Un correo y lo que pasó</p>
-          <p>Con <code>events</code>: cuándo se entregó (delivery), se abrió (open), se pulsó (click, nunca en un transaccional), rebotó (bounce), se marcó como spam (complaint) o se rechazó (reject). Lo primero de cada cosa. <code>pending</code> es uno que no se sabe si salió: no lo repitas, consúltalo.</p>
+          <p>Con <code>events</code>: cuándo se entregó (delivery), se abrió (open), se hizo clic (click, nunca en un transaccional), rebotó (bounce), se marcó como spam (complaint) o se rechazó (reject). Lo primero de cada cosa. <code>pending</code> es uno que no se sabe si salió: no lo repitas, consúltalo.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/emails/{email_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -4160,7 +4160,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/campaigns \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -4246,7 +4246,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
           <p>Con a cuántos saldría hoy (<code>audience</code>) y qué frena a la cuenta (<code>blocked</code>).</p>
           <p class="api-endpoint__scope">
 Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -4333,7 +4333,7 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
       <tr>
         <th scope="row"><code>subject</code> <span class="api-required">obligatorio</span><br>
           <span class="api-type">texto</span></th>
-        <td>Hasta 150 caracteres, con marcas.</td>
+        <td>Hasta 150 caracteres, con variables.</td>
       </tr>
       <tr>
         <th scope="row"><code>template_id</code><br>
@@ -4363,7 +4363,7 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/campaigns \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -4489,7 +4489,7 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X PATCH https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -4573,7 +4573,7 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
           <p>Lo que ya salió sigue en sus envíos. No mientras está saliendo.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/campaigns/{campaign_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -4602,10 +4602,10 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/campaigns/{campaign_id}/send</code></h3>
           <p class="api-endpoint__title">Mandarla ya</p>
-          <p>Responde 202 enseguida y la campaña empieza a salir por tandas. Una que ya salió sale otra vez entera. Si hoy la cuenta no puede enviar, 409 <code>cannot_send</code>. Con una llave de prueba dice a cuántos saldría y qué la frena, sin mandar nada.</p>
+          <p>Responde 202 enseguida y la campaña empieza a salir por tandas. Una que ya salió sale otra vez entera. Si hoy la cuenta no puede enviar, 409 <code>cannot_send</code>. Con una clave de prueba dice a cuántos saldría y qué la frena, sin mandar nada.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/campaigns/{campaign_id}/send \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -4693,7 +4693,7 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X POST https://app.sobreala.com/api/v1/campaigns/{campaign_id}/schedule \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34; \
@@ -4777,7 +4777,7 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
           <p>Ya no sale sola: espera a que la mandes.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl -X DELETE https://app.sobreala.com/api/v1/campaigns/{campaign_id}/schedule \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -4855,7 +4855,7 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/sends</code></h3>
           <p class="api-endpoint__title">Listar envíos</p>
-          <p>De los más nuevos, cada uno con sus cifras y cuántas personas lo recibieron, rebotaron, abrieron, pulsaron o se quejaron.</p>
+          <p>De los más nuevos, cada uno con sus cifras y cuántas personas lo recibieron, rebotaron, abrieron, hicieron clic o se quejaron.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
 <p class="api-endpoint__label">En la dirección</p>
@@ -4880,7 +4880,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/sends \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -4962,7 +4962,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
           <p>Con los primeros errores, si hubo.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/sends/{send_id} \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -5063,7 +5063,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/sends/{send_id}/recipients?outcome=opened&amp;limit=50 \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -5144,7 +5144,7 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/stats?period=30d \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -5245,7 +5245,7 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/stats/series \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -5295,8 +5295,8 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
         <article class="api-endpoint" id="get-stats-links">
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/stats/links</code></h3>
-          <p class="api-endpoint__title">Los enlaces más pulsados</p>
-          <p>Cuántas personas pulsó cada uno, hasta 20.</p>
+          <p class="api-endpoint__title">Los enlaces con más clics</p>
+          <p>Cuántas personas hicieron clic en cada uno, hasta 20.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
 <p class="api-endpoint__label">En la dirección</p>
@@ -5326,7 +5326,7 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/stats/links \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -5380,7 +5380,7 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/stats/timing \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -5494,7 +5494,7 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/stats/growth \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>
@@ -5585,7 +5585,7 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
     </tbody>
   </table>
 </div>
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           <div class="api-code" data-copy-box>
   <pre><code>curl https://app.sobreala.com/api/v1/events?type=bounce&amp;limit=100 \
   -H &#34;Authorization: Bearer sa_live_tu_llave&#34;</code></pre>

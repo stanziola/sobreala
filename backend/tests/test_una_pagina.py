@@ -170,7 +170,7 @@ def test_los_tutoriales_llevan_solo_su_titulo():
     el nombre de las pestañas para un lector de pantalla."""
     html = (LANDING / "index.html").read_text(encoding="utf-8")
     cabeza = html[html.index('id="tutorials"'):html.index('class="tutorial"')]
-    assert 'id="tutoriales-title">Aprende a usar el panel</h2>' in cabeza
+    assert 'id="tutoriales-title">Aprende a usar Sobreala</h2>' in cabeza
     assert 'class="eyebrow"' not in cabeza and 'class="section__intro"' not in cabeza
     assert "Pulsa el punto que late" not in html
     assert '<nav class="tutorial__tabs" aria-label="Tutoriales">' in html

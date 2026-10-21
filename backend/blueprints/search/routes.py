@@ -72,7 +72,7 @@ SEARCH_WORDS = {
     "api-keys": "api llave llaves clave token integracion programador desarrollador sistema",
     "api-webhooks": "avisos webhook webhooks notificaciones servidor eventos integracion",
     "api-emails": "correos api transaccionales promocionales enviados recibos",
-    "api-log": "registro errores peticiones log api",
+    "api-log": "registro errores peticiones log logs api",
     "api-docs": "documentacion api referencia programador integracion",
 }
 # Lo que se hace desde una pantalla y no es fila del árbol: (texto, ruta,

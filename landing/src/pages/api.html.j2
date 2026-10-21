@@ -115,7 +115,7 @@
           </p>
           {% if one.query %}{{ fields_table(one.query, 'En la dirección') }}{% endif %}
           {% if one.fields %}{{ fields_table(one.fields, 'En el cuerpo') }}{% endif %}
-          <p class="api-endpoint__label">Pedido</p>
+          <p class="api-endpoint__label">Solicitud</p>
           {{ code_box(one.curl, one.method ~ ' ' ~ one.path) }}
           {% if one.response is not none %}
           <p class="api-endpoint__label">Respuesta {{ one.status }}</p>

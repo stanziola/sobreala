@@ -21,8 +21,8 @@ baja, **el aviso de Amazon** que cuenta qué pasó con cada correo después de
 salir, **la pausa automática** de quien pasa del umbral de rebotes o quejas, y
 **la API pública** (octubre de 2026: llaves, contactos con sus listas,
 plantillas, correos transaccionales y promocionales, campañas, estadísticas y
-avisos a su sistema), con **el proceso en segundo plano** que manda lo
-programado y entrega esos avisos.
+webhooks), con **el proceso en segundo plano** que manda lo programado y
+entrega esos webhooks.
 
 ---
 
@@ -142,7 +142,7 @@ sobreala/
     │   │                   # o la fila de mail_log
     │   ├── pieces.py       # el lienzo fuera de la pantalla: lo usan el editor y la API
     │   ├── background.py   # lo de cada vuelta del proceso en segundo plano
-    │   ├── webhooks.py     # los avisos a su sistema: anotar, firmar y entregar
+    │   ├── webhooks.py     # los webhooks: anotar, firmar y entregar
     │   ├── safe_http.py    # hablarle a un servidor ajeno sin entrar a la red interna
     │   ├── api_auth.py     # la llave, la IP y los rangos de Cloudflare
     │   └── payments/
@@ -178,6 +178,12 @@ aplicación aparte: comparte modelos y servicios con el resto.
   sistema, mensajes de error, plantillas. Los textos de interfaz van en un solo
   archivo de traducciones, no dispersos en las plantillas.
 - Comentarios en inglés.
+- **Los términos técnicos van con su nombre estándar** (octubre de 2026), el
+  que usa todo el mundo: webhook (no «aviso»), clave de API (no «llave»), logs,
+  URL, hash, clic, variables (`*|NOMBRE|*`), modo producción o prueba, activar
+  y desactivar. Vale para los dos sitios, los correos y la documentación de la
+  API. Y la aplicación no se llama «el panel» delante del cliente: se dice
+  Sobreala, tu cuenta o el Dashboard.
 - **En la interfaz no se usan guiones largos.** Un inciso va entre paréntesis,
   con comas o con dos puntos. En el texto que lee un cliente —el panel, el sitio
   y los correos— esa raya se lee como escrita por una máquina. En los
@@ -234,7 +240,7 @@ cosa está como está, y lo que ya se probó y se quitó.
 | Estadísticas, la hora, varias cuentas abiertas, el menú, administración | `docs/panel.md` |
 | Pagos, PayPal, Paguélofácil, mejoras con prorrateo, recibo, `/checkout` | `docs/cobro.md` |
 | El sitio público: la página única, sus secciones, capturas y tutoriales | `docs/sitio.md` |
-| La API, sus llaves, los correos transaccionales, el proceso en segundo plano, los avisos a su sistema | `docs/api.md` |
+| La API, sus claves, los correos transaccionales, el proceso en segundo plano, los webhooks | `docs/api.md` |
 | Precios, límites por plan | `docs/pricing.md` (fuente de verdad) |
 | Conectar SES | `docs/ses.md` |
 
@@ -383,9 +389,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   `test_api_docs.py` la compara con `api_spec.py`, de donde salen
   `openapi.json` y `sobreala.com/api/`. **Cambiar la API pide regenerar el
   sitio.**
-- **Las llaves** guardan solo su hash, se enseñan una vez y se crean en el panel
-  (API → Llaves) con la contraseña y el segundo factor; una en la dirección se
-  revoca sola. Las de prueba solo leen y simulan.
+- **Las claves de API** guardan solo su hash, se enseñan una vez y se crean en
+  el Dashboard (API → Claves de API) con la contraseña y el segundo factor; una
+  que llega en la URL se revoca sola. Las de prueba solo leen y simulan.
 - **Dos clases de correo** (`sender.send_one`): **transaccional** (cualquier
   dirección, sin baja ni marca, sin contar clics) y **promocional** (un contacto
   completo, con su baja y su marca). Los dos gastan cuota, que se **aparta antes**
@@ -393,8 +399,8 @@ cosa está como está, y lo que ya se probó y se quitó.
 - **El proceso en segundo plano** (`worker.py`) manda lo programado y el resto
   de lo que empezó a salir, con un **turno** por campaña, y no manda nada si su
   `SECRET_KEY` no es la del web. Hay que crearlo en Railway (`docs/api.md`).
-- **Los avisos a su sistema** (webhooks): firmados, una vez por evento, nunca a
-  la red interna (`services/safe_http.py`), y apagados tras 72 h fallando.
+- **Los webhooks**: firmados, una vez por evento, nunca a la red interna
+  (`services/safe_http.py`), y desactivados tras 72 h fallando.
 
 ### El panel (`docs/panel.md`)
 

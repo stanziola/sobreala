@@ -383,8 +383,7 @@ def test_quitar_un_dominio_se_lleva_sus_remitentes_y_sus_responder_a(
     assert "send_from" not in plantilla and "reply_to" not in plantilla
 
 
-def test_los_registros_se_bajan_para_importarlos_en_cloudflare(client, database,
-                                                              outbox, ses):
+def test_los_registros_se_bajan_como_archivo_de_zona(client, database, outbox, ses):
     browser, cuenta = owner(client, database)
     # Un dominio que no es de la cuenta no tiene archivo.
     assert browser.get("/campaigns/sender/records/coopveraguas.org.txt").status_code == 404
@@ -392,15 +391,18 @@ def test_los_registros_se_bajan_para_importarlos_en_cloudflare(client, database,
     post(browser, action="domain", domain="coopveraguas.org")
     pantalla = browser.get(URL).get_data(as_text=True)
     assert 'href="/campaigns/sender/records/coopveraguas.org.txt"' in pantalla
-    assert "Descargar registros para Cloudflare" in pantalla
+    assert "Descargar los registros DNS" in pantalla
+    # El botón ya no da por hecho Cloudflare, y el archivo tampoco.
+    assert "para Cloudflare" not in pantalla
 
     archivo = browser.get("/campaigns/sender/records/coopveraguas.org.txt")
     assert archivo.status_code == 200
     assert archivo.mimetype == "text/plain"
     assert ('attachment; filename="registros-dns-coopveraguas.org.txt"'
             == archivo.headers["Content-Disposition"])
-    lineas = [one for one in archivo.get_data(as_text=True).splitlines()
-              if one and not one.startswith(";")]
+    texto = archivo.get_data(as_text=True)
+    assert "En Cloudflare" not in texto
+    lineas = [one for one in texto.splitlines() if one and not one.startswith(";")]
     # Los tres CNAME, con el nombre completo y su punto final, y sin proxy; y
     # el MX y el SPF del MAIL FROM (octubre de 2026), que no pasan por el proxy.
     assert lineas == [

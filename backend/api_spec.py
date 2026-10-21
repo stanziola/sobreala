@@ -25,32 +25,33 @@ PUBLIC = "public"
 
 SCOPES = [
     ("contacts:read", "Ver contactos", "Contactos, etiquetas, columnas y supresiones."),
-    ("contacts:write", "Cambiar contactos",
-     "Crear, cambiar y borrar contactos, sus listas, etiquetas y columnas."),
+    ("contacts:write", "Editar contactos",
+     "Crear, editar y borrar contactos, sus listas, etiquetas y columnas."),
     ("templates:read", "Ver plantillas", "Plantillas, carpetas y cómo queda cada correo."),
-    ("templates:write", "Cambiar plantillas",
-     "Crear, cambiar y borrar plantillas, carpetas y fotos."),
+    ("templates:write", "Editar plantillas",
+     "Crear, editar y borrar plantillas, carpetas e imágenes."),
     ("emails:send", "Enviar correos",
-     "Mandar un correo a una persona y ver los que mandó la API."),
-    ("campaigns:read", "Ver campañas", "Campañas, lo que salió y a quién."),
-    ("campaigns:write", "Cambiar campañas", "Crear, cambiar y borrar campañas."),
-    ("campaigns:send", "Mandar campañas", "Enviar y programar campañas."),
+     "Enviar un correo a una persona y ver los que se enviaron por la API."),
+    ("campaigns:read", "Ver campañas", "Campañas, sus envíos y a quién."),
+    ("campaigns:write", "Editar campañas", "Crear, editar y borrar campañas."),
+    ("campaigns:send", "Enviar campañas", "Enviar y programar campañas."),
     ("stats:read", "Ver estadísticas", "Las cifras y los eventos de tus correos."),
 ]
 
 # Los códigos de error: el código, su estado HTTP y qué quiere decir. La frase
 # que viaja en `message` está en `i18n.py` (`api_error_*`).
 ERRORS = [
-    ("unauthorized", 401, "Falta la llave, o no es válida, está vencida o se revocó."),
-    ("key_in_url", 400, "La llave llegó en la dirección. Se rechaza y, si era buena, "
-                        "se revoca: ahí queda escrita en registros ajenos."),
-    ("ip_not_allowed", 403, "La llave tiene una lista de IP y esta no está."),
+    ("unauthorized", 401, "Falta la clave de API, o no es válida, está vencida o se "
+                          "revocó."),
+    ("key_in_url", 400, "La clave llegó en la URL. Se rechaza y, si era válida, se "
+                        "revoca: ahí queda escrita en logs ajenos."),
+    ("ip_not_allowed", 403, "La clave tiene una lista de IP y esta no está."),
     ("account_suspended", 403, "La cuenta está suspendida."),
     ("account_closed", 403, "La cuenta todavía no se abrió (falta la demostración o "
                             "un plan)."),
-    ("test_key_cannot", 403, "Una llave de prueba no puede hacer esto: solo lee y "
+    ("test_key_cannot", 403, "Una clave de prueba no puede hacer esto: solo lee y "
                              "simula envíos."),
-    ("missing_scope", 403, "La llave no tiene el permiso que pide esta ruta."),
+    ("missing_scope", 403, "La clave no tiene el permiso que pide esta ruta."),
     ("rate_limited", 429, "Demasiadas peticiones. Espera lo que dice Retry-After."),
     ("not_found", 404, "No existe, o no es de esta cuenta. Las dos cosas responden "
                        "igual."),
@@ -67,7 +68,7 @@ ERRORS = [
     ("idempotency_busy", 409, "La primera petición con esa Idempotency-Key sigue en "
                               "curso."),
     ("busy", 409, "Ya hay una carga de contactos en curso en la cuenta (por la API "
-                  "o una importación del panel). Reintenta en unos segundos."),
+                  "o una importación desde el Dashboard). Reintenta en unos segundos."),
     ("unknown_tag", 422, "Hay etiquetas que no existen; `tags` dice cuáles. Se crean "
                          "antes con `POST /tags`."),
     ("email_taken", 409, "Esa dirección ya la tiene otro contacto de la cuenta."),
@@ -75,7 +76,7 @@ ERRORS = [
                                "cuenta."),
     ("tag_exists", 409, "Esa etiqueta ya existe."),
     ("limit_reached", 409, "Se llegó al tope de tu plan (etiquetas, columnas, "
-                           "plantillas, carpetas o fotos)."),
+                           "plantillas, carpetas o imágenes)."),
     ("field_exists", 409, "Ya hay una columna con esa clave, o es Nombre o Correo, "
                           "que todo contacto ya trae."),
     ("field_values", 409, "Hay contactos con valores que no encajan en el tipo nuevo; "
@@ -89,19 +90,19 @@ ERRORS = [
     ("undeliverable", 422, "El dominio de esa dirección no recibe correo."),
     ("demo_address", 422, "En la demostración solo se envía a las direcciones de prueba "
                           "confirmadas."),
-    ("missing_data", 422, "Hay marcas sin dato; `missing` dice cuáles."),
+    ("missing_data", 422, "Hay variables sin dato; `missing` dice cuáles."),
     ("bad_subject", 422, "El asunto lleno trae un salto de línea de un dato del contacto."),
-    ("throttled", 503, "Amazon pidió esperar. No salió ni gastó cuota: reintenta tras "
-                       "Retry-After."),
+    ("throttled", 503, "Amazon pidió esperar. No se envió ni gastó cuota: reintenta "
+                       "tras Retry-After."),
     ("delivery_failed", 502, "No se pudo entregar a Amazon. No gastó cuota."),
-    ("campaign_sending", 409, "La campaña está saliendo: no se cambia, no se borra ni "
+    ("campaign_sending", 409, "La campaña se está enviando: no se edita, no se borra ni "
                               "se reprograma hasta que termine."),
     ("unavailable", 503, "No disponible por un momento; reintenta tras Retry-After."),
     ("internal_error", 500, "Algo falló de nuestro lado. Escríbenos con el "
                             "request_id."),
 ]
 
-# Cómo comprobar la firma de un aviso, en tres lenguajes.
+# Cómo comprobar la firma de un webhook, en tres lenguajes.
 _VERIFY = r'''# Python
 import hashlib, hmac, time
 
@@ -137,50 +138,50 @@ GUIDES: list[dict[str, Any]] = [
     {"id": "empezar", "title": "Empezar",
      "paragraphs": [
          "La API deja que el sistema de tu negocio (tu tienda en línea, tu programa "
-         "de socios, tu sistema de cobros) hable con tu cuenta de Sobreala sin "
-         "entrar al panel: carga y actualiza contactos, usa tus plantillas y tus "
+         "de socios, tu sistema de cobros) se conecte con tu cuenta de Sobreala sin "
+         "que entres a ella: carga y actualiza contactos, usa tus plantillas y tus "
          "remitentes, envía correos y lee lo que pasó con ellos.",
          "Todas las direcciones empiezan por **https://app.sobreala.com/api/v1**. "
          "Se habla en JSON y en UTF-8, y siempre por HTTPS.",
-         "Lo primero es crear una llave en el panel: **Dashboard → API → Llaves**. "
-         "Con ella, esta llamada dice de quién es la cuenta y si hoy se puede "
-         "enviar:",
+         "Lo primero es crear una clave de API: **Dashboard → API → Claves de "
+         "API**. Con ella, esta llamada dice de quién es la cuenta y si hoy se "
+         "puede enviar:",
      ],
      "code": "curl https://app.sobreala.com/api/v1/me \\\n"
-             "  -H \"Authorization: Bearer sa_live_tu_llave\""},
-    {"id": "autenticacion", "title": "La llave",
+             "  -H \"Authorization: Bearer sa_live_tu_clave\""},
+    {"id": "autenticacion", "title": "La clave de API",
      "paragraphs": [
-         "Cada petición lleva la llave en la cabecera **Authorization: Bearer**. "
-         "Nunca en la dirección: una llave que llega ahí se rechaza y se revoca "
-         "sola, porque queda escrita en los registros de los servidores por donde "
-         "pasa.",
-         "**La llave va en tu servidor**, nunca en una página web, en una "
+         "Cada petición lleva la clave de API en la cabecera **Authorization: "
+         "Bearer**. Nunca en la URL: una clave que llega ahí se rechaza y se "
+         "revoca sola, porque queda escrita en los logs de los servidores por "
+         "donde pasa.",
+         "**La clave va en tu servidor**, nunca en una página web, en una "
          "aplicación que se descarga ni en un repositorio. La API no acepta "
          "llamadas desde un navegador de otra página.",
-         "La llave se ve una sola vez, al crearla: nosotros guardamos solo una "
-         "huella de ella. Si la pierdes, crea otra y revoca la vieja. Cada llave "
-         "puede vencer, y puede quedar limitada a unas IP.",
-         "Crear una llave pide tu contraseña (o un código a tu correo) y el código "
+         "La clave se ve una sola vez, al crearla: nosotros guardamos solo su "
+         "hash. Si la pierdes, crea otra y revoca la vieja. Cada clave puede "
+         "vencer, y puede quedar limitada a unas IP.",
+         "Crear una clave pide tu contraseña (o un código a tu correo) y el código "
          "de tu app si tienes segundo factor, y te llega un correo cada vez que se "
          "crea o se revoca una.",
      ]},
     {"id": "permisos", "title": "Permisos",
      "paragraphs": [
-         "Cada llave tiene los permisos que le diste al crearla, y cada ruta dice "
-         "cuál pide. `GET /me` y `GET /senders` responden a cualquier llave.",
+         "Cada clave tiene los permisos que le diste al crearla, y cada ruta dice "
+         "cuál pide. `GET /me` y `GET /senders` responden a cualquier clave.",
      ],
      "scopes": True},
-    {"id": "prueba", "title": "Llaves de prueba",
+    {"id": "prueba", "title": "Claves de prueba",
      "paragraphs": [
-         "Una llave que empieza por **sa_test_** es para ensayar: **lee todo lo "
+         "Una clave que empieza por **sa_test_** es para hacer pruebas: **lee todo lo "
          "que sus permisos dejen, y los envíos se simulan**. `POST /emails` arma "
          "el correo, lo revisa y te lo devuelve armado, pero no sale nada, no se "
          "gasta cuota y no se guarda nada. Enviar o programar una campaña dice a "
          "cuántos saldría y qué la frena, sin cambiar nada.",
-         "Una llave de prueba **no puede escribir**: ni crear contactos ni "
+         "Una clave de prueba **no puede escribir**: ni crear contactos ni "
          "plantillas ni campañas. Así, si se filtra desde un servidor de pruebas, "
-         "no puede tocar tu lista. Para escribir hace falta una llave de verdad "
-         "(**sa_live_**).",
+         "no puede tocar tu lista. Para escribir hace falta una clave de "
+         "producción (**sa_live_**).",
      ]},
     {"id": "errores", "title": "Errores",
      "paragraphs": [
@@ -196,14 +197,14 @@ GUIDES: list[dict[str, Any]] = [
      "errors": True},
     {"id": "limites", "title": "Límites",
      "paragraphs": [
-         "Por cuenta, sumando todas sus llaves: **600 peticiones por minuto**. "
+         "Por cuenta, sumando todas sus claves: **600 peticiones por minuto**. "
          "Además, por minuto: 120 correos, 30 cargas de contactos (y 5,000 filas), "
-         "5 plantillas o ZIP, 20 fotos y 30 consultas de estadísticas. Pasado un "
+         "5 plantillas o ZIP, 20 imágenes y 30 consultas de estadísticas. Pasado un "
          "límite responde 429 con la cabecera **Retry-After**, en segundos.",
          "El cuerpo de una petición llega hasta 1 MB, y hasta 6 MB el ZIP de una "
-         "plantilla y una foto. Lo pesado va de uno en uno por cuenta: dos cargas "
+         "plantilla y una imagen. Lo pesado va de uno en uno por cuenta: dos cargas "
          "de contactos a la vez no se cruzan.",
-         "Los correos gastan la cuota de tu plan, como en el panel. En la "
+         "Los correos gastan la cuota de tu plan, como desde el Dashboard. En la "
          "demostración solo salen a tus direcciones de prueba.",
      ]},
     {"id": "paginacion", "title": "Listas largas",
@@ -222,7 +223,7 @@ GUIDES: list[dict[str, Any]] = [
          "primera, con la cabecera Idempotent-Replayed: true, en vez de mandarlo "
          "otra vez.",
          "La aceptan `POST /emails`, `POST /contacts`, `POST /campaigns` y enviar "
-         "y programar una campaña. Se guarda 24 horas, para esa llave y esa ruta. "
+         "y programar una campaña. Se guarda 24 horas, para esa clave y esa ruta. "
          "Con otro cuerpo responde 422; mientras la primera sigue en curso, 409.",
      ]},
     {"id": "fechas", "title": "Fechas y horas",
@@ -273,12 +274,12 @@ GUIDES: list[dict[str, Any]] = [
          "postal al pie, salen de uno de tus remitentes y no salen si la cuenta "
          "está en pausa. En la demostración solo van a tus direcciones de prueba.",
      ]},
-    {"id": "avisos", "title": "Avisos a tu sistema",
+    {"id": "webhooks", "title": "Webhooks",
      "paragraphs": [
          "En vez de preguntar cada rato, tu servidor puede recibir lo que pasa con "
-         "tus correos en cuanto pasa. Los avisos se crean en el panel (**Dashboard → "
-         "API → Avisos**): una dirección https de tu servidor y los eventos que "
-         "quieres. Caben 5.",
+         "tus correos en cuanto pasa. Los webhooks se crean en **Dashboard → API → "
+         "Webhooks**: la URL https de tu endpoint y los eventos que quieres. "
+         "Caben 5.",
          "Los eventos: **email.delivered** (llegó), **email.bounced** (rebotó; "
          "`permanent` dice si la dirección no existe), **email.complained** (lo "
          "marcaron como spam), **email.rejected** (Amazon no lo mandó), "
@@ -287,17 +288,18 @@ GUIDES: list[dict[str, Any]] = [
          "individual), **contact.unsubscribed** y **campaign.finished** (con sus "
          "cifras). Cada uno dice de dónde vino en `source`: campaign, single o api, "
          "con sus ids.",
-         "Cada aviso es un POST en JSON con `id`, `type`, `created_at` y `data`, y "
-         "tres cabeceras: **Sobreala-Event-Id**, **Sobreala-Event-Type** y "
-         "**Sobreala-Signature** (`t=<segundos>,v1=<firma>`). La firma es un "
-         "HMAC-SHA256, con el secreto del aviso, de `t`, un punto y el cuerpo tal "
-         "como llegó. Compruébala siempre, y rechaza las de más de 5 minutos.",
+         "Cada evento llega como un POST en JSON con `id`, `type`, `created_at` y "
+         "`data`, y tres cabeceras: **Sobreala-Event-Id**, **Sobreala-Event-Type** "
+         "y **Sobreala-Signature** (`t=<segundos>,v1=<firma>`). La firma es un "
+         "HMAC-SHA256, con el secreto de firma del webhook, de `t`, un punto y el "
+         "cuerpo tal como llegó. Compruébala siempre, y rechaza las de más de 5 "
+         "minutos.",
          "Tu servidor tiene que responder un 2xx en menos de 5 segundos (las "
          "redirecciones no se siguen). Si no, se reintenta al minuto, a los 5 y 30 "
-         "minutos, a las 2, 6, 12 y 24 horas, y los demás avisos de esa dirección "
-         "esperan con él. Tras 72 horas fallando se apaga y te escribimos. Un mismo "
-         "evento puede llegar dos veces y en otro orden: usa Sobreala-Event-Id para "
-         "no contarlo dos veces.",
+         "minutos, a las 2, 6, 12 y 24 horas, y los demás eventos de ese webhook "
+         "esperan con él. Tras 72 horas fallando se desactiva y te escribimos. Un "
+         "mismo evento puede llegar dos veces y en otro orden: usa "
+         "Sobreala-Event-Id para no contarlo dos veces.",
      ],
      "code": _VERIFY},
     {"id": "lienzo", "title": "El lienzo en JSON",
@@ -309,7 +311,7 @@ GUIDES: list[dict[str, Any]] = [
          "en tablas al enviarlo, así que lo que se encima tiene que poder cortarse "
          "en franjas y columnas.",
          "**text**: `text` (hasta 2,000 caracteres, con saltos de línea y "
-         "marcas), `font` (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, "
+         "variables), `font` (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, "
          "Georgia, Times New Roman, Courier New, Palatino, Garamond, Lucida Sans o "
          "Century Gothic), `size` (de 14 a 72), `color` (#RRGGBB), `bold`, "
          "`italic`, `align` (left, center o right), `line` (de 1 a 2.5) y `list` "
@@ -321,10 +323,10 @@ GUIDES: list[dict[str, Any]] = [
          "star o arrow), `bg`, `radius` y `rot`; una línea mide de 1 a 12 px de "
          "alto.",
          "Se guarda solo si arma bien el correo y pasa la revisión antispam, igual "
-         "que en el panel: entre otras cosas, al menos 200 caracteres de texto, "
+         "que en el editor: entre otras cosas, al menos 200 caracteres de texto, "
          "poca imagen, pocos enlaces y nada de acortadores. `POST /templates/check` "
          "dice cómo va cada regla sin guardar nada. Lo más cómodo es armarla en el "
-         "panel y leerla después con `GET /templates/{template_id}`.",
+         "Lienzo y leerla después con `GET /templates/{template_id}`.",
      ],
      "code": "{\n  \"h\": 420,\n  \"bg\": \"#FFFFFF\",\n  \"items\": [\n"
              "    {\"t\": \"text\", \"x\": 40, \"y\": 40, \"w\": 520, \"h\": 120,\n"
@@ -336,10 +338,10 @@ GUIDES: list[dict[str, Any]] = [
              "  ]\n}"},
     {"id": "fuera", "title": "Lo que la API no hace",
      "paragraphs": [
-         "Hay cosas que se hacen solo en el panel, porque son de una persona y no "
-         "de un sistema: la contraseña y el segundo factor, los usuarios, pagar y "
-         "cambiar de plan, conectar dominios y confirmar remitentes, crear llaves "
-         "y avisos, y eliminar la cuenta.",
+         "Hay cosas que se hacen solo desde el Dashboard, porque son de una persona "
+         "y no de un sistema: la contraseña y el segundo factor, los usuarios, "
+         "pagar y cambiar de plan, conectar dominios y confirmar remitentes, crear "
+         "claves de API y webhooks, y eliminar la cuenta.",
          "Tampoco, por ahora: importar un CSV (por la API se cargan contactos en "
          "JSON), mandar un archivo adjunto, bajar el PDF de una plantilla ni las "
          "estadísticas en PDF o CSV (por la API van en JSON).",
@@ -389,13 +391,13 @@ _FOLDER = {"id": "6533b0aaa1b2c3d4e5f60900", "name": "Cobros", "color": "blue",
 # Las rutas, por grupo, en el orden de la página.
 GROUPS: list[dict[str, Any]] = [
     {"id": "cuenta", "title": "Tu cuenta",
-     "intro": "De quién es la llave, qué puede hacer y desde qué direcciones se "
+     "intro": "De quién es la clave, qué puede hacer y desde qué direcciones se "
               "puede enviar.",
      "endpoints": [
          {"method": "GET", "path": "/me", "scope": ANY,
-          "title": "Tu cuenta y tu llave",
+          "title": "Tu cuenta y tu clave",
           "description": "La empresa, su plan, la cuota del mes, los límites, si hoy "
-                         "se puede enviar (y si no, por qué) y la llave con la que "
+                         "se puede enviar (y si no, por qué) y la clave con la que "
                          "llamas.",
           "response": {
               "account": {"id": "6531f0c2a1b2c3d4e5f60718", "company": "Cooperativa Ejemplo",
@@ -413,7 +415,7 @@ GROUPS: list[dict[str, Any]] = [
           "title": "Remitentes y «Responder a»",
           "description": "Desde qué direcciones puede salir un correo (`ready` dice "
                          "si hoy puede), a dónde se responde, y tus dominios con "
-                         "su estado. Se conectan y se confirman en el panel, en "
+                         "su estado. Se conectan y se confirman en el Dashboard, en "
                          "Configuración de envío.",
           "response": {
               "from": [{"id": "6531f2aa0b1c2d3e4f506172", "name": "Cooperativa Ejemplo",
@@ -428,7 +430,7 @@ GROUPS: list[dict[str, Any]] = [
          {"method": "GET", "path": "/openapi.json", "scope": PUBLIC,
           "title": "Esta descripción, en OpenAPI",
           "description": "Todo lo de esta página en OpenAPI 3.1, para generar un "
-                         "cliente o importarlo en Postman. No pide llave.",
+                         "cliente o importarlo en Postman. No pide clave.",
           "response": {"openapi": "3.1.0", "info": {"title": TITLE, "version": VERSION}}},
      ]},
     {"id": "contactos", "title": "Contactos",
@@ -511,11 +513,11 @@ GROUPS: list[dict[str, Any]] = [
               {"index": 1, "email": "luis@ejemplo", "result": "rejected",
                "reason": "invalid_email"}]}},
          {"method": "PATCH", "path": "/contacts/{contact_id}", "scope": "contacts:write",
-          "title": "Cambiar un contacto",
+          "title": "Editar un contacto",
           "description": "Solo lo que mandes: `email`, `name`, `external_id` (null lo "
                          "quita), `tags` (reemplazan las que tenía) y `fields` (las "
                          "columnas se mezclan con las que tenía, y una lista que llega "
-                         "reemplaza la suya). Como en el panel, queda con todas sus "
+                         "reemplaza la suya). Como en el Dashboard, queda con todas sus "
                          "columnas llenas. De dónde salió y cuándo entró no se cambian.",
           "test": "no",
           "fields": [
@@ -687,7 +689,7 @@ GROUPS: list[dict[str, Any]] = [
     {"id": "plantillas", "title": "Plantillas",
      "intro": "Las plantillas de tu cuenta, las mismas de Mis plantillas. Las del "
               "lienzo (`source: canvas`) se crean, se cambian y se cargan en ZIP "
-              "por aquí, con las mismas reglas que al guardar en el panel; las "
+              "por aquí, con las mismas reglas que al guardar en el editor; las "
               "cargadas en HTML (`upload`) y las prediseñadas de antes (`builtin`) "
               "se leen, se arman, se mueven, se duplican y se borran. Cada una "
               "puede elegir de quién sale (`send_from`, el id de un remitente de "
@@ -709,9 +711,9 @@ GROUPS: list[dict[str, Any]] = [
           "response": {"data": [_TEMPLATE], "next_cursor": None, "limit": 300}},
          {"method": "GET", "path": "/templates/{template_id}", "scope": "templates:read",
           "title": "Una plantilla",
-          "description": "Con las marcas que nombra (`marks`), los bloques que repite "
+          "description": "Con las variables que usa (`marks`), los bloques que repite "
                          "o esconden (`blocks`) y lo que tiene dentro: el `canvas` y la "
-                         "dirección de cada foto en `images` si es del lienzo, el `html` "
+                         "URL de cada imagen en `images` si es del lienzo, el `html` "
                          "si se cargó en HTML, o `template` y `fields` si es una "
                          "prediseñada.",
           "test": "sí",
@@ -724,7 +726,7 @@ GROUPS: list[dict[str, Any]] = [
                          "los que mandes en `data` (que mandan sobre los del contacto) o "
                          "los dos. Transaccional sale sin baja ni marca de agua; "
                          "promocional, con las dos, y el enlace de baja es de ejemplo. "
-                         "`missing` dice qué marcas se quedarían en blanco. No envía ni "
+                         "`missing` dice qué variables se quedarían en blanco. No envía ni "
                          "guarda nada.",
           "test": "sí",
           "fields": [
@@ -732,9 +734,10 @@ GROUPS: list[dict[str, Any]] = [
                "description": "transactional o promotional. promotional si no se dice."},
               {"name": "contact_id", "type": "texto", "description": "Un contacto de la cuenta."},
               {"name": "subject", "type": "texto",
-               "description": "Un asunto con marcas, hasta 150 caracteres, para verlo lleno."},
+               "description": "Un asunto con variables, hasta 150 caracteres, para verlo "
+                              "lleno."},
               {"name": "data", "type": "objeto",
-               "description": "Cada marca por su clave: texto o un número de hasta 1,000 "
+               "description": "Cada variable por su nombre: texto o un número de hasta 1,000 "
                               "caracteres, o una lista de hasta 50 filas (cada una con "
                               "hasta 10 datos de hasta 200 caracteres). Hasta 50 claves y "
                               "32 KB, en una línea cada valor. CORREO no se manda: es la "
@@ -753,7 +756,7 @@ GROUPS: list[dict[str, Any]] = [
           "title": "Revisar un lienzo",
           "description": "La revisión del editor, sin guardar: `ok` dice si se podría "
                          "guardar, `issues` lo que falta y `rules` cómo va cada regla, "
-                         "en el orden de la ventana de requisitos del panel.",
+                         "en el orden de la ventana de requisitos del editor.",
           "test": "sí",
           "fields": [{"name": "canvas", "type": "objeto", "required": True,
                       "description": "El lienzo, como en «El lienzo en JSON»."},
@@ -773,7 +776,7 @@ GROUPS: list[dict[str, Any]] = [
          {"method": "GET", "path": "/templates/{template_id}/zip",
           "scope": "templates:read",
           "title": "Bajar el ZIP",
-          "description": "El mismo ZIP que baja el editor: el lienzo con sus fotos, que "
+          "description": "El mismo ZIP que baja el editor: el lienzo con sus imágenes, que "
                          "se vuelve a cargar en cualquier cuenta, y el HTML con sus "
                          "imágenes. Solo de las del lienzo. Responde el archivo, no JSON. "
                          "Cuenta para el límite de 5 plantillas por minuto.",
@@ -782,7 +785,7 @@ GROUPS: list[dict[str, Any]] = [
          {"method": "POST", "path": "/templates", "scope": "templates:write",
           "title": "Crear una plantilla del lienzo",
           "description": "Con la misma revisión que Guardar: si algo no se cumple, 422 "
-                         "dice qué en `fields.canvas`. Las fotos que nombra tienen que "
+                         "dice qué en `fields.canvas`. Las imágenes que usa tienen que "
                          "ser tuyas (súbelas antes con `POST /images`). Hasta 5 por "
                          "minuto.",
           "test": "no", "status": 201,
@@ -804,7 +807,7 @@ GROUPS: list[dict[str, Any]] = [
          {"method": "POST", "path": "/templates/import", "scope": "templates:write",
           "title": "Cargar un ZIP",
           "description": "El ZIP que baja el Lienzo, de esta cuenta o de otra, en "
-                         "multipart: `file`, y si quieres `name` y `folder_id`. Sus fotos "
+                         "multipart: `file`, y si quieres `name` y `folder_id`. Sus imágenes "
                          "entran a tu cuenta y cuentan contra tu tope. Hasta 5 MB.",
           "test": "no", "status": 201,
           "upload": "file=@estado-de-cuenta.zip",
@@ -849,7 +852,7 @@ GROUPS: list[dict[str, Any]] = [
                        "canvas": _CANVAS, "images": {}}},
          {"method": "DELETE", "path": "/templates/{template_id}", "scope": "templates:write",
           "title": "Borrar una plantilla",
-          "description": "Y las fotos que ninguna otra nombra. Una foto que ya salió en "
+          "description": "Y las imágenes que ninguna otra usa. Una imagen que ya salió en "
                          "un correo se sigue viendo un año.",
           "test": "no",
           "response": {"id": "6533b1d2a1b2c3d4e5f60901", "deleted": True}},
@@ -866,11 +869,11 @@ GROUPS: list[dict[str, Any]] = [
                       "folder_id": "6533b0aaa1b2c3d4e5f60900"},
           "response": {"moved": 1}},
          {"method": "POST", "path": "/images", "scope": "templates:write",
-          "title": "Subir una foto",
-          "description": "Una foto para un lienzo, en multipart (`file`, hasta 5 MB): "
+          "title": "Subir una imagen",
+          "description": "Una imagen para un lienzo, en multipart (`file`, hasta 5 MB): "
                          "se revisa, se le quitan los bordes transparentes y se achica. "
                          "Su `name` es el que va en una imagen del lienzo. Cuenta contra "
-                         "el tope de fotos de tu plan, y hasta 20 por minuto.",
+                         "el tope de imágenes de tu plan, y hasta 20 por minuto.",
           "test": "no", "status": 201,
           "upload": "file=@foto.jpg",
           "fields": [{"name": "file", "type": "archivo", "required": True,
@@ -916,14 +919,14 @@ GROUPS: list[dict[str, Any]] = [
      ]},
     {"id": "correos", "title": "Correos",
      "intro": "Un correo a una persona, con una de tus plantillas o con un texto, y "
-              "lo que pasó con él. Las reglas de cada clase están en «Transaccional o "
-              "promocional». Si la plantilla o el asunto nombran una marca que no "
+              "lo que pasó con él. Las reglas de cada tipo están en «Transaccional o "
+              "promocional». Si la plantilla o el asunto usan una variable que no "
               "llega en `data` ni está en el contacto, no sale: 422 con `missing`. "
               "Los correos se guardan 30 días, sin sus datos ni su HTML.",
      "endpoints": [
          {"method": "POST", "path": "/emails", "scope": "emails:send",
           "title": "Enviar un correo",
-          "description": "Sale en el momento: 201 con el correo guardado. Con una llave "
+          "description": "Sale en el momento: 201 con el correo guardado. Con una clave "
                          "de prueba se revisa y se arma todo, pero no sale, no gasta "
                          "cuota y no se guarda: responde 200 con `status: simulated` y "
                          "el correo armado en `preview`. Reintenta con la misma "
@@ -934,7 +937,7 @@ GROUPS: list[dict[str, Any]] = [
               {"name": "type", "type": "texto", "required": True,
                "description": "transactional o promotional."},
               {"name": "subject", "type": "texto", "required": True,
-               "description": "Hasta 150 caracteres, en una línea, con marcas."},
+               "description": "Hasta 150 caracteres, en una línea, con variables."},
               {"name": "template_id", "type": "texto",
                "description": "Una plantilla tuya. Va esto o `text`."},
               {"name": "text", "type": "texto",
@@ -943,7 +946,7 @@ GROUPS: list[dict[str, Any]] = [
               {"name": "logo", "type": "sí o no",
                "description": "Con `text`: tu logo arriba."},
               {"name": "data", "type": "objeto",
-               "description": "Los datos de las marcas, como en «Ver cómo sale». Mandan "
+               "description": "Los datos de las variables, como en «Ver cómo sale». Mandan "
                               "sobre los del contacto."},
               {"name": "from_id", "type": "texto",
                "description": "El id de un remitente listo. Sin él, el de la plantilla o "
@@ -970,7 +973,7 @@ GROUPS: list[dict[str, Any]] = [
           "title": "Listar correos",
           "description": "Los que mandó la API en los últimos 30 días, de los más nuevos "
                          "a los más viejos. El asunto sale como se escribió, con sus "
-                         "marcas.",
+                         "variables.",
           "test": "sí",
           "query": [{"name": "status", "type": "texto", "description": "pending, sent o failed."},
                     {"name": "type", "type": "texto",
@@ -986,7 +989,7 @@ GROUPS: list[dict[str, Any]] = [
          {"method": "GET", "path": "/emails/{email_id}", "scope": "emails:send",
           "title": "Un correo y lo que pasó",
           "description": "Con `events`: cuándo se entregó (delivery), se abrió (open), se "
-                         "pulsó (click, nunca en un transaccional), rebotó (bounce), se "
+                         "hizo clic (click, nunca en un transaccional), rebotó (bounce), se "
                          "marcó como spam (complaint) o se rechazó (reject). Lo primero "
                          "de cada cosa. `pending` es uno que no se sabe si salió: no lo "
                          "repitas, consúltalo.",
@@ -1031,7 +1034,7 @@ GROUPS: list[dict[str, Any]] = [
           "test": "no", "status": 201,
           "fields": [
               {"name": "subject", "type": "texto", "required": True,
-               "description": "Hasta 150 caracteres, con marcas."},
+               "description": "Hasta 150 caracteres, con variables."},
               {"name": "template_id", "type": "texto",
                "description": "Una plantilla tuya. Va esto o `text`."},
               {"name": "text", "type": "texto", "description": "Lo que dice, hasta 20,000."},
@@ -1068,7 +1071,7 @@ GROUPS: list[dict[str, Any]] = [
           "title": "Mandarla ya",
           "description": "Responde 202 enseguida y la campaña empieza a salir por tandas. "
                          "Una que ya salió sale otra vez entera. Si hoy la cuenta no puede "
-                         "enviar, 409 `cannot_send`. Con una llave de prueba dice a cuántos "
+                         "enviar, 409 `cannot_send`. Con una clave de prueba dice a cuántos "
                          "saldría y qué la frena, sin mandar nada.",
           "test": "simulado", "status": 202,
           "response": {**_CAMPAIGN, "status": "scheduled",
@@ -1101,7 +1104,8 @@ GROUPS: list[dict[str, Any]] = [
          {"method": "GET", "path": "/sends", "scope": "campaigns:read",
           "title": "Listar envíos",
           "description": "De los más nuevos, cada uno con sus cifras y cuántas personas "
-                         "lo recibieron, rebotaron, abrieron, pulsaron o se quejaron.",
+                         "lo recibieron, rebotaron, abrieron, hicieron clic o se "
+                         "quejaron.",
           "test": "sí",
           "query": [{"name": "campaign_id", "type": "texto", "description": "Los de esa campaña."},
                     {"name": "limit", "type": "entero", "description": "De 1 a 100."},
@@ -1168,8 +1172,8 @@ GROUPS: list[dict[str, Any]] = [
                        "data": [{"at": "2026-10-19T19:00:00Z", "sent": 120, "delivery": 118,
                                  "open": 40, "click": 9, "bounce": 1, "complaint": 0}]}},
          {"method": "GET", "path": "/stats/links", "scope": "stats:read",
-          "title": "Los enlaces más pulsados",
-          "description": "Cuántas personas pulsó cada uno, hasta 20.",
+          "title": "Los enlaces con más clics",
+          "description": "Cuántas personas hicieron clic en cada uno, hasta 20.",
           "test": "sí",
           "query": [{"name": "period", "type": "texto",
                      "description": "1h, today, 24h, 7d, 30d o 90d. 24h si no se dice."},
@@ -1319,9 +1323,9 @@ def openapi() -> dict[str, Any]:
                  "description": "La API de Sobreala. Guías y ejemplos en "
                                 "https://sobreala.com/api/."},
         "servers": [{"url": BASE_URL}],
-        "components": {"securitySchemes": {"llave": {"type": "http",
-                                                     "scheme": "bearer"}}},
-        "security": [{"llave": []}],
+        "components": {"securitySchemes": {"claveDeApi": {"type": "http",
+                                                          "scheme": "bearer"}}},
+        "security": [{"claveDeApi": []}],
         "tags": [{"name": group["id"], "description": group["title"]} for group in GROUPS],
         "paths": paths,
     }

@@ -634,10 +634,11 @@ M10 en adelante tiene Cloud Backup.
 ## La rama «API» del Dashboard (octubre de 2026)
 
 Solo del dueño, entre Configuración de envío y Configuración
-(`blueprints/developers/`): **Llaves** (crear con la prueba de contraseña,
-revocar), **Avisos** (los webhooks: crear, probar, apagar, cambiar el secreto,
-las últimas entregas), **Correos** (lo que mandó la API, 30 días, con lo que pasó
-con cada uno; no están en Enviados), **Registro** (lo que falló, 7 días) y
+(`blueprints/developers/`): **Claves de API** (crear con la prueba de
+contraseña, revocar), **Webhooks** (crear, probar, desactivar, cambiar el
+secreto de firma, las últimas entregas), **Correos** (lo que mandó la API, 30
+días, con el estado de cada uno; no están en Enviados), **Logs** (lo que falló,
+7 días) y
 **Documentación** (el enlace a `sobreala.com/api/`). La búsqueda las encuentra
 por sus palabras (`SEARCH_WORDS`).
 

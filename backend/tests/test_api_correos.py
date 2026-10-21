@@ -330,4 +330,4 @@ def test_la_pantalla_de_correos_del_panel(client, database, outbox, monkeypatch)
            data={"NUMERO": "R-QX9Z"})
     pantalla = browser.get("/developers/emails").get_data(as_text=True)
     assert "a@ejemplo.com" in pantalla and "Tu recibo *|NUMERO|*" in pantalla
-    assert "Transaccional" in pantalla and "Salió" in pantalla and "R-QX9Z" not in pantalla
+    assert "Transaccional" in pantalla and "Enviado" in pantalla and "R-QX9Z" not in pantalla

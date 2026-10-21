@@ -112,7 +112,7 @@ HOME = {
     "meta_title": "Sobreala",
     "meta_description": (
         "Email marketing sin complicaciones: sube tus contactos, escribe tu campaña "
-        "y envíala por correo a toda tu lista desde un solo panel."
+        "y envíala por correo a toda tu lista desde un solo lugar."
     ),
     "hero": {
         "title_lead": "Administra tu base de datos de correos",
@@ -437,7 +437,7 @@ HOME = {
                 "q": "¿Cómo empiezo?",
                 "a": (
                     "Creas tu cuenta y nos pides una demostración: en ella abrimos "
-                    "tu cuenta y, contigo, recorremos el panel, importamos tu lista y "
+                    "tu cuenta y, contigo, recorremos Sobreala, importamos tu lista y "
                     "armamos tu primer correo. Si ya sabes qué plan quieres, lo "
                     "contratas y empiezas enseguida."
                 ),
@@ -446,14 +446,14 @@ HOME = {
                 "q": "¿Necesito un dominio propio?",
                 "a": (
                     "No. Sin dominio, tus correos salen desde envios.sobreala.com con "
-                    "el nombre de tu negocio. Si tienes uno, lo conectas tú desde el "
-                    "panel con tres registros DNS."
+                    "el nombre de tu negocio. Si tienes uno, lo conectas tú desde tu "
+                    "cuenta con tres registros DNS."
                 ),
             },
             {
                 "q": "¿Cómo se paga?",
                 "a": (
-                    "Pagas un mes o un año por adelantado desde el panel, hoy con "
+                    "Pagas un mes o un año por adelantado desde tu cuenta, hoy con "
                     "PayPal, y no se renueva solo: te avisamos antes de que venza. Los "
                     "datos de tu tarjeta los maneja el proveedor de pago, nunca "
                     "Sobreala, y los precios incluyen el ITBMS."
@@ -518,7 +518,7 @@ TUTORIALS = {
     # Arriba va solo el título (octubre de 2026). «Tutoriales» se quedó como lo
     # que oye un lector de pantalla al llegar a las pestañas.
     "label": "Tutoriales",
-    "title": "Aprende a usar el panel",
+    "title": "Aprende a usar Sobreala",
     # Lo que dice el reproductor.
     "step": "Paso {n} de {total}",
     "back": "Atrás",
@@ -533,7 +533,7 @@ TUTORIALS = {
     "signup": {"label": "Crear mi cuenta", "url": "https://app.sobreala.com/signup",
                "states": {**CTA_STATES,
                           "demo": {"label": "Ver planes", "url": "/#planes"}}},
-    "screen": "Pantalla del panel: {what}",
+    "screen": "Pantalla de Sobreala: {what}",
     "tours": [
         {
             "id": "contacts",
@@ -546,7 +546,7 @@ TUTORIALS = {
             "steps": {
                 "menu": {
                     "do": "Abre el menú con el nombre de tu empresa",
-                    "why": "Desde ahí llegas a todo el panel.",
+                    "why": "Desde ahí llegas a todo Sobreala.",
                 },
                 "entrar": {
                     "do": "Entra a Contactos",
@@ -709,7 +709,7 @@ TUTORIALS = {
                 },
                 "mandar": {
                     "do": "Pulsa Enviar",
-                    "why": "Antes de salir, el panel te pregunta.",
+                    "why": "Antes de salir, Sobreala te pregunta.",
                 },
                 "pregunta": {
                     "do": "Revisa y confirma",
@@ -821,7 +821,7 @@ TUTORIALS = {
 HOW = {
     "meta_title": "Cómo funciona | Sobreala",
     "meta_description": (
-        "Tutoriales del panel de Sobreala: contactos, plantillas, envíos, "
+        "Tutoriales de Sobreala: contactos, plantillas, envíos, "
         "estadísticas y configuración, paso a paso y pulsando."
     ),
     # La sección ya no lleva cabeza propia: abre con «Funciones». Este título
@@ -839,7 +839,7 @@ HOW = {
         # envios.sobreala.com comparte reputación entre todos los que no tienen
         # dominio propio lo dice docs/envios.md.
         "text": (
-            "Si tienes un dominio, agrégalo desde el panel: te damos tres registros "
+            "Si tienes un dominio, agrégalo desde tu cuenta: te damos tres registros "
             "DNS para ponerlos donde lo administras y, en cuanto se verifican, tus "
             "campañas salen desde tu dominio, como boletin@tuempresa.com."
         ),
@@ -964,7 +964,7 @@ LEGAL_HOLDER = {
     "name": "Luis Alfredo Stanziola Guerra",
     "identifier": ("RUC 9-764-1273 DV 65, con aviso de operación N.° "
                    "9-764-1273-2026-574453501"),
-    "place": "Santiago de Veraguas, provincia de Veraguas, Panamá",
+    "place": "Santiago, provincia de Veraguas, Panamá",
 }
 
 
@@ -1183,12 +1183,12 @@ PRIVACY = {
         {
             "title": "Cookies y almacenamiento en tu navegador",
             "items": [
-                "Una **cookie de sesión** en el panel, imprescindible para "
+                "Una **cookie de sesión** en app.sobreala.com, imprescindible para "
                 "mantenerte dentro de tu cuenta. No se puede leer desde "
                 "JavaScript y caduca sola.",
                 "Un **valor guardado en tu navegador** con el tema que "
                 "elegiste, claro u oscuro. No sale de tu equipo.",
-                "Una **marca de un solo dígito** que el panel deja en "
+                "Una **marca de un solo dígito** que app.sobreala.com deja en "
                 "sobreala.com para que el sitio público sepa si dibujarte el "
                 "botón «Mi cuenta». No lleva tu nombre ni tu dirección: es un "
                 "uno y nada más.",
@@ -1222,8 +1222,8 @@ PRIVACY = {
         {
             "title": "Cambios en esta política",
             "paragraphs": [
-                "Si cambia algo importante lo avisaremos por correo o desde el "
-                "panel. La fecha de arriba indica la versión vigente.",
+                "Si cambia algo importante lo avisaremos por correo o desde tu "
+                "cuenta. La fecha de arriba indica la versión vigente.",
             ],
         },
     ],
@@ -1256,7 +1256,7 @@ TERMS = {
             "title": "2. Qué es el servicio",
             "paragraphs": [
                 "Sobreala es una plataforma de email marketing: subes tus "
-                "contactos, armas una campaña y la envías desde un panel.",
+                "contactos, armas una campaña y la envías desde tu cuenta.",
                 "La plataforma está en construcción. Algunas funciones no "
                 "existen todavía y otras pueden cambiar; los cambios "
                 "importantes se avisan.",
@@ -1272,7 +1272,7 @@ TERMS = {
                 "Al registrarte nos das tu teléfono y tu dirección, y después nos "
                 "envías un documento de tu identificación y otro de tu "
                 "dirección para verificarlos. Una cuenta nueva queda "
-                "**registrada**: el panel se abre después de una demostración, o "
+                "**registrada**: se abre después de una demostración, o "
                 "al contratar un plan. Es como cuidamos que la plataforma no se "
                 "use para correo no solicitado.",
                 "Podemos **limitar** una cuenta mientras no verifiquemos su "
@@ -1295,7 +1295,7 @@ TERMS = {
                 "que paga.",
                 "Por cada pago emitimos la factura y te la enviamos al correo "
                 "de tu cuenta.",
-                "El cobro se hace por PayPal desde el panel, o por Yappy "
+                "El cobro se hace por PayPal desde tu cuenta, o por Yappy "
                 "coordinándolo con nosotros, y en ese caso activamos el plan a "
                 "mano. La tarjeta no pasa por nuestros servidores.",
                 "La renovación automática es opcional y solo es con PayPal. Si "
@@ -1433,7 +1433,7 @@ TERMS = {
             "title": "12. Cambios",
             "paragraphs": [
                 "Podemos actualizar estos términos. Si el cambio es importante "
-                "lo avisaremos por correo o desde el panel antes de que entre "
+                "lo avisaremos por correo o desde tu cuenta antes de que entre "
                 "en vigor. Seguir usando el servicio después es aceptarlo.",
             ],
         },
@@ -1466,7 +1466,7 @@ TERMS = {
 # solo va lo que la presenta.
 API_PAGE = {
     "meta_title": "API de Sobreala: conecta tu tienda o tu sistema",
-    "meta_description": "Documentación de la API de Sobreala: llaves, contactos y "
+    "meta_description": "Documentación de la API de Sobreala: claves de API, contactos y "
                         "sus listas, plantillas, correos transaccionales y "
                         "promocionales, campañas y estadísticas.",
     "hero": {

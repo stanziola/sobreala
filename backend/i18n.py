@@ -70,7 +70,7 @@ TEXTS = {
     "logout_title": "¿Cerrar tu sesión?",
     "logout_lead": "Vas a salir de tu cuenta en este dispositivo.",
     "logout_submit": "Sí, cerrar mi sesión",
-    "logout_cancel": "No, volver al panel",
+    "logout_cancel": "No, seguir en Sobreala",
 
     # --- registration ------------------------------------------------------
     "register_title": "Crea tu cuenta",
@@ -341,9 +341,9 @@ TEXTS = {
     "close_done_lead": "Ese dispositivo ya no puede entrar a tu cuenta. Si no "
                        "reconociste el ingreso, cambia también tu contraseña.",
     "close_unknown_title": "Ese enlace ya no sirve",
-    "close_unknown_lead": "Puede que ya lo hayas usado o que haya vencido. "
-                          "Desde tu panel puedes ver y cerrar tus dispositivos "
-                          "cuando quieras.",
+    "close_unknown_lead": "Puede que ya lo hayas usado o que haya vencido. En "
+                          "Configuración → Seguridad puedes ver y cerrar tus "
+                          "dispositivos cuando quieras.",
     "close_change": "Cambiar mi contraseña",
 
     # --- autenticación de múltiples factores --------------------------------
@@ -399,10 +399,9 @@ TEXTS = {
     "two_step_codes_title": "Guarda estos códigos de respaldo",
     "two_step_codes_lead": "Sirven para entrar si pierdes el teléfono. Cada uno "
                            "vale una sola vez.",
-    "two_step_codes_hint": "Solo los verás ahora: guardamos únicamente una "
-                           "huella suya, así que ni nosotros podemos "
-                           "enseñártelos otra vez. Apúntalos en papel o en tu "
-                           "gestor de contraseñas.",
+    "two_step_codes_hint": "Solo los verás ahora: guardamos únicamente su hash, así "
+                           "que ni nosotros podemos enseñártelos otra vez. Apúntalos "
+                           "en papel o en tu gestor de contraseñas.",
     "two_step_codes_done": "Ya los guardé",
 
     "two_step_code_title": "Escribe el código de tu app",
@@ -434,7 +433,7 @@ TEXTS = {
     # La búsqueda de la barra (octubre de 2026).
     "search_label": "Buscar",
     "search_title": "Buscar",
-    "search_placeholder": "Buscar en el panel",
+    "search_placeholder": "Buscar",
     "search_suggestions": "Sugerencias",
     "search_none": "Nada coincide con «{q}».",
     "search_nothing": "Nada coincide.",
@@ -521,10 +520,10 @@ TEXTS = {
     "settings_verify_lead": "Verificamos tu identificación y tu dirección una sola "
                             "vez, con un documento de cada una. Los mira una "
                             "persona de Sobreala y el archivo se borra al decidir.",
-    "test_lead": "En la demostración puedes enviar campañas y correos de verdad, "
-                 "pero solo a estas direcciones: hasta {n}, y {total} correos en "
-                 "total. Así ves quién lo abrió y quién pulsó, como con tu lista. "
-                 "Cada una se confirma con un enlace que le llega a ese buzón.",
+    "test_lead": "En la demostración puedes enviar campañas y correos de verdad, pero "
+                 "solo a estas direcciones: hasta {n}, y {total} correos en total. "
+                 "Así ves quién lo abrió y quién hizo clic, como con tu lista. Cada "
+                 "una se confirma con un enlace que le llega a ese buzón.",
     "test_left": "Te quedan {left} de {total} correos de prueba.",
     "test_sent": "Listo, le mandamos el enlace de confirmación. Cuando lo abra, "
                  "ya le puedes enviar.",
@@ -740,10 +739,10 @@ TEXTS = {
                                        "cédula. Es la que espera que la abras.",
     "settings_notice_admin_plan_end": "A un cliente se le venció el plan",
     "settings_notice_admin_plan_end_desc": "Se mira cuando el cliente entra a su "
-                                           "panel, así que de quien no vuelve a "
+                                           "cuenta, así que de quien no vuelve a "
                                            "entrar no se entera nadie hasta que "
                                            "exista el proceso automático.",
-    "settings_notice_admin_pause": "El panel pausó a un cliente",
+    "settings_notice_admin_pause": "Sobreala pausó a un cliente",
     "settings_notice_admin_pause_desc": "Por rebotes o quejas por encima del "
                                         "umbral. La pausa solo la quitas tú, "
                                         "desde su ficha.",
@@ -946,9 +945,9 @@ TEXTS = {
                         "quiere decir que el servidor de la persona lo aceptó, "
                         "no que haya llegado a su bandeja.",
     "stats_engage_title": "Aperturas y clics",
-    "stats_engage_lead": "Cuántas personas abrieron tus correos y cuántas "
-                         "pulsaron un enlace en el periodo que elijas. Quien "
-                         "abre tres veces cuenta una.",
+    "stats_engage_lead": "Cuántas personas abrieron tus correos y cuántas hicieron "
+                         "clic en un enlace en el periodo que elijas. Quien abre tres "
+                         "veces cuenta una.",
     "stats_tag": "Etiqueta",
     "stats_all_tags": "Todas las etiquetas",
     "stats_apply": "Ver",
@@ -992,9 +991,9 @@ TEXTS = {
     "export_pdf": "Bajar PDF",
 
     # Enlaces más pulsados.
-    "stats_links_title": "Enlaces más pulsados",
-    "stats_links_lead": "Cuántas personas pulsaron cada enlace en el periodo. "
-                        "Quien pulsa el mismo tres veces cuenta una.",
+    "stats_links_title": "Enlaces con más clics",
+    "stats_links_lead": "Cuántas personas hicieron clic en cada enlace en el periodo. "
+                        "Quien hace clic en el mismo tres veces cuenta una.",
     "stats_links_who": "Personas",
     "stats_links_none": "Todavía no hay clics con su enlace anotado. Se "
                         "empieza a guardar desde ahora: los clics de antes no "
@@ -1018,10 +1017,10 @@ TEXTS = {
                          "escribir cada mes, en los últimos doce.",
     "stats_added": "Entraron",
     "stats_left": "Se fueron",
-    "stats_growth_note": "Las bajas incluyen los rebotes duros y las quejas, "
-                         "no solo a quien pulsó el enlace de baja. Y borrar un "
-                         "contacto a mano no queda anotado, así que esto son "
-                         "altas y bajas, no el total de cada mes.",
+    "stats_growth_note": "Las bajas incluyen los rebotes duros y las quejas, no solo "
+                         "a quien hizo clic en el enlace de baja. Y borrar un "
+                         "contacto a mano no queda anotado, así que esto son altas y "
+                         "bajas, no el total de cada mes.",
     "stats_growth_none": "Todavía no hay altas ni bajas que enseñar.",
     # Lo que se lee cuando la gráfica sale vacía. Se dibuja igual, con sus ejes,
     # porque un cuadro vacío que se explica dice más que un hueco.
@@ -1176,8 +1175,8 @@ TEXTS = {
     "fields_add_action": "Agregar columna",
     "fields_new_lead": "Un dato más de cada contacto. Se guarda con él y se "
                        "escribe dentro de tus correos.",
-    "fields_name_hint": "Con este nombre la vas a reconocer, y de él sale la "
-                        "marca que se escribe dentro de la pieza.",
+    "fields_name_hint": "Con este nombre la vas a reconocer, y de él sale la variable "
+                        "que se escribe dentro de la pieza.",
     "fields_new_warning": "Ojo: tus {n} contactos se quedan sin este dato, y "
                           "mientras les falte no reciben correos. Se completan "
                           "editándolos o volviendo a importar el archivo con "
@@ -1787,8 +1786,8 @@ TEXTS = {
     "send_new": "Nueva campaña",
     # El correo individual (octubre de 2026).
     "single_title": "Redactar",
-    "single_lead": "Un correo a una persona, con un archivo si hace falta. Sabrás "
-                   "si le llegó, si lo abrió, si pulsó un enlace y si bajó el "
+    "single_lead": "Un correo a una persona, con un archivo si hace falta. Sabrás si "
+                   "le llegó, si lo abrió, si hizo clic en un enlace y si bajó el "
                    "archivo.",
     "single_to": "Para",
     "single_to_hint": "Cualquier dirección, esté o no en tus contactos. Si no "
@@ -2026,11 +2025,11 @@ TEXTS = {
     "sender_records_value": "Valor",
     "sender_records_hint": "Amazon los comprueba solo. Suele tardar unos minutos, "
                            "y puede llegar a 72 horas.",
-    "sender_records_download": "Descargar registros para Cloudflare",
-    "sender_records_download_hint": "En Cloudflare: DNS, Registros, «Importar y "
-                                    "exportar», y sube el archivo. Entran todos "
-                                    "de una vez y sin proxy, como los pide "
-                                    "Amazon.",
+    "sender_records_download": "Descargar los registros DNS",
+    "sender_records_download_hint": "Si tu proveedor de DNS permite importar un "
+                                    "archivo de zona (Cloudflare, Route 53 y otros), "
+                                    "súbelo y entran todos a la vez. Si no, cópialos "
+                                    "uno por uno de la tabla.",
     "sender_records_priority": "prioridad {n}",
     # El MAIL FROM (octubre de 2026): el dominio que Gmail enseña en «enviado
     # por». Sin sus registros dice el de Amazon, y se envía igual.
@@ -2110,14 +2109,14 @@ TEXTS = {
     "run_tag": "Etiqueta",
     "run_all_tags": "Todas las etiquetas",
     "run_search": "Buscar por correo o nombre",
-    "run_outcome": "Qué pasó",
+    "run_outcome": "Resultado",
     "run_outcome_all": "Todos",
     "run_outcome_entregados": "Entregados",
     "run_outcome_rebotes": "Rebotaron",
     "run_outcome_rechazados": "Rechazados",
     "run_outcome_spam": "Lo marcaron como spam",
     "run_outcome_abrieron": "Lo abrieron",
-    "run_outcome_pulsaron": "Pulsaron",
+    "run_outcome_pulsaron": "Hicieron clic",
     "run_outcome_sin_abrir": "No lo abrieron",
     "run_apply": "Buscar",
     "run_clear": "Quitar filtros",
@@ -2125,7 +2124,7 @@ TEXTS = {
     "run_name": "Nombre",
     "run_reached": "Llegó",
     "run_opened": "Abrió",
-    "run_clicked": "Pulsó",
+    "run_clicked": "Hizo clic",
     "run_downloaded": "Bajó el archivo",
     "run_reached_sent": "Enviado",
     "run_reached_delivery": "Entregado",
@@ -2217,7 +2216,7 @@ TEXTS = {
                          "abierta.",
     "admin_events_refresh": "Actualizar",
     "admin_events_col_when": "Cuándo",
-    "admin_events_col_what": "Qué pasó",
+    "admin_events_col_what": "Evento",
     "admin_events_col_detail": "Detalle",
     "admin_events_none": "No pasó nada de esto en los últimos {days} días.",
     "activity_kind_delivery": "Entregado",
@@ -2237,21 +2236,21 @@ TEXTS = {
     "activity_payment_detail": "{plan}, {amount}",
     "activity_to": "a {domain}",
     "admin_mail_title": "Correos del sistema",
-    "admin_mail_lead": "Lo que el panel le mandó a una dirección (códigos, "
-                       "avisos, bienvenidas) y qué dijo Amazon de cada uno. "
-                       "Para cuando alguien dice que no le llegó.",
+    "admin_mail_lead": "Lo que Sobreala le envió a una dirección (códigos, avisos, "
+                       "bienvenidas) y qué dijo Amazon de cada uno. Para cuando "
+                       "alguien dice que no le llegó.",
     "admin_mail_search": "Dirección de correo",
     "admin_mail_col_when": "Cuándo",
     "admin_mail_col_subject": "Correo",
-    "admin_mail_col_result": "Qué pasó",
-    "admin_mail_failed": "No salió",
+    "admin_mail_col_result": "Estado",
+    "admin_mail_failed": "Fallido",
     "admin_mail_outcome_delivered": "Entregado",
     "admin_mail_outcome_bounced": "Rebotó",
     "admin_mail_outcome_soft_bounced": "Rebote pasajero",
     "admin_mail_outcome_complained": "Lo marcó como spam",
     "admin_mail_outcome_rejected": "Amazon lo rechazó",
     "admin_mail_waiting": "Enviado a Amazon, sin respuesta todavía",
-    "admin_mail_not_ses": "No salió por Amazon (desarrollo)",
+    "admin_mail_not_ses": "No se envió por Amazon (desarrollo)",
     "admin_mail_none": "No le hemos mandado nada a {address}.",
     "admin_mail_hint": "«Entregado» quiere decir que el servidor del "
                        "destinatario lo aceptó. Si después lo mandó a correo no "
@@ -2488,7 +2487,7 @@ TEXTS = {
     # El pie de todos los correos del sistema (octubre de 2026): quién y dónde,
     # las redes y la ayuda.
     "mail_footer_name": "Sobreala",
-    "mail_footer_address": "Santiago de Veraguas, Veraguas, Panamá",
+    "mail_footer_address": "Santiago de Veraguas, Panamá",
     "mail_footer_help": "Ayuda",
     "mail_footer_privacy": "Privacidad",
     "mail_confirm_subject": "{code} es tu código de Sobreala",
@@ -2513,10 +2512,10 @@ TEXTS = {
                          "agendarla, o contratas un plan y empiezas enseguida.",
     "mail_welcome_button": "Pedir la demostración",
     "mail_welcome_next_title": "Qué incluye la demostración",
-    "mail_welcome_next": "Abrimos tu cuenta y, juntos, recorremos el panel, "
-                         "vemos de dónde sale tu lista, la importamos y armamos "
-                         "tu primera plantilla. Desde ahí tienes lo del plan "
-                         "Básico para preparar todo.",
+    "mail_welcome_next": "Abrimos tu cuenta y, juntos, recorremos Sobreala, vemos de "
+                         "dónde sale tu lista, la importamos y armamos tu primera "
+                         "plantilla. Desde ahí tienes lo del plan Básico para "
+                         "preparar todo.",
     "mail_welcome_help": "Si algo no te calza, escríbenos a "
                          "info@sobreala.com y lo vemos.",
 
@@ -2557,7 +2556,7 @@ TEXTS = {
                            "Quien haya entrado conoce tu contraseña anterior, "
                            "así que conviene revisar también el correo con el "
                            "que abriste la cuenta.",
-    "mail_password_button": "Entrar al panel",
+    "mail_password_button": "Entrar a Sobreala",
 
     # Sent both ways, and one of the messages nobody can turn off: turning
     # two-step on with a phone that is not the owner's is how an account gets
@@ -2613,7 +2612,7 @@ TEXTS = {
     # misma forma y lo único que cambia es esto.
     "mail_notice_off": "Estos avisos se apagan en Configuración → "
                        "Notificaciones.",
-    "mail_plan_button": "Ir a mi panel",
+    "mail_plan_button": "Ir a mi cuenta",
     "mail_plan_until": "Corre hasta el {until}. Te avisamos una semana antes de "
                        "que se venza.",
     "mail_plan_charged": "Pagaste ${amount}.",
@@ -2666,7 +2665,7 @@ TEXTS = {
     "mail_reinstated_subject": "Tu cuenta está activa otra vez",
     "mail_reinstated_heading": "Levantamos la suspensión",
     "mail_reinstated_body": "Ya puedes entrar y seguir donde estabas.",
-    "mail_reinstated_button": "Entrar al panel",
+    "mail_reinstated_button": "Entrar a Sobreala",
 
     # La cuenta quedó limitada: entra y prepara, pero no envía.
     "mail_limited_subject": "Necesitamos verificar tu cuenta de Sobreala",
@@ -2811,10 +2810,10 @@ TEXTS = {
     "mail_admin_plan_end_button": "Ver la ficha",
     "mail_admin_pause_subject": "Pausamos los envíos de {company}",
     "mail_admin_pause_heading": "{company} quedó en pausa",
-    "mail_admin_pause_body_bounces": "El panel pausó los envíos de {company} "
-                                     "por rebotes. {note}.",
-    "mail_admin_pause_body_complaints": "El panel pausó los envíos de {company} "
-                                        "por quejas. {note}.",
+    "mail_admin_pause_body_bounces": "Sobreala pausó los envíos de {company} por "
+                                     "rebotes. {note}.",
+    "mail_admin_pause_body_complaints": "Sobreala pausó los envíos de {company} por "
+                                        "quejas. {note}.",
     "mail_admin_pause_lift": "Ya le llegó un correo con el detalle. Cuando haya "
                              "revisado su lista, quita la pausa desde su ficha, "
                              "en «Limitar la cuenta».",
@@ -2827,29 +2826,29 @@ TEXTS = {
 
     # --- la API (octubre de 2026) ------------------------------------------
     "dash_api": "API",
-    "dash_api_keys": "Llaves",
-    "dash_api_log": "Registro",
+    "dash_api_keys": "Claves de API",
+    "dash_api_log": "Logs",
     "dash_api_docs": "Documentación",
 
-    "api_keys_title": "Llaves de la API",
-    "api_keys_lead": "Con una llave, el sistema de tu negocio (tu tienda en línea, "
-                     "tu programa de socios) habla con Sobreala sin entrar al panel: "
-                     "carga contactos, usa tus plantillas y tus remitentes, y envía "
-                     "correos. Cada llave tiene sus permisos, y la puedes revocar "
-                     "cuando quieras.",
+    "api_keys_title": "Claves de API",
+    "api_keys_lead": "Con una clave de API, el sistema de tu negocio (tu tienda en "
+                     "línea, tu programa de socios) se conecta con Sobreala sin que "
+                     "entres a tu cuenta: carga contactos, usa tus plantillas y tus "
+                     "remitentes, y envía correos. Cada clave tiene sus permisos, y "
+                     "la puedes revocar cuando quieras.",
     "api_keys_docs": "Cómo se usa: la documentación",
-    "api_keys_new": "Crear una llave",
-    "api_keys_none": "Todavía no tienes ninguna llave.",
-    "api_keys_full": "Ya tienes {n} llaves activas, que es el máximo. Revoca una "
-                     "que no uses para crear otra.",
+    "api_keys_new": "Crear una clave",
+    "api_keys_none": "Todavía no tienes ninguna clave de API.",
+    "api_keys_full": "Ya tienes {n} claves activas, que es el máximo. Revoca una que "
+                     "no uses para crear otra.",
     "api_keys_active": "{n} de {limit} activas",
     "api_keys_col_name": "Nombre",
-    "api_keys_col_key": "Llave",
+    "api_keys_col_key": "Clave",
     "api_keys_col_scopes": "Permisos",
     "api_keys_col_used": "Último uso",
     "api_keys_col_expires": "Vence",
-    "api_keys_mode_live": "de verdad",
-    "api_keys_mode_test": "de prueba",
+    "api_keys_mode_live": "producción",
+    "api_keys_mode_test": "prueba",
     "api_keys_never_used": "Sin usar",
     "api_keys_used": "{when} · {ip}",
     "api_keys_expires_never": "Nunca",
@@ -2857,33 +2856,31 @@ TEXTS = {
     "api_keys_expired": "Vencida",
     "api_keys_ips_some": "Solo desde {n} IP o rangos",
     "api_keys_revoke": "Revocar",
-    "api_keys_done_revoked": "Listo, la llave quedó revocada: lo que la use ya no "
+    "api_keys_done_revoked": "Listo, la clave quedó revocada: lo que la use ya no "
                              "entra.",
-    "api_keys_new_title": "Crear una llave",
-    "api_keys_new_lead": "La llave se enseña una sola vez, al crearla. Va en el "
+    "api_keys_new_title": "Crear una clave de API",
+    "api_keys_new_lead": "La clave se enseña una sola vez, al crearla. Va en el "
                          "servidor de tu sistema, nunca en una página web, en una "
                          "aplicación que se descarga ni en un repositorio.",
     "api_keys_name": "Nombre",
     "api_keys_name_hint": "Para reconocerla después: «Tienda en línea», «Sistema "
                           "de socios».",
-    "api_keys_mode": "Clase",
-    "api_keys_mode_live_title": "De verdad",
-    "api_keys_mode_live_desc": "Hace lo que le permitas. Los correos salen de "
+    "api_keys_mode": "Modo",
+    "api_keys_mode_live_title": "Producción",
+    "api_keys_mode_live_desc": "Hace lo que le permitas. Los correos se envían de "
                                "verdad y gastan cuota.",
-    "api_keys_mode_test_title": "De prueba",
-    "api_keys_mode_test_desc": "Para que un programador ensaye: solo lee, y los "
-                               "envíos se simulan (no sale nada ni se gasta "
-                               "cuota). Si se filtra, no puede cambiar ni mandar "
-                               "nada.",
+    "api_keys_mode_test_title": "Prueba",
+    "api_keys_mode_test_desc": "Para que un programador haga pruebas: solo lee, y los "
+                               "envíos se simulan (no se envía nada ni se gasta "
+                               "cuota). Si se filtra, no puede editar ni enviar nada.",
     "api_keys_scopes": "Permisos",
     "api_keys_preset_send": "Solo enviar correos",
     "api_keys_preset_read": "Solo leer",
     "api_keys_preset_all": "Todo",
     "api_keys_preset_custom": "A mi medida",
     "api_keys_scope_required": "Marca al menos un permiso.",
-    "api_keys_test_scope_note": "Una llave de prueba solo se queda con los "
-                                "permisos de leer y los de enviar, que con ella se "
-                                "simulan.",
+    "api_keys_test_scope_note": "Una clave de prueba solo se queda con los permisos "
+                                "de lectura y los de envío, que con ella se simulan.",
     "api_keys_days": "Vence",
     "api_keys_days_0": "Nunca",
     "api_keys_days_30": "En 30 días",
@@ -2895,8 +2892,8 @@ TEXTS = {
     "api_keys_ips_bad": "Esto no es una IP ni un rango: {what}.",
     "api_keys_ips_full": "Caben hasta {n} IP o rangos.",
     "api_keys_proof_title": "Confirma que eres tú",
-    "api_keys_proof_lead": "Una llave abre tu cuenta sin contraseña, así que antes "
-                           "de crearla te pedimos la tuya. Después, por 10 "
+    "api_keys_proof_lead": "Una clave de API abre tu cuenta sin contraseña, así que "
+                           "antes de crearla te pedimos la tuya. Después, por 10 "
                            "minutos, no te la volvemos a pedir.",
     "api_keys_password": "Tu contraseña",
     "api_keys_email_code": "El código que te llegó al correo",
@@ -2905,14 +2902,13 @@ TEXTS = {
                           "mandamos un código a tu correo.",
     "api_keys_code_sent": "Listo, te mandamos el código.",
     "api_keys_app_code": "El código de tu app de autenticación",
-    "api_keys_create": "Crear la llave",
+    "api_keys_create": "Crear la clave",
     "api_keys_cancel": "Cancelar",
-    "api_keys_created_title": "Tu llave nueva",
+    "api_keys_created_title": "Tu clave nueva",
     "api_keys_created_lead": "Cópiala ahora: es la única vez que la vas a ver. "
-                             "Nosotros guardamos solo una huella de ella y no la "
-                             "podemos volver a enseñar. Si la pierdes, crea otra y "
-                             "revoca esta.",
-    "api_keys_created_label": "La llave «{name}»",
+                             "Nosotros guardamos solo su hash y no la podemos volver "
+                             "a enseñar. Si la pierdes, crea otra y revoca esta.",
+    "api_keys_created_label": "La clave «{name}»",
     "api_keys_created_where": "Va en la cabecera Authorization de cada petición, "
                               "desde el servidor de tu sistema. Nunca en una página "
                               "web, en una aplicación que se descarga ni en un "
@@ -2920,7 +2916,7 @@ TEXTS = {
     "api_keys_created_try": "Para probarla, desde una terminal:",
     "api_keys_created_done": "Ya la guardé",
     "api_keys_revoke_title": "¿Revocar «{name}»?",
-    "api_keys_revoke_lead": "Lo que use esta llave deja de entrar desde ya, y no se "
+    "api_keys_revoke_lead": "Lo que use esta clave deja de entrar desde ya, y no se "
                             "puede deshacer. Si la necesitas otra vez, crea una "
                             "nueva.",
     "api_keys_revoke_yes": "Sí, revocarla",
@@ -2930,87 +2926,84 @@ TEXTS = {
 
     "api_scope_contacts_read": "Ver contactos",
     "api_scope_contacts_read_desc": "Contactos, etiquetas, columnas y supresiones.",
-    "api_scope_contacts_write": "Cambiar contactos",
-    "api_scope_contacts_write_desc": "Crear, cambiar y borrar contactos, sus "
-                                     "listas, etiquetas y columnas.",
+    "api_scope_contacts_write": "Editar contactos",
+    "api_scope_contacts_write_desc": "Crear, editar y borrar contactos, sus listas, "
+                                     "etiquetas y columnas.",
     "api_scope_templates_read": "Ver plantillas",
     "api_scope_templates_read_desc": "Plantillas, carpetas y cómo queda cada correo.",
-    "api_scope_templates_write": "Cambiar plantillas",
-    "api_scope_templates_write_desc": "Crear, cambiar y borrar plantillas, "
-                                      "carpetas y fotos.",
+    "api_scope_templates_write": "Editar plantillas",
+    "api_scope_templates_write_desc": "Crear, editar y borrar plantillas, carpetas e "
+                                      "imágenes.",
     "api_scope_emails_send": "Enviar correos",
-    "api_scope_emails_send_desc": "Mandar un correo a una persona y ver los que "
-                                  "mandó la API.",
+    "api_scope_emails_send_desc": "Enviar un correo a una persona y ver los que se "
+                                  "enviaron por la API.",
     "api_scope_campaigns_read": "Ver campañas",
-    "api_scope_campaigns_read_desc": "Campañas, lo que salió y a quién.",
-    "api_scope_campaigns_write": "Cambiar campañas",
-    "api_scope_campaigns_write_desc": "Crear, cambiar y borrar campañas.",
-    "api_scope_campaigns_send": "Mandar campañas",
+    "api_scope_campaigns_read_desc": "Campañas, sus envíos y a quién.",
+    "api_scope_campaigns_write": "Editar campañas",
+    "api_scope_campaigns_write_desc": "Crear, editar y borrar campañas.",
+    "api_scope_campaigns_send": "Enviar campañas",
     "api_scope_campaigns_send_desc": "Enviar y programar campañas.",
     "api_scope_stats_read": "Ver estadísticas",
     "api_scope_stats_read_desc": "Las cifras y los eventos de tus correos.",
 
-    "api_log_title": "Registro de la API",
-    "api_log_lead": "Las peticiones que fallaron en los últimos {days} días, para "
-                    "ver por qué algo no entró. Lo que salió bien se ve en el "
-                    "último uso de cada llave.",
+    "api_log_title": "Logs de la API",
+    "api_log_lead": "Las peticiones que fallaron en los últimos {days} días, para ver "
+                    "por qué algo no entró. Lo que salió bien se ve en el último uso "
+                    "de cada clave.",
     "api_log_none": "Nada falló en estos días.",
-    "api_log_all": "Todas las llaves",
+    "api_log_all": "Todas las claves",
     "api_log_show": "Ver",
-    "api_log_key": "Llave",
+    "api_log_key": "Clave",
     "api_log_col_when": "Cuándo",
-    "api_log_col_key": "Llave",
+    "api_log_col_key": "Clave",
     "api_log_col_request": "Petición",
     "api_log_col_result": "Resultado",
     "api_log_col_from": "Desde",
 
     "admin_api_title": "API",
-    "admin_api_none": "No tiene llaves.",
+    "admin_api_none": "No tiene claves de API.",
     "admin_api_revoke": "Revocar",
     "admin_api_reason": "Motivo",
-    "admin_api_done": "Listo, la llave quedó revocada y el cliente recibió un "
-                      "correo.",
+    "admin_api_done": "Listo, la clave quedó revocada y el cliente recibió un correo.",
 
     "mail_api_code_subject": "Tu código para la API",
     "mail_api_code_heading": "Tu código para la API",
-    "mail_api_code_body": "Alguien con tu sesión abierta pidió crear una llave de "
-                          "la API o un aviso a otro sistema. Si fuiste tú, escribe "
-                          "este código. Si no, no hagas nada: sin el código no se "
-                          "crea nada.",
-    "mail_api_key_subject": "Se creó una llave de la API en tu cuenta",
-    "mail_api_key_heading": "Se creó una llave de la API",
-    "mail_api_key_body": "Se creó la llave «{name}» ({mode}) desde la IP {ip}.",
+    "mail_api_code_body": "Alguien con tu sesión abierta pidió crear una clave de API "
+                          "o un webhook. Si fuiste tú, escribe este código. Si no, no "
+                          "hagas nada: sin el código no se crea nada.",
+    "mail_api_key_subject": "Se creó una clave de API en tu cuenta",
+    "mail_api_key_heading": "Se creó una clave de API",
+    "mail_api_key_body": "Se creó la clave «{name}» ({mode}) desde la IP {ip}.",
     "mail_api_key_scopes": "Puede: {scopes}.",
-    "mail_api_key_not_you": "Si no fuiste tú, revócala ahora y cambia tu "
-                            "contraseña: con esa llave se puede usar tu cuenta sin "
-                            "entrar al panel.",
-    "mail_api_key_button": "Ver mis llaves",
-    "mail_api_revoked_subject": "Se revocó una llave de la API",
-    "mail_api_revoked_heading": "Se revocó una llave de la API",
-    "mail_api_revoked_body": "La llave «{name}» quedó revocada: lo que la usaba ya "
-                             "no entra.",
-    "mail_api_exposed_subject": "Revocamos una llave de la API",
-    "mail_api_exposed_heading": "Revocamos una de tus llaves",
-    "mail_api_exposed_body": "La llave «{name}» llegó escrita en la dirección de "
-                             "una petición. Ahí queda guardada en los registros de "
-                             "los servidores por donde pasa, así que la revocamos "
-                             "para que nadie más la use.",
+    "mail_api_key_not_you": "Si no fuiste tú, revócala ahora y cambia tu contraseña: "
+                            "con esa clave se puede usar tu cuenta sin iniciar "
+                            "sesión.",
+    "mail_api_key_button": "Ver mis claves de API",
+    "mail_api_revoked_subject": "Se revocó una clave de API",
+    "mail_api_revoked_heading": "Se revocó una clave de API",
+    "mail_api_revoked_body": "La clave «{name}» quedó revocada: lo que la usaba ya no "
+                             "entra.",
+    "mail_api_exposed_subject": "Revocamos una clave de API",
+    "mail_api_exposed_heading": "Revocamos una de tus claves de API",
+    "mail_api_exposed_body": "La clave «{name}» llegó escrita en la URL de una "
+                             "petición. Ahí queda guardada en los logs de los "
+                             "servidores por donde pasa, así que la revocamos para "
+                             "que nadie más la use.",
     "mail_api_exposed_fix": "Crea una nueva y mándala en la cabecera "
                             "Authorization, como dice la documentación.",
 
-    "api_error_unauthorized": "Falta la llave, o no es válida. Va en la cabecera "
-                              "Authorization: Bearer y tu llave.",
-    "api_error_key_in_url": "La llave no va en la dirección: va en la cabecera "
-                            "Authorization. Si era una llave buena, la revocamos, "
-                            "porque en la dirección queda escrita en registros "
-                            "ajenos.",
-    "api_error_ip_not_allowed": "Esta llave no se puede usar desde esta IP.",
+    "api_error_unauthorized": "Falta la clave de API, o no es válida. Va en la "
+                              "cabecera Authorization: Bearer y tu clave.",
+    "api_error_key_in_url": "La clave de API no va en la URL: va en la cabecera "
+                            "Authorization. Si era una clave válida, la revocamos, "
+                            "porque en la URL queda escrita en logs ajenos.",
+    "api_error_ip_not_allowed": "Esta clave no se puede usar desde esta IP.",
     "api_error_account_suspended": "La cuenta está suspendida.",
     "api_error_account_closed": "La cuenta todavía no está abierta: le falta la "
                                 "demostración o un plan.",
-    "api_error_test_key_cannot": "Una llave de prueba solo puede leer y simular "
+    "api_error_test_key_cannot": "Una clave de prueba solo puede leer y simular "
                                  "envíos.",
-    "api_error_missing_scope": "Esta llave no tiene el permiso {scope}.",
+    "api_error_missing_scope": "Esta clave no tiene el permiso {scope}.",
     "api_error_rate_limited": "Demasiadas peticiones. Espera los segundos que dice "
                               "Retry-After y vuelve a intentar.",
     "api_error_not_found": "No existe, o no es de esta cuenta.",
@@ -3148,9 +3141,9 @@ TEXTS = {
     "api_folders_color": "color es uno de {colors}.",
     "api_limit_templates": "plantillas",
     "api_limit_folders": "carpetas",
-    "api_limit_images": "fotos",
-    "api_data_shape": "data es un objeto, con cada marca por su clave.",
-    "api_data_keys": "data lleva hasta {n} marcas.",
+    "api_limit_images": "imágenes",
+    "api_data_shape": "data es un objeto, con cada variable por su nombre.",
+    "api_data_keys": "data lleva hasta {n} variables.",
     "api_data_size": "data pasa de {kb} KB.",
     "api_data_key": "Cada clave de data va en mayúsculas, números y _ (hasta 24), "
                     "como en la plantilla. CORREO no: es la dirección a la que va.",
@@ -3178,11 +3171,11 @@ TEXTS = {
     "api_error_undeliverable": "El dominio de esa dirección no recibe correo.",
     "api_error_demo_address": "En la demostración solo se envía a tus direcciones "
                               "de prueba confirmadas.",
-    "api_error_missing_data": "La plantilla o el asunto nombran marcas sin dato "
-                              "(van en missing): mándalas en data.",
+    "api_error_missing_data": "La plantilla o el asunto usan variables sin dato (van "
+                              "en missing): mándalas en data.",
     "api_error_bad_subject": "El asunto lleno trae un salto de línea, de un dato "
                              "del contacto: corrígelo y vuelve a enviar.",
-    "api_error_throttled": "Amazon pidió esperar un momento. No salió ni se gastó "
+    "api_error_throttled": "Amazon pidió esperar un momento. No se envió ni se gastó "
                            "cuota: reintenta tras Retry-After.",
     "api_error_delivery_failed": "No se pudo entregar a Amazon. No se gastó cuota: "
                                  "el detalle va en email.",
@@ -3190,23 +3183,23 @@ TEXTS = {
     # --- API → Correos en el panel (octubre de 2026)
     "dash_api_emails": "Correos",
     "api_emails_title": "Correos de la API",
-    "api_emails_lead": "Lo que tu sistema mandó por la API en los últimos {days} "
-                       "días, y qué pasó con cada uno. Las campañas siguen en "
+    "api_emails_lead": "Lo que tu sistema envió por la API en los últimos {days} "
+                       "días, y el estado de cada uno. Las campañas siguen en "
                        "Enviados.",
     "api_emails_col_when": "Cuándo",
     "api_emails_col_to": "Para",
     "api_emails_col_subject": "Asunto",
-    "api_emails_col_kind": "Clase",
-    "api_emails_col_outcome": "Qué pasó",
+    "api_emails_col_kind": "Tipo",
+    "api_emails_col_outcome": "Estado",
     "api_emails_from": "de {address}",
     "api_emails_kind_transactional": "Transaccional",
     "api_emails_kind_promotional": "Promocional",
     "api_emails_outcome_pending": "Sin confirmar",
-    "api_emails_outcome_sent": "Salió",
-    "api_emails_outcome_failed": "No salió",
+    "api_emails_outcome_sent": "Enviado",
+    "api_emails_outcome_failed": "Fallido",
     "api_emails_outcome_delivery": "Entregado",
     "api_emails_outcome_open": "Abierto",
-    "api_emails_outcome_click": "Pulsado",
+    "api_emails_outcome_click": "Clic",
     "api_emails_outcome_bounce": "Rebotó",
     "api_emails_outcome_complaint": "Marcado como spam",
     "api_emails_newest": "Los más nuevos",
@@ -3241,35 +3234,35 @@ TEXTS = {
     "admin_worker_key_unknown": "Todavía no comprobó su SECRET_KEY.",
 
     # --- los avisos a su sistema, webhooks (octubre de 2026)
-    "dash_api_webhooks": "Avisos",
-    "webhooks_title": "Avisos a tu sistema",
+    "dash_api_webhooks": "Webhooks",
+    "webhooks_title": "Webhooks",
     "webhooks_lead": "Cuando pasa algo con tus correos (se entregó, rebotó, alguien "
-                     "se dio de baja, terminó una campaña), te lo mandamos a tu "
+                     "se dio de baja, terminó una campaña), te lo enviamos a tu "
                      "servidor, firmado, sin que tengas que preguntar.",
-    "webhooks_done_deleted": "Se borró el aviso.",
-    "webhooks_new": "Agregar un aviso",
-    "webhooks_full": "Ya tienes {n} avisos, que es lo que cabe.",
-    "webhooks_col_url": "A dónde",
+    "webhooks_done_deleted": "Se borró el webhook.",
+    "webhooks_new": "Agregar un webhook",
+    "webhooks_full": "Ya tienes {n} webhooks, que es el máximo.",
+    "webhooks_col_url": "URL del endpoint",
     "webhooks_col_events": "Eventos",
     "webhooks_col_last": "La última vez",
-    "webhooks_on": "Encendido",
-    "webhooks_off": "Apagado",
+    "webhooks_on": "Activo",
+    "webhooks_off": "Inactivo",
     "webhooks_events_n": "{n} eventos",
     "webhooks_failing": "Fallando desde {when}",
     "webhooks_last": "Respondió {status}, {when}",
     "webhooks_never": "Todavía no se ha mandado nada.",
     "webhooks_open": "Abrir",
-    "webhooks_none": "Todavía no tienes avisos.",
-    "webhooks_new_title": "Agregar un aviso",
-    "webhooks_edit_title": "Cambiar el aviso",
+    "webhooks_none": "Todavía no tienes webhooks.",
+    "webhooks_new_title": "Agregar un webhook",
+    "webhooks_edit_title": "Editar el webhook",
     "webhooks_new_lead": "Tu servidor recibe un POST en JSON por cada evento, con la "
                          "firma en la cabecera Sobreala-Signature. Tiene que "
                          "responder un 2xx en menos de 5 segundos.",
-    "webhooks_url": "La dirección de tu servidor",
+    "webhooks_url": "URL del endpoint",
     "webhooks_url_hint": "https://, con un nombre (no una IP) y sin puerto. No puede "
                          "ser una dirección de una red interna.",
-    "webhooks_url_url": "Tiene que ser una dirección https:// completa, sin usuario "
-                        "ni contraseña, de hasta 500 caracteres.",
+    "webhooks_url_url": "Tiene que ser una URL https:// completa, sin usuario ni "
+                        "contraseña, de hasta 500 caracteres.",
     "webhooks_url_port": "Va sin puerto: solo el 443 de https.",
     "webhooks_url_ip": "Va con un nombre, no con una IP.",
     "webhooks_url_host": "Ese nombre no es de internet.",
@@ -3282,68 +3275,70 @@ TEXTS = {
     "webhooks_event_email_complained": "Alguien marcó un correo como spam.",
     "webhooks_event_email_rejected": "Amazon no lo mandó (traía un virus, por ejemplo).",
     "webhooks_event_email_opened": "Alguien abrió un correo (la primera vez).",
-    "webhooks_event_email_clicked": "Alguien pulsó un enlace (nunca en un "
+    "webhooks_event_email_clicked": "Alguien hizo clic en un enlace (nunca en un "
                                     "transaccional).",
     "webhooks_event_email_downloaded": "Alguien bajó el archivo de un correo individual.",
     "webhooks_event_contact_unsubscribed": "Un contacto se dio de baja.",
     "webhooks_event_campaign_finished": "Una campaña terminó de salir, con sus cifras.",
     "webhooks_save": "Guardar",
-    "webhooks_create": "Agregar el aviso",
-    "webhooks_secret_title": "El secreto del aviso",
-    "webhooks_created_lead": "Ya está: los avisos van a {host}. Este es su secreto, con "
-                             "el que tu servidor comprueba que cada aviso es nuestro.",
-    "webhooks_rotated_lead": "Este es el secreto nuevo de {host}. El de antes ya no "
-                             "sirve: cámbialo en tu servidor.",
-    "webhooks_secret_label": "Secreto",
+    "webhooks_create": "Agregar el webhook",
+    "webhooks_secret_title": "El secreto de firma del webhook",
+    "webhooks_created_lead": "Listo: los eventos van a {host}. Este es su secreto de "
+                             "firma, con el que tu servidor comprueba que cada evento "
+                             "es nuestro.",
+    "webhooks_rotated_lead": "Este es el secreto de firma nuevo de {host}. El de "
+                             "antes ya no sirve: cámbialo en tu servidor.",
+    "webhooks_secret_label": "Secreto de firma",
     "webhooks_secret_where": "Se ve solo ahora. Guárdalo en tu servidor, nunca en una "
                              "página web ni en un repositorio. Si lo pierdes, cámbialo "
                              "por otro.",
     "webhooks_how_verify": "Cómo comprobar la firma",
-    "webhooks_done_saved": "Se guardó el aviso.",
-    "webhooks_done_on": "El aviso está encendido.",
-    "webhooks_done_off": "El aviso está apagado: no se manda nada.",
+    "webhooks_done_saved": "Se guardó el webhook.",
+    "webhooks_done_on": "El webhook está activo.",
+    "webhooks_done_off": "El webhook está inactivo: no se envía nada.",
     "webhooks_test_ok": "Tu servidor respondió {status} en {ms} ms.",
-    "webhooks_test_bad": "No salió bien: respondió {status} ({error}) en {ms} ms.",
+    "webhooks_test_bad": "Falló: respondió {status} ({error}) en {ms} ms.",
     "webhooks_test_many": "Ya mandaste varios de prueba en la última hora. Espera un "
                           "poco.",
-    "webhooks_switched_off": "Lo apagamos porque tu servidor llevaba 72 horas sin "
-                             "responder bien. Arréglalo y enciéndelo otra vez.",
+    "webhooks_switched_off": "Lo desactivamos porque tu servidor llevaba 72 horas sin "
+                             "responder bien. Arréglalo y actívalo otra vez.",
     "webhooks_test": "Enviar uno de prueba",
-    "webhooks_turn_off": "Apagar",
-    "webhooks_turn_on": "Encender",
-    "webhooks_edit": "Cambiar",
-    "webhooks_rotate": "Cambiar el secreto",
+    "webhooks_turn_off": "Desactivar",
+    "webhooks_turn_on": "Activar",
+    "webhooks_edit": "Editar",
+    "webhooks_rotate": "Cambiar el secreto de firma",
     "webhooks_delete": "Borrar",
     "webhooks_deliveries": "Las últimas entregas",
     "webhooks_col_event": "Evento",
-    "webhooks_col_result": "Qué pasó",
+    "webhooks_col_result": "Estado",
     "webhooks_col_attempts": "Intentos",
     "webhooks_status_pending": "Por entregar",
     "webhooks_status_delivered": "Entregado",
-    "webhooks_status_failed": "No se pudo",
-    "webhooks_no_deliveries": "Todavía no se ha mandado nada a este aviso.",
-    "webhooks_ask_secret_title": "Cambiar el secreto de {host}",
-    "webhooks_ask_secret_lead": "El de ahora deja de servir en ese momento: los avisos "
-                                "que lleguen con la firma vieja tu servidor los va a "
-                                "rechazar hasta que pongas el nuevo.",
-    "webhooks_ask_secret_yes": "Cambiar el secreto",
-    "webhooks_ask_delete_title": "Borrar el aviso a {host}",
+    "webhooks_status_failed": "Fallido",
+    "webhooks_no_deliveries": "Todavía no se ha enviado nada a este webhook.",
+    "webhooks_ask_secret_title": "Cambiar el secreto de firma de {host}",
+    "webhooks_ask_secret_lead": "El de ahora deja de servir en ese momento: los "
+                                "eventos que lleguen con la firma vieja tu servidor "
+                                "los va a rechazar hasta que pongas el nuevo.",
+    "webhooks_ask_secret_yes": "Cambiar el secreto de firma",
+    "webhooks_ask_delete_title": "Borrar el webhook a {host}",
     "webhooks_ask_delete_lead": "No se le manda nada más, y se borran sus entregas "
                                 "pendientes. No se puede deshacer.",
     "webhooks_ask_delete_yes": "Sí, borrarlo",
-    "mail_webhook_added_subject": "Se agregó un aviso a tu sistema",
+    "mail_webhook_added_subject": "Se agregó un webhook a tu cuenta",
     "mail_webhook_added_heading": "Tus datos van a un servidor nuevo",
     "mail_webhook_added_body": "Desde ahora, lo que pasa con tus correos se manda a "
                                "{host}. Se agregó desde la IP {ip}.",
-    "mail_webhook_button": "Ver mis avisos",
-    "mail_webhook_off_subject": "Apagamos uno de tus avisos",
+    "mail_webhook_button": "Ver mis webhooks",
+    "mail_webhook_off_subject": "Desactivamos uno de tus webhooks",
     "mail_webhook_off_heading": "Tu servidor no responde",
-    "mail_webhook_off_body": "Lo de tus correos se mandaba a {host}, que lleva 72 "
-                             "horas sin responder bien, así que lo apagamos.",
-    "mail_webhook_off_fix": "Cuando tu servidor esté listo, enciéndelo otra vez desde "
-                            "el panel.",
+    "mail_webhook_off_body": "Los eventos de tus correos se enviaban a {host}, que "
+                             "lleva 72 horas sin responder bien, así que desactivamos "
+                             "el webhook.",
+    "mail_webhook_off_fix": "Cuando tu servidor esté listo, actívalo otra vez en "
+                            "Dashboard → API → Webhooks.",
 
-    "admin_api_hooks": "Manda sus avisos a:",
+    "admin_api_hooks": "Envía sus webhooks a:",
 
     # --- la API: envíos, estadísticas y eventos (octubre de 2026)
     "api_stats_tz": "tz es el nombre de una zona, como America/Panama.",

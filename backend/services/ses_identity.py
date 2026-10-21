@@ -72,16 +72,18 @@ def records(domain: str, tokens: list[str]) -> list[dict[str, str]]:
 
 
 def zone_file(domain: str, tokens: list[str]) -> str:
-    """Los mismos registros como archivo de zona (formato BIND), que Cloudflare
-    importa de una vez (DNS, Registros, «Importar y exportar») y que aceptan
-    casi todos los proveedores de DNS.
+    """Los mismos registros como archivo de zona (formato BIND), el que importan
+    de una vez los proveedores de DNS que lo permiten (Cloudflare, Route 53 y
+    otros). No da por hecho ninguno: no todos tienen ahí su dominio.
 
     Los nombres van completos y con su punto final, para que no se lean como
-    relativos al dominio. `cf_tags=cf-proxied:false` le dice a Cloudflare que
-    entren sin proxy («Solo DNS»): un CNAME de DKIM detrás del proxy no lo
-    encuentra Amazon."""
-    lines = [f"; Sobreala: los registros de {domain} para Amazon SES (DKIM y MAIL FROM).",
-             "; En Cloudflare: DNS, Registros, Importar y exportar.", ""]
+    relativos al dominio. `cf_tags=cf-proxied:false` va como comentario al final
+    de cada CNAME: los demás proveedores no lo leen, y a Cloudflare le dice que
+    entren sin proxy («Solo DNS») aunque al importar se marque lo contrario,
+    porque un CNAME de DKIM detrás del proxy no lo encuentra Amazon."""
+    lines = [f"; Sobreala: los registros DNS de {domain} para Amazon SES (DKIM y MAIL FROM).",
+             "; Impórtalo en tu proveedor de DNS si lo permite, o copia cada registro a mano.",
+             ""]
     for one in dkim_records(domain, tokens):
         lines.append(f"{one['name']}.\t3600\tIN\t{one['type']}\t{one['value']}."
                      "\t; cf_tags=cf-proxied:false")

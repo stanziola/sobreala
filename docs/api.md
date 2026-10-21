@@ -2,7 +2,7 @@
 
 Octubre de 2026. Lo que hay que leer antes de tocar la API (`backend/blueprints/api/`),
 la rama «API» del Dashboard (`blueprints/developers/`), el proceso en segundo
-plano (`backend/worker.py`) o los avisos a su sistema (webhooks). La
+plano (`backend/worker.py`) o los webhooks. La
 documentación para los clientes es otra: `sobreala.com/api/`, que sale de
 `backend/api_spec.py`.
 
@@ -141,9 +141,10 @@ prediseñadas solo se leen, se mueven, se duplican y se borran. **300 por cuenta
   manda nada si la suya no coincide.
 - **Latido** en `worker_state`; lo enseñan `/health` y Clientes.
 
-## Los avisos a su sistema (`services/webhooks.py`, `services/safe_http.py`)
+## Los webhooks (`services/webhooks.py`, `services/safe_http.py`)
 
-- Hasta 5 destinos por cuenta, solo en el panel (API → Avisos), con la prueba.
+- Hasta 5 destinos por cuenta, solo desde el Dashboard (API → Webhooks), con la
+  prueba.
 - Se anotan **una vez por evento** (`webhook_deliveries`, único por destino y
   clave) y solo si el evento es nuevo (`events.record_new`): el aviso de SES, la
   baja, el final de una campaña y una descarga.
