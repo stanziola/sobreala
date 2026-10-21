@@ -1483,6 +1483,181 @@ API_PAGE = {
 }
 
 
+# --------------------------------------------------------------------------- la ayuda
+
+# El centro de ayuda (octubre de 2026): sobreala.com/ayuda/. Es a donde lleva
+# «Ayuda» en el pie de los correos del sistema, que antes iba a las preguntas
+# de la portada. Cada respuesta se escribió contra docs/: si una cosa cambia
+# allí, cambia aquí.
+HELP = {
+    "meta_title": "Centro de ayuda | Sobreala",
+    "meta_description": "Respuestas sobre tu cuenta, tus contactos, tus plantillas, "
+                        "tus envíos, los pagos y la API de Sobreala, y cómo "
+                        "escribirnos.",
+    "hero": {
+        "eyebrow": "Centro de ayuda",
+        "title": "¿En qué te ayudamos?",
+        "subtitle": "Las preguntas que más nos hacen, por tema. Si no encuentras la "
+                    "tuya, escríbenos: al final de esta página están WhatsApp y el "
+                    "correo.",
+    },
+    "nav_label": "Temas",
+    "topics": [
+        {
+            "id": "cuenta",
+            "title": "Cuenta y acceso",
+            "items": [
+                {"q": "¿Cómo creo mi cuenta?",
+                 "a": "En app.sobreala.com, con «Registrarse»: tu correo y una "
+                      "contraseña, o tu cuenta de Google o de GitHub. Te pedimos tu "
+                      "teléfono, los de tu negocio y su dirección, y te mandamos un "
+                      "código para confirmar el correo."},
+                {"q": "¿Cómo se abre mi cuenta para enviar?",
+                 "a": "De dos formas. Pidiendo la demostración desde la bienvenida: "
+                      "la revisamos, y cuando la aprobamos te llega un correo; en ella "
+                      "envías solo a tus direcciones de prueba, hasta 50 correos. O "
+                      "contratando un plan, que la abre con todo."},
+                {"q": "Olvidé mi contraseña",
+                 "a": "En «Iniciar sesión», pulsa «¿Olvidaste tu contraseña?»: te "
+                      "mandamos un código a tu correo para crear una nueva. Si "
+                      "entraste con Google o GitHub y no tienes contraseña, así la "
+                      "creas."},
+                {"q": "¿Puedo entrar con Google o GitHub a la cuenta que ya tengo?",
+                 "a": "Sí: entra con tu contraseña y conéctalo en Configuración → "
+                      "Seguridad, con «Conectar». Por seguridad no se conectan solos, "
+                      "aunque el correo sea el mismo."},
+                {"q": "¿Cómo protejo mi cuenta?",
+                 "a": "Activa la autenticación de múltiples factores en Configuración "
+                      "→ Seguridad: además de tu contraseña, se te pide el código de "
+                      "una app como Google Authenticator. Ahí también ves y cierras "
+                      "los dispositivos donde tu cuenta está abierta."},
+                {"q": "¿Puedo dar acceso a mi equipo?",
+                 "a": "Sí: en Configuración → Seguridad, en «Usuarios de la cuenta», "
+                      "invitas a cada persona con su propio correo y eliges qué puede "
+                      "hacer."},
+            ],
+        },
+        {
+            "id": "contactos",
+            "title": "Contactos",
+            "items": [
+                {"q": "¿Cómo subo mis contactos?",
+                 "a": "Desde Contactos → Importar, con un archivo CSV (lo guardan Excel "
+                      "y Google Sheets). Eliges qué columna es el correo y cuál el "
+                      "nombre, y nos dices de dónde salió la lista. Un correo repetido "
+                      "queda una sola vez."},
+                {"q": "¿Qué son las etiquetas?",
+                 "a": "Grupos dentro de tu lista: socios, clientes, alumnos. Una "
+                      "campaña se envía a una o varias etiquetas, o a todos tus "
+                      "contactos."},
+                {"q": "¿Puedo guardar más datos de cada persona?",
+                 "a": "Sí, con columnas propias (la ciudad, el número de socio, una "
+                      "fecha) y usarlas en tus correos, para que a cada persona le "
+                      "llegue su propio dato. También listas, como las transacciones "
+                      "de un socio."},
+                {"q": "¿Qué pasa con quien se da de baja?",
+                 "a": "Queda en Supresiones y ya no le llega nada, aunque lo vuelvas a "
+                      "importar. Lo mismo con las direcciones que no existen y con "
+                      "quien marca tu correo como spam."},
+            ],
+        },
+        {
+            "id": "plantillas",
+            "title": "Plantillas",
+            "items": [
+                {"q": "¿Cómo armo un correo?",
+                 "a": "En el Lienzo: pones textos, imágenes, botones y formas sobre "
+                      "una hoja de 600 px de ancho. También puedes empezar desde una de "
+                      "nuestras plantillas de muestra, en la portada."},
+                {"q": "¿Por qué no me deja guardar mi plantilla?",
+                 "a": "Revisamos cada plantilla para que no caiga en spam: al menos 200 "
+                      "caracteres de texto, poca imagen, pocos enlaces y sin palabras "
+                      "que los filtros castigan. La ventana de requisitos del Lienzo "
+                      "dice qué falta."},
+                {"q": "Mi texto no cabe en su caja",
+                 "a": "Lo que pasa de la caja no sale en el correo, y el Lienzo te "
+                      "avisa. Agranda la caja a mano, o pulsa «Ajustar la caja al "
+                      "texto»."},
+                {"q": "¿Puedo pasar una plantilla a otra cuenta?",
+                 "a": "Sí: bájala en ZIP desde el Lienzo y cárgala en la otra, con sus "
+                      "imágenes."},
+            ],
+        },
+        {
+            "id": "envios",
+            "title": "Envíos",
+            "items": [
+                {"q": "¿Desde qué dirección salen mis correos?",
+                 "a": "Desde tu dirección en envios.sobreala.com, con el nombre de tu "
+                      "negocio, o desde tu propio dominio si lo conectas en "
+                      "Configuración de envío."},
+                {"q": "¿Puedo programar una campaña?",
+                 "a": "Sí: al guardarla eliges la fecha y la hora, y sale sola."},
+                {"q": "¿Por qué mis campañas llevan un enlace de baja?",
+                 "a": "Lo pide la ley y lo exigen Gmail y Outlook: cada campaña lleva "
+                      "el suyo, y quien se da de baja deja de recibir. Un correo "
+                      "individual, de una persona a otra, no lo lleva."},
+                {"q": "¿Cómo sé quién abrió mi correo?",
+                 "a": "En Estadísticas y en Enviados: cuántas personas lo recibieron, "
+                      "lo abrieron, hicieron clic, rebotaron o se quejaron."},
+                {"q": "¿Por qué se pausaron mis envíos?",
+                 "a": "Si en 30 días rebota más del 3 % de lo enviado, o se queja más "
+                      "del 0.1 %, pausamos tus envíos para cuidar tu reputación y la de "
+                      "todos. Escríbenos y lo revisamos contigo."},
+            ],
+        },
+        {
+            "id": "pagos",
+            "title": "Pagos",
+            "items": [
+                {"q": "¿Cómo pago?",
+                 "a": "Pagas un mes o un año por adelantado desde tu cuenta, hoy con "
+                      "PayPal. Los datos de tu tarjeta los maneja el proveedor de pago, "
+                      "nunca Sobreala, y los precios incluyen el ITBMS."},
+                {"q": "¿Me dan factura?",
+                 "a": "Sí: por cada pago te enviamos la factura al correo de tu cuenta, "
+                      "y tus pagos se ven en Configuración → Facturación."},
+                {"q": "¿Qué pasa con los correos que no uso?",
+                 "a": "Pasan al mes siguiente y vencen ahí. Al enviar se gastan primero "
+                      "los acumulados, para que no se pierdan."},
+                {"q": "¿Puedo cambiar de plan?",
+                 "a": "Puedes mejorarlo cuando quieras: los correos que no usaste se "
+                      "descuentan del precio nuevo. Para pasar a uno menor, lo eliges "
+                      "cuando venza el tuyo."},
+            ],
+        },
+        {
+            "id": "api",
+            "title": "API",
+            "items": [
+                {"q": "¿Qué es la API?",
+                 "a": "Una forma de que el sistema de tu negocio (tu tienda en línea, "
+                      "tu sistema de socios) cargue contactos, use tus plantillas y "
+                      "envíe correos sin que entres a tu cuenta."},
+                {"q": "¿Cómo empiezo?",
+                 "a": "Crea una clave de API en Dashboard → API → Claves de API, y "
+                      "sigue la documentación en sobreala.com/api/."},
+                {"q": "¿Qué diferencia hay entre transaccional y promocional?",
+                 "a": "Un transaccional es lo que alguien espera porque hizo algo: su "
+                      "recibo, su código, el estado de su pedido; no lleva enlace de "
+                      "baja. Un promocional es una oferta o un boletín, y lleva su "
+                      "baja como cualquier campaña."},
+                {"q": "¿Qué son los webhooks?",
+                 "a": "Avisos que enviamos a tu servidor cuando pasa algo con tus "
+                      "correos: se entregó, rebotó, alguien se dio de baja o terminó "
+                      "una campaña. Se crean en Dashboard → API → Webhooks."},
+            ],
+        },
+    ],
+    "contact": {
+        "title": "¿No encontraste tu respuesta?",
+        "text": "Escríbenos y te respondemos nosotros, no un robot.",
+        "whatsapp": "Escríbenos por WhatsApp",
+        "email": "Escríbenos un correo",
+    },
+}
+
+
 # --------------------------------------------------------------------------- footer
 
 FOOTER = {
@@ -1495,6 +1670,8 @@ FOOTER = {
                 {"label": "Cómo funciona", "url": "/#como-funciona"},
                 # La documentación de la API (octubre de 2026).
                 {"label": "API", "url": "/api/"},
+                # El centro de ayuda (octubre de 2026).
+                {"label": "Ayuda", "url": "/ayuda/"},
             ],
         },
         {

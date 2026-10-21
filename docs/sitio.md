@@ -588,3 +588,23 @@ ejemplo. `build_site.py` la carga por ruta al construir, así que **cambiar la A
 pide regenerar el sitio** (`--check` y `test_generated.py` lo vigilan). El pie
 lleva «API» en Producto. Las pruebas comparan la descripción con las rutas de
 verdad y las claves de cada respuesta con su ejemplo.
+
+
+## El centro de ayuda (octubre de 2026)
+
+**`sobreala.com/ayuda/`** es una página aparte (`src/pages/ayuda.html.j2`, sus
+textos en `HELP` de `content.py`, y su fila en `PAGES`, con la que entra al
+sitemap). Es a donde lleva el pie de los correos del sistema: «¿Necesitas
+ayuda? Visita el centro de ayuda» (antes «Ayuda» iba a las preguntas de la
+portada, en gris, con los íconos de Instagram y WhatsApp al lado).
+
+- **Las preguntas van por tema**: Cuenta y acceso, Contactos, Plantillas,
+  Envíos, Pagos y API, cada una con el acordeón de las preguntas de la portada
+  (`<details>`, sin guion), y arriba los temas como pastillas que bajan a su
+  sección. **Cada respuesta se escribió contra `docs/`**: si algo cambia allí,
+  cambia aquí.
+- **Al final, cómo escribirnos**: WhatsApp y el correo, con los mismos
+  enlaces del pie del sitio (`whatsapp_url()`, `mailto_url()`).
+- El pie del sitio lleva «Ayuda» en Producto. El panel no tiene pie, y el menú
+  de los dos sitios no la lleva (no se pidió).
+

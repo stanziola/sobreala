@@ -3460,6 +3460,11 @@ TEXTS = {
     "error_demo_other": "Cuéntanos cómo los conseguiste: de {min} a {max} caracteres.",
     "welcome_demo_done_wait": "La revisamos pronto. Cuando la aprobemos, te llegará un "
                               "correo a {email} para que empieces.",
+
+    # --- el pie de los correos del sistema (octubre de 2026)
+    "mail_footer_need_help": "¿Necesitas ayuda?",
+    "mail_footer_help_center": "Visita el centro de ayuda",
+    "mail_footer_terms": "Términos",
 }
 
 

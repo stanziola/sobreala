@@ -1,0 +1,57 @@
+{% extends "base.html.j2" %}
+
+{#- El centro de ayuda (octubre de 2026): las preguntas por tema, con el mismo
+    acordeón de las preguntas de la portada (sin guion: <details>), y al final
+    cómo escribirnos. A él lleva «Ayuda» del pie de los correos del sistema. -#}
+
+{% block main %}
+
+<section class="page-hero">
+  <div class="shell">
+    <p class="eyebrow eyebrow--light">{{ page.hero.eyebrow }}</p>
+    <h1 class="page-hero__title">{{ page.hero.title }}</h1>
+    <p class="page-hero__subtitle">{{ page.hero.subtitle }}</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell shell--narrow">
+    <nav class="help-nav" aria-label="{{ page.nav_label }}">
+      <ul>
+        {% for topic in page.topics %}
+        <li><a href="#{{ topic.id }}">{{ topic.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    {% for topic in page.topics %}
+    <section class="help-topic" id="{{ topic.id }}" aria-labelledby="{{ topic.id }}-title">
+      <h2 class="help-topic__title" id="{{ topic.id }}-title">{{ topic.title }}</h2>
+      <ul class="faq">
+        {% for item in topic['items'] %}
+        <li class="faq__item">
+          <details>
+            <summary class="faq__q">
+              <span>{{ item.q }}</span>
+              <span class="faq__mark" aria-hidden="true"></span>
+            </summary>
+            <div class="faq__a"><p>{{ item.a }}</p></div>
+          </details>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+
+    <section class="help-contact" id="contacto-ayuda" aria-labelledby="help-contact-title">
+      <h2 class="help-topic__title" id="help-contact-title">{{ page.contact.title }}</h2>
+      <p>{{ page.contact.text }}</p>
+      <div class="help-contact__actions">
+        <a class="btn" href="{{ whatsapp_url }}" target="_blank" rel="noopener">{{ page.contact.whatsapp }}</a>
+        <a class="btn btn--outline" href="{{ mailto_url }}">{{ page.contact.email }}</a>
+      </div>
+    </section>
+  </div>
+</section>
+
+{% endblock %}

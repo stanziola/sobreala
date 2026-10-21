@@ -1506,6 +1506,28 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 /* ------------------------------------------------------------------ FAQ
    Las preguntas frecuentes, al final: se quitaron y volvieron en octubre de
    2026, con seis en vez de once. */
+/* --------------------------------------------------------- el centro de ayuda
+   sobreala.com/ayuda/ (octubre de 2026): los temas arriba, como pastillas que
+   bajan a su sección, y cada tema con el acordeón de las preguntas de la
+   portada. Al final, cómo escribirnos. */
+.help-nav ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; padding: 0;
+               list-style: none; }
+.help-nav a {
+  display: inline-block; padding: 8px 14px; border: 1px solid var(--color-border);
+  border-radius: 999px; color: var(--color-ink); font-weight: 600; font-size: .95rem;
+  text-decoration: none; background: var(--color-surface);
+}
+.help-nav a:hover { border-color: var(--color-accent); }
+.help-topic { margin-top: clamp(32px, 5vw, 48px); scroll-margin-top: 90px; }
+.help-topic__title { font-size: clamp(1.3rem, 2.4vw, 1.6rem); margin: 0 0 12px; }
+.help-contact {
+  margin-top: clamp(40px, 6vw, 64px); padding: clamp(22px, 4vw, 32px);
+  border: 1px solid var(--color-border); border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.help-contact p { margin: 0; color: var(--color-ink-soft); }
+.help-contact__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
 .faq { display: grid; gap: 10px; margin-top: 8px; }
 .faq__item details { border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
 .faq__item details:hover { border-color: var(--color-accent); }

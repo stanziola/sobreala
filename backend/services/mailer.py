@@ -60,8 +60,10 @@ def footer_links() -> dict[str, str]:
         "instagram_icon": f"{Config.APP_BASE_URL}/static/img/mail/instagram.png",
         "whatsapp": f"https://wa.me/{WHATSAPP_NUMBER}",
         "whatsapp_icon": f"{Config.APP_BASE_URL}/static/img/mail/whatsapp.png",
-        "help": f"{Config.PUBLIC_SITE_URL}/#preguntas",
+        # El centro de ayuda (octubre de 2026); antes, las preguntas de la portada.
+        "help": f"{Config.PUBLIC_SITE_URL}/ayuda/",
         "privacy": f"{Config.PUBLIC_SITE_URL}/privacy/",
+        "terms": f"{Config.PUBLIC_SITE_URL}/terms/",
         "site": Config.PUBLIC_SITE_URL,
     }
 

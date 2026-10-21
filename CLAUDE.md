@@ -96,6 +96,7 @@ sobreala/
 │   ├── privacy/, terms/    # GENERADO: las dos legales
 │   ├── api/                # GENERADO: la documentación de la API, desde
 │   │                       # backend/api_spec.py
+│   ├── ayuda/              # GENERADO: el centro de ayuda (HELP de content.py)
 │   └── pricing/, how-it-works/, about/, contact/
 │                           # GENERADO: páginas de paso a su sección
 └── backend/                # → Railway
@@ -290,7 +291,8 @@ cosa está como está, y lo que ya se probó y se quitó.
   Todos los avisos los compone `services/notices.py`, y ninguno puede romper lo
   que estaba pasando. **Todos los correos del sistema** comparten el sobre
   `email/_layout.html` (una franja azul con el ala y «Sobreala» en imagen,
-  botón oscuro, pie con la dirección, las redes y la ayuda).
+  botón oscuro, y un pie con «¿Necesitas ayuda? Visita el centro de ayuda»,
+  que lleva a `sobreala.com/ayuda/`, la dirección, Privacidad y Términos).
 - `sessions`: un documento por dispositivo, con hash del testigo. Entrar desde
   un dispositivo nuevo avisa por correo.
 - **Entrar, registrarse y sus pasos van a dos columnas** (`_auth.html`), sin la

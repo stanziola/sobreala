@@ -503,6 +503,8 @@ PAGES = [
     ("terms/index.html", "legal.html.j2", "/terms/", content.TERMS),
     # La documentación de la API (octubre de 2026), de backend/api_spec.py.
     ("api/index.html", "api.html.j2", "/api/", content.API_PAGE),
+    # El centro de ayuda (octubre de 2026), a donde lleva el pie de los correos.
+    ("ayuda/index.html", "ayuda.html.j2", "/ayuda/", content.HELP),
 ]
 
 # La descripción de la API: la misma que la API sirve en /api/v1/openapi.json.

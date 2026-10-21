@@ -12,7 +12,6 @@ mismas redes que el del sitio.
 
 from __future__ import annotations
 
-import ast
 from pathlib import Path
 
 from bson import ObjectId
@@ -21,8 +20,8 @@ from test_admin import make_admin, make_client_account
 from test_campaigns import ready
 from test_users import as_member
 
+from config import Config
 from models import event as events
-from services import mailer
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -207,17 +206,14 @@ def test_enviados_cifras_de_campana_y_marcas_de_individual(client, database, out
 
 # --------------------------------------------------------- el pie del correo
 
-def test_el_pie_del_correo_tiene_las_redes_del_sitio(client, database, outbox):
-    source = (ROOT / "landing" / "content.py").read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    contact = next(ast.literal_eval(node.value) for node in tree.body
-                   if isinstance(node, ast.Assign)
-                   and getattr(node.targets[0], "id", "") == "CONTACT")
-    assert mailer.INSTAGRAM_URL == contact["instagram_url"]
-    assert mailer.WHATSAPP_NUMBER == contact["whatsapp_number"]
-
+def test_el_pie_del_correo_lleva_al_centro_de_ayuda(client, database, outbox):
+    """El pie (octubre de 2026): la ayuda a la vista y a una página que existe,
+    la dirección sin Veraguas dos veces, lo legal, y sin los íconos de las redes."""
     ready(client, database)
     mail = sorted(outbox.glob("*.html"))[0].read_text(encoding="utf-8")
-    assert contact["instagram_url"] in mail
-    assert f"https://wa.me/{contact['whatsapp_number']}" in mail
-    assert "Santiago de Veraguas" in mail and "/static/img/mail/instagram.png" in mail
+    assert "¿Necesitas ayuda?" in mail and f"{Config.PUBLIC_SITE_URL}/ayuda/" in mail
+    assert (ROOT / "landing" / "ayuda" / "index.html").exists()
+    assert "Santiago de Veraguas, Panamá" in mail and "Veraguas, Veraguas" not in mail
+    assert f"{Config.PUBLIC_SITE_URL}/privacy/" in mail
+    assert f"{Config.PUBLIC_SITE_URL}/terms/" in mail
+    assert "/static/img/mail/instagram.png" not in mail
