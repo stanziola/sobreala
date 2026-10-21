@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from urllib.parse import parse_qs, urlparse
 
-from conftest import login, register
+from conftest import SIGNUP_EXTRA, login, register
 
 from config import Config
 from models import account as accounts
@@ -165,7 +165,7 @@ def test_sin_cuenta_pide_lo_que_falta_y_la_crea_confirmada(client, database, out
     creada = browser.post("/signup/github", data={
         "csrf_token": csrf(browser, "/signup/github"), "company_name": "Coop Sur",
         "contact_name": "Luis Gómez", "phone_country": "PA", "phone": "60001111",
-        "address": "Calle 10, Santiago de Veraguas"})
+        **SIGNUP_EXTRA})
 
     assert creada.headers["Location"].endswith("/welcome")
     cuenta = accounts.by_email(database, "nueva@coop.com")

@@ -198,8 +198,42 @@ correo y contraseña:
   demostración (`phone`);
 - **los de la empresa**, opcionales y hasta tres (`company_phones`), con
   «Agregar otro número»;
-- **la dirección** (`postal_address`, la misma que sale al pie de las
-  campañas);
+- **la dirección**, por partes (ver abajo), la misma que sale al pie de las
+  campañas;
+- **la casilla de los términos**, obligatoria, y **la de las novedades**,
+  opcional (ver abajo).
+
+**Los nombres tienen que ser nombres** (octubre de 2026: se aceptaban «.» y
+«123»). El de la empresa, de 2 a 80 caracteres, con al menos dos letras o
+números y alguna letra; admite los signos de una razón social (`& . , ' - ( )
+/ +`). El de la persona, de 2 a 60, solo letras y `' - .`, con al menos dos
+letras (`accounts.clean_company_name()` y `clean_person_name()`). Valen en los
+dos registros y al invitar a un usuario. Los de las cuentas que ya existían no
+se revisan.
+
+**La dirección va por partes** (octubre de 2026; antes era una línea suelta):
+dirección (línea 1, de 5 a 200 caracteres), línea 2 opcional (apartamento,
+oficina), ciudad, provincia o estado (con las de Panamá como sugerencias en un
+`datalist`, `i18n.PANAMA_REGIONS`), código postal opcional y país
+(`templates/_address.html`, `accounts.clean_address()`). Se guarda en
+`accounts.address` y **también armada en `postal_address`**
+(`compose_postal()`), que es lo que leen el pie de las campañas,
+`sender.blocked()` y la ficha. Al armarla **no se repite nada**: si la ciudad ya
+nombra la provincia («Santiago de Veraguas» y «Veraguas») la provincia no se
+escribe. Las cuentas de antes tienen solo `postal_address`, y se leen como su
+línea 1 (`address_of()`): siguen enviando igual, y «Editar» les pide lo que
+falta. Guardar una dirección cuyo texto armado cambió reinicia su
+verificación, como siempre.
+
+**Los términos se aceptan con una casilla** (octubre de 2026; antes era una
+frase debajo del botón). Sin marcarla no hay cuenta, y se guardan
+`terms_accepted_at` y `terms_version`, que es la fecha de los términos vigentes:
+`accounts.TERMS_VERSION`, copia de `TERMS_UPDATED` de `landing/content.py`
+(una prueba compara las dos). **Las novedades de Sobreala** son la otra casilla:
+va desmarcada, se guarda en `news_opt_in` (con su fecha) y se cambia en
+Configuración → Notificaciones → Novedades de Sobreala. **Va aparte de
+`notifications`**, donde lo no escrito vale «sí»: aquí vale «no»
+(`wants_news()`). La ficha del administrador enseña las dos.
 
 **La identificación personal no se escribe en ningún sitio**: es solo el
 documento (la foto o el PDF de la cédula o el pasaporte), que se envía después
@@ -214,6 +248,13 @@ regionales; Windows no las dibuja, y para eso va la fuente
 CC-BY 4.0; ver su LICENSE), solo para esos caracteres. Se guardan con su
 prefijo, `+50760000000` (`clean_phone(número, país)`); el 0 de marcar dentro del
 país se quita, menos en Italia (`templates/_phone.html`).
+
+**Los de Panamá tienen sus reglas** (octubre de 2026; se aceptaban de 4 a 14
+dígitos): **el personal es un celular**, 8 dígitos que empiezan con 6, y los de
+la empresa pueden ser también un fijo, 7 dígitos que empiezan con 2 a 5 o 7 a
+9. Vale si se eligió Panamá o si se escribió +507 (`accounts.check_phone()`,
+que devuelve el número y, si no vale, la clave de la frase que dice por qué).
+Los de los demás países siguen con la regla de antes.
 
 **Teléfonos y dirección se ven como texto y se cambian con «Editar»**
 (Configuración → Cuenta, solo el dueño): cada fila enseña su valor, y «Editar»

@@ -73,6 +73,12 @@ IMPLIES = {SEND: (CAMPAIGNS,)}
 # no abre sesión.
 DISABLED = "disabled"
 
+# La versión de los términos que se acepta al registrarse (octubre de 2026): la
+# fecha de su última actualización. Es copia de `TERMS_UPDATED` de
+# landing/content.py, porque el backend no lee landing/ al correr; una prueba
+# (test_registro.py) comprueba que las dos digan lo mismo.
+TERMS_VERSION = "11 de octubre de 2026"
+
 
 def normalize_email(email: str) -> str:
     """Same rule the contacts collection uses: no spaces, lowercase."""
@@ -85,7 +91,8 @@ def now() -> datetime:
 
 def create(db, *, company_name: str, contact_name: str, email: str,
            password: str, phone: str = "", company_phones: list[str] | None = None,
-           postal_address: str = "") -> dict[str, Any] | None:
+           postal_address: str = "", address: dict[str, str] | None = None,
+           terms: bool = False, news: bool = False) -> dict[str, Any] | None:
     """Insert a new account. Returns None if the address is already taken.
 
     The caller must not tell the visitor which of the two happened: both cases
@@ -93,7 +100,10 @@ def create(db, *, company_name: str, contact_name: str, email: str,
 
     Desde octubre de 2026 el registro trae también el teléfono personal, los de
     la empresa y la dirección, ya limpios. La identificación personal no se
-    escribe: se sube como documento.
+    escribe: se sube como documento. La dirección llega por partes (`address`)
+    y se guarda también armada en `postal_address`; `terms` es la casilla de
+    los términos (se anota cuándo y qué versión) y `news`, la de las novedades
+    de Sobreala, que nace en «no» si no se marcó.
     """
     moment = now()
     doc = {
@@ -122,6 +132,15 @@ def create(db, *, company_name: str, contact_name: str, email: str,
     }
     if postal_address:
         doc["postal_address"] = postal_address
+    if address:
+        doc["address"] = {part: address.get(part, "") for part in ADDRESS_PARTS}
+        doc["postal_address"] = compose_postal(address)
+    if terms:
+        doc["terms_accepted_at"] = moment
+        doc["terms_version"] = TERMS_VERSION
+    doc["news_opt_in"] = bool(news)
+    if news:
+        doc["news_opt_in_at"] = moment
     try:
         result = db.accounts.insert_one(doc)
     except DuplicateKeyError:
@@ -806,55 +825,120 @@ PHONE_DIGITS = 15
 COMPANY_PHONES_MAX = 3
 
 
-def clean_phone(raw: str, country: str = "PA") -> str | None:
-    """El número como se guarda, con su prefijo («+50760807972»), o None si no
-    es un teléfono.
+# De quién es el número (octubre de 2026): en Panamá el personal tiene que ser
+# un celular, y los de la empresa pueden ser también un fijo.
+PERSONAL_PHONE = "personal"
+COMPANY_PHONE = "company"
+PANAMA_DIAL = "507"
+# Los fijos de Panamá tienen 7 dígitos y empiezan con estos; los celulares, 8 y
+# empiezan con 6 (los de 7 que empezaban con 6 son de antes de 2008).
+PANAMA_LANDLINE_FIRST = "2345789"
+
+
+def check_phone(raw: str, country: str = "PA",
+                kind: str = COMPANY_PHONE) -> tuple[str | None, str]:
+    """El número como se guarda, con su prefijo («+50760807972»), y por qué no
+    vale si no vale: la clave de su frase (`error_phone`, `error_phone_pa_mobile`
+    o `error_phone_pa_number`), o vacío.
 
     `country` es el código ISO que se eligió en el selector; si el número ya
     viene con `+`, manda lo escrito. Se aceptan los separadores que la gente
     escribe (espacios, guiones, paréntesis y puntos). El 0 con que se marca
     dentro de muchos países no va en el número internacional, así que se quita
-    (menos en Italia, donde sí va).
+    (menos en Italia, donde sí va). Uno de Panamá, escrito o elegido, se mira
+    con sus reglas: el personal es un celular (8 dígitos con 6), y uno de la
+    empresa puede ser también un fijo (7 dígitos).
     """
     from services import countries
 
     text = (raw or "").strip()
     if not re.fullmatch(r"\+?[\d\s\-().]+", text):
-        return None
+        return None, "error_phone"
     digits = re.sub(r"\D", "", text)
     if text.startswith("+"):
         full = digits
     else:
         dial = countries.dial_of(country)
         if dial is None:
-            return None
+            return None, "error_phone"
         if country.upper() != "IT":
             digits = digits.lstrip("0")
         if not NATIONAL_DIGITS[0] <= len(digits) <= NATIONAL_DIGITS[1]:
-            return None
+            return None, "error_phone"
         full = dial + digits
     if not 7 <= len(full) <= PHONE_DIGITS:
-        return None
-    return "+" + full
+        return None, "error_phone"
+    if full.startswith(PANAMA_DIAL):
+        national = full[len(PANAMA_DIAL):]
+        mobile = len(national) == 8 and national.startswith("6")
+        landline = len(national) == 7 and national[0] in PANAMA_LANDLINE_FIRST
+        if kind == PERSONAL_PHONE and not mobile:
+            return None, "error_phone_pa_mobile"
+        if not (mobile or landline):
+            return None, "error_phone_pa_number"
+    return "+" + full, ""
 
 
-def clean_phones(numbers: list[str], countries_chosen: list[str]) -> tuple[list[str], bool]:
+def clean_phone(raw: str, country: str = "PA", kind: str = COMPANY_PHONE) -> str | None:
+    """El número como se guarda, o None si no vale (ver `check_phone`)."""
+    return check_phone(raw, country, kind)[0]
+
+
+def clean_phones(numbers: list[str], countries_chosen: list[str]) -> tuple[list[str], str]:
     """Los números de la empresa: los que se escribieron, limpios, hasta tres.
 
-    Un campo vacío no cuenta. Devuelve la lista y si alguno estaba mal escrito,
-    para que la pantalla lo diga en lugar de perderlo en silencio.
+    Un campo vacío no cuenta. Devuelve la lista y, si alguno estaba mal escrito,
+    la clave de la frase que lo dice (vacío si todos valen), para que la
+    pantalla lo diga en lugar de perderlo en silencio.
     """
     kept: list[str] = []
-    bad = False
+    problem = ""
     for number, country in zip(numbers, countries_chosen):
         if not (number or "").strip():
             continue
-        clean = clean_phone(number, country)
+        clean, why = check_phone(number, country, COMPANY_PHONE)
         if clean is None:
-            bad = True
+            problem = problem or why
         elif clean not in kept:
             kept.append(clean)
-    return kept[:COMPANY_PHONES_MAX], bad
+    return kept[:COMPANY_PHONES_MAX], problem
+
+
+# Los nombres (octubre de 2026): «.» o «123» se aceptaban, y dejaban una cuenta
+# sin un nombre que leer. El de la empresa admite números y los signos de una
+# razón social («Ferretería 2000, S.A.», «Pérez & Hijos»); el de una persona,
+# solo letras y los signos de un nombre («María-José O'Neill»).
+COMPANY_NAME_LENGTH = (2, 80)
+PERSON_NAME_LENGTH = (2, 60)
+COMPANY_NAME_SIGNS = " &.,'’-()/+"
+PERSON_NAME_SIGNS = " '’-."
+
+
+def clean_company_name(raw: str) -> str | None:
+    """El nombre de la empresa, con los espacios de más quitados, o None si no
+    es un nombre: muy corto o largo, con signos raros, sin al menos dos letras o
+    números, o sin ninguna letra."""
+    text = " ".join(str(raw or "").split())
+    if not COMPANY_NAME_LENGTH[0] <= len(text) <= COMPANY_NAME_LENGTH[1]:
+        return None
+    if not all(c.isalnum() or c in COMPANY_NAME_SIGNS for c in text):
+        return None
+    if sum(c.isalnum() for c in text) < 2 or not any(c.isalpha() for c in text):
+        return None
+    return text
+
+
+def clean_person_name(raw: str) -> str | None:
+    """El nombre de una persona, o None si no lo es: solo letras y los signos de
+    un nombre, con al menos dos letras."""
+    text = " ".join(str(raw or "").split())
+    if not PERSON_NAME_LENGTH[0] <= len(text) <= PERSON_NAME_LENGTH[1]:
+        return None
+    if not all(c.isalpha() or c in PERSON_NAME_SIGNS for c in text):
+        return None
+    if sum(c.isalpha() for c in text) < 2:
+        return None
+    return text
 
 
 def set_phones(db, account_id, *, phone: str, company_phones: list[str]) -> None:
@@ -965,6 +1049,85 @@ def clean_postal(raw: str) -> str | None:
 def set_postal(db, account_id, address: str) -> None:
     db.accounts.update_one({"_id": account_id},
                            {"$set": {"postal_address": address, "updated_at": now()}})
+
+
+# La dirección por partes (octubre de 2026): línea 1, línea 2 opcional, ciudad,
+# provincia o estado, código postal opcional y país. Se guarda en `address`, y
+# `postal_address` se sigue escribiendo armada de esas partes, así lo que la usa
+# (el pie de las campañas, `sender.blocked()`, la ficha) no cambió. Las cuentas
+# de antes tienen solo `postal_address`: se leen como su línea 1.
+ADDRESS_PARTS = ("line1", "line2", "city", "region", "postal_code", "country")
+ADDRESS_LIMITS = {"line1": (5, 200), "line2": (0, 100), "city": (2, 60),
+                  "region": (2, 60), "postal_code": (0, 10)}
+POSTAL_CODE = re.compile(r"[A-Za-z0-9 \-]{1,10}")
+
+
+def _fold(text: str) -> str:
+    """Sin acentos y en minúscula, para comparar «Panamá» con «panama»."""
+    plain = unicodedata.normalize("NFKD", text or "")
+    return "".join(c for c in plain if not unicodedata.combining(c)).lower()
+
+
+def address_of(account: dict[str, Any] | None) -> dict[str, str]:
+    """Las partes de la dirección. Una cuenta de antes, que solo tiene la línea
+    entera, la tiene toda en la línea 1 y las demás vacías: «Editar» se las
+    pide."""
+    from services import countries
+
+    stored = (account or {}).get("address")
+    if isinstance(stored, dict):
+        return {part: str(stored.get(part) or "") for part in ADDRESS_PARTS}
+    legacy = postal_of(account)
+    return {"line1": legacy, "line2": "", "city": "", "region": "", "postal_code": "",
+            "country": countries.DEFAULT}
+
+
+def clean_address(raw: dict[str, Any]) -> tuple[dict[str, str] | None, dict[str, str]]:
+    """Las partes, limpias, o None y qué parte no vale (`{parte: motivo}`).
+
+    El motivo es la clave de su frase en i18n (`address_<parte>_bad`)."""
+    from services import countries
+
+    parts = {part: " ".join(str(raw.get(part) or "").split())
+             for part in ADDRESS_LIMITS}
+    country = str(raw.get("country") or "").strip().upper()
+    errors: dict[str, str] = {}
+    for part, (low, high) in ADDRESS_LIMITS.items():
+        if not low <= len(parts[part]) <= high:
+            errors[part] = f"address_{part}_bad"
+    if parts["postal_code"] and not POSTAL_CODE.fullmatch(parts["postal_code"]):
+        errors["postal_code"] = "address_postal_code_bad"
+    if country not in countries.BY_ISO:
+        errors["country"] = "address_country_bad"
+    if errors:
+        return None, errors
+    return {**parts, "country": country}, {}
+
+
+def compose_postal(address: dict[str, str]) -> str:
+    """La dirección en una línea, como va al pie de las campañas.
+
+    **Sin repetir nada**: si la ciudad ya nombra la provincia («Santiago de
+    Veraguas» y «Veraguas»), la provincia no se escribe. Así salía «Santiago de
+    Veraguas, Veraguas, Panamá»."""
+    from services import countries
+
+    city, region = address.get("city", ""), address.get("region", "")
+    pieces = [address.get("line1", ""), address.get("line2", ""), city]
+    if region and _fold(region) not in _fold(city):
+        pieces.append(region)
+    pieces.append(address.get("postal_code", ""))
+    country = countries.BY_ISO.get(address.get("country", ""), ("", ""))[0]
+    if country and not any(_fold(country) == _fold(one) for one in pieces if one):
+        pieces.append(country)
+    return ", ".join(one for one in pieces if one)
+
+
+def set_address(db, account_id, address: dict[str, str]) -> None:
+    """Guardar las partes y la línea armada de ellas."""
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "address": {part: address.get(part, "") for part in ADDRESS_PARTS},
+        "postal_address": compose_postal(address), "updated_at": now()}})
 
 
 # El logo de la empresa (octubre de 2026): el nombre de su imagen en `images`
@@ -1858,6 +2021,20 @@ def wants(account: dict[str, Any] | None, notice: str) -> bool:
     way round for a preference nobody has expressed.
     """
     return (account or {}).get("notifications", {}).get(notice, True) is not False
+
+
+def wants_news(account: dict[str, Any] | None) -> bool:
+    """Si quiere las novedades y comunicados de Sobreala (octubre de 2026).
+
+    Al revés que `wants()`: lo no escrito vale **no**, porque es publicidad
+    nuestra y solo se manda a quien marcó la casilla."""
+    return (account or {}).get("news_opt_in") is True
+
+
+def set_news(db, account_id, on: bool) -> None:
+    """Marcar o desmarcar las novedades, con la fecha del cambio."""
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "news_opt_in": bool(on), "news_opt_in_at": now(), "updated_at": now()}})
 
 
 def notices_for(account: dict[str, Any] | None) -> tuple[str, ...]:

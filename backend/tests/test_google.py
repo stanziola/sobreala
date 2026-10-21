@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlparse
 
-from conftest import login, register
+from conftest import SIGNUP_EXTRA, login, register
 
 from config import Config
 from models import account as accounts
@@ -258,14 +258,14 @@ def test_sin_cuenta_pide_lo_que_falta_y_la_crea_confirmada(client, database, out
     incompleta = browser.post("/signup/google", data={
         "csrf_token": csrf(browser, "/signup/google"), "company_name": "",
         "contact_name": "Luis Gómez", "phone_country": "PA", "phone": "",
-        "address": "Calle 1"})
+        **SIGNUP_EXTRA})
     assert "Completa este campo" in incompleta.get_data(as_text=True)
     assert accounts.by_email(database, "nueva@coop.com") is None
 
     creada = browser.post("/signup/google", data={
         "csrf_token": csrf(browser, "/signup/google"), "company_name": "Coop Sur",
         "contact_name": "Luis Gómez", "phone_country": "PA", "phone": "60001111",
-        "address": "Calle 10, Santiago de Veraguas"})
+        **SIGNUP_EXTRA})
 
     assert creada.headers["Location"].endswith("/welcome")
     cuenta = accounts.by_email(database, "nueva@coop.com")
@@ -312,7 +312,7 @@ def test_sin_contrasena_no_se_desconecta(client, database, outbox, monkeypatch):
     browser.post("/signup/google", data={
         "csrf_token": csrf(browser, "/signup/google"), "company_name": "Coop Sur",
         "contact_name": "Luis", "phone_country": "PA", "phone": "60001111",
-        "address": "Calle 10, Santiago de Veraguas"})
+        **SIGNUP_EXTRA})
 
     pantalla = browser.get("/settings/security").get_data(as_text=True)
     assert "Conectado" in pantalla and "Desconectar" not in pantalla

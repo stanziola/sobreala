@@ -40,11 +40,12 @@ def test_la_direccion_y_los_telefonos_iguales_no_se_guardan(client, database, ou
     antes = accounts.by_id(database, cuenta["_id"])
 
     misma = browser.post("/settings/account", data={
-        "csrf_token": csrf(browser, "/settings"), "address": accounts.postal_of(antes)})
+        "csrf_token": csrf(browser, "/settings"),
+        **{f"address_{part}": value for part, value in accounts.address_of(antes).items()}})
     assert "same=1" in location(misma) and location(misma).endswith("#address")
 
     otra = browser.post("/settings/account", data={
-        "csrf_token": csrf(browser, "/settings"), "address": "Apartado 0816-00001, Santiago"})
+        "csrf_token": csrf(browser, "/settings"), "address_line1": "Apartado 0816-00001", "address_city": "Santiago", "address_region": "Veraguas", "address_country": "PA"})
     assert "address=1" in location(otra)
 
     browser.post("/settings/account", data={

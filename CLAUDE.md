@@ -256,8 +256,11 @@ cosa está como está, y lo que ya se probó y se quitó.
   **enviando solo a sus direcciones de prueba**, hasta 50 correos), **o con el pago**, que la abre con todo, envío incluido. La puerta
   está en `needs()`. La habilitación antes del primer envío se quitó en octubre
   de 2026.
-- **El registro pide teléfono personal (con su país), los de la empresa y la
-  dirección**, que se cambian con «Editar». **La identificación no se escribe**:
+- **El registro pide teléfono personal (con su país; en Panamá, un celular),
+  los de la empresa y la dirección por partes**, que se cambian con «Editar»,
+  más la casilla de los términos (obligatoria) y la de las novedades
+  (desmarcada). Nombres y teléfonos tienen sus reglas (`docs/cuenta.md`). **La
+  identificación no se escribe**:
   se envía como documento, junto con el de la dirección, en `/verification`, y
   **se verifican a mano**; el archivo se borra al decidir (`verification_docs`).
   El administrador manda el resultado con un botón, y puede **limitar** una
@@ -580,8 +583,9 @@ no se descubra el día del lanzamiento.
 - ~~**Dirección postal física en el pie de cada campaña.**~~ Hecho, y **es la de
   cada cliente**: la CAN-SPAM la pide en todo correo publicitario (basta un
   destinatario con Gmail o Hotmail) y es la de quien anuncia, no la de
-  Sobreala. Se escribe en Configuración → Cuenta (`postal_address`, de 10 a
-  200 caracteres), va inyectada al pie junto a la baja, y **sin ella no se
+  Sobreala. Se escribe en Configuración → Cuenta, por partes (octubre de
+  2026), y se guarda armada en `postal_address`; va inyectada al pie junto a
+  la baja, y **sin ella no se
   envía**: `sender.blocked()` dice `postal`. El administrador la ve en la
   ficha y no la edita. Hubo una sola para todos en la variable `POSTAL_ADDRESS`,
   y se quitó. Un apartado postal cumple sin publicar un domicilio.

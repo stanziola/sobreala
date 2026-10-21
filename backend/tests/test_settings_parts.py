@@ -116,14 +116,14 @@ def test_un_formulario_vuelve_a_su_parte(client, database, outbox):
     browser = inside(client)
     bien = browser.post("/settings/account", data={
         "csrf_token": csrf(browser, "/settings/account"),
-        "address": "Apartado 0816-00001, Santiago, Veraguas"})
+        "address_line1": "Apartado 0816-00001", "address_city": "Santiago", "address_region": "Veraguas", "address_country": "PA"})
     assert bien.headers["Location"].endswith("/settings/account?address=1#address")
     # Con un error, se vuelve a dibujar con el campo abierto.
     mal = browser.post("/settings/account", data={
-        "csrf_token": csrf(browser, "/settings/account"), "address": "corta"})
+        "csrf_token": csrf(browser, "/settings/account"), "address_line1": ""})
     pantalla = mal.get_data(as_text=True)
     assert 'id="contact">Dirección y teléfonos<' in pantalla
-    assert 'name="address"' in pantalla
+    assert 'name="address_line1"' in pantalla
 
 
 def test_un_solo_guardar_para_todos_los_avisos(client, database, outbox):

@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 
 import pyotp
-from conftest import login, register
+from conftest import SIGNUP_EXTRA, login, register
 
 from models import account as accounts
 from models import mail_log
@@ -690,8 +690,7 @@ def register_another(browser, email, company="Otra Cooperativa"):
     return browser.post("/signup?add=1", data={
         "csrf_token": token, "company_name": company, "contact_name": "Bea",
         "email": email, "phone_country": "PA", "phone": "60000000",
-        "address": "Calle 10, Santiago de Veraguas",
-        "password": PASSWORD})
+        **SIGNUP_EXTRA, "password": PASSWORD})
 
 
 def test_la_pantalla_de_agregar_ofrece_crear_una(client, database, outbox):

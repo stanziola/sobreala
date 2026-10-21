@@ -1,0 +1,79 @@
+{# La dirección por partes (octubre de 2026): la del registro, la del registro
+   con Google o GitHub y la de Configuración → Cuenta. `values` son las partes
+   (`accounts.address_of()` o lo que se acaba de escribir), `errors` dice qué
+   parte no vale con la clave de su frase, `options` son los países
+   (`countries.options()`) y `regions` las provincias de Panamá que se sugieren
+   (`i18n.PANAMA_REGIONS`: se puede escribir otra). `first_id` es el id de la
+   línea 1: Configuración usa `direccion-campo`, que busca el tutorial.
+
+   Se importa con `with context`, porque necesita t(). #}
+{% macro address_fields(values, errors, options, regions, first_id='address-line1') %}
+<div class="address">
+  <label for="{{ first_id }}">{{ t('address_line1') }}</label>
+  <input id="{{ first_id }}" name="address_line1" value="{{ values.line1 }}" maxlength="200"
+         autocomplete="address-line1" required aria-describedby="{{ first_id }}-hint">
+  <p class="hint" id="{{ first_id }}-hint">{{ t('address_line1_hint') }}</p>
+  {% if errors.line1 %}<p class="error">{{ t(errors.line1) }}</p>{% endif %}
+
+  <label for="{{ first_id }}-2">{{ t('address_line2') }}</label>
+  <input id="{{ first_id }}-2" name="address_line2" value="{{ values.line2 }}" maxlength="100"
+         autocomplete="address-line2" aria-describedby="{{ first_id }}-2-hint">
+  <p class="hint" id="{{ first_id }}-2-hint">{{ t('address_line2_hint') }}</p>
+  {% if errors.line2 %}<p class="error">{{ t(errors.line2) }}</p>{% endif %}
+
+  <div class="address__row">
+    <div>
+      <label for="{{ first_id }}-ciudad">{{ t('address_city') }}</label>
+      <input id="{{ first_id }}-ciudad" name="address_city" value="{{ values.city }}"
+             maxlength="60" autocomplete="address-level2" required>
+      {% if errors.city %}<p class="error">{{ t(errors.city) }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ first_id }}-provincia">{{ t('address_region') }}</label>
+      <input id="{{ first_id }}-provincia" name="address_region" value="{{ values.region }}"
+             maxlength="60" autocomplete="address-level1" required
+             list="{{ first_id }}-provincias">
+      <datalist id="{{ first_id }}-provincias">
+        {% for one in regions %}<option value="{{ one }}"></option>{% endfor %}
+      </datalist>
+      {% if errors.region %}<p class="error">{{ t(errors.region) }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="address__row">
+    <div>
+      <label for="{{ first_id }}-postal">{{ t('address_postal_code') }}</label>
+      <input id="{{ first_id }}-postal" name="address_postal_code" value="{{ values.postal_code }}"
+             maxlength="10" autocomplete="postal-code">
+      {% if errors.postal_code %}<p class="error">{{ t(errors.postal_code) }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ first_id }}-pais">{{ t('address_country') }}</label>
+      <select id="{{ first_id }}-pais" name="address_country" autocomplete="country">
+        {% for one in options %}
+        <option value="{{ one.iso }}"{% if one.iso == values.country %} selected{% endif %}>{{ one.name }}</option>
+        {% endfor %}
+      </select>
+      {% if errors.country %}<p class="error">{{ t(errors.country) }}</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{# Las dos casillas del registro (octubre de 2026): aceptar los términos, que
+   es obligatoria y se anota con su versión, y las novedades de Sobreala, que
+   va desmarcada y se cambia después en Configuración → Notificaciones. #}
+{% macro consent(form, errors) %}
+<label class="check check--wrap">
+  <input type="checkbox" name="terms" value="1" required{% if form.terms %} checked{% endif %}>
+  <span>{{ t('register_terms_accept') }}
+    <a href="{{ site_url }}/terms/" target="_blank" rel="noopener">{{ t('register_legal_terms') }}</a>
+    {{ t('register_legal_join') }}
+    <a href="{{ site_url }}/privacy/" target="_blank" rel="noopener">{{ t('register_legal_privacy') }}</a></span>
+</label>
+{% if errors.terms %}<p class="error">{{ errors.terms }}</p>{% endif %}
+<label class="check check--wrap">
+  <input type="checkbox" name="news" value="1"{% if form.news %} checked{% endif %}>
+  <span>{{ t('register_news') }}</span>
+</label>
+{% endmacro %}

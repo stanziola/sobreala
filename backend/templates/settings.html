@@ -5,6 +5,7 @@
    en su página con su menú de secciones (`_settings_frame.html`). #}
 {% extends "_settings_frame.html" if bar_admin else "_dashboard.html" %}
 {% from "_phone.html" import phone, company_phones with context %}
+{% from "_address.html" import address_fields with context %}
 {% block title %}{{ t('settings_title') }}{% endblock %}
 {% set pane_center = true %}
 
@@ -139,12 +140,12 @@
        ley la pide y es la de quien anuncia. Sin ella no se puede enviar. #}
     {% call row(t('settings_postal'), '', id='address') %}
     {% if editing == 'address' %}
-    <form class="setting__form" method="post">
+    {# Por partes desde octubre de 2026: línea 1, línea 2, ciudad, provincia,
+       código postal y país. La primera conserva el id que busca el tutorial. #}
+    <form class="setting__form setting__form--wide" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label class="visually-hidden" for="direccion-campo">{{ t('settings_postal') }}</label>
-      <input id="direccion-campo" name="address" type="text" maxlength="{{ postal_max }}"
-             value="{{ postal }}" autocomplete="street-address"
-             placeholder="{{ t('settings_postal_placeholder') }}">
+      {{ address_fields(address, address_errors, country_options, regions,
+                        first_id='direccion-campo') }}
       <button class="btn btn--small" type="submit">{{ t('settings_postal_save') }}</button>
       <a class="btn btn--small btn--outline" data-keep-scroll href="{{ url_for('auth.settings', section='account') }}#address">{{ t('settings_cancel') }}</a>
       {% if postal_error %}<p class="error">{{ postal_error }}</p>{% endif %}
@@ -412,6 +413,11 @@
       {% if not is_admin %}
       {{ toggle('new_login', t('settings_notice_new_login'),
                 t('settings_notice_new_login_desc'), notifications.new_login) }}
+
+      {# Las novedades de Sobreala (octubre de 2026): la casilla del registro,
+         que se marca o se quita aquí. Nace apagada. #}
+      <h3 class="settings__subtitle settings__subtitle--part" id="news">{{ part_name('notifications', 'news') }}</h3>
+      {{ toggle('news', t('settings_news'), t('settings_news_desc'), news) }}
       {% endif %}
 
       <button class="btn" type="submit">{{ t('settings_notifications_save') }}</button>

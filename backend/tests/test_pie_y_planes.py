@@ -79,10 +79,11 @@ def test_la_direccion_se_guarda_y_sale_en_el_correo(client, database, outbox,
 
     respuesta = browser.post("/settings/account", data={
         "csrf_token": csrf(browser, "/settings/account"),
-        "address": "  Apartado 0816-00001,   Santiago, Veraguas "})
+        "address_line1": "  Apartado   0816-00001 ", "address_city": "Santiago",
+        "address_region": "Veraguas", "address_country": "PA"})
     assert respuesta.status_code == 302
     cuenta = accounts.by_id(database, account["_id"])
-    assert accounts.postal_of(cuenta) == "Apartado 0816-00001, Santiago, Veraguas"
+    assert accounts.postal_of(cuenta) == "Apartado 0816-00001, Santiago, Veraguas, Panamá"
     assert "postal" not in sender.blocked(cuenta)
     assert "Apartado 0816-00001" in browser.get("/settings/account").get_data(as_text=True)
 
@@ -98,11 +99,12 @@ def test_una_direccion_vacia_o_larga_no_se_guarda(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     antes = accounts.postal_of(cuenta)
     assert antes
-    for mala in ("", "corta", "x" * 201):
+    for mala in ("", "x" * 201):
         pantalla = browser.post("/settings/account", data={
             "csrf_token": csrf(browser, "/settings/account"),
-            "address": mala}).get_data(as_text=True)
-        assert "entre 10 y 200 caracteres" in pantalla
+            "address_line1": mala, "address_city": "Santiago",
+            "address_region": "Veraguas", "address_country": "PA"}).get_data(as_text=True)
+        assert "Revisa la dirección" in pantalla
     assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == antes
 
 
@@ -110,7 +112,7 @@ def test_sin_testigo_no_se_guarda(client, database, outbox):
     browser = inside(client)
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     antes = accounts.postal_of(cuenta)
-    browser.post("/settings/account", data={"address": "Calle 50, Panamá"})
+    browser.post("/settings/account", data={"address_line1": "Apartado 0816-00001", "address_city": "Santiago", "address_region": "Veraguas", "address_country": "PA"})
     assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == antes
 
 

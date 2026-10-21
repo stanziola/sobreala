@@ -52,5 +52,5 @@ def test_editar_y_cancelar_se_quedan_en_su_sitio(client, database, outbox):
 def test_sin_javascript_el_ancla_sigue(client, database, outbox):
     browser, _ = make_client_account(client, database, CLIENTA)
     respuesta = browser.post("/settings/account", data={
-        "csrf_token": csrf(browser, "/settings"), "address": "Apartado 0816-00001, Santiago"})
+        "csrf_token": csrf(browser, "/settings"), "address_line1": "Apartado 0816-00001", "address_city": "Santiago", "address_region": "Veraguas", "address_country": "PA"})
     assert respuesta.headers["Location"].endswith("#address")

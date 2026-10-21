@@ -154,7 +154,9 @@ def seed():
     who = cuenta["_id"]
     accounts.confirm_email(db, who)
     accounts.activate_plan(db, who, "negocio", events.now() + timedelta(days=300))
-    accounts.set_postal(db, who, "Apartado 0816-00001, Santiago, Veraguas")
+    accounts.set_address(db, who, {"line1": "Apartado 0816-00001", "line2": "",
+                                   "city": "Santiago", "region": "Veraguas",
+                                   "postal_code": "", "country": "PA"})
     # De quién salen sus campañas: sin usuario, Enviar correos diría que falta.
     accounts.set_handle(db, who, "tuempresa")
     db.accounts.update_one({"_id": who},

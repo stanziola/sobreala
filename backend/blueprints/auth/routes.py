@@ -31,7 +31,7 @@ from markupsafe import Markup
 
 from config import Config
 from db import get_db
-from i18n import t
+from i18n import PANAMA_REGIONS, t
 from models import account as accounts
 from models import contact as contacts
 from models import image as images
@@ -818,14 +818,17 @@ def register():
             session.pop(ADDING, None)
 
     form = {"company_name": "", "contact_name": "", "email": "", "phone": "",
-            "phone_country": countries.DEFAULT, "address": ""}
+            "phone_country": countries.DEFAULT, "terms": "", "news": ""}
     company: list[dict[str, str]] = []
+    address = accounts.address_of(None)
     errors: dict[str, str] = {}
+    address_errors: dict[str, str] = {}
 
     if request.method == "POST":
         db = get_db()
         form = {k: request.form.get(k, "").strip() for k in form}
         company = typed_company_phones()
+        address = typed_address()
         password = request.form.get("password", "")
 
         if not csrf_ok(request.form.get("csrf_token")):
@@ -835,33 +838,13 @@ def register():
             errors["form"] = t("error_too_many")
             log_auth(db, events.REGISTER, events.RATE_LIMITED, email=form["email"])
         else:
-            if not form["company_name"]:
-                errors["company_name"] = t("error_required")
-            if not form["contact_name"]:
-                errors["contact_name"] = t("error_required")
+            errors, address_errors, clean = check_signup(form, company, address)
 
             email = clean_email(form["email"]) if form["email"] else None
             if not form["email"]:
                 errors["email"] = t("error_required")
             elif not email:
                 errors["email"] = t("error_email_invalid")
-
-            # Desde octubre de 2026 el registro trae lo que después se verifica:
-            # el teléfono personal, la dirección y la identificación personal. Los
-            # números de la empresa son opcionales.
-            phone = accounts.clean_phone(form["phone"], form["phone_country"])
-            if not form["phone"]:
-                errors["phone"] = t("error_required")
-            elif not phone:
-                errors["phone"] = t("error_phone")
-            company_phones, bad_phone = accounts.clean_phones(
-                [one["number"] for one in company], [one["country"] for one in company])
-            if bad_phone:
-                errors["company_phones"] = t("error_phone")
-            address = accounts.clean_postal(form["address"])
-            if address is None:
-                errors["address"] = t("settings_postal_bad", min=accounts.POSTAL_MIN,
-                                      max=accounts.POSTAL_MAX)
             problem = password_problem(password)
             if problem:
                 errors["password"] = t(PASSWORD_MESSAGES[problem])
@@ -869,16 +852,7 @@ def register():
             if errors:
                 log_auth(db, events.REGISTER, events.INVALID, email=form["email"])
             else:
-                created = accounts.create(
-                    db,
-                    company_name=form["company_name"],
-                    contact_name=form["contact_name"],
-                    email=email,
-                    password=password,
-                    phone=phone,
-                    company_phones=company_phones,
-                    postal_address=address,
-                )
+                created = accounts.create(db, email=email, password=password, **clean)
                 if created:
                     log_auth(db, events.REGISTER, events.CREATED, email=email,
                              account_id=created["_id"])
@@ -889,7 +863,8 @@ def register():
                         tokens.discard(db, created["_id"])
                         accounts.delete(db, created["_id"])
                         errors["form"] = t("error_mail_failed")
-                        return register_screen(form, errors, adding, company)
+                        return register_screen(form, errors, adding, company, address,
+                                               address_errors)
                     await_code(created["_id"])
                 else:
                     # The address is taken, and the screen says so. Rule 7 in
@@ -909,10 +884,11 @@ def register():
                         deliver(db, send_already_registered, existing,
                                 kind=events.REGISTER)
                     errors["email"] = t("error_email_taken")
-                    return register_screen(form, errors, adding, company)
+                    return register_screen(form, errors, adding, company, address,
+                                           address_errors)
                 return redirect(url_for("auth.confirm"))
 
-    return register_screen(form, errors, adding, company)
+    return register_screen(form, errors, adding, company, address, address_errors)
 
 
 def typed_company_phones() -> list[dict[str, str]]:
@@ -925,14 +901,78 @@ def typed_company_phones() -> list[dict[str, str]]:
             for i, number in enumerate(numbers[:accounts.COMPANY_PHONES_MAX])]
 
 
+def typed_address() -> dict[str, str]:
+    """La dirección tal como llegó del formulario, por partes, para limpiarla y
+    para volver a dibujarla si algo falló."""
+    # Se corta muy por encima del tope de cada parte: lo que pasa de él tiene
+    # que llegar entero a `clean_address()` para que lo diga, no cortado a
+    # medida y guardado como si nada.
+    return {part: request.form.get(f"address_{part}", "").strip()[:500]
+            for part in accounts.ADDRESS_PARTS}
+
+
+def check_signup(form: dict, company: list[dict[str, str]],
+                 typed: dict[str, str]) -> tuple[dict[str, str], dict[str, str], dict]:
+    """Lo que piden los dos registros, el del correo y el de Google o GitHub, con
+    las mismas reglas (octubre de 2026): el nombre de la empresa y el de la
+    persona, el teléfono personal (en Panamá, un celular), los de la empresa, la
+    dirección por partes y la casilla de los términos.
+
+    Devuelve los errores de la pantalla, los de cada parte de la dirección (la
+    clave de su frase) y lo limpio, listo para `accounts.create()`.
+    """
+    errors: dict[str, str] = {}
+    company_name = accounts.clean_company_name(form["company_name"])
+    if not form["company_name"]:
+        errors["company_name"] = t("error_required")
+    elif company_name is None:
+        errors["company_name"] = t("error_company_name")
+    contact_name = accounts.clean_person_name(form["contact_name"])
+    if not form["contact_name"]:
+        errors["contact_name"] = t("error_required")
+    elif contact_name is None:
+        errors["contact_name"] = t("error_person_name")
+    # Desde octubre de 2026 el registro trae lo que después se verifica: el
+    # teléfono personal, la dirección y la identificación personal. Los números
+    # de la empresa son opcionales.
+    phone, why = accounts.check_phone(form["phone"], form["phone_country"],
+                                      accounts.PERSONAL_PHONE)
+    if not form["phone"]:
+        errors["phone"] = t("error_required")
+    elif phone is None:
+        errors["phone"] = t(why)
+    company_phones, problem = accounts.clean_phones(
+        [one["number"] for one in company], [one["country"] for one in company])
+    if problem:
+        errors["company_phones"] = t(problem)
+    address, address_errors = accounts.clean_address(typed)
+    if address_errors:
+        errors["address"] = t("address_bad")
+    if not form.get("terms"):
+        errors["terms"] = t("error_terms_required")
+    return errors, address_errors, {
+        "company_name": company_name or "", "contact_name": contact_name or "",
+        "phone": phone or "", "company_phones": company_phones, "address": address,
+        "terms": True, "news": bool(form.get("news"))}
+
+
+def signup_screen_parts(address: dict[str, str], address_errors: dict[str, str]) -> dict:
+    """Lo que dibujan los dos formularios de registro además de lo suyo."""
+    return {"address": address, "address_errors": address_errors,
+            "country_options": countries.options(), "regions": PANAMA_REGIONS,
+            "phone_options": countries.options(),
+            "company_max": accounts.COMPANY_PHONES_MAX,
+            "company_max_length": accounts.COMPANY_NAME_LENGTH[1],
+            "person_max_length": accounts.PERSON_NAME_LENGTH[1]}
+
+
 def register_screen(form: dict, errors: dict, adding: bool,
-                    company: list[dict[str, str]]):
+                    company: list[dict[str, str]], address: dict[str, str],
+                    address_errors: dict[str, str]):
     return render_template("register.html", form=form, errors=errors,
                            adding=adding, company=company,
                            providers=ready_providers(),
-                           phone_options=countries.options(),
-                           company_max=accounts.COMPANY_PHONES_MAX,
-                           postal_max=accounts.POSTAL_MAX)
+                           **signup_screen_parts(address, address_errors))
 
 
 # -------------------------------------------------------------------- confirm
@@ -1351,42 +1391,25 @@ def oauth_signup(provider: str):
         return redirect(url_for("auth.login"))
 
     form = {"company_name": "", "contact_name": pending.get("name", ""),
-            "phone": "", "phone_country": countries.DEFAULT, "address": ""}
+            "phone": "", "phone_country": countries.DEFAULT, "terms": "", "news": ""}
     company: list[dict[str, str]] = []
+    address = accounts.address_of(None)
     errors: dict[str, str] = {}
+    address_errors: dict[str, str] = {}
     if request.method == "POST":
         db = get_db()
         form = {k: request.form.get(k, "").strip() for k in form}
         company = typed_company_phones()
+        address = typed_address()
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         elif not rate_limit(db, f"register:ip:{client_ip()}", *REGISTER_PER_IP):
             errors["form"] = t("error_too_many")
         else:
-            if not form["company_name"]:
-                errors["company_name"] = t("error_required")
-            if not form["contact_name"]:
-                errors["contact_name"] = t("error_required")
-            phone = accounts.clean_phone(form["phone"], form["phone_country"])
-            if not form["phone"]:
-                errors["phone"] = t("error_required")
-            elif not phone:
-                errors["phone"] = t("error_phone")
-            company_phones, bad_phone = accounts.clean_phones(
-                [one_phone["number"] for one_phone in company],
-                [one_phone["country"] for one_phone in company])
-            if bad_phone:
-                errors["company_phones"] = t("error_phone")
-            address = accounts.clean_postal(form["address"])
-            if address is None:
-                errors["address"] = t("settings_postal_bad", min=accounts.POSTAL_MIN,
-                                      max=accounts.POSTAL_MAX)
+            errors, address_errors, clean = check_signup(form, company, address)
             if not errors:
-                created = accounts.create(
-                    db, company_name=form["company_name"],
-                    contact_name=form["contact_name"], email=pending["email"],
-                    password="", phone=phone, company_phones=company_phones,
-                    postal_address=address)
+                created = accounts.create(db, email=pending["email"], password="",
+                                          **clean)
                 if created is None:
                     # Alguien registró ese correo mientras tanto: que entre.
                     session.pop(f"{provider}_pending", None)
@@ -1403,9 +1426,8 @@ def oauth_signup(provider: str):
                 return redirect(url_for("auth.welcome"))
     return render_template("register-oauth.html", form=form, errors=errors,
                            email=pending["email"], provider=provider_name(provider),
-                           company=company, phone_options=countries.options(),
-                           company_max=accounts.COMPANY_PHONES_MAX,
-                           postal_max=accounts.POSTAL_MAX)
+                           company=company,
+                           **signup_screen_parts(address, address_errors))
 
 
 @bp.route(f"/settings/{PROVIDER}/disconnect", methods=["POST"])
@@ -2002,7 +2024,7 @@ def sections_for(account: dict | None) -> tuple[str, ...]:
 WHOLE = {
     "account": ("profile", "contact", "verification", "plan", "delete"),
     "security": ("two-step", "password", "users", "sessions"),
-    "notifications": ("plan", "security"),
+    "notifications": ("plan", "security", "news"),
     "billing": ("plan", "methods", "auto-renewal", "history"),
     "test": ("addresses",),
 }
@@ -2258,6 +2280,8 @@ def settings(section: str = "account", part: str = ""):
     postal_error = ""
     account_errors: dict[str, str] = {}
     company: list[dict[str, str]] | None = None
+    typed: dict[str, str] | None = None
+    address_errors: dict[str, str] = {}
     # Qué fila se está editando: cada una se ve como texto y «Editar» la abre
     # (octubre de 2026). Solo la ve el dueño.
     editing = request.args.get("editar", "") if (
@@ -2272,12 +2296,13 @@ def settings(section: str = "account", part: str = ""):
             return redirect(url_for("auth.settings", section="account"))
         what = request.form.get("what", "address")
         if what == "phones":
-            phone = accounts.clean_phone(request.form.get("phone", ""),
-                                         request.form.get("phone_country", ""))
+            phone, why = accounts.check_phone(request.form.get("phone", ""),
+                                              request.form.get("phone_country", ""),
+                                              accounts.PERSONAL_PHONE)
             company = typed_company_phones()
-            company_phones, bad = accounts.clean_phones(
+            company_phones, problem = accounts.clean_phones(
                 [one["number"] for one in company], [one["country"] for one in company])
-            if phone and not bad:
+            if phone and not problem:
                 # Los mismos que ya había: no se escribe nada, y se dice.
                 if (phone == account.get("phone")
                         and list(company_phones) == list(account.get("company_phones") or [])):
@@ -2287,20 +2312,26 @@ def settings(section: str = "account", part: str = ""):
                                     company_phones=company_phones)
                 return redirect(url_for("auth.settings", section="account",
                                         phones=1) + "#phones")
-            account_errors["phones"] = t("error_phone")
+            account_errors["phones"] = t(why or problem or "error_phone")
             editing = "phones"
         else:
-            address = accounts.clean_postal(request.form.get("address", ""))
+            # La dirección por partes (octubre de 2026). Se guarda armada en
+            # `postal_address`; si ese texto cambió, lo que se verificó era otra
+            # dirección y vuelve a faltar el documento, como siempre.
+            typed = typed_address()
+            address, address_errors = accounts.clean_address(typed)
             if address is not None:
-                if address == accounts.postal_of(account):
+                before = accounts.postal_of(account)
+                if (address == accounts.address_of(account)
+                        and accounts.compose_postal(address) == before):
                     return redirect(url_for("auth.settings", section="account",
                                             same=1) + "#address")
-                accounts.set_postal(db, account["_id"], address)
-                changed_verified(db, account, accounts.ADDRESS)
+                accounts.set_address(db, account["_id"], address)
+                if accounts.compose_postal(address) != before:
+                    changed_verified(db, account, accounts.ADDRESS)
                 return redirect(url_for("auth.settings", section="account",
                                         address=1) + "#address")
-            postal_error = t("settings_postal_bad", min=accounts.POSTAL_MIN,
-                             max=accounts.POSTAL_MAX)
+            postal_error = t("address_bad")
             editing = "address"
     elif request.method == "POST":
         if section != "notifications":
@@ -2317,9 +2348,16 @@ def settings(section: str = "account", part: str = ""):
         # subsección).
         mine = accounts.notices_for(account)
         wanted = {name: bool(request.form.get(name)) for name in mine}
-        if all(accounts.wants(account, name) == on for name, on in wanted.items()):
+        # Las novedades de Sobreala (octubre de 2026) van aparte: ahí lo no
+        # escrito vale «no», al revés que en los avisos de la cuenta.
+        news = (bool(request.form.get("news")) if not accounts.is_admin(account)
+                else accounts.wants_news(account))
+        if (all(accounts.wants(account, name) == on for name, on in wanted.items())
+                and news == accounts.wants_news(account)):
             return redirect(url_for("auth.settings", section="notifications", same=1))
         accounts.set_notifications(db, account["_id"], wanted, names=mine)
+        if news != accounts.wants_news(account):
+            accounts.set_news(db, account["_id"], news)
         log_auth(db, events.SETTINGS, events.OK, email=account["email"],
                  account_id=account["_id"])
         return redirect(url_for("auth.settings", section="notifications", saved=1))
@@ -2350,10 +2388,13 @@ def settings(section: str = "account", part: str = ""):
         devices=sessions.for_account(db, account["_id"]),
         here=here["_id"] if here else None,
         describe=sessions.describe,
-        postal=(request.form.get("address", "") if postal_error
-                else accounts.postal_of(account)),
+        postal=accounts.postal_of(account),
+        address=typed if typed is not None else accounts.address_of(account),
+        address_errors=address_errors,
+        country_options=countries.options(),
+        regions=PANAMA_REGIONS,
+        news=accounts.wants_news(account),
         postal_error=postal_error,
-        postal_max=accounts.POSTAL_MAX,
         account_errors=account_errors,
         editing=editing,
         renewals_ready=paypal.renewals_ready(),
@@ -3233,7 +3274,8 @@ def user_form(raw: str = ""):
     errors: dict[str, str] = {}
     form = request.form
     if request.method == "POST":
-        name = form.get("nombre", "").strip()[:80]
+        typed_name = form.get("nombre", "").strip()[:80]
+        name = accounts.clean_person_name(typed_name) or ""
         email = clean_email(form.get("email", ""))
         wanted = accounts.clean_permissions(form.getlist("permiso"))
         if not csrf_ok(form.get("csrf_token")):
@@ -3243,8 +3285,10 @@ def user_form(raw: str = ""):
             return redirect(url_for("auth.settings", section="security",
                                     user="saved") + "#users")
         else:
-            if not name:
+            if not typed_name:
                 errors["nombre"] = t("error_required")
+            elif not name:
+                errors["nombre"] = t("error_person_name")
             if email is None:
                 errors["email"] = t("error_email")
             # El sitio se mira aquí y no solo en la pantalla: el formulario se

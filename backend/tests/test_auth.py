@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from conftest import code_from_outbox, confirm, login, page_shape, register
+from conftest import SIGNUP_EXTRA, code_from_outbox, confirm, login, page_shape, register
 
 from models import account as accounts
 from models import token as tokens
@@ -76,7 +76,8 @@ def test_short_password_is_refused(client, database):
     with client.session_transaction() as sess:
         token = sess["_csrf"]
     response = client.post("/signup", data={
-        "csrf_token": token, "company_name": "X", "contact_name": "Y",
+        "csrf_token": token, "company_name": "Coop Ejemplo", "contact_name": "Ana",
+        "phone_country": "PA", "phone": "60000000", **SIGNUP_EXTRA,
         "email": "corta@ejemplo.com", "password": "corta",
     })
     assert response.status_code == 200
@@ -88,7 +89,8 @@ def test_password_over_the_bcrypt_limit_is_refused(client, database):
     with client.session_transaction() as sess:
         token = sess["_csrf"]
     response = client.post("/signup", data={
-        "csrf_token": token, "company_name": "X", "contact_name": "Y",
+        "csrf_token": token, "company_name": "Coop Ejemplo", "contact_name": "Ana",
+        "phone_country": "PA", "phone": "60000000", **SIGNUP_EXTRA,
         "email": "larga@ejemplo.com", "password": "a" * 100,
     })
     assert response.status_code == 200

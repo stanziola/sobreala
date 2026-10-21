@@ -73,6 +73,32 @@
   </div>
 </div>
 
+{# La casilla de los términos y la de las novedades, del registro (octubre de
+   2026). Las cuentas de antes no pasaron por la casilla. #}
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('admin_terms') }}</h3>
+  </div>
+  <div class="setting__action">
+    {% if client.terms_accepted_at %}
+    <span class="setting__value">{{ t('admin_terms_accepted', version=client.terms_version,
+                                      when=client.terms_accepted_at|on_date) }}</span>
+    {% else %}
+    <span class="tag tag--quiet">{{ t('admin_terms_none') }}</span>
+    {% endif %}
+  </div>
+</div>
+<div class="setting">
+  <div class="setting__text">
+    <h3 class="setting__title">{{ t('admin_news') }}</h3>
+  </div>
+  <div class="setting__action">
+    <span class="setting__value">{{ t('admin_news_yes', when=client.news_opt_in_at|on_date)
+                                    if client.news_opt_in is sameas true
+                                    else t('admin_news_no') }}</span>
+  </div>
+</div>
+
 {# De quién salen sus campañas y a dónde vuelven las respuestas: es parte de lo
    que se mira antes de habilitar el envío. Se mira, no se edita. Desde
    octubre de 2026 son varios: a la derecha el predeterminado, y debajo todos. #}

@@ -7,7 +7,7 @@ request.form with something other than a plain string, or drops the escaping.
 
 from __future__ import annotations
 
-from conftest import login, page_shape, register
+from conftest import ADDRESS, login, page_shape, register
 
 from models import account as accounts
 from services.security import MIN_PASSWORD_LENGTH, password_problem
@@ -52,23 +52,33 @@ def test_an_operator_is_stored_as_text_not_as_a_query(client, database):
     """
     data = {
         "csrf_token": csrf(client, "/signup"),
-        "company_name": '{"$ne": null}',
+        "company_name": "Coop Ejemplo",
         "contact_name": "Ana",
         "email": "ana@ejemplo.com",
         "phone_country": "PA",
         "phone": "60000000",
-        # La dirección se guarda tal cual, así que es la que lleva el operador
-        # (el teléfono ya no: uno que no son dígitos no se acepta).
-        "address": '{"$gt": "una calle cualquiera"}',
+        # La línea 1 de la dirección se guarda tal cual, así que es la que lleva
+        # el operador. El teléfono no: uno que no son dígitos no se acepta. Y
+        # el nombre de la empresa tampoco, desde octubre de 2026: llaves,
+        # comillas y $ no son de un nombre.
+        **ADDRESS,
+        "address_line1": '{"$gt": "una calle cualquiera"}',
+        "terms": "1",
         "password": "Contrasena-Larga1",
     }
     client.post("/signup", data=data)
 
     account = accounts.by_email(database, "ana@ejemplo.com")
-    assert isinstance(account["company_name"], str)
-    assert account["company_name"] == '{"$ne": null}'
+    assert isinstance(account["address"]["line1"], str)
+    assert account["address"]["line1"] == '{"$gt": "una calle cualquiera"}'
     assert isinstance(account["postal_address"], str)
-    assert account["postal_address"] == '{"$gt": "una calle cualquiera"}'
+    assert account["postal_address"].startswith('{"$gt": "una calle cualquiera"}')
+
+    # Un nombre de empresa que parece una consulta no es un nombre: no se crea.
+    client.post("/signup", data={**data, "csrf_token": csrf(client, "/signup"),
+                                 "email": "bea@ejemplo.com",
+                                 "company_name": '{"$ne": null}'})
+    assert accounts.by_email(database, "bea@ejemplo.com") is None
 
 
 def test_a_forged_address_header_cannot_write_whatever_it_likes(client, database):

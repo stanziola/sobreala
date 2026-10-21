@@ -96,6 +96,16 @@ def test_se_invita_y_pone_su_contrasena(client, database, outbox):
     assert suyo.get("/contacts").status_code == 200
 
 
+def test_el_nombre_del_invitado_tiene_que_ser_un_nombre(client, database, outbox):
+    """Las mismas reglas que el registro (octubre de 2026): «.» no es un nombre."""
+    browser, empresa = owner(client, database)
+
+    pantalla = invite(browser, name=".").get_data(as_text=True)
+
+    assert "Escribe un nombre de persona" in pantalla
+    assert database.accounts.find_one({"owner_id": empresa["_id"]}) is None
+
+
 def test_la_invitacion_vale_una_vez(client, database, outbox):
     browser, _ = owner(client, database)
     invite(browser)

@@ -3346,6 +3346,48 @@ TEXTS = {
     "api_stats_outcome": "outcome es uno de {outcomes}.",
     "api_stats_kind": "type es uno de {kinds}.",
     "api_stats_offset": "offset es un número entero desde 0.",
+
+    # --- el registro (octubre de 2026): nombres, teléfonos de Panamá, la
+    # dirección por partes, los términos y las novedades
+    "error_company_name": "Escribe el nombre de tu negocio: de 2 a 80 caracteres, con "
+                          "letras. Puede llevar números y signos como & . , -",
+    "error_person_name": "Escribe un nombre de persona: de 2 a 60 caracteres, solo "
+                         "letras.",
+    "error_phone_pa_mobile": "Tu teléfono personal tiene que ser un celular de Panamá: 8 "
+                             "dígitos que empiezan con 6.",
+    "error_phone_pa_number": "Un número de Panamá tiene 8 dígitos si es celular (empieza "
+                             "con 6) o 7 si es fijo.",
+    "address_title": "Dirección de tu negocio",
+    "address_line1": "Dirección",
+    "address_line1_hint": "Calle o avenida, número, barriada o lugar.",
+    "address_line2": "Dirección, línea 2 (opcional)",
+    "address_line2_hint": "Apartamento, oficina, piso o edificio.",
+    "address_city": "Ciudad",
+    "address_region": "Provincia o estado",
+    "address_postal_code": "Código postal (opcional)",
+    "address_country": "País",
+    "address_line1_bad": "Escribe la calle o el lugar: de 5 a 200 caracteres.",
+    "address_line2_bad": "La línea 2 lleva hasta 100 caracteres.",
+    "address_city_bad": "Escribe la ciudad.",
+    "address_region_bad": "Escribe la provincia o el estado.",
+    "address_postal_code_bad": "El código postal lleva hasta 10 letras, números o guiones.",
+    "address_country_bad": "Elige un país de la lista.",
+    "address_bad": "Revisa la dirección: falta algo o no está bien escrito.",
+    "register_terms_accept": "Acepto los",
+    "register_news": "Quiero recibir novedades y comunicados de Sobreala. Los puedes "
+                     "dejar de recibir cuando quieras.",
+    "error_terms_required": "Para crear tu cuenta, acepta los términos y condiciones y la "
+                            "política de privacidad.",
+    "settings_part_notifications_news": "Novedades de Sobreala",
+    "settings_news": "Novedades y comunicados",
+    "settings_news_desc": "Mejoras, funciones nuevas y comunicados de Sobreala. Nunca "
+                          "publicidad de otras empresas.",
+    "admin_terms": "Términos",
+    "admin_terms_accepted": "Aceptó la versión del {version}, el {when}",
+    "admin_terms_none": "Se registró antes de la casilla",
+    "admin_news": "Novedades de Sobreala",
+    "admin_news_yes": "Sí, desde el {when}",
+    "admin_news_no": "No",
 }
 
 
@@ -3368,6 +3410,14 @@ CANVAS_KEYS = (
     ("Pegar una foto", "Ctrl+V"),
     ("Soltar lo elegido, salir del texto o del recorte", "Esc"),
 )
+
+
+# Las provincias y comarcas de Panamá, que el campo «Provincia o estado» de la
+# dirección sugiere (un `datalist`: se puede escribir otra, de otro país). No van
+# en TEXTS porque `t()` devuelve texto, no listas.
+PANAMA_REGIONS = ("Bocas del Toro", "Chiriquí", "Coclé", "Colón", "Darién", "Herrera",
+                  "Los Santos", "Panamá", "Panamá Oeste", "Veraguas", "Guna Yala",
+                  "Emberá-Wounaan", "Ngäbe-Buglé", "Naso Tjër Di")
 
 
 MONTHS = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",

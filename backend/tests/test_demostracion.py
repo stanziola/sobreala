@@ -279,8 +279,8 @@ def test_que_acepta_como_telefono():
     assert accounts.clean_phone("60000000", "XX") is None
     # Los de la empresa: los vacíos no cuentan, y uno malo se dice.
     assert accounts.clean_phones(["6000-0001", "", "6000-0002"], ["PA", "PA", "PA"]) == (
-        ["+50760000001", "+50760000002"], False)
-    assert accounts.clean_phones(["abc"], ["PA"]) == ([], True)
+        ["+50760000001", "+50760000002"], "")
+    assert accounts.clean_phones(["abc"], ["PA"]) == ([], "error_phone")
     # De Panamá sin código, o de fuera con el suyo.
     assert accounts.whatsapp_url("60000000") == "https://wa.me/50760000000"
     assert accounts.whatsapp_url("+13055550101") == "https://wa.me/13055550101"

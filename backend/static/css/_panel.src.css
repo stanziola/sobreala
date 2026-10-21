@@ -2157,6 +2157,22 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 .setting__form--wide { flex: 1 1 100%; justify-content: flex-start; }
 .setting__form--wide .phone, .setting__form--wide .phones { flex: 1 1 100%; }
 .setting__form--wide .hint { flex: 1 1 100%; margin: 4px 0 0; }
+/* La dirección por partes (octubre de 2026): la ciudad y la provincia, y el
+   código postal y el país, de dos en dos; en el teléfono, una debajo de otra.
+   En Configuración ocupa la fila entera, como los teléfonos. */
+.address__row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+@media (max-width: 520px) { .address__row { grid-template-columns: 1fr; } }
+/* Con el mismo tope que todos los campos de esta pantalla (560 px), así la
+   línea 1 y la 2 terminan donde la provincia y el país. */
+.setting__form--wide .address { flex: 1 1 100%; max-width: 560px; }
+.setting__form--wide .address label { margin-top: 12px; }
+.setting__form--wide .address input[type="text"],
+.setting__form--wide .address input:not([type]) { width: 100%; }
+.setting__form--wide .address .error { text-align: left; }
+/* Las casillas del registro: el texto es largo y se parte en líneas, así que
+   la casilla se queda arriba, a la altura de la primera. */
+.check--wrap { align-items: flex-start; }
+.check--wrap input { margin-top: 3px; flex: none; }
 
 /* Las verificaciones de Configuración → Cuenta: cada una con su estado y su
    formulario para subir el documento. */

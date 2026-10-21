@@ -54,6 +54,14 @@ def client(app):
     return app.test_client()
 
 
+# La dirección por partes, como la mandan el registro y Configuración (octubre
+# de 2026), y lo que el registro pide además: la casilla de los términos.
+ADDRESS = {"address_line1": "Calle 10", "address_line2": "",
+           "address_city": "Santiago de Veraguas", "address_region": "Veraguas",
+           "address_postal_code": "", "address_country": "PA"}
+SIGNUP_EXTRA = {**ADDRESS, "terms": "1"}
+
+
 def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1", *,
              abierta=True):
     """Fill the registration form the way a browser would, CSRF included.
@@ -73,7 +81,7 @@ def register(client, email="ana@ejemplo.com", password="Contrasena-Larga1", *,
         "email": email,
         "phone_country": "PA",
         "phone": "60000000",
-        "address": "Calle 10, Santiago de Veraguas",
+        **SIGNUP_EXTRA,
         "password": password,
     })
     if abierta:

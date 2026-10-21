@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 
+from conftest import SIGNUP_EXTRA
 from test_admin import make_admin, make_client_account
 
 from models import account as accounts
@@ -39,7 +40,7 @@ def signup(browser, **changes):
     """Registrarse como lo hace la pantalla, con lo que se quiera cambiar."""
     data = {"csrf_token": csrf(browser, "/signup"), "company_name": "Tienda Ana",
             "contact_name": "Ana", "email": CLIENTA, "phone_country": "PA",
-            "phone": "6000-0000", "address": "Calle 10, Santiago de Veraguas",
+            "phone": "6000-0000", **SIGNUP_EXTRA,
             "password": "Contrasena-Larga1"}
     data.update(changes)
     return browser.post("/signup", data=data)
@@ -94,7 +95,7 @@ def test_el_registro_pide_telefono_y_direccion_y_ya_no_la_identificacion(
     assert 'name="tax_id"' not in pantalla
     assert "Identificación personal" not in pantalla
 
-    faltan = signup(other(client), phone="", address="")
+    faltan = signup(other(client), phone="", address_line1="")
     assert faltan.get_data(as_text=True).count('class="error"') >= 2
     assert accounts.by_email(database, CLIENTA) is None
 
@@ -113,14 +114,15 @@ def test_el_registro_guarda_los_telefonos_con_su_pais(client, database, outbox):
         "email": CLIENTA, "phone_country": "CR", "phone": "8888 1234",
         "company_phone_country": ["PA", "US", "PA", "PA"],
         "company_phone": ["998-1234", "(305) 555-0101", "", "6000-0009"],
-        "address": "Calle 10, Santiago de Veraguas",
-        "password": "Contrasena-Larga1"})
+        **SIGNUP_EXTRA, "password": "Contrasena-Larga1"})
 
     cuenta = accounts.by_email(database, CLIENTA)
     assert cuenta["phone"] == "+50688881234"
     # Hasta tres, y el vacío no cuenta.
     assert cuenta["company_phones"] == ["+5079981234", "+13055550101"]
-    assert cuenta["postal_address"] == "Calle 10, Santiago de Veraguas"
+    # Por partes, y armada sin repetir la provincia que ya nombra la ciudad.
+    assert cuenta["address"]["city"] == "Santiago de Veraguas"
+    assert cuenta["postal_address"] == "Calle 10, Santiago de Veraguas, Panamá"
     assert "tax_id" not in cuenta
     for kind in accounts.VERIFY_KINDS:
         assert accounts.verification_of(cuenta, kind)["status"] == accounts.MISSING
@@ -149,7 +151,7 @@ def test_configuracion_enseña_texto_y_editar_abre_el_formulario(client, databas
     assert "Calle 10, Santiago de Veraguas" in pantalla
     assert "+50761112222 · +5079980000" in pantalla
     assert "editar=address" in pantalla and "editar=phones" in pantalla
-    assert 'name="address"' not in pantalla and 'name="phone"' not in pantalla
+    assert 'name="address_line1"' not in pantalla and 'name="phone"' not in pantalla
     assert "Guardar" not in pantalla
     # La identificación no se escribe, y los documentos ya no se suben aquí:
     # el único archivo de Cuenta es el logo de la empresa (octubre de 2026).
@@ -158,10 +160,11 @@ def test_configuracion_enseña_texto_y_editar_abre_el_formulario(client, databas
     assert 'name="identity"' not in pantalla
 
     editando = browser.get("/settings?editar=address").get_data(as_text=True)
-    assert 'name="address"' in editando and "Guardar" in editando
+    assert 'name="address_line1"' in editando and "Guardar" in editando
+    assert 'id="direccion-campo"' in editando and 'name="address_city"' in editando
     assert "Cancelar" in editando and 'name="phone"' not in editando
     editando = browser.get("/settings?editar=phones").get_data(as_text=True)
-    assert 'name="phone"' in editando and 'name="address"' not in editando
+    assert 'name="phone"' in editando and 'name="address_line1"' not in editando
 
 
 def test_editar_guarda_los_telefonos_y_la_direccion(client, database, outbox):
@@ -183,11 +186,11 @@ def test_editar_guarda_los_telefonos_y_la_direccion(client, database, outbox):
     assert "Ese número no parece válido" in pantalla and 'name="phone"' in pantalla
     assert accounts.by_id(database, cuenta["_id"])["phone"] == "+50761112222"
 
-    corta = browser.post("/settings/account", data={
-        "csrf_token": csrf(browser, "/settings"), "address": "corta"})
-    assert 'name="address"' in corta.get_data(as_text=True)
+    vacia = browser.post("/settings/account", data={
+        "csrf_token": csrf(browser, "/settings"), **SIGNUP_EXTRA, "address_line1": ""})
+    assert 'name="address_line1"' in vacia.get_data(as_text=True)
     assert accounts.postal_of(accounts.by_id(database, cuenta["_id"])) == \
-        "Calle 10, Santiago de Veraguas"
+        "Calle 10, Santiago de Veraguas, Panamá"
 
 
 def test_cambiar_la_direccion_vuelve_a_pedir_su_documento(client, database, outbox):
@@ -199,7 +202,8 @@ def test_cambiar_la_direccion_vuelve_a_pedir_su_documento(client, database, outb
 
     browser.post("/settings/account", data={
         "csrf_token": csrf(browser, "/settings"),
-        "address": "Avenida Central, Ciudad de Panamá"})
+        "address_line1": "Avenida Central", "address_city": "Ciudad de Panamá",
+        "address_region": "Panamá", "address_country": "PA"})
 
     cuenta = accounts.by_id(database, cuenta["_id"])
     assert accounts.verification_of(cuenta, accounts.ADDRESS)["status"] == accounts.MISSING

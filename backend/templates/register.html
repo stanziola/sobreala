@@ -1,5 +1,6 @@
 {% extends "_auth.html" %}
 {% from "_phone.html" import phone, company_phones with context %}
+{% from "_address.html" import address_fields, consent with context %}
 {% block title %}{{ t('register_title') }}{% endblock %}
 {% block auth %}
 {# «Iniciar sesión», debajo del título y en el aviso de un correo que ya tiene
@@ -34,12 +35,12 @@
 
     <label for="company_name">{{ t('register_company') }}</label>
     <input id="company_name" name="company_name" value="{{ form.company_name }}"
-           autocomplete="organization" required>
+           autocomplete="organization" required maxlength="{{ company_max_length }}">
     {% if errors.company_name %}<p class="error">{{ errors.company_name }}</p>{% endif %}
 
     <label for="contact_name">{{ t('register_contact') }}</label>
     <input id="contact_name" name="contact_name" value="{{ form.contact_name }}"
-           autocomplete="name" required>
+           autocomplete="name" required maxlength="{{ person_max_length }}">
     {% if errors.contact_name %}<p class="error">{{ errors.contact_name }}</p>{% endif %}
 
     <label for="email">{{ t('register_email') }}</label>
@@ -67,12 +68,10 @@
     {{ company_phones(company, phone_options, company_max) }}
     {% if errors.company_phones %}<p class="error">{{ errors.company_phones }}</p>{% endif %}
 
-    <label for="address">{{ t('register_address') }}</label>
-    <input id="address" name="address" value="{{ form.address }}" required
-           maxlength="{{ postal_max }}" autocomplete="street-address"
-           aria-describedby="address-hint">
-    <p class="hint" id="address-hint">{{ t('register_address_hint') }}</p>
-    {% if errors.address %}<p class="error">{{ errors.address }}</p>{% endif %}
+    {# La dirección por partes (octubre de 2026). #}
+    <p class="field-label">{{ t('address_title') }}</p>
+    <p class="hint">{{ t('register_address_hint') }}</p>
+    {{ address_fields(address, address_errors, country_options, regions) }}
 
 
     <label for="password">{{ t('register_password') }}</label>
@@ -104,13 +103,10 @@
     </ul>
     {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
 
-    <button class="btn" type="submit">{{ t('register_submit') }}</button>
+    {# Aceptar los términos es una casilla desde octubre de 2026: se anota
+       cuándo y qué versión. Antes era una frase debajo del botón. #}
+    {{ consent(form, errors) }}
 
-    {# Aceptar los términos es parte de crear la cuenta, así que se dice aquí,
-       donde se decide, y no en una casilla que nadie lee. #}
-    <p class="hint hint--legal">{{ t('register_legal') }}
-      <a href="{{ site_url }}/terms/" target="_blank" rel="noopener">{{ t('register_legal_terms') }}</a>
-      {{ t('register_legal_join') }}
-      <a href="{{ site_url }}/privacy/" target="_blank" rel="noopener">{{ t('register_legal_privacy') }}</a>.</p>
+    <button class="btn" type="submit">{{ t('register_submit') }}</button>
   </form>
 {% endblock %}
