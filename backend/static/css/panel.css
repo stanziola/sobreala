@@ -1981,7 +1981,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
    tocarla. Sin ratón para que un clic en el hueco llegue a lo de debajo. */
 .cv-chrome { position: absolute; z-index: 45; pointer-events: none; }
 .cv-chrome .cv-handle, .cv-chrome .cv-turn { pointer-events: auto; }
-/* Sin overflow escondido: taparía los tiradores de las esquinas. */
+/* La caja de texto tiene el tamaño que se le pone (octubre de 2026): lo que
+   no cabe queda oculto, como en el correo. Mientras se escribe se desplaza
+   dentro. Los tiradores viven en `.cv-chrome`, así que esconder no los tapa. */
+.cv-item--text { overflow: hidden; }
+.cv-item--text.is-editing { overflow: auto; }
+/* La que no cabe lleva una raya al pie: de ahí para abajo no sale. */
+.cv-item--text.is-cut { box-shadow: inset 0 -3px 0 #D92D20; }
 .cv-item--button { text-align: center; white-space: nowrap; }
 .cv-item:hover { outline: 1px dashed var(--color-accent); }
 .cv-item.is-sel { outline: 2px solid var(--color-accent); }

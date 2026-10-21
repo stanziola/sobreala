@@ -115,6 +115,7 @@
   "sheetLeast": t('canvas_sheet_least'),
   "cropHow": t('canvas_crop_how'),
   "textCut": t('canvas_text_cut'),
+  "textGrows": t('canvas_text_grows'),
   "rotDrag": t('canvas_rot_drag'),
   "htmlSaveFirst": t('canvas_html_save_first'),
   "rulesCount": t('canvas_rules_count'),
@@ -252,6 +253,10 @@
           </select></label>
         <label class="props__field" data-only="button">{{ t('canvas_radius') }}
           <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
+        {#- La caja tiene el tamaño que se le pone (octubre de 2026): esto la
+            agranda hasta que quepa lo escrito. -#}
+        <button class="btn btn--small btn--outline" type="button" data-action="fit-text"
+                data-only="text">{{ t('canvas_fit_text') }}</button>
         <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
       </div>
 

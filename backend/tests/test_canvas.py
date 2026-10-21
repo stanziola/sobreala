@@ -1450,3 +1450,36 @@ def test_volver_a_guardar_sin_una_foto_la_borra(client, database, outbox):
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert not images.owns(database, cuenta["_id"], nombre)
     assert other(client).get(f"/img/{nombre}").status_code == 404
+
+
+# ------------------------------------------------ el texto, del tamaño de su caja
+
+def test_el_texto_queda_dentro_de_su_caja(client, database):
+    """Octubre de 2026: la celda ya no crece con el texto. Lo que no cabe no
+    sale, y el correo mide lo mismo que el lienzo."""
+    doc = canvas.parse(json.dumps(lienzo(texto(20, 20, w=200, h=40, text="Mucho " * 60))))
+    html = canvas.to_html(doc, [None] * len(canvas.groups(doc)))
+    assert 'style="height:40px;max-height:40px;overflow:hidden;"' in html
+
+
+def test_con_viñetas_tambien(client, database):
+    doc = canvas.parse(json.dumps(lienzo(texto(20, 20, w=200, h=60, text="uno\ndos\ntres",
+                                               list=True))))
+    html = canvas.to_html(doc, [None] * len(canvas.groups(doc)))
+    assert 'max-height:60px;overflow:hidden;' in html
+
+
+def test_una_caja_con_variables_crece(client, database):
+    """El largo de cada valor se sabe al enviar: recortarla cortaría datos de la
+    persona (un nombre largo, una tabla de diez filas)."""
+    for text in ("Hola, *|NOMBRE|*", "*|PRODUCTOS|*", "*|#TRANSACCIONES|* *|MONTO|* *|/TRANSACCIONES|*"):
+        doc = canvas.parse(json.dumps(lienzo(texto(20, 20, w=300, h=40, text=text))))
+        html = canvas.to_html(doc, [None] * len(canvas.groups(doc)))
+        assert "overflow:hidden" not in html, text
+        assert canvas.has_variables(doc["items"][0])
+
+
+def test_el_editor_ofrece_ajustar_la_caja(client, database):
+    browser, _, _ = ready(client, database)
+    pagina = browser.get("/templates/create").get_data(as_text=True)
+    assert 'data-action="fit-text"' in pagina and "Ajustar la caja al texto" in pagina

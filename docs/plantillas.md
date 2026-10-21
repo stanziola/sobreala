@@ -240,10 +240,34 @@ texto pequeño a media hoja invalidaba toda la banda, así que una figura (160 p
 o una foto (400) no entraban, y el aviso salía arriba del todo de la página,
 fuera de la vista. Los botones de Geometría e Imagen parecían muertos.
 
-Eso deja un caso en el que el editor y el correo no dicen lo mismo, y conviene
-tenerlo presente: **un texto que ya no cabe se ve cortado en el editor** (con su
-aviso), mientras que en el correo sale entero y empuja lo de abajo. Se eligió
-así a cambio de que la hoja no se mueva sola; la vista previa enseña la verdad.
+**Las cajas de texto tienen el tamaño que se les pone** (octubre de 2026).
+Antes una caja crecía sola al escribir, al soltar un tirador y al cambiar la
+letra, y en el correo el texto que no cabía salía entero y empujaba lo de
+abajo: el correo salía más largo que el lienzo. Ahora:
+
+- **En el editor** lo que no cabe queda oculto (`overflow:hidden`), y mientras
+  se escribe se ve desplazando dentro de la caja. Las que no caben llevan una
+  raya roja al pie y el aviso «Hay textos que no caben en su caja», que se mira
+  **al abrir la plantilla** (las de antes, los ZIP y las creadas por la API
+  pudieron quedar así), al terminar de escribir, al soltar un tirador y al
+  cambiar la letra (`checkFit()` en `canvas.js`). **«Ajustar la caja al
+  texto»**, en la barra del texto, la agranda hasta que quepa (`fitText()`).
+- **En el correo** el texto va dentro de un `div` del alto de la caja con
+  `overflow:hidden` (`canvas._clipped()`): lo respetan Gmail, Apple Mail,
+  Outlook.com, el Outlook nuevo y Yahoo, según caniemail.com. **Outlook de
+  escritorio para Windows no lo respeta**, y ahí el texto que no cabe sigue
+  empujando.
+- **El PDF** recorta en el mismo sitio (`canvas_pdf._text`, con un trazado de
+  recorte).
+- **La excepción son las cajas con variables** (`*|NOMBRE|*`, `*|PRODUCTOS|*`,
+  un bloque `*|#LISTA|*`; `canvas.has_variables()`): **crecen**, en el correo y
+  en el PDF, porque el largo de cada valor se sabe solo al enviar (un nombre de
+  120 caracteres, una tabla de diez filas) y recortarlas cortaría datos de la
+  persona. Desde el lienzo no se puede saber si una variable es una lista: las
+  que llegan por la API pueden ser tablas sin ser columnas. El editor lo dice
+  en esas cajas.
+- La revisión antispam cuenta los 200 caracteres sobre todo el texto, también
+  lo que queda oculto en una caja que no cabe.
 El ancho no se toca, 600 px es lo que se lee bien en todos los buzones. Topes: **4,000 px de alto y 60 elementos**; lo que
 de verdad limita es la barra de peso.
 

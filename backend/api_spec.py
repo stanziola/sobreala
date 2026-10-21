@@ -322,6 +322,9 @@ GUIDES: list[dict[str, Any]] = [
          "y `rot` (grados). **shape**: `shape` (rect, line, ellipse, triangle, "
          "star o arrow), `bg`, `radius` y `rot`; una línea mide de 1 a 12 px de "
          "alto.",
+         "**El alto de cada texto es fijo**: lo que no cabe en su caja no sale en "
+         "el correo. Un texto con variables (`*|NOMBRE|*`) es la excepción: crece "
+         "con el largo de cada valor.",
          "Se guarda solo si arma bien el correo y pasa la revisión antispam, igual "
          "que en el editor: entre otras cosas, al menos 200 caracteres de texto, "
          "poca imagen, pocos enlaces y nada de acortadores. `POST /templates/check` "

@@ -226,9 +226,25 @@ def _button(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
 def _text(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
     """Un texto, línea a línea y con su alineación.
 
-    No se recorta a la caja: en el correo un texto que ya no cabe sale entero y
-    empuja lo de abajo, y el PDF cuenta lo mismo que el correo.
+    **Se recorta a su caja** (octubre de 2026), como el correo: lo que no cabe
+    no sale. Antes no se recortaba, porque en el correo un texto que no cabía
+    salía entero y empujaba lo de abajo. Con variables no se recorta, igual que
+    en el correo (`canvas.has_variables`).
     """
+    if not canvas.has_variables(one):
+        sheet.saveState()
+        box = sheet.beginPath()
+        box.rect(left, top - one["h"], one["w"], one["h"])
+        sheet.clipPath(box, stroke=0, fill=0)
+        try:
+            _lines(sheet, one, left, top, color)
+        finally:
+            sheet.restoreState()
+        return
+    _lines(sheet, one, left, top, color)
+
+
+def _lines(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
     font, size = face_of(one), one["size"]
     leading = round(size * (one.get("line") or 1.4))
     sheet.setFont(font, size)

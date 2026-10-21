@@ -1602,9 +1602,9 @@ TEXTS = {
                         "dibujarla, y eso suma a la parte del correo que es "
                         "imagen. El rectángulo y la línea no.",
     "canvas_rot_drag": "Arrastra para girar (con Mayús, de 15 en 15)",
-    "canvas_text_cut": "Un texto no cabe en la hoja y se ve cortado aquí. En "
-                       "el correo sale entero y empuja lo de abajo: hazla más "
-                       "alta o acorta el texto.",
+    "canvas_text_cut": "Hay textos que no caben en su caja: lo que pasa de la caja no "
+                       "sale en el correo. Agrándala, o pulsa «Ajustar la caja al "
+                       "texto».",
     "canvas_image_href": "Enlace al pulsarla (opcional)",
     "canvas_image_alt": "Descripción",
     "canvas_image_alt_hint": "Lo que se lee si la imagen no carga",
@@ -3468,6 +3468,12 @@ TEXTS = {
 
     # --- los recientes del buscador (octubre de 2026)
     "search_recent": "Recientes",
+
+    # --- el lienzo: las cajas de texto tienen el tamaño que se les pone
+    # (octubre de 2026)
+    "canvas_text_grows": "Este texto lleva variables: en el correo la caja crece con el "
+                         "largo de cada valor, y empuja lo de abajo.",
+    "canvas_fit_text": "Ajustar la caja al texto",
 }
 
 

@@ -370,6 +370,8 @@
       el.className = "cv-item cv-item--" + one.t + (isLine(one) ? " cv-item--line" : "");
       el.setAttribute("data-item", i);
       if (bad[i]) { el.className += " is-bad"; notes[bad[i]] = true; }
+      if (cut[i] === "cut") { el.className += " is-cut"; notes.cut = true; }
+      if (cut[i] === "grow") notes.grow = true;
       if (isPicked(i)) el.className += " is-sel";
       if (FRONT[one.t]) fillText(el, one);
       paintItem(el, one);
@@ -390,6 +392,8 @@
     var said = [];
     if (notes.overlap) said.push(S.overlap);
     if (notes.link) said.push(S.linkOverlap);
+    if (notes.cut) said.push(S.textCut);
+    if (notes.grow) said.push(S.textGrows);
     warn.textContent = said.join(" ");
     warn.hidden = !said.length;
     showProps();
@@ -435,11 +439,19 @@
     });
   }
 
-  /* Un texto crece para que quepa lo escrito: así el correo no lo corta. Y si
-     pasa del borde de abajo, crece la hoja. */
-  function fitText(i) {
-    var one = doc.items[i];
-    if (!one || one.t !== "text") return;
+  /* **Las cajas de texto tienen el tamaño que se les pone** (octubre de 2026).
+     Antes una caja crecía sola al escribir, al soltar un tirador y al cambiar
+     la letra, y el correo salía más largo que el lienzo. Ahora lo que no cabe
+     queda oculto, igual que en el correo, y se avisa; «Ajustar la caja al
+     texto» la agranda cuando uno quiere. Una caja con variables (`*|NOMBRE|*`)
+     es la excepción: en el correo crece con el largo de cada valor, que aquí no
+     se sabe. */
+  var MARKS = /\*\|[#^/]?[A-Z0-9_]+\|\*/;
+
+  function hasMarks(one) { return MARKS.test(one.text || ""); }
+
+  /* Lo que mide lo escrito en esa caja, con su ancho. */
+  function needed(one) {
     var probe = document.createElement("div");
     probe.className = "cv-item cv-item--text cv-probe";
     if (one.list) fillText(probe, one); else probe.textContent = one.text || " ";
@@ -448,9 +460,26 @@
     stage.appendChild(probe);
     var need = Math.ceil(probe.scrollHeight);
     stage.removeChild(probe);
-    // Crece hasta el borde de la hoja y ahí se detiene: el alto de la hoja solo
-    // lo mueve quien la arrastra o escribe su número. Lo que no cabe se avisa.
+    return need;
+  }
+
+  /* Agrandar la caja hasta que quepa (el botón): hasta el borde de la hoja,
+     cuyo alto solo mueve quien la arrastra o escribe su número. */
+  function fitText(i) {
+    var one = doc.items[i];
+    if (!one || one.t !== "text") return;
+    var need = needed(one);
     if (need > one.h) one.h = Math.min(need, doc.h - one.y);
+  }
+
+  /* Qué cajas no caben: se marcan y se avisa. Se mira al abrir, al terminar de
+     escribir, al soltar un tirador y al cambiar la letra, no a cada dibujo. */
+  var cut = {};
+  function checkFit() {
+    cut = {};
+    doc.items.forEach(function (one, i) {
+      if (one.t === "text" && needed(one) > one.h + 1) cut[i] = hasMarks(one) ? "grow" : "cut";
+    });
   }
 
   /* ------------------------------------------------------------ agregar */
@@ -855,7 +884,7 @@
       return;
     }
     if (was.moved) {
-      if (was.mode !== "grip" && was.mode !== "drag") fitText(was.i);
+      if (was.mode !== "grip" && was.mode !== "drag") checkFit();
       chosen().forEach(fitRot);
       render(); commit();
     }
@@ -899,15 +928,11 @@
     var one = item();
     if (!one) return;
     one.text = editing.innerText.replace(/\n$/, "");
-    var need = Math.ceil(editing.scrollHeight);
-    if (need > one.h) {
-      one.h = Math.min(need, doc.h - one.y);
-      editing.style.height = one.h + "px";
-    }
-    // Si ya no cabe, se dice: en el correo ese texto sale entero y empuja lo
-    // de abajo, así que el editor y el correo dejarían de parecerse.
-    warn.textContent = need > one.h ? S.textCut : "";
-    warn.hidden = !(need > one.h);
+    // La caja no crece (octubre de 2026): lo que no cabe se ve desplazando
+    // dentro mientras se escribe, y se avisa, porque en el correo no sale.
+    var over = Math.ceil(editing.scrollHeight) > one.h + 1;
+    warn.textContent = over ? (hasMarks(one) ? S.textGrows : S.textCut) : "";
+    warn.hidden = !over;
   });
 
   stage.addEventListener("focusout", function (e) {
@@ -915,7 +940,7 @@
     var i = sel;
     editing.contentEditable = "false";
     editing = null;
-    if (i !== null) fitText(i);
+    checkFit();
     render(); commit();
   });
 
@@ -1020,7 +1045,7 @@
     // Las viñetas solo se escriben puestas, como las guarda el servidor.
     if (name === "list" && !value) delete one.list;
     if (name === "rot" || name === "h" || name === "shape") fitRot(one);
-    if (one.t === "text") fitText(sel);
+    if (one.t === "text") checkFit();
     var el = repaint(stage, one, sel);
     if (el && name === "text") el.firstChild ? (el.firstChild.nodeValue = value) : (el.textContent = value);
     // El enlace de una foto cambia lo que se puede encimar: se repinta.
@@ -1131,6 +1156,12 @@
     var one = item();
     if (!one) return;
     var list = doc.items;
+    if (what === "fit-text") {
+      fitText(sel);
+      checkFit();
+      render(); commit();
+      return;
+    }
     if (what === "delete") {
       list.splice(sel, 1);
       pick(null);
@@ -1578,6 +1609,7 @@
     });
   }
 
+  checkFit();
   render();
   past.push(JSON.stringify(doc));
   learnRatios();

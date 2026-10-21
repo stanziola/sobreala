@@ -756,6 +756,33 @@ def _bullets(one: dict[str, Any], style: str) -> str:
     return TABLE.format(w=w) + "".join(rows) + "</table>"
 
 
+# Una variable o un bloque de una lista dentro de un texto (`*|NOMBRE|*`,
+# `*|#TRANSACCIONES|*`): lo que pone se sabe solo al enviar.
+VARIABLE = re.compile(r"\*\|[#^/]?[A-Z0-9_]+\|\*")
+
+
+def has_variables(one: dict[str, Any]) -> bool:
+    return bool(VARIABLE.search(one.get("text", "")))
+
+
+def _clipped(one: dict[str, Any], inner: str) -> str:
+    """El texto dentro de su caja (octubre de 2026): lo que no cabe no sale, y
+    el correo mide lo mismo que el lienzo. Antes la celda crecía con el texto y
+    empujaba todo lo de abajo.
+
+    **Una caja con variables no se recorta**: el largo de cada valor se sabe
+    solo al enviar (un nombre de 120 caracteres, una tabla de diez filas), y
+    recortarla cortaría datos de la persona. Crece, como antes.
+
+    Lo respetan Gmail, Apple Mail, Outlook.com, el Outlook nuevo y Yahoo
+    (`overflow` y `max-height` en un `div`, según caniemail.com). **Outlook de
+    escritorio para Windows no**: ahí el texto que no cabe sigue empujando."""
+    if has_variables(one):
+        return inner
+    h = one["h"]
+    return f'<div style="height:{h}px;max-height:{h}px;overflow:hidden;">{inner}</div>'
+
+
 def _front_cell(one: dict[str, Any], *, inside_vml: bool) -> str:
     w, h = one["w"], one["h"]
     style = _font_style(one)
@@ -766,7 +793,7 @@ def _front_cell(one: dict[str, Any], *, inside_vml: bool) -> str:
                 f'class="{ink(one["color"])}" '
                 f'style="width:{w}px;height:{h}px;{style}'
                 f'line-height:{line_px(one)}px;mso-line-height-rule:exactly;'
-                f'text-align:left;">{_bullets(one, style)}</td>')
+                f'text-align:left;">{_clipped(one, _bullets(one, style))}</td>')
     if one["t"] == "text":
         # La letra va en la celda y otra vez en un <span>: dentro de un fondo
         # VML, Outlook de escritorio ignora lo que dice la celda.
@@ -775,8 +802,9 @@ def _front_cell(one: dict[str, Any], *, inside_vml: bool) -> str:
                 f'style="width:{w}px;height:{h}px;{style}'
                 f'line-height:{line_px(one)}px;mso-line-height-rule:exactly;'
                 f'text-align:{one["align"]};word-wrap:break-word;">'
-                f'<span class="{ink(one["color"])}" style="{style}'
-                f'line-height:{line_px(one)}px;">{_text(one["text"])}</span></td>')
+                + _clipped(one, f'<span class="{ink(one["color"])}" style="{style}'
+                                f'line-height:{line_px(one)}px;">{_text(one["text"])}</span>')
+                + '</td>')
     href = escape(one["href"])
     link = (f'<a href="{href}" target="_blank" class="{ink(one["color"])}" '
             f'style="display:block;width:{w}px;line-height:{h}px;{style}'
