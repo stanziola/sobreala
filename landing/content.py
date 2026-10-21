@@ -978,9 +978,10 @@ def holder_line() -> str:
 # Las dos cambiaron el 11 de octubre de 2026: el registro pide teléfono,
 # dirección e identificación personal, que se verifican con un documento que se
 # borra al revisarlo, y una cuenta puede quedar limitada hasta verificarse. La
-# privacidad, otra vez el 15: se puede entrar con GitHub; y el 16: la cuenta se
-# elimina desde Configuración.
-UPDATED = "16 de octubre de 2026"
+# privacidad, otra vez el 15: se puede entrar con GitHub; el 16: la cuenta se
+# elimina desde Configuración; y el 20: de una cuenta eliminada se guarda su
+# ficha mínima.
+UPDATED = "20 de octubre de 2026"
 TERMS_UPDATED = "11 de octubre de 2026"
 
 PRIVACY = {
@@ -1143,6 +1144,9 @@ PRIVACY = {
                 "después quedan solo los totales por campaña.",
                 "**Bitácora de accesos y de correos del sistema:** se conserva "
                 "como registro de seguridad y soporte.",
+                "**De una cuenta eliminada** guardamos su ficha mínima (empresa, "
+                "nombre y correo del dueño, plan y fechas) como registro de "
+                "seguridad y contable.",
             ],
         },
         {

@@ -71,7 +71,11 @@ def erase(db, owner_id, *, by: Any, reason: str) -> dict[str, int]:
     documentos se borraron de cada colección.
 
     `by` es quién la borra: la propia cuenta o un administrador. Queda una línea
-    en `admin_events` con cuántos documentos se fueron, sin ninguna dirección.
+    en `admin_events` con cuántos documentos se fueron y, desde octubre de 2026,
+    **la ficha mínima de la cuenta**: empresa, nombre y correo del dueño, plan,
+    fecha de alta y los ids de sus usuarios. Así Eventos sigue diciendo de quién
+    era cada fila (antes salía «·») y administración tiene registro de todo. Lo
+    dice la política de privacidad («Cuánto tiempo los guardamos»).
     """
     owner = accounts.by_id(db, owner_id)
     if owner is None:
@@ -85,9 +89,14 @@ def erase(db, owner_id, *, by: Any, reason: str) -> dict[str, int]:
         counts[name] = db[name].delete_many({"account_id": {"$in": ids}}).deleted_count
     counts["accounts"] = db.accounts.delete_many({"_id": {"$in": ids}}).deleted_count
 
+    card = {"company_name": owner.get("company_name", ""),
+            "contact_name": owner.get("contact_name", ""),
+            "email": owner.get("email", ""), "plan": owner.get("plan") or "",
+            "created_at": owner.get("created_at")}
     decisions.record(db, kind=decisions.ERASE, admin_id=by, account_id=owner_id,
                      before=owner.get("company_name", ""),
-                     after={"counts": counts, "outside_failed": problems},
+                     after={"counts": counts, "outside_failed": problems,
+                            "owner": card, "member_ids": ids[1:]},
                      reason=reason)
     if problems:
         print(f"  [erase] {owner_id}: no se pudo soltar {', '.join(problems)}", flush=True)

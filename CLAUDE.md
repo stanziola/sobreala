@@ -460,7 +460,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   `/admin/clients` enseña la salud de la cuenta de Amazon y una fila por empresa
   con sus cifras de 30 días, en ámbar o rojo según el umbral de la pausa.
   **Eventos** (`/admin/events`) es lo que está pasando, de los correos y de las
-  cuentas, y se actualiza sola; del destinatario, solo el dominio.
+  cuentas, y se actualiza sola; del destinatario, solo el dominio. Una cuenta
+  eliminada dice «Empresa (eliminada)» y lleva a su ficha mínima
+  (`/admin/erased/<id>`).
 
 ### Cobro (`docs/cobro.md`)
 

@@ -359,6 +359,36 @@ def activity_page(account):
         moment=happening.moment, level=happening.level)
 
 
+@bp.route("/erased/<raw>")
+@only_admins
+def erased_page(account, raw):
+    """Lo que queda de una cuenta eliminada (octubre de 2026): su ficha mínima,
+    quién la eliminó y por qué, cuánto se borró, y los pagos que se quedan por
+    ley. De solo lectura: la cuenta ya no existe. `raw` es el id de la empresa,
+    o el de uno de sus usuarios."""
+    db = get_db()
+    gone = as_id(raw)
+    record = db.admin_events.find_one(
+        {"kind": decisions.ERASE,
+         "$or": [{"account_id": gone}, {"after.member_ids": gone}]}) if gone else None
+    if record is None:
+        abort(404)
+    after = record.get("after") or {}
+    by = record.get("admin_id")
+    who = None
+    if by is not None and by != record["account_id"]:
+        found = accounts.by_id(db, by)
+        who = found.get("email", "") if found else ""
+    return render_template(
+        "admin/erased.html", section="eventos", admin=account, record=record,
+        card=after.get("owner") or {"company_name": record.get("before", "")},
+        counts=after.get("counts") or {}, problems=after.get("outside_failed") or [],
+        by_admin=who,
+        payments=list(db.payments.find({"account_id": record["account_id"],
+                                        "status": payments.COMPLETED}
+                                       ).sort("completed_at", -1).limit(50)))
+
+
 @bp.route("/events/feed")
 @only_admins
 def activity_feed(account):
@@ -786,7 +816,8 @@ def erase_account(account, raw):
     back = url_for("admin.account_page", raw=raw) + "#eliminar"
     reason = request.form.get("reason", "").strip()
     if (not csrf_ok(request.form.get("csrf_token")) or not reason
-            or not same_name(request.form.get("company", ""), client.get("company_name", ""))):
+            or not same_name(request.form.get("confirm_name", ""),
+                             client.get("company_name", ""))):
         return redirect(url_for("admin.account_page", raw=raw, erase_error=1) + "#eliminar")
     gone = dict(client)
     erase.erase(db, client["_id"], by=account["_id"], reason=reason)

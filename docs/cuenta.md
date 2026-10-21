@@ -673,7 +673,12 @@ Ahora hay un botón, y **un solo sitio que borra**: `services/erase.py`,
   pide la ley: `suppressions` (nadie le vuelve a escribir a quien pidió no
   recibir), `payments` e `invoices` (obligaciones contables), y `auth_events`,
   `mail_log` y `admin_events` (la bitácora). En `admin_events` queda una línea
-  `erase` con quién, cuándo y cuántos documentos, sin ninguna dirección.
+  `erase` con quién, cuándo y cuántos documentos y, desde octubre de 2026, **la
+  ficha mínima de la cuenta** (`after.owner`: empresa, nombre y correo del
+  dueño, plan y fecha de alta; y `after.member_ids`, sus usuarios), que lo
+  dice la privacidad. Con ella Eventos dice de quién era cada fila de una
+  cuenta que ya no existe (antes salía «·»), y administración la abre en
+  `/admin/erased/<id>`.
 - **Después:** se cierran las sesiones de este navegador, llega un correo a la
   dirección que tenía («Tu cuenta se eliminó»), se avisa a quien administra
   (con el interruptor de los registros) y se aterriza en entrar con un aviso

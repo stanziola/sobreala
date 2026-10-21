@@ -2273,7 +2273,8 @@ def delete_account():
                 sent = notices.erase_code(account, code)
         else:
             doc = None
-            if not same_name(request.form.get("company", ""), account.get("company_name", "")):
+            if not same_name(request.form.get("confirm_name", ""),
+                             account.get("company_name", "")):
                 errors["company"] = t("erase_error_company")
             if with_password:
                 if not verify_password(request.form.get("password", ""),

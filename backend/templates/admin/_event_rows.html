@@ -6,7 +6,9 @@
 <tr data-key="{{ row.key }}">
   <td class="table__quiet num">{{ moment(row.at) }}</td>
   <td><span class="level is-event-{{ level(row.kind) }}">{{ row.label }}</span></td>
-  <td>{% if row.company %}<a href="{{ url_for('admin.account_page', raw=row.account_id) }}">{{ row.company }}</a>{% else %}<span class="table__quiet">·</span>{% endif %}</td>
+  <td>{% if row.erased %}<a href="{{ url_for('admin.erased_page', raw=row.account_id) }}">{{ t('admin_erased_name', company=row.company) }}</a>
+      {%- elif row.company %}<a href="{{ url_for('admin.account_page', raw=row.account_id) }}">{{ row.company }}</a>
+      {%- else %}<span class="table__quiet">·</span>{% endif %}</td>
   <td class="table__wrap">{{ row.detail }}{% if row.domain %} <span class="table__quiet">{{ t('activity_to', domain=row.domain) }}</span>{% endif %}</td>
 </tr>
 {% endfor %}

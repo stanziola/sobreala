@@ -46,7 +46,7 @@ def cuantos(database, ids):
 
 def borrar(browser, **data):
     form = {"csrf_token": csrf(browser, "/settings/delete"), "action": "erase",
-            "company": "Cooperativa Ejemplo", "password": PASSWORD}
+            "confirm_name": "Cooperativa Ejemplo", "password": PASSWORD}
     form.update(data)
     return browser.post("/settings/delete", data=form)
 
@@ -66,12 +66,12 @@ def test_borra_lo_dicho_y_deja_lo_dicho(client, database, outbox):
     assert 'href="/settings/delete"' in browser.get("/settings/account").get_data(as_text=True)
 
     # Sin el nombre exacto, o con la contraseña mala, no se borra nada.
-    assert "no coincide" in borrar(browser, company="Otra cosa").get_data(as_text=True)
+    assert "no coincide" in borrar(browser, confirm_name="Otra cosa").get_data(as_text=True)
     assert "no es correcta" in borrar(browser, password="mala").get_data(as_text=True)
     assert accounts.by_id(database, cuenta["_id"]) is not None
 
     # Sin fijarse en mayúsculas ni espacios de más.
-    salida = borrar(browser, company="  cooperativa   ejemplo ")
+    salida = borrar(browser, confirm_name="  cooperativa   ejemplo ")
     assert salida.status_code == 302 and salida.headers["Location"].endswith("/login?deleted=1")
     assert accounts.by_id(database, cuenta["_id"]) is None
     quedan = cuantos(database, [cuenta["_id"]])
@@ -97,7 +97,7 @@ def test_los_usuarios_se_van_con_la_empresa(client, database, outbox):
     llenar(database, miembro["_id"])
     salida = dueno.post("/settings/delete", data={
         "csrf_token": csrf(dueno, "/settings/delete"), "action": "erase",
-        "company": empresa["company_name"], "password": PASSWORD})
+        "confirm_name": empresa["company_name"], "password": PASSWORD})
     assert salida.status_code == 302
     assert database.accounts.count_documents({"_id": {"$in": [empresa["_id"], miembro["_id"]]}}) == 0
     assert cuantos(database, [miembro["_id"]])["sessions"] == 0
@@ -126,12 +126,12 @@ def test_el_administrador_borra_desde_la_ficha(client, database, outbox):
     assert "Eliminar esta cuenta" in admin.get(ficha).get_data(as_text=True)
 
     def mandar(**data):
-        form = {"csrf_token": csrf(admin, ficha), "company": "Cooperativa Ejemplo",
+        form = {"csrf_token": csrf(admin, ficha), "confirm_name": "Cooperativa Ejemplo",
                 "reason": "Lo pidió por teléfono"}
         form.update(data)
         return admin.post(f"{ficha}/erase", data=form)
 
-    assert "erase_error=1" in mandar(company="Otra").headers["Location"]
+    assert "erase_error=1" in mandar(confirm_name="Otra").headers["Location"]
     assert "erase_error=1" in mandar(reason="").headers["Location"]
     assert accounts.by_id(database, cuenta["_id"]) is not None
     assert mandar().headers["Location"].endswith("/admin/accounts?erased=1")
@@ -160,3 +160,47 @@ def test_lo_de_afuera_se_suelta(client, database, outbox, monkeypatch):
     assert ("ses", "coop.com") in soltado and ("ses", "coop-tienda.com") in soltado
     assert ("vault", "VAULT-1") in soltado
     assert any(one[0] == "sub" for one in soltado)
+
+
+def test_el_formulario_no_se_rellena_solo(client, database, outbox):
+    """Ni el nombre ni la contraseña: el nombre no se llama «company» (Chrome lo
+    rellena aunque diga que no), la contraseña nace de solo lectura hasta el
+    primer clic, y los gestores de contraseñas tienen dicho que no."""
+    browser, _, _ = ready(client, database)
+    pagina = browser.get("/settings/delete").get_data(as_text=True)
+    formulario = pagina[pagina.index('name="confirm_name"') - 400:]
+    assert 'name="company"' not in pagina
+    assert 'autocomplete="off"' in formulario and "data-1p-ignore" in formulario
+    assert 'id="erase-password" name="password" type="password"' in pagina
+    assert "data-fill-on-click" in pagina
+    assert 'document.getElementById("erase-password").readOnly = true' in pagina
+
+
+def test_la_cuenta_eliminada_queda_registrada_en_eventos(client, database, outbox):
+    """Antes salía «·»: la cuenta ya no existía. Ahora su fila dice de quién era,
+    lleva a su ficha mínima, y la eliminación misma es una fila."""
+    from models import payment as payments
+
+    browser, cuenta, _ = ready(client, database)
+    database.payments.insert_one({"account_id": cuenta["_id"], "status": payments.COMPLETED,
+                                  "plan": "negocio", "amount": "45.00",
+                                  "completed_at": accounts.now(), "order_id": "O-1"})
+    assert borrar(browser).status_code == 302
+    admin, _ = make_admin(client, database)
+
+    eventos = admin.get("/admin/events?type=accounts").get_data(as_text=True)
+    assert "Cooperativa Ejemplo (eliminada)" in eventos and "Cuenta eliminada" in eventos
+    assert f'href="/admin/erased/{cuenta["_id"]}"' in eventos
+
+    ficha = admin.get(f"/admin/erased/{cuenta['_id']}").get_data(as_text=True)
+    assert "Cooperativa Ejemplo (eliminada)" in ficha and cuenta["email"] in ficha
+    assert "El propio cliente" in ficha and "45.00" in ficha
+    linea = database.admin_events.find_one({"account_id": cuenta["_id"], "kind": "erase"})
+    assert linea["after"]["owner"]["email"] == cuenta["email"]
+    # Y una que no se eliminó no tiene esa página.
+    assert admin.get(f"/admin/erased/{admin_id_inventado()}").status_code == 404
+
+
+def admin_id_inventado():
+    from bson import ObjectId
+    return ObjectId()

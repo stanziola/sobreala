@@ -5,7 +5,8 @@ Junta en una sola lista, del más nuevo al más viejo, dos clases de cosas:
   * **de los correos**, lo que contó Amazon de cada campaña (`events`):
     entregado, rebote, queja, rechazo, apertura y clic;
   * **de las cuentas**: un registro, una demostración pedida, un pago cobrado,
-    una pausa automática o un límite (`accounts`, `payments`, `admin_events`).
+    una pausa automática, un límite o una cuenta eliminada (`accounts`,
+    `payments`, `admin_events`).
 
 **Del destinatario se enseña solo el dominio** («gmail.com»), nunca la
 dirección: la administración no hojea los contactos de un cliente. El dominio es
@@ -40,9 +41,9 @@ OVERLAP = timedelta(minutes=10)
 MAIL_KINDS = (events.DELIVERED, events.BOUNCE, events.COMPLAINT, events.REJECT,
               events.OPEN, events.CLICK, events.DOWNLOAD)
 # Lo de las cuentas, con nombres propios porque no son eventos de Amazon.
-SIGNUP, DEMO, PAYMENT, PAUSE, LIMIT_ON, LIMIT_OFF = (
-    "signup", "demo", "payment", "pause", "limit", "unlimit")
-ACCOUNT_KINDS = (SIGNUP, DEMO, PAYMENT, PAUSE, LIMIT_ON, LIMIT_OFF)
+SIGNUP, DEMO, PAYMENT, PAUSE, LIMIT_ON, LIMIT_OFF, ERASED = (
+    "signup", "demo", "payment", "pause", "limit", "unlimit", "erased")
+ACCOUNT_KINDS = (SIGNUP, DEMO, PAYMENT, PAUSE, LIMIT_ON, LIMIT_OFF, ERASED)
 
 # Los filtros de la pantalla. «Lo que pide atención» es el de siempre.
 FILTERS = {
@@ -55,7 +56,7 @@ DEFAULT_FILTER = "attention"
 
 # Las que piden mirar, en rojo; las que conviene notar, en ámbar.
 BAD = (events.BOUNCE, events.COMPLAINT, events.REJECT, PAUSE)
-NOTE = (LIMIT_ON,)
+NOTE = (LIMIT_ON, ERASED)
 
 
 def now() -> datetime:
@@ -87,9 +88,15 @@ def latest(db, *, wanted: str = DEFAULT_FILTER, account_id=None,
                       since, limit)
     rows.sort(key=lambda row: row["at"], reverse=True)
     rows = rows[:limit]
-    names = accounts.names_of(db, [row["account_id"] for row in rows])
+    ids = [row["account_id"] for row in rows]
+    names = accounts.names_of(db, ids)
+    # La de una cuenta eliminada sale de su ficha mínima (octubre de 2026):
+    # antes la fila decía «·» y no se sabía de quién era.
+    gone = accounts.erased_names(db, [one for one in ids if one not in names])
     for row in rows:
-        row["company"] = names.get(row["account_id"], "")
+        row["erased"] = row["account_id"] in gone
+        row["company"] = gone[row["account_id"]] if row["erased"] else names.get(
+            row["account_id"], "")
     return rows
 
 
@@ -187,6 +194,16 @@ def _accounts(db, kinds, account_id, since, limit) -> list[dict[str, Any]]:
             out.append({"key": f"a{one['_id']}", "at": aware(one["created_at"]),
                         "kind": kind, "group": "accounts",
                         "label": t("activity_kind_" + kind),
+                        "account_id": one["account_id"],
+                        "detail": one.get("reason", ""), "domain": ""})
+    if ERASED in kinds:
+        query = {"kind": decisions.ERASE, "created_at": {"$gte": since}}
+        if account_id is not None:
+            query["account_id"] = account_id
+        for one in db.admin_events.find(query).sort("created_at", -1).limit(limit):
+            out.append({"key": f"x{one['_id']}", "at": aware(one["created_at"]),
+                        "kind": ERASED, "group": "accounts",
+                        "label": t("activity_kind_erased"),
                         "account_id": one["account_id"],
                         "detail": one.get("reason", ""), "domain": ""})
     return out

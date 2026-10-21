@@ -506,8 +506,13 @@ nuevo al más viejo (`services/activity.py`):
   dirección), queja, rechazo, apertura y clic, con la empresa, el asunto y
   **solo el dominio del destinatario** («a gmail.com»), nunca la dirección.
 - **De las cuentas**: el registro (al confirmar el correo), la demostración
-  pedida, el pago cobrado, la pausa automática y los límites que se ponen o se
-  quitan (`accounts`, `payments`, `admin_events`).
+  pedida, el pago cobrado, la pausa automática, los límites que se ponen o se
+  quitan y **la cuenta eliminada** (`accounts`, `payments`, `admin_events`).
+- **Una cuenta eliminada sigue teniendo nombre** (octubre de 2026): sus filas
+  dicen «Empresa (eliminada)», sacado de la ficha mínima que guarda
+  `services/erase.py` (`accounts.erased_names()`), y llevan a
+  `/admin/erased/<id>`: la ficha, quién la eliminó y por qué, cuánto se borró y
+  los pagos que se quedan. Antes salía «·».
 - Filtros: «Lo que pide atención» (el de siempre: rebotes, quejas, rechazos y
   pausas), «Correos», «Cuentas» y «Todo», y una sola empresa.
 - **Se actualiza sola**: `static/js/admin-events.js` le pide a

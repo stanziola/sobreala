@@ -549,12 +549,14 @@
 <h3 class="settings__subtitle" id="eliminar">{{ t('admin_erase_title') }}</h3>
 <p class="settings__lead">{{ t('admin_erase_hint') }}</p>
 {% if request.args.get('erase_error') %}<p class="error">{{ t('admin_erase_error') }}</p>{% endif %}
-<form method="post" action="{{ url_for('admin.erase_account', raw=client._id) }}">
+<form method="post" action="{{ url_for('admin.erase_account', raw=client._id) }}" autocomplete="off">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label for="erase-company">{{ t('admin_erase_company', company=client.company_name) }}</label>
-  <input id="erase-company" name="company" type="text" autocomplete="off" required>
+  <label for="erase-confirm">{{ t('admin_erase_company', company=client.company_name) }}</label>
+  <input id="erase-confirm" name="confirm_name" type="text" autocomplete="off"
+         data-1p-ignore data-lpignore="true" spellcheck="false" required>
   <label for="erase-reason">{{ t('admin_erase_reason') }}</label>
-  <input id="erase-reason" name="reason" type="text" maxlength="300" autocomplete="off" required>
+  <input id="erase-reason" name="reason" type="text" maxlength="300" autocomplete="off"
+         data-1p-ignore data-lpignore="true" required>
   <button class="btn btn--danger" type="submit">{{ t('admin_erase_submit') }}</button>
 </form>
 

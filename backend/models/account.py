@@ -484,6 +484,24 @@ def remove_field(db, account_id, key: str) -> None:
 
 # ------------------------------------------------------------- administration
 
+def erased_names(db, ids) -> dict[Any, str]:
+    """El nombre de las empresas que se eliminaron, por su id o por el de
+    cualquiera de sus usuarios (octubre de 2026): lo guarda la línea `erase` de
+    `admin_events` (`services/erase.py`). Es lo que dice Eventos en vez de «·»."""
+    wanted = [one for one in set(ids) if one is not None]
+    if not wanted:
+        return {}
+    out: dict[Any, str] = {}
+    for one in db.admin_events.find(
+            {"kind": "erase", "$or": [{"account_id": {"$in": wanted}},
+                                      {"after.member_ids": {"$in": wanted}}]},
+            {"account_id": 1, "before": 1, "after.member_ids": 1}):
+        for who in [one["account_id"], *((one.get("after") or {}).get("member_ids") or [])]:
+            if who in wanted:
+                out[who] = one.get("before") or ""
+    return out
+
+
 def names_of(db, ids) -> dict[Any, str]:
     """El nombre de cada empresa, por id, en una sola consulta.
 

@@ -1,0 +1,75 @@
+{% extends "admin/_layout.html" %}
+{#- Lo que queda de una cuenta eliminada (octubre de 2026): la ficha mínima que
+    guarda `services/erase.py` en `admin_events`, quién la eliminó y por qué,
+    cuánto se borró y los pagos que se quedan por ley. De solo lectura. -#}
+{% block pane %}
+<h2 class="settings__title">{{ t('admin_erased_title', company=card.company_name) }}</h2>
+<p class="settings__lead">{{ t('admin_erased_lead') }}</p>
+
+<div class="setting">
+  <div class="setting__text"><h3 class="setting__title">{{ t('admin_erased_when') }}</h3></div>
+  <div class="setting__action">
+    <span class="setting__value">{{ record.created_at|on_date }}</span>
+  </div>
+</div>
+<div class="setting">
+  <div class="setting__text"><h3 class="setting__title">{{ t('admin_erased_by') }}</h3></div>
+  <div class="setting__action">
+    <span class="setting__value">{{ t('admin_erased_by_admin', email=by_admin) if by_admin is not none
+                                    else t('admin_erased_by_self') }}</span>
+  </div>
+</div>
+<div class="setting">
+  <div class="setting__text"><h3 class="setting__title">{{ t('admin_erased_reason') }}</h3></div>
+  <div class="setting__action"><span class="setting__value">{{ record.reason or '·' }}</span></div>
+</div>
+<div class="setting">
+  <div class="setting__text"><h3 class="setting__title">{{ t('admin_erased_owner') }}</h3></div>
+  <div class="setting__action">
+    <span class="setting__value">{{ card.contact_name or '·' }}{% if card.email %} · {{ card.email }}{% endif %}</span>
+  </div>
+</div>
+<div class="setting">
+  <div class="setting__text"><h3 class="setting__title">{{ t('admin_erased_plan') }}</h3></div>
+  <div class="setting__action"><span class="setting__value">{{ (card.plan or '')|capitalize or '·' }}</span></div>
+</div>
+<div class="setting">
+  <div class="setting__text"><h3 class="setting__title">{{ t('admin_erased_since') }}</h3></div>
+  <div class="setting__action">
+    <span class="setting__value">{{ card.created_at|on_date if card.created_at else '·' }}</span>
+  </div>
+</div>
+
+<h3 class="settings__subtitle">{{ t('admin_erased_counts') }}</h3>
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for name, many in counts|dictsort %}
+      <tr><td>{{ name }}</td><td class="num">{{ many }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if problems %}<p class="hint">{{ t('admin_erased_outside', what=problems|join(', ')) }}</p>{% endif %}
+
+<h3 class="settings__subtitle">{{ t('admin_erased_payments') }}</h3>
+{% if payments %}
+<div class="table-wrap">
+  <table class="table">
+    <tbody>
+      {% for one in payments %}
+      <tr>
+        <td class="table__quiet">{{ one.completed_at|on_date }}</td>
+        <td>{{ (one.plan or '')|capitalize }}</td>
+        <td class="num">{{ one.amount }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">{{ t('admin_erased_no_payments') }}</p>
+{% endif %}
+
+<p class="foot"><a href="{{ url_for('admin.activity_page') }}">{{ t('admin_erased_back') }}</a></p>
+{% endblock %}

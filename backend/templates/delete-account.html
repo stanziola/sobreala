@@ -1,4 +1,5 @@
 {% extends "_dashboard.html" %}
+{% from "_fields.html" import proof with context %}
 {% block title %}{{ t('erase_title') }}{% endblock %}
 {% set pane_center = true %}
 
@@ -29,27 +30,32 @@
   </form>
   {% endif %}
 
-  <form method="post" novalidate data-once>
+  {#- Nada de esto se rellena solo (octubre de 2026): el nombre no se llama
+      «company» (Chrome autorrellena todo lo que lo parezca, aunque diga
+      `autocomplete="off"`), la contraseña nace de solo lectura hasta el primer
+      clic (`proof()`), y los gestores de contraseñas tienen dicho que no. -#}
+  <form method="post" novalidate data-once autocomplete="off">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label for="erase-company">{{ t('erase_company', company=company) }}</label>
-    <input id="erase-company" name="company" type="text" autocomplete="off" required>
+    <label for="erase-confirm">{{ t('erase_company', company=company) }}</label>
+    <input id="erase-confirm" name="confirm_name" type="text" autocomplete="off"
+           data-1p-ignore data-lpignore="true" spellcheck="false" required>
     {% if errors.company %}<p class="error">{{ errors.company }}</p>{% endif %}
 
     {% if with_password %}
     <label for="erase-password">{{ t('erase_password') }}</label>
-    <input id="erase-password" name="password" type="password" autocomplete="current-password" required>
+    {{ proof('erase-password', 'password') }}
     {% if errors.password %}<p class="error">{{ errors.password }}</p>{% endif %}
     {% else %}
     <label for="erase-email-code">{{ t('erase_email_code') }}</label>
     <input id="erase-email-code" name="email_code" type="text" inputmode="numeric"
-           maxlength="6" autocomplete="one-time-code" required>
+           maxlength="6" autocomplete="off" data-1p-ignore data-lpignore="true" required>
     {% if errors.email_code %}<p class="error">{{ errors.email_code }}</p>{% endif %}
     {% endif %}
 
     {% if two_step %}
     <label for="erase-app-code">{{ t('erase_app_code') }}</label>
     <input id="erase-app-code" name="app_code" type="text" inputmode="numeric"
-           maxlength="6" autocomplete="one-time-code" required>
+           maxlength="6" autocomplete="off" data-1p-ignore data-lpignore="true" required>
     {% if errors.app_code %}<p class="error">{{ errors.app_code }}</p>{% endif %}
     {% endif %}
 

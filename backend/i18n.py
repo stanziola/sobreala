@@ -3430,6 +3430,27 @@ TEXTS = {
     "oauth_signup_replaces": "Ese correo tenía un registro con contraseña que nadie "
                              "confirmó. Al crear tu cuenta con {provider}, ese registro "
                              "se borra.",
+
+    # --- las cuentas eliminadas en administración (octubre de 2026)
+    "activity_kind_erased": "Cuenta eliminada",
+    "admin_erased_name": "{company} (eliminada)",
+    "admin_erased_title": "{company} (eliminada)",
+    "admin_erased_lead": "La cuenta ya no existe. Esto es lo que se guarda de ella: su "
+                         "ficha mínima, quién la eliminó y por qué, y los pagos, que se "
+                         "quedan por ley.",
+    "admin_erased_when": "Eliminada",
+    "admin_erased_by": "Quién la eliminó",
+    "admin_erased_by_self": "El propio cliente",
+    "admin_erased_by_admin": "Administración ({email})",
+    "admin_erased_reason": "Motivo",
+    "admin_erased_owner": "Dueño",
+    "admin_erased_plan": "Plan",
+    "admin_erased_since": "Cliente desde",
+    "admin_erased_counts": "Lo que se borró",
+    "admin_erased_outside": "No se pudo soltar afuera: {what}",
+    "admin_erased_payments": "Pagos que se quedan",
+    "admin_erased_no_payments": "No tenía pagos.",
+    "admin_erased_back": "Volver a Eventos",
 }
 
 
