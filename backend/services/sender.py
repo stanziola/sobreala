@@ -43,6 +43,7 @@ from models import download as downloads_model
 from models import event as events
 from models import image as images
 from models import suppression as suppressions
+from services import audience
 from services import fields as columns
 from services import canvas, downloads, imaging, plans, render, unsubscribe
 
@@ -409,11 +410,18 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     # A quien le falte una columna no se le manda nada, así que tampoco se
     # cuenta: el total y las tandas miran lo mismo.
     fields = accounts.fields_of(account)
+    # Las condiciones (octubre de 2026), validadas otra vez contra las columnas
+    # de hoy: si una ya no vale (se borró la columna, cambió su tipo), la
+    # campaña no sale, en vez de salir a más gente de la elegida.
+    try:
+        chosen = None if single else audience.query(campaigns.filters_of(campaign), fields)
+    except audience.Stale:
+        return {"blocked": ["filters"], "sent": 0, "left": 0}
     if single:
         total = 1
     else:
         total = contacts.matching_count(db, account_id, tags=wanted,
-                                        complete=fields)
+                                        complete=fields, audience=chosen)
     if campaign["status"] == campaigns.SCHEDULED:
         run_id = campaigns.start(db, account_id, campaign["_id"], total)
         if run_id is None:
@@ -444,11 +452,12 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         # A medias desde antes del cursor (octubre de 2026): sigue por posición
         # esta vez, y desde la próxima por `_id`.
         people = contacts.batch_for_sending(db, account_id, tags=wanted,
-                                            complete=fields, skip=position, limit=room)
+                                            complete=fields, skip=position, limit=room,
+                                            audience=chosen)
     else:
         people = contacts.batch_for_sending(db, account_id, tags=wanted,
                                             complete=fields, after_id=cursor_id,
-                                            limit=room)
+                                            limit=room, audience=chosen)
     if (piece.get("source") == designs.CANVAS
             and (piece.get("canvas") or {}).get("v") != canvas.VERSION):
         # Guardada cuando el lienzo iba por diapositivas: sus imágenes son de

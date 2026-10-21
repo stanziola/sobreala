@@ -183,6 +183,7 @@
         <li><a class="api-docs__link" href="#idempotencia">Reintentar sin repetir</a></li>
         <li><a class="api-docs__link" href="#fechas">Fechas y horas</a></li>
         <li><a class="api-docs__link" href="#listas">Listas dentro de un contacto</a></li>
+        <li><a class="api-docs__link" href="#condiciones">Condiciones de una campaña</a></li>
         <li><a class="api-docs__link" href="#clases">Transaccional o promocional</a></li>
         <li><a class="api-docs__link" href="#webhooks">Webhooks</a></li>
         <li><a class="api-docs__link" href="#lienzo">El lienzo en JSON</a></li>
@@ -419,6 +420,29 @@ Este mes no tuviste movimientos.
 Este mes no tuviste movimientos.
 *|/TRANSACCIONES|*"
           data-copy-done="Copiado" aria-label="Copiar Listas dentro de un contacto">Copiar</button>
+  <span class="visually-hidden" role="status" data-copy-status></span>
+</div>
+      </section>
+      <section class="api-doc" id="condiciones">
+        <h2 class="api-doc__title">Condiciones de una campaña</h2>
+<p>Además de sus etiquetas, una campaña puede salir solo a quienes cumplan unas <strong>condiciones sobre sus columnas</strong>: <code>filters</code> lleva <code>match</code> (<code>all</code>, que se cumplan todas, o <code>any</code>, alguna) y <code>rules</code>, hasta 10. Sin <code>filters</code>, o con <code>null</code>, sale a sus etiquetas como siempre.</p><p>Cada regla nombra la columna por su clave (<code>field</code>), el operador (<code>op</code>) y el valor (<code>value</code>), que se lee como los de los contactos: un número puede venir con comas o con B/., y una fecha como 2026-10-01 o 01/10/2026. Los operadores dependen del tipo de la columna: número, <code>eq</code>, <code>ne</code>, <code>gt</code>, <code>gte</code>, <code>lt</code> y <code>lte</code>; texto (sin importar mayúsculas), <code>eq</code>, <code>ne</code>, <code>contains</code>, <code>not_contains</code> y <code>starts</code>; fecha, <code>on</code>, <code>before</code> y <code>after</code>; sí o no, <code>yes</code> y <code>no</code>, sin valor.</p><p>De una lista se mira una de tres cosas con <code>measure</code>: <code>rows</code> compara la cantidad de filas con un entero; <code>any</code>, que alguna fila cumpla una condición con uno de sus datos (<code>item</code>), con los operadores de su tipo; y <code>sum</code>, la suma de un dato de tipo número de todas las filas. Un valor vacío o mal escrito en un contacto no cumple nunca ninguna condición.</p><p>Si después se borra la columna o cambia su tipo, la campaña no sale: <code>blocked</code> y <code>waiting</code> dicen <code>filters</code> hasta que la corrijas. <code>filters_text</code> es la frase que se lee en el Dashboard y en sus envíos.</p><div class="api-code" data-copy-box>
+  <pre><code>{&#34;match&#34;: &#34;all&#34;, &#34;rules&#34;: [
+  {&#34;field&#34;: &#34;MONTO&#34;, &#34;op&#34;: &#34;gte&#34;, &#34;value&#34;: &#34;100&#34;},
+  {&#34;field&#34;: &#34;TRANSACCIONES&#34;, &#34;measure&#34;: &#34;rows&#34;, &#34;op&#34;: &#34;gt&#34;, &#34;value&#34;: &#34;3&#34;},
+  {&#34;field&#34;: &#34;TRANSACCIONES&#34;, &#34;measure&#34;: &#34;any&#34;, &#34;item&#34;: &#34;FECHA&#34;,
+   &#34;op&#34;: &#34;after&#34;, &#34;value&#34;: &#34;2026-10-01&#34;},
+  {&#34;field&#34;: &#34;TRANSACCIONES&#34;, &#34;measure&#34;: &#34;sum&#34;, &#34;item&#34;: &#34;MONTO&#34;,
+   &#34;op&#34;: &#34;gte&#34;, &#34;value&#34;: &#34;500&#34;}
+]}</code></pre>
+  <button class="api-code__copy" type="button" data-copy="{&#34;match&#34;: &#34;all&#34;, &#34;rules&#34;: [
+  {&#34;field&#34;: &#34;MONTO&#34;, &#34;op&#34;: &#34;gte&#34;, &#34;value&#34;: &#34;100&#34;},
+  {&#34;field&#34;: &#34;TRANSACCIONES&#34;, &#34;measure&#34;: &#34;rows&#34;, &#34;op&#34;: &#34;gt&#34;, &#34;value&#34;: &#34;3&#34;},
+  {&#34;field&#34;: &#34;TRANSACCIONES&#34;, &#34;measure&#34;: &#34;any&#34;, &#34;item&#34;: &#34;FECHA&#34;,
+   &#34;op&#34;: &#34;after&#34;, &#34;value&#34;: &#34;2026-10-01&#34;},
+  {&#34;field&#34;: &#34;TRANSACCIONES&#34;, &#34;measure&#34;: &#34;sum&#34;, &#34;item&#34;: &#34;MONTO&#34;,
+   &#34;op&#34;: &#34;gte&#34;, &#34;value&#34;: &#34;500&#34;}
+]}"
+          data-copy-done="Copiado" aria-label="Copiar Condiciones de una campaña">Copiar</button>
   <span class="visually-hidden" role="status" data-copy-status></span>
 </div>
       </section>
@@ -4129,7 +4153,7 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
       </section>
       <section class="api-doc" id="campanas">
         <h2 class="api-doc__title">Campañas</h2>
-        <p>Las campañas de Masivo: a todos tus contactos o a los de unas etiquetas, con una plantilla o un texto, y las veces que haga falta. Llevan siempre su enlace de baja (y la marca de agua del Básico), se saltan a los suprimidos sin gastar cuota y no salen a un contacto sin todas sus columnas. <strong>Las manda el proceso en segundo plano</strong>, por tandas: mandar o programar responde enseguida, y la campaña dice cómo va en <code>status</code> y <code>progress</code>. Si no puede salir (sin cuota, en pausa), <code>waiting</code> dice por qué, y se vuelve a intentar sola cada 15 minutos.</p>
+        <p>Las campañas de Masivo: a todos tus contactos o a los de unas etiquetas (y, si quieres, solo a los que cumplan unas condiciones sobre sus columnas), con una plantilla o un texto, y las veces que haga falta. Llevan siempre su enlace de baja (y la marca de agua del Básico), se saltan a los suprimidos sin gastar cuota y no salen a un contacto sin todas sus columnas. <strong>Las manda el proceso en segundo plano</strong>, por tandas: mandar o programar responde enseguida, y la campaña dice cómo va en <code>status</code> y <code>progress</code>. Si no puede salir (sin cuota, en pausa), <code>waiting</code> dice por qué, y se vuelve a intentar sola cada 15 minutos.</p>
 
         <article class="api-endpoint" id="get-campaigns">
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
@@ -4184,6 +4208,8 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
       &#34;tags&#34;: [
         &#34;Socios&#34;
       ],
+      &#34;filters&#34;: null,
+      &#34;filters_text&#34;: null,
       &#34;status&#34;: &#34;scheduled&#34;,
       &#34;auto_send&#34;: true,
       &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4215,6 +4241,8 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
       &#34;tags&#34;: [
         &#34;Socios&#34;
       ],
+      &#34;filters&#34;: null,
+      &#34;filters_text&#34;: null,
       &#34;status&#34;: &#34;scheduled&#34;,
       &#34;auto_send&#34;: true,
       &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4243,7 +4271,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/campaigns/{campaign_id}</code></h3>
           <p class="api-endpoint__title">Una campaña</p>
-          <p>Con a cuántos saldría hoy (<code>audience</code>) y qué frena a la cuenta (<code>blocked</code>).</p>
+          <p>Con a cuántos saldría hoy (<code>audience</code>, con sus etiquetas y sus condiciones) y qué la frena (<code>blocked</code>).</p>
           <p class="api-endpoint__scope">
 Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          </p>
           <p class="api-endpoint__label">Solicitud</p>
@@ -4268,6 +4296,8 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4296,6 +4326,8 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4356,6 +4388,11 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
         <td>A quién: los que lleven cualquiera de estas etiquetas. Sin ellas, a todos tus contactos.</td>
       </tr>
       <tr>
+        <th scope="row"><code>filters</code><br>
+          <span class="api-type">objeto</span></th>
+        <td>Además, solo a quienes cumplan estas condiciones sobre sus columnas: ver «Condiciones de una campaña».</td>
+      </tr>
+      <tr>
         <th scope="row"><code>scheduled_at</code><br>
           <span class="api-type">texto</span></th>
         <td>Una hora que no pasó, con su zona.</td>
@@ -4374,6 +4411,16 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: {
+    &#34;match&#34;: &#34;all&#34;,
+    &#34;rules&#34;: [
+      {
+        &#34;field&#34;: &#34;CIUDAD&#34;,
+        &#34;op&#34;: &#34;eq&#34;,
+        &#34;value&#34;: &#34;Santiago&#34;
+      }
+    ]
+  },
   &#34;scheduled_at&#34;: &#34;2026-10-20T08:00:00-05:00&#34;
 }&#39;</code></pre>
   <button class="api-code__copy" type="button" data-copy="curl -X POST https://app.sobreala.com/api/v1/campaigns \
@@ -4385,6 +4432,16 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: {
+    &#34;match&#34;: &#34;all&#34;,
+    &#34;rules&#34;: [
+      {
+        &#34;field&#34;: &#34;CIUDAD&#34;,
+        &#34;op&#34;: &#34;eq&#34;,
+        &#34;value&#34;: &#34;Santiago&#34;
+      }
+    ]
+  },
   &#34;scheduled_at&#34;: &#34;2026-10-20T08:00:00-05:00&#34;
 }&#39;"
           data-copy-done="Copiado" aria-label="Copiar POST /campaigns">Copiar</button>
@@ -4403,6 +4460,17 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: {
+    &#34;match&#34;: &#34;all&#34;,
+    &#34;rules&#34;: [
+      {
+        &#34;field&#34;: &#34;CIUDAD&#34;,
+        &#34;op&#34;: &#34;eq&#34;,
+        &#34;value&#34;: &#34;Santiago&#34;
+      }
+    ]
+  },
+  &#34;filters_text&#34;: &#34;Ciudad es igual a «Santiago»&#34;,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4429,6 +4497,17 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: {
+    &#34;match&#34;: &#34;all&#34;,
+    &#34;rules&#34;: [
+      {
+        &#34;field&#34;: &#34;CIUDAD&#34;,
+        &#34;op&#34;: &#34;eq&#34;,
+        &#34;value&#34;: &#34;Santiago&#34;
+      }
+    ]
+  },
+  &#34;filters_text&#34;: &#34;Ciudad es igual a «Santiago»&#34;,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4486,6 +4565,11 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
           <span class="api-type">lista de textos</span></th>
         <td>A quién.</td>
       </tr>
+      <tr>
+        <th scope="row"><code>filters</code><br>
+          <span class="api-type">objeto</span></th>
+        <td>Las condiciones; <code>null</code> las quita.</td>
+      </tr>
     </tbody>
   </table>
 </div>
@@ -4519,6 +4603,8 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4545,6 +4631,8 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4602,7 +4690,7 @@ Permiso: <code>campaigns:write</code> · Con una llave de prueba: no.          <
           <h3 class="api-endpoint__route"><span class="api-method api-method--post">POST</span>
             <code>/campaigns/{campaign_id}/send</code></h3>
           <p class="api-endpoint__title">Mandarla ya</p>
-          <p>Responde 202 enseguida y la campaña empieza a salir por tandas. Una que ya salió sale otra vez entera. Si hoy la cuenta no puede enviar, 409 <code>cannot_send</code>. Con una clave de prueba dice a cuántos saldría y qué la frena, sin mandar nada.</p>
+          <p>Responde 202 enseguida y la campaña empieza a salir por tandas. Una que ya salió sale otra vez entera. Si hoy no puede salir (la cuenta no puede enviar, o una de sus condiciones ya no vale), 409 <code>cannot_send</code>. Con una clave de prueba dice a cuántos saldría y qué la frena, sin mandar nada.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.          </p>
           <p class="api-endpoint__label">Solicitud</p>
@@ -4627,6 +4715,8 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-17T19:45:00Z&#34;,
@@ -4653,6 +4743,8 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-17T19:45:00Z&#34;,
@@ -4723,6 +4815,8 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4749,6 +4843,8 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: true,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4799,6 +4895,8 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: false,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4825,6 +4923,8 @@ Permiso: <code>campaigns:send</code> · Con una llave de prueba: simulado.      
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters&#34;: null,
+  &#34;filters_text&#34;: null,
   &#34;status&#34;: &#34;scheduled&#34;,
   &#34;auto_send&#34;: false,
   &#34;scheduled_at&#34;: &#34;2026-10-20T13:00:00Z&#34;,
@@ -4901,6 +5001,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
       &#34;tags&#34;: [
         &#34;Socios&#34;
       ],
+      &#34;filters_text&#34;: null,
       &#34;single&#34;: false,
       &#34;to&#34;: null,
       &#34;total&#34;: 812,
@@ -4930,6 +5031,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
       &#34;tags&#34;: [
         &#34;Socios&#34;
       ],
+      &#34;filters_text&#34;: null,
       &#34;single&#34;: false,
       &#34;to&#34;: null,
       &#34;total&#34;: 812,
@@ -4981,6 +5083,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters_text&#34;: null,
   &#34;single&#34;: false,
   &#34;to&#34;: null,
   &#34;total&#34;: 812,
@@ -5006,6 +5109,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
   &#34;tags&#34;: [
     &#34;Socios&#34;
   ],
+  &#34;filters_text&#34;: null,
   &#34;single&#34;: false,
   &#34;to&#34;: null,
   &#34;total&#34;: 812,

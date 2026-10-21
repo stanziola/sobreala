@@ -380,6 +380,12 @@ cosa está como está, y lo que ya se probó y se quitó.
   rebotes permanentes > 3 % desde 100 enviados, o quejas > 0.1 % desde 1,000.
   Es un límite (`accounts.pause()`): no envía, avisa al cliente y al
   administrador, y solo la quita el administrador desde la ficha.
+- **Las condiciones del masivo** (octubre de 2026, `services/audience.py`):
+  además de las etiquetas, sobre las columnas (número, texto, fecha, sí/no, y
+  de una lista sus filas, alguna fila o una suma), todas o alguna. Lo vacío o
+  mal escrito no cumple nunca, y **una que dejó de valer frena la campaña**
+  (`blocked: filters`), no la agranda. La cuenta en vivo pide el permiso de
+  enviar.
 - **Escribir o Plantilla**, en el individual y en el masivo: la campaña
   guarda `body` (y `logo`) o `design_id`. Escrito, el masivo sigue siendo una
   campaña (baja y marca) y sin archivo.

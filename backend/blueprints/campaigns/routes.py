@@ -25,7 +25,8 @@ from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import (Blueprint, Response, abort, redirect, render_template,
+from flask import (Blueprint, Response, abort, jsonify, redirect,
+                   render_template,
                    request, session, url_for)
 
 from blueprints.auth.routes import (CONFIRM_PER_IP, REGISTER_PER_EMAIL,
@@ -45,6 +46,7 @@ from models import event as events
 from models import token as tokens
 from models import suppression as suppressions
 from services import address_check, attachments, importer, notices, render, sender, ses_identity
+from services import audience
 from services import clock
 from services import fields
 from services.security import csrf_ok, rate_limit
@@ -157,8 +159,110 @@ def shared(db, account, **extra):
         # «Poner mi logo arriba», en lo escrito (octubre de 2026).
         "has_logo": bool(accounts.logo_of(account)),
         "body_max": campaigns.BODY_MAX,
+        # Las condiciones (octubre de 2026): qué se puede elegir en cada fila y
+        # los operadores de cada tipo.
+        "audience_choices": audience.choices(accounts.fields_of(account)),
+        "audience_ops": AUDIENCE_OPS,
+        "audience_max": audience.MAX_RULES,
         **extra,
     }
+
+
+# Los operadores de cada tipo, como los ofrece la pantalla: un grupo por tipo.
+# «count» son la cantidad de filas y la suma de un dato de una lista.
+AUDIENCE_OPS = [
+    ("number", audience.OPS[fields.NUMBER]),
+    ("text", audience.OPS[fields.TEXT]),
+    ("date", audience.OPS[fields.DATE]),
+    ("yesno", audience.OPS[fields.YESNO]),
+    ("count", audience.COMPARE),
+]
+
+
+def typed_rules() -> list[dict[str, str]]:
+    """Las filas de condiciones tal como llegaron del formulario, para leerlas y
+    para volver a dibujarlas si algo falló. Una fila sin columna no cuenta."""
+    chosen = request.form.getlist("rule_field")
+    ops = request.form.getlist("rule_op")
+    values = request.form.getlist("rule_value")
+    rows = []
+    for i, choice in enumerate(chosen[:audience.MAX_RULES + 1]):
+        rows.append({"choice": choice.strip()[:80],
+                     "op": (ops[i] if i < len(ops) else "").strip()[:20],
+                     "value": (values[i] if i < len(values) else "").strip()[:200]})
+    return rows
+
+
+def rules_of(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    return [audience.from_choice(row["choice"], row["op"], row["value"])
+            for row in rows if row["choice"]]
+
+
+def rule_rows(campaign, form_rows: list[dict[str, str]] | None) -> list[dict[str, str]]:
+    """Las filas que se dibujan: las que llegaron, o las guardadas; y una vacía
+    al final, para agregar sin JavaScript."""
+    if form_rows is not None:
+        rows = [row for row in form_rows if row["choice"]]
+    else:
+        saved = campaigns.filters_of(campaign) or {}
+        rows = [{"choice": audience.to_choice(rule), "op": rule.get("op", ""),
+                 "value": rule.get("value", "")} for rule in saved.get("rules") or []]
+    if len(rows) < audience.MAX_RULES:
+        rows.append({"choice": "", "op": "", "value": ""})
+    return rows
+
+
+def read_audience(account) -> tuple[dict | None, str]:
+    """Las condiciones del formulario, validadas, y el problema si hay uno."""
+    raw = {"match": request.form.get("cumplan", audience.ALL),
+           "rules": rules_of(typed_rules())}
+    found, problems = audience.parse(raw, accounts.fields_of(account))
+    if problems:
+        return None, audience.problem_text(*problems[0])
+    return found, ""
+
+
+def going_count(db, account, campaign) -> int | None:
+    """A cuántos saldría, con sus etiquetas, sus columnas llenas y sus
+    condiciones. None si una condición ya no vale: entonces no sale."""
+    columns = accounts.fields_of(account)
+    try:
+        chosen = audience.query(campaigns.filters_of(campaign), columns)
+    except audience.Stale:
+        return None
+    return contacts.matching_count(db, account["_id"], tags=campaigns.tags_of(campaign),
+                                   complete=columns, audience=chosen)
+
+
+# Cuántas veces por minuto se puede pedir la cuenta en vivo: una por cambio.
+AUDIENCE_PER_MINUTE = (60, 60)
+
+
+@bp.route("/campaigns/audience", methods=["POST"])
+def audience_count():
+    """A cuántos saldría lo que está en el formulario, mientras se elige
+    (octubre de 2026): las etiquetas marcadas y las condiciones. Pide **el mismo
+    permiso que enviar**: si no, un usuario que solo mira podría adivinar los
+    valores de los contactos estrechando la cuenta. Con CSRF y un tope."""
+    account = signed_in()
+    if account is None or may_send():
+        return jsonify({"error": t("send_audience_denied")}), 403
+    if not csrf_ok(request.form.get("csrf_token")):
+        return jsonify({"error": t("error_csrf")}), 400
+    db = get_db()
+    if not rate_limit(db, f"audience:{account['_id']}", *AUDIENCE_PER_MINUTE):
+        return jsonify({"error": t("error_too_many")}), 429
+    filters, problem = read_audience(account)
+    if problem:
+        return jsonify({"error": problem})
+    columns = accounts.fields_of(account)
+    many = contacts.matching_count(db, account["_id"], tags=lists_chosen(account),
+                                   complete=columns,
+                                   audience=audience.query(filters, columns))
+    response = jsonify({"count": many, "text": t("send_audience_count", n=many) if many != 1
+                        else t("send_audience_count_one")})
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @bp.route("/campaigns", methods=["GET", "POST"])
@@ -170,20 +274,41 @@ def index():
     db = get_db()
     errors: dict[str, str] = {}
 
+    rows = None
     if request.method == "POST":
         answer = may_send()
         if answer:
             return answer
-        errors = save(db, account, None)
-        if not errors:
-            return redirect(url_for("campaigns.index", saved=1))
+        rows = typed_rules()
+        # «Agregar condición» y «Quitar», sin JavaScript: se vuelve a dibujar
+        # con lo escrito, sin guardar nada.
+        if not redraw(rows):
+            errors = save(db, account, None)
+            if not errors:
+                return redirect(url_for("campaigns.index", saved=1))
 
     return render_template(
         "campaigns/index.html", section="envios",
         **shared(db, account, errors=errors, form=request.form,
                  saved=bool(request.args.get("saved")),
                  done=request.args.get("done", ""),
-                 removed=bool(request.args.get("deleted"))))
+                 removed=bool(request.args.get("deleted")),
+                 rule_rows=rule_rows(None, rows)))
+
+
+def redraw(rows: list[dict[str, str]]) -> bool:
+    """Si el formulario pidió agregar o quitar una condición (sin JavaScript).
+    Cambia `rows` en su sitio: la vacía del final la agrega `rule_rows()`."""
+    action = request.form.get("rule_action", "")
+    if action == "add":
+        return True
+    if action.startswith("remove:"):
+        try:
+            del rows[int(action.split(":", 1)[1])]
+        except (ValueError, IndexError):
+            pass
+        return True
+    return False
 
 
 # Cómo se arma un correo (octubre de 2026): escrito a mano o con una plantilla
@@ -212,6 +337,7 @@ def save(db, account, campaign) -> dict[str, str]:
     body = request.form.get("mensaje", "").strip() if mode == WRITE else ""
     logo = mode == WRITE and bool(request.form.get("logo")) and bool(accounts.logo_of(account))
     tags = lists_chosen(account)
+    filters, filters_problem = read_audience(account)
     now_wanted = request.form.get("cuando") == "ahora"
     when = accounts.now() if now_wanted else read_when(
         request.form.get("fecha", ""))
@@ -227,6 +353,8 @@ def save(db, account, campaign) -> dict[str, str]:
             errors["mensaje"] = t("single_body_long", n=campaigns.BODY_MAX)
     elif design_id is None or designs.by_id(db, account["_id"], design_id) is None:
         errors["pieza"] = t("send_pick_piece")
+    if filters_problem:
+        errors["condiciones"] = filters_problem
     if when is None:
         errors["fecha"] = t("send_pick_when")
     elif not now_wanted and when <= accounts.now():
@@ -238,14 +366,17 @@ def save(db, account, campaign) -> dict[str, str]:
 
     # Con fecha sale sola a esa hora (octubre de 2026, el proceso en segundo
     # plano); «ahora mismo» sigue pidiendo Enviar y su pantalla que pregunta.
+    filters_text = audience.describe(filters, accounts.fields_of(account))
     if campaign is None:
         campaigns.create(db, account["_id"], subject=subject,
                          design_id=design_id, tags=tags, scheduled_at=when,
-                         body=body, logo=logo, auto_send=not now_wanted)
+                         body=body, logo=logo, auto_send=not now_wanted,
+                         filters=filters, filters_text=filters_text)
     elif not campaigns.update(db, account["_id"], campaign["_id"],
                               subject=subject, design_id=design_id, tags=tags,
                               scheduled_at=when, body=body, logo=logo,
-                              auto_send=not now_wanted):
+                              auto_send=not now_wanted, filters=filters,
+                              filters_text=filters_text):
         return {"form": t("send_already_out")}
     return {}
 
@@ -417,18 +548,21 @@ def edit(raw):
         return redirect(url_for("campaigns.index", done="late"))
 
     errors: dict[str, str] = {}
+    rows = None
     if request.method == "POST":
         answer = may_send()
         if answer:
             return answer
-        errors = save(db, account, found)
-        if not errors:
-            return redirect(url_for("campaigns.index", saved=1))
+        rows = typed_rules()
+        if not redraw(rows):
+            errors = save(db, account, found)
+            if not errors:
+                return redirect(url_for("campaigns.index", saved=1))
 
     return render_template(
         "campaigns/edit.html", section="envios",
         **shared(db, account, errors=errors, form=request.form,
-                 campaign=found,
+                 campaign=found, rule_rows=rule_rows(found, rows),
                  # Vuelve a salir en la hora de quien la mira.
                  when=clock.local(found["scheduled_at"]).strftime(WHEN_FORMAT)))
 
@@ -577,10 +711,7 @@ def send(raw):
                      # plantilla, así que se dice aquí, antes de mandar.
                      sending_from=sender.remitente(account, design),
                      sending_reply=sender.reply_to(account, design),
-                     going=contacts.matching_count(
-                         db, account["_id"],
-                         tags=campaigns.tags_of(found),
-                         complete=accounts.fields_of(account)),
+                     going=going_count(db, account, found),
                      already=runs.times(db, account["_id"], found["_id"])))
 
     if not csrf_ok(request.form.get("csrf_token")):
@@ -609,6 +740,8 @@ def send(raw):
         campaigns.release(db, account["_id"], found["_id"], by)
     if result["blocked"] == ["busy"]:
         return redirect(url_for("campaigns.index", done="busy"))
+    if result["blocked"] == ["filters"]:
+        return redirect(url_for("campaigns.index", done="filters"))
     if result["blocked"]:
         return redirect(url_for("campaigns.index", done="blocked"))
     return redirect(url_for("campaigns.index",

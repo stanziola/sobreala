@@ -14,9 +14,13 @@
 <ul class="counts">
   <li><span>{{ t('send_confirm_list') }}</span>
     <b>{{ tags_of(campaign)|join(' · ') or everyone }} ·
-      {% if going == 0 %}{{ t('send_confirm_going_none') }}
+      {% if going is none %}{{ t('send_blocked_filters') }}
+      {% elif going == 0 %}{{ t('send_confirm_going_none') }}
       {% elif going == 1 %}{{ t('send_confirm_going_one') }}
       {% else %}{{ t('send_confirm_going', n=going) }}{% endif %}</b></li>
+  {% if campaign.filters_text %}
+  <li><span>{{ t('send_confirm_conditions') }}</span><b>{{ campaign.filters_text }}</b></li>
+  {% endif %}
   <li><span>{{ t('send_confirm_piece') }}</span>
     <b>{{ piece.name if piece else t('send_blocked_piece') }}</b></li>
   {#- Los elige la plantilla (octubre de 2026): aquí se comprueban antes de
@@ -50,7 +54,7 @@
 {% endif %}
 
 <div class="row">
-  {% if not blocked and going > 0 and piece %}
+  {% if not blocked and going and piece %}
   <form method="post" action="{{ url_for('campaigns.send', raw=campaign._id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn" type="submit">{{ t('send_confirm_yes') }}</button>

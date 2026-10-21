@@ -1,6 +1,7 @@
 """Las campañas por la API (octubre de 2026): las mismas de Masivo.
 
-Una campaña sale a tus contactos (todos, o los de unas etiquetas) con una
+Una campaña sale a tus contactos (todos, o los de unas etiquetas, y si se
+quiere solo a los que cumplan unas condiciones sobre sus columnas) con una
 plantilla o un texto, y se manda las veces que haga falta. Por la API se arma,
 se cambia y se borra, y se manda ya o se programa: **la manda el proceso en
 segundo plano**, por tandas, así la respuesta llega enseguida (202) y la
@@ -24,6 +25,7 @@ from models import account as accounts
 from models import campaign as campaigns
 from models import contact as contacts
 from models import design as designs
+from services import audience as conditions
 from services import sender
 
 TAGS_MAX = 20
@@ -38,7 +40,10 @@ def campaign_shape(one: dict) -> dict:
             "source": "text" if campaigns.written(one) else "template",
             "template_id": str(one["design_id"]) if one.get("design_id") else None,
             "text": one.get("body") or None, "logo": bool(one.get("logo")),
-            "tags": campaigns.tags_of(one), "status": one.get("status"),
+            "tags": campaigns.tags_of(one),
+            "filters": campaigns.filters_of(one),
+            "filters_text": one.get("filters_text") or None,
+            "status": one.get("status"),
             "auto_send": bool(one.get("auto_send")),
             "scheduled_at": iso(one.get("scheduled_at")),
             "progress": {"position": one.get("position", 0), "total": one.get("total", 0),
@@ -58,9 +63,33 @@ def find_campaign(db, company, raw: str) -> dict:
     return found
 
 
+def chosen(company, found):
+    """La condición de Mongo de sus condiciones. `conditions.Stale` si una ya
+    no vale con las columnas de hoy."""
+    return conditions.query(campaigns.filters_of(found), accounts.fields_of(company))
+
+
+def stale(company, found) -> bool:
+    try:
+        chosen(company, found)
+    except conditions.Stale:
+        return True
+    return False
+
+
 def audience(db, company, found) -> int:
+    """A cuántos saldría hoy. Con una condición que ya no vale, a nadie."""
+    try:
+        wanted = chosen(company, found)
+    except conditions.Stale:
+        return 0
     return contacts.matching_count(db, company["_id"], tags=campaigns.tags_of(found),
-                                   complete=accounts.fields_of(company))
+                                   complete=accounts.fields_of(company), audience=wanted)
+
+
+def blocked_for(company, found) -> list[str]:
+    """Lo que la frenaría: lo de la cuenta y, de ella, una condición vieja."""
+    return sender.blocked(company) + (["filters"] if stale(company, found) else [])
 
 
 def not_sending(found) -> None:
@@ -74,7 +103,8 @@ def content_from(db, company, data: dict, fields: Fields, found=None) -> dict:
     out = {"subject": (found or {}).get("subject", ""),
            "design_id": (found or {}).get("design_id"),
            "body": (found or {}).get("body", ""), "logo": bool((found or {}).get("logo")),
-           "tags": campaigns.tags_of(found) if found else []}
+           "tags": campaigns.tags_of(found) if found else [],
+           "filters": campaigns.filters_of(found)}
     if fields.has("subject") or found is None:
         subject = fields.text("subject", max_len=campaigns.SUBJECT_MAX, required=True)
         if subject and "subject" not in fields.errors and not one_line(subject):
@@ -104,6 +134,14 @@ def content_from(db, company, data: dict, fields: Fields, found=None) -> dict:
             if unknown:
                 fields.errors["tags"] = t("api_contacts_unknown_tags", what=", ".join(unknown[:5]))
             out["tags"] = list(dict.fromkeys(wanted))
+    if fields.has("filters"):
+        # Las condiciones (octubre de 2026), validadas como en Masivo; `null`
+        # las quita. Un problema por regla, con su número.
+        clean, problems = conditions.parse(data.get("filters"), accounts.fields_of(company))
+        for index, why in problems:
+            name = f"filters.rules[{index}]" if index >= 0 else "filters"
+            fields.errors.setdefault(name, conditions.problem_text(index, why))
+        out["filters"] = clean
     return out
 
 
@@ -142,7 +180,7 @@ def get_campaign(campaign_id):
     db = get_db()
     found = find_campaign(db, company, campaign_id)
     return ok({**campaign_shape(found), "audience": audience(db, company, found),
-               "blocked": blocked_shape(sender.blocked(company))})
+               "blocked": blocked_shape(blocked_for(company, found))})
 
 
 # ------------------------------------------------------------ cambiar
@@ -151,8 +189,8 @@ def get_campaign(campaign_id):
 def create_campaign():
     """Guardarla. Con `scheduled_at` queda programada y sale sola a esa hora;
     sin él espera a que la mandes."""
-    data = body({"subject", "template_id", "text", "logo", "tags", "scheduled_at"},
-                required=("subject",))
+    data = body({"subject", "template_id", "text", "logo", "tags", "filters",
+                 "scheduled_at"}, required=("subject",))
     fields = Fields(data)
     company = account()
     db = get_db()
@@ -162,7 +200,10 @@ def create_campaign():
     new_id = campaigns.create(db, company["_id"], subject=made["subject"],
                               design_id=made["design_id"], tags=made["tags"],
                               scheduled_at=when or accounts.now(), body=made["body"],
-                              logo=made["logo"], auto_send=when is not None)
+                              logo=made["logo"], auto_send=when is not None,
+                              filters=made["filters"],
+                              filters_text=conditions.describe(
+                                  made["filters"], accounts.fields_of(company)))
     return ok(campaign_shape(campaigns.by_id(db, company["_id"], new_id)), 201)
 
 
@@ -170,7 +211,7 @@ def create_campaign():
 def update_campaign(campaign_id):
     """Cambiar el asunto, lo que dice o a quién va. La hora se cambia con
     `schedule`. Una que ya salió se puede corregir para la próxima vez."""
-    data = body({"subject", "template_id", "text", "logo", "tags"})
+    data = body({"subject", "template_id", "text", "logo", "tags", "filters"})
     company = account()
     db = get_db()
     found = find_campaign(db, company, campaign_id)
@@ -178,11 +219,16 @@ def update_campaign(campaign_id):
     fields = Fields(data)
     made = content_from(db, company, data, fields, found)
     fields.check()
+    # La frase se escribe otra vez con los nombres de hoy, también si las
+    # condiciones no cambiaron.
     if not campaigns.update(db, company["_id"], found["_id"], subject=made["subject"],
                             design_id=made["design_id"], tags=made["tags"],
                             scheduled_at=found.get("scheduled_at") or accounts.now(),
                             body=made["body"], logo=made["logo"],
-                            auto_send=bool(found.get("auto_send"))):
+                            auto_send=bool(found.get("auto_send")),
+                            filters=made["filters"],
+                            filters_text=conditions.describe(
+                                made["filters"], accounts.fields_of(company))):
         fail("campaign_sending", 409)
     return ok(campaign_shape(campaigns.by_id(db, company["_id"], found["_id"])))
 
@@ -204,7 +250,7 @@ def delete_campaign(campaign_id):
 def simulated(db, company, found) -> dict:
     """Lo que diría una llave de verdad, sin cambiar nada."""
     return {"status": "simulated", "audience": audience(db, company, found),
-            "blocked": blocked_shape(sender.blocked(company))}
+            "blocked": blocked_shape(blocked_for(company, found))}
 
 
 @api_route("/campaigns/<campaign_id>/send", methods=("POST",), scope="campaigns:send",
@@ -219,7 +265,7 @@ def send_campaign(campaign_id):
     if is_test():
         return ok(simulated(db, company, found))
     not_sending(found)
-    blocked = sender.blocked(company)
+    blocked = blocked_for(company, found)
     if blocked:
         fail("cannot_send", 409, extra={"blocked": blocked_shape(blocked)})
     moment = accounts.now()

@@ -88,6 +88,17 @@ guarda nada; mandar o programar una campaña dice a cuántos saldría.
   `external_id_conflict`.
 - **Listas** (`fields.LIST`): ver `docs/contactos.md`.
 
+## Las condiciones de una campaña (`services/audience.py`)
+
+`POST` y `PATCH /campaigns` aceptan `filters` (`match` y `rules`, hasta 10), con
+la misma validación que Masivo: un 422 dice qué regla y por qué
+(`filters.rules[1]`), y `null` las quita. `GET` devuelve `filters` y
+`filters_text`, y `audience` ya las cuenta, también al simular con una clave de
+prueba. Una condición que dejó de valer (se borró la columna o cambió su tipo)
+sale en `blocked` como `filters`, y mandar responde 409 `cannot_send`. Los
+envíos de `/sends` traen la frase. La guía «Condiciones de una campaña» de
+`api_spec.py` explica la forma de cada regla; el detalle, en `docs/envios.md`.
+
 ## Plantillas (`services/pieces.py`)
 
 Lo que hacen el editor y la API con un lienzo vive en `services/pieces.py`,

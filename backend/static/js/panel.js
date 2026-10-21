@@ -1543,3 +1543,152 @@
   tour.addEventListener("focusout", function () { held = false; });
   plan();
 })();
+
+/* Las condiciones del masivo (octubre de 2026). Sin este guion el formulario
+   hace lo mismo volviendo a dibujarse: salen todos los operadores agrupados
+   por tipo, y «Agregar condición» y «Quitar» mandan el formulario sin guardar.
+   Con él, cada fila ofrece solo los operadores de su columna y el campo del
+   valor de su tipo, agregar y quitar no recargan, y «a cuántos saldría» se
+   pide mientras se elige (POST con CSRF, el mismo permiso que enviar). */
+(function () {
+  var box = document.querySelector("[data-audience-rules]");
+  if (!box) return;
+  var list = box.querySelector("[data-audience-list]");
+  if (!list) return;
+  var form = box.closest("form");
+  var add = box.querySelector("[data-audience-add]");
+  var count = box.querySelector("[data-audience-count]");
+  var max = parseInt(box.getAttribute("data-max"), 10) || 10;
+  var NO_VALUE = { yes: true, no: true };
+
+  // Los operadores de cada tipo, leídos una vez de los grupos del primer
+  // desplegable: el servidor ya los escribió con sus nombres.
+  var groups = {};
+  var first = list.querySelector("[data-audience-op]");
+  Array.prototype.forEach.call(first.querySelectorAll("optgroup"), function (g) {
+    groups[g.getAttribute("data-kind")] = Array.prototype.map.call(
+      g.querySelectorAll("option"), function (o) { return [o.value, o.textContent]; });
+  });
+  // Una fila vacía para «Agregar», copiada antes de tocar nada.
+  var blank = list.lastElementChild.cloneNode(true);
+  blank.querySelector("[data-audience-field]").value = "";
+  blank.querySelector("[data-audience-op]").selectedIndex = 0;
+  blank.querySelector("[data-audience-value]").value = "";
+  blank.querySelector("[data-audience-value]").setAttribute("value", "");
+
+  function kindOf(row) {
+    var field = row.querySelector("[data-audience-field]");
+    var picked = field.options[field.selectedIndex];
+    return picked ? picked.getAttribute("data-kind") || "" : "";
+  }
+
+  // Deja en el desplegable solo los operadores de su columna. El que estaba
+  // elegido se queda si sigue valiendo para el tipo nuevo.
+  function fit(row) {
+    var kind = kindOf(row);
+    var group = kind === "count_number" ? "count" : kind;
+    var op = row.querySelector("[data-audience-op]");
+    var value = row.querySelector("[data-audience-value]");
+    var wanted = op.value;
+    var ops = groups[group] || groups.number || [];
+    op.textContent = "";
+    ops.forEach(function (pair) {
+      var o = document.createElement("option");
+      o.value = pair[0];
+      o.textContent = pair[1];
+      if (pair[0] === wanted) o.selected = true;
+      op.appendChild(o);
+    });
+    var off = !kind || NO_VALUE[op.value];
+    value.classList.toggle("is-off", !!off);
+    value.tabIndex = off ? -1 : 0;
+    if (kind === "date") {
+      if (value.type !== "date") value.type = "date";
+    } else {
+      if (value.type !== "text") value.type = "text";
+      value.inputMode = kind === "number" || kind === "count_number" ? "decimal"
+        : kind === "count" ? "numeric" : "text";
+    }
+  }
+
+  function refreshButtons() {
+    var rows = list.querySelectorAll("[data-audience-row]");
+    if (add) add.hidden = rows.length >= max;
+  }
+
+  Array.prototype.forEach.call(list.querySelectorAll("[data-audience-row]"), fit);
+  // Con el guion, agregar y quitar no mandan el formulario.
+  Array.prototype.forEach.call(list.querySelectorAll("[data-audience-remove]"), function (b) {
+    b.type = "button";
+  });
+  if (add) add.type = "button";
+  refreshButtons();
+
+  list.addEventListener("change", function (e) {
+    var row = e.target.closest("[data-audience-row]");
+    if (!row) return;
+    if (e.target.matches("[data-audience-field], [data-audience-op]")) fit(row);
+    later();
+  });
+  list.addEventListener("input", function (e) {
+    if (e.target.matches("[data-audience-value]")) later();
+  });
+  list.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-audience-remove]");
+    if (!b) return;
+    var row = b.closest("[data-audience-row]");
+    // Siempre queda una fila, vacía si hace falta, para poder elegir.
+    if (list.querySelectorAll("[data-audience-row]").length > 1) {
+      row.parentNode.removeChild(row);
+    } else {
+      var fresh = blank.cloneNode(true);
+      fresh.querySelector("[data-audience-remove]").type = "button";
+      list.replaceChild(fresh, row);
+      fit(fresh);
+    }
+    refreshButtons();
+    later();
+  });
+  if (add) add.addEventListener("click", function () {
+    if (list.querySelectorAll("[data-audience-row]").length >= max) return;
+    var fresh = blank.cloneNode(true);
+    fresh.querySelector("[data-audience-remove]").type = "button";
+    list.appendChild(fresh);
+    fit(fresh);
+    refreshButtons();
+    fresh.querySelector("[data-audience-field]").focus();
+  });
+
+  // «A cuántos saldría»: las etiquetas marcadas y las condiciones, nada más.
+  if (!count || !form || !window.fetch || !window.FormData) return;
+  var timer = null;
+  var asked = 0;
+  function later() {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(ask, 450);
+  }
+  function ask() {
+    var body = new FormData();
+    var wanted = { csrf_token: 1, lista: 1, cumplan: 1, rule_field: 1, rule_op: 1, rule_value: 1 };
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (!el.name || !wanted[el.name]) return;
+      if ((el.type === "checkbox" || el.type === "radio") && !el.checked) return;
+      body.append(el.name, el.value);
+    });
+    var mine = ++asked;
+    fetch(box.getAttribute("data-audience-url"), { method: "POST", body: body, credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (answer) {
+        if (mine !== asked) return;
+        count.textContent = answer.text || "";
+        count.hidden = !answer.text;
+      })
+      .catch(function () {
+        if (mine === asked) count.hidden = true;
+      });
+  }
+  Array.prototype.forEach.call(form.querySelectorAll("[name=lista], [name=cumplan]"), function (el) {
+    el.addEventListener("change", later);
+  });
+  ask();
+})();

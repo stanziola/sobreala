@@ -737,7 +737,10 @@ def field_type():
     wrong = contacts.values_not_of_type(db, account["_id"], key, kind)
     if wrong:
         return redirect(url_for("contacts.fields", error="type", n=wrong))
-    accounts.set_field_type(db, account["_id"], key, kind)
+    if accounts.set_field_type(db, account["_id"], key, kind):
+        # Lo guardado, como lo guarda el tipo nuevo (octubre de 2026): si no,
+        # las condiciones de un envío no lo comparan bien.
+        contacts.normalize_field(db, account["_id"], key, kind)
     return redirect(url_for("contacts.fields", saved=1))
 
 

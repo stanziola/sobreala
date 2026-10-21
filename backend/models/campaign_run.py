@@ -43,6 +43,9 @@ def record(db, campaign: dict[str, Any], *, run_id=None) -> Any:
         # Copiados a propósito: ver más arriba.
         "subject": campaign.get("subject", ""),
         "tags": list(campaign.get("tags") or []),
+        # Las condiciones y su frase, como estaban al salir (octubre de 2026).
+        "filters": campaign.get("filters") or None,
+        "filters_text": campaign.get("filters_text") or "",
         # El correo individual: a quién, para decirlo en vez de la lista.
         "to": campaign.get("to", ""),
         "total": campaign.get("total", 0),

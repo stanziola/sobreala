@@ -32,7 +32,9 @@
           <b>{{ one.subject }}</b><br>
           <span class="pill">{{ t('sent_kind_single') if single else t('sent_kind_bulk') }}</span>
           <span class="table__quiet">
-            {% if single %}{{ one.to }}{% else %}{{ (one.tags or [])|join(' · ') or everyone }}{% endif %}
+            {% if single %}{{ one.to }}{% else %}
+            {%- set who = (one.tags or [])|join(' · ') or everyone %}
+            {{- t('send_audience_line', who=who, conditions=one.filters_text) if one.filters_text else who }}{% endif %}
             {% if one.skipped %}· {{ t('send_state_skipped', n=one.skipped) }}{% endif %}
             {% if one.failed %}· {{ t('send_state_failed', n=one.failed) }}{% endif %}</span>
         </td>

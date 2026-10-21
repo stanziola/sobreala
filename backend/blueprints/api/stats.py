@@ -73,6 +73,7 @@ def filters(company) -> dict:
 def send_shape(one: dict, counted: dict) -> dict:
     return {"id": str(one["_id"]), "campaign_id": str(one["campaign_id"]),
             "subject": one.get("subject", ""), "tags": list(one.get("tags") or []),
+            "filters_text": one.get("filters_text") or None,
             "single": bool(one.get("to")), "to": one.get("to") or None,
             "total": one.get("total", 0), "sent": one.get("sent", 0),
             "skipped": one.get("skipped", 0), "failed": one.get("failed", 0),

@@ -24,6 +24,7 @@ Tres decisiones que se notan en todo el archivo:
 from __future__ import annotations
 
 import json
+import math
 import re
 import secrets
 import unicodedata
@@ -116,10 +117,15 @@ def parse(raw: str, kind: str) -> str | None:
         return ""
     if kind == NUMBER:
         plain = value.replace(",", "").replace(" ", "")
-        plain = re.sub(r"^[$B/.]+", "", plain)
+        # El símbolo de la moneda delante: «B/.» o «$». Solo eso: un punto
+        # suelto es el de los decimales, y «.5» es medio, no cinco.
+        plain = re.sub(r"^(?:B/\.?|\$)", "", plain)
         try:
             number = float(plain)
         except ValueError:
+            return None
+        # «inf» y «nan» los entiende float(), pero no son un monto.
+        if not math.isfinite(number):
             return None
         # Sin decimales cuando no los tiene: «3» y no «3.0».
         return str(int(number)) if number == int(number) else str(number)

@@ -119,9 +119,15 @@ def create_single(db, account_id, *, subject: str, body: str, contact_id, to: st
     }).inserted_id
 
 
+def filters_of(campaign: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Sus condiciones (octubre de 2026), o None: sale a sus etiquetas y ya."""
+    return (campaign or {}).get("filters") or None
+
+
 def create(db, account_id, *, subject: str, design_id, tags: list[str],
            scheduled_at: datetime, body: str = "", logo: bool = False,
-           auto_send: bool = False) -> Any:
+           auto_send: bool = False, filters: dict[str, Any] | None = None,
+           filters_text: str = "") -> Any:
     """Dejar la campaña en cola. Devuelve su id.
 
     Sale de una plantilla (`design_id`) o, desde octubre de 2026, de un texto
@@ -136,6 +142,12 @@ def create(db, account_id, *, subject: str, design_id, tags: list[str],
         # Vacío es «todos mis contactos». Se guardan los nombres de las
         # etiquetas y no sus posiciones: las etiquetas se pueden reordenar.
         "tags": list(tags or []),
+        # Las condiciones sobre las columnas (`services/audience.py`), ya
+        # validadas; None es solo las etiquetas. Con su frase, que se escribe
+        # al guardar y se copia a cada envío (`campaign_runs`): la columna se
+        # puede borrar después, y el historial tiene que seguir leyéndose.
+        "filters": filters or None,
+        "filters_text": filters_text if filters else "",
         "scheduled_at": scheduled_at,
         "auto_send": bool(auto_send),
         "status": SCHEDULED,
@@ -181,7 +193,8 @@ def editable(campaign: dict[str, Any] | None) -> bool:
 
 def update(db, account_id, campaign_id, *, subject: str, design_id,
            tags: list[str], scheduled_at: datetime, body: str = "",
-           logo: bool = False, auto_send: bool = False) -> bool:
+           logo: bool = False, auto_send: bool = False,
+           filters: dict[str, Any] | None = None, filters_text: str = "") -> bool:
     """Cambiarla. False si en este momento está saliendo.
 
     El estado va en la consulta y no en una comprobación previa: entre mirar y
@@ -193,7 +206,9 @@ def update(db, account_id, campaign_id, *, subject: str, design_id,
         {"$set": {"subject": clean_subject(subject), "design_id": design_id,
                   "body": "" if design_id else body[:BODY_MAX],
                   "logo": bool(logo) and not design_id,
-                  "tags": list(tags or []), "scheduled_at": scheduled_at,
+                  "tags": list(tags or []), "filters": filters or None,
+                  "filters_text": filters_text if filters else "",
+                  "scheduled_at": scheduled_at,
                   "auto_send": bool(auto_send), "updated_at": now()},
          # Una campaña de antes llevaba una sola etiqueta en otro campo. Se
          # quita al guardar, o seguiría mandando por su cuenta.

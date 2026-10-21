@@ -3474,6 +3474,97 @@ TEXTS = {
     "canvas_text_grows": "Este texto lleva variables: en el correo la caja crece con el "
                          "largo de cada valor, y empuja lo de abajo.",
     "canvas_fit_text": "Ajustar la caja al texto",
+
+    # Las condiciones del masivo (octubre de 2026, `services/audience.py`):
+    # sobre las columnas de cada contacto, además de las etiquetas.
+    "send_conditions": "Condiciones",
+    "send_conditions_hint": "Opcional. Sale solo a quien lleve alguna de las "
+                            "etiquetas marcadas y además cumpla estas "
+                            "condiciones sobre sus columnas.",
+    "send_conditions_none": "Para filtrar por un dato (un monto, una fecha, una "
+                            "ciudad) hace falta una columna en Contactos.",
+    "send_conditions_none_link": "Crear una columna",
+    "send_match_all": "Que cumplan todas",
+    "send_match_any": "Que cumplan alguna",
+    "send_rule_field": "Columna",
+    "send_rule_field_pick": "Elige una columna",
+    "send_rule_op": "Operador",
+    "send_rule_value": "Valor",
+    "send_rule_item_hint": "En una lista, «alguna fila» mira cada fila por "
+                           "separado y la suma junta las de todas.",
+    "send_add_condition": "Agregar condición",
+    "send_remove_condition": "Quitar",
+    "send_audience_count": "Saldría a {n} contactos.",
+    "send_audience_count_one": "Saldría a 1 contacto.",
+    "send_audience_denied": "Tu usuario no puede enviar campañas.",
+    "send_audience_line": "{who}, si {conditions}",
+    "send_confirm_conditions": "Condiciones",
+    "send_blocked_filters": "Una de sus condiciones ya no vale: se borró o "
+                            "cambió una columna. Edita la campaña para "
+                            "corregirla.",
+
+    # Los operadores, como se eligen en la pantalla.
+    "audience_label_eq": "es igual a",
+    "audience_label_ne": "no es igual a",
+    "audience_label_gt": "es mayor que",
+    "audience_label_gte": "es mayor o igual que",
+    "audience_label_lt": "es menor que",
+    "audience_label_lte": "es menor o igual que",
+    "audience_label_contains": "contiene",
+    "audience_label_not_contains": "no contiene",
+    "audience_label_starts": "empieza con",
+    "audience_label_on": "es el día",
+    "audience_label_before": "es antes del",
+    "audience_label_after": "es después del",
+    "audience_label_yes": "es sí",
+    "audience_label_no": "es no",
+    "audience_group_count": "Cantidad de filas o suma",
+
+    # Lo que se puede elegir de una lista.
+    "audience_choice_rows": "{field}: cantidad de filas",
+    "audience_choice_any": "{field}: alguna fila con {item}",
+    "audience_choice_sum": "{field}: suma de {item}",
+
+    # La frase que se lee en Masivo, al confirmar, en Enviados y en la API.
+    "audience_op_eq": "{field} es igual a {value}",
+    "audience_op_ne": "{field} no es igual a {value}",
+    "audience_op_gt": "{field} es mayor que {value}",
+    "audience_op_gte": "{field} es mayor o igual que {value}",
+    "audience_op_lt": "{field} es menor que {value}",
+    "audience_op_lte": "{field} es menor o igual que {value}",
+    "audience_op_contains": "{field} contiene {value}",
+    "audience_op_not_contains": "{field} no contiene {value}",
+    "audience_op_starts": "{field} empieza con {value}",
+    "audience_op_on": "{field} es el {value}",
+    "audience_op_before": "{field} es antes del {value}",
+    "audience_op_after": "{field} es después del {value}",
+    "audience_op_yes": "{field} es sí",
+    "audience_op_no": "{field} es no",
+    "audience_rows_eq": "{field}: la cantidad de filas es igual a {n}",
+    "audience_rows_ne": "{field}: la cantidad de filas no es igual a {n}",
+    "audience_rows_gt": "{field}: la cantidad de filas es mayor que {n}",
+    "audience_rows_gte": "{field}: la cantidad de filas es mayor o igual que {n}",
+    "audience_rows_lt": "{field}: la cantidad de filas es menor que {n}",
+    "audience_rows_lte": "{field}: la cantidad de filas es menor o igual que {n}",
+    "audience_any": "{field}: en alguna fila, {test}",
+    "audience_sum": "{field}: la suma de {test}",
+    "audience_join_all": " y ",
+    "audience_join_any": " o ",
+
+    # Por qué una condición no vale.
+    "audience_row_problem": "Condición {n}: {why}",
+    "audience_bad_rule": "no se entiende.",
+    "audience_bad_field": "esa columna no existe.",
+    "audience_bad_measure": "de una lista se elige la cantidad de filas, alguna "
+                            "fila o la suma de un dato.",
+    "audience_bad_op": "ese operador no va con esa columna.",
+    "audience_bad_count": "la cantidad de filas es un número entero, de 0 a {rows}.",
+    "audience_bad_item": "ese dato no está en la lista.",
+    "audience_bad_sum": "solo se suman los datos de tipo número.",
+    "audience_bad_value": "falta el valor, o no es del tipo de la columna.",
+    "audience_bad_shape": "Las condiciones no se entienden.",
+    "audience_bad_match": "Elige si se cumplen todas o alguna.",
+    "audience_too_many": "Son como mucho {n} condiciones.",
 }
 
 

@@ -203,6 +203,57 @@ otra fecha no se rearma sola: se vuelve a mandar con Enviar o con `schedule` por
 la API. Al desplegar el worker, las de antes con fecha futura pasaron a salir
 solas y las que ya habían pasado su hora no (`campaigns.migrate_auto_send`).
 
+### Las condiciones (octubre de 2026)
+
+**Además de sus etiquetas, una campaña puede salir solo a quien cumpla unas
+condiciones sobre sus columnas**: un monto mayor que 100, una ciudad que empieza
+con «San», un vencimiento antes del 1 de noviembre, un sí; y de una lista (las
+transacciones de un socio), cuántas filas tiene, si alguna fila cumple algo con
+uno de sus datos o la suma de un dato numérico. Se cumplen **todas** o
+**alguna**, hasta 10, y van en `campaigns.filters` (`match` y `rules`) con su
+frase en `filters_text`. Etiquetas y condiciones van juntas: «quien lleve alguna
+de estas etiquetas **y** cumpla las condiciones».
+
+**Todo pasa por `services/audience.py`**: `parse()` valida contra las columnas
+de la cuenta (la clave existe, el operador es de su tipo, el valor pasa por
+`fields.parse` y cada parte de la regla llega con su tipo), `query()` arma la
+consulta que se suma al `$and` de `contact._matching()`, y `describe()` escribe
+la frase. Las usan el panel, la cuenta en vivo, el envío por tandas, el proceso
+en segundo plano y la API, así que no pueden contar distinto.
+
+**Cómo compara cada tipo**, porque todo se guarda como texto: las fechas como
+`AAAA-MM-DD`, que ordena bien; los números con `$expr` y `$convert` a decimal,
+no a double (0.1 + 0.2 da 0.3 exacto), con el valor de la regla redondeado a
+las 34 cifras que caben; el texto con una expresión escapada y sin mayúsculas,
+así un punto es un punto. **Un valor vacío, que falta o mal escrito no cumple
+nunca**, ni «menor que» ni «distinto de»: en Mongo lo que falta es menor que
+cualquier número y `$ne` lo acepta, así que cada comparación lleva su guarda.
+Un contacto sin la lista tiene 0 filas y suma 0.
+
+**Una condición que dejó de valer frena la campaña, no la agranda.** Si después
+de guardarla se borra la columna, cambia su tipo o la lista pierde el dato,
+`query()` lanza `Stale`: la pantalla de confirmar lo dice y no ofrece mandar,
+`sender.run()` devuelve `blocked: ["filters"]`, el proceso en segundo plano la
+deja esperando con ese motivo (`waiting`) y la API responde 409. Saltarla en
+silencio la mandaría a más gente de la elegida.
+
+**La pantalla funciona sin JavaScript**: salen las guardadas y una fila vacía,
+«Agregar condición» y «Quitar» son botones del formulario que lo vuelven a
+dibujar sin guardar (`rule_action`), y el operador lista todos, agrupados por
+tipo; el servidor dice si uno no va con su columna. Con JavaScript cada fila
+ofrece solo los de su columna, el campo del valor es de su tipo, y **«a cuántos
+saldría» se pide mientras se elige** (`POST /campaigns/audience`, con CSRF, 60
+por minuto y **el permiso de enviar**: con solo mirar se podría estrechar la
+cuenta hasta adivinar el monto de cada contacto). Un botón escondido al
+principio del formulario hace que Intro guarde, en vez de pulsar «Quitar» de la
+primera fila. La cifra cuenta, como la de confirmar, a los suprimidos y a las
+direcciones inválidas, que al enviar se saltan.
+
+**La frase se copia a cada envío** (`campaign_runs.filters_text`), como el
+asunto: la columna se puede borrar después y el historial tiene que seguir
+leyéndose. La enseñan Masivo, confirmar, Enviados y el detalle de un envío;
+Estadísticas no enseña la audiencia, y no se le agregó.
+
 ### `campaign_runs`
 Un documento **cada vez que una campaña sale**: la cuenta, la campaña, el asunto
 y la lista copiados, cuándo empezó y terminó, cuántos salieron, se saltaron y

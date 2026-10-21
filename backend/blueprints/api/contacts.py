@@ -776,7 +776,8 @@ def update_field(key):
     wrong = contacts.values_not_of_type(db, company["_id"], found["key"], kind)
     if wrong:
         fail("field_values", 409, extra={"contacts": wrong}, n=wrong)
-    accounts.set_field_type(db, company["_id"], found["key"], kind)
+    if accounts.set_field_type(db, company["_id"], found["key"], kind):
+        contacts.normalize_field(db, company["_id"], found["key"], kind)
     filled = contacts.count_by_field(db, company["_id"], [found])
     return ok(field_shape({**found, "type": kind}, filled))
 

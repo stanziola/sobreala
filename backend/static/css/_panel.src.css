@@ -269,6 +269,9 @@ a.menu__item:hover, button.menu__item:hover { background: var(--color-hover); te
 .wrap--table input, .wrap--table select, .wrap--table textarea {
   max-width: 560px;
 }
+/* La caja de una contraseña con su ojo: con el mismo tope, o el ojo se queda
+   en el borde de la tarjeta, lejos del campo. */
+.wrap--wide .field, .wrap--table .field { max-width: 560px; }
 
 .card {
   padding: clamp(22px, 4vw, 32px); border-radius: 16px;
@@ -2226,3 +2229,27 @@ button.mark:hover { border-color: var(--color-accent); color: var(--color-accent
 .row-form__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .row-form__actions .btn { margin-top: 0; }
 .row-delete .move__list { min-width: 200px; }
+
+/* ---------------------------------------- las condiciones del masivo
+   Octubre de 2026. Una fila por condición (columna, operador, valor y Quitar),
+   y en un teléfono la columna arriba y lo demás debajo. `min-width: 0` porque
+   un fieldset no se encoge por debajo de lo que trae dentro, y el desplegable
+   de las columnas sacaba la pantalla de lado en un teléfono. */
+.audience { margin: 18px 0 0; padding: 0; border: 0; min-width: 0; }
+.audience legend { padding: 0; }
+.audience__match { display: flex; flex-wrap: wrap; gap: 0 22px; }
+.audience__match .check { margin-top: 10px; }
+.audience__list { display: grid; gap: 8px; margin-top: 12px; }
+.audience__row {
+  display: grid; gap: 8px; align-items: center;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+.audience__row .btn { margin-top: 0; }
+/* El sí y el no no llevan valor: su casilla se aparta sin mover lo demás. */
+.audience__row .is-off { visibility: hidden; }
+.audience [data-audience-add] { display: inline-block; width: auto; margin-top: 10px; }
+.audience__count { margin: 10px 0 0; font-weight: 600; font-size: .92rem; }
+@media (max-width: 640px) {
+  .audience__row { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; }
+  .audience__row [data-audience-field] { grid-column: 1 / -1; }
+}

@@ -254,6 +254,37 @@ GUIDES: list[dict[str, Any]] = [
      "code": "*|#TRANSACCIONES|*\n*|FECHA|*: *|DESCRIPCION|*, B/. *|MONTO|*\n"
              "*|/TRANSACCIONES|*\n*|^TRANSACCIONES|*\n"
              "Este mes no tuviste movimientos.\n*|/TRANSACCIONES|*"},
+    {"id": "condiciones", "title": "Condiciones de una campaña",
+     "paragraphs": [
+         "Además de sus etiquetas, una campaña puede salir solo a quienes cumplan "
+         "unas **condiciones sobre sus columnas**: `filters` lleva `match` (`all`, "
+         "que se cumplan todas, o `any`, alguna) y `rules`, hasta 10. Sin "
+         "`filters`, o con `null`, sale a sus etiquetas como siempre.",
+         "Cada regla nombra la columna por su clave (`field`), el operador (`op`) y "
+         "el valor (`value`), que se lee como los de los contactos: un número puede "
+         "venir con comas o con B/., y una fecha como 2026-10-01 o 01/10/2026. Los "
+         "operadores dependen del tipo de la columna: número, `eq`, `ne`, `gt`, "
+         "`gte`, `lt` y `lte`; texto (sin importar mayúsculas), `eq`, `ne`, "
+         "`contains`, `not_contains` y `starts`; fecha, `on`, `before` y `after`; "
+         "sí o no, `yes` y `no`, sin valor.",
+         "De una lista se mira una de tres cosas con `measure`: `rows` compara la "
+         "cantidad de filas con un entero; `any`, que alguna fila cumpla una "
+         "condición con uno de sus datos (`item`), con los operadores de su tipo; y "
+         "`sum`, la suma de un dato de tipo número de todas las filas. Un valor "
+         "vacío o mal escrito en un contacto no cumple nunca ninguna condición.",
+         "Si después se borra la columna o cambia su tipo, la campaña no sale: "
+         "`blocked` y `waiting` dicen `filters` hasta que la corrijas. "
+         "`filters_text` es la frase que se lee en el Dashboard y en sus envíos.",
+     ],
+     "code": "{\"match\": \"all\", \"rules\": [\n"
+             "  {\"field\": \"MONTO\", \"op\": \"gte\", \"value\": \"100\"},\n"
+             "  {\"field\": \"TRANSACCIONES\", \"measure\": \"rows\", \"op\": \"gt\", "
+             "\"value\": \"3\"},\n"
+             "  {\"field\": \"TRANSACCIONES\", \"measure\": \"any\", \"item\": \"FECHA\",\n"
+             "   \"op\": \"after\", \"value\": \"2026-10-01\"},\n"
+             "  {\"field\": \"TRANSACCIONES\", \"measure\": \"sum\", \"item\": \"MONTO\",\n"
+             "   \"op\": \"gte\", \"value\": \"500\"}\n"
+             "]}"},
     {"id": "clases", "title": "Transaccional o promocional",
      "paragraphs": [
          "Cada correo dice qué es en `type`, y eso decide sus reglas. Elegir mal "
@@ -382,7 +413,8 @@ _CANVAS = {"v": 2, "h": 420, "bg": "#FFFFFF", "items": [
      "radius": 8}]}
 _CAMPAIGN = {"id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios",
              "source": "template", "template_id": "6533b1d2a1b2c3d4e5f60901",
-             "text": None, "logo": False, "tags": ["Socios"], "status": "scheduled",
+             "text": None, "logo": False, "tags": ["Socios"], "filters": None,
+             "filters_text": None, "status": "scheduled",
              "auto_send": True, "scheduled_at": "2026-10-20T13:00:00Z",
              "progress": {"position": 0, "total": 0, "sent": 0, "skipped": 0,
                           "failed": 0},
@@ -1005,7 +1037,9 @@ GROUPS: list[dict[str, Any]] = [
      ]},
     {"id": "campanas", "title": "Campañas",
      "intro": "Las campañas de Masivo: a todos tus contactos o a los de unas "
-              "etiquetas, con una plantilla o un texto, y las veces que haga falta. "
+              "etiquetas (y, si quieres, solo a los que cumplan unas condiciones "
+              "sobre sus columnas), con una plantilla o un texto, y las veces que "
+              "haga falta. "
               "Llevan siempre su enlace de baja (y la marca de agua del Básico), se "
               "saltan a los suprimidos sin gastar cuota y no salen a un contacto sin "
               "todas sus columnas. **Las manda el proceso en segundo plano**, por "
@@ -1026,8 +1060,8 @@ GROUPS: list[dict[str, Any]] = [
           "response": {"data": [_CAMPAIGN], "next_cursor": None}},
          {"method": "GET", "path": "/campaigns/{campaign_id}", "scope": "campaigns:read",
           "title": "Una campaña",
-          "description": "Con a cuántos saldría hoy (`audience`) y qué frena a la cuenta "
-                         "(`blocked`).",
+          "description": "Con a cuántos saldría hoy (`audience`, con sus etiquetas y "
+                         "sus condiciones) y qué la frena (`blocked`).",
           "test": "sí",
           "response": {**_CAMPAIGN, "audience": 812, "blocked": []}},
          {"method": "POST", "path": "/campaigns", "scope": "campaigns:write",
@@ -1045,13 +1079,21 @@ GROUPS: list[dict[str, Any]] = [
               {"name": "tags", "type": "lista de textos",
                "description": "A quién: los que lleven cualquiera de estas etiquetas. Sin "
                               "ellas, a todos tus contactos."},
+              {"name": "filters", "type": "objeto",
+               "description": "Además, solo a quienes cumplan estas condiciones sobre "
+                              "sus columnas: ver «Condiciones de una campaña»."},
               {"name": "scheduled_at", "type": "texto",
                "description": "Una hora que no pasó, con su zona."},
           ],
           "request": {"subject": "Asamblea anual de socios",
                       "template_id": "6533b1d2a1b2c3d4e5f60901", "tags": ["Socios"],
+                      "filters": {"match": "all", "rules": [
+                          {"field": "CIUDAD", "op": "eq", "value": "Santiago"}]},
                       "scheduled_at": "2026-10-20T08:00:00-05:00"},
-          "response": _CAMPAIGN},
+          "response": {**_CAMPAIGN,
+                       "filters": {"match": "all", "rules": [
+                           {"field": "CIUDAD", "op": "eq", "value": "Santiago"}]},
+                       "filters_text": "Ciudad es igual a «Santiago»"}},
          {"method": "PATCH", "path": "/campaigns/{campaign_id}", "scope": "campaigns:write",
           "title": "Cambiar una campaña",
           "description": "El asunto, lo que dice o a quién va; la hora, con `schedule`. "
@@ -1061,7 +1103,9 @@ GROUPS: list[dict[str, Any]] = [
                      {"name": "template_id", "type": "texto", "description": "O `text`."},
                      {"name": "text", "type": "texto", "description": "O `template_id`."},
                      {"name": "logo", "type": "sí o no", "description": "Con `text`."},
-                     {"name": "tags", "type": "lista de textos", "description": "A quién."}],
+                     {"name": "tags", "type": "lista de textos", "description": "A quién."},
+                     {"name": "filters", "type": "objeto",
+                      "description": "Las condiciones; `null` las quita."}],
           "request": {"subject": "Asamblea anual: cambio de salón"},
           "response": {**_CAMPAIGN, "subject": "Asamblea anual: cambio de salón"}},
          {"method": "DELETE", "path": "/campaigns/{campaign_id}", "scope": "campaigns:write",
@@ -1073,8 +1117,9 @@ GROUPS: list[dict[str, Any]] = [
           "scope": "campaigns:send",
           "title": "Mandarla ya",
           "description": "Responde 202 enseguida y la campaña empieza a salir por tandas. "
-                         "Una que ya salió sale otra vez entera. Si hoy la cuenta no puede "
-                         "enviar, 409 `cannot_send`. Con una clave de prueba dice a cuántos "
+                         "Una que ya salió sale otra vez entera. Si hoy no puede salir (la "
+                         "cuenta no puede enviar, o una de sus condiciones ya no vale), 409 "
+                         "`cannot_send`. Con una clave de prueba dice a cuántos "
                          "saldría y qué la frena, sin mandar nada.",
           "test": "simulado", "status": 202,
           "response": {**_CAMPAIGN, "status": "scheduled",
@@ -1113,12 +1158,12 @@ GROUPS: list[dict[str, Any]] = [
           "query": [{"name": "campaign_id", "type": "texto", "description": "Los de esa campaña."},
                     {"name": "limit", "type": "entero", "description": "De 1 a 100."},
                     {"name": "cursor", "type": "texto", "description": "Para la página siguiente."}],
-          "response": {"data": [{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0, "download": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}], "next_cursor": None}},
+          "response": {"data": [{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "filters_text": None, "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0, "download": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}], "next_cursor": None}},
          {"method": "GET", "path": "/sends/{send_id}", "scope": "campaigns:read",
           "title": "Un envío",
           "description": "Con los primeros errores, si hubo.",
           "test": "sí",
-          "response": {**{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0, "download": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}, "errors": []}},
+          "response": {**{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "filters_text": None, "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0, "download": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}, "errors": []}},
          {"method": "GET", "path": "/sends/{send_id}/recipients", "scope": "campaigns:read",
           "title": "A quién le salió",
           "description": "Cada persona con lo que pasó (`reached`: complaint, bounce, reject, "

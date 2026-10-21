@@ -154,7 +154,8 @@ def _complete(definitions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _matching(account_id, search: str, tag: str,
               tags: list[str] | None = None,
-              complete: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+              complete: list[dict[str, Any]] | None = None,
+              audience: dict[str, Any] | None = None) -> dict[str, Any]:
     """La consulta de la tabla, en un solo sitio.
 
     La usan la exportación y el conteo que la confirma, para que el número que
@@ -165,6 +166,10 @@ def _matching(account_id, search: str, tag: str,
     varias, que es como sale una campaña: **quien lleve cualquiera de ellas**.
     Nadie sale dos veces porque un contacto es un solo documento con sus
     etiquetas dentro, así que llevar tres de las marcadas no lo duplica.
+
+    `audience` son las condiciones de una campaña (octubre de 2026), ya
+    convertidas por `services/audience.query()`: se suman al `$and`, junto a
+    las de las columnas llenas, sin pisarlas.
     """
     query: dict[str, Any] = {"account_id": account_id}
     wanted = [one for one in (tags or []) if one] or ([tag] if tag else [])
@@ -177,6 +182,8 @@ def _matching(account_id, search: str, tag: str,
     # Solo lo encienden los caminos de envío: la lista sí los enseña, porque
     # para completarlos hay que verlos.
     conditions = _complete(complete or [])
+    if audience:
+        conditions.append(audience)
     if conditions:
         query["$and"] = conditions
     return query
@@ -184,17 +191,19 @@ def _matching(account_id, search: str, tag: str,
 
 def matching_count(db, account_id, *, search: str = "", tag: str = "",
                    tags: list[str] | None = None,
-                   complete: list[dict[str, Any]] | None = None) -> int:
+                   complete: list[dict[str, Any]] | None = None,
+                   audience: dict[str, Any] | None = None) -> int:
     """Cuántos saldrían con ese buscador y ese filtro."""
     return db.contacts.count_documents(
-        _matching(account_id, search, tag, tags, complete))
+        _matching(account_id, search, tag, tags, complete, audience))
 
 
 def batch_for_sending(db, account_id, *, tag: str = "",
                       tags: list[str] | None = None,
                       complete: list[dict[str, Any]] | None = None,
                       skip: int = 0, after_id=None,
-                      limit: int = 100) -> list[dict[str, Any]]:
+                      limit: int = 100,
+                      audience: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Un tramo de la lista, en orden fijo, para mandarle una campaña.
 
     Por `_id` y no por fecha, que es como ordena la pantalla: es el único orden
@@ -203,7 +212,7 @@ def batch_for_sending(db, account_id, *, tag: str = "",
     procesó (`after_id`) y no saltando una cantidad: si se borran contactos
     mientras la campaña espera, saltar contaría mal y dejaría gente fuera.
     """
-    query = _matching(account_id, "", tag, tags, complete)
+    query = _matching(account_id, "", tag, tags, complete, audience)
     if after_id is not None:
         query["_id"] = {"$gt": after_id}
         skip = 0
@@ -282,6 +291,30 @@ def values_not_of_type(db, account_id, key: str, kind: str) -> int:
         return 0
     return db.contacts.count_documents({"account_id": account_id,
                                         f"fields.{key}": {"$in": wrong}})
+
+
+def normalize_field(db, account_id, key: str, kind: str) -> int:
+    """Reescribir lo guardado en una columna como lo guarda su tipo nuevo.
+
+    Al pasar de texto a número, «1,234.50» tiene que quedar `1234.5`, y
+    «15/03/2026» como `2026-03-15` al pasar a fecha: si no, se escribe bien en
+    el correo pero las condiciones de un envío (`services/audience.py`) no lo
+    comparan como número o como fecha. Se llama después de comprobar que todos
+    encajan (`values_not_of_type`). Una operación por valor distinto, en un
+    solo `bulkWrite` (regla 10). Devuelve cuántos contactos cambiaron.
+    """
+    path = f"fields.{key}"
+    changes = []
+    for value in db.contacts.distinct(path, {"account_id": account_id}):
+        if not isinstance(value, str):
+            continue
+        clean = fields.parse(value, kind)
+        if clean is not None and clean != value:
+            changes.append(UpdateMany({"account_id": account_id, path: value},
+                                      {"$set": {path: clean}}))
+    if not changes:
+        return 0
+    return db.contacts.bulk_write(changes, ordered=False).modified_count
 
 
 def count_by_tag(db, account_id,

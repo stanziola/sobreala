@@ -1,11 +1,16 @@
 {#- El formulario de una campaña, el mismo para crear y para editar.
 
     Espera: lists, pieces, named, errors, form (lo que se acaba de escribir),
-    has_logo y, al editar, campaign y when. Desde octubre de 2026 se arma con
-    una plantilla o escrito, sin archivo (el archivo es del individual). -#}
+    has_logo, las condiciones (audience_choices, audience_ops, rule_rows) y, al
+    editar, campaign y when. Desde octubre de 2026 se arma con una plantilla o
+    escrito, sin archivo (el archivo es del individual). -#}
 {% set chosen = form.getlist('lista') if form.getlist('lista')
                   else (tags_of(campaign) if campaign else []) %}
 {% set piece_id = form.get('pieza', campaign.design_id|string if campaign else '') %}
+
+{#- El botón que pulsa Intro: el primero del formulario. Sin él sería
+    «Quitar» de la primera condición, que va antes que Guardar. -#}
+<button class="visually-hidden" type="submit" tabindex="-1" aria-hidden="true"></button>
 
 <label for="asunto">{{ t('send_subject') }}</label>
 <input id="asunto" name="asunto" type="text" maxlength="150" autocomplete="off"
@@ -33,6 +38,71 @@
   <a href="{{ url_for('contacts.tags') }}">{{ t('tags_create_first') }}</a></p>
 {% endif %}
 {% if errors.lista %}<p class="error">{{ errors.lista }}</p>{% endif %}
+
+{#- Las condiciones (octubre de 2026, `services/audience.py`): sobre las
+    columnas de cada contacto, además de las etiquetas. Sin JavaScript también
+    funciona: salen las guardadas y una vacía, «Agregar condición» y «Quitar»
+    vuelven a dibujar sin guardar, y el operador lista todos, agrupados por
+    tipo (el servidor dice si uno no va con su columna). Con JavaScript cada
+    fila ofrece solo los de su columna, y la cuenta sale mientras se elige. -#}
+<fieldset class="audience" data-audience-rules data-audience-url="{{ url_for('campaigns.audience_count') }}"
+          data-max="{{ audience_max }}">
+  <legend class="field-label">{{ t('send_conditions') }}</legend>
+  {% if audience_choices %}
+  <p class="hint">{{ t('send_conditions_hint') }}</p>
+  {% set saved_match = ((campaign.filters or {}).get('match') if campaign else none) or 'all' %}
+  {% set match = form.get('cumplan', saved_match) %}
+  <div class="audience__match">
+    <label class="check"><input type="radio" name="cumplan" value="all"
+      {%- if match != 'any' %} checked{% endif %}><span>{{ t('send_match_all') }}</span></label>
+    <label class="check"><input type="radio" name="cumplan" value="any"
+      {%- if match == 'any' %} checked{% endif %}><span>{{ t('send_match_any') }}</span></label>
+  </div>
+  <div class="audience__list" data-audience-list>
+    {% for row in rule_rows %}
+    {% set row_kind = (audience_choices|selectattr('value', 'equalto', row.choice)
+                       |map(attribute='kind')|first) or '' %}
+    {% set row_group = 'count' if row_kind in ('count', 'count_number') else row_kind %}
+    <div class="audience__row" data-audience-row>
+      <select name="rule_field" aria-label="{{ t('send_rule_field') }}" data-audience-field>
+        <option value="">{{ t('send_rule_field_pick') }}</option>
+        {% for one in audience_choices %}
+        <option value="{{ one.value }}" data-kind="{{ one.kind }}"
+          {%- if one.value == row.choice %} selected{% endif %}>{{ one.label }}</option>
+        {% endfor %}
+      </select>
+      <select name="rule_op" aria-label="{{ t('send_rule_op') }}" data-audience-op>
+        {% for group, ops in audience_ops %}
+        <optgroup label="{{ t('audience_group_count') if group == 'count' else t('fields_type_' + group) }}"
+                  data-kind="{{ group }}">
+          {% for op in ops %}
+          <option value="{{ op }}"
+            {%- if op == row.op and group == row_group %} selected{% endif %}>{{ t('audience_label_' + op) }}</option>
+          {% endfor %}
+        </optgroup>
+        {% endfor %}
+      </select>
+      <input name="rule_value" type="text" maxlength="120" autocomplete="off"
+             aria-label="{{ t('send_rule_value') }}" value="{{ row.value }}" data-audience-value>
+      <button class="btn btn--small btn--outline" type="submit" name="rule_action"
+              value="remove:{{ loop.index0 }}" data-audience-remove>{{ t('send_remove_condition') }}</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% if errors.condiciones %}<p class="error">{{ errors.condiciones }}</p>{% endif %}
+  {% if rule_rows|length < audience_max %}
+  <button class="btn btn--small btn--outline" type="submit" name="rule_action" value="add"
+          data-audience-add>{{ t('send_add_condition') }}</button>
+  {% endif %}
+  <p class="hint">{{ t('send_rule_item_hint') }}</p>
+  {#- «A cuántos saldría», mientras se elige: lo pide panel.js. Sin JavaScript,
+      la cuenta sale al confirmar, como siempre. -#}
+  <p class="audience__count" data-audience-count aria-live="polite" hidden></p>
+  {% else %}
+  <p class="hint">{{ t('send_conditions_none') }}
+    <a href="{{ url_for('contacts.fields') }}">{{ t('send_conditions_none_link') }}</a></p>
+  {% endif %}
+</fieldset>
 
 {% set mode = form.get('modo', 'escribir' if campaign and not campaign.design_id else 'plantilla') %}
 {% with options=[('plantilla', t('send_mode_template')), ('escribir', t('send_mode_write'))] %}

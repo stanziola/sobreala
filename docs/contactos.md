@@ -40,11 +40,14 @@ etiquetas: 1 · 5 · 10, y 1 sin plan.
 
 Cuatro tipos —texto, número, fecha y sí/no— y cada uno se gana el sitio
 haciendo dos cosas: decidir qué se acepta al importar, y cómo se escribe al
-enviar. **El valor se guarda normalizado y siempre como texto**: una fecha como
+enviar (y desde octubre de 2026, cómo se compara en las condiciones de un
+envío). **El valor se guarda normalizado y siempre como texto**: una fecha como
 `2026-03-15` y un «1,234.50» como `1234.5`, para que el archivo de cada cliente
 pueda venir como venga y el correo salga parejo. Lo que no es de su tipo no se
 escribe: guardar «el martes» en una columna de fecha es guardar algo que
-después no se puede enseñar.
+después no se puede enseñar. Un número acepta delante «B/.» o «$», y nada más:
+«.5» es medio (hasta octubre de 2026 se leía 5), e «inf» o «nan» no son un
+número (daban un error 500).
 
 **Son obligatorias, y no hay texto de respaldo.** Un contacto **nuevo** solo
 entra con todas llenas —sin ellas no podría recibir nada, así que entrar sería
@@ -63,7 +66,12 @@ envío**: la lista sí los enseña, porque para completarlos hay que verlos.
 botón «Columnas» de la lista: arriba, «Agregar columna», que con el plan lleno
 sale apagado —y la ruta lo comprueba igual—; debajo, lo que ya existe:
 **cambiar el tipo**, que no se deja si algún valor no encaja en el nuevo, y
-borrar. Hasta octubre de 2026 se creaban desde la lista y Columnas era una
+borrar. **Al cambiarlo, lo guardado se reescribe como lo guarda el tipo nuevo**
+(octubre de 2026, `contacts.normalize_field()`, en el panel y en la API): un
+«1,234.50» que entró como texto queda `1234.5` al pasar a número. Antes se
+quedaba como estaba, se escribía bien en el correo y las condiciones de un
+envío (`docs/envios.md`) no lo comparaban como número. Es un `bulkWrite` con
+una operación por valor distinto, no por contacto. Hasta octubre de 2026 se creaban desde la lista y Columnas era una
 pestaña. El nombre
 no se cambia: es lo que las piezas ya tienen escrito dentro. Borrar una borra lo
 que los contactos tenían escrito en ella; los contactos se quedan.
