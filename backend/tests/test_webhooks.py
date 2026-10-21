@@ -6,22 +6,30 @@ sirva para hacer que el servidor abra cualquier dirección. Que un rebote anule
 la dirección **en la cuenta a la que pertenece y en ninguna otra**. Y que las
 cifras de un envío cuenten personas y no eventos.
 
-Los avisos son de mentira, pero tienen la forma exacta de los de Amazon.
+Los avisos son de mentira, pero tienen la forma exacta de los de Amazon, y
+desde octubre de 2026 van firmados como los firma Amazon: con una clave de
+prueba cuyo certificado se sirve en lugar del de SNS (`services/sns.py`).
 """
 
 from __future__ import annotations
 
+import base64
 import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
 from bson import ObjectId
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.x509.oid import NameOID
 
 from blueprints.webhooks import routes as webhook
 from config import Config
 from models import event as events
 from models import mail_log
 from models import suppression as suppressions
+from services import sns
 from test_admin import make_admin
 from test_campaigns import catch, make, ready, send_it
 
@@ -29,16 +37,53 @@ SECRET = "un-secreto-largo-de-prueba"
 TOPIC = "arn:aws:sns:us-east-2:123456789012:sobreala-ses-events"
 
 
+CERT_URL = ("https://sns.us-east-2.amazonaws.com/"
+            "SimpleNotificationService-0000000000000000000000.pem")
+
+
+def _clave():
+    clave = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    nombre = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "sns.amazonaws.com")])
+    ahora = datetime.now(timezone.utc)
+    cert = (x509.CertificateBuilder().subject_name(nombre).issuer_name(nombre)
+            .public_key(clave.public_key()).serial_number(x509.random_serial_number())
+            .not_valid_before(ahora - timedelta(days=1))
+            .not_valid_after(ahora + timedelta(days=30))
+            .sign(clave, hashes.SHA256()))
+    return clave, cert.public_bytes(serialization.Encoding.PEM)
+
+
+CLAVE, PEM = _clave()
+
+
 @pytest.fixture(autouse=True)
 def configured(monkeypatch):
     monkeypatch.setattr(Config, "SES_WEBHOOK_SECRET", SECRET)
     monkeypatch.setattr(Config, "SES_TOPIC_ARN", "")
+    # El certificado de «Amazon» es el de la clave de prueba, y solo en su URL.
+    bajados: list[str] = []
+    monkeypatch.setattr(sns, "_cache", {})
+    monkeypatch.setattr(sns, "fetch_cert",
+                        lambda url: bajados.append(url) or (PEM if url == CERT_URL else b""))
+    return bajados
+
+
+def firmar(envelope, *, version="2", clave=None, url=CERT_URL):
+    """Firmar un aviso como lo firma SNS."""
+    envelope = {"MessageId": "11111111-2222-3333-4444-555555555555",
+                "Timestamp": "2026-10-21T15:00:00.000Z", **envelope,
+                "SignatureVersion": version, "SigningCertURL": url}
+    texto = sns.signed_text(envelope)
+    algoritmo = hashes.SHA256() if version == "2" else hashes.SHA1()
+    firma = (clave or CLAVE).sign(texto.encode("utf-8"), padding.PKCS1v15(), algoritmo)
+    envelope["Signature"] = base64.b64encode(firma).decode("ascii")
+    return envelope
 
 
 def notify(client, message, *, secret=SECRET, topic=TOPIC):
     """Mandar un aviso como lo manda SNS: el evento va dentro, como texto."""
-    envelope = {"Type": "Notification", "TopicArn": topic,
-                "Message": json.dumps(message)}
+    envelope = firmar({"Type": "Notification", "TopicArn": topic,
+                       "Message": json.dumps(message)})
     return client.post(f"/webhooks/ses/{secret}", data=json.dumps(envelope),
                        content_type="text/plain; charset=UTF-8")
 
@@ -106,9 +151,9 @@ def test_la_confirmacion_solo_se_visita_si_es_de_amazon(client, monkeypatch):
     for url in ("https://sns.us-east-2.amazonaws.com/?Action=ConfirmSubscription",
                 "https://evil.example.com/?Action=ConfirmSubscription",
                 "http://sns.us-east-2.amazonaws.com/?Action=ConfirmSubscription"):
-        client.post(f"/webhooks/ses/{SECRET}", data=json.dumps({
-            "Type": "SubscriptionConfirmation", "TopicArn": TOPIC,
-            "SubscribeURL": url}), content_type="text/plain")
+        client.post(f"/webhooks/ses/{SECRET}", data=json.dumps(firmar({
+            "Type": "SubscriptionConfirmation", "TopicArn": TOPIC, "Token": "t",
+            "Message": "Confirma", "SubscribeURL": url})), content_type="text/plain")
 
     assert visitadas == [
         "https://sns.us-east-2.amazonaws.com/?Action=ConfirmSubscription"]
@@ -134,6 +179,48 @@ def test_un_aviso_ilegible_se_contesta_200_y_no_guarda_nada(client, database):
 
     assert respuesta.status_code == 200
     assert database.events.count_documents({}) == 0
+
+
+def test_sin_la_firma_de_amazon_no_se_guarda_nada(client, database, configured):
+    """Con solo el secreto de la dirección ya no alcanza (octubre de 2026): quien
+    lo tuviera podía inventar rebotes y quejas, que además viajan a los
+    webhooks de los clientes."""
+    evento = bounce("Permanent", "ana@coop.com")
+    sobre = {"Type": "Notification", "TopicArn": TOPIC, "Message": json.dumps(evento)}
+    otra, _ = _clave()
+    cambiado = firmar(sobre)
+    cambiado["Message"] = cambiado["Message"].replace("ana@coop.com", "bea@coop.com")
+    for malo in (sobre,                                   # sin firma
+                 cambiado,                                # el mensaje cambió
+                 firmar(sobre, clave=otra),               # otra clave
+                 firmar(sobre, version="3"),              # versión que no existe
+                 firmar(sobre, url="https://evil.example.com/cert.pem"),
+                 firmar(sobre, url="http://sns.us-east-2.amazonaws.com/x.pem")):
+        respuesta = client.post(f"/webhooks/ses/{SECRET}", data=json.dumps(malo),
+                                content_type="text/plain")
+        assert respuesta.status_code == 403
+    assert database.suppressions.count_documents({}) == 0
+    # El certificado solo se pidió a Amazon, nunca a la dirección del cuerpo.
+    assert set(configured) <= {CERT_URL}
+
+
+def test_la_firma_vieja_de_sha1_tambien_vale(client, database):
+    sobre = firmar({"Type": "Notification", "TopicArn": TOPIC,
+                    "Message": json.dumps({"eventType": "Nada"})}, version="1")
+    respuesta = client.post(f"/webhooks/ses/{SECRET}", data=json.dumps(sobre),
+                            content_type="text/plain")
+    assert respuesta.status_code == 200
+
+
+def test_sin_poder_bajar_el_certificado_se_pide_reintentar(client, database,
+                                                          monkeypatch):
+    def caida(url):
+        raise sns.Unavailable("sin red")
+    monkeypatch.setattr(sns, "fetch_cert", caida)
+    sobre = firmar({"Type": "Notification", "TopicArn": TOPIC, "Message": "{}"})
+    respuesta = client.post(f"/webhooks/ses/{SECRET}", data=json.dumps(sobre),
+                            content_type="text/plain")
+    assert respuesta.status_code == 500
 
 
 # -------------------------------------------------------------- las campañas

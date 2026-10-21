@@ -376,7 +376,8 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Una campaña se guarda y se manda las veces que haga falta. Sale por tandas de
   cien y anota la posición; cada salida es una línea en `campaign_runs`.
 - `events`: uno por envío, persona y tipo. Las cifras cuentan **personas**.
-- **El aviso de SES** (`/webhooks/ses/<secreto>`) sabe de quién es cada correo
+- **El aviso de SES** (`/webhooks/ses/<secreto>`), **con la firma de SNS
+  comprobada** (`services/sns.py`), sabe de quién es cada correo
   por sus etiquetas, nunca por la dirección. Rebote permanente y queja anulan en
   esa cuenta.
 - **La pausa automática** (`services/reputation.py`): en los últimos 30 días,

@@ -65,12 +65,12 @@ el panel esté casi terminado.
   Hoy corre mientras la página espera; con más de unas 5,000 filas se corta.
   Ahora que existe el worker, es el sitio natural para hacerla.
 
-- [ ] **Comprobar la firma del aviso de Amazon (SNS).** *Claude.*
-  Hoy lo autoriza solo un secreto en la dirección (fue una decisión,
-  `docs/envios.md`). Con los avisos a los sistemas de los clientes pesa más:
-  quien tuviera ese secreto podría inventarles eventos. Pide agregar la
-  dependencia `cryptography`. Recomendado antes de que un cliente encienda sus
-  avisos.
+- [ ] **Pedir la producción de SES.** *Tú, con el texto que redacta Claude.*
+  La cuenta sigue en sandbox (21 de octubre de 2026): solo entrega a direcciones
+  verificadas. Va después de crear el worker. Lo que se le diga a Amazon tiene
+  que estar funcionando: bajas, supresiones, la pausa automática y la
+  declaración del origen de cada contacto.
+
 
 - [ ] **Respaldo de la base entera.** *Tú, en Atlas.*
   El plan gratis (M0) no tiene respaldos; Flex hace una copia diaria y M10 en

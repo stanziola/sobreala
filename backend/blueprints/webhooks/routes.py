@@ -8,11 +8,10 @@ ni galleta que valgan, y lo que autoriza es otra cosa:
     nuestra, y un secreto que no cuadra, o que no está configurado, responde
     404: para quien prueba direcciones, esta no existe.
   * **Solo se acepta el tema que se configuró**, si `SES_TOPIC_ARN` está puesto.
-  * **No se comprueba la firma de SNS.** Pide verificar RSA contra un
-    certificado que se descarga, y eso es una dependencia más. Con el secreto
-    viajando por HTTPS y el filtro del tema alcanza; es una decisión, no un
-    olvido, y este es el sitio donde ponerla el día que se quiera cerrar del
-    todo.
+  * **Se comprueba la firma de SNS** (octubre de 2026, `services/sns.py`):
+    un aviso sin firma o con una que no cuadra se contesta 403 y no se guarda.
+    Hasta entonces bastaba el secreto, y con los webhooks a los sistemas de
+    los clientes quien lo tuviera podía inventarles rebotes y quejas.
 
 Un aviso que **no se entiende se contesta 200**: SNS reintenta lo que no
 recibe 200, y un aviso raro reintentado durante horas no se arregla por
@@ -33,6 +32,7 @@ from flask import Blueprint, abort, request
 from config import Config
 from db import get_db
 from services import ses_events
+from services import sns
 
 bp = Blueprint("webhooks", __name__, url_prefix="/webhooks")
 
@@ -63,6 +63,16 @@ def ses(secret: str):
     except ValueError:
         print("  [ses] aviso ilegible", flush=True)
         return "", 200
+
+    try:
+        genuine = sns.verify(envelope)
+    except sns.Unavailable as exc:
+        # No se pudo bajar el certificado: SNS lo reintenta con un 500.
+        print(f"  [ses] sin certificado: {exc}", flush=True)
+        return "", 500
+    if not genuine:
+        print("  [ses] firma que no cuadra", flush=True)
+        return "", 403
 
     if Config.SES_TOPIC_ARN and envelope.get("TopicArn") != Config.SES_TOPIC_ARN:
         print(f"  [ses] tema ajeno: {envelope.get('TopicArn')}", flush=True)

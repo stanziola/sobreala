@@ -437,9 +437,14 @@ consola de Amazon y en Cloudflare está paso a paso en `docs/ses.md`.
 
 **Lo que lo autoriza es el secreto de la dirección** (`SES_WEBHOOK_SECRET`):
 uno que no cuadra, o ninguno configurado, responde 404. Con `SES_TOPIC_ARN`
-puesto, un aviso de otro tema se descarta. **La firma de SNS no se comprueba**:
-pide RSA contra un certificado descargado, y con el secreto por HTTPS y el
-filtro del tema alcanza. Es una decisión, no un olvido. La dirección para
+puesto, un aviso de otro tema se descarta. **Y se comprueba la firma de SNS**
+(octubre de 2026, `services/sns.py`): el certificado se baja solo de
+`https://sns.<región>.amazonaws.com/….pem` y se guarda en memoria, se arma el
+texto firmado de cada tipo y se verifica con RSA (SHA1 o SHA256, según
+`SignatureVersion`). Sin firma o con una que no cuadra, 403 y nada se guarda; si
+no se pudo bajar el certificado, 500 y SNS lo reintenta. Hasta entonces bastaba
+el secreto, y con los webhooks a los sistemas de los clientes quien lo tuviera
+podía inventarles rebotes y quejas. La dirección para
 confirmar la suscripción **solo se visita si es de `sns.<región>.amazonaws.com`**,
 porque ese campo lo escribe quien manda el cuerpo.
 

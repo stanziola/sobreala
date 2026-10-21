@@ -43,5 +43,10 @@ tzdata>=2024.1
 # de Railway siga siendo `pip install` y nada más.
 reportlab>=4.0
 
+# Firmas: comprobar la de los avisos de Amazon SNS y firmar la clave de
+# «Continuar con Apple» (octubre de 2026). Ruedas ya compiladas para Linux y
+# Windows: el despliegue sigue siendo `pip install` y nada más.
+cryptography>=43
+
 # Pruebas
 pytest>=8.0
