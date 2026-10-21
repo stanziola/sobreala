@@ -4,7 +4,7 @@
 {% from "_fields.html" import proof with context %}
 {% if needs_proof %}
 <h2 class="settings__subtitle">{{ t('api_keys_proof_title') }}</h2>
-<p class="hint">{{ t('api_keys_proof_lead') }}</p>
+<p class="hint">{{ proof_lead if proof_lead is defined else t('api_keys_proof_lead') }}</p>
 {% if with_password %}
 <label for="key-password">{{ t('api_keys_password') }}</label>
 {{ proof('key-password', 'password') }}

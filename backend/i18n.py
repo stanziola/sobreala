@@ -276,7 +276,7 @@ TEXTS = {
     "oauth_signup_lead": "Entraste con {provider} como {email}. Faltan estos datos "
                          "para crear tu cuenta.",
     "oauth_on_desc": "Entras con tu cuenta de {provider}.",
-    "oauth_off_desc": "Entra una vez con {provider} y quedará conectado.",
+    "oauth_off_desc": "Conéctalo para entrar también con tu cuenta de {provider}.",
     "oauth_on": "Conectado",
     "oauth_off": "Sin conectar",
     "oauth_disconnect": "Desconectar",
@@ -3388,6 +3388,48 @@ TEXTS = {
     "admin_news": "Novedades de Sobreala",
     "admin_news_yes": "Sí, desde el {when}",
     "admin_news_no": "No",
+
+    # --- Google y GitHub (octubre de 2026): solo entran a la cuenta conectada
+    # a ellos, y se conectan desde Seguridad
+    "join_or": " o ",
+    "oauth_has_password": "Ya tienes una cuenta con {email} que entra con contraseña. "
+                          "Entra con ella y, si quieres, conecta {provider} en "
+                          "Configuración → Seguridad.",
+    "oauth_has_other": "Esa cuenta entra con {other}. Usa ese botón para entrar.",
+    "oauth_has_account": "Ya hay una cuenta con {email}. Entra con tu contraseña, o "
+                         "recupérala con «¿Olvidaste tu contraseña?».",
+    "oauth_connect": "Conectar",
+    "oauth_done_on": "Listo, conectaste {provider}. Desde ahora también entras con él.",
+    "oauth_taken": "Esa cuenta de {provider} ya está conectada a otra cuenta de Sobreala.",
+    "oauth_lost": "No se conectó {provider}: la sesión cambió a mitad de camino. Vuelve "
+                  "a intentarlo.",
+    "erase_replaced": "Registro sin confirmar, reemplazado al registrarse con {provider}",
+    "connect_title": "Conectar {provider}",
+    "connect_lead": "Después podrás entrar a esta cuenta con tu cuenta de {provider}. Te "
+                    "llevamos a {provider} para que elijas cuál.",
+    "connect_proof_lead": "Conectar {provider} abre tu cuenta por otra puerta, así que "
+                          "antes te pedimos tu contraseña. Después, por 10 minutos, no te "
+                          "la volvemos a pedir.",
+    "connect_submit": "Continuar a {provider}",
+    "mail_connect_code_subject": "Tu código para conectar {provider}",
+    "mail_connect_code_heading": "Tu código para conectar {provider}",
+    "mail_connect_code_body": "Alguien con tu sesión abierta pidió conectar {provider} a tu "
+                              "cuenta de Sobreala. Si fuiste tú, escribe este código. Si "
+                              "no, no hagas nada: sin el código no se conecta nada.",
+    "mail_connected_subject": "Se conectó {provider} a tu cuenta",
+    "mail_connected_heading": "Se conectó {provider} a tu cuenta",
+    "mail_connected_body": "Desde ahora se puede entrar a tu cuenta de Sobreala con una "
+                           "cuenta de {provider}. Se conectó desde la IP {ip}.",
+    "mail_connected_not_you": "Si no fuiste tú, desconéctalo en Configuración → Seguridad "
+                              "y cambia tu contraseña.",
+    "mail_connected_button": "Ver mi seguridad",
+    "mail_exists_body_provider": "Alguien intentó registrarse en Sobreala con esta "
+                                 "dirección, que ya tiene una cuenta. Si fuiste tú, entra "
+                                 "con {provider}.",
+
+    "oauth_signup_replaces": "Ese correo tenía un registro con contraseña que nadie "
+                             "confirmó. Al crear tu cuenta con {provider}, ese registro "
+                             "se borra.",
 }
 
 

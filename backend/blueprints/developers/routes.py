@@ -28,9 +28,9 @@ from bson.errors import InvalidId
 from flask import (Blueprint, Response, redirect, render_template, request,
                    session, url_for)
 
-from blueprints.auth.routes import (PASSWORD_PER_IP, SESSION_KEY, client_ip,
-                                    current_account, log_auth, needs,
-                                    not_for_admins, owner_only)
+from blueprints.auth.routes import (check_proof, client_ip, current_account,
+                                    log_auth, needs, not_for_admins, owner_only,
+                                    proof_context, proved)
 from config import Config
 from db import get_db
 from i18n import t
@@ -47,9 +47,6 @@ from services.security import csrf_ok, rate_limit, verify_password
 
 bp = Blueprint("developers", __name__, url_prefix="/developers")
 
-PROOF_KEY = "api_proof"
-PROOF_MINUTES = 10
-PROOF_PER_ACCOUNT = (5, 900)
 # El número de un solo uso del formulario de crear.
 FORM_KEY = "api_key_form"
 
@@ -78,62 +75,9 @@ def docs_url() -> str:
     return f"{Config.PUBLIC_SITE_URL}/api/"
 
 
-# ------------------------------------------------------------ la prueba
-
-def proved(account) -> bool:
-    """Si esta cuenta, en esta sesión, demostró hace poco quién es."""
-    found = session.get(PROOF_KEY) or {}
-    if (found.get("account") != str(account["_id"])
-            or found.get("sid") != session.get(SESSION_KEY)):
-        return False
-    try:
-        return datetime.fromisoformat(found.get("until", "")) > now()
-    except (TypeError, ValueError):
-        return False
-
-
-def prove(account) -> None:
-    session[PROOF_KEY] = {"account": str(account["_id"]),
-                          "sid": session.get(SESSION_KEY),
-                          "until": (now() + timedelta(minutes=PROOF_MINUTES)).isoformat()}
-
-
-def check_proof(db, account, form) -> dict[str, str]:
-    """Comprobar la contraseña (o el código del correo) y el de la app.
-    Devuelve los errores; vacío es que quedó demostrado."""
-    errors: dict[str, str] = {}
-    if (not rate_limit(db, f"apiproof:{account['_id']}", *PROOF_PER_ACCOUNT)
-            or not rate_limit(db, f"apiproof:ip:{client_ip()}", *PASSWORD_PER_IP)):
-        return {"form": t("error_too_many")}
-    spent = None
-    if account.get("password_hash"):
-        if not verify_password(form.get("password", ""), account.get("password_hash")):
-            errors["password"] = t("erase_error_password")
-    else:
-        reason, doc = tokens.check(db, account["_id"], form.get("email_code", "").strip(),
-                                   tokens.API_ACCESS)
-        if reason != tokens.VALID:
-            errors["email_code"] = t("erase_error_code")
-        else:
-            spent = doc
-    if accounts.two_factor_on(account) and not errors:
-        typed = form.get("app_code", "").strip()
-        counter = (totp.counter_for(account["two_factor"]["secret"], typed)
-                   if typed else None)
-        if counter is None or not accounts.use_counter(db, account["_id"], counter):
-            errors["app_code"] = t("error_code_invalid")
-    if not errors and spent is not None and not tokens.spend(db, spent):
-        # Otra petición lo gastó primero: no vale dos veces.
-        errors["email_code"] = t("erase_error_code")
-    if not errors:
-        prove(account)
-    return errors
-
-
-def proof_context(account) -> dict:
-    return {"needs_proof": not proved(account),
-            "with_password": bool(account.get("password_hash")),
-            "two_step": accounts.two_factor_on(account)}
+# La prueba de quién es (`proved`, `check_proof`, `proof_context`) vive en
+# blueprints/auth/routes.py desde octubre de 2026: la usa también Seguridad, al
+# conectar Google o GitHub.
 
 
 # ------------------------------------------------------------ las llaves

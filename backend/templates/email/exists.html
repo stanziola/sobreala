@@ -4,7 +4,7 @@
     The screen cannot say so without revealing who is registered. -#}
 {% block body %}
 {{ m.heading(t('mail_exists_heading')) }}
-{{ m.para(t('mail_exists_body')) }}
+{{ m.para(body) }}
 {{ m.button(link, t('mail_exists_button')) }}
 {{ m.small(t('mail_exists_ignore')) }}
 {% endblock %}

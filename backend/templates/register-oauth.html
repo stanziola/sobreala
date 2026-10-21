@@ -8,6 +8,7 @@
    la contraseña. #}
   <h1>{{ t('oauth_signup_title') }}</h1>
   <p class="lead">{{ t('oauth_signup_lead', provider=provider, email=email) }}</p>
+  {% if replaces %}<p class="notice">{{ t('oauth_signup_replaces', provider=provider) }}</p>{% endif %}
 
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 

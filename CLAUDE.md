@@ -303,6 +303,9 @@ cosa está como está, y lo que ya se probó y se quitó.
   correo principal verificado. Tras cualquiera de los dos pasa lo mismo que
   tras la contraseña (`finish_sign_in()`: doble factor incluido). Sin cuenta, se
   piden empresa, teléfonos y dirección, y nace confirmada y sin contraseña.
+  **Entra solo por el id del proveedor, nunca por el correo** (octubre de
+  2026): una cuenta se conecta a propósito, con «Conectar» en Seguridad y la
+  prueba de quién es, y un registro sin confirmar del mismo correo se descarta.
 
 ### Contactos (`docs/contactos.md`)
 
@@ -522,8 +525,11 @@ cosa está como está, y lo que ya se probó y se quitó.
    en el enlace, y valen una sola vez y con vencimiento.
 7. **Entrar y recuperar la cuenta nunca revelan si una dirección tiene cuenta.**
    Las dos responden igual exista o no, para que ninguna sirva de buscador de
-   clientes. **El registro sí lo dice**: esconderlo dejaba a la persona
-   esperando un código que no iba a llegar. El aviso al dueño se manda igual,
+   clientes. **La excepción es entrar con Google o GitHub** (octubre de 2026):
+   si el correo tiene una cuenta que no está conectada a ese proveedor, se dice
+   cómo entra, porque el proveedor acaba de probar que ese correo es de quien
+   está ahí; a un extraño no le revela nada. **El registro sí lo dice**:
+   esconderlo dejaba a la persona esperando un código que no iba a llegar. El aviso al dueño se manda igual,
    con su propio límite por dirección para que el formulario no sirva para
    llenarle el buzón a nadie.
 8. **Los correos del sistema son transaccionales**: sin enlace de baja y sin

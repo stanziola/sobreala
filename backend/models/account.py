@@ -159,6 +159,23 @@ def by_email(db, email: str) -> dict[str, Any] | None:
     return db.accounts.find_one({"email_normalized": normalize_email(email)})
 
 
+def unconfirmed_signup(db, email: str) -> dict[str, Any] | None:
+    """Un registro con ese correo que nadie confirmó (vence solo, `purge_at`) y
+    que no es un usuario invitado, o None.
+
+    Es el que se descarta cuando Google o GitHub prueban de quién es el correo
+    (octubre de 2026): si no, cualquiera registraba con contraseña el correo de
+    otra persona, sin confirmarlo, y cuando la dueña entraba con Google la cuenta
+    quedaba enlazada y confirmada con una contraseña que conocía el otro. Una
+    invitación pendiente (`owner_id`) también nace sin confirmar, y esa no se
+    toca."""
+    found = by_email(db, email)
+    if (found is not None and found.get("purge_at") and not found.get("owner_id")
+            and not found.get("email_confirmed_at")):
+        return found
+    return None
+
+
 # Entrar con Google (octubre de 2026): `google_sub` es el identificador de la
 # cuenta de Google, que no cambia aunque cambie su correo. Nada más de Google se
 # guarda.

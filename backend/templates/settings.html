@@ -238,8 +238,14 @@
     {% for one in sign_in_with %}
     {% if request.args.get(one.key) == 'off' %}
     <p class="notice notice--ok">{{ t('oauth_done_off', provider=one.label) }}</p>
+    {% elif request.args.get(one.key) == 'on' %}
+    <p class="notice notice--ok">{{ t('oauth_done_on', provider=one.label) }}</p>
     {% elif request.args.get(one.key) == 'nopassword' %}
     <p class="notice">{{ t('oauth_needs_password', provider=one.label) }}</p>
+    {% elif request.args.get(one.key) == 'taken' %}
+    <p class="notice">{{ t('oauth_taken', provider=one.label) }}</p>
+    {% elif request.args.get(one.key) == 'lost' %}
+    <p class="notice">{{ t('oauth_lost', provider=one.label) }}</p>
     {% endif %}
     {% endfor %}
 
@@ -248,11 +254,13 @@
        href="{{ url_for('auth.change_password') }}">{{ t('settings_password_action') }}</a>
     {% endcall %}
 
-    {# Google y GitHub solo salen si la cuenta está conectada (octubre de 2026):
-       quien se registró sin ellos no tiene nada que ver aquí. Se conectan
-       solos, la primera vez que se entra con cada uno. Desconectarlos pide
-       tener contraseña, para no quedarse sin forma de entrar. #}
-    {% for one in sign_in_with if account.get(one.field) %}
+    {# Google y GitHub (octubre de 2026). El conectado sale con «Desconectar»,
+       que pide tener contraseña para no quedarse sin forma de entrar; el que
+       no, con «Conectar», que pide la prueba de quién es. Ya no se conectan
+       solos al entrar con el mismo correo. Uno apagado solo sale si está
+       conectado, para poder quitarlo. #}
+    {% for one in sign_in_with if account.get(one.field) or (one.ready and not is_admin) %}
+    {% if account.get(one.field) %}
     {% call row(one.label, t('oauth_on_desc', provider=one.label)) %}
     <span class="tag tag--on">{{ t('oauth_on') }}</span>
     {% if account.password_hash %}
@@ -262,6 +270,12 @@
     </form>
     {% endif %}
     {% endcall %}
+    {% else %}
+    {% call row(one.label, t('oauth_off_desc', provider=one.label)) %}
+    <a class="btn btn--small btn--outline"
+       href="{{ url_for('auth.oauth_connect', provider=one.key) }}">{{ t('oauth_connect') }}</a>
+    {% endcall %}
+    {% endif %}
     {% endfor %}
 
     {# ----- los usuarios de la cuenta. Solo los ve el dueño: un usuario tiene

@@ -4,9 +4,10 @@ Google se sustituye entero (`fake_google`): es lo único que no se puede llamar
 desde una prueba. Lo que fijan estas pruebas es lo que, si sale mal, deja entrar
 a quien no es: que la vuelta solo valga con **el `state` que se guardó al
 salir**, que quién es lo diga **Google al servidor** (un correo sin verificar no
-entra, y uno enlazado a otra cuenta de Google tampoco), que **tras Google pase lo
-mismo que tras la contraseña** (suspendida no entra, el doble factor se pide), y
-que nadie se quede sin forma de entrar al desconectarlo.
+entra), que **solo entra a la cuenta conectada a esa cuenta de Google** (octubre
+de 2026: ya no a la que tenga el mismo correo), que **tras Google pase lo mismo
+que tras la contraseña** (suspendida no entra, el doble factor se pide), y que
+nadie se quede sin forma de entrar al desconectarlo.
 """
 
 from __future__ import annotations
@@ -110,9 +111,28 @@ def test_el_boton_sigue_cuando_entrar_dice_que_no(client, database, outbox, monk
 
 # ------------------------------------------------------------- con cuenta
 
-def test_entra_con_su_cuenta_y_queda_enlazada(client, database, outbox, monkeypatch):
+def test_el_mismo_correo_no_abre_una_cuenta_de_contrasena(client, database, outbox,
+                                                           monkeypatch):
+    """Era el error: Google entraba a la cuenta de contraseña con el mismo correo,
+    y la dejaba enlazada. Ahora dice cómo entra esa cuenta, y no toca nada."""
     register(client)
     cuenta = accounts.by_email(database, EMAIL)
+    # Confirmada: una sin confirmar es otra cosa (se descarta, ver abajo).
+    accounts.confirm_email(database, cuenta["_id"])
+    fake_google(monkeypatch)
+    browser = other(client)
+
+    pantalla = entrar_con_google(browser).get_data(as_text=True)
+
+    assert "que entra con contraseña" in pantalla and "Configuración → Seguridad" in pantalla
+    assert not esta_dentro(browser)
+    assert "google_sub" not in accounts.by_id(database, cuenta["_id"])
+
+
+def test_entra_por_su_id_de_google(client, database, outbox, monkeypatch):
+    register(client)
+    cuenta = accounts.by_email(database, EMAIL)
+    accounts.link_google(database, cuenta["_id"], "G-ANA")
     google = fake_google(monkeypatch)
     browser = other(client)
 
@@ -120,7 +140,6 @@ def test_entra_con_su_cuenta_y_queda_enlazada(client, database, outbox, monkeypa
 
     assert respuesta.status_code == 302
     assert esta_dentro(browser)
-    assert accounts.by_id(database, cuenta["_id"])["google_sub"] == "G-ANA"
     # El código viaja con su verificador de PKCE y la vuelta registrada.
     codigo, verificador, vuelta = google["codes"][0]
     assert codigo == "CODIGO" and verificador
@@ -136,19 +155,50 @@ def test_entra_con_su_cuenta_y_queda_enlazada(client, database, outbox, monkeypa
     assert esta_dentro(otra)
 
 
-def test_un_registro_sin_confirmar_queda_confirmado(client, database, outbox, monkeypatch):
+def test_un_registro_sin_confirmar_se_descarta(client, database, outbox, monkeypatch):
+    """Alguien registra con contraseña el correo de otra persona y no lo confirma.
+    Cuando la dueña entra con Google, ese registro se borra y se crea el suyo:
+    antes quedaba enlazado y confirmado, con la contraseña del otro."""
     register(client, abierta=False)
-    assert not accounts.is_confirmed(accounts.by_email(database, EMAIL))
+    del_otro = accounts.by_email(database, EMAIL)
+    assert not accounts.is_confirmed(del_otro)
+    fake_google(monkeypatch)
+    browser = other(client)
+
+    assert entrar_con_google(browser).headers["Location"].endswith("/signup/google")
+    # Hasta que se guarda el registro, sigue ahí.
+    assert accounts.by_id(database, del_otro["_id"]) is not None
+    browser.post("/signup/google", data={
+        "csrf_token": csrf(browser, "/signup/google"), "company_name": "Coop Sur",
+        "contact_name": "Ana Pérez", "phone_country": "PA", "phone": "60001111",
+        **SIGNUP_EXTRA})
+
+    suya = accounts.by_email(database, EMAIL)
+    assert suya["_id"] != del_otro["_id"] and suya["google_sub"] == "G-ANA"
+    assert suya["password_hash"] == "" and accounts.is_confirmed(suya)
+    assert accounts.by_id(database, del_otro["_id"]) is None
+    borrado = database.admin_events.find_one({"kind": "erase",
+                                              "account_id": del_otro["_id"]})
+    assert "reemplazado al registrarse con Google" in borrado["reason"]
+
+
+def test_una_invitacion_pendiente_no_se_toca(client, database, outbox, monkeypatch):
+    register(client, email="duena@ejemplo.com")
+    duena = accounts.by_email(database, "duena@ejemplo.com")
+    invitado = accounts.add_member(database, duena, contact_name="Ana", email=EMAIL,
+                                   permissions=[])
     fake_google(monkeypatch)
 
-    entrar_con_google(other(client))
+    pantalla = entrar_con_google(other(client)).get_data(as_text=True)
 
-    assert accounts.is_confirmed(accounts.by_email(database, EMAIL))
+    assert "Ya hay una cuenta con ana@ejemplo.com" in pantalla
+    assert accounts.by_id(database, invitado["_id"]) is not None
 
 
 def test_el_doble_factor_se_pide_tambien_con_google(client, database, outbox, monkeypatch):
     register(client)
     cuenta = accounts.by_email(database, EMAIL)
+    accounts.link_google(database, cuenta["_id"], "G-ANA")
     accounts.enable_two_factor(database, cuenta["_id"], "JBSWY3DPEHPK3PXP", [])
     fake_google(monkeypatch)
     browser = other(client)
@@ -162,7 +212,8 @@ def test_el_doble_factor_se_pide_tambien_con_google(client, database, outbox, mo
 def test_una_cuenta_suspendida_no_entra(client, database, outbox, monkeypatch):
     register(client)
     database.accounts.update_one({"email_normalized": EMAIL},
-                                 {"$set": {"status": accounts.SUSPENDED}})
+                                 {"$set": {"status": accounts.SUSPENDED,
+                                           "google_sub": "G-ANA"}})
     fake_google(monkeypatch)
     browser = other(client)
 
@@ -176,13 +227,16 @@ def test_un_correo_enlazado_a_otra_cuenta_de_google_no_entra(client, database, o
                                                              monkeypatch):
     register(client)
     cuenta = accounts.by_email(database, EMAIL)
+    accounts.confirm_email(database, cuenta["_id"])
     accounts.link_google(database, cuenta["_id"], "G-OTRA")
     fake_google(monkeypatch)
     browser = other(client)
 
     pantalla = entrar_con_google(browser).get_data(as_text=True)
 
-    assert "conectado a otra cuenta de Google" in pantalla
+    # Esa cuenta está conectada a otra cuenta de Google: con esta no se entra, y
+    # se dice cómo entra.
+    assert "que entra con contraseña" in pantalla
     assert not esta_dentro(browser)
     assert accounts.by_id(database, cuenta["_id"])["google_sub"] == "G-OTRA"
 
@@ -292,6 +346,7 @@ def test_sin_haber_pasado_por_google_no_hay_registro(client, database, monkeypat
 def test_seguridad_dice_conectado_y_desconectar_pide_contrasena(client, database, outbox,
                                                                  monkeypatch):
     register(client)
+    accounts.link_google(database, accounts.by_email(database, EMAIL)["_id"], "G-ANA")
     fake_google(monkeypatch)
     browser = other(client)
     entrar_con_google(browser)

@@ -674,6 +674,26 @@ def api_access_code(account, code: str) -> bool:
                    paragraphs=[t("mail_api_code_body")], code=code)
 
 
+def connect_code(account, code: str, *, provider: str) -> bool:
+    """El código para conectar Google o GitHub, a quien no tiene contraseña."""
+    return deliver(account, purpose=mail_log.PROVIDER,
+                   subject=t("mail_connect_code_subject", provider=provider),
+                   heading=t("mail_connect_code_heading", provider=provider),
+                   paragraphs=[t("mail_connect_code_body", provider=provider)], code=code)
+
+
+def provider_connected(account, *, provider: str, ip: str) -> bool:
+    """Que se conectó Google o GitHub a su cuenta (octubre de 2026). Es de
+    seguridad y no se apaga: desde ahora esa cuenta de Google entra a esta."""
+    return deliver(account, purpose=mail_log.PROVIDER,
+                   subject=t("mail_connected_subject", provider=provider),
+                   heading=t("mail_connected_heading", provider=provider),
+                   paragraphs=[t("mail_connected_body", provider=provider, ip=ip or "-"),
+                               t("mail_connected_not_you", provider=provider)],
+                   button={"href": f"{Config.APP_BASE_URL}/settings/security#password",
+                           "label": t("mail_connected_button")})
+
+
 def api_key_created(account, *, found, ip: str) -> bool:
     from models import api_key as api_keys
 

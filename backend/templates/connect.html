@@ -1,0 +1,36 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('connect_title', provider=provider) }}{% endblock %}
+{% set pane_center = true %}
+
+{#- Conectar Google o GitHub a la cuenta abierta (octubre de 2026). Antes se
+    conectaban solos la primera vez que se entraba con el mismo correo; ahora
+    se hace aquí, con la prueba de quién es: la contraseña (o un código al
+    correo, sin ella) y el código de la app si tiene segundo factor. Después
+    se va a elegir la cuenta del proveedor y se vuelve a Seguridad. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('connect_title', provider=provider) }}</h1>
+<div class="settings__pane">
+  <p class="lead">{{ t('connect_lead', provider=provider) }}</p>
+  {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
+
+  {% if needs_proof and not with_password %}
+  {% if sent %}<p class="notice notice--ok">{{ t('api_keys_code_sent') }}</p>{% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="hint">{{ t('api_keys_code_hint') }}</p>
+    <button class="btn btn--small btn--outline" type="submit" name="action"
+            value="code">{{ t('api_keys_send_code') }}</button>
+  </form>
+  {% endif %}
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% include "developers/_proof.html" %}
+    <div class="erase__actions">
+      <button class="btn" type="submit">{{ t('connect_submit', provider=provider) }}</button>
+      <a class="btn btn--outline"
+         href="{{ url_for('auth.settings', section='security') }}#password">{{ t('settings_cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

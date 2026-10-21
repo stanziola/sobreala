@@ -334,6 +334,32 @@ def ensure_indexes(db: Database | None = None) -> None:
     # solo toca las que no tienen el campo, así que correrla otra vez no cambia nada.
     from models import campaign as campaigns
     campaigns.migrate_auto_send(db)
+    # Al final y aparte, porque puede no hacerse sin que falle nada de arriba.
+    _provider_indexes(db)
+
+
+def _provider_indexes(db) -> None:
+    """Una cuenta de Google o de GitHub entra a una sola cuenta de Sobreala
+    (octubre de 2026): un índice único parcial para cada una.
+
+    Si ya hubiera dos cuentas con el mismo id, crearlo fallaría, y un fallo aquí
+    dejaría sin hacer todo lo que `ensure_indexes_once()` reintenta. Por eso se
+    mira antes, se anota y se sigue."""
+    for field in ("google_sub", "github_id"):
+        repeated = list(db.accounts.aggregate([
+            {"$match": {field: {"$type": "string"}}},
+            {"$group": {"_id": f"${field}", "n": {"$sum": 1}}},
+            {"$match": {"n": {"$gt": 1}}}, {"$limit": 1}]))
+        if repeated:
+            print(f"  [db] dos cuentas comparten {field}: no se crea su índice único",
+                  flush=True)
+            continue
+        try:
+            db.accounts.create_index([(field, ASCENDING)], unique=True,
+                                     name=f"uniq_{field}",
+                                     partialFilterExpression={field: {"$type": "string"}})
+        except Exception as exc:  # noqa: BLE001 - anotado, no detiene lo demás
+            print(f"  [db] no se pudo crear uniq_{field}: {type(exc).__name__}", flush=True)
 
 
 def indexes_ready() -> bool:

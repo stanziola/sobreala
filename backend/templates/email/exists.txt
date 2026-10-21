@@ -1,6 +1,6 @@
 {{ t('mail_exists_heading') }}
 
-{{ t('mail_exists_body') }}
+{{ body }}
 
 {{ link }}
 

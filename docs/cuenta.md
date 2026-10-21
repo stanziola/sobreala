@@ -401,9 +401,11 @@ valiendo y llevan a la sección y bajan a la suya (`/settings/security/sessions`
   Los de un administrador se dibujan todos en el orden de `ADMIN_NOTICES`:
   hasta octubre de 2026 faltaban «Alguien pidió una demostración» y «El panel
   pausó a un cliente», y guardar esa pantalla los apagaba sin que se viera.
-- **Google y GitHub solo salen si la cuenta está conectada**, en Contraseña,
-  cada uno con su «Desconectar». Quien se registró sin ellos no ve la fila; se
-  conectan solos la primera vez que entra con cada uno.
+- **Google y GitHub salen en Contraseña**, cada uno con lo que toca: el
+  conectado con «Desconectar», y el que no, con **«Conectar»** (octubre de 2026;
+  antes se conectaban solos la primera vez que se entraba con el mismo correo,
+  y solo salía la fila del conectado). Uno apagado solo sale si está conectado,
+  para poder quitarlo. Un administrador no ve «Conectar».
 - El aviso de la pausa o el límite y el de los documentos pendientes salen
   arriba de toda Cuenta.
 
@@ -746,20 +748,49 @@ apartado.
   servidor**: el código se cambia por un token y con él se pide `sub`, `email`,
   `email_verified` y `name`. Un correo sin verificar no entra. Se pide `openid
   email profile` y nada más.
-- **Con cuenta:** se busca por `google_sub`, y si no, por el correo verificado;
-  la primera vez queda enlazada (`google_sub`) y, si estaba sin confirmar, queda
-  confirmada. Un correo enlazado a **otra** cuenta de Google no entra. Después
-  pasa lo mismo que tras la contraseña (`finish_sign_in()`): suspendida no
-  entra, el doble factor se pide si está puesto, aviso de dispositivo nuevo y
-  varias cuentas abiertas.
+- **Con cuenta: solo por `google_sub`, nunca por el correo** (octubre de 2026).
+  Hasta entonces, sin cuenta con ese id se buscaba por el correo verificado y
+  se enlazaba sola, y así GitHub abría una cuenta de contraseña que tenía el
+  mismo correo. Ahora, si el correo tiene una cuenta que no está conectada a
+  ese proveedor, **no se entra ni se enlaza**, y se dice cómo entra esa cuenta
+  (`how_to_enter()`, leído de lo que tiene: contraseña o los proveedores
+  conectados, no de cómo nació): «Ya tienes una cuenta con … que entra con
+  contraseña. Entra con ella y conecta Google en Configuración → Seguridad», o
+  «Esa cuenta entra con GitHub». Después de entrar pasa lo mismo que tras la
+  contraseña (`finish_sign_in()`): suspendida no entra, el doble factor se pide
+  si está puesto, aviso de dispositivo nuevo y varias cuentas abiertas.
+- **Un registro con contraseña sin confirmar del mismo correo se descarta**
+  (`accounts.unconfirmed_signup()`): sin esto, alguien registraba el correo de
+  otra persona sin confirmarlo, y cuando la dueña entraba con Google la cuenta
+  quedaba enlazada y confirmada con una contraseña que conocía el otro. Solo
+  uno que vence (`purge_at`) y que no es un usuario invitado (`owner_id`: una
+  invitación pendiente no se toca). Se borra **al guardar el registro con el
+  proveedor**, con `erase.erase()` (pudo entrar y dejar sesiones o archivos),
+  y la pantalla de completar la cuenta lo avisa antes.
+- **Conectar Google o GitHub** es «Conectar», en Seguridad
+  (`/settings/<proveedor>/connect`): pide **la prueba de quién es**, la misma que
+  crear una clave de API (la contraseña, o un código al correo sin ella, y el
+  código de la app si tiene segundo factor; `check_proof()`, que vive en
+  `blueprints/auth/routes.py` desde octubre de 2026 y developers importa). Lo
+  que se pidió (`intent: link`, la cuenta y la sesión) va en
+  `session["<proveedor>_request"]`, nunca en el `state`, y la vuelta es la de
+  siempre (GitHub solo acepta esa ruta). A la vuelta se exigen **la misma cuenta
+  y la misma sesión**; un id que ya es de otra cuenta no se enlaza. Llega un
+  aviso de seguridad al correo, que no se apaga: «Se conectó Google a tu
+  cuenta».
+- **Una cuenta de Google o de GitHub entra a una sola de Sobreala**: índice
+  único parcial sobre `google_sub` y sobre `github_id` (`db._provider_indexes`,
+  al final de `ensure_indexes`, que mira antes si hay repetidos y, si los hay,
+  lo anota y sigue).
 - **Sin cuenta:** `/signup/google` pide lo que Google no da (empresa, teléfono
   personal, los de la empresa y dirección). Nace **confirmada y sin contraseña**,
   con la bienvenida y el aviso al administrador de siempre. Si un día quiere
   contraseña, la crea con «¿Olvidaste tu contraseña?». Las pantallas que piden
   la contraseña actual (cambiar el correo, apagar el doble factor) la piden
   igual.
-- **Regla 7:** entrar con Google no busca por un correo escrito, solo por el que
-  Google confirma de quien está ahí.
+- **Regla 7:** entrar con Google no busca por un correo escrito. Decir cómo
+  entra la cuenta de un correo solo se le dice a quien Google acaba de probar
+  que es dueño de ese correo (octubre de 2026): a un extraño no le revela nada.
 - **Seguridad** dice «Google: Conectado» con «Desconectar», que solo se deja con
   contraseña puesta.
 - **Lo que hace falta en Google Cloud:** un cliente OAuth de tipo aplicación web,

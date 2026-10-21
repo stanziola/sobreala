@@ -94,16 +94,30 @@ def test_sale_al_lado_de_google(client, database, monkeypatch):
 
 # ------------------------------------------------------------- con cuenta
 
-def test_entra_con_su_cuenta_y_queda_enlazada(client, database, outbox, monkeypatch):
+def test_el_mismo_correo_no_abre_una_cuenta_de_contrasena(client, database, outbox,
+                                                           monkeypatch):
     register(client)
     cuenta = accounts.by_email(database, EMAIL)
+    accounts.confirm_email(database, cuenta["_id"])
+    fake_github(monkeypatch)
+    browser = other(client)
+
+    pantalla = entrar_con_github(browser).get_data(as_text=True)
+
+    assert "que entra con contraseña" in pantalla and not esta_dentro(browser)
+    assert "github_id" not in accounts.by_id(database, cuenta["_id"])
+
+
+def test_entra_por_su_id_de_github(client, database, outbox, monkeypatch):
+    register(client)
+    cuenta = accounts.by_email(database, EMAIL)
+    accounts.link_github(database, cuenta["_id"], "4242")
     github = fake_github(monkeypatch)
     browser = other(client)
 
     respuesta = entrar_con_github(browser)
 
     assert respuesta.status_code == 302 and esta_dentro(browser)
-    assert accounts.by_id(database, cuenta["_id"])["github_id"] == "4242"
     codigo, verificador, vuelta = github["codes"][0]
     assert codigo == "CODIGO" and verificador and vuelta.endswith("/login/github/return")
     # La segunda vez entra por su identificador, aunque cambie su correo.
@@ -116,6 +130,7 @@ def test_entra_con_su_cuenta_y_queda_enlazada(client, database, outbox, monkeypa
 def test_el_doble_factor_se_pide_tambien_con_github(client, database, outbox, monkeypatch):
     register(client)
     cuenta = accounts.by_email(database, EMAIL)
+    accounts.link_github(database, cuenta["_id"], "4242")
     accounts.enable_two_factor(database, cuenta["_id"], "JBSWY3DPEHPK3PXP", [])
     fake_github(monkeypatch)
     browser = other(client)
@@ -126,16 +141,17 @@ def test_el_doble_factor_se_pide_tambien_con_github(client, database, outbox, mo
 def test_lo_que_no_deja_entrar(client, database, outbox, monkeypatch):
     register(client)
     cuenta = accounts.by_email(database, EMAIL)
+    accounts.confirm_email(database, cuenta["_id"])
     # Sin el correo principal verificado.
     fake_github(monkeypatch, email_verified=False)
     browser = other(client)
     assert "Tu cuenta de GitHub no tiene el correo verificado" in entrar_con_github(
         browser).get_data(as_text=True)
     assert not esta_dentro(browser) and "github_id" not in accounts.by_email(database, EMAIL)
-    # Un correo enlazado a otra cuenta de GitHub.
+    # Una cuenta conectada a otra cuenta de GitHub: con esta no se entra.
     accounts.link_github(database, cuenta["_id"], "9999")
     fake_github(monkeypatch)
-    assert "conectado a otra cuenta de GitHub" in entrar_con_github(
+    assert "que entra con contraseña" in entrar_con_github(
         other(client)).get_data(as_text=True)
     # Con otro state.
     ir_a_github(browser)
@@ -179,6 +195,7 @@ def test_sin_cuenta_pide_lo_que_falta_y_la_crea_confirmada(client, database, out
 def test_seguridad_dice_conectado_y_desconectar_pide_contrasena(client, database, outbox,
                                                                  monkeypatch):
     register(client)
+    accounts.link_github(database, accounts.by_email(database, EMAIL)["_id"], "4242")
     fake_github(monkeypatch)
     browser = other(client)
     entrar_con_github(browser)

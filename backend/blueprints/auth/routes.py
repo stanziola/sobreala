@@ -28,6 +28,7 @@ from flask import (Blueprint, Response, abort, current_app, g,
                    has_request_context, redirect, render_template, request,
                    session, url_for)
 from markupsafe import Markup
+from pymongo.errors import DuplicateKeyError
 
 from config import Config
 from db import get_db
@@ -766,13 +767,23 @@ def send_two_factor_changed(db, account: dict, *, on: bool) -> None:
 
 
 def send_already_registered(db, account: dict) -> None:
-    """Tell the owner, because the screen cannot."""
+    """Tell the owner, because the screen cannot.
+
+    Dice cómo entra esa cuenta (octubre de 2026): una creada con Google no
+    tiene contraseña, y «entra con tu contraseña» la dejaba sin saber qué
+    hacer."""
     link = f"{Config.APP_BASE_URL}{url_for('auth.login')}"
+    linked = [provider_name(key) for key, one in PROVIDERS.items()
+              if account.get(one["field"])]
+    if account.get("password_hash") or not linked:
+        body = t("mail_exists_body")
+    else:
+        body = t("mail_exists_body_provider", provider=t("join_or").join(linked))
     mailer.send(
         to=account["email"],
         subject=t("mail_exists_subject"),
-        html=render_template("email/exists.html", link=link),
-        text=render_template("email/exists.txt", link=link),
+        html=render_template("email/exists.html", link=link, body=body),
+        text=render_template("email/exists.txt", link=link, body=body),
         purpose=mail_log.EXISTS,
         account_id=account["_id"],
     )
@@ -1225,6 +1236,81 @@ def login():
                            deleted=bool(request.args.get("deleted")) and not errors)
 
 
+# ------------------------------------------------------- la prueba de quién es
+#
+# Antes de algo que abre la cuenta por otra puerta (crear una clave de API, un
+# webhook, conectar Google o GitHub), la contraseña (o un código al correo, sin
+# ella) y el código de la app si tiene segundo factor. **Queda atada a esa
+# cuenta y a esa sesión**, 10 minutos: con varias cuentas abiertas en un
+# navegador, probar la contraseña de una no sirve para otra. Vivía en
+# `blueprints/developers/` (octubre de 2026) y pasó aquí al usarla también
+# Seguridad; developers la importa.
+
+PROOF_KEY = "api_proof"
+PROOF_MINUTES = 10
+PROOF_PER_ACCOUNT = (5, 900)
+
+
+def proof_now() -> datetime:
+    return security_now()
+
+
+def proved(account) -> bool:
+    """Si esta cuenta, en esta sesión, demostró hace poco quién es."""
+    found = session.get(PROOF_KEY) or {}
+    if (found.get("account") != str(account["_id"])
+            or found.get("sid") != session.get(SESSION_KEY)):
+        return False
+    try:
+        return datetime.fromisoformat(found.get("until", "")) > proof_now()
+    except (TypeError, ValueError):
+        return False
+
+
+def prove(account) -> None:
+    session[PROOF_KEY] = {"account": str(account["_id"]),
+                          "sid": session.get(SESSION_KEY),
+                          "until": (proof_now() + timedelta(minutes=PROOF_MINUTES)).isoformat()}
+
+
+def check_proof(db, account, form) -> dict[str, str]:
+    """Comprobar la contraseña (o el código del correo) y el de la app.
+    Devuelve los errores; vacío es que quedó demostrado."""
+    errors: dict[str, str] = {}
+    if (not rate_limit(db, f"apiproof:{account['_id']}", *PROOF_PER_ACCOUNT)
+            or not rate_limit(db, f"apiproof:ip:{client_ip()}", *PASSWORD_PER_IP)):
+        return {"form": t("error_too_many")}
+    spent = None
+    if account.get("password_hash"):
+        if not verify_password(form.get("password", ""), account.get("password_hash")):
+            errors["password"] = t("erase_error_password")
+    else:
+        reason, doc = tokens.check(db, account["_id"], form.get("email_code", "").strip(),
+                                   tokens.API_ACCESS)
+        if reason != tokens.VALID:
+            errors["email_code"] = t("erase_error_code")
+        else:
+            spent = doc
+    if accounts.two_factor_on(account) and not errors:
+        typed = form.get("app_code", "").strip()
+        counter = (totp.counter_for(account["two_factor"]["secret"], typed)
+                   if typed else None)
+        if counter is None or not accounts.use_counter(db, account["_id"], counter):
+            errors["app_code"] = t("error_code_invalid")
+    if not errors and spent is not None and not tokens.spend(db, spent):
+        # Otra petición lo gastó primero: no vale dos veces.
+        errors["email_code"] = t("erase_error_code")
+    if not errors:
+        prove(account)
+    return errors
+
+
+def proof_context(account) -> dict:
+    return {"needs_proof": not proved(account),
+            "with_password": bool(account.get("password_hash")),
+            "two_step": accounts.two_factor_on(account)}
+
+
 def finish_sign_in(db, account: dict, *, remember: bool, email: str):
     """Lo que pasa cuando ya se sabe quién es, con su contraseña o con Google: el
     segundo paso si lo tiene puesto, o la sesión, el aviso de dispositivo nuevo y
@@ -1287,8 +1373,27 @@ def provider_name(provider: str) -> str:
 def sign_in_list() -> list[dict[str, str]]:
     """Todos los proveedores, para las filas de Seguridad: una cuenta enlazada se
     ve y se desconecta aunque ese proveedor se haya apagado."""
-    return [{"key": key, "label": provider_name(key), "field": one["field"]}
+    return [{"key": key, "label": provider_name(key), "field": one["field"],
+             "ready": one["service"].configured()}
             for key, one in PROVIDERS.items()]
+
+
+def how_to_enter(account: dict, provider: str, email: str) -> str:
+    """Qué decirle a quien entró con un proveedor y su correo tiene una cuenta
+    que no está conectada a él (octubre de 2026): cómo entra esa cuenta.
+
+    Decirlo no le revela nada a un extraño: el proveedor acaba de probar que el
+    correo es de quien está ahí (la regla 7 de CLAUDE.md, reescrita para esto).
+    Se lee de lo que la cuenta tiene, no de cómo nació: una creada con Google
+    que después puso contraseña entra de las dos formas."""
+    name = provider_name(provider)
+    if account.get("password_hash"):
+        return t("oauth_has_password", email=email, provider=name)
+    others = [provider_name(key) for key, one in PROVIDERS.items()
+              if key != provider and account.get(one["field"])]
+    if others:
+        return t("oauth_has_other", provider=name, other=t("join_or").join(others))
+    return t("oauth_has_account", email=email)
 
 
 def ready_providers() -> list[dict[str, str]]:
@@ -1355,29 +1460,56 @@ def oauth_return(provider: str):
     if not found["email_verified"]:
         return oauth_failed(t("oauth_unverified", provider=name))
 
-    field = one["field"]
-    account = one["by"](db, found["sub"]) or accounts.by_email(db, found["email"])
+    if asked.get("intent") == "link":
+        return finish_connect(db, provider, asked, found)
+
+    # **Solo por el id del proveedor** (octubre de 2026). Hasta entonces, sin
+    # cuenta con ese id se buscaba por el correo y se enlazaba sola: GitHub
+    # abría una cuenta de contraseña con el mismo correo. Ahora una cuenta se
+    # conecta a propósito, desde Seguridad, con su prueba.
+    account = one["by"](db, found["sub"])
     if account is None:
-        # Nadie con ese correo: se crea, con lo que el proveedor no da.
+        existing = accounts.by_email(db, found["email"])
+        if existing is not None and accounts.unconfirmed_signup(db, found["email"]) is None:
+            log_auth(db, events.LOGIN, events.NOT_LINKED, email=found["email"],
+                     account_id=existing["_id"])
+            return oauth_failed(how_to_enter(existing, provider, found["email"]))
+        # Nadie con ese correo (o un registro sin confirmar, que se descarta al
+        # guardar): se crea, con lo que el proveedor no da.
         session[f"{provider}_pending"] = {"sub": found["sub"], "email": found["email"],
                                           "name": found["name"]}
         return redirect(url_for("auth.oauth_signup", provider=provider))
-    if account.get(field) and account[field] != found["sub"]:
-        log_auth(db, events.LOGIN, events.BAD_CREDENTIALS, email=found["email"],
-                 account_id=account["_id"])
-        return oauth_failed(t("oauth_other", provider=name))
     if accounts.is_suspended(account) or not member_may_enter(db, account):
         log_auth(db, events.LOGIN, events.SUSPENDED, email=account["email"],
                  account_id=account["_id"])
         return oauth_failed(t("error_suspended"))
-    # La primera vez queda enlazada. El proveedor ya comprobó el correo, así que
-    # uno registrado sin confirmar queda confirmado.
-    if not account.get(field):
-        one["link"](db, account["_id"], found["sub"])
-    if not account.get("email_confirmed_at"):
-        accounts.confirm_email(db, account["_id"])
-    account = accounts.by_id(db, account["_id"])
     return finish_sign_in(db, account, remember=True, email=account["email"])
+
+
+def finish_connect(db, provider: str, asked: dict, found: dict):
+    """La vuelta de «Conectar» (octubre de 2026): enlazar ese id a la cuenta que
+    lo pidió. Solo si sigue siendo la misma cuenta **y la misma sesión** que lo
+    pidió: cambiar de cuenta a mitad de camino no sirve."""
+    one = PROVIDERS[provider]
+    back = url_for("auth.settings", section="security")
+    account = current_account()
+    if (account is None or asked.get("account") != str(account["_id"])
+            or asked.get("sid") != session.get(SESSION_KEY)):
+        return redirect(f"{back}?{provider}=lost#password")
+    if account.get(one["field"]):
+        return redirect(f"{back}#password")
+    holder = one["by"](db, found["sub"])
+    if holder is not None and holder["_id"] != account["_id"]:
+        return redirect(f"{back}?{provider}=taken#password")
+    try:
+        one["link"](db, account["_id"], found["sub"])
+    except DuplicateKeyError:
+        # Otra cuenta lo enlazó en este mismo momento: el índice único lo frena.
+        return redirect(f"{back}?{provider}=taken#password")
+    log_auth(db, events.SETTINGS, events.LINKED, email=account["email"],
+             account_id=account["_id"])
+    notices.provider_connected(account, provider=provider_name(provider), ip=client_ip())
+    return redirect(f"{back}?{provider}=on#password")
 
 
 @bp.route(f"/signup/{PROVIDER}", methods=["GET", "POST"])
@@ -1408,6 +1540,14 @@ def oauth_signup(provider: str):
         else:
             errors, address_errors, clean = check_signup(form, company, address)
             if not errors:
+                stale = accounts.unconfirmed_signup(db, pending["email"])
+                if stale is not None:
+                    # El proveedor acaba de probar de quién es el correo: un
+                    # registro con contraseña que nadie confirmó no es de nadie que
+                    # lo pueda usar. Se borra con lo que haya dejado (pudo entrar y
+                    # tener sesiones o archivos), y queda anotado.
+                    erase.erase(db, stale["_id"], by=stale["_id"],
+                                reason=t("erase_replaced", provider=provider_name(provider)))
                 created = accounts.create(db, email=pending["email"], password="",
                                           **clean)
                 if created is None:
@@ -1424,10 +1564,60 @@ def oauth_signup(provider: str):
                 session.pop(f"{provider}_pending", None)
                 sign_in(account, keep=bool(session.pop(ADDING, False)))
                 return redirect(url_for("auth.welcome"))
+    # Si ese correo tiene un registro sin confirmar, se dice que se va a borrar.
+    replaces = accounts.unconfirmed_signup(get_db(), pending["email"]) is not None
     return render_template("register-oauth.html", form=form, errors=errors,
                            email=pending["email"], provider=provider_name(provider),
-                           company=company,
+                           company=company, replaces=replaces,
                            **signup_screen_parts(address, address_errors))
+
+
+@bp.route(f"/settings/{PROVIDER}/connect", methods=["GET", "POST"])
+def oauth_connect(provider: str):
+    """Conectar Google o GitHub a la cuenta abierta (octubre de 2026), para
+    entrar también con él. Antes se conectaba solo, la primera vez que se
+    entraba con el mismo correo; ahora se hace aquí, con la misma prueba que
+    crear una clave de API, porque es abrir la cuenta por otra puerta."""
+    one = provider_or_404(provider)
+    account = current_account()
+    if account is None:
+        return redirect(url_for("auth.login"))
+    if accounts.is_admin(account):
+        abort(404)
+    back = url_for("auth.settings", section="security")
+    if account.get(one["field"]):
+        return redirect(f"{back}#password")
+    db = get_db()
+    name = provider_name(provider)
+    errors: dict[str, str] = {}
+    sent = False
+    if request.method == "POST":
+        if not csrf_ok(request.form.get("csrf_token")):
+            errors["form"] = t("error_csrf")
+        elif request.form.get("action") == "code":
+            # Sin contraseña: el código va a su correo.
+            if not account.get("password_hash") and rate_limit(
+                    db, f"apiproof:code:{account['_id']}", 5, 3600):
+                code = tokens.issue(db, account["_id"], tokens.API_ACCESS)
+                sent = notices.connect_code(account, code, provider=name)
+        else:
+            if not proved(account):
+                errors.update(check_proof(db, account, request.form))
+            if not errors:
+                # Lo que se pidió, en la sesión y nunca en el `state`: a la vuelta
+                # se exigen la misma cuenta y la misma sesión. La dirección de
+                # vuelta es la de siempre, la única que acepta GitHub.
+                asked = one["service"].new_request()
+                session[f"{provider}_request"] = {
+                    "state": asked["state"], "verifier": asked["verifier"],
+                    "intent": "link", "account": str(account["_id"]),
+                    "sid": session.get(SESSION_KEY)}
+                return redirect(one["service"].authorize_url(
+                    state=asked["state"], challenge=asked["challenge"],
+                    redirect_uri=oauth_redirect_uri(provider)))
+    return render_template("connect.html", provider=name, errors=errors, sent=sent,
+                           proof_lead=t("connect_proof_lead", provider=name),
+                           **proof_context(account))
 
 
 @bp.route(f"/settings/{PROVIDER}/disconnect", methods=["POST"])

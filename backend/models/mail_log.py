@@ -73,6 +73,9 @@ ADMIN_ERASED = "admin_erased"
 API_KEY = "api_key"
 API_CODE = "api_code"
 WEBHOOK = "webhook"
+# Conectar Google o GitHub desde Seguridad (octubre de 2026): el código para
+# quien no tiene contraseña, y el aviso de que se conectó.
+PROVIDER = "provider"
 # Sent by hand from check_mail.py, never by the application.
 CHECK = "check"
 

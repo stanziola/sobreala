@@ -61,6 +61,10 @@ MAIL_FAILED = "mail_failed"            # the account is fine, the email did not 
 FAILED = "failed"                      # import: the file could not be read
 SUSPENDED = "suspended"                # login: la contraseña era buena, la cuenta no
 REVOKED = "revoked"                    # api_key: se revocó
+# Google o GitHub (octubre de 2026): su correo tiene una cuenta que no está
+# conectada a ese proveedor, y no se entra; y se conectó uno desde Seguridad.
+NOT_LINKED = "not_linked"
+LINKED = "linked"
 
 # What the confirm route writes down, keyed by the reason models/token.py gave.
 # The screen collapses most of these into one message, on purpose; the log keeps
