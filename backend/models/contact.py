@@ -46,13 +46,38 @@ def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def consent_of(source: str, note: str = "") -> dict[str, Any]:
-    """The origin record that goes on every contact of an import."""
-    return {
+def consent_of(source: str, note: str = "", *, attested: bool = False,
+               by: dict[str, Any] | None = None) -> dict[str, Any]:
+    """The origin record that goes on every contact of an import.
+
+    Since October 2026 it also keeps the client's declaration (`attested`: these
+    people gave their address and agreed to receive its mail) and who made it
+    (`by`: the user, or the API key), with the email or key name copied, so the
+    record still reads after that user or key is gone. Contacts from before
+    have no `attested` at all: it was never asked, and it is not made up."""
+    record: dict[str, Any] = {
         "source": source if source in SOURCES else OTHER,
         "note": note.strip()[:300],
         "recorded_at": now(),
+        "attested": bool(attested),
     }
+    if by:
+        record["by"] = by
+    return record
+
+
+def consent_by_user(person: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Who declared it, from the panel."""
+    if not person:
+        return None
+    return {"user_id": person["_id"], "email": person.get("email", "")}
+
+
+def consent_by_key(key: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Who declared it, through the API: the key, by id and name."""
+    if not key:
+        return None
+    return {"key_id": key["_id"], "key_name": key.get("name", "")}
 
 
 def added_between(db, account_id, start, end=None) -> int:

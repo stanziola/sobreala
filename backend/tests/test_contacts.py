@@ -69,7 +69,7 @@ def export(client, query=""):
 def upload(client, text, *, source="members", tags=(), filename="lista.csv"):
     """Subir un archivo. Las etiquetas van marcadas, como casillas."""
     token = csrf(client, "/contacts/import")
-    data = {"csrf_token": token, "source": source, "note": "",
+    data = {"csrf_token": token, "source": source, "attest": "1", "note": "",
             "archivo": (io.BytesIO(text.encode("utf-8")), filename)}
     if tags:
         data["tags"] = list(tags)
@@ -217,7 +217,7 @@ def test_un_archivo_enorme_se_rechaza_sin_leerlo(client, database, outbox):
     grande = "a" * (Config.IMPORT_MAX_BYTES + 200 * 1024)
     token = csrf(browser, "/contacts/import")
     respuesta = browser.post("/contacts/import", data={
-        "csrf_token": token, "source": "members", "note": "",
+        "csrf_token": token, "source": "members", "attest": "1", "note": "",
         "archivo": (io.BytesIO(grande.encode("ascii")), "enorme.csv"),
     }, content_type="multipart/form-data")
 
@@ -438,7 +438,7 @@ def test_se_guarda_por_donde_entro_cada_contacto(client, database, outbox):
     upload(browser, "correo\nana@coop.com\n")
     browser.post("/contacts/new", data={
         "csrf_token": csrf(browser, "/contacts/new"),
-        "email": "bea@coop.com", "source": "customers"})
+        "email": "bea@coop.com", "source": "customers", "attest": "1"})
 
     cuenta = account_of(database)
     assert contacts.by_email(database, cuenta["_id"],
@@ -567,7 +567,7 @@ def test_agregar_a_mano_una_anulada_lo_avisa(client, database, outbox):
 
     respuesta = browser.post("/contacts/new", data={
         "csrf_token": csrf(browser, "/contacts/new"),
-        "email": "nueva@coop.com", "source": "members"})
+        "email": "nueva@coop.com", "source": "members", "attest": "1"})
 
     assert "suppressed=1" in respuesta.headers["Location"]
     assert "está anulada" in browser.get("/contacts?suppressed=1").get_data(as_text=True)
@@ -620,7 +620,7 @@ def test_agregar_uno_a_mano(client, database, outbox):
     make_tag(browser, "socios")
     browser.post("/contacts/new", data={
         "csrf_token": csrf(browser, "/contacts/new"), "email": "nuevo@coop.com",
-        "name": "Nuevo", "tags": ["junta", "socios"], "source": "customers"})
+        "name": "Nuevo", "tags": ["junta", "socios"], "source": "customers", "attest": "1"})
 
     guardado = contacts.by_email(database, account_of(database)["_id"],
                                  "nuevo@coop.com")

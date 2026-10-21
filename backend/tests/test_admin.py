@@ -251,7 +251,7 @@ def test_la_ficha_ensena_cifras_y_no_direcciones(client, database, outbox):
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
     navegador.post("/contacts/import", data={
-        "csrf_token": token, "source": contacts.MEMBERS, "tags": ["socios"],
+        "csrf_token": token, "source": contacts.MEMBERS, "attest": "1", "tags": ["socios"],
         "note": "", "archivo": (io.BytesIO(b"correo\nana@coop.com\nbea@coop.com\n"),
                                 "socios.csv"),
     }, content_type="multipart/form-data")
@@ -358,7 +358,7 @@ def test_la_actividad_trae_entradas_importaciones_pagos_y_decisiones(
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
     navegador.post("/contacts/import", data={
-        "csrf_token": token, "source": "members", "note": "",
+        "csrf_token": token, "source": "members", "attest": "1", "note": "",
         "archivo": (io.BytesIO(b"correo\nana@coop.com\n"), "socios.csv")},
         content_type="multipart/form-data")
 
@@ -470,7 +470,7 @@ def test_la_actividad_no_ensena_las_direcciones_de_sus_contactos(
     with navegador.session_transaction() as sess:
         token = sess["_csrf"]
     navegador.post("/contacts/import", data={
-        "csrf_token": token, "source": "members", "note": "",
+        "csrf_token": token, "source": "members", "attest": "1", "note": "",
         "archivo": (io.BytesIO(b"correo\nbea@coop.com\ncarlos@coop.com\n"),
                     "lista.csv")},
         content_type="multipart/form-data")

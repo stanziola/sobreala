@@ -28,7 +28,8 @@ def llave(database, cuenta, *, mode="live", scopes=("contacts:read", "contacts:w
 
 
 def cargar(client, auth, filas, **extra):
-    data = {"consent": {"source": "customers", "note": "Clientes"}, "contacts": filas}
+    data = {"consent": {"source": "customers", "note": "Clientes", "attested": True},
+            "contacts": filas}
     data.update(extra)
     return client.post("/api/v1/contacts", json=data, headers=auth)
 

@@ -396,7 +396,8 @@ _CONTACT = {
     "fields": {"CIUDAD": "Santiago", "TRANSACCIONES": _ROWS},
     "status": "active", "suppression": None, "complete": True,
     "consent": {"source": "members", "note": "Lista de socios 2026",
-                "recorded_at": "2026-10-01T15:20:00Z"},
+                "recorded_at": "2026-10-01T15:20:00Z", "attested": True,
+                "by": {"type": "api_key", "name": "Sistema de socios"}},
     "added_by": "api", "created_at": "2026-10-01T15:20:00Z",
     "updated_at": "2026-10-12T13:05:44Z"}
 _TEMPLATE = {"id": "6533b1d2a1b2c3d4e5f60901", "name": "Estado de cuenta", "source": "canvas",
@@ -530,12 +531,16 @@ GROUPS: list[dict[str, Any]] = [
               {"name": "consent", "type": "objeto", "required": True,
                "description": "De dónde salieron: `source` es own_form (tu formulario), "
                               "members (socios), customers (clientes), event (un evento) u "
-                              "other; `note`, hasta 300 caracteres. Se guarda en cada "
-                              "contacto nuevo, y es lo que enseñas si alguien reclama."},
+                              "other; `note`, hasta 300 caracteres; y `attested: true`, "
+                              "con el que confirmas que esas personas te dieron su correo "
+                              "y aceptaron recibir tus mensajes (sin él, 422). Se guarda "
+                              "en cada contacto nuevo con el nombre de la clave, y es lo "
+                              "que enseñas si alguien reclama."},
               {"name": "tags", "type": "lista de textos",
                "description": "Etiquetas para todos los de esta carga."},
           ],
-          "request": {"consent": {"source": "members", "note": "Sistema de socios"},
+          "request": {"consent": {"source": "members", "note": "Sistema de socios",
+                                  "attested": True},
                       "tags": ["Socios"],
                       "contacts": [{"email": "ana@ejemplo.com", "name": "Ana Pérez",
                                     "external_id": "1043",

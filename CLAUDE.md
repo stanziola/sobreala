@@ -322,7 +322,10 @@ cosa está como está, y lo que ya se probó y se quitó.
   se borra el contacto.
 - La importación corre dentro del request, en streaming; hay que mudarla antes
   del primer cliente con más de unas 5,000 filas. `consent` guarda de dónde
-  salió cada contacto.
+  salió cada contacto, y desde octubre de 2026 **la declaración** de quien
+  carga (casilla obligatoria, `attested: true` en la API): esas personas
+  aceptaron recibir sus correos. Se guarda con quién la hizo y en qué
+  importación.
 - **Listas dentro de un contacto** (octubre de 2026): una columna de tipo lista
   guarda filas (las transacciones de un socio), 2 por cuenta y 50 filas, cada
   una con su id; **pueden ir vacías** y no dejan incompleto a nadie. Y **el id de
@@ -625,13 +628,14 @@ no se descubra el día del lanzamiento.
   `mail.sobreala.com`); separar los dos es lo que impide que la reputación de
   las campañas arrastre a los códigos de confirmación. El permiso de IAM para
   los dominios de los clientes también está: uno de prueba ya envía.
-- **Registro de consentimiento por contacto.** Guardar de dónde salió cada
-  dirección y cuándo, en el propio documento del contacto. Hoy el importador no
-  lo pide, y es exactamente lo que hay que enseñar cuando alguien reclame.
-- ~~**Pedir la producción de SES en la cuenta nueva de Sobreala.**~~ Hecho
-  (octubre de 2026). Lo que se le prometió a Amazon sobre bajas, supresiones y
-  umbrales tiene que estar funcionando cuando empiecen las campañas: por eso la
-  pausa automática va antes de la primera.
+- ~~**Registro de consentimiento por contacto.**~~ Hecho: cada contacto guarda
+  de dónde salió, cuándo y, desde octubre de 2026, la declaración de quien lo
+  cargó de que aceptó recibir correos, con quién la hizo (`docs/contactos.md`).
+- **Pedir la producción de SES en la cuenta nueva de Sobreala.** **Sigue en
+  sandbox** (21 de octubre de 2026; antes decía «hecho», y no lo estaba). Va
+  después de crear el worker en Railway. Lo que se le prometa a Amazon sobre
+  bajas, supresiones, umbrales y el origen de los contactos tiene que estar
+  funcionando: por eso la pausa automática y la declaración van antes.
 - **Contrato de encargo para clientes grandes.** El tratamiento de datos de
   terceros ya está pactado en los términos públicos (§8), que se aceptan al
   registrarse. Una cooperativa grande puede pedir además un documento firmado;

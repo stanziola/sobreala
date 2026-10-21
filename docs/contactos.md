@@ -85,6 +85,18 @@ al importar, la nota y la fecha. Se pregunta antes de escribir nada porque no se
 puede rellenar hacia atrás, y es lo que hay que enseñar cuando alguien reclame
 que no dio su correo.
 
+**Y desde octubre de 2026, la declaración**: al importar, al crear uno a mano y
+por la API (`consent.attested: true`), quien carga confirma que esas personas le
+dieron su correo y aceptaron recibir mensajes de su organización. Es una
+casilla obligatoria: sin ella no se escribe nada. Se guarda en cada contacto
+`attested`, quién lo declaró (`by`: el usuario con su correo copiado, o la clave
+de API con su nombre, para que se lea aunque después se borren) y, si entró en
+una importación, cuál (`import_id`, el `_id` de `imports`). La ficha del
+contacto, la de administración, el CSV de exportar y la API lo enseñan entero.
+**Los contactos de antes no tienen `attested`**: no se pedía, y la pantalla dice
+«No se pedía todavía» en vez de inventar un sí. Las direcciones de prueba de la
+demostración entran confirmadas, porque las confirma quien las recibe.
+
 **Si está suprimido no se marca en el contacto.** La supresión vive en su propia
 colección y se consulta en lote con `$in`; así las dos no pueden separarse, y un
 contacto borrado y vuelto a importar reaparece suprimido. La columna «Estado» de

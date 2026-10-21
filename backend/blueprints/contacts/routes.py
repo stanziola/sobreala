@@ -124,6 +124,7 @@ def shared(db, account, **extra):
     limit = accounts.contact_limit(account)
     return {
         "account": account, "total": total, "active": active, "limit": limit,
+        "consent_who": consent_who,
         "blocked_total": total - active,
         "left": max(0, limit - active),
         "suppressed_total": suppressions.count(db, account["_id"]),
@@ -214,6 +215,8 @@ def add_one():
                                 domain=address_check.domain_of(address))
         elif source not in contacts.SOURCES:
             errors["source"] = t("error_required")
+        elif not request.form.get("attest"):
+            errors["attest"] = t("consent_attest_required")
         elif contacts.active_count(db, account["_id"]) >= accounts.contact_limit(account):
             errors["form"] = t("error_contacts_full")
         elif errors:
@@ -225,8 +228,9 @@ def add_one():
                 name=request.form.get("name", "").strip(),
                 tags=tags_chosen(account),
                 values=written,
-                consent=contacts.consent_of(source,
-                                            request.form.get("note", "")))
+                consent=contacts.consent_of(
+                    source, request.form.get("note", ""), attested=True,
+                    by=contacts.consent_by_user(current_account())))
             # Si esa dirección está anulada, se guarda igual pero no va a
             # recibir nada: mejor decirlo ahora que dejarlo descubrir.
             if suppressions.has(db, account["_id"], address):
@@ -494,7 +498,10 @@ def csv_lines(account, rows, blocked):
     writer.writerow([t("contacts_col_email"), t("contacts_col_name"),
                      t("contacts_col_tags"), t("contacts_col_how"),
                      t("contacts_col_added"), t("contacts_col_status")]
-                    + [one["label"] for one in mine] + [t("contacts_external")])
+                    + [one["label"] for one in mine] + [t("contacts_external")]
+                    + [t("consent_col_source"), t("consent_col_note"),
+                       t("consent_col_when"), t("consent_col_attested"),
+                       t("consent_col_by")])
     yield flush()
     for row in rows:
         how = row.get("added_by")
@@ -510,6 +517,7 @@ def csv_lines(account, rows, blocked):
             else t("contacts_status_active"),
             *[written(row, one) for one in mine],
             row.get("external_id", ""),
+            *consent_cells(row.get("consent")),
         ])
         yield flush()
 
@@ -808,6 +816,27 @@ def chosen_columns(db, account, head: list[str]):
     return take, None
 
 
+def consent_cells(consent: dict | None) -> list[str]:
+    """El origen de un contacto, en las columnas del CSV (octubre de 2026)."""
+    if not consent:
+        return ["", "", "", "", ""]
+    when = consent.get("recorded_at")
+    if "attested" not in consent:
+        attested = t("consent_not_asked")
+    else:
+        attested = t("consent_yes") if consent["attested"] else t("consent_no")
+    return [t("consent_" + consent.get("source", contacts.OTHER)), consent.get("note", ""),
+            when.date().isoformat() if when else "", attested, consent_who(consent)]
+
+
+def consent_who(consent: dict | None) -> str:
+    """Quién lo declaró: el correo del usuario o el nombre de la clave."""
+    by = (consent or {}).get("by") or {}
+    if by.get("key_name") or by.get("key_id"):
+        return t("consent_by_key", name=by.get("key_name", ""))
+    return by.get("email", "")
+
+
 @bp.route("/contacts/import", methods=["GET", "POST"])
 def upload():
     account = signed_in()
@@ -838,8 +867,15 @@ def upload():
             # Asked before anything is written, because it cannot be filled in
             # afterwards: a list imported without an origin has none, ever.
             errors["source"] = t("error_required")
+        elif not request.form.get("attest"):
+            # La declaración, octubre de 2026: sin ella no se escribe nada.
+            errors["attest"] = t("consent_attest_required")
         else:
-            consent = contacts.consent_of(source, request.form.get("note", ""))
+            job_id = ObjectId()
+            consent = {**contacts.consent_of(source, request.form.get("note", ""),
+                                             attested=True,
+                                             by=contacts.consent_by_user(current_account())),
+                       "import_id": job_id}
             tags = tags_chosen(account)
             # El archivo se lee dos veces: la primera solo los títulos, para
             # saber qué columna es cuál, y la segunda es la que escribe.
@@ -860,7 +896,7 @@ def upload():
                              max_mb=Config.IMPORT_MAX_BYTES // (1024 * 1024)))
 
             job = imports.start(db, account["_id"], filename=archivo.filename,
-                                tags=tags, consent=consent)
+                                tags=tags, consent=consent, job_id=job_id)
             try:
                 counts, stopped = importer.run(
                     db, account["_id"], archivo.stream, tags=tags,

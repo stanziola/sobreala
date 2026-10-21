@@ -33,7 +33,7 @@ from flask import request
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
-from blueprints.api.core import (Fields, account, api_route, body, fail, iso, ok,
+from blueprints.api.core import (Fields, account, api_route, body, fail, iso, key, ok,
                                  one_line, page_cursor, page_limit, paged, path_id)
 from db import get_db
 from i18n import t
@@ -72,6 +72,16 @@ def blocked_for(db, account_id, emails: list[str]) -> dict[str, dict]:
         {"email_normalized": 1, "reason": 1, "created_at": 1})}
 
 
+def consent_by(by: dict | None) -> dict | None:
+    """Quién declaró el origen: un usuario (su correo) o una clave de API (su
+    nombre). Nunca los ids internos."""
+    if not by:
+        return None
+    if "key_id" in by:
+        return {"type": "api_key", "name": by.get("key_name", "")}
+    return {"type": "user", "email": by.get("email", "")}
+
+
 def contact_shape(one: dict, blocked: dict[str, dict], definitions: list[dict]) -> dict:
     """Cómo sale un contacto: sus datos, sus listas, si puede recibir y de dónde
     salió."""
@@ -98,7 +108,9 @@ def contact_shape(one: dict, blocked: dict[str, dict], definitions: list[dict]) 
                         if block else None),
         "complete": not columns.missing(one, definitions),
         "consent": ({"source": consent.get("source"), "note": consent.get("note", ""),
-                     "recorded_at": iso(consent.get("recorded_at"))} if consent else None),
+                     "recorded_at": iso(consent.get("recorded_at")),
+                     "attested": consent.get("attested"),
+                     "by": consent_by(consent.get("by"))} if consent else None),
         "added_by": one.get("added_by"),
         "created_at": iso(one.get("created_at")),
         "updated_at": iso(one.get("updated_at")),
@@ -255,8 +267,11 @@ def upsert_contacts():
         fields.errors["contacts"] = t("api_contacts_rows", n=ROWS_MAX)
     consent = data.get("consent")
     note = consent.get("note", "") if isinstance(consent, dict) else ""
-    if (not isinstance(consent, dict) or set(consent) - {"source", "note"}
+    # `attested: true` (octubre de 2026): quien carga declara que esas
+    # personas dieron su correo y aceptaron recibir sus mensajes.
+    if (not isinstance(consent, dict) or set(consent) - {"source", "note", "attested"}
             or consent.get("source") not in contacts.SOURCES
+            or consent.get("attested") is not True
             or not isinstance(note, str) or len(note) > 300):
         fields.errors["consent"] = t("api_contacts_consent",
                                      sources=", ".join(contacts.SOURCES))
@@ -296,7 +311,9 @@ def upsert_contacts():
         fail("busy", 409, retry_after=5)
     try:
         write_rows(db, company, prepared, results, definitions=definitions,
-                   batch_tags=batch_tags, consent=contacts.consent_of(consent["source"], note))
+                   batch_tags=batch_tags,
+                   consent=contacts.consent_of(consent["source"], note, attested=True,
+                                               by=contacts.consent_by_key(key())))
     finally:
         locks.release(db, lock_name, token)
 

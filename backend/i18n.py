@@ -1107,9 +1107,10 @@ TEXTS = {
                           "es lo que hay que enseñar si alguien reclama.",
     "contacts_edit_submit": "Guardar",
     "contacts_history_title": "Lo que no se puede cambiar",
-    "contacts_history_hint": "Cuándo entró, por dónde y qué origen se declaró. "
-                             "Es lo que hay que enseñar si alguien reclama que "
-                             "no dio su correo, así que no se edita.",
+    "contacts_history_hint": "Cuándo entró, por dónde, qué origen se declaró y quién "
+                             "confirmó que aceptó recibir correos. Es lo que hay que "
+                             "enseñar si alguien reclama que no dio su correo, así "
+                             "que no se edita.",
     "contacts_blocked_tag": "Suprimido",
     "contacts_saved": "Listo, guardamos el contacto.",
 
@@ -3040,7 +3041,9 @@ TEXTS = {
     # --- la API: contactos (octubre de 2026) ----------------------------------
     "api_contacts_rows": "Van de 1 a {n} contactos por carga.",
     "api_contacts_consent": "Falta de dónde salieron: source es uno de {sources}, "
-                            "y note (opcional) hasta 300 caracteres.",
+                            "attested tiene que ser true (confirmas que esas personas "
+                            "aceptaron recibir tus mensajes) y note (opcional) hasta "
+                            "300 caracteres.",
     "api_contacts_email": "Ese correo no parece válido.",
     "api_contacts_unknown_tags": "Estas etiquetas no existen: {what}. Créalas antes "
                                  "con POST /tags.",
@@ -3565,6 +3568,24 @@ TEXTS = {
     "audience_bad_shape": "Las condiciones no se entienden.",
     "audience_bad_match": "Elige si se cumplen todas o alguna.",
     "audience_too_many": "Son como mucho {n} condiciones.",
+
+    # La declaración del origen (octubre de 2026): quien carga confirma que
+    # esas personas aceptaron, y queda guardado con quién lo hizo.
+    "consent_attest": "Confirmo que estas personas me dieron su correo y "
+                      "aceptaron recibir mensajes de mi organización.",
+    "consent_attest_required": "Marca la casilla: sin esa confirmación no "
+                               "guardamos los contactos.",
+    "consent_col_source": "Origen",
+    "consent_col_note": "Nota del origen",
+    "consent_col_when": "Origen registrado",
+    "consent_col_attested": "Confirmó que aceptaron",
+    "consent_col_by": "Lo declaró",
+    "consent_yes": "Sí",
+    "consent_no": "No",
+    "consent_not_asked": "No se pedía todavía",
+    "consent_by_key": "Clave de API «{name}»",
+    "admin_imports_attested": "confirmado por {email}",
+
 }
 
 

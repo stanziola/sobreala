@@ -101,7 +101,7 @@ def test_a_mano_no_entra_una_de_un_dominio_muerto(client, database, outbox):
     browser = inside(client)
     pantalla = browser.post("/contacts/new", data={
         "csrf_token": csrf(browser, "/contacts/new"), "email": f"beto@{MUERTO}",
-        "name": "Beto", "source": "members"}).get_data(as_text=True)
+        "name": "Beto", "source": "members", "attest": "1"}).get_data(as_text=True)
     assert "no recibe correo" in pantalla
     assert contacts.count(database, account_of(database)["_id"]) == 0
 

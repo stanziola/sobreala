@@ -87,7 +87,7 @@ def test_cerrada_no_guarda_nada_aunque_escriba_el_formulario(client, database,
     browser, cuenta = cerrada(client, database)
 
     respuesta = browser.post("/contacts/import", data={
-        "csrf_token": csrf(browser, "/settings"), "source": "members", "note": "",
+        "csrf_token": csrf(browser, "/settings"), "source": "members", "attest": "1", "note": "",
         "archivo": (io.BytesIO(b"correo\nana@coop.com\n"), "lista.csv")},
         content_type="multipart/form-data")
 

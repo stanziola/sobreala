@@ -58,10 +58,6 @@ el panel esté casi terminado.
 
 ## 2. Antes de la primera campaña real de un cliente
 
-- [ ] **Registro de consentimiento por contacto.** *Claude.*
-  Guardar de dónde salió cada dirección y cuándo. Es lo que hay que enseñar
-  cuando alguien reclame. (Ya estaba en `CLAUDE.md`.)
-
 - [ ] **Pedirle al cliente sus datos de facturación (RUC).** *Claude.*
   El panel no los guarda en ningún sitio, y una factura en Panamá los necesita.
 

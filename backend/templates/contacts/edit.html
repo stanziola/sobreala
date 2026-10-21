@@ -130,6 +130,23 @@
     <b>{{ t('contacts_how_' + row.added_by) if row.added_by else '—' }}</b></li>
   <li><span>{{ t('admin_imports_origin') }}</span>
     <b>{{ t('consent_' + row.consent.source) if row.consent else '—' }}</b></li>
+  {#- El origen entero (octubre de 2026): la nota, cuándo se declaró, si se
+      confirmó que aceptaron y quién. Los de antes no tienen la confirmación:
+      no se pedía, y no se inventa. -#}
+  {% if row.consent %}
+  {% if row.consent.note %}
+  <li><span>{{ t('consent_col_note') }}</span> <b>{{ row.consent.note }}</b></li>
+  {% endif %}
+  {% if row.consent.recorded_at %}
+  <li><span>{{ t('consent_col_when') }}</span> <b>{{ row.consent.recorded_at|at_moment }}</b></li>
+  {% endif %}
+  <li><span>{{ t('consent_col_attested') }}</span>
+    <b>{% if row.consent.attested is not defined %}{{ t('consent_not_asked') }}
+       {%- elif row.consent.attested %}{{ t('consent_yes') }}{% else %}{{ t('consent_no') }}{% endif %}</b></li>
+  {% if consent_who(row.consent) %}
+  <li><span>{{ t('consent_col_by') }}</span> <b>{{ consent_who(row.consent) }}</b></li>
+  {% endif %}
+  {% endif %}
 </ul>
 <p class="hint">{{ t('contacts_history_hint') }}</p>
 

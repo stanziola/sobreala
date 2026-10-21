@@ -17,4 +17,13 @@
 
   <label for="note">{{ t('consent_note') }}</label>
   <input id="note" name="note" type="text" autocomplete="off" maxlength="300">
+
+  {#- La declaración (octubre de 2026): quien carga confirma que esas personas
+      dieron su correo y aceptaron recibir mensajes. Se guarda con quién la
+      hizo, y sin ella no se escribe nada. -#}
+  <label class="check check--wrap">
+    <input type="checkbox" name="attest" value="1" required>
+    <span>{{ t('consent_attest') }}</span>
+  </label>
+  {% if errors is defined and errors.attest %}<p class="error">{{ errors.attest }}</p>{% endif %}
 </fieldset>

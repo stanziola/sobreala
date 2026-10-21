@@ -2454,7 +2454,10 @@ def test_address_confirm(raw):
     if account is None or not accounts.confirm_test_address(db, account["_id"], email):
         return render_template("test-address.html", ok=False), 404
     contacts.create(db, account["_id"], email=email,
-                    consent=contacts.consent_of(contacts.OTHER, t("test_address_consent")))
+                    # La confirmó quien la recibe, con su enlace: eso es el
+                    # consentimiento mismo.
+                    consent=contacts.consent_of(contacts.OTHER, t("test_address_consent"),
+                                                attested=True))
     return render_template("test-address.html", ok=True, email=email,
                            company=account.get("company_name", ""),
                            logo=accounts.logo_of(account))

@@ -51,14 +51,14 @@ def crear(browser, nombre, tipo="text"):
 def guardar_contacto(browser, email, **columnas):
     """Agregar uno a mano, como lo manda la pantalla."""
     data = {"csrf_token": csrf(browser, "/contacts/new"),
-            "email": email, "source": "members"}
+            "email": email, "source": "members", "attest": "1"}
     data.update({f"col-{key}": value for key, value in columnas.items()})
     return browser.post("/contacts/new", data=data)
 
 
 def subir(browser, texto, **extra):
     data = {"csrf_token": csrf(browser, "/contacts/import"),
-            "source": "members", "note": "",
+            "source": "members", "attest": "1", "note": "",
             "archivo": (io.BytesIO(texto.encode("utf-8")), "socios.csv")}
     data.update(extra)
     return browser.post("/contacts/import", data=data,

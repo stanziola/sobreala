@@ -874,7 +874,12 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
       &#34;consent&#34;: {
         &#34;source&#34;: &#34;members&#34;,
         &#34;note&#34;: &#34;Lista de socios 2026&#34;,
-        &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;
+        &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
+        &#34;attested&#34;: true,
+        &#34;by&#34;: {
+          &#34;type&#34;: &#34;api_key&#34;,
+          &#34;name&#34;: &#34;Sistema de socios&#34;
+        }
       },
       &#34;added_by&#34;: &#34;api&#34;,
       &#34;created_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
@@ -916,7 +921,12 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
       &#34;consent&#34;: {
         &#34;source&#34;: &#34;members&#34;,
         &#34;note&#34;: &#34;Lista de socios 2026&#34;,
-        &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;
+        &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
+        &#34;attested&#34;: true,
+        &#34;by&#34;: {
+          &#34;type&#34;: &#34;api_key&#34;,
+          &#34;name&#34;: &#34;Sistema de socios&#34;
+        }
       },
       &#34;added_by&#34;: &#34;api&#34;,
       &#34;created_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
@@ -980,7 +990,12 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
   &#34;consent&#34;: {
     &#34;source&#34;: &#34;members&#34;,
     &#34;note&#34;: &#34;Lista de socios 2026&#34;,
-    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;
+    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
+    &#34;attested&#34;: true,
+    &#34;by&#34;: {
+      &#34;type&#34;: &#34;api_key&#34;,
+      &#34;name&#34;: &#34;Sistema de socios&#34;
+    }
   },
   &#34;added_by&#34;: &#34;api&#34;,
   &#34;created_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
@@ -1017,7 +1032,12 @@ Permiso: <code>contacts:read</code> · Con una llave de prueba: sí.          </
   &#34;consent&#34;: {
     &#34;source&#34;: &#34;members&#34;,
     &#34;note&#34;: &#34;Lista de socios 2026&#34;,
-    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;
+    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
+    &#34;attested&#34;: true,
+    &#34;by&#34;: {
+      &#34;type&#34;: &#34;api_key&#34;,
+      &#34;name&#34;: &#34;Sistema de socios&#34;
+    }
   },
   &#34;added_by&#34;: &#34;api&#34;,
   &#34;created_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
@@ -1047,7 +1067,7 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
       <tr>
         <th scope="row"><code>consent</code> <span class="api-required">obligatorio</span><br>
           <span class="api-type">objeto</span></th>
-        <td>De dónde salieron: <code>source</code> es own_form (tu formulario), members (socios), customers (clientes), event (un evento) u other; <code>note</code>, hasta 300 caracteres. Se guarda en cada contacto nuevo, y es lo que enseñas si alguien reclama.</td>
+        <td>De dónde salieron: <code>source</code> es own_form (tu formulario), members (socios), customers (clientes), event (un evento) u other; <code>note</code>, hasta 300 caracteres; y <code>attested: true</code>, con el que confirmas que esas personas te dieron su correo y aceptaron recibir tus mensajes (sin él, 422). Se guarda en cada contacto nuevo con el nombre de la clave, y es lo que enseñas si alguien reclama.</td>
       </tr>
       <tr>
         <th scope="row"><code>tags</code><br>
@@ -1065,7 +1085,8 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   -d &#39;{
   &#34;consent&#34;: {
     &#34;source&#34;: &#34;members&#34;,
-    &#34;note&#34;: &#34;Sistema de socios&#34;
+    &#34;note&#34;: &#34;Sistema de socios&#34;,
+    &#34;attested&#34;: true
   },
   &#34;tags&#34;: [
     &#34;Socios&#34;
@@ -1098,7 +1119,8 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   -d &#39;{
   &#34;consent&#34;: {
     &#34;source&#34;: &#34;members&#34;,
-    &#34;note&#34;: &#34;Sistema de socios&#34;
+    &#34;note&#34;: &#34;Sistema de socios&#34;,
+    &#34;attested&#34;: true
   },
   &#34;tags&#34;: [
     &#34;Socios&#34;
@@ -1275,7 +1297,12 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   &#34;consent&#34;: {
     &#34;source&#34;: &#34;members&#34;,
     &#34;note&#34;: &#34;Lista de socios 2026&#34;,
-    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;
+    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
+    &#34;attested&#34;: true,
+    &#34;by&#34;: {
+      &#34;type&#34;: &#34;api_key&#34;,
+      &#34;name&#34;: &#34;Sistema de socios&#34;
+    }
   },
   &#34;added_by&#34;: &#34;api&#34;,
   &#34;created_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
@@ -1313,7 +1340,12 @@ Permiso: <code>contacts:write</code> · Con una llave de prueba: no.          </
   &#34;consent&#34;: {
     &#34;source&#34;: &#34;members&#34;,
     &#34;note&#34;: &#34;Lista de socios 2026&#34;,
-    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;
+    &#34;recorded_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,
+    &#34;attested&#34;: true,
+    &#34;by&#34;: {
+      &#34;type&#34;: &#34;api_key&#34;,
+      &#34;name&#34;: &#34;Sistema de socios&#34;
+    }
   },
   &#34;added_by&#34;: &#34;api&#34;,
   &#34;created_at&#34;: &#34;2026-10-01T15:20:00Z&#34;,

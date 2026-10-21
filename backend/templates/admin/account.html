@@ -417,7 +417,9 @@
         <td>{{ job.filename }}<br>
           <span class="table__quiet">{{ t('admin_imports_origin') }}:
             {{ t('consent_' + job.consent.source) }}
-            {%- if job.consent.note %} · {{ job.consent.note }}{% endif %}</span></td>
+            {%- if job.consent.note %} · {{ job.consent.note }}{% endif %}
+            {%- if job.consent.attested %} · {{ t('admin_imports_attested',
+                 email=(job.consent.by or {}).get('email', '')) }}{% endif %}</span></td>
         <td class="table__quiet">{{ job.created_at|ago }}</td>
         <td class="table__quiet">{{ t('import_added') }}: {{ job.added }} ·
           {{ t('import_invalid') }}: {{ job.invalid }}</td>

@@ -25,8 +25,11 @@ def now() -> datetime:
 
 
 def start(db, account_id, *, filename: str, tags: list[str],
-          consent: dict[str, Any]) -> Any:
+          consent: dict[str, Any], job_id=None) -> Any:
+    """`job_id` is chosen by the caller when its contacts carry it in their
+    `consent.import_id` (October 2026)."""
     doc = {
+        **({"_id": job_id} if job_id is not None else {}),
         "account_id": account_id,
         "filename": filename[:200],
         "tags": tags,

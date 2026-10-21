@@ -99,6 +99,14 @@ sale en `blocked` como `filters`, y mandar responde 409 `cannot_send`. Los
 envíos de `/sends` traen la frase. La guía «Condiciones de una campaña» de
 `api_spec.py` explica la forma de cada regla; el detalle, en `docs/envios.md`.
 
+## La declaración del origen
+
+`POST /contacts` pide `consent.attested: true` (octubre de 2026): quien carga
+confirma que esas personas dieron su correo y aceptaron recibir sus mensajes.
+Sin él, 422. Cada contacto guarda que lo declaró esa clave, por su nombre, y
+`GET` lo devuelve en `consent.by` (`{"type": "api_key", "name": …}`, o un
+usuario con su correo si entró por el Dashboard), nunca los ids internos.
+
 ## Plantillas (`services/pieces.py`)
 
 Lo que hacen el editor y la API con un lienzo vive en `services/pieces.py`,
