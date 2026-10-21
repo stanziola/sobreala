@@ -539,8 +539,10 @@ def demo_to_admins(db, client) -> bool:
                         t("mail_admin_demo_contacts", answer=t(
                             "welcome_demo_contacts_" + client["demo_contacts"])
                           if client.get("demo_contacts") else "-"),
-                        t("mail_admin_demo_source", answer=t(
+                        t("mail_admin_demo_source", answer=(t(
                             "welcome_demo_source_" + client["demo_source"])
+                            + (f": {client['demo_source_other']}"
+                               if client.get("demo_source_other") else ""))
                           if client.get("demo_source") else "-")]
                        + ([t("mail_admin_demo_website", answer=client["demo_website"])]
                           if client.get("demo_website") else []),

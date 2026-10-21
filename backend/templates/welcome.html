@@ -17,10 +17,15 @@
 
   {% if asked %}
   {# Se pide una sola vez: con la solicitud hecha el formulario ya no sale, y
-     queda este aviso con su gancho verde hasta que se abra la cuenta. #}
+     queda este aviso con su gancho verde hasta que se abra la cuenta. Desde
+     octubre de 2026 dice también qué pasa ahora: que se revisa pronto y que la
+     confirmación llega al correo (se había quitado ese mismo mes). #}
   <div class="notice notice--done" role="status">
     <span class="notice__tick">{% include "_icon-check.svg" %}</span>
-    <strong>{{ t('welcome_demo_done_title') }}</strong>
+    <div>
+      <strong>{{ t('welcome_demo_done_title') }}</strong>
+      <p>{{ t('welcome_demo_done_wait', email=account.email) }}</p>
+    </div>
   </div>
   {% else %}
   <form method="post" action="{{ url_for('auth.request_demo') }}" novalidate data-once>
@@ -53,6 +58,17 @@
       {% endfor %}
     </select>
     {% if errors.source %}<p class="error">{{ errors.source }}</p>{% endif %}
+
+    {#- «Otra forma» dice cuál (octubre de 2026). Con JavaScript la casilla sale
+        solo al elegirla (`data-shown-by`, panel.js); sin él se ve siempre, con
+        su pista. -#}
+    <div class="demo-other" data-shown-by="source" data-shown-value="other">
+      <label for="source_other">{{ t('welcome_demo_source_other_label') }}</label>
+      <input id="source_other" name="source_other" type="text" maxlength="200"
+             value="{{ form.source_other }}" aria-describedby="source-other-hint">
+      <p class="hint" id="source-other-hint">{{ t('welcome_demo_source_other_hint') }}</p>
+      {% if errors.source_other %}<p class="error">{{ errors.source_other }}</p>{% endif %}
+    </div>
 
     <label for="website">{{ t('welcome_demo_website') }}</label>
     <input id="website" name="website" type="text" inputmode="url" maxlength="200"

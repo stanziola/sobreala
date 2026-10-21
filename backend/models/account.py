@@ -1041,8 +1041,22 @@ def clean_website(raw: str) -> str | None:
     return text
 
 
+# «Otra forma» de conseguir los contactos dice cuál (octubre de 2026).
+DEMO_SOURCE_OTHER = "other"
+DEMO_OTHER = (3, 200)
+
+
+def clean_source_other(raw: str) -> str | None:
+    """Cómo consiguió los contactos, si eligió «Otra forma»: una línea de 3 a 200
+    caracteres, o None."""
+    text = " ".join(str(raw or "").split())
+    if not DEMO_OTHER[0] <= len(text) <= DEMO_OTHER[1]:
+        return None
+    return text
+
+
 def request_demo(db, account_id, *, business: str, purpose: str, contacts: str,
-                 source: str, website: str = "") -> None:
+                 source: str, website: str = "", source_other: str = "") -> None:
     """Dejar pedida la demostración: a qué se dedica el negocio, para qué usará
     Sobreala, cuántos contactos tiene, de dónde salieron y su sitio web si lo dio.
 
@@ -1055,6 +1069,8 @@ def request_demo(db, account_id, *, business: str, purpose: str, contacts: str,
               "demo_requested_at": now(), "updated_at": now()}
     if website:
         fields["demo_website"] = website
+    if source == DEMO_SOURCE_OTHER and source_other:
+        fields["demo_source_other"] = source_other
     db.accounts.update_one({"_id": account_id}, {"$set": fields})
 
 

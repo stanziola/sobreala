@@ -53,12 +53,12 @@ PARA_QUE = "Avisos de asambleas y estados de cuenta a los socios."
 
 
 def pedir(browser, *, business=NEGOCIO, purpose=PARA_QUE, contacts="500_2k",
-          source="customers", website="", token_from="/welcome"):
+          source="customers", website="", token_from="/welcome", source_other=""):
     """Pedir la demostración como lo hace la bienvenida."""
     return browser.post("/welcome/demo", data={
         "csrf_token": csrf(browser, token_from), "business": business,
         "purpose": purpose, "contacts": contacts, "source": source,
-        "website": website})
+        "source_other": source_other, "website": website})
 
 
 def avisos(database, purpose):
@@ -195,7 +195,9 @@ def test_pedir_la_demo_pregunta_a_que_se_dedica_y_para_que(client, database,
 
     pantalla = browser.get("/welcome").get_data(as_text=True)
     assert "Tu solicitud ha sido recibida" in pantalla
-    # Lo verde dice solo eso: ni la espera ni el teléfono.
+    # Y qué pasa ahora (octubre de 2026): se revisa pronto, y la confirmación
+    # llega al correo de la cuenta. El teléfono no.
+    assert "La revisamos pronto" in pantalla and cuenta["email"] in pantalla
     assert "Te escribimos al" not in pantalla
 
 
@@ -453,3 +455,29 @@ def test_la_portada_trae_los_botones_de_cada_estado():
     assert 'data-href-paid="https://app.sobreala.com/dashboard"' in portada
     assert "data-label-demo" not in portada and "data-cta-backup" in portada
     assert 'data-label-demo="Ver planes"' in sitio
+
+
+def test_otra_forma_dice_cual(client, database, outbox):
+    """«Otra forma» abre su casilla (octubre de 2026): sin decir cuál no se pide,
+    y lo que dice llega a la ficha y al correo de quien administra."""
+    make_admin(client, database)
+    browser, cuenta = cerrada(client, database)
+    pantalla = browser.get("/welcome").get_data(as_text=True)
+    assert 'name="source_other"' in pantalla and 'data-shown-value="other"' in pantalla
+
+    sin_decir = pedir(browser, source="other", source_other="")
+    assert "Cuéntanos cómo los conseguiste" in sin_decir.get_data(as_text=True)
+    assert "demo_requested_at" not in accounts.by_id(database, cuenta["_id"])
+
+    assert pedir(browser, source="other",
+                 source_other="Los anotamos en la feria del libro").status_code == 302
+    guardada = accounts.by_id(database, cuenta["_id"])
+    assert guardada["demo_source_other"] == "Los anotamos en la feria del libro"
+    aviso, = avisos(database, mail_log.ADMIN_DEMO)
+    assert "Otra forma: Los anotamos en la feria del libro" in aviso["text"]
+
+
+def test_con_otra_opcion_no_se_guarda_el_texto(client, database, outbox):
+    browser, cuenta = cerrada(client, database)
+    pedir(browser, source="customers", source_other="esto no va")
+    assert "demo_source_other" not in accounts.by_id(database, cuenta["_id"])

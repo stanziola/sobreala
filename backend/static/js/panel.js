@@ -978,6 +978,28 @@
   });
 })();
 
+/* Una parte que sale solo con una opción elegida (octubre de 2026): la casilla
+   de «Otra forma» en la demostración. `data-shown-by` es el id del <select> y
+   `data-shown-value`, la opción. Sin este guion se ve siempre, con su pista. */
+(function () {
+  Array.prototype.forEach.call(document.querySelectorAll("[data-shown-by]"), function (part) {
+    var select = document.getElementById(part.getAttribute("data-shown-by"));
+    if (!select) return;
+    var wanted = part.getAttribute("data-shown-value");
+    var hint = part.querySelector(".hint");
+    function refresh() {
+      part.hidden = select.value !== wanted;
+    }
+    // Con el guion la pista sobra: la casilla solo sale cuando toca.
+    if (hint) hint.hidden = true;
+    select.addEventListener("change", function () {
+      refresh();
+      if (!part.hidden) { var field = part.querySelector("input"); if (field) field.focus(); }
+    });
+    refresh();
+  });
+})();
+
 /* Escribir o Plantilla (octubre de 2026), en Redactar y en Masivo: se ve solo
    la parte de lo elegido. Sin JavaScript se ven las dos, y el servidor usa la
    elegida. */

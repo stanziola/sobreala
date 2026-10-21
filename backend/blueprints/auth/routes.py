@@ -2094,7 +2094,8 @@ def request_demo():
 
     db = get_db()
     form = {name: request.form.get(name, "")[:1000]
-            for name in ("business", "purpose", "contacts", "source", "website")}
+            for name in ("business", "purpose", "contacts", "source", "source_other",
+                         "website")}
     errors: dict[str, str] = {}
     if not csrf_ok(request.form.get("csrf_token")):
         errors["form"] = t("error_csrf")
@@ -2111,13 +2112,22 @@ def request_demo():
             errors["contacts"] = t("error_demo_choose")
         if form["source"] not in accounts.DEMO_SOURCES:
             errors["source"] = t("error_demo_choose")
+        # «Otra forma» dice cuál (octubre de 2026): sin eso no se sabe nada.
+        other = ""
+        if form["source"] == accounts.DEMO_SOURCE_OTHER:
+            other = accounts.clean_source_other(form["source_other"])
+            if other is None:
+                errors["source_other"] = t("error_demo_other",
+                                           min=accounts.DEMO_OTHER[0],
+                                           max=accounts.DEMO_OTHER[1])
         website = accounts.clean_website(form["website"])
         if website is None:
             errors["website"] = t("error_demo_website")
         if not errors:
             accounts.request_demo(
                 db, account["_id"], business=business, purpose=purpose,
-                contacts=form["contacts"], source=form["source"], website=website)
+                contacts=form["contacts"], source=form["source"], website=website,
+                source_other=other or "")
             # A quien administra, con el teléfono y las respuestas dentro. No
             # puede romper una petición que ya quedó guardada: se traga lo suyo.
             notices.demo_to_admins(db, accounts.by_id(db, account["_id"]))

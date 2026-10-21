@@ -149,19 +149,23 @@ Hasta ese mes la demostración no enviaba nada, así que no enseñaba lo mejor
   **«¿Para qué usarás Sobreala?»** (`demo_business`, `demo_purpose`, de 10 a 500
   caracteres), **cuántos contactos tiene** (`demo_contacts`: menos de 500, 500 a
   2,000, 2,000 a 10,000, más de 10,000) y **cómo los consiguió** (`demo_source`:
-  clientes o socios, alumnos, formulario, eventos, otra), y un **sitio web
+  clientes o socios, alumnos, formulario, eventos, otra; **con «Otra forma» se
+  dice cuál**, de 3 a 200 caracteres, en `demo_source_other`: una casilla que
+  con JavaScript sale solo al elegirla, octubre de 2026), y un **sitio web
   opcional** (`demo_website`, de hasta 200 caracteres, con `https://` si no lo
   trae). Los dos selectos dicen qué plan le conviene y si la lista es de fiar, que
   es lo primero que revisa Amazon. Se le escribe al teléfono personal del
   registro. Solo el dueño y con el correo confirmado.
 - **Con la solicitud hecha el formulario ya no sale**: queda un aviso verde con
-  su gancho que dice solo «Tu solicitud ha sido recibida» (sin la espera ni el
-  teléfono, que se quitaron en octubre de 2026), y un segundo
+  su gancho que dice «Tu solicitud ha sido recibida» y qué pasa ahora: «La
+  revisamos pronto. Cuando la aprobemos, te llegará un correo a {correo} para que
+  empieces» (la espera se quitó a principios de octubre de 2026 y volvió el 20,
+  porque sin ella no se sabía qué esperar; el teléfono no), y un segundo
   envío no guarda nada ni vuelve a avisar. Antes se podía pedir otra vez, con un
   tope de tres al día (`DEMO_PER_ACCOUNT`, ya quitado). Corregir una solicitud
   enviada no se ofrece. A quien administra le llega «{empresa} pidió una
-  demostración» (`admin_demo`, con interruptor), con el teléfono y las respuestas,
-  y la cuenta sale en el filtro «Piden demostración» de Cuentas. La ficha enseña
+  demostración» (`admin_demo`, con interruptor), con el teléfono y las respuestas
+  (también lo que escribió en «Otra forma»), y la cuenta sale en el filtro «Piden demostración» de Cuentas. La ficha enseña
   las respuestas, con el sitio como enlace.
 - **Configuración → Cuenta, con menos texto** (octubre de 2026): el correo se
   llama «Correo» a secas; la dirección postal y los teléfonos van sin frase

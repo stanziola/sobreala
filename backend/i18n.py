@@ -3451,6 +3451,15 @@ TEXTS = {
     "admin_erased_payments": "Pagos que se quedan",
     "admin_erased_no_payments": "No tenía pagos.",
     "admin_erased_back": "Volver a Eventos",
+
+    # --- la demostración (octubre de 2026): «Otra forma» dice cuál, y el aviso
+    # dice qué pasa ahora
+    "welcome_demo_source_other_label": "¿Cuál?",
+    "welcome_demo_source_other_hint": "Si elegiste «Otra forma», cuéntanos cómo los "
+                                      "conseguiste.",
+    "error_demo_other": "Cuéntanos cómo los conseguiste: de {min} a {max} caracteres.",
+    "welcome_demo_done_wait": "La revisamos pronto. Cuando la aprobemos, te llegará un "
+                              "correo a {email} para que empieces.",
 }
 
 
