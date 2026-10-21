@@ -378,7 +378,10 @@ def create_app(overrides: dict | None = None) -> Flask:
             # cliente al entrar. Sin ellos el navegador se planta y el botón
             # parece no hacer nada.
             f"form-action 'self' {Config.paypal_checkout()} "
-            f"{' '.join(Config.paguelofacil_checkout())} {Config.PUBLIC_SITE_URL}",
+            f"{' '.join(Config.paguelofacil_checkout())} {Config.PUBLIC_SITE_URL} "
+            # «Conectar» en Seguridad es un formulario que acaba en el
+            # proveedor (octubre de 2026): sin ellos aquí, el botón no hacía nada.
+            "https://accounts.google.com https://github.com https://appleid.apple.com",
             "frame-ancestors 'none'",
             "base-uri 'none'",
             "object-src 'none'",

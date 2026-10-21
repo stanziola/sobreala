@@ -339,13 +339,13 @@ def ensure_indexes(db: Database | None = None) -> None:
 
 
 def _provider_indexes(db) -> None:
-    """Una cuenta de Google o de GitHub entra a una sola cuenta de Sobreala
-    (octubre de 2026): un índice único parcial para cada una.
+    """Una cuenta de Google, de GitHub o de Apple entra a una sola cuenta de
+    Sobreala (octubre de 2026): un índice único parcial para cada una.
 
     Si ya hubiera dos cuentas con el mismo id, crearlo fallaría, y un fallo aquí
     dejaría sin hacer todo lo que `ensure_indexes_once()` reintenta. Por eso se
     mira antes, se anota y se sigue."""
-    for field in ("google_sub", "github_id"):
+    for field in ("google_sub", "github_id", "apple_sub"):
         repeated = list(db.accounts.aggregate([
             {"$match": {field: {"$type": "string"}}},
             {"$group": {"_id": f"${field}", "n": {"$sum": 1}}},

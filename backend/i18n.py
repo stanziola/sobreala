@@ -490,7 +490,7 @@ TEXTS = {
     "erase_email_code": "El código que te enviamos",
     "erase_send_code": "Enviarme el código",
     "erase_code_sent": "Te enviamos un código a tu correo. Vence en unos minutos.",
-    "erase_code_hint": "Entraste con Google o GitHub y no tienes contraseña: te mandamos un código a tu correo.",
+    "erase_code_hint": "Entraste con Google, GitHub o Apple y no tienes contraseña: te mandamos un código a tu correo.",
     "erase_submit": "Eliminar mi cuenta para siempre",
     "erase_cancel": "Cancelar",
     "erase_error_company": "El nombre no coincide con el de tu empresa.",
@@ -2899,7 +2899,7 @@ TEXTS = {
     "api_keys_password": "Tu contraseña",
     "api_keys_email_code": "El código que te llegó al correo",
     "api_keys_send_code": "Enviarme un código",
-    "api_keys_code_hint": "Entraste con Google o GitHub y no tienes contraseña: te "
+    "api_keys_code_hint": "Entraste con Google, GitHub o Apple y no tienes contraseña: te "
                           "mandamos un código a tu correo.",
     "api_keys_code_sent": "Listo, te mandamos el código.",
     "api_keys_app_code": "El código de tu app de autenticación",
@@ -3586,6 +3586,11 @@ TEXTS = {
     "consent_by_key": "Clave de API «{name}»",
     "admin_imports_attested": "confirmado por {email}",
 
+    "provider_apple": "Apple",
+    # La vuelta de Apple, que se reenvía desde nuestra página (octubre de 2026).
+    "oauth_relay_title": "Entrando a Sobreala",
+    "oauth_relay_lead": "Un momento: terminamos de entrar con Apple.",
+    "oauth_relay_button": "Continuar",
 }
 
 

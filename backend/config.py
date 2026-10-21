@@ -149,6 +149,12 @@ class Config:
     # Y con GitHub (octubre de 2026), igual: sin las dos, ni botón ni rutas.
     GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
     GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
+    # Y con Apple (octubre de 2026): el Services ID, el Team ID, el id de la
+    # clave y la clave .p8 entera. Sin las cuatro, ni botón ni rutas.
+    APPLE_CLIENT_ID = os.getenv("APPLE_CLIENT_ID", "")
+    APPLE_TEAM_ID = os.getenv("APPLE_TEAM_ID", "")
+    APPLE_KEY_ID = os.getenv("APPLE_KEY_ID", "")
+    APPLE_PRIVATE_KEY = os.getenv("APPLE_PRIVATE_KEY", "")
     PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
     PAYPAL_SECRET = os.getenv("PAYPAL_SECRET", "")
     # Sin esto no se puede comprobar que un aviso venga de PayPal, así que

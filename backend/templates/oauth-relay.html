@@ -1,0 +1,28 @@
+<!doctype html>
+{#- La vuelta de Apple, reenviada desde nuestra propia página (octubre de 2026):
+    Apple la manda con un POST desde su dominio, y ahí el navegador no lleva la
+    galleta de sesión. Este segundo POST sale de aquí y sí la lleva. Sin
+    JavaScript, un botón. No escribe nada en la sesión (ni el CSRF): la ruta
+    comprueba el `state` que se guardó al salir. -#}
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{{ t('oauth_relay_title') }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+</head>
+<body>
+  <main class="wrap wrap--narrow">
+    <form method="post" action="{{ action }}" id="relay">
+      {% for name, value in fields.items() %}
+      <input type="hidden" name="{{ name }}" value="{{ value }}">
+      {% endfor %}
+      <input type="hidden" name="relay" value="1">
+      <p class="lead">{{ t('oauth_relay_lead') }}</p>
+      <button class="btn" type="submit">{{ t('oauth_relay_button') }}</button>
+    </form>
+  </main>
+  <script nonce="{{ csp_nonce }}">document.getElementById("relay").submit();</script>
+</body>
+</html>

@@ -71,6 +71,10 @@ el panel esté casi terminado.
   que estar funcionando: bajas, supresiones, la pausa automática y la
   declaración del origen de cada contacto.
 
+- [ ] **Configurar «Continuar con Apple».** *Tú, con los pasos de
+  `docs/cuenta.md`.* El Services ID, la clave `.p8` y las cuatro variables
+  `APPLE_*` en Railway, y registrar `sobreala.com` en el servicio de reenvío de
+  correo de Apple (sin eso, a quien oculta su correo no le llega nada).
 
 - [ ] **Respaldo de la base entera.** *Tú, en Atlas.*
   El plan gratis (M0) no tiene respaldos; Flex hace una copia diaria y M10 en

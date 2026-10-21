@@ -48,7 +48,7 @@ from services import dashboard
 from services import erase
 from services import imaging
 from services import importer
-from services import github_auth, google_auth
+from services import apple_auth, github_auth, google_auth
 from services import mailer
 from services import notices
 from services import paguelofacil
@@ -1362,9 +1362,12 @@ PROVIDERS = {
     "github": {"service": github_auth, "field": "github_id", "mark": "_github-mark.svg",
                "by": accounts.by_github, "link": accounts.link_github,
                "unlink": accounts.unlink_github},
+    "apple": {"service": apple_auth, "field": "apple_sub", "mark": "_apple-mark.svg",
+              "by": accounts.by_apple, "link": accounts.link_apple,
+              "unlink": accounts.unlink_apple},
 }
-PROVIDER = "<any(google, github):provider>"
-OAUTH_ERRORS = (google_auth.GoogleError, github_auth.GitHubError)
+PROVIDER = "<any(google, github, apple):provider>"
+OAUTH_ERRORS = (google_auth.GoogleError, github_auth.GitHubError, apple_auth.AppleError)
 
 
 def provider_name(provider: str) -> str:
@@ -1438,16 +1441,31 @@ def oauth_start(provider: str):
         redirect_uri=oauth_redirect_uri(provider)))
 
 
-@bp.route(f"/login/{PROVIDER}/return")
+# Lo que Apple manda en su POST y se reenvía tal cual desde nuestra página.
+RELAYED = ("code", "state", "user", "error")
+
+
+@bp.route(f"/login/{PROVIDER}/return", methods=["GET", "POST"])
 def oauth_return(provider: str):
     """La vuelta del proveedor. Solo vale con el `state` que se guardó al salir;
-    el código se cambia por la identidad hablando el servidor con el proveedor."""
+    el código se cambia por la identidad hablando el servidor con el proveedor.
+
+    Apple vuelve con un POST desde su dominio (octubre de 2026), y en ese POST
+    el navegador no manda nuestra galleta de sesión (`SameSite=Lax`). Se
+    contesta con una página que lo vuelve a mandar desde aquí mismo, y ese
+    segundo POST sí la lleva. **La primera respuesta no toca la sesión**: si la
+    escribiera, el navegador cambiaría la galleta de quien está entrando."""
     one = provider_or_404(provider)
+    if request.method == "POST" and not request.form.get("relay"):
+        return render_template("oauth-relay.html", action=request.path,
+                               fields={k: request.form.get(k, "")[:4000] for k in RELAYED
+                                       if request.form.get(k)})
     name = provider_name(provider)
     db = get_db()
     asked = session.pop(f"{provider}_request", None) or {}
-    state = request.args.get("state", "")
-    code = request.args.get("code", "")
+    given = request.form if request.method == "POST" else request.args
+    state = given.get("state", "")
+    code = given.get("code", "")
     if (not asked or not state or not code
             or not secrets.compare_digest(state, asked.get("state", ""))):
         return oauth_failed(t("oauth_cancelled", provider=name))
@@ -1460,6 +1478,9 @@ def oauth_return(provider: str):
         return oauth_failed(t("oauth_error", provider=name))
     if not found["email_verified"]:
         return oauth_failed(t("oauth_unverified", provider=name))
+    if not found["name"] and provider == "apple":
+        # Apple da el nombre solo la primera vez, fuera del token.
+        found["name"] = apple_auth.name_from(given.get("user", ""))
 
     if asked.get("intent") == "link":
         return finish_connect(db, provider, asked, found)

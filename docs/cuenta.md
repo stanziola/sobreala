@@ -664,7 +664,7 @@ Ahora hay un botón, y **un solo sitio que borra**: `services/erase.py`,
 - **Se confirma** escribiendo el nombre de la empresa (sin fijarse en
   mayúsculas ni en espacios de más) y la contraseña; con doble factor, además
   el código de la app (gasta su ventana, como al entrar). Quien entró con
-  Google o GitHub y no tiene contraseña pide un código por correo
+  Google, GitHub o Apple y no tiene contraseña pide un código por correo
   (`tokens.ERASE`). Con CSRF y cinco intentos cada quince minutos.
 - **Se borra**, con un `delete_many` por colección (`ERASED`): `contacts`,
   `campaigns`, `campaign_runs`, `events`, `designs`, `images`, `imports`,
@@ -736,7 +736,7 @@ cambie de cara a la mitad.
 - **En el teléfono** (por debajo de 900 px) la izquierda es una franja azul con
   el ala, sin las funciones, y el formulario va a todo el ancho.
 
-## Entrar y registrarse con Google o con GitHub (octubre de 2026)
+## Entrar y registrarse con Google, GitHub o Apple (octubre de 2026)
 
 **Los dos van por el mismo camino.** Google llegó primero y GitHub se sumó el
 15 de octubre de 2026: las rutas son de un proveedor (`/login/<proveedor>`,
@@ -776,7 +776,7 @@ apartado.
   invitación pendiente no se toca). Se borra **al guardar el registro con el
   proveedor**, con `erase.erase()` (pudo entrar y dejar sesiones o archivos),
   y la pantalla de completar la cuenta lo avisa antes.
-- **Conectar Google o GitHub** es «Conectar», en Seguridad
+- **Conectar Google, GitHub o Apple** es «Conectar», en Seguridad
   (`/settings/<proveedor>/connect`): pide **la prueba de quién es**, la misma que
   crear una clave de API (la contraseña, o un código al correo sin ella, y el
   código de la app si tiene segundo factor; `check_proof()`, que vive en
@@ -829,6 +829,53 @@ apartado.
   dirección de vuelta `https://app.sobreala.com/login/github/return`. Del
   resultado salen el Client ID y el secreto (que se genera ahí), que van en
   Railway como `GITHUB_CLIENT_ID` y `GITHUB_CLIENT_SECRET`.
+
+### Lo que Apple tiene distinto (octubre de 2026)
+
+- **`services/apple_auth.py`**, el tercero de `PROVIDERS` (`apple_sub`,
+  `_apple-mark.svg`, «Continuar con Apple»). Sale con sus **cuatro** variables:
+  `APPLE_CLIENT_ID` (el Services ID), `APPLE_TEAM_ID`, `APPLE_KEY_ID` y
+  `APPLE_PRIVATE_KEY` (el `.p8` entero; si en Railway queda con «\n»
+  escritos, se arreglan solos).
+- **La clave secreta es un JWT ES256** firmado con la `.p8`, que vale cinco
+  minutos (`client_secret()`). Por eso `cryptography` está en
+  `requirements.txt`.
+- **Sin PKCE: `nonce`.** Viaja al salir y vuelve dentro del `id_token`, y es
+  lo que ata la vuelta a esa salida. Del token se comprueban el emisor
+  (`https://appleid.apple.com`), la audiencia (el Services ID), el vencimiento
+  y el `nonce`. La firma del token no se baja: llega directo del servidor de
+  Apple al nuestro por HTTPS y a cambio de la clave secreta, que es lo que
+  permite OpenID Connect (3.1.3.7).
+- **La vuelta es un POST desde `appleid.apple.com`** (`form_post`, obligatorio
+  al pedir el nombre y el correo), y en ese POST el navegador no manda la
+  galleta de sesión (`SameSite=Lax`). La ruta contesta con
+  `oauth-relay.html`, que lo vuelve a mandar desde nuestra página (con
+  JavaScript solo, sin él con un botón), y ese segundo POST sí la lleva.
+  **La primera respuesta no escribe nada en la sesión**: si lo hiciera, el
+  navegador cambiaría la galleta de quien está entrando.
+- **El nombre llega solo la primera vez**, en el POST (`user`) y no en el
+  token: llena el registro, que se puede corregir, y no decide nada.
+- **«Ocultar mi correo» se acepta**: la cuenta queda con la dirección
+  `@privaterelay.appleid.com`, que es verificada. Para que le lleguen los
+  códigos y los avisos, **`sobreala.com` tiene que estar registrado en el
+  servicio de reenvío de Apple** (abajo).
+- **Lo que hace falta en Apple Developer** (Certificates, Identifiers &
+  Profiles):
+  1. **Identifiers → App IDs**: uno para Sobreala con «Sign in with Apple»
+     marcado (aunque no haya app de iPhone, el Services ID cuelga de él).
+  2. **Identifiers → Services IDs**: uno nuevo (por ejemplo
+     `com.sobreala.web`), con «Sign in with Apple» → Configure: el App ID de
+     arriba, el dominio `app.sobreala.com` y la dirección de vuelta
+     `https://app.sobreala.com/login/apple/return`. Su identificador es
+     `APPLE_CLIENT_ID`.
+  3. **Keys**: una nueva con «Sign in with Apple», asociada al App ID. Se baja
+     el `.p8` **una sola vez**: su contenido es `APPLE_PRIVATE_KEY` y su Key ID,
+     `APPLE_KEY_ID`. El Team ID sale arriba a la derecha de la cuenta.
+  4. **Services → Sign in with Apple for Email Communication**: registrar
+     `sobreala.com` y la dirección `notifications@sobreala.com`. Apple
+     comprueba SPF y DKIM, que ya están (`docs/ses.md`). Sin esto, a quien
+     ocultó su correo no le llega nada de Sobreala.
+- **La privacidad** lo dice al lado de Google y GitHub, y la ayuda lo nombra.
 
 ## La API y la cuenta (octubre de 2026)
 

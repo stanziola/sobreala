@@ -979,9 +979,9 @@ def holder_line() -> str:
 # dirección e identificación personal, que se verifican con un documento que se
 # borra al revisarlo, y una cuenta puede quedar limitada hasta verificarse. La
 # privacidad, otra vez el 15: se puede entrar con GitHub; el 16: la cuenta se
-# elimina desde Configuración; y el 20: de una cuenta eliminada se guarda su
-# ficha mínima.
-UPDATED = "20 de octubre de 2026"
+# elimina desde Configuración; el 20: de una cuenta eliminada se guarda su
+# ficha mínima; y el 21: se puede entrar con Apple.
+UPDATED = "21 de octubre de 2026"
 TERMS_UPDATED = "11 de octubre de 2026"
 
 PRIVACY = {
@@ -1068,6 +1068,10 @@ PRIVACY = {
                 "verificado), tu nombre y un identificador de tu cuenta de "
                 "GitHub, y nada más: ni tu contraseña, ni tus repositorios. Lo "
                 "usamos solo para dejarte entrar.",
+                "**Si entras con Apple:** Apple nos da un identificador de tu "
+                "cuenta de Apple, tu correo (o la dirección de reenvío de Apple, "
+                "si eliges ocultarlo) y, la primera vez, tu nombre, y nada más. "
+                "Lo usamos solo para dejarte entrar.",
                 "**De pagos:** el plan, la fecha y el resultado del cobro, y si "
                 "activas la renovación automática, el identificador de tu "
                 "suscripción de PayPal. "
@@ -1509,7 +1513,7 @@ HELP = {
             "items": [
                 {"q": "¿Cómo creo mi cuenta?",
                  "a": "En app.sobreala.com, con «Registrarse»: tu correo y una "
-                      "contraseña, o tu cuenta de Google o de GitHub. Te pedimos tu "
+                      "contraseña, o tu cuenta de Google, GitHub o Apple. Te pedimos tu "
                       "teléfono, los de tu negocio y su dirección, y te mandamos un "
                       "código para confirmar el correo."},
                 {"q": "¿Cómo se abre mi cuenta para enviar?",
@@ -1520,9 +1524,9 @@ HELP = {
                 {"q": "Olvidé mi contraseña",
                  "a": "En «Iniciar sesión», pulsa «¿Olvidaste tu contraseña?»: te "
                       "mandamos un código a tu correo para crear una nueva. Si "
-                      "entraste con Google o GitHub y no tienes contraseña, así la "
+                      "entraste con Google, GitHub o Apple y no tienes contraseña, así la "
                       "creas."},
-                {"q": "¿Puedo entrar con Google o GitHub a la cuenta que ya tengo?",
+                {"q": "¿Puedo entrar con Google, GitHub o Apple a la cuenta que ya tengo?",
                  "a": "Sí: entra con tu contraseña y conéctalo en Configuración → "
                       "Seguridad, con «Conectar». Por seguridad no se conectan solos, "
                       "aunque el correo sea el mismo."},

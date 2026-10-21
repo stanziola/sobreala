@@ -299,15 +299,18 @@ cosa está como está, y lo que ya se probó y se quitó.
   barra: a la izquierda el ala y cuatro dibujos de «Funciones» del sitio que
   rotan (`_art-*.svg`, que genera `build_assets.py`), y a la derecha el
   formulario.
-- **Entrar y registrarse con Google o GitHub** (`services/google_auth.py`,
-  `services/github_auth.py`, por las mismas rutas: `PROVIDERS`): quién es lo
+- **Entrar y registrarse con Google, GitHub o Apple** (`services/google_auth.py`,
+  `services/github_auth.py`, `services/apple_auth.py`, por las mismas rutas:
+  `PROVIDERS`): quién es lo
   dice el proveedor al servidor, nunca la vuelta; de GitHub vale solo el
-  correo principal verificado. Tras cualquiera de los dos pasa lo mismo que
+  correo principal verificado. Tras cualquiera de los tres pasa lo mismo que
   tras la contraseña (`finish_sign_in()`: doble factor incluido). Sin cuenta, se
   piden empresa, teléfonos y dirección, y nace confirmada y sin contraseña.
   **Entra solo por el id del proveedor, nunca por el correo** (octubre de
   2026): una cuenta se conecta a propósito, con «Conectar» en Seguridad y la
   prueba de quién es, y un registro sin confirmar del mismo correo se descarta.
+  **Apple vuelve con un POST** que se reenvía desde nuestra página sin tocar la
+  sesión, y acepta «Ocultar mi correo» (`docs/cuenta.md`).
 
 ### Contactos (`docs/contactos.md`)
 
@@ -540,7 +543,7 @@ cosa está como está, y lo que ya se probó y se quitó.
    en el enlace, y valen una sola vez y con vencimiento.
 7. **Entrar y recuperar la cuenta nunca revelan si una dirección tiene cuenta.**
    Las dos responden igual exista o no, para que ninguna sirva de buscador de
-   clientes. **La excepción es entrar con Google o GitHub** (octubre de 2026):
+   clientes. **La excepción es entrar con Google, GitHub o Apple** (octubre de 2026):
    si el correo tiene una cuenta que no está conectada a ese proveedor, se dice
    cómo entra, porque el proveedor acaba de probar que ese correo es de quien
    está ahí; a un extraño no le revela nada. **El registro sí lo dice**:
@@ -573,6 +576,10 @@ GOOGLE_CLIENT_ID          # entrar y registrarse con Google; sin los dos, no hay
 GOOGLE_CLIENT_SECRET      # botón y sus rutas dan 404
 GITHUB_CLIENT_ID          # lo mismo con GitHub (una OAuth App); sin los dos, no
 GITHUB_CLIENT_SECRET      # hay botón y sus rutas dan 404
+APPLE_CLIENT_ID           # lo mismo con Apple: el Services ID, el Team ID, el id
+APPLE_TEAM_ID             # de la clave y la .p8 entera; sin las cuatro, no hay
+APPLE_KEY_ID              # botón y sus rutas dan 404. Los pasos en Apple
+APPLE_PRIVATE_KEY         # Developer, en docs/cuenta.md
 PAYPAL_ENV                # sandbox | live; en producción, con llaves, tiene que
                           # estar escrita: sin ella no arranca
 PAYPAL_CLIENT_ID

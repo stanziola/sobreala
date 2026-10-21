@@ -195,6 +195,24 @@ def unlink_google(db, account_id) -> None:
         "$unset": {"google_sub": ""}, "$set": {"updated_at": now()}})
 
 
+# Y con Apple (octubre de 2026): `apple_sub`, el identificador que Apple le da a
+# esa persona para nuestra aplicación. Tampoco cambia con su correo.
+def by_apple(db, sub: str) -> dict[str, Any] | None:
+    if not sub:
+        return None
+    return db.accounts.find_one({"apple_sub": sub})
+
+
+def link_apple(db, account_id, sub: str) -> None:
+    db.accounts.update_one({"_id": account_id}, {"$set": {
+        "apple_sub": sub, "updated_at": now()}})
+
+
+def unlink_apple(db, account_id) -> None:
+    db.accounts.update_one({"_id": account_id}, {
+        "$unset": {"apple_sub": ""}, "$set": {"updated_at": now()}})
+
+
 # Y con GitHub (octubre de 2026): `github_id` es el identificador numérico de su
 # cuenta, que tampoco cambia aunque cambie su nombre de usuario o su correo.
 def by_github(db, github_id: str) -> dict[str, Any] | None:
