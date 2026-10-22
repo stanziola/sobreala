@@ -782,7 +782,10 @@ def sender_screen(db, account, **extra):
                 "records": ses_identity.records(one["name"], one.get("dkim_tokens") or []),
                 "mail_from_records": ses_identity.mail_from_records(one["name"]),
                 "mail_from_domain": ses_identity.mail_from_domain(one["name"]),
-                "mail_from_state": states.get(one["name"], "")}
+                "mail_from_state": states.get(one["name"], ""),
+                # DMARC (octubre de 2026): se mira en el DNS, y si falta se pide.
+                "dmarc": ses_identity.dmarc_state(one["name"]),
+                "dmarc_record": ses_identity.dmarc_record(one["name"])}
                for one in accounts.domains_of(account)]
     mine = accounts.sender_of(account)
     return render_template(
@@ -1005,7 +1008,9 @@ def sender_records(domain):
     found = accounts.domain_of(account, domain)
     if found is None or not found.get("dkim_tokens"):
         abort(404)
-    text = ses_identity.zone_file(found["name"], found["dkim_tokens"])
+    text = ses_identity.zone_file(
+        found["name"], found["dkim_tokens"],
+        dmarc=ses_identity.dmarc_state(found["name"]) == ses_identity.DMARC_MISSING)
     name = f"registros-dns-{found['name']}.txt"
     return Response(text, mimetype="text/plain", headers={
         "Content-Disposition": f'attachment; filename="{name}"',

@@ -82,7 +82,16 @@ suyos** (`account.sender`, en `models/account.py`):
   el de Amazon (`USE_DEFAULT_VALUE`), porque DKIM ya alinea DMARC; Remitente
   dice «Enviado por: listo / esperando los registros». A un dominio conectado
   antes se le pide al abrir esa pantalla (`ses_identity.mail_from()`). El de
-  `envios.sobreala.com` se pone a mano: `docs/ses.md`, paso 6b.
+  `envios.sobreala.com` se pone a mano: `docs/ses.md`, paso 6b. **Y DMARC**
+  (octubre de 2026): Amazon lo marca como recomendación de impacto alto y Gmail
+  y Yahoo lo piden a quien envía en cantidad, pero no lo puede poner SES.
+  Remitente lo consulta en el DNS del dominio (`ses_identity.dmarc_state()`, un
+  minuto en memoria) y dice «Publicado», «Falta» o «Sin comprobar»; si falta,
+  enseña el TXT de `_dmarc.<dominio>` con `v=DMARC1; p=none;` (solo observa) y
+  lo mete en el archivo de zona. **Si ya tiene uno no se pide otro**, y si no se
+  pudo saber se enseña con el aviso pero no va en el archivo: dos registros
+  DMARC se anulan. BIMI (el logo en la bandeja) no se pide: necesita DMARC
+  estricto y un certificado de marca.
 - **Cada «Responder a» se confirma con un código** a esa dirección
   (`tokens.REPLY_TO`, el mismo mecanismo que cambiar el correo de la cuenta),
   para que nadie ponga la de un tercero y le lleguen las respuestas de toda una

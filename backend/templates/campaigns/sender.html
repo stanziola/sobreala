@@ -225,6 +225,33 @@
   {% endcall %}
   {% endif %}
 
+  {#- DMARC (octubre de 2026): no lo pone SES, lo pone el cliente. Se mira en
+      su DNS; si falta, el registro para copiar, y si no se pudo saber, el
+      mismo registro con el aviso de no duplicar. -#}
+  {% call row(t('sender_dmarc'), t('sender_dmarc_hint', domain=one.name)) %}
+  <span class="tag{% if one.dmarc == 'ok' %} tag--on{% else %} tag--warn{% endif %}">
+    {{ t('sender_dmarc_' + one.dmarc) }}</span>
+  {% endcall %}
+  {% if one.dmarc != 'ok' %}
+  <p>{{ t('sender_dmarc_lead') }}</p>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>{{ t('sender_records_type') }}</th><th>{{ t('sender_records_name') }}</th>
+        <th>{{ t('sender_records_value') }}</th></tr></thead>
+      <tbody>
+      <tr>
+        <td>{{ one.dmarc_record.type }}</td>
+        <td><input class="copy-field" type="text" readonly value="{{ one.dmarc_record.name }}"
+                   aria-label="DMARC {{ t('sender_records_name') }}"></td>
+        <td><input class="copy-field" type="text" readonly value="{{ one.dmarc_record.value }}"
+                   aria-label="DMARC {{ t('sender_records_value') }}"></td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">{{ t('sender_dmarc_once') }}</p>
+  {% endif %}
+
   {% if one.status != 'verified' or (one.mail_from_state and one.mail_from_state != 'verified') %}
   {# Los cinco registros (los tres CNAME de DKIM y el MX y el TXT del MAIL
      FROM) mientras falte verificarlo; ya verificado, solo los dos del MAIL

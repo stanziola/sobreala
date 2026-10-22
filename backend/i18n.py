@@ -3598,6 +3598,20 @@ TEXTS = {
     "single_file_room": "Tus archivos de los últimos {days} días ya ocupan {mb} MB, "
                         "que es lo que cabe. Se liberan solos al vencer, o manda "
                         "este correo sin archivo.",
+
+    # DMARC de los dominios propios (octubre de 2026).
+    "sender_dmarc": "DMARC",
+    "sender_dmarc_hint": "Le dice a Gmail, Outlook y Yahoo qué hacer con un correo "
+                         "que dice venir de {domain} sin serlo. Gmail y Yahoo lo "
+                         "piden a quien envía en cantidad.",
+    "sender_dmarc_ok": "Publicado",
+    "sender_dmarc_missing": "Falta",
+    "sender_dmarc_unknown": "Sin comprobar",
+    "sender_dmarc_lead": "Agrega este registro en tu DNS. Con p=none solo observa: "
+                         "no frena ningún correo, y más adelante puedes hacerlo más "
+                         "estricto.",
+    "sender_dmarc_once": "Si tu dominio ya tiene un registro en _dmarc, no agregues "
+                         "otro: dos registros DMARC se anulan entre sí.",
 }
 
 

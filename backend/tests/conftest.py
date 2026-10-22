@@ -26,6 +26,16 @@ def outbox(tmp_path, monkeypatch):
     return box
 
 
+@pytest.fixture(autouse=True)
+def no_dns_for_dmarc(monkeypatch):
+    """Las pruebas no le preguntan al DNS de verdad por el DMARC de un dominio
+    (octubre de 2026): sin saberlo, «sin comprobar». La que lo prueba lo cambia."""
+    from services import ses_identity
+    monkeypatch.setattr(ses_identity, "_lookup_dmarc",
+                        lambda domain: ses_identity.DMARC_UNKNOWN)
+    monkeypatch.setattr(ses_identity, "_dmarc_seen", {})
+
+
 @pytest.fixture()
 def database(monkeypatch):
     monkeypatch.setattr(Config, "MONGODB_URI", Config.MONGODB_TEST_URI)

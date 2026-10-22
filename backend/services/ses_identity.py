@@ -12,6 +12,13 @@ registros se envía igual, con el de Amazon (`USE_DEFAULT_VALUE`): lo que pide e
 envío sigue siendo DKIM. Pedírselo a SES necesita el permiso
 `ses:PutEmailIdentityMailFromAttributes` (`docs/ses.md`).
 
+**Y DMARC** (octubre de 2026): Amazon lo marca como recomendación de impacto
+alto y Gmail y Yahoo lo exigen a quien envía en cantidad. No lo puede poner SES:
+se consulta en el DNS (`dmarc_state()`) y, si falta, se le pide al cliente un
+TXT en `_dmarc.<dominio>` con `p=none`, que solo observa y no frena ningún
+correo. **Si ya tiene uno no se pide otro**: dos registros DMARC se anulan, y
+el dominio quedaría sin ninguno.
+
 **Sin MAIL_BACKEND=ses todo es de mentira**, como el resto del envío: devuelve
 tokens inventados y da el dominio por verificado al comprobarlo. Así el flujo
 entero se recorre en local y en las pruebas sin credenciales de AWS.
@@ -20,6 +27,7 @@ entero se recorre en local y en las pruebas sin credenciales de AWS.
 from __future__ import annotations
 
 import hashlib
+import time
 from typing import Any
 
 from config import Config
@@ -66,12 +74,62 @@ def mail_from_records(domain: str) -> list[dict[str, str]]:
             {"type": "TXT", "name": mail_from_domain(domain), "value": SPF}]
 
 
+# Lo que se pide: publicar la política sin frenar nada. Subirla a
+# `quarantine` es decisión del cliente, cuando vea sus informes.
+DMARC = "v=DMARC1; p=none;"
+DMARC_OK, DMARC_MISSING, DMARC_UNKNOWN = "ok", "missing", "unknown"
+# Cuánto se recuerda la respuesta del DNS: lo justo para no preguntar en cada
+# recarga, y poco para que quien lo acaba de poner lo vea enseguida.
+DMARC_SECONDS = 60
+_dmarc_seen: dict[str, tuple[float, str]] = {}
+
+
+def dmarc_record(domain: str) -> dict[str, str]:
+    return {"type": "TXT", "name": f"_dmarc.{domain}", "value": DMARC}
+
+
+def _lookup_dmarc(domain: str) -> str:
+    """Pregunta al DNS si `_dmarc.<dominio>` tiene un registro DMARC. Aparte,
+    para cambiarlo en las pruebas."""
+    import dns.exception
+    import dns.resolver
+
+    resolver = dns.resolver.Resolver()
+    resolver.lifetime = 3.0
+    try:
+        answer = resolver.resolve(f"_dmarc.{domain}", "TXT")
+    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+        return DMARC_MISSING
+    except (dns.exception.DNSException, OSError):
+        return DMARC_UNKNOWN
+    for one in answer:
+        text = b"".join(one.strings).decode("utf-8", "replace").strip()
+        if text.lower().startswith("v=dmarc1"):
+            return DMARC_OK
+    return DMARC_MISSING
+
+
+def dmarc_state(domain: str) -> str:
+    """`ok`, `missing` o `unknown` (sin envío de verdad, o el DNS no contestó)."""
+    if _fake():
+        return DMARC_UNKNOWN
+    now = time.monotonic()
+    seen = _dmarc_seen.get(domain)
+    if seen and now - seen[0] < DMARC_SECONDS:
+        return seen[1]
+    state = _lookup_dmarc(domain)
+    if len(_dmarc_seen) > 2000:
+        _dmarc_seen.clear()
+    _dmarc_seen[domain] = (now, state)
+    return state
+
+
 def records(domain: str, tokens: list[str]) -> list[dict[str, str]]:
     """Los cinco registros que el cliente pone en su DNS: DKIM y MAIL FROM."""
     return dkim_records(domain, tokens) + mail_from_records(domain)
 
 
-def zone_file(domain: str, tokens: list[str]) -> str:
+def zone_file(domain: str, tokens: list[str], *, dmarc: bool = False) -> str:
     """Los mismos registros como archivo de zona (formato BIND), el que importan
     de una vez los proveedores de DNS que lo permiten (Cloudflare, Route 53 y
     otros). No da por hecho ninguno: no todos tienen ahí su dominio.
@@ -80,7 +138,10 @@ def zone_file(domain: str, tokens: list[str]) -> str:
     relativos al dominio. `cf_tags=cf-proxied:false` va como comentario al final
     de cada CNAME: los demás proveedores no lo leen, y a Cloudflare le dice que
     entren sin proxy («Solo DNS») aunque al importar se marque lo contrario,
-    porque un CNAME de DKIM detrás del proxy no lo encuentra Amazon."""
+    porque un CNAME de DKIM detrás del proxy no lo encuentra Amazon.
+
+    Con `dmarc`, también el de DMARC: solo cuando se comprobó que el dominio no
+    tiene uno, porque importar un segundo los anularía a los dos."""
     lines = [f"; Sobreala: los registros DNS de {domain} para Amazon SES (DKIM y MAIL FROM).",
              "; Impórtalo en tu proveedor de DNS si lo permite, o copia cada registro a mano.",
              ""]
@@ -93,6 +154,9 @@ def zone_file(domain: str, tokens: list[str]) -> str:
             lines.append(f"{one['name']}.\t3600\tIN\tMX\t{one['priority']} {one['value']}.")
         else:
             lines.append(f"{one['name']}.\t3600\tIN\tTXT\t\"{one['value']}\"")
+    if dmarc:
+        one = dmarc_record(domain)
+        lines.append(f"{one['name']}.\t3600\tIN\tTXT\t\"{one['value']}\"")
     return "\n".join(lines) + "\n"
 
 

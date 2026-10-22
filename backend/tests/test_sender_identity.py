@@ -574,3 +574,38 @@ def test_un_usuario_del_equipo_la_ve_y_no_la_cambia(client, database, outbox):
     suyo.post(URL, data={"csrf_token": token, "action": "from_add", "name": "Intruso",
                          "domain": "shared"})
     assert not accounts.sender_of(fresh(database, empresa)).get("froms")
+
+
+# ------------------------------------------------------------------ DMARC
+
+def test_dmarc_se_pide_solo_si_falta(client, database, outbox, ses, monkeypatch):
+    """DMARC lo pone el cliente, no SES (octubre de 2026). Se mira en su DNS: si
+    falta, se pide el registro y va en el archivo de zona; si ya tiene uno, no
+    se pide otro, porque dos se anulan; y si no se pudo saber, se enseña con el
+    aviso, pero no se mete en el archivo."""
+    browser, cuenta = owner(client, database)
+    post(browser, action="domain", domain="coopveraguas.org")
+    monkeypatch.setattr(ses_identity, "_fake", lambda: False)
+    monkeypatch.setattr(ses_identity, "_dmarc_seen", {})
+    respuesta = {"coopveraguas.org": ses_identity.DMARC_MISSING}
+    monkeypatch.setattr(ses_identity, "_lookup_dmarc", lambda domain: respuesta[domain])
+
+    pantalla = browser.get(URL).get_data(as_text=True)
+    assert "_dmarc.coopveraguas.org" in pantalla and "v=DMARC1; p=none;" in pantalla
+    assert "Falta" in pantalla
+    archivo = browser.get("/campaigns/sender/records/coopveraguas.org.txt").get_data(as_text=True)
+    assert '_dmarc.coopveraguas.org.\t3600\tIN\tTXT\t"v=DMARC1; p=none;"' in archivo
+
+    respuesta["coopveraguas.org"] = ses_identity.DMARC_OK
+    monkeypatch.setattr(ses_identity, "_dmarc_seen", {})
+    pantalla = browser.get(URL).get_data(as_text=True)
+    assert "Publicado" in pantalla and "_dmarc.coopveraguas.org" not in pantalla
+    archivo = browser.get("/campaigns/sender/records/coopveraguas.org.txt").get_data(as_text=True)
+    assert "_dmarc" not in archivo
+
+    respuesta["coopveraguas.org"] = ses_identity.DMARC_UNKNOWN
+    monkeypatch.setattr(ses_identity, "_dmarc_seen", {})
+    pantalla = browser.get(URL).get_data(as_text=True)
+    assert "Sin comprobar" in pantalla and "no agregues otro" in pantalla
+    archivo = browser.get("/campaigns/sender/records/coopveraguas.org.txt").get_data(as_text=True)
+    assert "_dmarc" not in archivo
