@@ -39,8 +39,6 @@ ENDPOINT_ROWS = {
     "designs.folder": "templates",
     "designs.folders": "templates",
     "designs.create": "templates-new",
-    # Eliminar la cuenta cuelga de Configuración → Cuenta.
-    "auth.delete_account": "settings-account",
     "contacts.blocked": "suppressions",
     "contacts.remove_suppressed": "suppressions",
     # La rama API (octubre de 2026).
@@ -92,8 +90,8 @@ def here() -> str:
         return "stats-" + ((request.view_args or {}).get("section") or STATS_SECTIONS[0])
     if endpoint in ENDPOINT_ROWS:
         return ENDPOINT_ROWS[endpoint]
-    # Each section of the settings is its row (octubre de 2026): the test
-    # addresses in Configuración de envío, the account's own in Configuración.
+    # The test addresses are a row of Configuración de envío. The account's
+    # own sections left the tree (octubre de 2026): they open from the menu.
     if endpoint == "auth.settings":
         return "settings-" + (request.view_args or {}).get("section", "account")
     # The rest of Contacts (importing, columns, tags, one contact) lives
@@ -187,16 +185,9 @@ def tree(account: dict | None) -> list[dict[str, Any]]:
                                   {"key": "api-docs", "label": "dash_api_docs",
                                    "url": f"{Config.PUBLIC_SITE_URL}/api/"}]})
 
-    # And the account's own settings, apart from the sending ones but on the
-    # left too (octubre de 2026): the sections this person may open (a user of
-    # the company, only Seguridad). An admin has no Dashboard and keeps the
-    # page with its own menu.
-    mine = [{"key": "settings-" + slug, "label": SECTION_LABELS[slug],
-             "url": url_for("auth.settings", section=slug)}
-            for slug in sections_for(account) if slug != "test"]
-    if mine:
-        branches.append({"key": "settings-branch", "label": "dash_settings",
-                         "icon": "_icon-user.svg", "rows": mine})
+    # The account's own settings are not a branch (octubre de 2026): they
+    # open from «Configuración» in the menu, on their page with their own
+    # list of sections, like the admin's.
     for branch in branches:
         _point(branch)
     return branches

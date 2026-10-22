@@ -68,6 +68,20 @@ def test_un_usuario_ve_solo_sus_permisos(client, database, outbox):
     assert "/campaigns/write" not in urls(sugerencias(suyo, "redactar"))
 
 
+def test_configuracion_se_encuentra_aunque_no_este_en_el_arbol(client, database, outbox):
+    """Configuración salió del Dashboard (octubre de 2026): sus secciones se
+    siguen encontrando, y un usuario de la empresa solo encuentra Seguridad."""
+    browser, _, _ = ready(client, database)
+    for q, url in (("seguridad", "/settings/security"), ("contrasena", "/settings/security"),
+                   ("notificaciones", "/settings/notifications"),
+                   ("empresa", "/settings/account"), ("facturacion", "/settings/billing")):
+        assert url in urls(sugerencias(browser, q)), q
+    _, _, suyo = as_member(client, database, permisos=("contacts",), outbox=outbox)
+    assert "/settings/security" in urls(sugerencias(suyo, "seguridad"))
+    assert "/settings/billing" not in urls(sugerencias(suyo, "facturacion"))
+    assert "/settings/account" not in urls(sugerencias(suyo, "empresa"))
+
+
 def test_un_administrador_ve_lo_suyo(client, database, outbox):
     admin, _ = make_admin(client, database)
     assert "/admin/events" in urls(sugerencias(admin, "eventos"))
@@ -85,7 +99,8 @@ def test_cada_resultado_dice_donde_esta(client, database, outbox):
     """Las pantallas salen del árbol del Dashboard con su camino al lado (16 de
     octubre de 2026): «Lista» de Estadísticas y «Lista» de Contactos no se
     confunden. Remitente sale en Configuración de envío, y las secciones de la
-    cuenta en Configuración, que también es una rama del Dashboard."""
+    cuenta en Configuración, que ya no es rama del Dashboard (se abre desde el
+    menú) y se encuentra igual."""
     browser, _, _ = ready(client, database)
     listas = {(one["label"], one["hint"]) for one in sugerencias(browser, "lista")}
     assert ("Lista", "Estadísticas") in listas and ("Lista", "Contactos") in listas

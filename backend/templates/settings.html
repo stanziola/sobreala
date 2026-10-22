@@ -1,9 +1,10 @@
-{# Un cliente tiene su configuración dentro del Dashboard, a la izquierda
-   (octubre de 2026): las direcciones de prueba en la rama «Configuración de
-   envío», junto a Remitente, y Cuenta, Seguridad, Notificaciones y Facturación
-   en la rama «Configuración». El administrador, que no tiene Dashboard, la ve
-   en su página con su menú de secciones (`_settings_frame.html`). #}
-{% extends "_settings_frame.html" if bar_admin else "_dashboard.html" %}
+{# La configuración de la cuenta (Cuenta, Seguridad, Notificaciones y
+   Facturación) va en su página, con su menú de secciones a la izquierda
+   (`_settings_frame.html`), para el cliente y para el administrador: se abre
+   desde «Configuración» del menú y ya no es rama del Dashboard (octubre de
+   2026). Las direcciones de prueba de la demostración sí siguen dentro del
+   Dashboard, en «Configuración de envío», junto a Remitente. #}
+{% extends "_dashboard.html" if section == 'test' and not bar_admin else "_settings_frame.html" %}
 {% from "_phone.html" import phone, company_phones with context %}
 {% from "_address.html" import address_fields with context %}
 {% block title %}{{ t('settings_title') }}{% endblock %}
@@ -38,7 +39,9 @@
 {%- endmacro %}
 
 {% block pane %}
-{% if not bar_admin %}<h1 class="settings__heading">{{ t('dash_send_settings') if section == 'test' else t('settings_title') }}</h1>{% endif %}
+{#- El título va aquí solo en el Dashboard (las direcciones de prueba): la
+    página de Configuración ya trae el suyo (`_settings_frame.html`). -#}
+{% if section == 'test' and not bar_admin %}<h1 class="settings__heading">{{ t('dash_send_settings') }}</h1>{% endif %}
   <div class="settings__pane">
     {# Cada sección se lee entera, en una página (octubre de 2026): sus partes
        son subtítulos con su ancla. #}

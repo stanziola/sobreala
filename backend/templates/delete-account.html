@@ -1,4 +1,6 @@
-{% extends "_dashboard.html" %}
+{# En la página de Configuración, con su menú, como la sección Cuenta de la que
+   cuelga (octubre de 2026). #}
+{% extends "_settings_frame.html" %}
 {% from "_fields.html" import proof with context %}
 {% block title %}{{ t('erase_title') }}{% endblock %}
 {% set pane_center = true %}
@@ -9,8 +11,10 @@
     la contraseña; con doble factor, además el código de la app; sin
     contraseña (entró con Google o GitHub), un código por correo. -#}
 {% block pane %}
-<h1 class="settings__heading">{{ t('erase_title') }}</h1>
 <div class="settings__pane">
+  {#- Dentro de la página de Configuración, que trae su título: este es el de
+      la sección. -#}
+  <h2 class="settings__title">{{ t('erase_title') }}</h2>
   <p class="lead">{{ t('erase_lead') }}</p>
   {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 

@@ -1,10 +1,13 @@
 {% extends "base.html" %}
-{#- La configuración del administrador (octubre de 2026): no tiene Dashboard,
-    así que la suya va con su menú de secciones a la izquierda, pegada al borde
-    y con el ancho de siempre. La de un cliente va dentro del Dashboard, en sus
-    ramas «Configuración de envío» y «Configuración»; `settings.html` elige el
-    marco. -#}
+{#- La configuración de la cuenta, con su menú de secciones a la izquierda,
+    pegada al borde y con el ancho de siempre (octubre de 2026). Era solo la
+    del administrador; desde que «Configuración» dejó de ser rama del Dashboard
+    es también la del cliente. Las direcciones de prueba de la demostración
+    siguen en el Dashboard: `settings.html` elige el marco. -#}
 {% block wrap_class %}wrap--wide wrap--left wrap--rows{% endblock %}
+{# La búsqueda, como en el Dashboard: Configuración se abre desde el menú y
+   también se busca desde aquí (octubre de 2026). #}
+{% set bar_search = true %}
 {% block content %}
 <h1 class="settings__heading">{{ t('settings_title') }}</h1>
 

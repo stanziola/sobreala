@@ -84,16 +84,16 @@ def test_cuenta_y_facturacion_se_leen_enteras(client, database, outbox):
 
 
 def test_el_menu_no_se_despliega(client, database, outbox):
-    """Las secciones son filas de la rama Configuración, en el árbol del
-    Dashboard (octubre de 2026), sin subsecciones. El administrador, que no
-    tiene Dashboard, sigue con su lista de íconos, sin raya azul."""
+    """Las secciones van en su menú de íconos, sin subsecciones. Desde el 22 de
+    octubre de 2026 también las del cliente: Configuración dejó de ser rama del
+    Dashboard y se abre desde el menú, como la del administrador."""
     browser = inside(client)
     pantalla = browser.get("/settings/security").get_data(as_text=True)
     assert "settings-subnav" not in pantalla and "settings-nav__item" not in pantalla
-    arbol = pantalla.split("data-dash-nav")[1].split('class="dash__pane')[0]
-    assert 'href="/settings/billing"' in arbol
-    assert 'aria-current="page">Seguridad<' in arbol
-    assert 'class="settings__nav' not in pantalla
+    assert "data-dash-nav" not in pantalla
+    menu = pantalla.split('class="settings__nav')[1].split("</nav>")[0]
+    assert 'href="/settings/billing"' in menu
+    assert 'is-current"\n       href="/settings/security" aria-current="page"' in menu
 
     from test_admin import make_admin
     admin, _ = make_admin(client, database)

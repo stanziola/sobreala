@@ -9,8 +9,8 @@ escribe sugiere dos clases de resultados:
     salían de una lista aparte, sin decir dónde estaban). El árbol ya trae
     los permisos de quien mira. Además, lo que se hace desde una pantalla sin
     ser fila (importar, agregar un contacto, etiquetas, columnas). Las
-    secciones de la cuenta salen con «Configuración» al lado, que también es
-    una rama del árbol. Se buscan por su nombre, el de
+    secciones de la cuenta salen con «Configuración» al lado: ya no son rama
+    del árbol (octubre de 2026), y se añaden aparte. Se buscan por su nombre, el de
     su rama y palabras con que la gente las pide («csv», «bajas»). Un
     administrador busca en lo suyo;
   * **lo suyo por nombre**: campañas, envíos, plantillas y etiquetas de su
@@ -32,7 +32,8 @@ from typing import Any
 
 from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
-from blueprints.auth.routes import current_account, current_workspace
+from blueprints.auth.routes import (SECTION_LABELS, current_account,
+                                    current_workspace, sections_for)
 from db import get_db
 from i18n import t
 from models import account as accounts
@@ -68,6 +69,11 @@ SEARCH_WORDS = {
     "contacts": "personas socios clientes",
     "suppressions": "bajas anulados rebotes quejas",
     "settings-test": "demostracion correos verificados prueba",
+    # Las secciones de la cuenta, que se abren desde el menú (octubre de 2026).
+    "settings-account": "empresa direccion telefono logo usuarios eliminar cuenta",
+    "settings-security": "contrasena doble factor autenticacion dispositivos sesiones",
+    "settings-notifications": "avisos correos novedades",
+    "settings-billing": "pagos facturas plan tarjeta paypal renovacion recibo",
     # La API (octubre de 2026).
     "api-keys": "api llave llaves clave token integracion programador desarrollador sistema",
     "api-webhooks": "avisos webhook webhooks notificaciones servidor eventos integracion",
@@ -161,6 +167,15 @@ def pages_for(account: dict) -> list[dict[str, Any]]:
     for row, path in leaves(dashboard.tree(account), []):
         add(t(row["label"]), row["url"], path, SEARCH_WORDS.get(row["key"], ""))
         places[row["key"]] = path + [t(row["label"])]
+    # Configuración ya no es rama del árbol (octubre de 2026): sus secciones
+    # se suman aquí, con su sitio al lado como si lo fuera.
+    for slug in sections_for(account):
+        if slug == "test":
+            continue
+        key, path = "settings-" + slug, [t("dash_settings")]
+        add(t(SECTION_LABELS[slug]), url_for("auth.settings", section=slug), path,
+            SEARCH_WORDS.get(key, ""))
+        places[key] = path + [t(SECTION_LABELS[slug])]
     for key, endpoint, permission, where, extra in CLIENT_ACTIONS:
         if accounts.can(account, permission) and where in places:
             add(t(key), url_for(endpoint), places[where][:-1], extra)

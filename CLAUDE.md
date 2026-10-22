@@ -433,11 +433,13 @@ cosa está como está, y lo que ya se probó y se quitó.
 - Al entrar se aterriza en el sitio público. Una cuenta nueva ve `/welcome`.
 - **El Dashboard** (`services/dashboard.py`, `_dashboard.html`): Estadísticas,
   Correos (Enviar → Redactar, Masivo y Enviados), Plantillas (Mis plantillas y
-  Lienzo), Contactos (Lista y Supresiones), Configuración de envío (Remitente
-  y, en la demostración, las direcciones de prueba) y **Configuración, la de la
-  cuenta, como rama aparte** (Cuenta, Seguridad, Notificaciones y Facturación)
-  en un árbol a la izquierda, y la pantalla a la derecha. El administrador ve
-  su Configuración en su página (`_settings_frame.html`). Las direcciones de siempre no cambiaron. Importar, Etiquetas y
+  Lienzo), Contactos (Lista y Supresiones) y Configuración de envío (Remitente
+  y, en la demostración, las direcciones de prueba) en un árbol a la izquierda,
+  y la pantalla a la derecha. **La Configuración de la cuenta** (Cuenta,
+  Seguridad, Notificaciones y Facturación) **no es rama del Dashboard**
+  (octubre de 2026): se abre desde «Configuración» del menú, en su página con
+  su menú de secciones (`_settings_frame.html`), la del cliente y la del
+  administrador, y la búsqueda la encuentra igual. Las direcciones de siempre no cambiaron. Importar, Etiquetas y
   Columnas se abren desde la lista de Contactos. **Pegado a la izquierda**
   (`.wrap--left`): el árbol arranca donde el ala, y lo de la derecha se lleva
   el resto; Administración igual, y Configuración arranca ahí con su ancho.

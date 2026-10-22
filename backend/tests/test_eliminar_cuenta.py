@@ -59,8 +59,10 @@ def test_borra_lo_dicho_y_deja_lo_dicho(client, database, outbox):
 
     pagina = browser.get("/settings/delete").get_data(as_text=True)
     assert "Se borra" in pagina and "Se queda" in pagina
-    # En el Dashboard, con Cuenta marcada en la rama Configuración.
-    assert 'aria-current="page">Cuenta<' in pagina.split("data-dash-nav")[1]
+    # En la página de Configuración, con Cuenta marcada en su menú.
+    menu = pagina.split('class="settings__nav')[1].split("</nav>")[0]
+    assert 'aria-current="page">' in menu.split(">Cuenta<")[0].rsplit("<a", 1)[1]
+    assert "data-dash-nav" not in pagina
     assert "Las bajas y supresiones" in pagina and 'href="/contacts/export"' in pagina
     # La fila, al final de Cuenta, lleva ahí.
     assert 'href="/settings/delete"' in browser.get("/settings/account").get_data(as_text=True)

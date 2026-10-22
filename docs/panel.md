@@ -62,7 +62,6 @@ Correos                ▸ Enviar ▸ Redactar · Masivo · Enviados
 Plantillas             ▸ Mis plantillas · Lienzo
 Contactos              ▸ Lista · Supresiones
 Configuración de envío ▸ Remitente · Direcciones de prueba (en la demostración)
-Configuración          ▸ Cuenta · Seguridad · Notificaciones · Facturación
 ```
 
 **Plantillas y Configuración de envío son ramas desde el 16 de octubre de
@@ -76,16 +75,17 @@ regla de `sections_for()`), que son los correos verificados a los que puede
 enviar. Sus dos pantallas van en medio de lo que deja el árbol, con el ancho de
 antes (`pane_center`, 1180 px): tienen filas, no tablas.
 
-**La configuración de la cuenta es su propia rama, «Configuración»**, aparte de
-la del envío y a la izquierda también: Cuenta, Seguridad, Notificaciones y
-Facturación, las que esa persona puede abrir (`sections_for()`: un usuario de la
-empresa, solo Seguridad). Sus pantallas se abren en el Dashboard, en medio de lo
-que deja el árbol, y la de eliminar la cuenta marca Cuenta. El administrador, que
-no tiene Dashboard, la ve en su página con su menú de secciones
-(`_settings_frame.html`). Historia del 16 de octubre: primero fue una sola rama
-«Configuración» con Remitente y la cuenta; después la de la cuenta salió del
-Dashboard a una página aparte, y eso fue un error (lo que se pedía era
-separarla de la del envío, no del árbol), así que volvió como rama propia.
+**La configuración de la cuenta no es rama del Dashboard** (22 de octubre de
+2026, pedido así): Cuenta, Seguridad, Notificaciones y Facturación, las que esa
+persona puede abrir (`sections_for()`: un usuario de la empresa, solo
+Seguridad), se abren desde «Configuración» del menú, en su página con su menú
+de secciones a la izquierda (`_settings_frame.html`), igual que la del
+administrador, y con la búsqueda en la barra. Eliminar la cuenta va en esa
+misma página y marca Cuenta. La única sección que sigue en el Dashboard es la
+de las direcciones de prueba (Configuración de envío). Historia: el 16 de
+octubre fue una sola rama «Configuración» con Remitente y la cuenta; después la
+de la cuenta salió a una página aparte, volvió como rama propia, y el 22 de
+octubre salió del árbol otra vez, ya a propósito.
 
 - El árbol lo arma `services/dashboard.py` (`tree()`) con los permisos de quien
   mira, y la fila marcada la decide el endpoint (`here()`), así que el menú y
@@ -240,10 +240,10 @@ Un campo **en la barra de arriba, al lado del ala, en las pantallas del
 Dashboard** (`_search.html`, `blueprints/search/`), para moverse por el
 Dashboard sin saber dónde está cada cosa. Ahí la barra lleva **solo el ala**:
 la palabra «Sobreala» se queda para el lector de pantalla. Los marcos que la
-quieren ponen `bar_search` (`_dashboard.html` y `admin/_layout.html`) y
-`base.html` la dibuja. **El administrador**, que no tiene Dashboard, la lleva
-igual en Administración. Fuera de ahí (Configuración, la lista de cuentas)
-la barra es la de siempre, con la palabra y sin el campo.
+quieren ponen `bar_search` (`_dashboard.html`, `_settings_frame.html` y
+`admin/_layout.html`) y `base.html` la dibuja. **El administrador**, que no
+tiene Dashboard, la lleva igual en Administración. Fuera de ahí (la lista de
+cuentas, el lienzo) la barra es la de siempre, con la palabra y sin el campo.
 
 Por dónde pasó: hasta octubre de 2026 iba en medio de la barra de arriba, en
 todas las pantallas; después, arriba del árbol del Dashboard (y de las
@@ -261,7 +261,8 @@ lado: al lado del ala y del nombre de la empresa no cabe.
   estaban, y dos «Lista» no se distinguían. Además, lo que se hace desde una
   pantalla sin ser fila (`CLIENT_ACTIONS`: importar, agregar un contacto,
   etiquetas, columnas). Las secciones de la cuenta salen con «Configuración» al
-  lado, porque son una rama del árbol; sus partes (las anclas) no.
+  lado: ya no son rama del árbol y se suman aparte (`pages_for()`); sus partes
+  (las anclas) no.
   Se buscan por su nombre, el de su rama y palabras con que se piden
   (`SEARCH_WORDS` por clave del árbol, «csv», «bajas»); y **lo suyo por
   nombre**: campañas, envíos, plantillas y etiquetas de su empresa, cinco de
