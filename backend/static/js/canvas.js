@@ -18,6 +18,9 @@
   var S = JSON.parse(root.getAttribute("data-strings") || "{}");
   var L = JSON.parse(root.getAttribute("data-limits") || "{}");
   var FONTS = JSON.parse(document.getElementById("canvas-fonts").textContent || "{}");
+  // Los puntos de cada figura, en fracciones de su caja: los mismos que pinta
+  // el correo (`canvas.shape_points()`).
+  var SHAPE_POINTS = JSON.parse((document.getElementById("canvas-shapes") || {}).textContent || "{}");
   var doc = JSON.parse(document.getElementById("canvas-doc").textContent || "{}");
   if (!doc.items) doc = { v: 2, h: 600, bg: "#FFFFFF", items: [] };
 
@@ -30,11 +33,19 @@
   var GAP = 20;
 
   var stage = root.querySelector("[data-stage]");
+  // La hoja va dentro de una caja que se desplaza y de otra que mide lo que
+  // ocupa con el zoom (octubre de 2026): la hoja mide 600 px de verdad y la
+  // vista la acerca o la aleja.
+  var scroller = root.querySelector("[data-scroll]");
+  var zoomBox = root.querySelector("[data-zoom-box]");
   var props = root.querySelector("[data-props]");
   var warn = root.querySelector("[data-canvas-warn]");
   var fileInput = root.querySelector("[data-canvas-file]");
   var errorBox = document.querySelector("[data-canvas-error]");
   var saveForm = document.querySelector("[data-canvas-save]");
+  // El nombre y Guardar viven en la barra, fuera del formulario, y lo nombran
+  // con `form` (octubre de 2026).
+  var nameField = document.getElementById("nombre");
   var previewForm = document.querySelector("[data-canvas-preview]");
 
   var picked = [];         // los índices elegidos, que pueden ser varios
@@ -46,6 +57,8 @@
   var dirty = false;
   var past = [], future = [];
   var saved = JSON.stringify(doc);
+  var zoom = 1;            // la vista: 1 es la hoja a su tamaño
+  var zoomAuto = true;     // si sigue «Ajustar», que cambia con la ventana
 
   /* ------------------------------------------------------------ utilidades */
 
@@ -224,6 +237,12 @@
         el.style.backgroundSize = one.fit === "contain" ? "contain" : "cover";
         el.style.backgroundPosition = "";
       }
+      // Su forma o sus esquinas, y su borde (octubre de 2026). Los tiradores
+      // viven en otra capa, así que recortar la caja no los recorta.
+      el.style.clipPath = one.mask ? (one.mask === "ellipse" ? "ellipse(50% 50% at 50% 50%)"
+                                                             : CLIPS[one.mask] || "") : "";
+      el.style.borderRadius = !one.mask && one.radius ? one.radius + "px" : "";
+      paintEdge(el, one.mask || "rect", one);
       return;
     }
     if (one.t === "shape") {
@@ -239,6 +258,7 @@
       // Un círculo es su caja redondeada del todo; un óvalo, si no es cuadrada.
       fill.style.borderRadius = one.shape === "ellipse" ? "50%" : one.radius + "px";
       fill.style.clipPath = CLIPS[one.shape] || "";
+      paintEdge(el, one.shape === "line" ? "rect" : one.shape, one);
       return;
     }
     el.style.fontFamily = FONTS[one.font] || FONTS.Arial || "Arial, sans-serif";
@@ -252,6 +272,9 @@
       el.style.textAlign = one.list ? "left" : one.align;
       el.style.setProperty("--cv-dot", dotPx(one) + "px");
       el.classList.toggle("cv-item--list", !!one.list);
+      // El tipo de viñeta: lo dibuja el CSS (octubre de 2026).
+      if (one.list) el.setAttribute("data-bullet", one.list === true ? "dot" : one.list);
+      else el.removeAttribute("data-bullet");
     } else {
       el.style.lineHeight = one.h + "px";
       el.style.backgroundColor = one.bg;
@@ -264,24 +287,405 @@
      el texto se parte en el mismo sitio en los dos. Un renglón vacío es un
      hueco del alto de una línea. */
   function fillText(el, one) {
-    if (one.t !== "text" || !one.list) { el.textContent = one.text; return; }
+    if (one.t !== "text") { el.textContent = one.text; return; }
     el.textContent = "";
-    (one.text || "").split("\n").forEach(function (line) {
+    if (!one.list) { fillRuns(el, runsOf(one)); return; }
+    linesOf(one).forEach(function (runs) {
+      var plain = runs.map(function (r) { return r.text; }).join("");
       var row = document.createElement("div");
-      row.className = line.trim() ? "cv-li" : "cv-li cv-li--blank";
-      row.textContent = line.trim() ? line : " ";
+      row.className = plain.trim() ? "cv-li" : "cv-li cv-li--blank";
+      if (plain.trim()) fillRuns(row, runs); else row.textContent = " ";
       el.appendChild(row);
     });
+  }
+
+  /* ------------------------------------------- el formato por palabras */
+
+  /* Un texto puede llevar `runs` (octubre de 2026): tramos con su negrita,
+     cursiva, subrayado, color y enlace. Lo de la caja (`bold`, `italic`,
+     `color`) es la base, y cada tramo dice solo en qué cambia; así lo guarda
+     el servidor (`canvas._runs`). Mientras se escribe, cada tramo es un
+     `span`, y al terminar se vuelven a leer de lo escrito. */
+  var RUN_KEYS = ["b", "i", "u", "color", "href"];
+  var editRange = null;     // lo seleccionado en el texto que se escribe
+
+  function baseOf(one) {
+    return { b: !!one.bold, i: !!one.italic, u: false,
+             color: String(one.color || "").toUpperCase() };
+  }
+
+  function runsOf(one) {
+    return one.runs && one.runs.length ? clone(one.runs) : [{ text: one.text || "" }];
+  }
+
+  function sameStyle(a, b) {
+    return RUN_KEYS.every(function (k) { return a[k] === b[k]; });
+  }
+
+  /* Como los guarda el servidor: sin lo que dice lo mismo que la caja y con
+     los seguidos iguales unidos. Sin formato no queda ninguno. */
+  function tidyRuns(one, runs) {
+    var base = baseOf(one), out = [];
+    runs.forEach(function (run) {
+      if (!run.text) return;
+      var r = { text: run.text };
+      ["b", "i", "u"].forEach(function (k) {
+        if (typeof run[k] === "boolean" && run[k] !== base[k]) r[k] = run[k];
+      });
+      if (run.color && run.color.toUpperCase() !== base.color) r.color = run.color.toUpperCase();
+      if (run.href) r.href = run.href;
+      var last = out[out.length - 1];
+      if (last && sameStyle(last, r)) last.text += r.text; else out.push(r);
+    });
+    one.text = out.map(function (r) { return r.text; }).join("");
+    if (out.some(function (r) { return Object.keys(r).length > 1; })) one.runs = out;
+    else delete one.runs;
+  }
+
+  function fillRuns(el, runs) {
+    runs.forEach(function (run) {
+      var span = document.createElement("span");
+      span.textContent = run.text;
+      if (run.b !== undefined) span.style.fontWeight = run.b ? "bold" : "normal";
+      if (run.i !== undefined) span.style.fontStyle = run.i ? "italic" : "normal";
+      if (run.u) span.style.textDecoration = "underline";
+      if (run.color) span.style.color = run.color;
+      if (run.href) {
+        span.setAttribute("data-href", run.href);
+        span.className = "cv-link";
+        span.title = run.href;
+      }
+      el.appendChild(span);
+    });
+  }
+
+  function linesOf(one) {
+    var lines = [[]];
+    runsOf(one).forEach(function (run) {
+      run.text.split("\n").forEach(function (part, at) {
+        if (at) lines.push([]);
+        if (part) lines[lines.length - 1].push(Object.assign({}, run, { text: part }));
+      });
+    });
+    return lines;
+  }
+
+  function toHex(css) {
+    var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(css || "");
+    if (!m) return /^#[0-9a-f]{6}$/i.test(css || "") ? css.toUpperCase() : "";
+    return "#" + [m[1], m[2], m[3]].map(function (n) {
+      var h = (+n).toString(16);
+      return h.length < 2 ? "0" + h : h;
+    }).join("").toUpperCase();
+  }
+
+  /* Los tramos de lo que hay escrito en la caja que se edita. */
+  function readRuns(el) {
+    var out = [];
+    function push(text, st) { if (text) out.push(Object.assign({ text: text }, st)); }
+    function walk(node, st) {
+      Array.prototype.forEach.call(node.childNodes, function (child) {
+        if (child.nodeType === 3) { push(child.nodeValue.replace(/\u00a0/g, " "), st); return; }
+        if (child.nodeType !== 1) return;
+        var tag = child.tagName;
+        if (tag === "BR") { push("\n", st); return; }
+        var s = Object.assign({}, st), cs = child.style;
+        if (tag === "B" || tag === "STRONG") s.b = true;
+        if (tag === "I" || tag === "EM") s.i = true;
+        if (tag === "U") s.u = true;
+        if (cs.fontWeight) s.b = cs.fontWeight === "bold" || +cs.fontWeight >= 600;
+        if (cs.fontStyle) s.i = cs.fontStyle === "italic";
+        var deco = cs.textDecorationLine || cs.textDecoration;
+        if (deco) s.u = /underline/.test(deco);
+        if (cs.color) s.color = toHex(cs.color) || s.color;
+        if (child.getAttribute("data-href")) s.href = child.getAttribute("data-href");
+        if ((tag === "DIV" || tag === "P") && out.length && !/\n$/.test(out[out.length - 1].text)) {
+          push("\n", st);
+        }
+        walk(child, s);
+      });
+    }
+    walk(el, {});
+    if (out.length) out[out.length - 1].text = out[out.length - 1].text.replace(/\n$/, "");
+    return out;
+  }
+
+  function syncEditing() {
+    var one = item();
+    if (!editing || !one) return;
+    tidyRuns(one, readRuns(editing));
+  }
+
+  /* Cuántas letras hay antes de un punto de la caja (un salto cuenta una). */
+  function charsTo(el, node, offset) {
+    var count = 0, done = false;
+    function all(n) {
+      if (n.nodeType === 3) count += n.nodeValue.length;
+      else if (n.tagName === "BR") count += 1;
+      else for (var c = n.firstChild; c; c = c.nextSibling) all(c);
+    }
+    function walk(n) {
+      if (done) return;
+      if (n === node) {
+        if (n.nodeType === 3) count += offset;
+        else for (var k = 0; k < offset && k < n.childNodes.length; k++) all(n.childNodes[k]);
+        done = true;
+        return;
+      }
+      if (n.nodeType === 3) { count += n.nodeValue.length; return; }
+      if (n.tagName === "BR") { count += 1; return; }
+      for (var c = n.firstChild; c && !done; c = c.nextSibling) walk(c);
+    }
+    if (node === el) { walk(el); return count; }
+    for (var c = el.firstChild; c && !done; c = c.nextSibling) walk(c);
+    return count;
+  }
+
+  function selOffsets(el) {
+    var s = window.getSelection();
+    if (!el || !s.rangeCount) return null;
+    var r = s.getRangeAt(0);
+    if (!el.contains(r.startContainer) || !el.contains(r.endContainer)) return null;
+    return { start: charsTo(el, r.startContainer, r.startOffset),
+             end: charsTo(el, r.endContainer, r.endOffset) };
+  }
+
+  function placeSel(el, start, end) {
+    function find(target) {
+      var count = 0, hit = null;
+      (function walk(n) {
+        for (var c = n.firstChild; c && !hit; c = c.nextSibling) {
+          if (c.nodeType === 3) {
+            if (count + c.nodeValue.length >= target) { hit = { node: c, offset: target - count }; return; }
+            count += c.nodeValue.length;
+          } else if (c.tagName === "BR") {
+            if (count + 1 > target) { hit = { node: n, offset: Array.prototype.indexOf.call(n.childNodes, c) }; return; }
+            count += 1;
+          } else walk(c);
+        }
+      })(el);
+      return hit || { node: el, offset: el.childNodes.length };
+    }
+    var a = find(start), b = find(end);
+    var r = document.createRange();
+    r.setStart(a.node, a.offset);
+    r.setEnd(b.node, b.offset);
+    var s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+
+  /* Parte los tramos para que uno empiece justo en `at`; devuelve cuál. */
+  function cutRuns(runs, at) {
+    var pos = 0;
+    for (var k = 0; k < runs.length; k++) {
+      var len = runs[k].text.length;
+      if (pos === at) return k;
+      if (at < pos + len) {
+        runs.splice(k, 1, Object.assign({}, runs[k], { text: runs[k].text.slice(0, at - pos) }),
+                    Object.assign({}, runs[k], { text: runs[k].text.slice(at - pos) }));
+        return k + 1;
+      }
+      pos += len;
+    }
+    return runs.length;
+  }
+
+  function effective(one, run, key) {
+    return run[key] !== undefined ? run[key] : baseOf(one)[key];
+  }
+
+  /* Pone `key` en las letras de `start` a `end`; sin valor, lo alterna, y con
+     null lo quita. Devuelve lo que puso. */
+  function formatRange(one, start, end, key, value) {
+    var runs = runsOf(one);
+    var a = cutRuns(runs, start), b = cutRuns(runs, end);
+    var inside = runs.slice(a, b);
+    if (value === undefined) value = !inside.every(function (r) { return effective(one, r, key); });
+    inside.forEach(function (r) { if (value === null) delete r[key]; else r[key] = value; });
+    tidyRuns(one, runs);
+    return value;
+  }
+
+  /* Lo que se formatea: lo seleccionado mientras se escribe, o todo el texto. */
+  function formatSpan(one) {
+    var r = editing ? (selOffsets(editing) || editRange) : null;
+    if (r && r.start !== r.end) return { start: Math.min(r.start, r.end), end: Math.max(r.start, r.end), part: true };
+    return { start: 0, end: (one.text || "").length, part: false };
+  }
+
+  /* Vuelve a escribir la caja que se edita con sus tramos, y deja la
+     selección donde estaba. */
+  function refillEditing(one, span, focus) {
+    if (!editing) return;
+    editing.textContent = "";
+    fillRuns(editing, runsOf(one));
+    if (focus) {
+      editing.focus();
+      placeSel(editing, span.start, span.end);
+    }
+    editRange = { start: span.start, end: span.end };
+  }
+
+  function applyFormat(key, value, focus) {
+    var one = item();
+    if (!one || one.t !== "text") return;
+    if (editing) syncEditing();
+    var span = formatSpan(one);
+    formatRange(one, span.start, span.end, key, value);
+    if (editing) refillEditing(one, span, focus !== false);
+    else { checkFit(); render(); }
+    commitSoon();
+    showFormat();
+  }
+
+  /* Las casillas de negrita, cursiva y subrayado dicen cómo está lo
+     seleccionado, o el texto entero. */
+  function showFormat() {
+    var one = item();
+    if (!one || one.t !== "text") return;
+    var runs = runsOf(one), span = formatSpan(one), pos = 0, inside = [];
+    runs.forEach(function (r) {
+      var from = pos, to = pos + r.text.length;
+      pos = to;
+      if (span.start === span.end ? (from <= span.start && span.start <= to) : (to > span.start && from < span.end)) inside.push(r);
+    });
+    if (!inside.length) inside = runs;
+    var all = function (key) { return inside.every(function (r) { return effective(one, r, key); }); };
+    var set = function (sel, on) { var box = props.querySelector(sel); if (box) box.checked = on; };
+    set('[data-props-for~="text"] [data-prop="bold"]', all("b"));
+    set('[data-props-for~="text"] [data-prop="italic"]', all("i"));
+    set("[data-format=u]", all("u"));
+  }
+
+  /* El enlace de lo seleccionado o del texto entero (octubre de 2026). */
+  var linkMenu = props.querySelector("[data-link-menu]");
+  var linkUrl = props.querySelector("[data-link-url]");
+  var linkU = props.querySelector("[data-link-u]");
+  var linkSpan = null;
+
+  function openLink() {
+    var one = item();
+    if (!linkMenu || !one || one.t !== "text") return;
+    if (editing) syncEditing();
+    linkSpan = formatSpan(one);
+    var found = runsOf(one).filter(function (r) { return r.href; })[0];
+    linkUrl.value = found ? found.href : "";
+    linkU.checked = found ? !!found.u : true;
+    linkMenu.open = true;
+    linkUrl.focus();
+  }
+
+  function applyLink(remove) {
+    var one = item();
+    if (!one || one.t !== "text") return;
+    var span = linkSpan || formatSpan(one);
+    if (remove) {
+      formatRange(one, span.start, span.end, "href", null);
+      formatRange(one, span.start, span.end, "u", null);
+    } else {
+      var url = linkUrl.value.trim();
+      if (url && !/^(https:\/\/|mailto:)/i.test(url)) url = "https://" + url.replace(/^(http:\/\/|\/+)/i, "");
+      if (!/^(https:\/\/|mailto:)[^\s"'<>]+$/i.test(url)) { say(S.linkBad); linkUrl.focus(); return; }
+      say("");
+      formatRange(one, span.start, span.end, "href", url);
+      formatRange(one, span.start, span.end, "u", linkU.checked);
+    }
+    linkMenu.open = false;
+    linkSpan = null;
+    if (editing) refillEditing(one, span, true);
+    else { checkFit(); render(); }
+    commitSoon();
+  }
+
+  if (linkMenu) {
+    linkMenu.querySelector("summary").addEventListener("click", function (e) {
+      e.preventDefault();
+      if (linkMenu.open) { linkMenu.open = false; return; }
+      openLink();
+    });
+    props.querySelector("[data-link-apply]").addEventListener("click", function () { applyLink(false); });
+    props.querySelector("[data-link-remove]").addEventListener("click", function () { applyLink(true); });
+    linkUrl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); applyLink(false); }
+    });
+  }
+
+  document.addEventListener("selectionchange", function () {
+    if (!editing) return;
+    var r = selOffsets(editing);
+    if (r) { editRange = r; showFormat(); }
+  });
+
+  function endEditing() {
+    if (!editing) return;
+    syncEditing();
+    editing.contentEditable = "false";
+    editing = null;
+    editRange = null;
+    checkFit();
+    render(); commit();
   }
 
   /* Las figuras que el navegador dibuja recortando su caja. Son las mismas
      que `services/canvas.py` pinta con Pillow, para que el editor y el correo
      enseñen lo mismo. */
-  var CLIPS = {
-    triangle: "polygon(50% 0%, 100% 100%, 0% 100%)",
-    star: "polygon(50.0% 0.0%, 38.2% 33.8%, 2.4% 34.5%, 31.0% 56.2%, 20.6% 90.5%, 50.0% 70.0%, 79.4% 90.5%, 69.0% 56.2%, 97.6% 34.5%, 61.8% 33.8%)",
-    arrow: "polygon(0% 30%, 60% 30%, 60% 0%, 100% 50%, 60% 100%, 60% 70%, 0% 70%)",
-  };
+  var CLIPS = {};
+  Object.keys(SHAPE_POINTS).forEach(function (name) {
+    CLIPS[name] = "polygon(" + SHAPE_POINTS[name].map(function (p) {
+      return (p[0] * 100).toFixed(2) + "% " + (p[1] * 100).toFixed(2) + "%";
+    }).join(", ") + ")";
+  });
+
+  /* El borde de una foto o de una figura (octubre de 2026): un SVG encima,
+     con la misma forma, recortado a ella para que el trazo quede por dentro,
+     como lo pinta el correo. */
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var edgeSeq = 0;
+
+  function shapeNode(figure, w, h, radius) {
+    var n;
+    if (figure === "ellipse") {
+      n = document.createElementNS(SVGNS, "ellipse");
+      n.setAttribute("cx", w / 2); n.setAttribute("cy", h / 2);
+      n.setAttribute("rx", w / 2); n.setAttribute("ry", h / 2);
+    } else if (SHAPE_POINTS[figure]) {
+      n = document.createElementNS(SVGNS, "polygon");
+      n.setAttribute("points", SHAPE_POINTS[figure].map(function (p) {
+        return (p[0] * w) + "," + (p[1] * h);
+      }).join(" "));
+    } else {
+      n = document.createElementNS(SVGNS, "rect");
+      n.setAttribute("width", w); n.setAttribute("height", h);
+      var r = Math.min(radius || 0, w / 2, h / 2);
+      n.setAttribute("rx", r); n.setAttribute("ry", r);
+    }
+    return n;
+  }
+
+  function paintEdge(el, figure, one) {
+    var old = el.querySelector(".cv-edge");
+    if (old) old.remove();
+    if (!one.border) return;
+    var svg = document.createElementNS(SVGNS, "svg");
+    svg.setAttribute("class", "cv-edge");
+    svg.setAttribute("viewBox", "0 0 " + one.w + " " + one.h);
+    svg.setAttribute("preserveAspectRatio", "none");
+    var id = "cv-edge-" + (++edgeSeq);
+    var defs = document.createElementNS(SVGNS, "defs");
+    var clip = document.createElementNS(SVGNS, "clipPath");
+    clip.setAttribute("id", id);
+    clip.appendChild(shapeNode(figure, one.w, one.h, one.radius));
+    defs.appendChild(clip);
+    svg.appendChild(defs);
+    var line = shapeNode(figure, one.w, one.h, one.radius);
+    line.setAttribute("fill", "none");
+    line.setAttribute("stroke", one.border_color || "#18181B");
+    line.setAttribute("stroke-width", one.border * 2);
+    line.setAttribute("clip-path", "url(#" + id + ")");
+    svg.appendChild(line);
+    el.appendChild(svg);
+  }
 
   // Las fotos y los rectángulos se tiran también de los lados: en una foto,
   // las esquinas guardan su proporción y los lados la recortan.
@@ -354,7 +758,7 @@
     // Vaciar el lienzo acorta la página un instante y el navegador salta de
     // posición: el segundo clic de un doble clic caería en otra cosa. Se
     // sostiene la altura y se vuelve a donde estaba.
-    var scrollY = window.scrollY;
+    var scrollY = scroller ? scroller.scrollTop : window.scrollY;
     stage.style.minHeight = stage.offsetHeight + "px";
     stage.textContent = "";
 
@@ -398,8 +802,114 @@
     warn.hidden = !said.length;
     showProps();
     stage.style.minHeight = "";
-    if (window.scrollY !== scrollY) window.scrollTo(window.scrollX, scrollY);
+    sizeZoom();
+    if (scroller) { if (scroller.scrollTop !== scrollY) scroller.scrollTop = scrollY; }
+    else if (window.scrollY !== scrollY) window.scrollTo(window.scrollX, scrollY);
   }
+
+  /* -------------------------------------------------------------- el zoom */
+
+  /* La hoja se escala con `transform` y la caja de fuera toma lo que ocupa
+     escalada, que es lo que se desplaza. Todo lo que viene del ratón se divide
+     entre el zoom (`unzoom`) para volver a medidas de la hoja. */
+  var ZOOMS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+  var zoomValue = root.querySelector("[data-zoom-value]");
+
+  function unzoom(px) { return px / zoom; }
+
+  function sizeZoom() {
+    if (!zoomBox) return;
+    stage.style.transform = zoom === 1 ? "" : "scale(" + zoom + ")";
+    zoomBox.style.width = Math.ceil(stage.offsetWidth * zoom) + "px";
+    zoomBox.style.height = Math.ceil(stage.offsetHeight * zoom) + "px";
+    if (zoomValue) zoomValue.textContent = Math.round(zoom * 100) + "%";
+  }
+
+  function setZoom(value, auto) {
+    zoom = clamp(Math.round(value * 100) / 100, ZOOMS[0], ZOOMS[ZOOMS.length - 1]);
+    zoomAuto = !!auto;
+    sizeZoom();
+  }
+
+  /* «Ajustar»: la hoja llena el ancho que queda, hasta un 125 %: más grande
+     la letra se ve borrosa y se pierde de vista el resto del correo. */
+  function fitZoom() {
+    if (!scroller) return;
+    var room = scroller.clientWidth - 48;
+    if (room > 0) setZoom(Math.min(1.25, Math.max(ZOOMS[0], room / (stage.offsetWidth || W))), true);
+  }
+
+  function stepZoom(dir) {
+    var next = dir > 0 ? ZOOMS.filter(function (z) { return z > zoom + 0.001; })[0]
+                       : ZOOMS.filter(function (z) { return z < zoom - 0.001; }).pop();
+    if (next) setZoom(next, false);
+  }
+
+  var zoomBar = root.querySelector("[data-zoom]");
+  if (zoomBar) {
+    zoomBar.addEventListener("click", function (e) {
+      var step = e.target.closest("[data-zoom-step]");
+      if (step) stepZoom(+step.getAttribute("data-zoom-step"));
+      if (e.target.closest("[data-zoom-fit]")) fitZoom();
+    });
+  }
+  if (scroller) {
+    // Ctrl y la rueda acercan y alejan la hoja, no la página.
+    scroller.addEventListener("wheel", function (e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      stepZoom(e.deltaY < 0 ? 1 : -1);
+    }, { passive: false });
+  }
+  window.addEventListener("resize", function () { if (zoomAuto) fitZoom(); });
+
+  /* ------------------------------------------------- el riel y sus paneles */
+
+  /* Cada ícono abre su panel y el mismo lo cierra. El último abierto se
+     recuerda en este navegador. Sin JavaScript se ven todos. */
+  var rail = document.querySelector("[data-rail]");
+  var panelBox = document.querySelector("[data-panel-box]");
+  var PANEL_KEY = "sa_studio_panel";
+
+  function openPanel(name) {
+    if (!panelBox) return;
+    Array.prototype.forEach.call(panelBox.querySelectorAll("[data-panel-for]"), function (p) {
+      p.hidden = p.getAttribute("data-panel-for") !== name;
+    });
+    panelBox.hidden = !name;
+    Array.prototype.forEach.call(rail.querySelectorAll("[data-panel]"), function (b) {
+      var on = b.getAttribute("data-panel") === name;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-expanded", on ? "true" : "false");
+    });
+    try { localStorage.setItem(PANEL_KEY, name || ""); } catch (err) { /* sin memoria */ }
+    if (zoomAuto) requestAnimationFrame(fitZoom);
+  }
+
+  if (rail && panelBox) {
+    root.classList.add("is-live");
+    rail.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-panel]");
+      if (!b) return;
+      var name = b.getAttribute("data-panel");
+      openPanel(b.classList.contains("is-on") ? "" : name);
+    });
+    var first = null;
+    try { first = localStorage.getItem(PANEL_KEY); } catch (err) { first = null; }
+    if (first === null) first = window.innerWidth > 1100 ? "text" : "";
+    if (first && !rail.querySelector('[data-panel="' + first + '"]')) first = "text";
+    openPanel(first);
+  }
+
+  /* Los menús de «⋯», de Alinear y de Descargar: se cierran al elegir algo y
+     al pulsar fuera. */
+  document.addEventListener("click", function (e) {
+    Array.prototype.forEach.call(document.querySelectorAll(".props__more[open], .studio__more[open]"), function (menu) {
+      if (!menu.contains(e.target) || e.target.closest(".props__menu button, .studio__menu-item")) {
+        menu.open = false;
+      }
+    });
+  });
 
   function showProps() {
     var one = item();
@@ -420,19 +930,33 @@
     // rectángulo («shape-ellipse»): el redondeo es del rectángulo y el aviso
     // de la imagen es del círculo.
     var also = kind === "shape" ? "shape-" + (one.shape || "rect") : "";
+    // El borde es de las figuras con relleno (no de la línea), y las esquinas
+    // de una foto sin forma.
+    var extra = kind === "shape" && one.shape !== "line" ? "shape-fill"
+              : (kind === "image" && !one.mask ? "image-plain" : "");
     Array.prototype.forEach.call(props.querySelectorAll("[data-only]"), function (el) {
       var want = el.getAttribute("data-only");
-      el.hidden = want !== kind && want !== also;
+      el.hidden = want !== kind && want !== also && want !== extra;
     });
     // Con viñetas el texto va a la izquierda: la alineación no haría nada.
     var alignField = props.querySelector("[data-align-field]");
     if (alignField && kind === "text") alignField.hidden = !!one.list;
+    if (kind === "text") showFormat();
+    // Sin viñetas el campo dice «Sin viñetas»: la clave no se guarda.
+    var bullet = props.querySelector('[data-prop="list"]');
+    if (bullet && kind === "text" && bullet !== document.activeElement) {
+      bullet.value = one.list === true ? "dot" : (one.list || "");
+    }
     var row = props.querySelector('[data-props-for~="' + kind + '"]');
     Array.prototype.forEach.call(row.querySelectorAll("[data-prop]"), function (input) {
       var name = input.getAttribute("data-prop");
       // Una casilla sin su clave está apagada: las viñetas solo se escriben
       // cuando están puestas, y sin esto quedaba marcada la del texto anterior.
-      if (!(name in one) && input.type !== "checkbox") return;
+      var DEFAULTS = { border: 0, border_color: "#18181B", mask: "", radius: 0 };
+      if (!(name in one) && input.type !== "checkbox") {
+        if (name in DEFAULTS && input !== document.activeElement) input.value = DEFAULTS[name];
+        return;
+      }
       if (input === document.activeElement) return;
       if (input.type === "checkbox") input.checked = !!one[name];
       else input.value = String(one[name]);
@@ -457,9 +981,10 @@
     if (one.list) fillText(probe, one); else probe.textContent = one.text || " ";
     paintItem(probe, one);
     probe.style.height = "auto";
-    stage.appendChild(probe);
+    // Fuera de la hoja, que lleva el zoom: se mide a su tamaño de verdad.
+    root.appendChild(probe);
     var need = Math.ceil(probe.scrollHeight);
-    stage.removeChild(probe);
+    root.removeChild(probe);
     return need;
   }
 
@@ -491,7 +1016,7 @@
      Ahora **siempre entra algo**, y la hoja no cambia de alto por ello. */
   var dropped = 0;          // cuántas van seguidas, para no apilarlas encima
 
-  function place(one) {
+  function place(one, at) {
     if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
     // Lo que no quepa se achica al entrar: crear algo que después no se puede
     // guardar por salirse de la hoja no le sirve a nadie.
@@ -501,6 +1026,16 @@
       one.h = room;
     }
     if (one.w > W) one.w = W;
+    // Soltada sobre la hoja, o pulsada en Subidas: entra donde se soltó, o en
+    // medio de lo que se ve (octubre de 2026).
+    if (at) {
+      one.x = clamp(Math.round(at.x - one.w / 2), 0, W - one.w);
+      one.y = clamp(Math.round(at.y - one.h / 2), 0, Math.max(0, doc.h - one.h));
+      doc.items.push(one);
+      pick(doc.items.length - 1);
+      render(); commit();
+      return;
+    }
     // En cascada, como en un editor de diapositivas: la siguiente entra un
     // poco más abajo y a la derecha, y se vuelve arriba al llegar al borde de
     // abajo. Lo ancho no cuenta para eso: una figura ocupa la hoja entera y
@@ -526,16 +1061,39 @@
     triangle: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
     star: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
     arrow: { x: Math.round((W - 200) / 2), w: 200, h: 120 },
+    diamond: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
+    pentagon: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
+    hexagon: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
+    octagon: { x: Math.round((W - 160) / 2), w: 160, h: 160 },
+    heart: { x: Math.round((W - 160) / 2), w: 160, h: 150 },
+    cross: { x: Math.round((W - 140) / 2), w: 140, h: 140 },
+    bubble: { x: Math.round((W - 220) / 2), w: 220, h: 160 },
+    double_arrow: { x: Math.round((W - 240) / 2), w: 240, h: 110 },
   };
 
-  function add(kind, figure) {
+  /* Los textos de partida del panel Texto (octubre de 2026), como en Canva:
+     un título, un subtítulo, un texto y una lista. */
+  var PRESETS = {
+    title: { size: 36, bold: true, text: "newTitle" },
+    subtitle: { size: 24, bold: true, text: "newSubtitle" },
+    body: { size: 16, bold: false, text: "newText" },
+    list: { size: 16, bold: false, text: "newList", list: true },
+  };
+
+  function add(kind, figure, preset) {
     say("");
     if (doc.items.length >= L.maxItems) { say(S.maxItems); return; }
     if (kind === "image") { pickImage(null); return; }
     if (kind === "logo") { useLogo(); return; }
     if (kind === "text") {
-      place({ t: "text", x: 40, w: W - 80, h: 34, text: S.newText, font: "Arial",
-              size: 22, color: "#18181B", bold: false, italic: false, align: "left", line: 1.4 });
+      var p = PRESETS[preset] || PRESETS.body;
+      var text = S[p.text] || S.newText;
+      var one = { t: "text", x: 40, w: W - 80, h: 34, text: text, font: "Arial",
+                  size: p.size, color: "#18181B", bold: p.bold, italic: false,
+                  align: "left", line: 1.4 };
+      if (p.list) one.list = "dot";
+      one.h = Math.max(16, needed(one));
+      place(one);
     } else if (kind === "button") {
       // Sin `https://` escrito dentro: el campo lo enseña como marca de agua.
       // Escrito, quien pegaba una dirección acababa con «https://https://…».
@@ -559,17 +1117,65 @@
   }
 
   fileInput.addEventListener("change", function () {
-    var file = fileInput.files && fileInput.files[0];
-    if (file) sendImage(file, replacing);
+    var files = Array.prototype.slice.call(fileInput.files || []);
+    // Para cambiar una se usa la primera; para agregar, hasta cinco de una vez.
+    if (replacing !== null && replacing !== undefined) {
+      if (files[0]) sendImage(files[0], replacing);
+      return;
+    }
+    files.slice(0, 5).forEach(function (file) { sendImage(file, null, visibleCenter()); });
   });
+
+  /* El punto de la hoja que está en medio de lo que se ve: ahí entra lo que se
+     pulsa en Subidas o se pega. */
+  function visibleCenter() {
+    var sheet = stage.querySelector(".cv-sheet");
+    if (!sheet || !scroller) return null;
+    var box = sheet.getBoundingClientRect(), view = scroller.getBoundingClientRect();
+    var x = unzoom((view.left + view.right) / 2 - box.left);
+    var y = unzoom((Math.max(view.top, box.top) + Math.min(view.bottom, box.bottom)) / 2 - box.top);
+    return { x: clamp(x, 0, W), y: clamp(y, 0, doc.h) };
+  }
+
+  /* Un SVG no se sube tal cual (octubre de 2026): puede llevar código. Se
+     dibuja en el navegador y sube su PNG, de hasta 1,200 px de ancho. */
+  function isSvg(file) {
+    return file && (file.type === "image/svg+xml" || /\.svg$/i.test(file.name || ""));
+  }
+
+  function svgToPng(file, done) {
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var w = img.naturalWidth || 1200, h = img.naturalHeight || 1200;
+      var scale = Math.min(1, 1200 / w) || 1;
+      if (w < 600) scale = 600 / w;
+      var c = document.createElement("canvas");
+      c.width = Math.round(w * scale);
+      c.height = Math.round(h * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(function (blob) {
+        if (!blob) { say(S.svgFailed); return; }
+        done(new File([blob], (file.name || "imagen").replace(/\.svg$/i, "") + ".png",
+                      { type: "image/png" }));
+      }, "image/png");
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); say(S.svgFailed); };
+    img.src = url;
+  }
 
   /* Sube una foto y la pone en la hoja. `replace` cambia la del elemento que
      diga, y con null entra una nueva. La misma ruta para el botón y para lo
      que se pega: el servidor la revisa por lo que trae dentro y la achica. */
-  function sendImage(file, replace) {
+  function sendImage(file, replace, at) {
+    if (isSvg(file)) {
+      svgToPng(file, function (png) { sendImage(png, replace, at); });
+      return;
+    }
     var body = new FormData();
     body.append("archivo", file);
-    askImage(root.getAttribute("data-upload"), body, replace);
+    askImage(root.getAttribute("data-upload"), body, replace, at);
   }
 
   /* El logo de la empresa (octubre de 2026): el servidor pone una copia como
@@ -578,7 +1184,7 @@
     askImage(root.getAttribute("data-logo"), new FormData(), null);
   }
 
-  function askImage(url, body, replace) {
+  function askImage(url, body, replace, at) {
     say(S.uploading);
     body.append("csrf_token", saveForm.querySelector("[name=csrf_token]").value);
     fetch(url, { method: "POST", body: body, credentials: "same-origin" })
@@ -599,12 +1205,139 @@
         }
         // Entra a la mitad del ancho, con su proporción: se puede mover y
         // cabe otra al lado. «Ancho completo» la estira.
-        var w = W / 2;
-        var h = Math.max(16, Math.min(Math.round(w / r), L.maxHeight));
-        place({ t: "image", x: Math.round((W - w) / 2), w: w, h: h, name: answer.name,
-                r: Math.round(r * 10000) / 10000, href: "", alt: "" });
+        putImage(answer.name, r, at);
+        uploaded(answer);
       })
       .catch(function () { say(S.uploadFailed); });
+  }
+
+  function putImage(name, r, at) {
+    var w = W / 2;
+    var h = Math.max(16, Math.min(Math.round(w / r), L.maxHeight));
+    place({ t: "image", x: Math.round((W - w) / 2), w: w, h: h, name: name,
+            r: Math.round(r * 10000) / 10000, href: "", alt: "" }, at);
+  }
+
+  /* ---------------------------------------------------------- Subidas */
+
+  /* Las fotos que ya subió la cuenta (octubre de 2026), de la más nueva a la
+     más vieja: se pulsan para ponerlas en medio de lo que se ve, o se
+     arrastran a donde se quieran. Se piden la primera vez que se abre el
+     panel. */
+  var gallery = document.querySelector("[data-uploads]");
+  var galleryMore = document.querySelector("[data-uploads-more]");
+  var galleryEmpty = document.querySelector("[data-uploads-empty]");
+  var galleryNext = null, galleryAsked = false;
+
+  function tile(one, first) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "uploads__one";
+    b.draggable = true;
+    b.setAttribute("data-photo", one.name);
+    b.setAttribute("data-ratio", one.width && one.height ? one.width / one.height : 0);
+    var img = document.createElement("img");
+    img.src = one.url;
+    img.alt = "";
+    img.loading = "lazy";
+    b.appendChild(img);
+    if (first && gallery.firstChild) gallery.insertBefore(b, gallery.firstChild);
+    else gallery.appendChild(b);
+  }
+
+  function loadGallery(more) {
+    if (!gallery) return;
+    galleryAsked = true;
+    var url = gallery.getAttribute("data-list") + (more && galleryNext ? "?antes=" + encodeURIComponent(galleryNext) : "");
+    fetch(url, { credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (answer) {
+        (answer.images || []).forEach(function (one) { tile(one, false); });
+        galleryNext = answer.antes || null;
+        galleryMore.hidden = !answer.more;
+        galleryEmpty.hidden = !!gallery.children.length;
+      })
+      .catch(function () { /* sin la lista, se sube igual */ });
+  }
+
+  function uploaded(answer) {
+    if (!gallery || !galleryAsked) return;
+    tile(answer, true);
+    galleryEmpty.hidden = true;
+  }
+
+  /* La proporción de una foto de la lista: la guardada, o la de la imagen. */
+  function ratioOf(b, done) {
+    var r = parseFloat(b.getAttribute("data-ratio"));
+    if (r > 0) { done(r); return; }
+    var img = b.querySelector("img");
+    if (img.complete && img.naturalWidth) { done(img.naturalWidth / img.naturalHeight); return; }
+    img.addEventListener("load", function () { done(img.naturalWidth / img.naturalHeight); });
+  }
+
+  if (gallery) {
+    if (rail) {
+      rail.addEventListener("click", function (e) {
+        var b = e.target.closest('[data-panel="uploads"]');
+        if (b && !galleryAsked) loadGallery(false);
+      });
+      if (rail.querySelector('[data-panel="uploads"].is-on')) loadGallery(false);
+    } else loadGallery(false);
+    galleryMore.addEventListener("click", function () { loadGallery(true); });
+    gallery.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-photo]");
+      if (!b) return;
+      ratioOf(b, function (r) { putImage(b.getAttribute("data-photo"), r, visibleCenter()); });
+    });
+    gallery.addEventListener("dragstart", function (e) {
+      var b = e.target.closest("[data-photo]");
+      if (!b) return;
+      e.dataTransfer.setData("application/x-sobreala-photo", JSON.stringify({
+        name: b.getAttribute("data-photo"), ratio: parseFloat(b.getAttribute("data-ratio")) || 0 }));
+      e.dataTransfer.effectAllowed = "copy";
+    });
+  }
+
+  /* Soltar sobre la hoja: una foto de Subidas o archivos del escritorio entran
+     donde se sueltan, con el zoom descontado. */
+  function dropPoint(e) {
+    var sheet = stage.querySelector(".cv-sheet");
+    if (!sheet) return null;
+    var box = sheet.getBoundingClientRect();
+    return { x: clamp(unzoom(e.clientX - box.left), 0, W),
+             y: clamp(unzoom(e.clientY - box.top), 0, doc.h) };
+  }
+
+  if (scroller) {
+    scroller.addEventListener("dragover", function (e) {
+      var types = Array.prototype.slice.call(e.dataTransfer.types || []);
+      if (types.indexOf("Files") < 0 && types.indexOf("application/x-sobreala-photo") < 0) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      scroller.classList.add("is-drop");
+    });
+    scroller.addEventListener("dragleave", function (e) {
+      if (!scroller.contains(e.relatedTarget)) scroller.classList.remove("is-drop");
+    });
+    scroller.addEventListener("drop", function (e) {
+      scroller.classList.remove("is-drop");
+      var at = dropPoint(e);
+      var mine = e.dataTransfer.getData("application/x-sobreala-photo");
+      if (mine) {
+        e.preventDefault();
+        var data = JSON.parse(mine);
+        if (data.ratio > 0) { putImage(data.name, data.ratio, at); return; }
+        var b = gallery && gallery.querySelector('[data-photo="' + CSS.escape(data.name) + '"]');
+        if (b) ratioOf(b, function (r) { putImage(data.name, r, at); });
+        return;
+      }
+      var files = Array.prototype.filter.call(e.dataTransfer.files || [], function (f) {
+        return f.type.indexOf("image/") === 0 || isSvg(f);
+      });
+      if (!files.length) return;
+      e.preventDefault();
+      files.slice(0, 5).forEach(function (file) { sendImage(file, null, at); });
+    });
   }
 
   /* --------------------------------------------------- mover y cambiar tamaño */
@@ -657,6 +1390,9 @@
     }
     var sheet = e.target.closest(".cv-sheet");
     if (!sheet) return;
+    // Mientras se escribe, pulsar fuera del texto termina de escribir: el
+    // foco puede estar en la barra (dando formato), y no en el texto.
+    if (editing && !editing.contains(e.target)) { endEditing(); return; }
 
     // Mientras se recorta, el ratón es del recuadro: mover dentro, estirar por
     // las esquinas, y un clic fuera termina.
@@ -683,10 +1419,12 @@
       // Arrastrar sobre la hoja vacía encierra lo que toque el recuadro.
       if (editing) editing.blur();
       var edge = sheet.getBoundingClientRect();
+      // Con Ctrl o Mayús, lo encerrado se suma a lo elegido (octubre de 2026).
+      var adding = e.shiftKey || e.ctrlKey || e.metaKey;
       drag = { mode: "marquee", sheet: sheet, moved: false,
-               ax: e.clientX - edge.left, ay: e.clientY - edge.top,
-               add: e.shiftKey, was: picked.slice() };
-      if (!e.shiftKey) { pick(null); render(); }
+               ax: unzoom(e.clientX - edge.left), ay: unzoom(e.clientY - edge.top),
+               add: adding, was: picked.slice() };
+      if (!adding) { pick(null); render(); }
       e.preventDefault();
       return;
     }
@@ -703,8 +1441,9 @@
       return;
     }
     var handle = e.target.closest("[data-handle]");
-    if (e.shiftKey && !handle) {
-      // Mayús suma y quita, y arrastra al grupo entero con él.
+    if ((e.shiftKey || e.ctrlKey || e.metaKey) && !handle) {
+      // Ctrl o Mayús suman y quitan (Cmd en Mac), y arrastran al grupo entero
+      // con él.
       var group = tied(i), out = picked.slice();
       if (isPicked(i)) {
         out = out.filter(function (k) { return group.indexOf(k) < 0; });
@@ -732,8 +1471,9 @@
     if (!drag) return;
     var sheet = stage.querySelector(".cv-sheet");
     if (drag.mode === "grip") {
-      doc.h = clamp(Math.round(drag.h0 + e.clientY - drag.y0), drag.min, L.maxHeight);
+      doc.h = clamp(Math.round(drag.h0 + unzoom(e.clientY - drag.y0)), drag.min, L.maxHeight);
       if (sheet) sheet.style.height = doc.h + "px";
+      sizeZoom();
       drag.moved = true;
       return;
     }
@@ -754,7 +1494,7 @@
       var cropped = doc.items[cropping];
       if (!cropped) return;
       var a = drag.start;
-      var cdx = Math.round(e.clientX - drag.x0), cdy = Math.round(e.clientY - drag.y0);
+      var cdx = Math.round(unzoom(e.clientX - drag.x0)), cdy = Math.round(unzoom(e.clientY - drag.y0));
       drag.moved = true;
       var ratio = cropped.w / Math.max(cropped.h, 1);
       var want;
@@ -779,8 +1519,8 @@
     }
     if (drag.mode === "marquee") {
       var edge = drag.sheet.getBoundingClientRect();
-      drag.bx = clamp(e.clientX - edge.left, 0, W);
-      drag.by = Math.max(0, e.clientY - edge.top);
+      drag.bx = clamp(unzoom(e.clientX - edge.left), 0, W);
+      drag.by = Math.max(0, unzoom(e.clientY - edge.top));
       drag.moved = true;
       var mark = drag.sheet.querySelector(".cv-marquee");
       if (!mark) {
@@ -795,7 +1535,7 @@
       return;
     }
     var one = doc.items[drag.i], a = drag.start;
-    var dx = Math.round(e.clientX - drag.x0), dy = Math.round(e.clientY - drag.y0);
+    var dx = Math.round(unzoom(e.clientX - drag.x0)), dy = Math.round(unzoom(e.clientY - drag.y0));
     if (!dx && !dy && !drag.moved) return;
     drag.moved = true;
 
@@ -902,11 +1642,13 @@
     // Con viñetas se escribe en plano, con la misma sangría: los renglones se
     // parten igual, y las viñetas vuelven al terminar.
     var writing = doc.items[+el.getAttribute("data-item")];
-    if (writing && writing.list) el.textContent = writing.text;
+    if (writing && writing.list) { el.textContent = ""; fillRuns(el, runsOf(writing)); }
     try { el.contentEditable = "plaintext-only"; } catch (err) { el.contentEditable = "true"; }
     if (el.contentEditable !== "plaintext-only") el.contentEditable = "true";
     el.classList.add("is-editing");
     editing = el;
+    // La barra del texto, para darle formato mientras se escribe.
+    showProps();
     el.focus();
     var range = document.createRange();
     range.selectNodeContents(el);
@@ -927,21 +1669,31 @@
     if (!editing || e.target !== editing || sel === null) return;
     var one = item();
     if (!one) return;
-    one.text = editing.innerText.replace(/\n$/, "");
+    // Lo escrito, con su formato por palabras.
+    syncEditing();
     // La caja no crece (octubre de 2026): lo que no cabe se ve desplazando
     // dentro mientras se escribe, y se avisa, porque en el correo no sale.
-    var over = Math.ceil(editing.scrollHeight) > one.h + 1;
+    var over = needed(one) > one.h + 1;
     warn.textContent = over ? (hasMarks(one) ? S.textGrows : S.textCut) : "";
     warn.hidden = !over;
   });
 
   stage.addEventListener("focusout", function (e) {
     if (!editing || e.target !== editing) return;
-    var i = sel;
-    editing.contentEditable = "false";
-    editing = null;
-    checkFit();
-    render(); commit();
+    // A la barra de lo elegido no se sale: es para darle formato a lo
+    // seleccionado (octubre de 2026).
+    if (e.relatedTarget && props.contains(e.relatedTarget)) return;
+    endEditing();
+  });
+  // Y de la barra a cualquier otro sitio que no sea el texto, sí.
+  props.addEventListener("focusout", function (e) {
+    if (!editing) return;
+    var to = e.relatedTarget;
+    if (to && (props.contains(to) || to === editing)) return;
+    setTimeout(function () {
+      var now = document.activeElement;
+      if (editing && !(now && (props.contains(now) || now === editing))) endEditing();
+    }, 0);
   });
 
   /* Las columnas: a donde está el cursor del texto que se escribe, o al campo
@@ -992,6 +1744,19 @@
   });
 
   props.addEventListener("input", function (e) {
+    // Negrita, cursiva, subrayado y color de un texto: a lo seleccionado
+    // mientras se escribe, o, el subrayado, al texto entero.
+    var fmt = e.target.closest('[data-prop="bold"], [data-prop="italic"], [data-prop="color"], [data-format="u"]');
+    var cur = item();
+    if (fmt && cur && cur.t === "text") {
+      var key = { bold: "b", italic: "i", color: "color" }[fmt.getAttribute("data-prop")] || "u";
+      var val = fmt.type === "checkbox" ? fmt.checked : String(fmt.value).toUpperCase();
+      if (key === "u" || (editing && formatSpan(cur).part)) {
+        applyFormat(key, val, key !== "color");
+        return;
+      }
+    }
+    if (e.target.closest("[data-link-url]")) return;
     var page = e.target.closest("[data-page-bg]");
     if (page) {
       doc.bg = page.value.toUpperCase();
@@ -1019,12 +1784,21 @@
     if (!input || !one) return;
     var name = input.getAttribute("data-prop");
     var value = input.type === "checkbox" ? input.checked : input.value;
-    if (name === "size" || name === "radius" || name === "rot" || name === "h") {
+    if (name === "size" || name === "radius" || name === "rot" || name === "h" || name === "border") {
       value = parseInt(value, 10);
       if (isNaN(value)) return;
       if (name === "size") value = clamp(value, L.minSize, L.maxSize);
       if (name === "rot") value = ((value % 360) + 360) % 360;
+      if (name === "border") value = clamp(value, 0, 20);
     }
+    // Sin forma, sin borde: la clave no se guarda (octubre de 2026).
+    if ((name === "mask" && !value) || (name === "border" && !value)) {
+      delete one[name];
+      repaint(stage, one, sel);
+      commitSoon();
+      return;
+    }
+    if (name === "border" && !one.border_color) one.border_color = "#18181B";
     if (name === "h") {
       // El grosor de una línea, que crece y adelgaza desde su centro.
       if (!isLine(one)) return;
@@ -1040,8 +1814,15 @@
       one.y = clamp(Math.round(mid - one.h / 2), 0, Math.max(0, doc.h - one.h));
     }
     if (name === "line") value = parseFloat(value);
-    if (name === "bg" || name === "color") value = String(value).toUpperCase();
+    if (name === "bg" || name === "color" || name === "border_color") value = String(value).toUpperCase();
     one[name] = value;
+    // Lo de la caja entera borra lo de cada tramo: «negrita» es todo el texto.
+    var runKey = { bold: "b", italic: "i", color: "color" }[name];
+    if (runKey && one.runs) {
+      one.runs.forEach(function (r) { delete r[runKey]; });
+      tidyRuns(one, one.runs);
+      if (editing) refillEditing(one, formatSpan(one), false);
+    }
     // Las viñetas solo se escriben puestas, como las guarda el servidor.
     if (name === "list" && !value) delete one.list;
     if (name === "rot" || name === "h" || name === "shape") fitRot(one);
@@ -1208,9 +1989,20 @@
 
   document.addEventListener("keydown", function (e) {
     var typing = e.target.closest && e.target.closest("input, select, textarea, [contenteditable=true], [contenteditable=plaintext-only]");
-    if (editing && e.key === "Escape") { editing.blur(); return; }
+    if (editing && e.key === "Escape") { endEditing(); return; }
+    // Mientras se escribe: Ctrl+B, I y U dan formato a lo seleccionado, y
+    // Ctrl+K pone un enlace (octubre de 2026).
+    if (editing && e.target === editing && (e.ctrlKey || e.metaKey)) {
+      var f = e.key.toLowerCase();
+      if (f === "b" || f === "i" || f === "u") { e.preventDefault(); applyFormat(f); return; }
+      if (f === "k") { e.preventDefault(); openLink(); return; }
+    }
     if ((e.ctrlKey || e.metaKey) && !typing) {
       var k = e.key.toLowerCase();
+      // El zoom de la hoja, no el de la página.
+      if (k === "+" || k === "=") { e.preventDefault(); stepZoom(1); return; }
+      if (k === "-") { e.preventDefault(); stepZoom(-1); return; }
+      if (k === "0") { e.preventDefault(); fitZoom(); return; }
       if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
       if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); redo(); return; }
       if (k === "a") { e.preventDefault(); pick(doc.items.map(function (x, i) { return i; })); render(); return; }
@@ -1385,7 +2177,7 @@
     if (photos.length) {
       e.preventDefault();
       // De a una: cada una pasa por la misma revisión que subir un archivo.
-      photos.slice(0, 3).forEach(function (file) { sendImage(file, null); });
+      photos.slice(0, 3).forEach(function (file) { sendImage(file, null, visibleCenter()); });
       return;
     }
     var text = data.getData ? data.getData("text/plain") : "";
@@ -1406,45 +2198,39 @@
   root.addEventListener("click", function (e) {
     var b = e.target.closest("[data-add]");
     if (!b) return;
-    add(b.getAttribute("data-add"), b.getAttribute("data-shape"));
-    // El menú de Geometría se cierra al elegir una figura.
-    var geo = b.closest("[data-geo]");
-    if (geo) geo.open = false;
+    add(b.getAttribute("data-add"), b.getAttribute("data-shape"), b.getAttribute("data-preset"));
+    // En el teléfono el panel tapa la hoja: se cierra al agregar.
+    if (window.innerWidth <= 760 && rail) openPanel("");
   });
   document.querySelector("[data-undo]").addEventListener("click", undo);
   document.querySelector("[data-redo]").addEventListener("click", redo);
 
   /* ------------------------------------------------ guardar y vista previa */
 
+  /* Guardar siempre guarda (octubre de 2026): lo que no cumple las reglas se
+     guarda como borrador, que no se puede enviar. Lo encimado y lo que falta
+     se siguen marcando en la hoja y en la revisión. */
   saveForm.addEventListener("submit", function (e) {
     if (editing) editing.blur();
-    var bad = badOnes();
-    if (Object.keys(bad).length) {
-      e.preventDefault();
-      say(Object.keys(bad).some(function (k) { return bad[k] === "overlap"; }) ? S.overlap : S.linkOverlap);
-      return;
-    }
-    if (checkBlocked) { e.preventDefault(); return; }
-    if (!saveForm.querySelector("#nombre").value.trim()) {
-      e.preventDefault(); say(S.nameNeeded); saveForm.querySelector("#nombre").focus(); return;
+    if (!nameField.value.trim()) {
+      e.preventDefault(); say(S.nameNeeded); nameField.focus(); return;
     }
     saveForm.querySelector("[name=lienzo]").value = JSON.stringify(doc);
     dirty = false;
   });
 
   /* La barra de peso y la revisión antispam. Las pide al servidor, que hace
-     la misma cuenta que al guardar; mientras haya un motivo, Guardar no se
-     deja pulsar. */
+     la misma cuenta que al guardar; mientras haya un motivo, Guardar dice
+     «Guardar borrador» (octubre de 2026). */
   var check = document.querySelector("[data-canvas-check]");
-  var saveButton = saveForm.querySelector("button[type=submit]");
-  var checkBlocked = false;
+  var saveButton = document.querySelector("[data-canvas-submit]");
   function runCheck() {
     if (!check) return;
     var body = new FormData();
     body.append("csrf_token", saveForm.querySelector("[name=csrf_token]").value);
     body.append("lienzo", JSON.stringify(doc));
     // El nombre, para la regla del nombre de la ventana de requisitos.
-    body.append("nombre", saveForm.querySelector("#nombre").value);
+    body.append("nombre", nameField.value);
     fetch(root.getAttribute("data-review"), { method: "POST", body: body, credentials: "same-origin" })
       .then(function (r) { return r.json(); })
       .then(function (answer) {
@@ -1462,11 +2248,16 @@
           li.textContent = text;
           list.appendChild(li);
         });
-        checkBlocked = !answer.ok;
         check.querySelector("[data-check-bad]").hidden = answer.ok;
         check.querySelector("[data-check-ok]").hidden = !answer.ok;
-        saveButton.disabled = checkBlocked;
-        saveButton.classList.toggle("btn--off", checkBlocked);
+        // El punto del ícono de Revisión: le falta algo para enviarse.
+        var dot = document.querySelector("[data-review-dot]");
+        if (dot) {
+          dot.hidden = answer.ok;
+          dot.parentNode.title = answer.ok ? S.reviewOk : S.reviewBad;
+        }
+        saveButton.textContent = answer.ok ? S.save : S.saveDraft;
+        saveButton.title = answer.ok ? "" : S.saveDraftHint;
         fillRules(answer.rules || []);
       })
       .catch(function () { /* sin revisión no se bloquea: el servidor revisa igual */ });
@@ -1511,7 +2302,7 @@
   var rulesOpener = document.querySelector('[data-open-dialog="requisitos"]');
   if (rulesOpener) rulesOpener.addEventListener("click", runCheck);
   var nameTimer = null;
-  saveForm.querySelector("#nombre").addEventListener("input", function () {
+  nameField.addEventListener("input", function () {
     clearTimeout(nameTimer);
     nameTimer = setTimeout(runCheck, 500);
   });
@@ -1548,7 +2339,7 @@
     var papers = document.querySelector(form);
     if (!send || !papers) return;
     send.addEventListener("click", function () {
-      var named = saveForm.querySelector("[name=nombre]");
+      var named = nameField;
       papers.querySelector("[name=lienzo]").value = JSON.stringify(doc);
       papers.querySelector("[name=nombre]").value = named ? named.value : "";
       papers.submit();
@@ -1611,6 +2402,7 @@
 
   checkFit();
   render();
+  fitZoom();
   past.push(JSON.stringify(doc));
   learnRatios();
   schedulePreview();

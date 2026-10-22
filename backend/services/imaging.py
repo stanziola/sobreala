@@ -34,6 +34,10 @@ from config import Config
 # petición llegue a ninguna línea nuestra, así que una foto enorme se rechaza
 # sin haberla leído.
 MAX_UPLOAD = 5 * 1024 * 1024
+# Una foto del lienzo puede pesar el doble (octubre de 2026): se achica al
+# entrar igual que las demás. La ruta sube su propio tope de petición; las
+# demás siguen con el de siempre.
+PHOTO_MAX = 10 * 1024 * 1024
 
 # El ancho al que las plantillas dibujan la imagen. Guardar más píxeles de los
 # que se van a ver es pagar espacio y hacer esperar a quien abre el correo.

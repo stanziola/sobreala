@@ -24,7 +24,8 @@
               title="{{ one.name }}"></iframe>
     </div>
     <div class="card-piece__body">
-      <p class="card-piece__name"><b>{{ one.name }}</b></p>
+      <p class="card-piece__name"><b>{{ one.name }}</b>
+        {%- if one.draft %} <span class="tag tag--warn" title="{{ (one.draft_issues or [])|join(' ') }}">{{ t('designs_draft_tag') }}</span>{% endif %}</p>
       <p class="card-piece__what">
         {%- if one.source == 'upload' -%}
         {{ t('designs_kind_upload', kb=((one.bytes or 0) / 1024)|round(1)) }}

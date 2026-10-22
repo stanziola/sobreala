@@ -187,8 +187,34 @@ de tamaño y de estilo, y se deshace y rehace. Se guarda **el lienzo en JSON con
 sus coordenadas** (`source: "canvas"`, `{v: 2, h, bg, items}`), no el HTML: el
 correo se arma al enviar.
 
-**Se eligen varios a la vez** con Mayús+clic o arrastrando un recuadro sobre la
-hoja, y entonces se mueven juntos, se alinean, se reparten, se duplican y se
+**La pantalla es como la de Canva** (22 de octubre de 2026): ocupa la ventana
+entera, sin la barra del panel ni el árbol del Dashboard.
+- **Arriba, su propia barra**: el ala vuelve a Mis plantillas, el nombre se
+  escribe ahí mismo, deshacer y rehacer, Previsualización, Descargar (PDF y
+  ZIP, en un menú), Cargar, Guardar y el menú de la cuenta.
+- **A la izquierda, un riel de íconos** que abre su panel y lo cierra al
+  volver a pulsarlo: **Texto** (un título, un subtítulo, un texto, una lista y
+  un botón, cada uno con su tamaño de partida), **Elementos** (las figuras,
+  dibujadas en cuadrícula), **Subidas**, **Variables** (los `*|CAMPO|*`),
+  **Revisión** (el peso y lo que falta para poder enviarse, con un punto en el
+  ícono si falta algo) y **Ajustes** (la carpeta, «Sale de», «Responder a» y
+  los atajos). El último abierto se recuerda en ese navegador.
+- **Encima de la hoja, la barra de lo elegido**, en una fila: cambia con lo
+  elegido, y lo menos usado va en «⋯».
+- **La hoja, en medio, con zoom**: «Ajustar» la lleva al ancho que queda
+  (hasta 125 %), y se acerca y aleja con −, +, Ctrl y la rueda o Ctrl + y
+  Ctrl −. La hoja sigue midiendo 600 px: el zoom es solo la vista, y
+  `canvas.js` divide entre él todo lo que llega del ratón (`unzoom()`).
+- **El formulario de Guardar va aparte y vacío** (`#lienzo-guardar`), y el
+  nombre, la carpeta, «Sale de» y Guardar lo nombran con `form`: el menú de la
+  cuenta trae su propio formulario (cerrar sesión), y uno dentro de otro
+  cerraba el de fuera antes de tiempo.
+- **En el teléfono** el riel baja como una barra, el panel sube encima de él y
+  la barra de lo elegido se desplaza de lado.
+
+**Se eligen varios a la vez** con Ctrl+clic (Cmd en Mac) o Mayús+clic, o
+arrastrando un recuadro sobre la hoja (con Ctrl o Mayús, se suma a lo que ya
+estaba elegido), y entonces se mueven juntos, se alinean, se reparten, se duplican y se
 borran de una vez. **Agrupar** escribe `g` en cada elemento y viaja con la
 pieza, así que tocar uno vuelve a elegir el grupo entero al reabrirla. Es lo
 único de todo esto que **no cambia cómo se arma el correo**: las celdas las
@@ -200,6 +226,19 @@ portapapeles **como texto nuestro**, así que se pega también en otra plantilla
 en otra pestaña; si el navegador no deja escribirlo, queda en una variable y
 sirve dentro de esa página. Lo pegado entra por `parse()` como todo lo demás: el
 servidor no se fía de ello más que de lo que escribe el editor.
+
+**El panel Subidas** (octubre de 2026) sube varias de una vez, pone «Mi logo»
+y enseña **las fotos que ya subió la cuenta** (`GET /templates/canvas/images`,
+de la más nueva a la más vieja, de 30 en 30, sin los fondos fundidos ni el
+logo, y solo de esa cuenta; `images` guarda ahora su ancho y su alto). Se
+pulsan para ponerlas en medio de lo que se ve, o **se arrastran a donde se
+quieran**; un archivo del escritorio soltado en la hoja también entra donde
+cae, con el zoom descontado. **Una foto del lienzo puede pesar hasta 10 MB**
+(`imaging.PHOTO_MAX`): esa ruta sube su propio tope de petición
+(`request.max_content_length`, Flask 3.1) y las demás subidas siguen en 5 MB.
+**Un SVG no llega al servidor**: el editor lo dibuja en un `<canvas>` y sube su
+PNG, porque un SVG puede llevar código; uno mandado directo se rechaza, porque
+lo que llega se reconoce por lo que trae dentro.
 
 **Una foto se puede pegar del portapapeles**, y sube por la misma ruta que el
 botón (`/templates/canvas/image`): se revisa por lo que trae dentro, se achica
@@ -413,12 +452,53 @@ recortan**, así que la caja siempre abraza la foto; la proporción se guarda en
 opcional y **descripción**, que va en el `alt`: es lo que se lee con las imágenes
 bloqueadas.
 
-El formato va **por caja de texto entera**: una caja es toda de la misma fuente,
-tamaño y color. Formato por palabra complica que llegue igual a Outlook.
+**Una foto puede tomar forma, redondear sus esquinas y llevar borde** (octubre
+de 2026): `mask` (cualquier figura menos el rectángulo y la línea), `radius`
+(hasta 300) y `border` con `border_color` (hasta 20 px); **las figuras también
+llevan borde**, y hay ocho nuevas (rombo, pentágono, hexágono, octágono,
+corazón, cruz, globo de diálogo y flecha doble, en `POLYGONS`). **Todo eso se
+pinta en la imagen del grupo** con Pillow (`_shaped()`, dibujado al cuádruple y
+achicado para que la orilla salga suave), así que se ve igual en Gmail, Apple
+Mail y Outlook de escritorio: `border-radius` y los bordes con esquinas son lo
+que Outlook no dibuja. Por eso **una figura con borde deja de ser celda de
+color** y pasa a imagen. El borde va por dentro de la caja, en el correo, en el
+PDF (que recorta la foto con `clipPath` y traza el borde metido la mitad de su
+grosor) y en el editor, que dibuja las figuras y el borde con los mismos puntos
+que el correo (`shape_points()`, en `#canvas-shapes`).
+
+**El formato va por palabras** (22 de octubre de 2026; antes era por caja
+entera, porque se temía que no llegara igual a Outlook, y sí llega: un `<span>`
+con su estilo y un `<a>` con el suyo los dibujan todos). La fuente, el tamaño y
+la alineación siguen siendo de la caja. **Negrita, cursiva, subrayado, color y
+enlace** se ponen a lo seleccionado mientras se escribe (con la barra o con
+Ctrl+B, I, U y K), y sin nada seleccionado, al texto entero.
+- **El modelo**: el texto gana `runs`, tramos `{text, b, i, u, color, href}`.
+  La caja (`bold`, `italic`, `color`) es la base y cada tramo dice solo en qué
+  cambia; `_runs()` quita lo repetido y une los seguidos iguales, y sin ningún
+  formato no se guardan. **`text` lo arma el servidor** con los tramos, así que
+  las variables, el conteo de 200 caracteres, la búsqueda y la API de antes no
+  cambian. Hasta 200 tramos.
+- **El enlace** lleva escritos su color y su `text-decoration`: sin ellos Gmail
+  lo pinta de azul y lo subraya. **El subrayado del enlace es opcional**: viene
+  puesto al crearlo y se quita en su cuadro. Su dirección pasa por la misma
+  regla `HREF` que la de un botón (`https://` o `mailto:`, y lo demás no se
+  guarda ni como borrador), **cuenta en «más de 8 enlaces» y en los
+  acortadores** (`links_of()`), y sus clics se miden como los de un botón.
+- **El color de un tramo** se protege del modo oscuro como el de la caja
+  (`dark_css()`).
+- **El PDF** parte los renglones por palabras con su letra, pinta el subrayado
+  como una raya y deja el enlace clicable (`_rich()` de `canvas_pdf.py`).
+- **En el editor** la caja se escribe con `span` por tramo, se vuelve a leer al
+  escribir (`readRuns()`), y dar formato parte los tramos por posición de
+  letra (`formatRange()`), no con `execCommand`, que cada navegador hace a su
+  modo. Pulsar la barra mientras se escribe no termina de escribir.
 
 **Un texto puede ir con viñetas** (`list`, que solo se escribe cuando está
-puesto): cada renglón es un punto, y un renglón vacío, un hueco. En el correo es
-una tabla con una columna para la viñeta (`&#8226;`, del ancho de la letra × 1.2,
+puesto): cada renglón es un punto, y un renglón vacío, un hueco. **Hay cuatro
+tipos** (octubre de 2026): `dot` •, `check` ✓, `star` ★ y `circle` ○ (`BULLETS`);
+un `true` de antes es el punto. En el PDF el punto va con la letra del texto y
+los otros tres con ZapfDingbats, que sí los tiene. En el correo es
+una tabla con una columna para la viñeta (su entidad, del ancho de la letra × 1.2,
 `dot_px()`) y otra para el texto, una fila por renglón: `<ul>` Outlook lo dibuja
 con márgenes propios. Va siempre a la izquierda, así que la alineación se
 esconde. En el editor cada renglón es un bloque con su viñeta y sangría
@@ -588,11 +668,24 @@ que hace Gmail). El contacto se busca con la cuenta en la consulta: el de otra
 no encuentra nada. Las dos cosas están también en el editor de HTML
 (`templates/designs/_preview_tools.html`).
 
-### Solo se guarda lo que tiene pinta de llegar a la bandeja
+### Solo se envía lo que tiene pinta de llegar a la bandeja
 
-`canvas.review()` es una revisión **que bloquea**: con cualquier motivo en la
-lista, el servidor no guarda y el botón de Guardar no se deja pulsar. Mira lo que
-más manda a spam:
+`canvas.review()` es una revisión **que bloquea el envío**. Hasta octubre de
+2026 bloqueaba también el guardado; desde el 22 de octubre, **Guardar siempre
+guarda**: lo que no cumple (esta lista o las reglas de `problems()`) se guarda
+como **borrador** (`designs.draft: true` y `draft_issues`, las frases de lo que
+falta), sin imágenes fundidas, y el botón dice «Guardar borrador». Así se puede
+dejar a medias sin inventar texto de relleno. **Un borrador no se envía por
+ninguna puerta**: `sender.run()` lo frena con `blocked: draft` (la campaña
+espera, no se termina, también la programada del worker), `send_one()` con
+`template_draft`, el Masivo y Redactar no lo dejan elegir, y la API responde
+422. Mis plantillas lo marca «Borrador», y su miniatura se arma como la vista
+previa del editor. **Lo que ni un borrador guarda** (`canvas.hard_problems()`)
+es seguridad o recursos: una imagen que no es de la cuenta, un enlace que no es
+`https://` ni `mailto:`, la hoja o los elementos fuera de tope, una fuente o un
+tamaño que no existen, y el tope de 300 plantillas. Por la API no hay
+borradores: `POST` y `PATCH /templates` siguen estrictos. Mira lo que más manda
+a spam:
 
 | Regla | Límite |
 |---|---|

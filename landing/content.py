@@ -16,7 +16,9 @@ from __future__ import annotations
 # --------------------------------------------------------------------------- site
 
 SITE = {
-    "name": "Sobreala",
+    # Como en el logo y en la pestaña (octubre de 2026): en minúscula. En las
+    # frases se sigue escribiendo «Sobreala».
+    "name": "sobreala",
     "domain": "sobreala.com",
     "base_url": "https://sobreala.com",
     "locale": "es",
@@ -109,7 +111,7 @@ CTA_STATES = {
 
 HOME = {
     # El nombre de la pestaña, y nada más.
-    "meta_title": "Sobreala",
+    "meta_title": "sobreala",
     "meta_description": (
         "Email marketing sin complicaciones: sube tus contactos, escribe tu campaña "
         "y envíala por correo a toda tu lista desde un solo lugar."
@@ -819,7 +821,7 @@ TUTORIALS = {
 # --------------------------------------------------------------------------- how it works
 
 HOW = {
-    "meta_title": "Cómo funciona | Sobreala",
+    "meta_title": "Cómo funciona | sobreala",
     "meta_description": (
         "Tutoriales de Sobreala: contactos, plantillas, envíos, "
         "estadísticas y configuración, paso a paso y pulsando."
@@ -869,7 +871,7 @@ HOW = {
 # --------------------------------------------------------------------------- pricing
 
 PRICING = {
-    "meta_title": "Precios | Sobreala",
+    "meta_title": "Precios | sobreala",
     "meta_description": (
         "Planes de Sobreala desde $15 al mes, con contactos, correos mensuales y "
         "soporte que responde. Plan anual con 20% de descuento."
@@ -936,7 +938,7 @@ PRICING = {
 # respondiendo, porque puede haber enlaces guardados, y lleva al inicio: esto es
 # lo único que usa esa página de paso.
 ABOUT = {
-    "meta_title": "Sobreala",
+    "meta_title": "sobreala",
     "hero": {"title": "Sobreala"},
 }
 
@@ -947,7 +949,7 @@ ABOUT = {
 # Instagram están en el pie, que lleva el ancla #contacto. Esto queda solo
 # para la página de paso de /contact/, que manda ahí.
 CONTACT_PAGE = {
-    "meta_title": "Contacto | Sobreala",
+    "meta_title": "Contacto | sobreala",
     "hero": {"title": "Contacto"},
 }
 
@@ -985,7 +987,7 @@ UPDATED = "21 de octubre de 2026"
 TERMS_UPDATED = "11 de octubre de 2026"
 
 PRIVACY = {
-    "meta_title": "Política de privacidad | Sobreala",
+    "meta_title": "Política de privacidad | sobreala",
     "meta_description": (
         "Qué datos trata Sobreala, para qué, con quién los comparte, cuánto "
         "tiempo los guarda y cómo ejercer tus derechos bajo la Ley 81 de 2019."
@@ -1238,7 +1240,7 @@ PRIVACY = {
 }
 
 TERMS = {
-    "meta_title": "Términos y condiciones | Sobreala",
+    "meta_title": "Términos y condiciones | sobreala",
     "meta_description": (
         "Condiciones de uso de Sobreala: cuenta, planes y pagos, reglas de "
         "envío, tratamiento de los datos de tus contactos y responsabilidades."
@@ -1473,7 +1475,7 @@ TERMS = {
 # backend/api_spec.py, que es también lo que la API sirve como OpenAPI; aquí
 # solo va lo que la presenta.
 API_PAGE = {
-    "meta_title": "API de Sobreala: conecta tu tienda o tu sistema",
+    "meta_title": "API: conecta tu tienda o tu sistema | sobreala",
     "meta_description": "Documentación de la API de Sobreala: claves de API, contactos y "
                         "sus listas, plantillas, correos transaccionales y "
                         "promocionales, campañas y estadísticas.",
@@ -1494,7 +1496,7 @@ API_PAGE = {
 # de la portada. Cada respuesta se escribió contra docs/: si una cosa cambia
 # allí, cambia aquí.
 HELP = {
-    "meta_title": "Centro de ayuda | Sobreala",
+    "meta_title": "Centro de ayuda | sobreala",
     "meta_description": "Respuestas sobre tu cuenta, tus contactos, tus plantillas, "
                         "tus envíos, los pagos y la API de Sobreala, y cómo "
                         "escribirnos.",

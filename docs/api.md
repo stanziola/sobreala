@@ -111,9 +111,13 @@ usuario con su correo si entró por el Dashboard), nunca los ids internos.
 
 Lo que hacen el editor y la API con un lienzo vive en `services/pieces.py`,
 recibiendo la cuenta a mano (sin sesión ni `g`). La API crea, cambia, carga y
-baja lienzos con la misma revisión que Guardar; las cargadas en HTML y las
-prediseñadas solo se leen, se mueven, se duplican y se borran. **300 por cuenta**
-(el panel no tiene tope: ver «Lo que no se tocó»).
+baja lienzos con la revisión completa: **por la API no hay borradores**, y un
+lienzo que no cumple da 422 como siempre. Las cargadas en HTML y las
+prediseñadas solo se leen, se mueven, se duplican y se borran. **300 por
+cuenta**, en el panel también. Un borrador guardado en el editor sale en la
+lista con `draft: true` e `issues`, y no se envía: `POST /emails` y las
+campañas lo rechazan con 422 (`api_template_draft`), y una campaña cuya
+plantilla vuelve a borrador dice `blocked: draft` (octubre de 2026).
 
 ## Los correos de la API (`blueprints/api/emails.py`, `sender.send_one`)
 

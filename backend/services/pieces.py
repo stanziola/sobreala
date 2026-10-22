@@ -107,14 +107,16 @@ def images_in(found) -> list[str]:
             if one.get("type") == "image" and fields.get(one["name"])]
 
 
-def save_photo(db, account, raw: bytes) -> tuple[dict[str, Any] | None, str]:
+def save_photo(db, account, raw: bytes, *,
+               limit: int = imaging.MAX_UPLOAD) -> tuple[dict[str, Any] | None, str]:
     """Una foto para el lienzo: revisada, sin sus bordes transparentes y
     achicada. Devuelve (su nombre, dirección y medidas, "") o (None, por qué
-    no), en la frase del cliente."""
+    no), en la frase del cliente. `limit` es lo que puede pesar al llegar: el
+    editor acepta más que la API."""
     if not photo_room(db, account):
         return None, t("designs_image_limit", n=photo_limit(account))
-    if len(raw) > imaging.MAX_UPLOAD:
-        return None, t("designs_image_heavy", mb=imaging.MAX_UPLOAD // (1024 * 1024))
+    if len(raw) > limit:
+        return None, t("designs_image_heavy", mb=limit // (1024 * 1024))
     try:
         # Sin los bordes transparentes: la caja queda justo en lo que se ve.
         data, ext, mime = imaging.shrink(imaging.trim(raw), width=CANVAS_PHOTO_WIDTH)
@@ -125,7 +127,8 @@ def save_photo(db, account, raw: bytes) -> tuple[dict[str, Any] | None, str]:
 
     with Image.open(io.BytesIO(data)) as opened:
         width, height = opened.size
-    name = images.save(db, account["_id"], data=data, ext=ext, mime=mime)
+    name = images.save(db, account["_id"], data=data, ext=ext, mime=mime,
+                       width=width, height=height)
     return {"name": name, "url": imaging.url_of(name), "width": width, "height": height}, ""
 
 
@@ -218,6 +221,20 @@ def canvas_refused(db, account, doc) -> str:
                                           postal=accounts.postal_of(account)),
                          limit=html_check.MAX_BYTES)
     return " ".join(review_texts(spam))
+
+
+def canvas_hard(db, account, doc) -> str:
+    """Lo que ni como borrador se guarda (`canvas.hard_problems()`), en la frase
+    del cliente, o vacío."""
+    return canvas_explain(canvas.hard_problems(
+        doc, owns=lambda name: (imaging.valid_name(name)
+                                and images.owns(db, account["_id"], name))))
+
+
+def draft_issues(db, account, doc) -> list[str]:
+    """Lo que le falta a un borrador para poder enviarse, una frase por regla:
+    lo mismo que dice la revisión del editor."""
+    return review(db, account, doc, named=True)["issues"]
 
 
 def canvas_fused(db, account, doc):

@@ -105,15 +105,24 @@ def update_filled(db, account_id, design_id, *, name: str,
                   "updated_at": now()}}).matched_count == 1
 
 
+def is_draft(found: dict[str, Any] | None) -> bool:
+    """Si es un borrador (octubre de 2026): se guardó sin cumplir las reglas y
+    no se puede enviar hasta que se corrija."""
+    return bool((found or {}).get("draft"))
+
+
 def save_canvas(db, account_id, *, name: str, doc: dict[str, Any],
                 backgrounds: list[str | None],
-                shades: list[str | None] | None = None, folder_id=None) -> Any:
+                shades: list[str | None] | None = None, folder_id=None,
+                draft_issues: list[str] | None = None) -> Any:
     """Guardar un lienzo nuevo. Devuelve su id.
 
     `backgrounds` son las imágenes de sus grupos y `shades` su color promedio,
     en el orden de `canvas.groups()` (se llaman así desde que eran los fondos
     de cada diapositiva). `folder_id` es la carpeta elegida en el Lienzo, ya
-    comprobada por quien llama.
+    comprobada por quien llama. Con `draft_issues` es un borrador: lo que le
+    falta para enviarse, y sin imágenes fundidas (se hacen al guardarla
+    completa).
     """
     record = {
         "account_id": account_id,
@@ -127,6 +136,8 @@ def save_canvas(db, account_id, *, name: str, doc: dict[str, Any],
     }
     if folder_id is not None:
         record["folder_id"] = folder_id
+    if draft_issues:
+        record.update(draft=True, draft_issues=list(draft_issues))
     return db.designs.insert_one(record).inserted_id
 
 
@@ -137,17 +148,25 @@ KEEP = object()
 
 def update_canvas(db, account_id, design_id, *, name: str | None = None,
                   doc: dict[str, Any], backgrounds: list[str | None],
-                  shades: list[str | None] | None = None, folder_id=KEEP) -> bool:
-    """Volver a guardar un lienzo. La cuenta va en la consulta."""
+                  shades: list[str | None] | None = None, folder_id=KEEP,
+                  draft_issues: list[str] | None = None) -> bool:
+    """Volver a guardar un lienzo. La cuenta va en la consulta. Sin
+    `draft_issues` deja de ser borrador, si lo era."""
     changes: dict[str, Any] = {"canvas": doc, "backgrounds": list(backgrounds),
                                "shades": list(shades or []), "updated_at": now()}
     if name is not None:
         changes["name"] = clean_name(name)
     update: dict[str, Any] = {"$set": changes}
+    unset: dict[str, str] = {}
+    if draft_issues:
+        changes.update(draft=True, draft_issues=list(draft_issues))
+    else:
+        unset.update(draft="", draft_issues="")
     if folder_id is None:
-        update["$unset"] = {"folder_id": ""}
+        unset["folder_id"] = ""
     elif folder_id is not KEEP:
         changes["folder_id"] = folder_id
+    update["$unset"] = unset
     return db.designs.update_one(
         {"_id": design_id, "account_id": account_id, "source": CANVAS},
         update).matched_count == 1
@@ -266,7 +285,7 @@ FOLDER_COLORS = ("gray", "white", "blue", "green", "amber", "red", "purple", "pi
 PEEK = 3
 # What a list of templates needs: neither the HTML nor the canvas of each.
 LISTED = {"name": 1, "source": 1, "bytes": 1, "template": 1, "folder_id": 1,
-          "created_at": 1, "updated_at": 1}
+          "created_at": 1, "updated_at": 1, "draft": 1, "draft_issues": 1}
 
 
 def clean_folder_name(raw: str) -> str:

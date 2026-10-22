@@ -37,7 +37,7 @@ TEXT_MAX = campaigns.BODY_MAX
 # Lo que `send_one` dice que no puede salir, y con qué estado HTTP.
 REFUSED = {"not_a_contact": 422, "contact_incomplete": 422, "suppressed": 422,
            "undeliverable": 422, "demo_address": 422, "missing_data": 422,
-           "bad_subject": 422}
+           "bad_subject": 422, "template_draft": 422}
 
 
 def message_shape(one: dict) -> dict:
@@ -68,6 +68,8 @@ def chosen_design(company, data: dict, fields: Fields) -> dict:
         found = designs.by_id(get_db(), company["_id"], found_id) if found_id else None
         if found_id and found is None:
             fields.errors["template_id"] = t("api_field_ref")
+        elif designs.is_draft(found):
+            fields.errors["template_id"] = t("api_template_draft")
         if fields.has("logo"):
             fields.errors["logo"] = t("api_emails_logo")
         design = dict(found or {})

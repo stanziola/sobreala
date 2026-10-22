@@ -45,16 +45,17 @@ def test_las_direcciones_de_antes_llevan_a_su_seccion():
 
 
 def test_la_pestana_separa_con_una_barra(client, database, outbox):
-    """«Términos y condiciones | Sobreala» y no con «·» (octubre de 2026), en
-    las páginas del sitio y en las del panel."""
+    """«Términos y condiciones | sobreala» y no con «·» (octubre de 2026), en
+    las páginas del sitio y en las del panel. La marca, en minúscula, como el
+    logo."""
     for pagina, titulo in (("privacy", "Política de privacidad"),
                            ("terms", "Términos y condiciones"),
                            ("pricing", "Precios"), ("how-it-works", "Cómo funciona"),
                            ("contact", "Contacto")):
         html = (LANDING / pagina / "index.html").read_text(encoding="utf-8")
-        assert f"<title>{titulo} | Sobreala</title>" in html, pagina
+        assert f"<title>{titulo} | sobreala</title>" in html, pagina
     entrar = client.get("/login").get_data(as_text=True)
-    assert re.search(r"<title>[^<·|]+ \| Sobreala</title>", entrar)
+    assert re.search(r"<title>[^<·|]+ \| sobreala</title>", entrar)
 
 
 def test_las_tarjetas_sueltan_su_entrada():
@@ -66,9 +67,9 @@ def test_las_tarjetas_sueltan_su_entrada():
 
 
 def test_la_portada_dice_menos():
-    """La pestaña dice solo «Sobreala», y arriba van el título y dos botones."""
+    """La pestaña dice solo «sobreala», y arriba van el título y dos botones."""
     html = (LANDING / "index.html").read_text(encoding="utf-8")
-    assert "<title>Sobreala</title>" in html
+    assert "<title>sobreala</title>" in html
     portada = html[html.index('<section class="hero">'):html.index("</section>")]
     assert "Envía un correo a todos tus contactos" not in portada
     assert "Escríbenos y te acompañamos" not in portada

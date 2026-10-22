@@ -10,6 +10,9 @@ from __future__ import annotations
 TEXTS = {
     # --- shared ------------------------------------------------------------
     "brand": "Sobreala",
+    # En la pestaña del navegador va en minúscula, como el logo (octubre de
+    # 2026); en las frases, «Sobreala».
+    "tab_brand": "sobreala",
     "nav_panel": "Estadísticas",
     "nav_logout": "Cerrar sesión",
     # Encima de salir. Lleva a la lista de las cuentas que este navegador tiene
@@ -1457,6 +1460,19 @@ TEXTS = {
                          "queda con el que traía.",
     "designs_submit": "Cargar",
     "designs_saved": "Listo, ya la puedes usar.",
+    # Guardar borrador (octubre de 2026).
+    "designs_saved_draft": "Se guardó como borrador: no se puede enviar hasta "
+                           "que cumpla las reglas. Ábrela para ver qué le falta.",
+    "designs_draft_tag": "Borrador",
+    "canvas_save_draft": "Guardar borrador",
+    "canvas_save_draft_hint": "Todavía no cumple las reglas: se guarda como "
+                              "borrador y no se puede enviar hasta corregirla.",
+    "send_piece_draft": "Esa plantilla es un borrador: ábrela y corrige lo que le "
+                        "falta para poder enviarla.",
+    "send_blocked_draft": "Su plantilla está guardada como borrador: corrígela "
+                          "para que salga.",
+    "api_template_draft": "Esa plantilla es un borrador del editor y no se puede "
+                          "enviar hasta que cumpla las reglas.",
     "designs_delete": "Eliminar",
 
     # Las carpetas de Mis plantillas (octubre de 2026).
@@ -1563,19 +1579,59 @@ TEXTS = {
     "canvas_add_logo": "Mi logo",
     "canvas_logo_none": "Tu empresa todavía no tiene logo. Súbelo en Configuración, en Cuenta.",
     "canvas_add_shape": "Geometría",
-    "canvas_image_hint": "JPG, PNG, GIF o WebP, hasta {mb} MB. Entra debajo de "
-                         "lo último, a la mitad del ancho. Los bordes "
-                         "transparentes se recortan solos.",
+    # El editor a pantalla completa, como Canva (octubre de 2026).
+    "canvas_tools": "Herramientas",
+    "canvas_panel_text": "Texto",
+    "canvas_panel_elements": "Elementos",
+    "canvas_panel_uploads": "Subidas",
+    "canvas_panel_marks": "Variables",
+    "canvas_panel_review": "Revisión",
+    "canvas_panel_settings": "Ajustes",
+    "canvas_add_title": "Agregar un título",
+    "canvas_add_subtitle": "Agregar un subtítulo",
+    "canvas_add_body": "Agregar texto",
+    "canvas_add_list": "Agregar una lista",
+    "canvas_new_title": "Tu título",
+    "canvas_new_subtitle": "Tu subtítulo",
+    "canvas_new_list": "Primer punto\nSegundo punto\nTercer punto",
+    "canvas_text_hint": "Doble clic en un texto para escribir. Para cambiar unas "
+                        "palabras, selecciónalas mientras escribes.",
+    "canvas_upload": "Subir imágenes",
+    "canvas_back": "Volver a Mis plantillas",
+    "canvas_name_placeholder": "Nombre de la plantilla",
+    "canvas_download": "Descargar",
+    "canvas_more": "Más opciones",
+    "canvas_zoom_in": "Acercar",
+    "canvas_zoom_out": "Alejar",
+    "canvas_zoom_fit": "Ajustar",
+    "canvas_review_ok": "Lista para enviar",
+    "canvas_underline": "Subrayado",
+    "canvas_bullet_none": "Sin viñetas",
+    "canvas_bullet_dot": "Punto",
+    "canvas_bullet_check": "Gancho",
+    "canvas_bullet_star": "Estrella",
+    "canvas_bullet_circle": "Círculo",
+    "canvas_link": "Enlace",
+    "canvas_link_url": "Dirección del enlace",
+    "canvas_link_apply": "Aplicar",
+    "canvas_link_remove": "Quitar enlace",
+    "canvas_link_bad": "El enlace tiene que empezar con https:// o mailto:.",
+    "canvas_review_bad": "Le falta algo para poder enviarse",
+    "canvas_image_hint": "JPG, PNG, GIF, WebP o SVG, hasta {mb} MB. Arrástralas "
+                         "a la hoja, púlsalas o pégalas con Ctrl+V.",
     "canvas_marks_hint": "Haz doble clic en un texto y pulsa una columna: se "
                          "escribe donde está el cursor.",
     "canvas_marks_need": "Primero haz doble clic en un texto, o pon el cursor "
                          "en el texto del botón.",
     "canvas_keys": "Atajos del teclado",
     "canvas_props_none": "Haz clic en algo para cambiarlo. Doble clic en un "
-                         "texto para escribir. Con Mayús pulsas varios, y "
-                         "arrastrando sobre la hoja los encierras.",
-    "canvas_rights": "Sube solo imágenes de las que tengas derechos: respondes "
-                     "por ellas. También puedes pegar una con Ctrl+V.",
+                         "texto para escribir. Con Ctrl o Mayús pulsas varios, "
+                         "y arrastrando sobre la hoja los encierras.",
+    "canvas_rights": "Solo imágenes de las que tengas derechos: respondes por ellas.",
+    "canvas_uploads_title": "Tus imágenes",
+    "canvas_uploads_empty": "Todavía no has subido ninguna.",
+    "canvas_uploads_more": "Ver más",
+    "canvas_svg_failed": "No se pudo leer ese SVG. Prueba con un PNG.",
     "canvas_page_bg": "Color de la hoja",
     "canvas_sheet_h": "Alto de la hoja",
     "canvas_sheet_least": "La hoja no puede quedar por debajo de lo que tiene "
@@ -1597,6 +1653,20 @@ TEXTS = {
     "canvas_shape_triangle": "Triángulo",
     "canvas_shape_star": "Estrella",
     "canvas_shape_arrow": "Flecha",
+    # Las figuras nuevas, la forma de una foto y el borde (octubre de 2026).
+    "canvas_shape_diamond": "Rombo",
+    "canvas_shape_pentagon": "Pentágono",
+    "canvas_shape_hexagon": "Hexágono",
+    "canvas_shape_octagon": "Octágono",
+    "canvas_shape_heart": "Corazón",
+    "canvas_shape_cross": "Cruz",
+    "canvas_shape_bubble": "Globo de diálogo",
+    "canvas_shape_double_arrow": "Flecha doble",
+    "canvas_mask": "Forma",
+    "canvas_mask_none": "Sin forma",
+    "canvas_corners": "Esquinas",
+    "canvas_border": "Borde",
+    "canvas_border_color": "Color del borde",
     "canvas_rot": "Giro",
     "canvas_rot_zero": "Enderezar",
     "canvas_shape_tip": "Esta figura viaja como imagen: el correo no sabe "
@@ -3629,9 +3699,10 @@ CANVAS_KEYS = (
     ("Copiar, cortar y pegar", "Ctrl+C, Ctrl+X y Ctrl+V"),
     ("Duplicar", "Ctrl+D"),
     ("Elegir todo", "Ctrl+A"),
-    ("Elegir varios", "Mayús y clic, o arrastrar sobre la hoja"),
+    ("Elegir varios", "Ctrl o Mayús y clic, o arrastrar sobre la hoja"),
     ("Escribir en un texto", "Doble clic"),
     ("Pegar una foto", "Ctrl+V"),
+    ("Acercar, alejar y ajustar la hoja", "Ctrl+ +, Ctrl+ − y Ctrl+0 (o Ctrl y la rueda)"),
     ("Soltar lo elegido, salir del texto o del recorte", "Esc"),
 )
 

@@ -22,6 +22,7 @@ arrancar el panel sin él tiene que seguir funcionando.
 
 from __future__ import annotations
 
+import re
 from io import BytesIO
 from typing import Any, Callable
 
@@ -169,8 +170,18 @@ def to_pdf(doc: dict[str, Any], load: Callable[[str], bytes | None],
             raw = load(one["name"])
             if raw:
                 flat, spot, size = _photo(one, raw)
+                # Con forma o esquinas redondas, recortada a ellas.
+                figure = one.get("mask") or "rect"
+                shaped = one.get("mask") or one.get("radius")
+                if shaped:
+                    sheet.saveState()
+                    sheet.clipPath(_outline(sheet, figure, left, top, one["w"], one["h"],
+                                            one.get("radius") or 0), stroke=0, fill=0)
                 sheet.drawImage(ImageReader(flat), left + spot[0],
                                 top - spot[1] - size[1], size[0], size[1])
+                if shaped:
+                    sheet.restoreState()
+                _edge(sheet, one, figure, left, top, HexColor)
         elif one["t"] == "button":
             _button(sheet, one, left, top, HexColor)
         else:
@@ -182,28 +193,51 @@ def to_pdf(doc: dict[str, Any], load: Callable[[str], bytes | None],
     return buffer.getvalue()
 
 
-def _shape(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
-    """Una figura, con los mismos puntos que pinta el correo."""
-    wide, tall = one["w"], one["h"]
-    sheet.setFillColor(color(one["bg"]))
-    figure = one.get("shape", "rect")
+def _outline(sheet, figure: str, left: float, top: float, wide: float, tall: float,
+             radius: float):
+    """El contorno de una figura como camino de PDF: para rellenarla, para su
+    borde y para recortar una foto con su forma (octubre de 2026)."""
+    path = sheet.beginPath()
     if figure == "ellipse":
-        sheet.ellipse(left, top - tall, left + wide, top, fill=1, stroke=0)
-        return
-    if figure in canvas.POLYGONS:
-        path = sheet.beginPath()
+        path.ellipse(left, top - tall, wide, tall)
+    elif figure in canvas.POLYGONS:
         points = canvas.POLYGONS[figure](wide, tall)
         path.moveTo(left + points[0][0], top - points[0][1])
         for x, y in points[1:]:
             path.lineTo(left + x, top - y)
         path.close()
-        sheet.drawPath(path, fill=1, stroke=0)
-        return
-    radius = min(one.get("radius") or 0, wide / 2, tall / 2)
-    if radius:
-        sheet.roundRect(left, top - tall, wide, tall, radius, fill=1, stroke=0)
     else:
-        sheet.rect(left, top - tall, wide, tall, fill=1, stroke=0)
+        radius = min(radius or 0, wide / 2, tall / 2)
+        if radius:
+            path.roundRect(left, top - tall, wide, tall, radius)
+        else:
+            path.rect(left, top - tall, wide, tall)
+    return path
+
+
+def _edge(sheet, one: dict[str, Any], figure: str, left: float, top: float, color) -> None:
+    """El borde, por dentro de la caja como en el correo: el trazo de un PDF va
+    sobre la orilla, así que se dibuja metido la mitad de su grosor."""
+    width = one.get("border") or 0
+    if not width:
+        return
+    half = width / 2
+    sheet.setStrokeColor(color(one.get("border_color") or "#18181B"))
+    sheet.setLineWidth(width)
+    sheet.drawPath(_outline(sheet, figure, left + half, top - half, one["w"] - width,
+                            one["h"] - width, max((one.get("radius") or 0) - half, 0)),
+                   fill=0, stroke=1)
+
+
+def _shape(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
+    """Una figura, con los mismos puntos que pinta el correo, y su borde."""
+    sheet.setFillColor(color(one["bg"]))
+    figure = one.get("shape", "rect")
+    if figure == "line":
+        figure = "rect"
+    sheet.drawPath(_outline(sheet, figure, left, top, one["w"], one["h"],
+                            one.get("radius") or 0), fill=1, stroke=0)
+    _edge(sheet, one, figure, left, top, color)
 
 
 def _button(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
@@ -247,6 +281,9 @@ def _text(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
 def _lines(sheet, one: dict[str, Any], left: float, top: float, color) -> None:
     font, size = face_of(one), one["size"]
     leading = round(size * (one.get("line") or 1.4))
+    if one.get("runs"):
+        _rich(sheet, one, left, top, color, size, leading)
+        return
     sheet.setFont(font, size)
     sheet.setFillColor(color(one["color"]))
     if one.get("list"):
@@ -280,6 +317,109 @@ def _bullets(sheet, one: dict[str, Any], left: float, top: float, font: str,
             base = top - n * leading - (leading + size * 0.72) / 2
             if line:
                 if first:
-                    sheet.drawCentredString(left + dot / 2, base, "•")
+                    _bullet(sheet, one, left + dot / 2, base, size)
                 sheet.drawString(left + dot, base, line)
+            n += 1
+
+
+# ------------------------------------------------- el formato por palabras
+
+# La viñeta de cada tipo en el PDF: el punto con la letra del texto, y las
+# demás con ZapfDingbats, que es de las catorce que todo PDF trae y sí las tiene.
+_BULLETS = {"check": "\u2713", "star": "\u2605", "circle": "\u274d"}
+
+
+def _bullet(sheet, one: dict[str, Any], x: float, base: float, size: float) -> None:
+    glyph = _BULLETS.get(one.get("list"))
+    if glyph:
+        sheet.setFont("ZapfDingbats", size * 0.8)
+        sheet.drawCentredString(x, base, glyph)
+        sheet.setFont(face_of(one), size)
+    else:
+        sheet.drawCentredString(x, base, "•")
+
+
+def _run_face(one: dict[str, Any], run: dict[str, Any]) -> str:
+    """La letra de un tramo: la de la caja, con su negrita y su cursiva."""
+    family = _FACE.get(one.get("font", "Arial"), "Helvetica")
+    return _VARIANTS[(family, bool(run.get("b", one.get("bold"))),
+                      bool(run.get("i", one.get("italic"))))]
+
+
+def _wrap_runs(one: dict[str, Any], runs: list[dict[str, Any]], size: float,
+               width: float) -> list[list[tuple[str, dict[str, Any], str, float]]]:
+    """Los renglones de un párrafo con formato, partiendo por palabras como
+    `wrap()`: cada pedazo con su tramo, su letra y su ancho."""
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+
+    lines: list[list[tuple[str, dict[str, Any], str, float]]] = []
+    line: list[tuple[str, dict[str, Any], str, float]] = []
+    used = 0.0
+    for run in runs:
+        face = _run_face(one, run)
+        for token in re.findall(r"\S+|\s+", run["text"]):
+            wide = stringWidth(token, face, size)
+            if token.isspace():
+                if line:
+                    line.append((token, run, face, wide))
+                    used += wide
+                continue
+            if line and used + wide > width:
+                while line and line[-1][0].isspace():
+                    used -= line.pop()[3]
+                lines.append(line)
+                line, used = [], 0.0
+            line.append((token, run, face, wide))
+            used += wide
+    while line and line[-1][0].isspace():
+        line.pop()
+    lines.append(line)
+    return lines
+
+
+def _draw_line(sheet, one: dict[str, Any], pieces, x: float, base: float, size: float,
+               color) -> None:
+    """Un renglón con formato: cada pedazo con su letra y su color, el subrayado
+    como una raya debajo, y el enlace como un vínculo que se puede pulsar."""
+    for token, run, face, wide in pieces:
+        tone = color(run.get("color") or one["color"])
+        sheet.setFont(face, size)
+        sheet.setFillColor(tone)
+        sheet.drawString(x, base, token)
+        if run.get("u") and not token.isspace():
+            sheet.setStrokeColor(tone)
+            sheet.setLineWidth(max(size / 16, 0.6))
+            sheet.line(x, base - size * 0.12, x + wide, base - size * 0.12)
+        if run.get("href"):
+            sheet.linkURL(run["href"], (x, base - size * 0.25, x + wide, base + size * 0.8),
+                          relative=1)
+        x += wide
+
+
+def _rich(sheet, one: dict[str, Any], left: float, top: float, color, size: float,
+          leading: float) -> None:
+    """Un texto con formato por palabras (octubre de 2026), con su alineación,
+    o con viñetas: la misma columna y la misma sangría que el correo."""
+    listed = bool(one.get("list"))
+    dot = canvas.dot_px(one) if listed else 0
+    align = "left" if listed else one.get("align", "left")
+    n = 0
+    for runs in canvas.text_lines(one):
+        if not "".join(run["text"] for run in runs).strip():
+            n += 1
+            continue
+        for at, pieces in enumerate(_wrap_runs(one, runs, size, one["w"] - dot)):
+            base = top - n * leading - (leading + size * 0.72) / 2
+            wide = sum(piece[3] for piece in pieces)
+            if listed and at == 0:
+                sheet.setFont(face_of(one), size)
+                sheet.setFillColor(color(one["color"]))
+                _bullet(sheet, one, left + dot / 2, base, size)
+            if align == "center":
+                x = left + (one["w"] - wide) / 2
+            elif align == "right":
+                x = left + one["w"] - wide
+            else:
+                x = left + dot
+            _draw_line(sheet, one, pieces, x, base, size, color)
             n += 1

@@ -13,6 +13,7 @@
 {% if done == 'late' %}<p class="notice">{{ t('send_already_out') }}</p>{% endif %}
 {% if done == 'busy' %}<p class="notice">{{ t('send_done_busy') }}</p>{% endif %}
 {% if done == 'filters' %}<p class="notice">{{ t('send_blocked_filters') }}</p>{% endif %}
+{% if done == 'draft' %}<p class="notice">{{ t('send_blocked_draft') }}</p>{% endif %}
 {% if done == 'single_failed' %}<p class="notice">{{ t('single_failed') }}</p>{% endif %}
 {% if errors.form %}<p class="error error--form">{{ errors.form }}</p>{% endif %}
 

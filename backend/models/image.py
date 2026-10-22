@@ -60,8 +60,10 @@ NOT_PHOTOS = {"$nin": [BACKGROUND, LOGO]}
 
 
 def save(db, account_id, *, data: bytes, ext: str, mime: str,
-         kind: str | None = None) -> str:
-    """Guardar una imagen ya achicada. Devuelve su nombre, que es su dirección."""
+         kind: str | None = None, width: int | None = None,
+         height: int | None = None) -> str:
+    """Guardar una imagen ya achicada. Devuelve su nombre, que es su dirección.
+    Con sus medidas, si se saben: las usa el panel de Subidas del lienzo."""
     name = f"{secrets.token_urlsafe(16)}.{ext}"
     doc = {
         "account_id": account_id,
@@ -73,8 +75,22 @@ def save(db, account_id, *, data: bytes, ext: str, mime: str,
     }
     if kind:
         doc["kind"] = kind
+    if width and height:
+        doc.update(width=int(width), height=int(height))
     db.images.insert_one(doc)
     return name
+
+
+def photos_of(db, account_id, *, before: datetime | None = None,
+              limit: int = 30) -> list[dict[str, Any]]:
+    """Las fotos que subió la cuenta y siguen vivas, de la más nueva a la más
+    vieja (octubre de 2026): el panel de Subidas del lienzo. Sin los fondos que
+    funde el lienzo ni el logo, y sin los bytes."""
+    query: dict[str, Any] = {"account_id": account_id, "kind": NOT_PHOTOS, **LIVE}
+    if before is not None:
+        query["created_at"] = {"$lt": before}
+    return list(db.images.find(query, {"name": 1, "width": 1, "height": 1, "created_at": 1})
+                .sort("created_at", -1).limit(limit))
 
 
 def by_name(db, name: str) -> dict[str, Any] | None:

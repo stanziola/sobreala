@@ -353,6 +353,8 @@ def save(db, account, campaign) -> dict[str, str]:
             errors["mensaje"] = t("single_body_long", n=campaigns.BODY_MAX)
     elif design_id is None or designs.by_id(db, account["_id"], design_id) is None:
         errors["pieza"] = t("send_pick_piece")
+    elif designs.is_draft(designs.by_id(db, account["_id"], design_id)):
+        errors["pieza"] = t("send_piece_draft")
     if filters_problem:
         errors["condiciones"] = filters_problem
     if when is None:
@@ -454,6 +456,8 @@ def send_single(db, account):
     if mode == TEMPLATE:
         if design is None:
             errors["pieza"] = t("send_pick_piece")
+        elif designs.is_draft(design):
+            errors["pieza"] = t("send_piece_draft")
         elif to and "para" not in errors:
             # A quien le falta un dato no le llega nada (octubre de 2026): la
             # plantilla nombra columnas o el nombre, y esa dirección no está en
@@ -704,9 +708,7 @@ def send(raw):
     if request.method == "GET":
         design = (None if campaigns.written(found)
                   else designs.by_id(db, account["_id"], found.get("design_id")))
-        return render_template(
-            "campaigns/confirm.html", section="envios",
-            **shared(db, account, campaign=found,
+        context = shared(db, account, campaign=found,
                      # Una escrita no tiene pieza guardada: se dice que es su
                      # texto, y se puede mandar (octubre de 2026).
                      piece=({"name": t("send_written_name")} if campaigns.written(found)
@@ -716,7 +718,12 @@ def send(raw):
                      sending_from=sender.remitente(account, design),
                      sending_reply=sender.reply_to(account, design),
                      going=going_count(db, account, found),
-                     already=runs.times(db, account["_id"], found["_id"])))
+                     already=runs.times(db, account["_id"], found["_id"]))
+        # Una plantilla que volvió a borrador frena la campaña (octubre de
+        # 2026): se dice antes de pulsar, y no hay botón.
+        if designs.is_draft(design):
+            context["blocked"] = context["blocked"] + ["draft"]
+        return render_template("campaigns/confirm.html", section="envios", **context)
 
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(url_for("campaigns.index"))
@@ -746,6 +753,8 @@ def send(raw):
         return redirect(url_for("campaigns.index", done="busy"))
     if result["blocked"] == ["filters"]:
         return redirect(url_for("campaigns.index", done="filters"))
+    if result["blocked"] == ["draft"]:
+        return redirect(url_for("campaigns.index", done="draft"))
     if result["blocked"]:
         return redirect(url_for("campaigns.index", done="blocked"))
     return redirect(url_for("campaigns.index",

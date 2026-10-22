@@ -4,8 +4,11 @@
 {% if pieces %}
 <select id="pieza" name="pieza">
   {% for one in pieces %}
-  <option value="{{ one._id }}"{% if one._id|string == piece_id %} selected{% endif %}>
-    {{ one.name }}{% if one.template %} · {{ named.get(one.template, one.template) }}{% endif %}</option>
+  {#- Un borrador sale, pero no se puede elegir: no se envía (octubre de 2026). #}
+  <option value="{{ one._id }}"{% if one._id|string == piece_id %} selected{% endif %}
+          {%- if one.draft %} disabled{% endif %}>
+    {{ one.name }}{% if one.template %} · {{ named.get(one.template, one.template) }}{% endif %}
+    {%- if one.draft %} · {{ t('designs_draft_tag') }}{% endif %}</option>
   {% endfor %}
 </select>
 {% if errors.pieza %}<p class="error">{{ errors.pieza }}</p>{% endif %}

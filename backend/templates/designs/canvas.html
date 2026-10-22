@@ -1,103 +1,25 @@
 {% extends "base.html" %}
 {% block title %}{{ name or t('canvas_title_new') }}{% endblock %}
-{% block wrap_class %}wrap--wide{% endblock %}
+{#- El editor ocupa la ventana entera (octubre de 2026), como Canva: su propia
+    barra arriba en lugar de la del panel, un riel de íconos a la izquierda que
+    abre su panel (Texto, Elementos, Subidas, Variables, Revisión, Ajustes),
+    encima de la hoja la barra de lo elegido, y la hoja en medio con su zoom.
+    En el teléfono el riel baja y el panel sube desde abajo. -#}
+{% block bar %}{% endblock %}
+{% block wrap_class %}wrap--studio{% endblock %}
+
+{% macro icon(path) -%}
+<svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+     stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+     focusable="false">{{ path|safe }}</svg>
+{%- endmacro %}
 
 {% block content %}
-<h1 class="settings__heading">{{ name or t('canvas_title_new') }}</h1>
-<p class="settings__lead">{{ t('canvas_lead') }}</p>
-
-{% if errors.form %}<p class="error error--form" role="alert">{{ errors.form }}</p>{% endif %}
-<noscript><p class="notice">{{ t('canvas_noscript') }}</p></noscript>
-<p class="notice editor__narrow">{{ t('canvas_narrow') }}</p>
-
-{# Guardar manda el lienzo entero en un campo escondido. Lo llena el editor
-   justo antes de enviar. #}
-<form class="editor__head" method="post" novalidate data-canvas-save>
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="lienzo" value="">
-  <div class="editor__name">
-    <label for="nombre">{{ t('designs_name') }}</label>
-    <input id="nombre" name="nombre" type="text" maxlength="80" value="{{ name }}"
-           autocomplete="off" required>
-    {% if errors.nombre %}<p class="error">{{ errors.nombre }}</p>{% endif %}
-  </div>
-  {#- La carpeta donde queda (octubre de 2026). Sin carpetas no hay nada que
-      elegir, y la lista no sale. -#}
-  {% if folders %}
-  <div class="editor__folder">
-    <label for="carpeta">{{ t('canvas_folder') }}</label>
-    <select id="carpeta" name="carpeta">
-      <option value="">{{ t('folders_move_none') }}</option>
-      {% for one in folders %}
-      <option value="{{ one.id }}"{% if one.id == folder_id %} selected{% endif %}>{{ one.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  {% endif %}
-  <div class="editor__actions">
-    {#- Flechas curvas, que es como se reconocen deshacer y rehacer. El nombre
-        sigue estando para quien no ve el icono. -#}
-    <button class="btn btn--small btn--outline btn--icon" type="button" data-undo
-            title="{{ t('canvas_undo') }}" aria-label="{{ t('canvas_undo') }}">
-      <svg class="icon" viewBox="0 0 24 24" width="17" height="17" fill="none"
-           stroke="currentColor" stroke-width="2" stroke-linecap="round"
-           stroke-linejoin="round" aria-hidden="true" focusable="false">
-        <path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>
-      </svg>
-    </button>
-    <button class="btn btn--small btn--outline btn--icon" type="button" data-redo
-            title="{{ t('canvas_redo') }}" aria-label="{{ t('canvas_redo') }}">
-      <svg class="icon" viewBox="0 0 24 24" width="17" height="17" fill="none"
-           stroke="currentColor" stroke-width="2" stroke-linecap="round"
-           stroke-linejoin="round" aria-hidden="true" focusable="false">
-        <path d="M20 9H9a5 5 0 0 0 0 10h6"/><path d="m16 5 4 4-4 4"/>
-      </svg>
-    </button>
-    <button class="btn btn--small btn--outline" type="button"
-            data-open-dialog="vista-previa">{{ t('designs_preview_button') }}</button>
-    <button class="btn btn--small btn--outline" type="button"
-            data-canvas-pdf>{{ t('canvas_pdf') }}</button>
-    {#- El HTML es el de la plantilla guardada, listo para volver a cargarlo: sin
-        guardar todavía no hay nada que bajar, y el editor lo dice. -#}
-    {% if found %}
-    <a class="btn btn--small btn--outline" href="{{ url_for('designs.canvas_html', raw=found._id) }}"
-       data-canvas-html>{{ t('canvas_html') }}</a>
-    {% else %}
-    <button class="btn btn--small btn--outline" type="button"
-            data-canvas-html>{{ t('canvas_html') }}</button>
-    {% endif %}
-    {#- Cargar el ZIP de un lienzo vive aquí desde octubre de 2026: cargarlo es
-        abrir un lienzo. Sin JavaScript lleva a su propia página. -#}
-    <a class="btn btn--small btn--outline" href="{{ url_for('designs.upload') }}"
-       data-open-dialog="cargar">{{ t('designs_upload_button') }}</a>
-    <button class="btn" type="submit">{{ t('designs_save') }}</button>
-  </div>
-  {#- De quién sale y a dónde se responde (octubre de 2026), en su propia fila
-      debajo del nombre y los botones. -#}
-  {% include "designs/_sending.html" %}
-</form>
-<p class="error error--form" data-canvas-error hidden role="alert"></p>
-
-{# Cuánto pesa el correo y qué le falta para no ir a spam. Se recalcula mientras
-   se trabaja, con la misma revisión que hace el servidor al guardar: con
-   cualquier motivo en la lista, Guardar no se deja pulsar. #}
-<div class="review" data-canvas-check>
-  <div class="meter">
-    <p class="meter__label">{{ t('canvas_meter') }} <b data-meter-text>…</b></p>
-    <div class="meter__bar" aria-hidden="true"><span data-meter-fill></span></div>
-  </div>
-  <p class="review__ok" data-check-ok hidden>{{ t('canvas_check_ok') }}</p>
-  <div class="review__bad" data-check-bad hidden>
-    <p class="review__title">{{ t('canvas_check_title') }}</p>
-    <ul data-check-list></ul>
-  </div>
-  {#- Todas las reglas, también las que se cumplen, en su propia ventana. -#}
-  <button class="btn btn--small btn--outline review__rules" type="button"
-          data-open-dialog="requisitos">{{ t('canvas_rules_button') }}</button>
-</div>
-
 {% set strings = {
   "newText": t('canvas_new_text'),
+  "newTitle": t('canvas_new_title'),
+  "newSubtitle": t('canvas_new_subtitle'),
+  "newList": t('canvas_new_list'),
   "newButton": t('canvas_new_button'),
   "resizeSheet": t('canvas_resize_sheet'),
   "overlap": t('canvas_overlap'),
@@ -121,198 +43,431 @@
   "rulesCount": t('canvas_rules_count'),
   "ruleYes": t('canvas_rule_yes'),
   "ruleNo": t('canvas_rule_no'),
+  "save": t('designs_save'),
+  "saveDraft": t('canvas_save_draft'),
+  "saveDraftHint": t('canvas_save_draft_hint'),
+  "reviewOk": t('canvas_review_ok'),
+  "linkBad": t('canvas_link_bad'),
+  "svgFailed": t('canvas_svg_failed'),
+  "reviewBad": t('canvas_review_bad'),
 } %}
-<div class="editor" data-canvas
-     data-upload="{{ url_for('designs.canvas_image') }}"
-     data-logo="{{ url_for('designs.canvas_logo') }}"
-     data-review="{{ url_for('designs.canvas_review') }}"
-     data-strings='{{ strings|tojson }}'
-     data-limits='{{ limits|tojson }}'>
 
-  <aside class="editor__tools">
-    <p class="field-label">{{ t('canvas_add') }}</p>
-    <div class="editor__adds">
-      <button class="tool" type="button" data-add="text">{{ t('canvas_add_text') }}</button>
-      <button class="tool" type="button" data-add="button">{{ t('canvas_add_button') }}</button>
-      <button class="tool" type="button" data-add="image">{{ t('canvas_add_image') }}</button>
-      {# El logo de la empresa, sin volver a subirlo (octubre de 2026). #}
-      {% if has_logo %}
-      <button class="tool" type="button" data-add="logo">{{ t('canvas_add_logo') }}</button>
-      {% endif %}
-      {#- Las figuras, en un menú que abre sin JavaScript: cada una entra con su
-          medida, y la línea, fina. -#}
-      <details class="geo" data-geo>
-        <summary class="tool">{{ t('canvas_add_shape') }}</summary>
-        <div class="geo__list">
-          {% for one in ('rect', 'line', 'ellipse', 'triangle', 'star', 'arrow') %}
-          <button class="tool geo__one" type="button" data-add="shape"
-                  data-shape="{{ one }}">{{ t('canvas_shape_' + one) }}</button>
-          {% endfor %}
+<div class="studio">
+  {# Guardar manda el lienzo entero en un campo escondido, que el editor llena
+     justo antes de enviar. El formulario va aparte y vacío: el nombre, la
+     carpeta, «Sale de» y Guardar viven en la barra y en Ajustes y lo nombran
+     con `form`. Envolver el editor no se puede: el menú de la cuenta trae su
+     propio formulario (cerrar sesión), y uno dentro de otro cerraba el de
+     fuera antes de tiempo. #}
+  <form id="lienzo-guardar" method="post" novalidate data-canvas-save hidden>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="lienzo" value="">
+  </form>
+
+  <header class="studio__bar">
+    {#- El ala vuelve a Mis plantillas; con cambios sin guardar, el navegador
+        pregunta antes de salir. -#}
+    <a class="studio__back" href="{{ url_for('designs.index') }}"
+       title="{{ t('canvas_back') }}" aria-label="{{ t('canvas_back') }}">
+      <span class="studio__wing">{% include "_wing.svg" %}</span>
+    </a>
+    <div class="studio__name">
+      <label class="visually-hidden" for="nombre">{{ t('designs_name') }}</label>
+      <input id="nombre" name="nombre" type="text" maxlength="80" value="{{ name }}"
+             form="lienzo-guardar" placeholder="{{ t('canvas_name_placeholder') }}"
+             autocomplete="off" required>
+      {% if errors.nombre %}<p class="error">{{ errors.nombre }}</p>{% endif %}
+    </div>
+    {#- Flechas curvas, que es como se reconocen deshacer y rehacer. -#}
+    <div class="studio__history">
+      <button class="studio__icon" type="button" data-undo
+              title="{{ t('canvas_undo') }}" aria-label="{{ t('canvas_undo') }}">
+        {{ icon('<path d="M4 9h11a5 5 0 0 1 0 10h-6"/><path d="M8 5 4 9l4 4"/>') }}
+      </button>
+      <button class="studio__icon" type="button" data-redo
+              title="{{ t('canvas_redo') }}" aria-label="{{ t('canvas_redo') }}">
+        {{ icon('<path d="M20 9H9a5 5 0 0 0 0 10h6"/><path d="m16 5 4 4-4 4"/>') }}
+      </button>
+    </div>
+    <span class="studio__grow"></span>
+    <div class="studio__actions">
+      <button class="studio__btn" type="button"
+              data-open-dialog="vista-previa">{{ t('designs_preview_button') }}</button>
+      {#- Bajar: el PDF de lo que se ve y el ZIP de lo guardado, en un menú. -#}
+      <details class="studio__more" data-studio-menu>
+        <summary class="studio__btn">{{ t('canvas_download') }}</summary>
+        <div class="studio__menu">
+          <button class="studio__menu-item" type="button" data-canvas-pdf>{{ t('canvas_pdf') }}</button>
+          {% if found %}
+          <a class="studio__menu-item" href="{{ url_for('designs.canvas_html', raw=found._id) }}"
+             data-canvas-html>{{ t('canvas_html') }}</a>
+          {% else %}
+          <button class="studio__menu-item" type="button" data-canvas-html>{{ t('canvas_html') }}</button>
+          {% endif %}
         </div>
       </details>
+      {#- Cargar el ZIP de un lienzo: cargarlo es abrir un lienzo. Sin
+          JavaScript lleva a su propia página. -#}
+      <a class="studio__btn" href="{{ url_for('designs.upload') }}"
+         data-open-dialog="cargar">{{ t('designs_upload_button') }}</a>
+      <button class="btn studio__save" type="submit" form="lienzo-guardar"
+              data-canvas-submit>{{ t('designs_save') }}</button>
     </div>
-    <input class="visually-hidden" type="file" accept="image/*" data-canvas-file
-           aria-label="{{ t('canvas_add_image') }}" tabindex="-1">
-    <p class="hint">{{ t('canvas_image_hint', mb=image_mb) }}</p>
-    {# No hay forma de saber de quién es una imagen: se dice, y queda escrito
-       quién la subió y cuándo. #}
-    <p class="hint">{{ t('canvas_rights') }}</p>
+    {% include "_menu.html" %}
+  </header>
 
-    {% if columns %}
-    <p class="field-label">{{ t('designs_columns_title') }}</p>
-    <p class="hint">{{ t('canvas_marks_hint') }}</p>
-    <div class="marks" data-canvas-marks>
-      {% for one in columns %}
-      <button class="mark" type="button" data-mark="*|{{ one.key }}|*"
-              title="{{ one.label }}">*|{{ one.key }}|*</button>
-      {% endfor %}
-    </div>
-    {% endif %}
-    {#- Los atajos, en su propia ventana: en esta columna angosta no se leían.
-        La abre panel.js, el mismo que abre la bandeja de cargar. -#}
-    <button class="btn btn--small btn--outline" type="button"
-            data-open-dialog="atajos">{{ t('canvas_keys') }}</button>
-  </aside>
+  {% if errors.form %}<p class="error error--form studio__error" role="alert">{{ errors.form }}</p>{% endif %}
+  <noscript><p class="notice studio__error">{{ t('canvas_noscript') }}</p></noscript>
+  <p class="error error--form studio__error" data-canvas-error hidden role="alert"></p>
 
-  <div class="editor__main">
-    {# Una barra por cada cosa que se puede seleccionar. El editor enseña la del
-       elemento elegido y esconde las demás. #}
-    <div class="props" data-props>
-      {# Sin nada elegido: la hoja. #}
-      <div class="props__row" data-props-for="none">
-        <p class="props__none">{{ t('canvas_props_none') }}</p>
-        <label class="props__field props__field--color">{{ t('canvas_page_bg') }}
-          <input type="color" data-page-bg></label>
-        {#- El alto también se arrastra por el tirador de abajo de la hoja;
-            escrito es para cuando se quiere una medida exacta. -#}
-        <label class="props__field props__field--small">{{ t('canvas_sheet_h') }}
-          <input type="number" min="{{ limits.minHeight }}" max="{{ limits.maxHeight }}"
-                 step="10" data-sheet-h></label>
-        {#- Pega la hoja a lo que hay dentro: el sobrante de abajo sale en el
-            correo como una franja en blanco antes del botón de la baja. -#}
-        <button class="btn btn--small btn--outline" type="button"
-                data-action="fit">{{ t('canvas_fit_content') }}</button>
-      </div>
+  <div class="studio__body editor" data-canvas
+       data-upload="{{ url_for('designs.canvas_image') }}"
+       data-logo="{{ url_for('designs.canvas_logo') }}"
+       data-review="{{ url_for('designs.canvas_review') }}"
+       data-strings='{{ strings|tojson }}'
+       data-limits='{{ limits|tojson }}'>
 
-      {# Varios a la vez: lo que se puede hacer con un montón, no con uno.
-         Agrupar es para moverlos juntos y no cambia cómo se corta el correo,
-         así que eso se dice aquí mismo. #}
-      <div class="props__row" data-props-for="many" hidden>
-        <p class="props__none" data-many-count></p>
-        <button class="btn btn--small btn--outline" type="button" data-action="duplicate">{{ t('canvas_duplicate') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
-        <span class="props__sep" aria-hidden="true"></span>
-        <button class="btn btn--small btn--outline" type="button" data-action="group">{{ t('canvas_group') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="ungroup">{{ t('canvas_ungroup') }}</button>
-        <span class="props__sep" aria-hidden="true"></span>
-        <p class="field-label">{{ t('canvas_align_many') }}</p>
-        <button class="btn btn--small btn--outline" type="button" data-action="align-l">{{ t('canvas_align_l') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="align-cx">{{ t('canvas_align_cx') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="align-r">{{ t('canvas_align_r') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="align-t">{{ t('canvas_align_t') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="align-cy">{{ t('canvas_align_cy') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="align-b">{{ t('canvas_align_b') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="spread-x">{{ t('canvas_spread_x') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="spread-y">{{ t('canvas_spread_y') }}</button>
-        <p class="props__tip">{{ t('canvas_group_hint') }}</p>
-      </div>
+    {#- El riel: cada ícono abre su panel, y el mismo lo cierra para dejarle
+        más sitio a la hoja. Sin JavaScript se ven todos los paneles, uno
+        debajo de otro. -#}
+    <nav class="studio__rail" aria-label="{{ t('canvas_tools') }}" data-rail>
+      <button class="rail__one" type="button" data-panel="text" aria-expanded="false">
+        {{ icon('<path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M9 20h6"/>') }}
+        <span>{{ t('canvas_panel_text') }}</span></button>
+      <button class="rail__one" type="button" data-panel="elements" aria-expanded="false">
+        {{ icon('<rect x="3" y="3" width="8" height="8" rx="1.5"/><circle cx="17" cy="7" r="4"/><path d="m7 14 4.5 7h-9z"/><path d="m17 13 1.3 2.7 3 .4-2.2 2 .6 2.9-2.7-1.4-2.7 1.4.6-2.9-2.2-2 3-.4z"/>') }}
+        <span>{{ t('canvas_panel_elements') }}</span></button>
+      <button class="rail__one" type="button" data-panel="uploads" aria-expanded="false">
+        {{ icon('<path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>') }}
+        <span>{{ t('canvas_panel_uploads') }}</span></button>
+      {% if columns %}
+      <button class="rail__one" type="button" data-panel="marks" aria-expanded="false">
+        {{ icon('<path d="M8 4c-2 0-2 2-2 4s-1 4-3 4c2 0 3 2 3 4s0 4 2 4"/><path d="M16 4c2 0 2 2 2 4s1 4 3 4c-2 0-3 2-3 4s0 4-2 4"/>') }}
+        <span>{{ t('canvas_panel_marks') }}</span></button>
+      {% endif %}
+      <button class="rail__one" type="button" data-panel="review" aria-expanded="false">
+        {{ icon('<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>') }}
+        <span>{{ t('canvas_panel_review') }}</span>
+        <span class="rail__dot" data-review-dot hidden></span></button>
+      <button class="rail__one" type="button" data-panel="settings" aria-expanded="false">
+        {{ icon('<path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h12"/><path d="M20 18h0"/><circle cx="18" cy="18" r="2"/>') }}
+        <span>{{ t('canvas_panel_settings') }}</span></button>
+    </nav>
 
-      <div class="props__row" data-props-for="text button" hidden>
-        <label class="props__field" data-only="button">{{ t('canvas_button_text') }}
-          <input type="text" maxlength="60" data-prop="text"></label>
-        <label class="props__field" data-only="button">{{ t('canvas_href') }}
-          <input type="url" maxlength="500" placeholder="https://" data-prop="href"
-                 data-href></label>
-        <label class="props__field">{{ t('canvas_font') }}
-          <select data-prop="font">
-            {% for one in fonts %}<option value="{{ one }}">{{ one }}</option>{% endfor %}
-          </select></label>
-        <label class="props__field props__field--small">{{ t('canvas_size') }}
-          <input type="number" min="{{ limits.minSize }}" max="{{ limits.maxSize }}"
-                 step="1" data-prop="size"></label>
-        <label class="props__field props__field--color">{{ t('canvas_color') }}
-          <input type="color" data-prop="color"></label>
-        <label class="props__field props__field--color" data-only="button">{{ t('canvas_button_bg') }}
-          <input type="color" data-prop="bg"></label>
-        <label class="props__check"><input type="checkbox" data-prop="bold"> {{ t('canvas_bold') }}</label>
-        <label class="props__check"><input type="checkbox" data-prop="italic"> {{ t('canvas_italic') }}</label>
-        {#- Cada renglón, un punto de la lista. Con viñetas va a la izquierda, así
-            que la alineación se esconde. -#}
-        <label class="props__check" data-only="text"><input type="checkbox" data-prop="list"> {{ t('canvas_list') }}</label>
-        <label class="props__field" data-only="text" data-align-field>{{ t('canvas_align') }}
-          <select data-prop="align">
-            <option value="left">{{ t('canvas_align_left') }}</option>
-            <option value="center">{{ t('canvas_align_center') }}</option>
-            <option value="right">{{ t('canvas_align_right') }}</option>
-          </select></label>
-        <label class="props__field props__field--small" data-only="text">{{ t('canvas_line') }}
-          <select data-prop="line">
-            <option value="1.1">1.1</option><option value="1.25">1.25</option>
-            <option value="1.4">1.4</option><option value="1.6">1.6</option>
-            <option value="1.8">1.8</option><option value="2">2</option>
-          </select></label>
-        <label class="props__field" data-only="button">{{ t('canvas_radius') }}
-          <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
-        {#- La caja tiene el tamaño que se le pone (octubre de 2026): esto la
-            agranda hasta que quepa lo escrito. -#}
-        <button class="btn btn--small btn--outline" type="button" data-action="fit-text"
-                data-only="text">{{ t('canvas_fit_text') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
-      </div>
+    <aside class="studio__panel" data-panel-box>
+      <section class="panel" data-panel-for="text" aria-label="{{ t('canvas_panel_text') }}">
+        <h2 class="panel__title">{{ t('canvas_panel_text') }}</h2>
+        <button class="tool tool--title" type="button" data-add="text" data-preset="title">{{ t('canvas_add_title') }}</button>
+        <button class="tool tool--subtitle" type="button" data-add="text" data-preset="subtitle">{{ t('canvas_add_subtitle') }}</button>
+        <button class="tool tool--body" type="button" data-add="text">{{ t('canvas_add_body') }}</button>
+        <button class="tool" type="button" data-add="text" data-preset="list">{{ t('canvas_add_list') }}</button>
+        <button class="tool" type="button" data-add="button">{{ t('canvas_add_button') }}</button>
+        <p class="hint">{{ t('canvas_text_hint') }}</p>
+      </section>
 
-      <div class="props__row" data-props-for="image" hidden>
-        <label class="props__field">{{ t('canvas_image_href') }}
-          <input type="url" maxlength="500" placeholder="https://" data-prop="href"
-                 data-href></label>
-        {#- Obligatoria: es lo que se lee cuando el buzón bloquea las imágenes,
-            y sin ella el servidor no guarda. -#}
-        <label class="props__field">{{ t('canvas_image_alt') }}
-          <input type="text" maxlength="{{ limits.altMax }}" data-prop="alt" required
-                 placeholder="{{ t('canvas_image_alt_hint') }}"></label>
-        <label class="props__field props__field--small">{{ t('canvas_rot') }}
-          <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
-        <button class="btn btn--small btn--outline" type="button" data-action="crop">{{ t('canvas_crop') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="uncrop">{{ t('canvas_uncrop') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="back">{{ t('canvas_back') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
-        <p class="props__tip">{{ t('canvas_image_tip') }}</p>
-      </div>
+      <section class="panel" data-panel-for="elements" aria-label="{{ t('canvas_panel_elements') }}">
+        <h2 class="panel__title">{{ t('canvas_panel_elements') }}</h2>
+        {#- Cada figura entra con su medida, y la línea, fina. -#}
+        <div class="shapes" data-geo>
+          {% for one in shapes %}
+          <button class="shapes__one" type="button" data-add="shape" data-shape="{{ one }}"
+                  title="{{ t('canvas_shape_' + one) }}">
+            {#- Dibujada con los mismos puntos que pinta el correo. -#}
+            <svg class="shapes__pic" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet"
+                 aria-hidden="true" focusable="false">
+              {%- if one == 'rect' %}<rect width="1" height="1" rx=".06"/>
+              {%- elif one == 'line' %}<rect y=".46" width="1" height=".08"/>
+              {%- elif one == 'ellipse' %}<circle cx=".5" cy=".5" r=".5"/>
+              {%- else %}<polygon points="{% for x, y in shape_points[one] %}{{ x }},{{ y }} {% endfor %}"/>
+              {%- endif %}</svg>
+            <span class="shapes__name">{{ t('canvas_shape_' + one) }}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </section>
 
-      <div class="props__row" data-props-for="shape" hidden>
-        <label class="props__field props__field--color">{{ t('canvas_shape_bg') }}
-          <input type="color" data-prop="bg"></label>
-        <label class="props__field">{{ t('canvas_shape_kind') }}
-          <select data-prop="shape">
-            {% for one in ('rect', 'line', 'ellipse', 'triangle', 'star', 'arrow') %}
-            <option value="{{ one }}">{{ t('canvas_shape_' + one) }}</option>
+      <section class="panel" data-panel-for="uploads" aria-label="{{ t('canvas_panel_uploads') }}">
+        <h2 class="panel__title">{{ t('canvas_panel_uploads') }}</h2>
+        <button class="btn panel__wide" type="button" data-add="image">{{ t('canvas_upload') }}</button>
+        {# El logo de la empresa, sin volver a subirlo. #}
+        {% if has_logo %}
+        <button class="btn btn--outline panel__wide" type="button" data-add="logo">{{ t('canvas_add_logo') }}</button>
+        {% endif %}
+        <input class="visually-hidden" type="file" accept="image/*,.svg" multiple
+               data-canvas-file aria-label="{{ t('canvas_add_image') }}" tabindex="-1">
+        <p class="hint">{{ t('canvas_image_hint', mb=image_mb) }}</p>
+        {# No hay forma de saber de quién es una imagen: se dice, y queda escrito
+           quién la subió y cuándo. #}
+        <p class="hint hint--small">{{ t('canvas_rights') }}</p>
+        {#- Las fotos que ya subió la cuenta (octubre de 2026): se pulsan o se
+            arrastran a la hoja. Las pide el editor al abrir el panel. -#}
+        <h3 class="panel__subtitle">{{ t('canvas_uploads_title') }}</h3>
+        <div class="uploads" data-uploads data-list="{{ url_for('designs.canvas_images') }}"></div>
+        <p class="hint" data-uploads-empty hidden>{{ t('canvas_uploads_empty') }}</p>
+        <button class="btn btn--small btn--outline" type="button" data-uploads-more
+                hidden>{{ t('canvas_uploads_more') }}</button>
+      </section>
+
+      {% if columns %}
+      <section class="panel" data-panel-for="marks" aria-label="{{ t('canvas_panel_marks') }}">
+        <h2 class="panel__title">{{ t('canvas_panel_marks') }}</h2>
+        <p class="hint">{{ t('canvas_marks_hint') }}</p>
+        <div class="marks" data-canvas-marks>
+          {% for one in columns %}
+          <button class="mark" type="button" data-mark="*|{{ one.key }}|*"
+                  title="{{ one.label }}">*|{{ one.key }}|*</button>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {# Cuánto pesa el correo y qué le falta para poder enviarse. Se recalcula
+         mientras se trabaja, con la misma revisión que hace el servidor: con
+         cualquier motivo, Guardar guarda un borrador. #}
+      <section class="panel review" data-panel-for="review" data-canvas-check
+               aria-label="{{ t('canvas_panel_review') }}">
+        <h2 class="panel__title">{{ t('canvas_panel_review') }}</h2>
+        <div class="meter">
+          <p class="meter__label">{{ t('canvas_meter') }} <b data-meter-text>…</b></p>
+          <div class="meter__bar" aria-hidden="true"><span data-meter-fill></span></div>
+        </div>
+        <p class="review__ok" data-check-ok hidden>{{ t('canvas_check_ok') }}</p>
+        <div class="review__bad" data-check-bad hidden>
+          <p class="review__title">{{ t('canvas_check_title') }}</p>
+          <ul data-check-list></ul>
+        </div>
+        {#- Todas las reglas, también las que se cumplen, en su propia ventana. -#}
+        <button class="btn btn--small btn--outline review__rules" type="button"
+                data-open-dialog="requisitos">{{ t('canvas_rules_button') }}</button>
+      </section>
+
+      <section class="panel" data-panel-for="settings" aria-label="{{ t('canvas_panel_settings') }}">
+        <h2 class="panel__title">{{ t('canvas_panel_settings') }}</h2>
+        {#- La carpeta donde queda. Sin carpetas no hay nada que elegir. -#}
+        {% if folders %}
+        <div class="field">
+          <label for="carpeta">{{ t('canvas_folder') }}</label>
+          <select id="carpeta" name="carpeta" form="lienzo-guardar">
+            <option value="">{{ t('folders_move_none') }}</option>
+            {% for one in folders %}
+            <option value="{{ one.id }}"{% if one.id == folder_id %} selected{% endif %}>{{ one.name }}</option>
             {% endfor %}
-          </select></label>
-        <label class="props__field" data-only="shape-rect">{{ t('canvas_radius') }}
-          <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
-        {#- El grosor de una línea es su alto: de 1 a 12 px. El largo se tira de
-            sus puntas. -#}
-        <label class="props__field props__field--small" data-only="shape-line">{{ t('canvas_line_width') }}
-          <input type="number" min="{{ limits.lineMin }}" max="{{ limits.lineMax }}"
-                 step="1" data-prop="h"></label>
-        <label class="props__field props__field--small">{{ t('canvas_rot') }}
-          <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
-        <button class="btn btn--small btn--outline" type="button" data-action="full">{{ t('canvas_full_width') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="front">{{ t('canvas_front') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="back">{{ t('canvas_back') }}</button>
-        <button class="btn btn--small btn--outline" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
-        <p class="props__tip" data-only="shape-ellipse">{{ t('canvas_shape_tip') }}</p>
+          </select>
+        </div>
+        {% endif %}
+        {#- De quién sale y a dónde se responde. -#}
+        {% with sending_form = 'lienzo-guardar' %}{% include "designs/_sending.html" %}{% endwith %}
+        <button class="btn btn--small btn--outline" type="button"
+                data-open-dialog="atajos">{{ t('canvas_keys') }}</button>
+      </section>
+    </aside>
+
+    <div class="studio__main">
+      {# La barra de lo elegido, encima de la hoja. El editor enseña la del
+         elemento elegido y esconde las demás; lo menos usado va en «⋯». #}
+      <div class="props" data-props>
+        {# Sin nada elegido: la hoja. #}
+        <div class="props__row" data-props-for="none">
+          <label class="props__field props__field--color">{{ t('canvas_page_bg') }}
+            <input type="color" data-page-bg></label>
+          {#- El alto también se arrastra por el tirador de abajo de la hoja. -#}
+          <label class="props__field props__field--small">{{ t('canvas_sheet_h') }}
+            <input type="number" min="{{ limits.minHeight }}" max="{{ limits.maxHeight }}"
+                   step="10" data-sheet-h></label>
+          {#- Pega la hoja a lo que hay dentro: el sobrante sale en el correo como
+              una franja en blanco antes de la baja. -#}
+          <button class="props__btn" type="button" data-action="fit">{{ t('canvas_fit_content') }}</button>
+          <p class="props__none">{{ t('canvas_props_none') }}</p>
+        </div>
+
+        {# Varios a la vez. Agrupar es para moverlos juntos y no cambia cómo se
+           corta el correo, y eso lo dice su ayuda. #}
+        <div class="props__row" data-props-for="many" hidden>
+          <p class="props__count" data-many-count></p>
+          <button class="props__btn" type="button" data-action="duplicate">{{ t('canvas_duplicate') }}</button>
+          <button class="props__btn" type="button" data-action="group">{{ t('canvas_group') }}</button>
+          <button class="props__btn" type="button" data-action="ungroup">{{ t('canvas_ungroup') }}</button>
+          <details class="props__more">
+            <summary class="props__btn">{{ t('canvas_align_many') }}</summary>
+            <div class="props__menu">
+              <button type="button" data-action="align-l">{{ t('canvas_align_l') }}</button>
+              <button type="button" data-action="align-cx">{{ t('canvas_align_cx') }}</button>
+              <button type="button" data-action="align-r">{{ t('canvas_align_r') }}</button>
+              <button type="button" data-action="align-t">{{ t('canvas_align_t') }}</button>
+              <button type="button" data-action="align-cy">{{ t('canvas_align_cy') }}</button>
+              <button type="button" data-action="align-b">{{ t('canvas_align_b') }}</button>
+              <button type="button" data-action="spread-x">{{ t('canvas_spread_x') }}</button>
+              <button type="button" data-action="spread-y">{{ t('canvas_spread_y') }}</button>
+            </div>
+          </details>
+          <button class="props__btn props__btn--danger" type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+          <span class="props__help" title="{{ t('canvas_group_hint') }}">?</span>
+        </div>
+
+        <div class="props__row" data-props-for="text button" hidden>
+          <label class="props__field" data-only="button">{{ t('canvas_button_text') }}
+            <input type="text" maxlength="60" data-prop="text"></label>
+          <label class="props__field" data-only="button">{{ t('canvas_href') }}
+            <input type="url" maxlength="500" placeholder="https://" data-prop="href"
+                   data-href></label>
+          <label class="props__field">{{ t('canvas_font') }}
+            <select data-prop="font">
+              {% for one in fonts %}<option value="{{ one }}">{{ one }}</option>{% endfor %}
+            </select></label>
+          <label class="props__field props__field--small">{{ t('canvas_size') }}
+            <input type="number" min="{{ limits.minSize }}" max="{{ limits.maxSize }}"
+                   step="1" data-prop="size"></label>
+          <label class="props__field props__field--color">{{ t('canvas_color') }}
+            <input type="color" data-prop="color"></label>
+          <label class="props__field props__field--color" data-only="button">{{ t('canvas_button_bg') }}
+            <input type="color" data-prop="bg"></label>
+          <label class="props__toggle" title="{{ t('canvas_bold') }}"><input type="checkbox" data-prop="bold"><b aria-hidden="true">N</b><span class="visually-hidden">{{ t('canvas_bold') }}</span></label>
+          <label class="props__toggle" title="{{ t('canvas_italic') }}"><input type="checkbox" data-prop="italic"><i aria-hidden="true">K</i><span class="visually-hidden">{{ t('canvas_italic') }}</span></label>
+          {#- Subrayado y enlace (octubre de 2026): a lo seleccionado mientras se
+              escribe, o a todo el texto. -#}
+          <label class="props__toggle" data-only="text" title="{{ t('canvas_underline') }}"><input type="checkbox" data-format="u"><u aria-hidden="true">S</u><span class="visually-hidden">{{ t('canvas_underline') }}</span></label>
+          <details class="props__more" data-only="text" data-link-menu>
+            <summary class="props__btn" title="{{ t('canvas_link') }}">{{ t('canvas_link') }}</summary>
+            <div class="props__menu props__link">
+              <label class="props__field props__field--stack">{{ t('canvas_link_url') }}
+                <input type="url" maxlength="500" placeholder="https://" data-link-url></label>
+              <label class="props__check"><input type="checkbox" data-link-u checked> {{ t('canvas_underline') }}</label>
+              <button type="button" data-link-apply>{{ t('canvas_link_apply') }}</button>
+              <button type="button" data-link-remove>{{ t('canvas_link_remove') }}</button>
+            </div>
+          </details>
+          {#- Cada renglón, un punto de la lista, con el tipo de viñeta que se
+              elija. Con viñetas va a la izquierda, así que la alineación se
+              esconde. -#}
+          <label class="props__field" data-only="text">{{ t('canvas_list') }}
+            <select data-prop="list">
+              <option value="">{{ t('canvas_bullet_none') }}</option>
+              <option value="dot">• {{ t('canvas_bullet_dot') }}</option>
+              <option value="check">✓ {{ t('canvas_bullet_check') }}</option>
+              <option value="star">★ {{ t('canvas_bullet_star') }}</option>
+              <option value="circle">○ {{ t('canvas_bullet_circle') }}</option>
+            </select></label>
+          <label class="props__field" data-only="text" data-align-field>{{ t('canvas_align') }}
+            <select data-prop="align">
+              <option value="left">{{ t('canvas_align_left') }}</option>
+              <option value="center">{{ t('canvas_align_center') }}</option>
+              <option value="right">{{ t('canvas_align_right') }}</option>
+            </select></label>
+          <label class="props__field props__field--small" data-only="text">{{ t('canvas_line') }}
+            <select data-prop="line">
+              <option value="1.1">1.1</option><option value="1.25">1.25</option>
+              <option value="1.4">1.4</option><option value="1.6">1.6</option>
+              <option value="1.8">1.8</option><option value="2">2</option>
+            </select></label>
+          <label class="props__field" data-only="button">{{ t('canvas_radius') }}
+            <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
+          {#- La caja tiene el tamaño que se le pone: esto la agranda hasta que
+              quepa lo escrito. -#}
+          <button class="props__btn" type="button" data-action="fit-text"
+                  data-only="text">{{ t('canvas_fit_text') }}</button>
+          <details class="props__more">
+            <summary class="props__btn" title="{{ t('canvas_more') }}" aria-label="{{ t('canvas_more') }}">⋯</summary>
+            <div class="props__menu">
+              <button type="button" data-action="duplicate">{{ t('canvas_duplicate') }}</button>
+              <button type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+            </div>
+          </details>
+        </div>
+
+        <div class="props__row" data-props-for="image" hidden>
+          <label class="props__field">{{ t('canvas_image_href') }}
+            <input type="url" maxlength="500" placeholder="https://" data-prop="href"
+                   data-href></label>
+          {#- Obligatoria para enviarse: es lo que se lee cuando el buzón bloquea
+              las imágenes. -#}
+          <label class="props__field">{{ t('canvas_image_alt') }}
+            <input type="text" maxlength="{{ limits.altMax }}" data-prop="alt" required
+                   placeholder="{{ t('canvas_image_alt_hint') }}"></label>
+          <label class="props__field props__field--small">{{ t('canvas_rot') }}
+            <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
+          {#- La forma de la foto, sus esquinas y su borde (octubre de 2026). -#}
+          <label class="props__field">{{ t('canvas_mask') }}
+            <select data-prop="mask">
+              <option value="">{{ t('canvas_mask_none') }}</option>
+              {% for one in masks %}<option value="{{ one }}">{{ t('canvas_shape_' + one) }}</option>{% endfor %}
+            </select></label>
+          <label class="props__field" data-only="image-plain">{{ t('canvas_corners') }}
+            <input type="range" min="0" max="150" step="1" data-prop="radius"></label>
+          <label class="props__field props__field--small">{{ t('canvas_border') }}
+            <input type="number" min="0" max="20" step="1" data-prop="border"></label>
+          <label class="props__field props__field--color">{{ t('canvas_border_color') }}
+            <input type="color" data-prop="border_color"></label>
+          <button class="props__btn" type="button" data-action="crop">{{ t('canvas_crop') }}</button>
+          <button class="props__btn" type="button" data-action="replace">{{ t('canvas_replace') }}</button>
+          <details class="props__more">
+            <summary class="props__btn" title="{{ t('canvas_more') }}" aria-label="{{ t('canvas_more') }}">⋯</summary>
+            <div class="props__menu">
+              <button type="button" data-action="uncrop">{{ t('canvas_uncrop') }}</button>
+              <button type="button" data-action="full">{{ t('canvas_full_width') }}</button>
+              <button type="button" data-action="front">{{ t('canvas_front') }}</button>
+              <button type="button" data-action="back">{{ t('canvas_back') }}</button>
+              <button type="button" data-action="duplicate">{{ t('canvas_duplicate') }}</button>
+              <button type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+            </div>
+          </details>
+          <span class="props__help" title="{{ t('canvas_image_tip') }}">?</span>
+        </div>
+
+        <div class="props__row" data-props-for="shape" hidden>
+          <label class="props__field props__field--color">{{ t('canvas_shape_bg') }}
+            <input type="color" data-prop="bg"></label>
+          <label class="props__field">{{ t('canvas_shape_kind') }}
+            <select data-prop="shape">
+              {% for one in shapes %}
+              <option value="{{ one }}">{{ t('canvas_shape_' + one) }}</option>
+              {% endfor %}
+            </select></label>
+          <label class="props__field" data-only="shape-rect">{{ t('canvas_radius') }}
+            <input type="range" min="0" max="60" step="1" data-prop="radius"></label>
+          {#- El grosor de una línea es su alto: de 1 a 12 px. -#}
+          <label class="props__field props__field--small" data-only="shape-line">{{ t('canvas_line_width') }}
+            <input type="number" min="{{ limits.lineMin }}" max="{{ limits.lineMax }}"
+                   step="1" data-prop="h"></label>
+          <label class="props__field props__field--small" data-only="shape-fill">{{ t('canvas_border') }}
+            <input type="number" min="0" max="20" step="1" data-prop="border"></label>
+          <label class="props__field props__field--color" data-only="shape-fill">{{ t('canvas_border_color') }}
+            <input type="color" data-prop="border_color"></label>
+          <label class="props__field props__field--small">{{ t('canvas_rot') }}
+            <input type="number" min="0" max="359" step="5" data-prop="rot"></label>
+          <details class="props__more">
+            <summary class="props__btn" title="{{ t('canvas_more') }}" aria-label="{{ t('canvas_more') }}">⋯</summary>
+            <div class="props__menu">
+              <button type="button" data-action="full">{{ t('canvas_full_width') }}</button>
+              <button type="button" data-action="front">{{ t('canvas_front') }}</button>
+              <button type="button" data-action="back">{{ t('canvas_back') }}</button>
+              <button type="button" data-action="duplicate">{{ t('canvas_duplicate') }}</button>
+              <button type="button" data-action="delete">{{ t('canvas_delete') }}</button>
+            </div>
+          </details>
+          <span class="props__help" data-only="shape-ellipse" title="{{ t('canvas_shape_tip') }}">?</span>
+        </div>
+      </div>
+
+      <p class="notice notice--warn studio__warn" data-canvas-warn hidden></p>
+      {#- La hoja, con su zoom: mide 600 px de verdad y la vista la acerca o la
+          aleja. -#}
+      <div class="studio__scroll" data-scroll>
+        <div class="cv-zoom" data-zoom-box><div class="stage" data-stage></div></div>
+      </div>
+      <div class="zoom" data-zoom>
+        <button class="zoom__btn" type="button" data-zoom-step="-1"
+                title="{{ t('canvas_zoom_out') }}" aria-label="{{ t('canvas_zoom_out') }}">−</button>
+        <output class="zoom__value" data-zoom-value>100%</output>
+        <button class="zoom__btn" type="button" data-zoom-step="1"
+                title="{{ t('canvas_zoom_in') }}" aria-label="{{ t('canvas_zoom_in') }}">+</button>
+        <button class="zoom__fit" type="button" data-zoom-fit>{{ t('canvas_zoom_fit') }}</button>
       </div>
     </div>
-
-    <p class="notice notice--warn" data-canvas-warn hidden></p>
-    <div class="stage" data-stage></div>
   </div>
-
 </div>
 
-{# La vista previa, en su propia ventana: al lado del lienzo se veía lo mismo dos
-   veces y dejaba el lienzo sin ancho. Se refresca sola mientras está abierta. #}
+{# La vista previa, en su propia ventana. Se refresca sola mientras está
+   abierta. #}
 <dialog class="drawer drawer--wide" id="vista-previa" data-preview-dialog
         aria-labelledby="vista-titulo">
   <div class="drawer__head">
@@ -330,8 +485,7 @@
   </div>
 </dialog>
 
-{# La vista previa se pide con este formulario, hacia el marco: la respuesta trae
-   su propia cabecera de correo. #}
+{# La vista previa se pide con este formulario, hacia el marco. #}
 <form method="post" action="{{ url_for('designs.canvas_preview') }}" target="vista"
       data-canvas-preview hidden>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -340,9 +494,8 @@
   <button type="submit">{{ t('designs_preview_button') }}</button>
 </form>
 
-{# El PDF se pide con este otro, y sin marco: la respuesta es un archivo que el
-   navegador baja, así que la página se queda donde está. Por POST y no por un
-   enlace para que baje lo que se está viendo, también antes de guardar. #}
+{# El PDF se pide con este otro, y sin marco: la respuesta es un archivo. Por
+   POST para que baje lo que se está viendo, también antes de guardar. #}
 <form method="post" action="{{ url_for('designs.canvas_pdf') }}"
       data-canvas-pdf-form hidden>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -351,8 +504,8 @@
   <button type="submit">{{ t('canvas_pdf') }}</button>
 </form>
 
-{# Los requisitos para guardar: todas las reglas, con las que se cumplen y las
-   que no. Las llena el editor con cada revisión, la misma que la de la barra. #}
+{# Los requisitos para enviarse: todas las reglas, con las que se cumplen y
+   las que no. #}
 <dialog class="drawer drawer--wide" id="requisitos" aria-labelledby="requisitos-titulo"
         data-rules-dialog>
   <div class="drawer__head">
@@ -368,7 +521,7 @@
   <ul class="rules" data-rules="spam"></ul>
 </dialog>
 
-{# Los atajos del teclado, en dos columnas y con sitio para leerlos. #}
+{# Los atajos del teclado. #}
 <dialog class="drawer drawer--wide" id="atajos" aria-labelledby="atajos-titulo">
   <div class="drawer__head">
     <h2 class="settings__subtitle" id="atajos-titulo">{{ t('canvas_keys') }}</h2>
@@ -382,8 +535,8 @@
   </dl>
 </dialog>
 
-{# La bandeja de cargar el ZIP de un lienzo, la misma que tenía Mis plantillas.
-   Su campo de nombre lleva otro id: aquí «nombre» es el de la plantilla. #}
+{# La bandeja de cargar el ZIP de un lienzo. Su campo de nombre lleva otro id:
+   aquí «nombre» es el de la plantilla. #}
 <dialog class="drawer" id="cargar" aria-labelledby="cargar-titulo">
   <div class="drawer__head">
     <h2 class="settings__subtitle" id="cargar-titulo">{{ t('designs_upload_title') }}</h2>
@@ -397,6 +550,7 @@
 
 <script type="application/json" id="canvas-doc">{{ doc|tojson }}</script>
 <script type="application/json" id="canvas-fonts">{{ font_stacks|tojson }}</script>
+<script type="application/json" id="canvas-shapes">{{ shape_points|tojson }}</script>
 {% endblock %}
 
 {% block scripts %}

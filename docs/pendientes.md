@@ -155,3 +155,7 @@ Decisiones de producto: **tú decides**, Claude las hace.
 - [ ] `docs/cobro.md`: dice que el proyecto no tiene proceso en segundo plano.
 - [ ] `CLAUDE.md` nombra `docs/arquitectura.md` y `docs/decisiones.md`, que no
   existen: o se escriben o se quitan del árbol.
+- [ ] `landing/tutorials.py` busca selectores del editor de antes
+  (`.editor__actions button.btn[type="submit"]`, `button[data-add="text"]` dentro
+  de la columna vieja): el lienzo pasó a pantalla completa el 22 de octubre de
+  2026. Se arregla al rehacer los tutoriales, al final.

@@ -274,15 +274,48 @@ def test_crear_guarda_el_lienzo(client, database, outbox):
     assert "Hecha en el editor" in browser.get("/templates").get_data(as_text=True)
 
 
-def test_lo_que_no_se_puede_guardar_vuelve_con_lo_escrito(client, database, outbox):
+def test_lo_que_no_cumple_se_guarda_como_borrador(client, database, outbox):
+    """Desde octubre de 2026, lo encimado se guarda como borrador (para poder
+    dejarlo a medias), con lo que le falta, y no se puede enviar."""
     browser = inside(client)
     respuesta = guardar(browser, lienzo(texto(40, 40, text="Mi texto"), boton(60, 50)))
-    salida = respuesta.get_data(as_text=True)
-    assert respuesta.status_code == 200
-    assert "encimados" in salida
-    assert "Mi texto" in salida
+    assert respuesta.status_code == 302 and "borrador=1" in respuesta.headers["Location"]
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    hecha, = designs.for_account(database, cuenta["_id"])
+    assert hecha["draft"] is True and hecha["backgrounds"] == []
+    assert any("encimados" in one for one in hecha["draft_issues"])
+    lista = browser.get(respuesta.headers["Location"]).get_data(as_text=True)
+    assert "Se guardó como borrador" in lista and ">Borrador</span>" in lista
+    # Su miniatura se arma como la vista previa, sin imágenes fundidas.
+    assert browser.get(f"/templates/{hecha['_id']}/preview").status_code == 200
+
+
+def test_lo_que_ni_un_borrador_guarda_vuelve_con_lo_escrito(client, database, outbox):
+    """Una imagen de otra cuenta o un enlace que ejecuta código no se guardan
+    ni como borrador: vuelve la pantalla con lo escrito."""
+    browser = inside(client)
+    for malo in (imagen(0, 0, 200, 100, name="0123456789abcdef0123456789abcdef.jpg"),
+                 boton(20, 200, href="javascript:alert(1)")):
+        respuesta = guardar(browser, lienzo(texto(20, 120, text="Mi texto"), malo))
+        salida = respuesta.get_data(as_text=True)
+        assert respuesta.status_code == 200, malo
+        assert "Mi texto" in salida
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
     assert designs.count(database, cuenta["_id"]) == 0
+
+
+def test_un_borrador_corregido_deja_de_serlo(client, database, outbox):
+    browser = inside(client)
+    guardar(browser, lienzo(texto(40, 40, text="Hola")), completar=False)
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    hecha, = designs.for_account(database, cuenta["_id"])
+    assert designs.is_draft(hecha)
+    respuesta = guardar(browser, lienzo(texto(40, 40, text="Hola")),
+                        url=f"/templates/canvas/{hecha['_id']}")
+    assert "borrador" not in respuesta.headers["Location"]
+    hecha = designs.by_id(database, cuenta["_id"], hecha["_id"])
+    assert not designs.is_draft(hecha) and "draft_issues" not in hecha
+    assert hecha["backgrounds"]
 
 
 def subir_foto(browser, raw=None, nombre="foto.jpg"):
@@ -547,13 +580,13 @@ def test_enlaces_acortados_mayusculas_gritos_y_palabras_gancho():
     assert "trigger" in revisar(texto(20, 20, w=560, h=320, text=PARRAFO + " Es gratis."))
 
 
-def test_lo_que_puede_ir_a_spam_no_se_guarda(client, database, outbox):
+def test_lo_que_puede_ir_a_spam_queda_como_borrador(client, database, outbox):
     browser = inside(client)
     respuesta = guardar(browser, lienzo(texto(40, 40, text="Hola")), completar=False)
-    assert respuesta.status_code == 200
-    assert "muy poco texto" in respuesta.get_data(as_text=True)
+    assert respuesta.status_code == 302
     cuenta = accounts.by_email(database, "ana@ejemplo.com")
-    assert designs.count(database, cuenta["_id"]) == 0
+    hecha, = designs.for_account(database, cuenta["_id"])
+    assert any("muy poco texto" in one for one in hecha["draft_issues"])
 
 
 def test_la_revision_dice_cuanto_pesa_y_que_falta(client, database, outbox):
@@ -734,10 +767,15 @@ def test_sin_descripcion_una_foto_no_se_guarda(client, database, outbox):
         leer(lienzo(imagen(0, 0, 200, 100), texto(0, 120, w=560, h=160))))
 
     browser = inside(client)
-    respuesta = guardar(browser, lienzo(imagen(0, 0, 600, 200, alt="  "),
+    suya = subir_foto(browser).get_json()["name"]
+    respuesta = guardar(browser, lienzo(imagen(0, 0, 600, 200, name=suya, alt="  "),
                                         texto(20, 220, w=560, h=200, text=PARRAFO)),
                         completar=False)
-    assert "falta la descripción" in respuesta.get_data(as_text=True)
+    # Se guarda como borrador, y dice qué le falta.
+    assert "borrador=1" in respuesta.headers["Location"]
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    hecha, = designs.for_account(database, cuenta["_id"])
+    assert any("falta la descripción" in one for one in hecha["draft_issues"])
 
 
 def test_las_figuras_nuevas_se_pintan_y_la_linea_sigue_siendo_color():
@@ -1141,7 +1179,8 @@ def test_el_editor_ofrece_la_linea_en_geometria(client, database, outbox):
 def test_las_vinetas_se_guardan_y_salen_una_fila_por_renglon():
     doc = leer(lienzo(texto(20, 20, w=400, h=120, text="Uno\nDos\n\nTres",
                             list=True, align="center")))
-    assert doc["items"][0]["list"] is True
+    # Un `true` de antes es el punto (octubre de 2026: hay tipos de viñeta).
+    assert doc["items"][0]["list"] == "dot"
     html = canvas.to_html(doc, [None])
     assert html.count("&#8226;") == 3
     for renglon in ("Uno", "Dos", "Tres"):
@@ -1483,3 +1522,224 @@ def test_el_editor_ofrece_ajustar_la_caja(client, database):
     browser, _, _ = ready(client, database)
     pagina = browser.get("/templates/create").get_data(as_text=True)
     assert 'data-action="fit-text"' in pagina and "Ajustar la caja al texto" in pagina
+
+
+# --------------------------------------- el formato por palabras (octubre 2026)
+
+def con_tramos(*runs, **extra):
+    return texto(20, 20, w=560, h=200, text="ignorado", runs=list(runs), **extra)
+
+
+def test_los_tramos_se_guardan_limpios_y_arman_el_texto():
+    doc = leer(lienzo(con_tramos({"text": "Visita "},
+                                 {"text": "nuestra web", "href": "https://coop.com", "u": True,
+                                  "b": True, "z": "nada"},
+                                 {"text": " y ", "b": False, "color": "#18181b"},
+                                 {"text": "más", "i": True})))
+    one = doc["items"][0]
+    assert one["text"] == "Visita nuestra web y más"
+    # Lo que dice lo mismo que la caja se quita, y los seguidos iguales se unen.
+    assert one["runs"] == [{"text": "Visita "},
+                           {"text": "nuestra web", "b": True, "u": True,
+                            "href": "https://coop.com"},
+                           {"text": " y "}, {"text": "más", "i": True}]
+    # Sin ningún formato no quedan tramos: es un texto de siempre.
+    plano = leer(lienzo(con_tramos({"text": "Hola "}, {"text": "a todos"})))["items"][0]
+    assert "runs" not in plano and plano["text"] == "Hola a todos"
+
+
+def test_el_correo_pinta_cada_tramo_escapado_y_el_enlace_con_su_color():
+    doc = leer(lienzo(con_tramos({"text": "<b>Ojo</b> "},
+                                 {"text": "aquí", "href": "https://coop.com/a?b=1&c=2",
+                                  "u": False, "color": "#C2410C"})))
+    html = canvas.to_html(doc, [None] * len(canvas.groups(doc)))
+    assert "&lt;b&gt;Ojo&lt;/b&gt;" in html and "<b>Ojo" not in html
+    assert ('<a href="https://coop.com/a?b=1&amp;c=2" target="_blank" class="sac-C2410C" '
+            'style="color:#C2410C;text-decoration:none;">aquí</a>') in html
+    # Y su color se protege del modo oscuro como el de la caja.
+    assert ".sac-C2410C{color:#C2410C !important;}" in canvas.dark_css(doc)
+
+
+def test_un_enlace_que_ejecuta_codigo_no_se_guarda_ni_como_borrador():
+    doc = leer(lienzo(con_tramos({"text": "clic", "href": "javascript:alert(1)"})))
+    assert "href" in canvas.problems(doc)
+    assert "href" in canvas.hard_problems(doc)
+
+
+def test_los_enlaces_del_texto_cuentan_para_la_revision():
+    tramos = [{"text": f"enlace {n} ", "href": f"https://bit.ly/{n}"} for n in range(9)]
+    hallado = [one["key"] for one in canvas.review(
+        leer(lienzo(con_tramos({"text": PARRAFO}, *tramos))), 20000, limit=102 * 1024)]
+    assert "many_links" in hallado and "shortener" in hallado
+
+
+def test_las_vinetas_con_formato_parten_los_tramos_por_renglon():
+    doc = leer(lienzo(con_tramos({"text": "Uno "}, {"text": "dos\ntres", "b": True},
+                                 list=True)))
+    html = canvas.to_html(doc, [None] * len(canvas.groups(doc)))
+    assert html.count("&#8226;") == 2
+    assert '<span style="font-weight:bold;">dos</span>' in html
+    assert '<span style="font-weight:bold;">tres</span>' in html
+
+
+def test_el_pdf_dibuja_los_tramos_y_su_enlace():
+    from services import canvas_pdf
+
+    doc = leer(lienzo(con_tramos({"text": "Visita "},
+                                 {"text": "la web", "href": "https://coop.com", "u": True})))
+    hecho = canvas_pdf.to_pdf(doc, lambda name: None)
+    assert hecho.startswith(b"%PDF") and b"https://coop.com" in hecho
+
+
+def test_un_texto_sin_tramos_sale_igual_que_antes():
+    doc = leer(lienzo(texto(20, 20, w=300, h=60, text="Hola <a>")))
+    html = canvas.to_html(doc, [None] * len(canvas.groups(doc)))
+    assert ">Hola &lt;a&gt;</span>" in html
+
+
+def test_el_editor_ofrece_subrayado_y_enlace(client, database, outbox):
+    pantalla = inside(client).get("/templates/create").get_data(as_text=True)
+    assert 'data-format="u"' in pantalla and "data-link-menu" in pantalla
+
+
+def test_cada_tipo_de_vineta_sale_en_el_correo_y_en_el_pdf():
+    from services import canvas_pdf
+
+    for tipo, entidad in (("dot", "&#8226;"), ("check", "&#10003;"),
+                          ("star", "&#9733;"), ("circle", "&#9675;")):
+        doc = leer(lienzo(texto(20, 20, w=400, h=80, text="Uno\nDos", list=tipo)))
+        assert doc["items"][0]["list"] == tipo
+        assert canvas.to_html(doc, [None]).count(entidad) == 2, tipo
+        assert canvas_pdf.to_pdf(doc, lambda name: None).startswith(b"%PDF")
+    # Un tipo que no existe es el punto.
+    raro = leer(lienzo(texto(20, 20, w=400, h=80, text="Uno", list="corazon")))
+    assert raro["items"][0]["list"] == "dot"
+
+
+def test_el_editor_ofrece_los_tipos_de_vineta(client, database, outbox):
+    pantalla = inside(client).get("/templates/create").get_data(as_text=True)
+    for tipo in ("dot", "check", "star", "circle"):
+        assert f'<option value="{tipo}">' in pantalla
+
+
+# ------------------------------- forma, esquinas y borde (octubre de 2026)
+
+def _roja(w=200, h=100):
+    buffer = BytesIO()
+    Image.new("RGB", (w, h), (220, 20, 20)).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def _pixeles(doc):
+    hecho = canvas.parts(doc, lambda name: _roja())
+    pintura = next(one for one in hecho if one)
+    return Image.open(BytesIO(pintura)).convert("RGB")
+
+
+def test_una_foto_en_circulo_deja_ver_la_hoja_en_las_esquinas():
+    doc = leer(lienzo(imagen(0, 0, 200, 200, mask="ellipse"), h=200))
+    assert doc["items"][0]["mask"] == "ellipse"
+    vista = _pixeles(doc)
+    centro, esquina = vista.getpixel((200, 200)), vista.getpixel((4, 4))
+    assert centro[0] > 180 and centro[1] < 80          # la foto
+    assert min(esquina) > 230                            # la hoja blanca
+
+
+def test_las_esquinas_y_el_borde_de_una_foto():
+    doc = leer(lienzo(imagen(0, 0, 200, 100, radius=40, border=8,
+                             border_color="#0000ff"), h=100))
+    one = doc["items"][0]
+    assert one["radius"] == 40 and one["border"] == 8 and one["border_color"] == "#0000FF"
+    vista = _pixeles(doc)
+    borde = vista.getpixel((200, 6))                     # a 3 px del borde de arriba
+    assert borde[2] > 180 and borde[0] < 80
+    assert min(vista.getpixel((2, 2))) > 230             # la esquina redonda
+
+
+def test_los_limites_de_forma_esquinas_y_borde():
+    one = leer(lienzo(imagen(0, 0, 200, 100, mask="line", radius=900, border=99)))["items"][0]
+    assert "mask" not in one and one["radius"] == 300 and one["border"] == 20
+    # Sin grosor no se escribe nada: las fotos de antes se leen igual.
+    plano = leer(lienzo(imagen(0, 0, 200, 100, border=0, border_color="#123456")))["items"][0]
+    assert "border" not in plano and "border_color" not in plano and "radius" not in plano
+
+
+def test_una_figura_con_borde_ya_no_es_celda_de_color():
+    sin = leer(lienzo(rectangulo(0, 0, 600, 100), h=100))
+    con = leer(lienzo(rectangulo(0, 0, 600, 100, border=4, border_color="#000000"), h=100))
+    assert canvas.groups(sin)[0]["kind"] == "color"
+    assert canvas.groups(con)[0]["kind"] == "picture"
+
+
+def test_las_figuras_nuevas_se_pintan_y_salen_en_el_editor(client, database, outbox):
+    for forma in ("diamond", "pentagon", "hexagon", "octagon", "heart", "cross", "bubble",
+                  "double_arrow"):
+        doc = leer(lienzo({"t": "shape", "x": 100, "y": 20, "w": 200, "h": 160,
+                           "bg": "#0B3B5C", "shape": forma}, h=200))
+        assert doc["items"][0]["shape"] == forma
+        # El centro de la figura, pintada al doble: es del color de la figura.
+        assert _pixeles(doc).getpixel((200, 160))[2] > 60, forma
+    puntos = canvas.shape_points()
+    assert set(puntos) >= {"heart", "bubble", "star"}
+    assert all(0 <= x <= 1 and 0 <= y <= 1 for one in puntos.values() for x, y in one)
+    pantalla = inside(client).get("/templates/create").get_data(as_text=True)
+    assert 'data-shape="heart"' in pantalla and 'id="canvas-shapes"' in pantalla
+    assert 'data-prop="mask"' in pantalla and 'data-prop="border"' in pantalla
+
+
+def test_el_pdf_recorta_la_foto_y_dibuja_el_borde():
+    from services import canvas_pdf
+
+    doc = leer(lienzo(imagen(0, 0, 200, 200, mask="star", border=6),
+                      rectangulo(0, 220, 300, 60, border=3, border_color="#FF0000"), h=300))
+    assert canvas_pdf.to_pdf(doc, lambda name: _roja()).startswith(b"%PDF")
+
+
+# ----------------------------------------------------- Subidas (octubre de 2026)
+
+def test_subidas_lista_solo_las_fotos_de_la_cuenta(client, database, outbox):
+    browser = inside(client)
+    primera = subir_foto(browser).get_json()["name"]
+    segunda = subir_foto(browser).get_json()["name"]
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    # Un fondo fundido y el logo no son subidas.
+    images.save(database, cuenta["_id"], data=b"x", ext="jpg", mime="image/jpeg",
+                kind=images.BACKGROUND)
+    lista = browser.get("/templates/canvas/images").get_json()
+    nombres = [one["name"] for one in lista["images"]]
+    assert nombres == [segunda, primera] and lista["more"] is False
+    assert lista["images"][0]["width"] > 0 and lista["images"][0]["height"] > 0
+    # Otra cuenta no ve ninguna.
+    ajena = other(client)
+    from conftest import login, register
+    register(ajena, email="otra@ejemplo.com")
+    accounts.confirm_email(database, accounts.by_email(database, "otra@ejemplo.com")["_id"])
+    login(ajena, email="otra@ejemplo.com")
+    respuesta = ajena.get("/templates/canvas/images")
+    assert respuesta.status_code != 200 or respuesta.get_json()["images"] == []
+
+
+def test_una_foto_del_lienzo_puede_pesar_hasta_10_mb(client, database, outbox):
+    browser = inside(client)
+    # Una foto con relleno al final: pasa de los 5 MB de las demás subidas.
+    pesada = foto() + b"\0" * (6 * 1024 * 1024)
+    respuesta = subir_foto(browser, pesada)
+    assert respuesta.status_code == 200, respuesta.get_data(as_text=True)[:200]
+    demasiado = foto() + b"\0" * (11 * 1024 * 1024)
+    assert subir_foto(browser, demasiado).status_code in (400, 413)
+
+
+def test_un_svg_mandado_directo_no_se_guarda(client, database, outbox):
+    browser = inside(client)
+    svg = (b'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">'
+           b'<script>alert(1)</script><rect width="10" height="10"/></svg>')
+    respuesta = subir_foto(browser, svg, nombre="logo.svg")
+    assert respuesta.status_code == 400
+    cuenta = accounts.by_email(database, "ana@ejemplo.com")
+    assert images.count(database, cuenta["_id"]) == 0
+
+
+def test_el_editor_trae_el_panel_de_subidas(client, database, outbox):
+    pantalla = inside(client).get("/templates/create").get_data(as_text=True)
+    assert "data-uploads" in pantalla and "hasta 10 MB" in pantalla
+    assert "Entra debajo de lo último" not in pantalla

@@ -349,7 +349,12 @@ cosa está como está, y lo que ya se probó y se quitó.
   que hay se editan y se envían).
 - **El lienzo se guarda como JSON con coordenadas** y el correo se arma al
   enviar: `to_html()` lo traduce a una cuadrícula de tablas. `parse()` no se fía
-  del JSON, `problems()` y `review()` deciden si se guarda.
+  del JSON, y `problems()` y `review()` deciden si se puede **enviar**: lo que
+  no cumple se guarda como **borrador** (octubre de 2026), que no sale por
+  ninguna puerta; solo `hard_problems()` (seguridad y recursos) impide guardar.
+- **El editor ocupa la pantalla entera, como Canva** (octubre de 2026): su
+  barra, un riel con paneles (Texto, Elementos, Subidas, Variables, Revisión,
+  Ajustes), la barra de lo elegido y la hoja con zoom (`docs/plantillas.md`).
 - **Se baja y se carga como ZIP** (`canvas_from_pack()`): el lienzo con sus
   fotos y el HTML con sus imágenes. Cargarlo pasa lo mismo que Guardar. Crear
   y cargar viven en el **Lienzo** (la fila que se llamó «Crear», octubre de

@@ -21,6 +21,7 @@ en su lista y se editan con el formulario de siempre.
 
 from __future__ import annotations
 
+from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -206,6 +207,7 @@ def shelf_screen(db, account, *, folder=None, editing=None):
         "updated": bool(request.args.get("changed")),
         "copied": bool(request.args.get("copy")),
         "full": bool(request.args.get("full")),
+        "drafted": bool(request.args.get("borrador")),
         "designs_limit": designs.LIMIT,
         # Cuántas se movieron: una con «Mover a…», o varias arrastrándolas.
         "moved": request.args.get("movida", default=0, type=int),
@@ -738,6 +740,10 @@ def piece_view(raw):
         doc = canvas.read(found.get("canvas"))
         if doc is None:
             return Response("", mimetype="text/html")
+        if designs.is_draft(found):
+            # Un borrador no tiene imágenes fundidas: se arma como la vista
+            # previa del editor, con las suyas dentro.
+            return Response(live_email(db, account, doc), mimetype="text/html")
         grounds = found.get("backgrounds") or []
         shades = found.get("shades") or []
         email = pieces.canvas_email(
@@ -781,44 +787,51 @@ def canvas_editor(account, found):
         if not csrf_ok(request.form.get("csrf_token")):
             errors["form"] = t("error_csrf")
         else:
-            # Solo se guarda lo que arma bien el correo y tiene pocas
-            # probabilidades de ir a spam.
-            refused = pieces.canvas_refused(db, account, posted)
+            # Lo que arma bien el correo y tiene pocas probabilidades de ir a
+            # spam se guarda completo. Lo demás se guarda como borrador
+            # (octubre de 2026), que no se puede enviar: así se puede dejar a
+            # medias. Lo que ni un borrador guarda (`canvas_hard`) frena igual.
+            hard = pieces.canvas_hard(db, account, posted)
+            refused = "" if hard else pieces.canvas_refused(db, account, posted)
             if not name:
                 errors["nombre"] = t("error_required")
-            if refused:
-                errors["form"] = refused
+            if hard:
+                errors["form"] = hard
             elif found is None and not designs.has_room(db, account["_id"]):
                 errors["form"] = t("designs_full", n=designs.LIMIT)
             elif not errors:
-                fused = pieces.canvas_fused(db, account, posted)
-                if fused is None:
-                    errors["form"] = pieces.canvas_explain(["too_big"])
-                else:
-                    grounds, shades = fused
-                    if found is None:
-                        new_id = designs.save_canvas(
-                            db, account["_id"], name=name, doc=posted, backgrounds=grounds,
-                            shades=shades, folder_id=folder_id)
-                        if choice is not None:
-                            designs.set_sending(db, account["_id"], new_id, **choice)
-                        return redirect(listed_at(account, folder_id, saved=1))
-                    designs.update_canvas(db, account["_id"], found["_id"],
-                                          name=name, doc=posted, backgrounds=grounds,
-                                          shades=shades, folder_id=folder_id)
+                fused = None if refused else pieces.canvas_fused(db, account, posted)
+                issues = [] if fused else pieces.draft_issues(db, account, posted)
+                if fused is None and not issues:
+                    # Pasó la cuenta aproximada y, armado de verdad, pesa más.
+                    issues = [pieces.canvas_explain(["too_big"])]
+                grounds, shades = fused or ([], [])
+                kept = {"borrador": 1} if issues else {}
+                if found is None:
+                    new_id = designs.save_canvas(
+                        db, account["_id"], name=name, doc=posted, backgrounds=grounds,
+                        shades=shades, folder_id=folder_id, draft_issues=issues)
                     if choice is not None:
-                        designs.set_sending(db, account["_id"], found["_id"], **choice)
-                    # Lo que la versión de antes nombraba y esta ya no: sus
-                    # imágenes fundidas y las fotos que se quitaron del lienzo.
-                    pieces.drop_unused(db, account["_id"], pieces.images_in(found))
-                    return redirect(listed_at(account, folder_id, changed=1))
+                        designs.set_sending(db, account["_id"], new_id, **choice)
+                    return redirect(listed_at(account, folder_id, saved=1, **kept))
+                designs.update_canvas(db, account["_id"], found["_id"],
+                                      name=name, doc=posted, backgrounds=grounds,
+                                      shades=shades, folder_id=folder_id,
+                                      draft_issues=issues)
+                if choice is not None:
+                    designs.set_sending(db, account["_id"], found["_id"], **choice)
+                # Lo que la versión de antes nombraba y esta ya no: sus
+                # imágenes fundidas y las fotos que se quitaron del lienzo.
+                pieces.drop_unused(db, account["_id"], pieces.images_in(found))
+                return redirect(listed_at(account, folder_id, changed=1, **kept))
 
     return render_template(
         "designs/canvas.html", section="plantillas", account=account,
         found=found, doc=doc, name=name, errors=errors,
         folders=designs.folders_of(account), folder_id=folder_id,
         **sending_context(account, found, choice),
-        fonts=list(canvas.FONTS), font_stacks=canvas.FONTS,
+        fonts=list(canvas.FONTS), font_stacks=canvas.FONTS, shapes=canvas.SHAPES,
+        masks=canvas.MASKS, shape_points=canvas.shape_points(),
         columns=marks_for(account), keys=CANVAS_KEYS,
         people=contacts.for_preview(db, account["_id"]),
         limits={"minSize": canvas.MIN_SIZE, "maxSize": canvas.MAX_SIZE,
@@ -826,7 +839,7 @@ def canvas_editor(account, found):
                 "maxItems": canvas.MAX_ITEMS, "altMax": canvas.ALT_MAX,
                 "width": canvas.WIDTH, "lineMin": canvas.LINE_MIN,
                 "lineMax": canvas.LINE_MAX},
-        image_mb=imaging.MAX_UPLOAD // (1024 * 1024),
+        image_mb=imaging.PHOTO_MAX // (1024 * 1024),
         watermark=plans.has_watermark(accounts.plan_of(account)),
         # «Mi logo» sale solo si la empresa tiene uno (octubre de 2026).
         has_logo=bool(accounts.logo_of(account)))
@@ -879,6 +892,12 @@ def canvas_preview():
     doc = canvas.parse(request.form.get("lienzo", ""))
     if doc is None:
         return Response("", mimetype="text/html")
+    return Response(live_email(db, account, doc), mimetype="text/html")
+
+
+def live_email(db, account, doc) -> str:
+    """El correo de un lienzo con sus imágenes dentro, sin guardar nada: la
+    vista previa del editor y la miniatura de un borrador."""
     # Solo las imágenes de esta cuenta: `data_of` pregunta con ella.
     load = lambda one: images.data_of(db, account["_id"], one)  # noqa: E731
     made = canvas.parts(doc, load)
@@ -887,7 +906,7 @@ def canvas_preview():
                                 [canvas.average(raw, doc["bg"]) if raw else None
                                  for raw in made], preview=True,
                                 postal=accounts.postal_of(account))
-    return Response(filled_for(db, account, email), mimetype="text/html")
+    return filled_for(db, account, email)
 
 
 @bp.route("/templates/canvas/pdf", methods=["POST"])
@@ -951,7 +970,13 @@ def canvas_html(raw):
 
 @bp.route("/templates/canvas/image", methods=["POST"])
 def canvas_image():
-    """Subir una foto al lienzo. Contesta en JSON: la pide el editor."""
+    """Subir una foto al lienzo. Contesta en JSON: la pide el editor.
+
+    Hasta 10 MB (octubre de 2026): esta ruta sube su propio tope de petición,
+    antes de leer nada; el de las demás no cambia. Un SVG no llega nunca aquí:
+    el editor lo pasa a PNG en el navegador, porque un SVG puede llevar código,
+    y lo que llega se reconoce por lo que trae dentro (`imaging`)."""
+    request.max_content_length = imaging.PHOTO_MAX + 64 * 1024
     account = signed_in()
     if account is None:
         abort(403)
@@ -961,10 +986,41 @@ def canvas_image():
     if not archivo or not archivo.filename:
         return jsonify(error=t("error_required")), 400
     photo, wrong = pieces.save_photo(get_db(), account,
-                                     archivo.read(imaging.MAX_UPLOAD + 1))
+                                     archivo.read(imaging.PHOTO_MAX + 1),
+                                     limit=imaging.PHOTO_MAX)
     if photo is None:
         return jsonify(error=wrong), 400
     return jsonify(**photo)
+
+
+# Cuántas trae cada vuelta del panel de Subidas.
+PHOTOS_PAGE = 30
+
+
+@bp.route("/templates/canvas/images")
+def canvas_images():
+    """Las fotos que subió la cuenta, para el panel de Subidas del lienzo
+    (octubre de 2026): de la más nueva a la más vieja, de 30 en 30. Solo las de
+    esta cuenta: la consulta la lleva. `antes` es la fecha de la última que ya
+    se vio, para pedir las siguientes."""
+    account = signed_in()
+    if account is None:
+        abort(403)
+    before = None
+    raw = request.args.get("antes", "")
+    if raw:
+        try:
+            before = datetime.fromisoformat(raw)
+        except ValueError:
+            abort(400)
+    found = images.photos_of(get_db(), account["_id"], before=before, limit=PHOTOS_PAGE + 1)
+    shown = found[:PHOTOS_PAGE]
+    return jsonify(
+        images=[{"name": one["name"], "url": imaging.url_of(one["name"]),
+                 "width": one.get("width") or 0, "height": one.get("height") or 0}
+                for one in shown],
+        more=len(found) > PHOTOS_PAGE,
+        antes=shown[-1]["created_at"].isoformat() if shown else "")
 
 
 @bp.route("/templates/canvas/logo", methods=["POST"])

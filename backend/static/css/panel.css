@@ -1891,73 +1891,249 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 }
 
 /* ------------------------------------------------------------- el lienzo
-   Dos columnas: lo que se agrega y la hoja. La vista previa vive en su
-   ventana. En un teléfono la hoja se desplaza de lado,
-   porque tiene los 600 px de un correo. */
-.editor__head {
-  display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between;
-  gap: 14px; margin-top: 18px;
+   A pantalla completa, como Canva (octubre de 2026): su propia barra arriba,
+   un riel de íconos a la izquierda con su panel, encima de la hoja la barra de
+   lo elegido, y la hoja en medio con su zoom. En el teléfono el riel baja y el
+   panel sube desde abajo. */
+.wrap--studio { width: 100%; max-width: none; margin: 0; }
+/* Lo que el editor esconde se esconde aunque su clase diga otro `display`. */
+.studio [hidden] { display: none !important; }
+.studio {
+  position: fixed; inset: 0; z-index: 1;
+  display: grid; grid-template-rows: auto auto minmax(0, 1fr);
+  background: var(--color-surface-alt); color: var(--color-ink);
 }
-.editor__name { flex: 1 1 280px; max-width: 420px; }
-.editor__actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.editor__actions .btn { margin-top: 0; }
-.editor__narrow { display: none; }
-@media (max-width: 760px) { .editor__narrow { display: block; } }
-
-/* Dos columnas: las herramientas y la hoja. La vista previa se fue a su
-   ventana, que es donde no le quita ancho al lienzo. */
-.editor {
-  display: grid; gap: 22px; margin-top: 18px; align-items: start;
-  grid-template-columns: 170px minmax(0, 1fr);
+.studio__bar {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 8px clamp(10px, 2vw, 18px);
+  background: var(--color-background); color: var(--color-on-dark);
 }
-@media (max-width: 760px) { .editor { grid-template-columns: 1fr; } }
+.studio__back { display: grid; place-items: center; flex: none; padding: 2px 4px;
+                border-radius: 10px; color: inherit; }
+.studio__back:hover { background: rgba(255, 255, 255, .14); }
+.studio__wing { display: block; width: 40px; }
+.studio__wing svg { display: block; width: 100%; height: auto; }
+.studio__wing .wing-fill { fill: var(--color-logo); }
+.studio__wing .wing-shadow { fill: var(--color-shadow); }
+.studio__name { min-width: 0; flex: 0 1 300px; }
+.studio__name input {
+  width: 100%; margin: 0; padding: 7px 10px; font-weight: 600;
+  color: var(--color-on-dark); background: transparent;
+  border: 1px solid transparent; border-radius: 9px;
+}
+.studio__name input::placeholder { color: rgba(255, 255, 255, .7); }
+.studio__name input:hover { border-color: rgba(255, 255, 255, .45); }
+.studio__name input:focus { background: var(--color-surface); color: var(--color-ink); }
+.studio__name .error { margin: 2px 0 0; color: var(--color-on-dark); font-size: .8rem; }
+.studio__history { display: flex; gap: 2px; flex: none; }
+.studio__icon, .studio__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 38px; padding: 6px 10px; border-radius: 9px; cursor: pointer;
+  font: inherit; font-size: .92rem; font-weight: 600; color: inherit;
+  background: transparent; border: 1px solid transparent; text-decoration: none;
+  list-style: none; white-space: nowrap;
+}
+.studio__btn::-webkit-details-marker { display: none; }
+.studio__icon:hover, .studio__btn:hover { background: rgba(255, 255, 255, .14);
+                                          text-decoration: none; }
+.studio__grow { flex: 1 1 auto; }
+.studio__actions { display: flex; align-items: center; gap: 4px; flex: none; }
+.studio__save { margin: 0 4px 0 6px; min-height: 38px; padding: 8px 16px; }
+.studio__more { position: relative; }
+.studio__menu, .props__menu {
+  position: absolute; z-index: 70; top: calc(100% + 6px); right: 0;
+  display: grid; min-width: 190px; padding: 6px;
+  color: var(--color-ink); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: 12px; box-shadow: var(--shadow-lg);
+}
+.studio__menu-item, .props__menu button {
+  display: block; width: 100%; padding: 9px 10px; border: 0; border-radius: 8px;
+  font: inherit; font-size: .92rem; text-align: left; color: var(--color-ink);
+  background: transparent; cursor: pointer; text-decoration: none;
+}
+.studio__menu-item:hover, .props__menu button:hover { background: var(--color-hover);
+                                                      text-decoration: none; }
+.studio__error { margin: 8px 16px 0; }
 
-.editor__tools { position: sticky; top: 18px; display: grid; gap: 10px; }
-.editor__adds { display: grid; gap: 8px; }
+.studio__body {
+  display: grid; min-height: 0;
+  grid-template-columns: 76px auto minmax(0, 1fr);
+}
+.studio__rail {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 6px;
+  background: var(--color-surface); border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+}
+.rail__one {
+  position: relative; display: grid; justify-items: center; gap: 4px;
+  padding: 9px 2px; border: 0; border-radius: 10px; cursor: pointer;
+  font: inherit; font-size: .72rem; font-weight: 600; color: var(--color-ink-soft);
+  background: transparent;
+}
+.rail__one:hover { background: var(--color-hover); color: var(--color-ink); }
+.rail__one.is-on { background: var(--color-accent-soft); color: var(--color-ink); }
+.rail__dot { position: absolute; top: 7px; right: 16px; width: 9px; height: 9px;
+             border-radius: 50%; background: #D97706; border: 2px solid var(--color-surface); }
+.studio__panel {
+  width: 300px; overflow-y: auto; padding: 16px;
+  background: var(--color-surface); border-right: 1px solid var(--color-border);
+}
+.studio__panel[hidden] { display: none; }
+.panel { display: grid; gap: 10px; align-content: start; }
+.panel + .panel { margin-top: 26px; }
+.is-live .panel + .panel { margin-top: 0; }
+.panel__title { margin: 0 0 4px; font-size: 1.05rem; }
+.panel__subtitle { margin: 10px 0 0; font-size: .92rem; }
+/* Las fotos ya subidas: se pulsan o se arrastran a la hoja. */
+.uploads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.uploads__one {
+  display: block; aspect-ratio: 1; padding: 0; overflow: hidden; cursor: grab;
+  border: 1px solid var(--color-border); border-radius: 10px;
+  background: var(--color-surface-alt);
+}
+.uploads__one:hover { border-color: var(--color-accent); }
+.uploads__one img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* La hoja, mientras se arrastra algo encima. */
+.studio__scroll.is-drop { outline: 2px dashed var(--color-accent); outline-offset: -8px; }
+.panel .btn { margin-top: 0; }
+.panel__wide { width: 100%; justify-content: center; }
+.panel .hint { margin: 0; }
+.panel .hint--small { font-size: .78rem; }
+.panel .field { margin: 0; }
+.panel .field select { width: 100%; }
+.panel .sending { display: grid; gap: 10px; }
+.panel .sending select { width: 100%; max-width: none; }
 .tool {
-  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--color-border);
-  background: var(--color-surface); color: var(--color-ink); font: inherit;
+  padding: 12px 14px; border-radius: 10px; border: 1px solid var(--color-border);
+  background: var(--color-surface-alt); color: var(--color-ink); font: inherit;
   font-weight: 600; text-align: left; cursor: pointer;
 }
-.tool:hover { border-color: var(--color-accent); color: var(--color-accent-strong); }
-/* Geometría: un menú que abre sin guion, con las seis figuras en dos columnas. */
-.geo > summary { list-style: none; }
-.geo > summary::-webkit-details-marker { display: none; }
-.geo[open] > summary { border-color: var(--color-accent); color: var(--color-accent-strong); }
-.geo__list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
-.geo__one { padding: 7px 8px; font-size: .8rem; }
-
-/* Alto fijo: si creciera o encogiera según lo elegido, la hoja de abajo se
-   movería justo mientras se hace clic en ella. */
-.props {
-  position: sticky; top: 0; z-index: 40; padding: 10px 12px; height: 158px;
-  overflow-y: auto; box-sizing: border-box;
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: 12px;
+.tool:hover { border-color: var(--color-accent); background: var(--color-surface); }
+.tool--title { font-size: 1.45rem; font-weight: 800; }
+.tool--subtitle { font-size: 1.1rem; font-weight: 700; }
+.tool--body { font-size: .92rem; font-weight: 500; }
+/* Las figuras, en cuadrícula, cada una dibujada. */
+.shapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.shapes__one {
+  display: grid; justify-items: center; gap: 6px; padding: 10px 4px;
+  border: 1px solid var(--color-border); border-radius: 10px; cursor: pointer;
+  font: inherit; font-size: .72rem; color: var(--color-ink-soft);
+  background: var(--color-surface-alt);
 }
-.props__none { margin: 8px 0; color: var(--color-ink-soft); font-size: .92rem; }
-.props__row { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 12px; }
-.props__row .btn { margin-top: 0; }
-.props__field { display: grid; gap: 2px; font-size: .75rem; font-weight: 600;
-                color: var(--color-ink-soft); margin: 0; }
-.props__field input, .props__field select { margin: 0; min-width: 120px; padding: 6px 8px; }
-.props__field--small input, .props__field--small select { min-width: 0; width: 76px; }
-.props__field--color input { min-width: 0; width: 46px; height: 34px; padding: 2px; }
-.props__check { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem;
-                margin: 0 0 8px; }
-.props__row .props__none { flex: 1 1 100%; }
-.props__tip { flex: 1 1 100%; margin: 0; font-size: .8rem; color: var(--color-ink-soft); }
-/* Separa los grupos de botones de la barra de varios elegidos. */
-.props__sep { width: 1px; align-self: stretch; background: var(--color-border); }
-.props__row .field-label { margin: 0; align-self: center; }
+.shapes__one:hover { border-color: var(--color-accent); color: var(--color-ink); }
+.shapes__pic { display: block; width: 44px; height: 44px; fill: var(--color-accent); }
+/* El borde de una foto o una figura, encima, con su misma forma. */
+.cv-edge { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
+           overflow: visible; }
+.shapes__name { line-height: 1.2; text-align: center; }
 
-/* `safe` y no `center` a secas: con `overflow-x`, en una ventana más angosta
-   que la hoja el centrado normal corta el borde izquierdo.
-   El aire de arriba es el sitio del tirador del giro, que sale 32 px por
-   encima de la caja: sin él, el de un elemento pegado al borde de arriba caía
-   debajo de la barra de propiedades y no se podía agarrar. */
-.stage { display: grid; justify-items: safe center; margin-top: 14px; overflow-x: auto;
-         padding: 36px 8px 12px; }
+.studio__main { position: relative; display: grid; min-width: 0; min-height: 0;
+                grid-template-rows: auto auto minmax(0, 1fr); }
+/* La barra de lo elegido: una fila, como la de Canva. Si no cabe, se desplaza
+   de lado; lo menos usado va en «⋯». */
+.props {
+  position: relative; z-index: 40; min-height: 56px; padding: 8px 14px;
+  background: var(--color-surface); border-bottom: 1px solid var(--color-border);
+  overflow-x: auto; overflow-y: visible; box-sizing: border-box;
+}
+.props__row { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
+.props__row[hidden] { display: none; }
+.props__none { flex: 1 1 260px; min-width: 220px; margin: 0; color: var(--color-ink-soft);
+               font-size: .8rem; line-height: 1.35; }
+.props__count { margin: 0; font-weight: 600; font-size: .9rem; white-space: nowrap; }
+.props__field { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem;
+                font-weight: 600; color: var(--color-ink-soft); margin: 0; white-space: nowrap; }
+.props__field input, .props__field select { margin: 0; min-width: 110px; padding: 6px 8px; }
+.props__field--small input, .props__field--small select { min-width: 0; width: 70px; }
+.props__field--color input { min-width: 0; width: 38px; height: 32px; padding: 2px; }
+.props__btn {
+  display: inline-flex; align-items: center; min-height: 34px; padding: 6px 10px;
+  border: 1px solid var(--color-border); border-radius: 8px; cursor: pointer;
+  font: inherit; font-size: .85rem; font-weight: 600; color: var(--color-ink);
+  background: var(--color-surface); white-space: nowrap; list-style: none;
+}
+.props__btn::-webkit-details-marker { display: none; }
+.props__btn:hover { background: var(--color-hover); }
+.props__btn--danger { color: #B42318; }
+/* Negrita, cursiva, viñetas: botones que se quedan hundidos, hechos con su
+   casilla dentro, así que funcionan sin guion. */
+.props__toggle {
+  position: relative; display: inline-grid; place-items: center; min-width: 34px;
+  height: 34px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 8px;
+  cursor: pointer; font-size: .95rem; color: var(--color-ink); background: var(--color-surface);
+  white-space: nowrap; margin: 0;
+}
+.props__toggle input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.props__toggle:has(input:checked) { background: var(--color-accent-soft);
+                                    border-color: var(--color-accent); }
+.props__toggle:has(input:focus-visible) { outline: 2px solid var(--color-accent); }
+.props__toggle--wide { display: inline-flex; width: auto; padding: 0 10px; font-size: .85rem;
+                       font-weight: 600; }
+.props__more { position: relative; }
+/* El cuadro del enlace: la dirección, el subrayado y sus dos botones. */
+.props__link { min-width: 280px; gap: 8px; padding: 10px; }
+.props__field--stack { display: grid; gap: 4px; white-space: normal; }
+.props__field--stack input { width: 100%; min-width: 0; }
+.props__check { display: inline-flex; align-items: center; gap: 6px; margin: 0;
+                font-size: .88rem; font-weight: 500; }
+.props__check input { margin: 0; }
+.props__menu { right: auto; left: 0; }
+.props__help {
+  display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px;
+  border-radius: 50%; font-size: .75rem; font-weight: 700; cursor: help;
+  color: var(--color-ink-soft); border: 1px solid var(--color-border);
+}
+.studio__warn { margin: 8px 14px 0; }
+.studio__scroll { overflow: auto; min-height: 0; }
+/* La caja que mide lo que ocupa la hoja con su zoom: se centra a lo ancho y
+   deja que se desplace cuando no cabe. */
+.cv-zoom { margin: 0 auto; }
+.zoom {
+  position: absolute; right: 16px; bottom: 16px; z-index: 50;
+  display: flex; align-items: center; gap: 2px; padding: 4px;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 12px; box-shadow: var(--shadow-sm);
+}
+.zoom__btn, .zoom__fit {
+  min-width: 32px; height: 32px; padding: 0 8px; border: 0; border-radius: 8px;
+  font: inherit; font-weight: 700; color: var(--color-ink); background: transparent;
+  cursor: pointer;
+}
+.zoom__fit { font-size: .8rem; font-weight: 600; }
+.zoom__btn:hover, .zoom__fit:hover { background: var(--color-hover); }
+.zoom__value { min-width: 46px; text-align: center; font-size: .82rem;
+               font-variant-numeric: tabular-nums; }
+
+/* La hoja sin el zoom: 600 px y el aire de arriba es el sitio del tirador del
+   giro, que sale 32 px por encima de la caja. El zoom la escala desde la
+   esquina, y `.cv-zoom` mide lo que ocupa. */
+.stage { width: 600px; padding: 40px 0 28px; transform-origin: 0 0; }
+
+/* Sin JavaScript se ven todos los paneles, uno debajo de otro, y el editor
+   no funciona: el aviso de arriba lo dice. */
+
+@media (max-width: 760px) {
+  .studio__bar { flex-wrap: wrap; gap: 6px; }
+  .studio__name { order: 3; flex: 1 1 100%; }
+  /* En el teléfono la cuenta se deja para fuera del editor: el ala vuelve. */
+  .studio__bar .menu { display: none; }
+  .studio__actions .studio__btn:not(.studio__more summary) { display: none; }
+  .studio__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+  }
+  .studio__main { grid-row: 1; }
+  .studio__panel {
+    grid-row: 2; width: auto; max-height: 45vh; border-right: 0;
+    border-top: 1px solid var(--color-border); box-shadow: var(--shadow-lg);
+  }
+  .studio__rail {
+    grid-row: 3; flex-direction: row; justify-content: space-around; padding: 4px;
+    border-right: 0; border-top: 1px solid var(--color-border); overflow-x: auto;
+  }
+  .rail__one { min-width: 56px; }
+  .zoom { right: 10px; bottom: 10px; }
+}
 
 /* La hoja mide lo que mide en el correo: 600 px de ancho. */
 /* `isolation` encierra las capas de dentro: sin eso, un texto o un botón de
@@ -2005,6 +2181,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 .cv-li { position: relative; padding-left: var(--cv-dot, 19px); }
 .cv-li::before { content: "\2022"; position: absolute; left: 0; width: var(--cv-dot, 19px);
                  text-align: center; }
+.cv-item[data-bullet="check"] .cv-li::before { content: "\2713"; }
+.cv-item[data-bullet="star"] .cv-li::before { content: "\2605"; }
+.cv-item[data-bullet="circle"] .cv-li::before { content: "\25CB"; }
 .cv-li--blank::before { content: none; }
 .cv-item--list.is-editing { padding-left: var(--cv-dot, 19px); }
 /* Una línea puede medir 1 px: una franja invisible arriba y abajo deja
@@ -2077,7 +2256,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
   content: ""; position: absolute; left: 50%; top: 100%;
   width: 2px; height: 12px; background: var(--color-accent);
 }
-.cv-guide { position: absolute; background: #E0368C; z-index: 30; pointer-events: none; }
+.cv-guide { position: absolute; background: var(--color-guide, #E0368C); z-index: 30;
+            pointer-events: none; }
 .cv-guide--x { top: 0; bottom: 0; width: 1px; }
 .cv-guide--y { left: 0; right: 0; height: 1px; }
 .cv-grip {
@@ -2090,11 +2270,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-accent); }
 /* El peso del correo y la revisión antispam, encima del lienzo. Su propia
    clase: `.check` es la de las casillas del panel, y compartirla les ponía
    borde y fondo de recuadro a todas. */
-.review {
-  display: grid; gap: 10px; margin-top: 14px; padding: 12px 14px;
-  border: 1px solid var(--color-border); border-radius: 12px;
-  background: var(--color-surface);
-}
+.review { display: grid; gap: 10px; }
 .meter { display: grid; gap: 6px; }
 .meter__label { margin: 0; font-size: .85rem; color: var(--color-ink-soft); }
 .meter__label b { color: var(--color-ink); font-variant-numeric: tabular-nums; }

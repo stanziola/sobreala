@@ -100,7 +100,15 @@ FITS = ("cover", "contain")
 # pueden salir como **celda de color**, que es lo más liviano que hay en un
 # correo; las demás se pintan en la imagen del grupo, porque Outlook de
 # escritorio ignora `border-radius` y no sabe dibujar un polígono.
-SHAPES = ("rect", "line", "ellipse", "triangle", "star", "arrow")
+SHAPES = ("rect", "line", "ellipse", "triangle", "star", "arrow",
+          # Las que se sumaron en octubre de 2026: se pintan como las de antes,
+          # en la imagen del grupo.
+          "diamond", "pentagon", "hexagon", "octagon", "heart", "cross", "bubble",
+          "double_arrow")
+# La forma que puede tomar una foto (octubre de 2026): cualquiera menos la línea.
+MASKS = tuple(one for one in SHAPES if one not in ("rect", "line"))
+BORDER_MAX = 20
+IMAGE_RADIUS_MAX = 300
 # Cuáles siguen siendo una celda de color cuando llenan su grupo.
 FLAT = ("rect", "line")
 
@@ -172,6 +180,74 @@ def _crop(raw: Any) -> list[float] | None:
     return [x, y, min(w, 1 - x), min(h, 1 - y)]
 
 
+# El formato por palabras (octubre de 2026): un texto puede llevar `runs`,
+# tramos con su negrita, cursiva, subrayado, color y enlace. El estilo de la caja
+# (`bold`, `italic`, `color`) es el de base, y cada tramo dice solo en qué cambia.
+# `text` sigue siendo el texto entero, armado aquí con los tramos: así no cambian
+# las variables, el conteo de la revisión ni la API de antes.
+RUNS_MAX = 200
+# Los tipos de viñeta (octubre de 2026): punto, gancho, estrella y círculo, con
+# la entidad que va en el correo. Un `list: true` de antes es el punto.
+BULLETS = {"dot": "&#8226;", "check": "&#10003;", "star": "&#9733;", "circle": "&#9675;"}
+RUN_FLAGS = ("b", "i", "u")
+
+
+def _run_style(run: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in run.items() if key != "text"}
+
+
+def _runs(raw: Any, one: dict[str, Any]) -> list[dict[str, Any]]:
+    """Los tramos de un texto, limpios y unidos los seguidos que se ven igual.
+    Lo que dice lo mismo que la caja se quita."""
+    if not isinstance(raw, list):
+        return []
+    base = {"b": one["bold"], "i": one["italic"], "u": False, "color": one["color"]}
+    out: list[dict[str, Any]] = []
+    for piece in raw[:RUNS_MAX]:
+        if not isinstance(piece, dict):
+            continue
+        text = _clean(piece.get("text"), TEXT_MAX)
+        if not text:
+            continue
+        run: dict[str, Any] = {"text": text}
+        for key in RUN_FLAGS:
+            if isinstance(piece.get(key), bool) and piece[key] != base[key]:
+                run[key] = piece[key]
+        tone = str(piece.get("color") or "")
+        if COLOR.match(tone) and tone.upper() != base["color"].upper():
+            run["color"] = tone.upper()
+        href = str(piece.get("href") or "").strip()[:HREF_MAX + 1]
+        if href:
+            run["href"] = href
+        if out and _run_style(out[-1]) == _run_style(run):
+            out[-1]["text"] += text
+        else:
+            out.append(run)
+    return out
+
+
+def _border(one: dict[str, Any], raw: dict[str, Any]) -> None:
+    """El borde de una foto o una figura: su grosor (hasta 20 px) y su color.
+    Sin grosor no se escribe nada."""
+    width = min(max(_int(raw.get("border"), 0), 0), BORDER_MAX)
+    if width:
+        one["border"] = width
+        one["border_color"] = _color(raw.get("border_color"), "#18181B")
+
+
+def links_of(one: dict[str, Any]) -> list[str]:
+    """Los enlaces de un elemento: el de un botón (aunque esté vacío, que es lo
+    que lo hace botón), el de una foto si lo tiene, y los de los tramos de un
+    texto."""
+    if one["t"] == "button":
+        return [one["href"]]
+    if one["t"] == "image":
+        return [one["href"]] if one["href"] else []
+    if one["t"] == "text":
+        return [run["href"] for run in one.get("runs") or [] if run.get("href")]
+    return []
+
+
 def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
     kind = raw.get("t")
     if kind not in KINDS:
@@ -202,6 +278,14 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         # Grados, como en CSS: hacia la derecha. El texto y el botón no giran,
         # que girarlos sería convertirlos en imagen.
         one["rot"] = _int(raw.get("rot")) % 360
+        # Su forma, sus esquinas y su borde (octubre de 2026). Solo se escriben
+        # puestos, así las fotos de antes se leen igual.
+        if raw.get("mask") in MASKS:
+            one["mask"] = raw["mask"]
+        radius = min(max(_int(raw.get("radius"), 0), 0), IMAGE_RADIUS_MAX)
+        if radius:
+            one["radius"] = radius
+        _border(one, raw)
         return one
     if kind == "shape":
         one["bg"] = _color(raw.get("bg"), "#E0F2FE")
@@ -213,6 +297,7 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         if one["shape"] == "line" and one["h"] > LINE_MAX:
             one["shape"] = "rect"
         one["rot"] = _int(raw.get("rot")) % 360
+        _border(one, raw)
         return one
     one["text"] = _clean(raw.get("text"), TEXT_MAX if kind == "text" else BUTTON_MAX)
     one["font"] = str(raw.get("font") or "Arial")
@@ -231,8 +316,16 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         one["line"] = min(max(round(line, 2), 1.0), 2.5)
         # Con viñetas, cada renglón es un punto de la lista. Solo se escribe
         # cuando está puesto, así los textos de siempre se leen igual que antes.
-        if raw.get("list"):
-            one["list"] = True
+        bullet = raw.get("list")
+        if bullet:
+            one["list"] = bullet if bullet in BULLETS else "dot"
+        # Con tramos, el texto son ellos; y si ninguno cambia nada, es un texto
+        # de siempre y no se guardan.
+        runs = _runs(raw.get("runs"), one)
+        if runs:
+            one["text"] = "".join(run["text"] for run in runs)[:TEXT_MAX + 1]
+            if any(_run_style(run) for run in runs):
+                one["runs"] = runs
     else:
         one["href"] = str(raw.get("href") or "").strip()[:HREF_MAX + 1]
         one["bg"] = _color(raw.get("bg"), "#31A9E8")
@@ -391,6 +484,8 @@ def groups(doc: dict[str, Any]) -> list[dict[str, Any]]:
         elif (len(backs) == 1 and backs[0]["t"] == "shape"
               and backs[0].get("shape", "rect") in FLAT
               and not backs[0].get("rot")
+              # Con borde se pinta: Outlook no dibuja bien un borde con esquinas.
+              and not backs[0].get("border")
               and _box(backs) == box):
             kind = "color"
         elif fronts:
@@ -467,6 +562,8 @@ def problems(doc: dict[str, Any] | None, *, owns=lambda name: True) -> list[str]
             add("size")
         if one["t"] == "text" and len(one["text"]) > TEXT_MAX:
             add("text_long")
+        if one["t"] == "text" and any(not HREF.match(href) for href in links_of(one)):
+            add("href")
         if one["t"] == "button":
             if not one["text"].strip() or len(one["text"]) > BUTTON_MAX:
                 add("button_text")
@@ -482,6 +579,37 @@ def problems(doc: dict[str, Any] | None, *, owns=lambda name: True) -> list[str]
         if len(group["items"]) > 1 and any(one["t"] == "image" and one["href"]
                                            for one in group["items"]):
             add("link_overlap")
+    return found
+
+
+# Lo que ni un borrador puede guardar (octubre de 2026). Un borrador se guarda
+# aunque no cumpla las reglas de forma ni la revisión antispam, porque no se
+# puede enviar; pero lo de aquí es seguridad o recursos: una imagen de otra
+# cuenta, un enlace que no es https ni mailto, una hoja o una lista de
+# elementos que no caben, y una fuente o un tamaño que no se sabe dibujar.
+def hard_problems(doc: dict[str, Any] | None, *, owns=lambda name: True) -> list[str]:
+    if doc is None:
+        return ["broken"]
+    found: list[str] = []
+
+    def add(reason: str) -> None:
+        if reason not in found:
+            found.append(reason)
+
+    if not MIN_HEIGHT <= doc["h"] <= MAX_HEIGHT:
+        add("height")
+    if len(doc["items"]) > MAX_ITEMS:
+        add("too_many_items")
+    for one in doc["items"]:
+        if one["t"] == "image" and (not one["name"] or not owns(one["name"])):
+            add("image")
+        if any(href and not HREF.match(href) for href in links_of(one)):
+            add("href")
+        if one["t"] in FRONT:
+            if one["font"] not in FONTS:
+                add("font")
+            if not MIN_SIZE <= one["size"] <= MAX_SIZE:
+                add("size")
     return found
 
 
@@ -521,7 +649,98 @@ def _arrow(w: int, h: int) -> list[tuple[float, float]]:
             (w * 0.6, h), (w * 0.6, h * 0.7), (0, h * 0.7)]
 
 
-POLYGONS = {"triangle": _triangle, "star": _star, "arrow": _arrow}
+def _regular(sides: int, turn: float = 0.0):
+    """Un polígono regular dentro de su caja, con una punta arriba."""
+    import math
+
+    def points(w: int, h: int) -> list[tuple[float, float]]:
+        return [(w / 2 + math.cos(-math.pi / 2 + turn + k * 2 * math.pi / sides) * w / 2,
+                 h / 2 + math.sin(-math.pi / 2 + turn + k * 2 * math.pi / sides) * h / 2)
+                for k in range(sides)]
+    return points
+
+
+def _diamond(w: int, h: int) -> list[tuple[float, float]]:
+    return [(w / 2, 0), (w, h / 2), (w / 2, h), (0, h / 2)]
+
+
+def _heart(w: int, h: int) -> list[tuple[float, float]]:
+    """Un corazón, con la curva de siempre, ajustado a su caja."""
+    import math
+
+    raw = []
+    for n in range(48):
+        t = n * 2 * math.pi / 48
+        raw.append((16 * math.sin(t) ** 3,
+                    -(13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t)
+                      - math.cos(4 * t))))
+    xs, ys = [p[0] for p in raw], [p[1] for p in raw]
+    return [((x - min(xs)) / (max(xs) - min(xs)) * w, (y - min(ys)) / (max(ys) - min(ys)) * h)
+            for x, y in raw]
+
+
+def _cross(w: int, h: int) -> list[tuple[float, float]]:
+    a, b = 0.35, 0.65
+    return [(w * a, 0), (w * b, 0), (w * b, h * a), (w, h * a), (w, h * b), (w * b, h * b),
+            (w * b, h), (w * a, h), (w * a, h * b), (0, h * b), (0, h * a), (w * a, h * a)]
+
+
+def _bubble(w: int, h: int) -> list[tuple[float, float]]:
+    """Un globo de diálogo, con su pico abajo a la izquierda."""
+    return [(0, 0), (w, 0), (w, h * 0.75), (w * 0.45, h * 0.75), (w * 0.22, h),
+            (w * 0.27, h * 0.75), (0, h * 0.75)]
+
+
+def _double_arrow(w: int, h: int) -> list[tuple[float, float]]:
+    return [(0, h / 2), (w * 0.25, 0), (w * 0.25, h * 0.3), (w * 0.75, h * 0.3),
+            (w * 0.75, 0), (w, h / 2), (w * 0.75, h), (w * 0.75, h * 0.7),
+            (w * 0.25, h * 0.7), (w * 0.25, h)]
+
+
+POLYGONS = {"triangle": _triangle, "star": _star, "arrow": _arrow,
+            "diamond": _diamond, "pentagon": _regular(5), "hexagon": _regular(6),
+            "octagon": _regular(8, 3.141592653589793 / 8), "heart": _heart,
+            "cross": _cross, "bubble": _bubble, "double_arrow": _double_arrow}
+
+
+def shape_points() -> dict[str, list[list[float]]]:
+    """Los puntos de cada figura, en fracciones de su caja: el editor los usa
+    para dibujar lo mismo que el correo (octubre de 2026)."""
+    return {name: [[round(x, 4), round(y, 4)] for x, y in make(1, 1)]
+            for name, make in POLYGONS.items()}
+
+
+def _figure(pen, figure: str, box, radius: float, *, fill=None, border: float = 0,
+            edge=None) -> None:
+    """Una figura en su caja, rellena, con borde o las dos cosas."""
+    corners = (0, 0, box[0] - 1, box[1] - 1)
+    outline = edge if border else None
+    width = max(int(round(border)), 0) if border else 0
+    if figure == "ellipse":
+        pen.ellipse(corners, fill=fill, outline=outline, width=width or 1)
+    elif figure in POLYGONS:
+        pen.polygon(POLYGONS[figure](box[0] - 1, box[1] - 1), fill=fill, outline=outline,
+                    width=width or 1)
+    else:
+        pen.rounded_rectangle(corners, radius=min(radius, min(box) / 2), fill=fill,
+                              outline=outline, width=width or 1)
+
+
+def _shaped(picture, figure: str, radius: float, border: float, edge):
+    """Una foto con forma (la máscara), esquinas redondas y borde: se dibuja al
+    cuádruple y se achica, para que la orilla no salga dentada."""
+    from PIL import Image, ImageChops, ImageDraw
+
+    big = (picture.width * 4, picture.height * 4)
+    mask = Image.new("L", big, 0)
+    _figure(ImageDraw.Draw(mask), figure, big, radius * 4, fill=255)
+    mask = mask.resize(picture.size, Image.LANCZOS)
+    picture.putalpha(ImageChops.multiply(picture.getchannel("A"), mask))
+    if border:
+        layer = Image.new("RGBA", big, (0, 0, 0, 0))
+        _figure(ImageDraw.Draw(layer), figure, big, radius * 4, border=border * 4, edge=edge)
+        picture = Image.alpha_composite(picture, layer.resize(picture.size, Image.LANCZOS))
+    return picture
 
 
 def _paint(group: dict[str, Any], page: str, load, scale: int):
@@ -537,17 +756,14 @@ def _paint(group: dict[str, Any], page: str, load, scale: int):
             # En su propia hoja transparente, para poder girarla. Sin giro se
             # pega igual: lo que se ve es lo mismo.
             piece = Image.new("RGBA", box, (0, 0, 0, 0))
-            pen = ImageDraw.Draw(piece)
-            corners = (0, 0, box[0] - 1, box[1] - 1)
             figure = one.get("shape", "rect")
-            if figure == "ellipse":
-                pen.ellipse(corners, fill=one["bg"])
-            elif figure in POLYGONS:
-                pen.polygon(POLYGONS[figure](box[0] - 1, box[1] - 1),
-                            fill=one["bg"])
-            else:
-                pen.rounded_rectangle(corners, radius=one["radius"] * scale,
-                                      fill=one["bg"])
+            _figure(ImageDraw.Draw(piece), figure, box, one["radius"] * scale,
+                    fill=one["bg"])
+            if one.get("border"):
+                # El borde, por dentro de la figura, con su orilla suave.
+                piece = _shaped(piece, figure if figure != "line" else "rect",
+                                one["radius"] * scale, one["border"] * scale,
+                                one["border_color"])
             _drop(ground, piece, one, spot, box)
             continue
         raw = load(one["name"])
@@ -570,6 +786,10 @@ def _paint(group: dict[str, Any], page: str, load, scale: int):
                     spot[1] + (box[1] - picture.height) // 2)
         else:
             picture = ImageOps.fit(picture, box, Image.LANCZOS)
+        if one.get("mask") or one.get("radius") or one.get("border"):
+            picture = _shaped(picture, one.get("mask") or "rect",
+                              (one.get("radius") or 0) * scale,
+                              (one.get("border") or 0) * scale, one.get("border_color"))
         _drop(ground, picture, one, spot, box)
     return ground
 
@@ -720,6 +940,50 @@ def _text(value: str) -> str:
     return str(escape(value)).replace("\n", "<br>")
 
 
+def _run_html(run: dict[str, Any], one: dict[str, Any]) -> str:
+    """Un tramo con su formato. Un enlace lleva su color y su subrayado
+    escritos: sin ellos Gmail lo pinta de azul y lo subraya a su gusto."""
+    text = _text(run["text"])
+    style = ""
+    if "b" in run:
+        style += f"font-weight:{'bold' if run['b'] else 'normal'};"
+    if "i" in run:
+        style += f"font-style:{'italic' if run['i'] else 'normal'};"
+    tone = run.get("color") or one["color"]
+    if run.get("href"):
+        decoration = "underline" if run.get("u") else "none"
+        return (f'<a href="{escape(run["href"])}" target="_blank" class="{ink(tone)}" '
+                f'style="color:{tone};text-decoration:{decoration};{style}">{text}</a>')
+    if run.get("u"):
+        style += "text-decoration:underline;"
+    if "color" in run:
+        style += f"color:{tone};"
+    if not style:
+        return text
+    marked = f' class="{ink(tone)}"' if "color" in run else ""
+    return f'<span{marked} style="{style}">{text}</span>'
+
+
+def _rich(one: dict[str, Any]) -> str:
+    """Lo escrito de un texto: con su formato por palabras, si lo tiene."""
+    if not one.get("runs"):
+        return _text(one["text"])
+    return "".join(_run_html(run, one) for run in one["runs"])
+
+
+def text_lines(one: dict[str, Any]) -> list[list[dict[str, Any]]]:
+    """Los renglones de un texto, cada uno con sus tramos. Los usan las viñetas
+    del correo y el PDF."""
+    lines: list[list[dict[str, Any]]] = [[]]
+    for run in one.get("runs") or [{"text": one["text"]}]:
+        for at, part in enumerate(run["text"].split("\n")):
+            if at:
+                lines.append([])
+            if part:
+                lines[-1].append({**run, "text": part})
+    return lines
+
+
 def line_px(one: dict[str, Any]) -> int:
     """El interlineado en píxeles: Outlook solo lo respeta así, y el editor
     usa la misma cuenta para que el texto ocupe lo mismo en los dos."""
@@ -757,18 +1021,21 @@ def _bullets(one: dict[str, Any], style: str) -> str:
     w, lh, dot = one["w"], line_px(one), dot_px(one)
     cell = f"{style}line-height:{lh}px;mso-line-height-rule:exactly;"
     rows = []
-    for line in one["text"].split("\n"):
+    for runs in text_lines(one):
+        line = "".join(run["text"] for run in runs)
         if not line.strip():
             rows.append(f'<tr><td colspan="2" height="{lh}" style="height:{lh}px;'
                         f'line-height:{lh}px;font-size:0;">&nbsp;</td></tr>')
             continue
         rows.append(f'<tr><td width="{dot}" valign="top" align="center" '
                     f'class="{ink(one["color"])}" style="width:{dot}px;{cell}'
-                    f'text-align:center;">&#8226;</td>'
+                    f'text-align:center;">{BULLETS.get(one["list"], BULLETS["dot"])}</td>'
                     f'<td width="{w - dot}" valign="top" class="{ink(one["color"])}" '
                     f'style="width:{w - dot}px;{cell}word-wrap:break-word;">'
                     f'<span class="{ink(one["color"])}" style="{style}'
-                    f'line-height:{lh}px;">{escape(line)}</span></td></tr>')
+                    f'line-height:{lh}px;">'
+                    + "".join(_run_html(run, one) for run in runs)
+                    + '</span></td></tr>')
     return TABLE.format(w=w) + "".join(rows) + "</table>"
 
 
@@ -819,7 +1086,7 @@ def _front_cell(one: dict[str, Any], *, inside_vml: bool) -> str:
                 f'line-height:{line_px(one)}px;mso-line-height-rule:exactly;'
                 f'text-align:{one["align"]};word-wrap:break-word;">'
                 + _clipped(one, f'<span class="{ink(one["color"])}" style="{style}'
-                                f'line-height:{line_px(one)}px;">{_text(one["text"])}</span>')
+                                f'line-height:{line_px(one)}px;">{_rich(one)}</span>')
                 + '</td>')
     href = escape(one["href"])
     link = (f'<a href="{href}" target="_blank" class="{ink(one["color"])}" '
@@ -988,6 +1255,7 @@ def dark_css(doc: dict[str, Any], shades: list[str | None] | None = None) -> str
     for one in doc["items"]:
         if one["t"] in FRONT:
             inks.add(one["color"])
+            inks.update(run["color"] for run in one.get("runs") or [] if run.get("color"))
         if one["t"] in ("button", "shape"):
             paints.add(one["bg"])
     paints.update(one for one in (shades or []) if one)
@@ -1062,8 +1330,9 @@ def _measure(doc: dict[str, Any]) -> dict[str, Any]:
         # Caracteres como los cuenta una persona: con los espacios entre palabras.
         "letters": len(" ".join(plain_text.split())),
         "share": _covered(doc) / (WIDTH * doc["h"] or 1),
-        "links": [one["href"] for one in doc["items"]
-                  if one["t"] == "button" or (one["t"] == "image" and one["href"])],
+        # Los de los botones, las fotos y, desde octubre de 2026, las palabras
+        # con enlace de un texto.
+        "links": [href for one in doc["items"] for href in links_of(one)],
         "alpha": len(alpha),
         "caps": sum(c.isupper() for c in alpha) / len(alpha) if alpha else 0.0,
     }

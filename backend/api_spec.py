@@ -345,14 +345,20 @@ GUIDES: list[dict[str, Any]] = [
          "variables), `font` (Arial, Helvetica, Verdana, Tahoma, Trebuchet MS, "
          "Georgia, Times New Roman, Courier New, Palatino, Garamond, Lucida Sans o "
          "Century Gothic), `size` (de 14 a 72), `color` (#RRGGBB), `bold`, "
-         "`italic`, `align` (left, center o right), `line` (de 1 a 2.5) y `list` "
-         "(con viñetas). **button**: `text` (hasta 60), `href` (https:// o "
+         "`italic`, `align` (left, center o right), `line` (de 1 a 2.5), `list` "
+         "(con viñetas: dot, check, star o circle) y, opcional, `runs`: el formato por palabras, una lista de "
+         "tramos `{text, b, i, u, color, href}` que juntos son el texto (hasta 200; "
+         "cada uno dice solo en qué cambia de la caja, y `href` es https:// o "
+         "mailto:). Con `runs`, `text` se arma con ellos. **button**: `text` (hasta 60), `href` (https:// o "
          "mailto:), `bg`, `radius` (de 0 a 60) y la misma letra que un texto. "
          "**image**: `name` (el que devuelve `POST /images`), `alt` (obligatorio), "
+         "`mask` (la forma: cualquier figura menos rect y line), `radius` (las "
+         "esquinas, de 0 a 300), `border` (de 0 a 20) y `border_color`, "
          "`href`, `fit` (cover o contain), `crop` ([x, y, ancho, alto], de 0 a 1) "
          "y `rot` (grados). **shape**: `shape` (rect, line, ellipse, triangle, "
-         "star o arrow), `bg`, `radius` y `rot`; una línea mide de 1 a 12 px de "
-         "alto.",
+         "star, arrow, diamond, pentagon, hexagon, octagon, heart, cross, bubble "
+         "o double_arrow), `bg`, `radius`, `rot`, `border` (de 0 a 20) y "
+         "`border_color`; una línea mide de 1 a 12 px de alto.",
          "**El alto de cada texto es fijo**: lo que no cabe en su caja no sale en "
          "el correo. Un texto con variables (`*|NOMBRE|*`) es la excepción: crece "
          "con el largo de cada valor.",
@@ -402,6 +408,7 @@ _CONTACT = {
     "updated_at": "2026-10-12T13:05:44Z"}
 _TEMPLATE = {"id": "6533b1d2a1b2c3d4e5f60901", "name": "Estado de cuenta", "source": "canvas",
              "folder_id": "6533b0aaa1b2c3d4e5f60900", "send_from": None, "reply_to": None,
+             "draft": False, "issues": [],
              "created_at": "2026-10-02T14:00:00Z", "updated_at": "2026-10-15T16:30:00Z"}
 _CANVAS = {"v": 2, "h": 420, "bg": "#FFFFFF", "items": [
     {"t": "text", "x": 40, "y": 40, "w": 520, "h": 120,
@@ -734,7 +741,10 @@ GROUPS: list[dict[str, Any]] = [
               "se leen, se arman, se mueven, se duplican y se borran. Cada una "
               "puede elegir de quién sale (`send_from`, el id de un remitente de "
               "`GET /senders`) y a dónde se responde (`reply_to`); sin elegir, van "
-              "los predeterminados. Caben 300 por cuenta.",
+              "los predeterminados. Caben 300 por cuenta. Una plantilla guardada "
+              "como borrador en el editor trae `draft: true` y en `issues` lo que "
+              "le falta: no se puede enviar (ni en una campaña ni en `POST "
+              "/emails`) hasta que se corrija. Por la API no se crean borradores.",
      "endpoints": [
          {"method": "GET", "path": "/templates", "scope": "templates:read",
           "title": "Listar plantillas",

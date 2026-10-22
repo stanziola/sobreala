@@ -2,11 +2,13 @@
     primera opción de cada lista es el predeterminado de la cuenta, que es lo
     que vale si no se elige otro, y lo que vuelve a valer si lo elegido se quita
     de Remitente. Va en los tres editores. Espera: senders (los remitentes que
-    pueden salir), replies, default_from, default_reply y chosen. -#}
+    pueden salir), replies, default_from, default_reply y chosen; y, si las
+    listas viven fuera de su formulario, `sending_form`, su id. -#}
+{% set owner = sending_form if sending_form is defined and sending_form else '' %}
 <div class="sending">
   <div class="sending__one">
     <label for="remitente">{{ t('designs_send_from') }}</label>
-    <select id="remitente" name="remitente">
+    <select id="remitente" name="remitente"{% if owner %} form="{{ owner }}"{% endif %}>
       <option value="">{{ t('designs_send_default', what=(default_from.label ~ ' <' ~ default_from.address ~ '>') if default_from else t('sender_none')) }}</option>
       {% for one in senders %}
       <option value="{{ one.id }}"{% if one.id == chosen.send_from %} selected{% endif %}>{{ one.label }} &lt;{{ one.address }}&gt;</option>
@@ -15,7 +17,7 @@
   </div>
   <div class="sending__one">
     <label for="responder">{{ t('designs_reply_to') }}</label>
-    <select id="responder" name="responder">
+    <select id="responder" name="responder"{% if owner %} form="{{ owner }}"{% endif %}>
       <option value="">{{ t('designs_send_default', what=default_reply) }}</option>
       {% for one in replies %}
       <option value="{{ one }}"{% if one == chosen.reply_to %} selected{% endif %}>{{ one }}</option>

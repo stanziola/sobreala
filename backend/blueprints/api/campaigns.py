@@ -88,8 +88,12 @@ def audience(db, company, found) -> int:
 
 
 def blocked_for(company, found) -> list[str]:
-    """Lo que la frenaría: lo de la cuenta y, de ella, una condición vieja."""
-    return sender.blocked(company) + (["filters"] if stale(company, found) else [])
+    """Lo que la frenaría: lo de la cuenta y, de ella, una condición vieja o
+    una plantilla que volvió a borrador."""
+    draft = bool(found.get("design_id")) and designs.is_draft(
+        designs.by_id(get_db(), company["_id"], found["design_id"]))
+    return (sender.blocked(company) + (["filters"] if stale(company, found) else [])
+            + (["draft"] if draft else []))
 
 
 def not_sending(found) -> None:
@@ -114,8 +118,11 @@ def content_from(db, company, data: dict, fields: Fields, found=None) -> dict:
         fields.errors["template_id"] = t("api_emails_one_body")
     elif fields.has("template_id"):
         found_id = fields.object_id("template_id", required=True)
-        if found_id and designs.by_id(db, company["_id"], found_id) is None:
+        picked = designs.by_id(db, company["_id"], found_id) if found_id else None
+        if found_id and picked is None:
             fields.errors["template_id"] = t("api_field_ref")
+        elif designs.is_draft(picked):
+            fields.errors["template_id"] = t("api_template_draft")
         out.update(design_id=found_id, body="", logo=False)
     elif fields.has("text"):
         out.update(design_id=None, body=fields.text("text", max_len=campaigns.BODY_MAX,

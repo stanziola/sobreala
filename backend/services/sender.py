@@ -405,6 +405,10 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         # La pieza se borró después de programar la campaña.
         campaigns.finish(db, account_id, campaign["_id"], by=lease_by)
         return {"blocked": ["piece"], "sent": 0, "left": 0}
+    if designs.is_draft(piece):
+        # Una plantilla guardada como borrador no sale (octubre de 2026): la
+        # campaña espera a que se corrija, no se da por terminada.
+        return {"blocked": ["draft"], "sent": 0, "left": 0}
 
     wanted = campaigns.tags_of(campaign)
     # A quien le falte una columna no se le manda nada, así que tampoco se
@@ -619,6 +623,8 @@ def send_one(db, account: dict[str, Any], *, kind: str, to: str, design: dict[st
     why = blocked(account)
     if why:
         return {"refused": "cannot_send", "blocked": why}
+    if designs.is_draft(design):
+        return {"refused": "template_draft"}
     account_id = account["_id"]
     fields = accounts.fields_of(account)
     promotional = kind == messages.PROMOTIONAL

@@ -246,6 +246,12 @@ de guardarla se borra la columna, cambia su tipo o la lista pierde el dato,
 deja esperando con ese motivo (`waiting`) y la API responde 409. Saltarla en
 silencio la mandaría a más gente de la elegida.
 
+**Una plantilla que vuelve a borrador también la frena** (octubre de 2026): si
+después de elegirla se guarda en el lienzo sin cumplir las reglas,
+`sender.run()` devuelve `blocked: ["draft"]` y la campaña espera, igual que con
+una condición vieja; la pantalla de confirmar lo dice y no ofrece mandar.
+Corregida y guardada, sale (`docs/plantillas.md`, «Solo se envía lo que…»).
+
 **La pantalla funciona sin JavaScript**: salen las guardadas y una fila vacía,
 «Agregar condición» y «Quitar» son botones del formulario que lo vuelven a
 dibujar sin guardar (`rule_action`), y el operador lista todos, agrupados por

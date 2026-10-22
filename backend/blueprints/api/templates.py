@@ -53,7 +53,7 @@ LOCK_SECONDS = 90
 UNSUBSCRIBE_EXAMPLE = Config.APP_BASE_URL + "/unsubscribe/ejemplo"
 # Lo que se lee de cada plantilla para listarla: ni su lienzo ni su HTML.
 LISTED = {"name": 1, "source": 1, "folder_id": 1, "send_from": 1, "reply_to": 1,
-          "created_at": 1, "updated_at": 1}
+          "created_at": 1, "updated_at": 1, "draft": 1, "draft_issues": 1}
 
 
 # ------------------------------------------------------------ cómo salen
@@ -70,6 +70,10 @@ def template_shape(company, one) -> dict:
             "folder_id": folder_shown(company, one.get("folder_id")),
             "send_from": str(one["send_from"]) if one.get("send_from") else None,
             "reply_to": one.get("reply_to") or None,
+            # Un borrador del editor (octubre de 2026): no se envía, y dice
+            # qué le falta.
+            "draft": designs.is_draft(one),
+            "issues": list(one.get("draft_issues") or []),
             "created_at": iso(one.get("created_at")),
             "updated_at": iso(designs.changed_at(one))}
 
