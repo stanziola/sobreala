@@ -912,6 +912,9 @@ están en `tests/test_endurecido.py`.
   `frame-ancestors 'none'`. El sitio no lleva una política de scripts: tiene
   scripts en línea, y una lista mal hecha lo rompería en silencio.
 - **El aviso de SES** no da error 500 con un JSON anidado sin fin.
+- **`/health` es público y no dice a dónde se conecta**: con la base caída
+  responde solo el tipo de error, y el mensaje entero (que nombra los
+  servidores del clúster de Atlas) va al log.
 
 ## La API y la cuenta (octubre de 2026)
 

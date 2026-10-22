@@ -396,5 +396,8 @@ def health() -> dict:
         status["database"] = "up"
         status["name"] = Config.MONGODB_DB
     except Exception as exc:  # noqa: BLE001
-        status["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+        # /health is public: the message can name the cluster's hosts, so it
+        # goes to the log and the answer carries only the kind of error.
+        print(f"  [db] ping fallido: {type(exc).__name__}: {str(exc)[:200]}", flush=True)
+        status["error"] = type(exc).__name__
     return status

@@ -364,3 +364,6 @@ def test_the_health_route_reports_a_dead_database(unreachable_db):
     assert payload["app"] == "up"
     assert payload["database"] == "down"
     assert payload["indexes"] is False
+    # The route is public: the kind of error, never the hosts it tried.
+    assert payload["error"] == "ServerSelectionTimeoutError"
+    assert "127.0.0.1" not in response.get_data(as_text=True)
