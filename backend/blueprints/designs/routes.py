@@ -205,6 +205,8 @@ def shelf_screen(db, account, *, folder=None, editing=None):
         "saved": bool(request.args.get("saved")),
         "updated": bool(request.args.get("changed")),
         "copied": bool(request.args.get("copy")),
+        "full": bool(request.args.get("full")),
+        "designs_limit": designs.LIMIT,
         # Cuántas se movieron: una con «Mover a…», o varias arrastrándolas.
         "moved": request.args.get("movida", default=0, type=int),
         "folder_done": FOLDER_DONE.get(request.args.get("carpeta_hecha", "")),
@@ -659,6 +661,8 @@ def compose(account, key: str, found):
                 errors["form"] = t("designs_fill_missing")
                 for one in empty:
                     errors[one] = t("error_required")
+            elif found is None and not designs.has_room(db, account["_id"]):
+                errors["form"] = t("designs_full", n=designs.LIMIT)
             elif found is None:
                 designs.save_filled(db, account["_id"], name=name,
                                     template=key, filled=filled)
@@ -784,6 +788,8 @@ def canvas_editor(account, found):
                 errors["nombre"] = t("error_required")
             if refused:
                 errors["form"] = refused
+            elif found is None and not designs.has_room(db, account["_id"]):
+                errors["form"] = t("designs_full", n=designs.LIMIT)
             elif not errors:
                 fused = pieces.canvas_fused(db, account, posted)
                 if fused is None:
@@ -1008,6 +1014,8 @@ def copy():
         design_id = as_id(request.form.get("id"))
         db = get_db()
         found = designs.by_id(db, account["_id"], design_id) if design_id else None
+        if found is not None and not designs.has_room(db, account["_id"]):
+            return redirect(listed_at(account, back, full=1))
         if found is not None:
             designs.duplicate(db, account["_id"], found["_id"],
                               name=t("designs_copy_name", name=found.get("name", "")))

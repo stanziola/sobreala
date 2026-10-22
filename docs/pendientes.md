@@ -84,40 +84,13 @@ el panel esté casi terminado.
 
 ## 3. Seguridad: lo que se vio y no se tocó
 
-Ninguno es urgente con pocos clientes, pero conviene cerrarlos antes de crecer.
-Todos los arregla **Claude** cuando se le pida.
+Lo de esta sección se cerró el 21 de octubre de 2026 (`docs/cuenta.md`, «Lo que
+se cerró de seguridad»); queda solo lo de Cloudflare.
 
-- [ ] **La contraseña del segundo factor no está atada a la cuenta.**
-  `password_proved()` (`blueprints/auth/routes.py`) guarda solo una hora en la
-  sesión. Con varias cuentas abiertas en el mismo navegador, probar la
-  contraseña de una sirve para encender el segundo factor en otra. La API ya lo
-  hace bien (la prueba lleva la cuenta); es copiar eso.
-
-- [ ] **El panel cree la IP que dice cualquiera.** `client_ip()` lee
-  `CF-Connecting-IP` venga de donde venga, así que quien le hable directo a
-  Railway se salta los límites de intentos de entrar y registrarse. La API ya
-  solo la cree si viene de Cloudflare (`services/api_auth.py`); el panel es una
-  línea.
-
-- [ ] **Eliminar la cuenta no comprueba que el código se gastó.** Dos
-  peticiones a la vez podrían usar el mismo código (`delete_account`, no mira
-  lo que devuelve `tokens.spend()`).
-
-- [ ] **Un nombre con salto de línea rompe el asunto de una campaña.** Si un
-  contacto tiene un salto de línea en el nombre y el asunto lleva `*|NOMBRE|*`,
-  falla al armarse. La API ya rechaza esos caracteres; el importador y la ficha
-  no.
-
-- [ ] **Un número inválido en el lienzo da error 500.** Un JSON del lienzo con
-  `NaN` o `Infinity` revienta en vez de decir qué está mal. La API ya los
-  rechaza; el editor del panel no.
-
-- [ ] **Sin HSTS.** *Tú, en Cloudflare* (SSL/TLS → Edge Certificates). Obliga al
+- [ ] **HSTS también en Cloudflare** (opcional). *Tú* (SSL/TLS → Edge
+  Certificates). El panel y el sitio ya lo mandan (octubre de 2026); encenderlo
+  en Cloudflare lo pone además en lo que Cloudflare conteste solo. Obliga al
   navegador a usar siempre HTTPS.
-
-- [ ] **Cosas que pueden llenar la base.** Redactar guarda archivos de hasta
-  5 MB dentro de la base, y el panel no tiene tope de plantillas (la API sí,
-  300). Con uso normal no pasa nada; con abuso, llenan los 512 MB de Atlas.
 
 ---
 

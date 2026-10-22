@@ -478,6 +478,10 @@ def send_single(db, account):
             errors["archivo"] = t("single_file_big", mb=attachments.MAX_BYTES // (1024 * 1024))
         elif kind is None:
             errors["archivo"] = t("single_file_kind")
+        elif not downloads_model.has_room(db, account["_id"], len(data)):
+            errors["archivo"] = t("single_file_room",
+                                  mb=downloads_model.ACCOUNT_BYTES // (1024 * 1024),
+                                  days=downloads_model.KEEP_DAYS)
         else:
             maintype, subtype, ext = kind
             attachment = (attachments.safe_name(upload.filename, ext),

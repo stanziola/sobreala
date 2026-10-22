@@ -297,6 +297,15 @@ def table_html(rows: list[dict[str, Any]], items: list[dict[str, Any]],
     return f"{TABLE}<tr>{head}</tr>{body}</table>"
 
 
+def single_line(text: str) -> str:
+    """Una sola línea, sin caracteres de control: lo que va en una cabecera de
+    correo (el asunto). Un salto de línea en un nombre o en un dato rompía el
+    asunto al armarse, y en una cabecera es además lo que permite inventar
+    otras (octubre de 2026)."""
+    plain = "".join(c if c >= " " and c != "\x7f" else " " for c in str(text or ""))
+    return " ".join(plain.split())
+
+
 def fill(text: str, contact: dict[str, Any] | None,
          definitions: list[dict[str, Any]], *, html: bool = True,
          data: dict[str, Any] | None = None) -> str:

@@ -701,7 +701,31 @@ def build() -> list[Path]:
 
     written.append(write_robots())
     written.append(write_sitemap())
+    written.append(write_headers())
     return written
+
+
+# Las cabeceras de seguridad del sitio (octubre de 2026): Cloudflare Pages lee
+# `_headers` de la raíz y las pone en cada respuesta. Antes el sitio no mandaba
+# ninguna. Sin una política de scripts a propósito: el sitio tiene scripts en
+# línea, y una lista mal hecha lo rompería en silencio; lo que va aquí no puede
+# romper nada y cierra lo que importa (que nos metan en un marco, que el
+# navegador adivine tipos, y HTTPS siempre).
+HEADERS = (
+    "/*\n"
+    "  Strict-Transport-Security: max-age=63072000; includeSubDomains\n"
+    "  X-Content-Type-Options: nosniff\n"
+    "  X-Frame-Options: DENY\n"
+    "  Referrer-Policy: strict-origin-when-cross-origin\n"
+    "  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()\n"
+    "  Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'\n"
+)
+
+
+def write_headers() -> Path:
+    target = LANDING_DIR / "_headers"
+    target.write_text(HEADERS, encoding="utf-8", newline="\n")
+    return target
 
 
 def write_robots() -> Path:
@@ -783,7 +807,7 @@ def check() -> list[Path]:
             LANDING_DIR, ASSETS_DIR, OUT_IMG, OG_DIR = saved
 
         for made in produced:
-            if made.suffix.lower() not in CHECKED:
+            if made.suffix.lower() not in CHECKED and made.name != "_headers":
                 continue
             published = LANDING_DIR / made.relative_to(fake)
             if (not published.exists()

@@ -455,7 +455,7 @@ def upsert_many(db, account_id, rows: Iterable[tuple], *,
         normalized = normalize_email(email)
         fresh = {"email": email.strip(), "updated_at": moment}
         if name:
-            fresh["name"] = name.strip()[:120]
+            fresh["name"] = fields.single_line(name)[:120]
         for key, value in (values or {}).items():
             if value != "":
                 fresh[f"fields.{key}"] = value
@@ -538,7 +538,7 @@ def update(db, account_id, contact_id, *, email: str, name: str,
     """
     changes: dict[str, Any] = {"email": email.strip(),
                                "email_normalized": normalize_email(email),
-                               "name": name.strip()[:120],
+                               "name": fields.single_line(name)[:120],
                                "tags": tags,
                                "updated_at": now()}
     # Columna por columna y no el bloque entero (octubre de 2026): dentro

@@ -271,7 +271,8 @@ def template_render(template_id):
     filled = columns.fill(html, person, definitions, data=values)
     return ok({
         "type": kind,
-        "subject": (columns.fill(subject, person, definitions, html=False, data=values)
+        "subject": (columns.single_line(columns.fill(subject, person, definitions,
+                                                     html=False, data=values))
                     if subject is not None else None),
         "html": filled, "text": sender.plain_text(filled),
         "bytes": len(filled.encode("utf-8")),

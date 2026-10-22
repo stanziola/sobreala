@@ -180,8 +180,8 @@ prediseñadas solo se leen, se mueven, se duplican y se borran. **300 por cuenta
 
 ## Lo que no se tocó (dicho en el reporte, a la espera)
 
-La prueba de contraseña del segundo factor sin atar a la cuenta, `client_ip()`
-del panel fiándose de `CF-Connecting-IP`, la firma de SNS sin comprobar, la
-pausa automática mezclando las dos clases, el panel sin tope de plantillas, los
-nombres de contactos con saltos de línea que rompen el asunto de una campaña, y
-NaN o Infinity en el JSON de un lienzo del panel.
+La pausa automática mezclando las dos clases. Lo demás que estaba aquí se
+cerró en octubre de 2026: la prueba del segundo factor atada a la cuenta, la
+IP del panel con la regla de la API, la firma de SNS, el tope de plantillas en
+el panel, los saltos de línea en los nombres y NaN o Infinity en el lienzo
+(`docs/cuenta.md`, «Lo que se cerró de seguridad»).

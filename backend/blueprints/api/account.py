@@ -14,10 +14,12 @@ from blueprints.api.core import (ANY, PUBLIC, account, api_route, iso, key,
                                  key_shape, ok)
 from i18n import t
 from models import account as accounts
+from models import design as designs
 from services import plans, sender
 
-# Las plantillas que caben por la API (`blueprints/api/templates.py`).
-TEMPLATE_LIMIT = 300
+# Las plantillas que caben (`blueprints/api/templates.py`): el mismo tope que
+# en el panel, que vive en `models/design.py`.
+TEMPLATE_LIMIT = designs.LIMIT
 
 
 def blocked_of(company) -> list[dict[str, str]]:

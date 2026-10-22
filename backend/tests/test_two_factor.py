@@ -43,7 +43,7 @@ def turn_on(client, database):
     page = client.get("/account/two-factor/enable").get_data(as_text=True)
     assert 'class="qr"' in page               # the QR was drawn on the page
     with client.session_transaction() as sess:
-        secret = sess["two_factor_setup"]
+        secret = sess["two_factor_setup"]["secret"]
         csrf = sess["_csrf"]
     answer = client.post("/account/two-factor/enable", data={
         "csrf_token": csrf, "code": list(pyotp.TOTP(secret).now()),

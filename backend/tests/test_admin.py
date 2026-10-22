@@ -41,7 +41,7 @@ def turn_on_two_step(browser):
     browser.post("/account/two-factor", data={"csrf_token": token, "password": PASSWORD})
     browser.get("/account/two-factor/enable")
     with browser.session_transaction() as sess:
-        secret, token = sess["two_factor_setup"], sess["_csrf"]
+        secret, token = sess["two_factor_setup"]["secret"], sess["_csrf"]
     browser.post("/account/two-factor/enable", data={
         "csrf_token": token, "code": list(pyotp.TOTP(secret).now())})
 

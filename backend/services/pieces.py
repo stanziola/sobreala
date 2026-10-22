@@ -248,14 +248,16 @@ def canvas_from_pack(db, account, raw: bytes, *, name: str,
     `canvas_fused()`): del JSON no se fía nada, y si una regla no se cumple no
     se carga. Si algo falla no queda nada guardado.
     """
+    if not designs.has_room(db, account["_id"]):
+        return None, t("designs_full", n=designs.LIMIT)
     try:
         page, files = imaging.unpack(raw, most=photo_limit(account))
     except imaging.PackError as exc:
         return None, t("designs_" + str(exc), n=photo_limit(account),
                        mb=imaging.MAX_UPLOAD // (1024 * 1024))
     try:
-        data = json.loads(page.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError):
+        data = json.loads(page.decode("utf-8"), parse_constant=canvas._not_json)
+    except (UnicodeDecodeError, ValueError, RecursionError):
         data = None
     if not isinstance(data, dict) or not isinstance(data.get("items"), list):
         return None, t("designs_zip_canvas_bad")

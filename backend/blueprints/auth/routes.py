@@ -48,6 +48,7 @@ from services import dashboard
 from services import erase
 from services import imaging
 from services import importer
+from services import api_auth
 from services import apple_auth, github_auth, google_auth
 from services import mailer
 from services import notices
@@ -577,25 +578,30 @@ def await_reset(account_id=None) -> None:
         minutes=Config.CONFIRMATION_CODE_MINUTES)).isoformat()
 
 
-def password_proved() -> bool:
-    """Si la contraseña se comprobó hace poco, en el primer paso.
+def password_proved(account) -> bool:
+    """Si **esta cuenta**, en **esta sesión**, comprobó su contraseña hace poco,
+    en el primer paso.
 
     Es lo único que abre la pantalla del QR. Sin esto, cualquiera que encuentre
     una sesión abierta escribe la dirección a mano y se pone su propio teléfono
-    como segundo paso, que es exactamente lo que la contraseña evita.
+    como segundo paso, que es exactamente lo que la contraseña evita. Atada a la
+    cuenta y a la sesión (octubre de 2026): con varias cuentas abiertas en el
+    mismo navegador, la contraseña de una no sirve para la otra.
     """
-    raw = session.get(TWO_FACTOR_OK)
-    if not raw:
+    found = session.get(TWO_FACTOR_OK)
+    if (not isinstance(found, dict) or found.get("account") != str(account["_id"])
+            or found.get("sid") != session.get(SESSION_KEY)):
         return False
     try:
-        return datetime.fromisoformat(raw) > security_now()
+        return datetime.fromisoformat(found.get("until", "")) > security_now()
     except (TypeError, ValueError):
         return False
 
 
-def prove_password() -> None:
-    session[TWO_FACTOR_OK] = (
-        security_now() + timedelta(minutes=TWO_FACTOR_MINUTES)).isoformat()
+def prove_password(account) -> None:
+    session[TWO_FACTOR_OK] = {
+        "account": str(account["_id"]), "sid": session.get(SESSION_KEY),
+        "until": (security_now() + timedelta(minutes=TWO_FACTOR_MINUTES)).isoformat()}
 
 
 def seconds_left(key: str = DEADLINE_KEY) -> int:
@@ -619,13 +625,10 @@ def client_ip() -> str:
     used, because it arrives from outside: anything else would let a caller
     write whatever it liked into the keys of the rate_limits collection.
     """
-    claimed = request.headers.get("CF-Connecting-IP", "")[:64].strip()
-    if claimed:
-        try:
-            return str(ip_address(claimed))
-        except ValueError:
-            pass  # not an address: fall back to the connection itself
-    return request.remote_addr or "unknown"
+    # Only when the connection itself comes from Cloudflare (October 2026):
+    # anyone talking straight to Railway could write any address there and
+    # get a fresh budget on every attempt. Same rule as the API.
+    return api_auth.caller_ip()
 
 
 def clean_email(raw: str) -> str | None:
@@ -2335,9 +2338,10 @@ def delete_account():
                            if typed else None)
                 if counter is None or not accounts.use_counter(db, account["_id"], counter):
                     errors["app_code"] = t("error_code_invalid")
+            if not errors and doc is not None and not tokens.spend(db, doc):
+                # Otra petición lo gastó primero: un código vale una vez.
+                errors["email_code"] = t("erase_error_code")
             if not errors:
-                if doc is not None:
-                    tokens.spend(db, doc)
                 gone = dict(account)
                 erase.erase(db, account["_id"], by=account["_id"],
                             reason=t("erase_reason_self"))
@@ -3854,7 +3858,7 @@ def two_factor():
 
         elif not on:
             # La contraseña quedó demostrada; el QR está en la otra pantalla.
-            prove_password()
+            prove_password(account)
             session.pop(SETUP_KEY, None)
             return redirect(url_for("auth.two_factor_scan"))
 
@@ -3897,14 +3901,16 @@ def two_factor_scan():
         return redirect(url_for("auth.login"))
     if accounts.two_factor_on(account):
         return redirect(url_for("auth.two_factor"))
-    if not password_proved():
+    if not password_proved(account):
         return redirect(url_for("auth.two_factor", expired=1))
 
     db = get_db()
     errors: dict[str, str] = {}
     # El secreto vive en la galleta mientras se prepara: todavía no es de nadie,
     # y solo pasa a ser de la cuenta cuando un código prueba que la app lo tiene.
-    secret = session.get(SETUP_KEY) or totp.new_secret()
+    setup = session.get(SETUP_KEY)
+    secret = (setup.get("secret") if isinstance(setup, dict)
+              and setup.get("account") == str(account["_id"]) else None) or totp.new_secret()
 
     if request.method == "POST":
         if not csrf_ok(request.form.get("csrf_token")):
@@ -3934,7 +3940,7 @@ def two_factor_scan():
                     account, kind=events.TWO_FACTOR)
             return render_template("two-factor-codes.html", codes=codes)
 
-    session[SETUP_KEY] = secret
+    session[SETUP_KEY] = {"account": str(account["_id"]), "secret": secret}
     return render_template(
         "two-factor-scan.html", errors=errors, secret=secret,
         qr=Markup(totp.qr_svg(secret, account["email"])))

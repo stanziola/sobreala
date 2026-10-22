@@ -877,6 +877,42 @@ apartado.
      ocultó su correo no le llega nada de Sobreala.
 - **La privacidad** lo dice al lado de Google y GitHub, y la ayuda lo nombra.
 
+## Lo que se cerró de seguridad (octubre de 2026)
+
+Lo que estaba en `docs/pendientes.md` y lo que salió al revisarlo. Las pruebas
+están en `tests/test_endurecido.py`.
+
+- **La contraseña del segundo factor está atada a la cuenta y a la sesión**
+  (`password_proved(account)`), como la prueba de las claves de API: con varias
+  cuentas abiertas en un navegador, probar la contraseña de una no abría el QR
+  de otra... y antes sí. El secreto que se está preparando también va con su
+  cuenta (`two_factor_setup` es `{account, secret}`).
+- **La IP del panel** (`client_ip()`) usa la regla de la API
+  (`api_auth.caller_ip()`): `CF-Connecting-IP` solo cuenta si la conexión viene
+  de Cloudflare. Antes, quien le hablaba directo a Railway escribía la IP que
+  quisiera y tenía límites de intentos nuevos en cada uno.
+- **Eliminar la cuenta gasta el código antes de borrar**, y si otra petición lo
+  gastó primero, no borra: un código vale una vez aunque lleguen dos juntas.
+- **Un salto de línea no llega a una cabecera**: los nombres de los contactos
+  se guardan en una línea (`fields.single_line()`), y el asunto ya armado
+  también pasa por ahí, en las campañas y en la vista de la API (un nombre
+  guardado antes con el salto rompía el envío, y en una cabecera es lo que
+  permite inventar otra).
+- **El lienzo no revienta con números que no son números**: `NaN` e `Infinity`
+  no son JSON y se rechazan al leer (también el ZIP), y un `1e999`, que sí es
+  JSON y da infinito, cae al valor por omisión (`canvas._finite`). Antes era un
+  error 500, o un `NaN` guardado.
+- **Lo que podía llenar la base tiene tope**: 300 plantillas por cuenta también
+  en el panel (`designs.LIMIT`, el mismo de la API), y 50 MB de archivos de
+  Redactar guardados a la vez por cuenta (`downloads.ACCOUNT_BYTES`; se liberan
+  solos a los 30 días).
+- **HSTS**: el panel lo manda en toda respuesta por HTTPS (también la API), y el
+  sitio público en su `_headers`, que escribe `build_site.py` junto con
+  `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y
+  `frame-ancestors 'none'`. El sitio no lleva una política de scripts: tiene
+  scripts en línea, y una lista mal hecha lo rompería en silencio.
+- **El aviso de SES** no da error 500 con un JSON anidado sin fin.
+
 ## La API y la cuenta (octubre de 2026)
 
 - **Avisos de seguridad que no se apagan**: se creó o se revocó una clave de

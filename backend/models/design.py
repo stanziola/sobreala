@@ -226,6 +226,16 @@ def count(db, account_id) -> int:
     return db.designs.count_documents({"account_id": account_id})
 
 
+# Cuántas plantillas caben en una cuenta, por la API y por el panel (octubre de
+# 2026): cada lienzo guarda sus imágenes en la base, y sin tope una cuenta
+# podía llenar sola el almacenamiento de todos.
+LIMIT = 300
+
+
+def has_room(db, account_id, wanted: int = 1) -> bool:
+    return count(db, account_id) + wanted <= LIMIT
+
+
 def remove(db, account_id, design_id) -> dict[str, Any] | None:
     """El cliente borra la suya, y devuelve lo que borró.
 

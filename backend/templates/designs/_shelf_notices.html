@@ -3,5 +3,6 @@
 {% if saved %}<p class="notice notice--ok">{{ t('designs_saved') }}</p>{% endif %}
 {% if updated %}<p class="notice notice--ok">{{ t('designs_updated') }}</p>{% endif %}
 {% if copied %}<p class="notice notice--ok">{{ t('designs_copied') }}</p>{% endif %}
+{% if full %}<p class="notice">{{ t('designs_full', n=designs_limit) }}</p>{% endif %}
 {% if moved %}<p class="notice notice--ok">{{ t('folders_done_moved') if moved == 1 else t('folders_done_moved_many', n=moved) }}</p>{% endif %}
 {% if folder_done %}<p class="notice notice--ok">{{ t(folder_done) }}</p>{% endif %}

@@ -328,6 +328,12 @@ def create_app(overrides: dict | None = None) -> Flask:
         from this same origin, so anything injected into a page — a script tag,
         a remote stylesheet, a form pointed somewhere else — has nowhere to go.
         """
+        if request.is_secure:
+            # Solo HTTPS en adelante, aunque alguien escriba http:// o un
+            # enlace viejo lo traiga (octubre de 2026). Por HTTP no vale, y
+            # en local no se manda.
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=63072000; includeSubDomains")
         if is_api():
             # La API responde JSON (o un archivo), nunca una página: nada se
             # dibuja, nada se enmarca y nada se guarda. Va antes que la del

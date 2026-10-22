@@ -18,6 +18,10 @@ from typing import Any
 from bson import Binary
 
 KEEP_DAYS = 30
+# Lo que una cuenta puede tener guardado a la vez (octubre de 2026): diez
+# archivos del tamaño más grande. Sin tope, mandar el mismo archivo de 5 MB a
+# cien personas eran 500 MB dentro de la base.
+ACCOUNT_BYTES = 50 * 1024 * 1024
 
 
 def now() -> datetime:
@@ -37,6 +41,18 @@ def save(db, account_id, campaign_id, *, name: str, content_type: str,
         "created_at": now(),
         "expires_at": now() + timedelta(days=KEEP_DAYS),
     }).inserted_id
+
+
+def stored_bytes(db, account_id) -> int:
+    """Cuánto ocupan los archivos que esa cuenta tiene guardados y vigentes."""
+    found = list(db.downloads.aggregate([
+        {"$match": {"account_id": account_id, "expires_at": {"$gt": now()}}},
+        {"$group": {"_id": None, "bytes": {"$sum": "$size"}}}]))
+    return int(found[0]["bytes"]) if found else 0
+
+
+def has_room(db, account_id, size: int) -> bool:
+    return stored_bytes(db, account_id) + size <= ACCOUNT_BYTES
 
 
 def by_id(db, download_id, *, with_data: bool = False) -> dict[str, Any] | None:

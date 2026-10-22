@@ -50,7 +50,7 @@ def make_admin(client, database, email="jefe@ejemplo.com"):
                                             "password": PASSWORD})
     browser.get("/account/two-factor/enable")
     with browser.session_transaction() as sess:
-        secret, token = sess["two_factor_setup"], sess["_csrf"]
+        secret, token = sess["two_factor_setup"]["secret"], sess["_csrf"]
     browser.post("/account/two-factor/enable", data={
         "csrf_token": token, "code": list(pyotp.TOTP(secret).now())})
     return browser, accounts.by_email(database, email)

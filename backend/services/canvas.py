@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 import re
 from io import BytesIO
 from typing import Any
@@ -116,11 +117,25 @@ def blank() -> dict[str, Any]:
 
 # ------------------------------------------------------------- leer lo que llega
 
+def _finite(value) -> float:
+    """Un número de verdad: NaN e infinito no lo son, aunque `float()` los lea
+    (un JSON con 1e999 da infinito, y `int()` de eso era un error 500)."""
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError(value)
+    return number
+
+
 def _int(value, default=0) -> int:
     try:
-        return int(round(float(value)))
-    except (TypeError, ValueError):
+        return int(round(_finite(value)))
+    except (TypeError, ValueError, OverflowError):
         return default
+
+
+def _not_json(constant: str):
+    """NaN e Infinity no son JSON, aunque Python los lea."""
+    raise ValueError(constant)
 
 
 def _color(value, default: str) -> str:
@@ -147,7 +162,7 @@ def _crop(raw: Any) -> list[float] | None:
     if not isinstance(raw, (list, tuple)) or len(raw) != 4:
         return None
     try:
-        x, y, w, h = (round(float(one), 4) for one in raw)
+        x, y, w, h = (round(_finite(one), 4) for one in raw)
     except (TypeError, ValueError):
         return None
     if min(x, y) < 0 or min(w, h) < MIN_CROP or x + w > 1.0001 or y + h > 1.0001:
@@ -174,7 +189,7 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
         one["name"] = str(raw.get("name") or "")[:80]
         one["fit"] = raw.get("fit") if raw.get("fit") in FITS else "cover"
         try:
-            ratio = float(raw.get("r") or 0)
+            ratio = _finite(raw.get("r") or 0)
         except (TypeError, ValueError):
             ratio = 0
         # La proporción de la foto, ancho entre alto. Solo la usa el editor.
@@ -210,7 +225,7 @@ def _item(raw: dict[str, Any]) -> dict[str, Any] | None:
     if kind == "text":
         line = raw.get("line")
         try:
-            line = float(line)
+            line = _finite(line)
         except (TypeError, ValueError):
             line = 1.4
         one["line"] = min(max(round(line, 2), 1.0), 2.5)
@@ -259,8 +274,9 @@ def parse(raw: str) -> dict[str, Any] | None:
     de rango se queda como llegó, para que `problems()` lo diga.
     """
     try:
-        data = json.loads(raw or "") if isinstance(raw, str) else raw
-    except (TypeError, ValueError):
+        data = (json.loads(raw or "", parse_constant=_not_json)
+                if isinstance(raw, str) else raw)
+    except (TypeError, ValueError, RecursionError):
         return None
     return read(data)
 

@@ -237,8 +237,8 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     message["From"] = from_address(account, piece.design)
     message["To"] = contact["email"]
     # Sin escapar: un asunto es texto, y ahí «&» es «&» y no «&amp;».
-    message["Subject"] = columns.fill(campaign["subject"], contact, fields,
-                                      html=False, data=data)
+    message["Subject"] = columns.single_line(columns.fill(
+        campaign["subject"], contact, fields, html=False, data=data))
     # Responder le llega al cliente, no a nosotros: la conversación es suya.
     answer = reply_to(account, piece.design)
     if answer:

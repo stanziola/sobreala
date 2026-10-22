@@ -295,6 +295,11 @@ cosa está como está, y lo que ya se probó y se quitó.
   que lleva a `sobreala.com/ayuda/`, la dirección, Privacidad y Términos).
 - `sessions`: un documento por dispositivo, con hash del testigo. Entrar desde
   un dispositivo nuevo avisa por correo.
+- **Lo que prueba quién es** (la contraseña del segundo factor, la de las claves
+  de API y la de «Conectar») **va atado a la cuenta y a la sesión**. La IP sale
+  de `CF-Connecting-IP` solo si la conexión es de Cloudflare
+  (`api_auth.caller_ip()`, también en el panel). HSTS va en el panel y en el
+  `_headers` del sitio (`docs/cuenta.md`, «Lo que se cerró de seguridad»).
 - **Entrar, registrarse y sus pasos van a dos columnas** (`_auth.html`), sin la
   barra: a la izquierda el ala y cuatro dibujos de «Funciones» del sitio que
   rotan (`_art-*.svg`, que genera `build_assets.py`), y a la derecha el

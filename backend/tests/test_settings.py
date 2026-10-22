@@ -51,7 +51,7 @@ def turn_on_two_step(client):
     client.post("/account/two-factor", data={"csrf_token": token, "password": PASSWORD})
     client.get("/account/two-factor/enable")
     with client.session_transaction() as sess:
-        secret, token = sess["two_factor_setup"], sess["_csrf"]
+        secret, token = sess["two_factor_setup"]["secret"], sess["_csrf"]
     client.post("/account/two-factor/enable", data={
         "csrf_token": token, "code": list(pyotp.TOTP(secret).now())})
     return secret

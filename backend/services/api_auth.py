@@ -12,8 +12,8 @@ Los rangos son los que publica Cloudflare en cloudflare.com/ips-v4 y ips-v6,
 copiados el 17 de octubre de 2026. Cambian muy de vez en cuando; si cambian, se
 copian otra vez aquí.
 
-(`client_ip()` del panel todavía cree `CF-Connecting-IP` de cualquiera: está
-dicho y espera.)
+Desde octubre de 2026 el panel usa esta misma regla (`client_ip()` de
+`blueprints/auth/routes.py` llama a `caller_ip()`).
 """
 
 from __future__ import annotations

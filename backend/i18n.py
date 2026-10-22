@@ -3591,6 +3591,13 @@ TEXTS = {
     "oauth_relay_title": "Entrando a Sobreala",
     "oauth_relay_lead": "Un momento: terminamos de entrar con Apple.",
     "oauth_relay_button": "Continuar",
+
+    # Los topes que cuidan la base (octubre de 2026).
+    "designs_full": "Ya tienes {n} plantillas, que es lo que cabe. Borra alguna "
+                    "que no uses para guardar otra.",
+    "single_file_room": "Tus archivos de los últimos {days} días ya ocupan {mb} MB, "
+                        "que es lo que cabe. Se liberan solos al vencer, o manda "
+                        "este correo sin archivo.",
 }
 
 

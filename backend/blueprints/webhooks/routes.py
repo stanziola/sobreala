@@ -60,7 +60,7 @@ def ses(secret: str):
 
     try:
         envelope = json.loads(request.get_data(as_text=True) or "{}")
-    except ValueError:
+    except (ValueError, RecursionError):
         print("  [ses] aviso ilegible", flush=True)
         return "", 200
 
@@ -92,7 +92,7 @@ def ses(secret: str):
 
     try:
         message = json.loads(envelope.get("Message") or "{}")
-    except ValueError:
+    except (ValueError, RecursionError, TypeError):
         print("  [ses] mensaje ilegible", flush=True)
         return "", 200
 
