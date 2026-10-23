@@ -428,9 +428,15 @@ cosa está como está, y lo que ya se probó y se quitó.
   dirección, sin baja ni marca, sin contar clics) y **promocional** (un contacto
   completo, con su baja y su marca). Los dos gastan cuota, que se **aparta antes**
   de mandar. Viven en `messages` (30 días), no en Enviados.
-- **El proceso en segundo plano** (`worker.py`) manda lo programado y el resto
-  de lo que empezó a salir, con un **turno** por campaña, y no manda nada si su
-  `SECRET_KEY` no es la del web. Hay que crearlo en Railway (`docs/api.md`).
+- **El proceso en segundo plano** (`worker.py`) manda **todas** las campañas
+  (desde octubre de 2026 «Enviar» solo la deja en cola), por tandas y
+  turnándose entre clientes, con un **turno** por campaña, y no manda nada si
+  su `SECRET_KEY` no es la del web. Está creado en Railway.
+- **Un solo ritmo para todo lo que le escribe a Amazon** (`services/send_rate.py`,
+  octubre de 2026): los límites por segundo y por día se leen de SES y las
+  variables solo los bajan; un reloj compartido en la base da los turnos; las
+  campañas usan el 80 % y el sistema y la API entran en los huecos; el tope del
+  día deja una reserva para los códigos (`docs/envios.md`, «El ritmo de envío»).
 - **Los webhooks**: firmados, una vez por evento, nunca a la red interna
   (`services/safe_http.py`), y desactivados tras 72 h fallando.
 
@@ -606,7 +612,9 @@ PAGUELOFACIL_WEBHOOK_SECRET  # va en la dirección del aviso; sin él, 404
 PAGUELOFACIL_CHECKOUT     # opcional: la página de pago, si no es la de siempre
 YAPPY_MERCHANT_ID
 YAPPY_SECRET
-SES_MAX_PER_SECOND        # opcional: el ritmo del proceso en segundo plano (10)
+SES_MAX_PER_SECOND        # opcional: baja el ritmo por segundo que da Amazon
+SES_MAX_PER_DAY           # opcional: baja el tope del día que da Amazon (los dos,
+                          # en el web y en el worker; services/send_rate.py)
 WORKER_TICK_SECONDS       # opcional: cuánto duerme sin nada que hacer (5)
 ```
 

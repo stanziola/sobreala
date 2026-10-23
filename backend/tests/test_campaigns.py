@@ -19,7 +19,7 @@ from models import campaign_run as runs
 from models import contact as contacts
 from models import design as designs
 from models import suppression as suppressions
-from services import sender, unsubscribe
+from services import background, sender, unsubscribe
 
 PASSWORD = "Contrasena-Larga1"
 WHEN = "%Y-%m-%dT%H:%M"
@@ -76,7 +76,7 @@ def catch(monkeypatch) -> list:
     """Quedarse con los correos en vez de entregarlos."""
     salidos: list = []
 
-    def fake(message):
+    def fake(message, **_):
         salidos.append(message)
         return "de-mentira"
 
@@ -94,10 +94,17 @@ def make(browser, piece, *, subject="Aviso", tag="", when="ahora", fecha=""):
     return browser.post("/campaigns", data=data)
 
 
-def send_it(browser, database, account_id):
+def send_it(browser, database, account_id, *, vueltas=50):
+    """Pulsar «Enviar». Desde octubre de 2026 la página se la deja al proceso
+    en segundo plano, así que aquí se corren sus vueltas, como haría él:
+    `vueltas` dice cuántas (una tanda de cada campaña por vuelta)."""
     one = campaigns.for_account(database, account_id)[0]
-    return browser.post(f"/campaigns/{one['_id']}/send",
-                        data={"csrf_token": csrf(browser)}), one
+    respuesta = browser.post(f"/campaigns/{one['_id']}/send",
+                             data={"csrf_token": csrf(browser)})
+    for _ in range(vueltas):
+        if not background.campaigns_tick(database, "pruebas"):
+            break
+    return respuesta, one
 
 
 # ------------------------------------------------------------- armar y editar
@@ -139,7 +146,7 @@ def test_la_que_esta_saliendo_no_se_toca(client, database, outbox, monkeypatch):
     monkeypatch.setattr(sender, "BATCH", 2)
     browser, account, piece = ready(client, database, howmany=5)
     make(browser, piece)
-    _, suya = send_it(browser, database, account["_id"])
+    _, suya = send_it(browser, database, account["_id"], vueltas=1)
 
     mitad = campaigns.by_id(database, account["_id"], suya["_id"])
     assert mitad["status"] == campaigns.SENDING
@@ -239,16 +246,15 @@ def test_la_tanda_tiene_tope_y_retoma_donde_iba(client, database, outbox,
     browser, account, piece = ready(client, database, howmany=5)
     make(browser, piece)
 
-    _, suya = send_it(browser, database, account["_id"])
+    _, suya = send_it(browser, database, account["_id"], vueltas=1)
     mitad = campaigns.by_id(database, account["_id"], suya["_id"])
     assert len(salidos) == 2
     assert mitad["status"] == campaigns.SENDING
     assert mitad["position"] == 2
 
-    browser.post(f"/campaigns/{suya['_id']}/send",
-                 data={"csrf_token": csrf(browser)})
-    browser.post(f"/campaigns/{suya['_id']}/send",
-                 data={"csrf_token": csrf(browser)})
+    # Las vueltas siguientes del proceso retoman donde iba.
+    background.campaigns_tick(database, "pruebas")
+    background.campaigns_tick(database, "pruebas")
 
     final = campaigns.by_id(database, account["_id"], suya["_id"])
     assert final["status"] == campaigns.SENT

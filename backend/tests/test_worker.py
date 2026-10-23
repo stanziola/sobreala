@@ -68,10 +68,13 @@ def test_enviar_desde_el_panel_deja_el_resto_al_proceso(client, database, outbox
     monkeypatch.setattr(sender, "BATCH", 2)
     browser, account, piece = ready(client, database, howmany=3)
     make(browser, piece, subject="Ya")
-    respuesta, one = send_it(browser, database, account["_id"])
-    assert "done=partial" in respuesta.headers["Location"]
-    medio = campaigns.by_id(database, account["_id"], one["_id"])
-    assert medio["auto_send"] is True and "lease_by" not in medio and len(salidos) == 2
+    # «Enviar» ya no manda desde la página (octubre de 2026): la deja lista
+    # para el proceso, que es el único que reparte el ritmo de Amazon.
+    respuesta, one = send_it(browser, database, account["_id"], vueltas=0)
+    assert "done=started" in respuesta.headers["Location"]
+    lista = campaigns.by_id(database, account["_id"], one["_id"])
+    assert lista["auto_send"] is True and "lease_by" not in lista and salidos == []
+    assert background.campaigns_tick(database, "w1") == 2
     assert background.campaigns_tick(database, "w1") == 1
     assert campaigns.by_id(database, account["_id"], one["_id"])["status"] == campaigns.SENT
 
@@ -79,7 +82,7 @@ def test_enviar_desde_el_panel_deja_el_resto_al_proceso(client, database, outbox
     make(browser, piece, subject="Otra")
     otra = campaigns.for_account(database, account["_id"])[0]
     assert campaigns.take(database, account["_id"], otra["_id"], "w1")
-    ocupada, _ = send_it(browser, database, account["_id"])
+    ocupada, _ = send_it(browser, database, account["_id"], vueltas=0)
     assert "done=busy" in ocupada.headers["Location"] and len(salidos) == 3
 
 
@@ -145,7 +148,7 @@ def test_parar_y_que_amazon_pida_esperar(client, database, outbox, monkeypatch):
     class Throttling(Exception):
         response = {"Error": {"Code": "Throttling"}}
 
-    def a_veces(message):
+    def a_veces(message, **_):
         if len(salidos) == 2:
             salidos.append(None)
             raise Throttling("Maximum sending rate exceeded.")
@@ -163,7 +166,7 @@ def test_parar_y_que_amazon_pida_esperar(client, database, outbox, monkeypatch):
     assert accounts.used_this_month(accounts.by_id(database, account["_id"])) == antes + 2
 
     # Parar entre un correo y otro: se anota hasta dónde llegó.
-    monkeypatch.setattr(sender, "deliver", lambda message: "ok")
+    monkeypatch.setattr(sender, "deliver", lambda message, **_: "ok")
     vistos = []
     resultado = sender.run(database, accounts.by_id(database, account["_id"]),
                            campaigns.by_id(database, account["_id"], one["_id"]),

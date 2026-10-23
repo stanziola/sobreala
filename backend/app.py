@@ -482,8 +482,14 @@ def create_app(overrides: dict | None = None) -> Flask:
         # El proceso en segundo plano: si da vueltas y si su llave es la del
         # web (octubre de 2026). No cambia el estado HTTP: el web sirve igual.
         if state["database"] == "up":
-            from services import background
+            from services import background, send_rate
             payload.update(background.status(get_db()))
+            # El ritmo que rige: el de Amazon con las variables encima. Dice si
+            # se pudo leer de Amazon, y nunca una credencial.
+            try:
+                payload.update(send_rate.status(get_db()))
+            except Exception:  # noqa: BLE001 - /health no se cae por esto
+                pass
         return jsonify(payload), (200 if state["database"] == "up" else 503)
 
     return app

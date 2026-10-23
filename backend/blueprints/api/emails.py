@@ -141,6 +141,8 @@ def send_email():
             {"code": why, "message": t("send_blocked_" + why)} for why in done["blocked"]]})
     if refused == "throttled":
         fail("throttled", 503, retry_after=2)
+    if refused == "daily_limit":
+        fail("daily_limit", 429, retry_after=1800)
     if refused == "replay":
         return replayed(messages.by_request(db, company["_id"], key()["_id"], wanted))
     if refused:

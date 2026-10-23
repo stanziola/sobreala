@@ -47,6 +47,12 @@
   {% endfor %}
 </ul>
 <p class="hint">{{ t('admin_health_note') }}</p>
+{#- `pace` y no `rate`: así se llama la macro de las cifras de arriba. -#}
+{% if pace %}
+<p class="hint">{{ t('admin_rate_line', per_second=pace.ses_rate|round(2), per_day='{:,}'.format(pace.ses_day),
+                     left='{:,}'.format(pace.ses_day_left)) }}
+  {% if pace.ses_limits_from != 'amazon' %}{{ t('admin_rate_not_amazon') }}{% endif %}</p>
+{% endif %}
 <p class="{{ 'hint' if worker.worker == 'up' and worker.worker_key == 'ok' else 'notice' }}">
   {{ t('admin_worker_' + worker.worker) }}{% if worker.worker != 'never' and worker.worker_key != 'ok' %}
   {{ t('admin_worker_key_' + worker.worker_key) }}{% endif %}</p>

@@ -63,7 +63,6 @@ def main() -> None:
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     name = f"worker:{socket.gethostname()}:{os.getpid()}"
-    pace = 1.0 / Config.SES_MAX_PER_SECOND
     print(f"  [worker] {name} arrancó", flush=True)
     threading.Thread(target=deliver_loop, args=(app, stopping), daemon=True,
                      name="avisos").start()
@@ -75,8 +74,8 @@ def main() -> None:
             try:
                 key = background.key_ok(db)
                 if key:
-                    sent = background.campaigns_tick(db, name, stop=lambda: stopping["now"],
-                                                     pace=pace)
+                    # El ritmo lo pone cada envío (`services/send_rate.py`).
+                    sent = background.campaigns_tick(db, name, stop=lambda: stopping["now"])
                 elif key is False:
                     print("  [worker] la SECRET_KEY no es la del web: no se manda "
                           "nada hasta que coincidan", flush=True)

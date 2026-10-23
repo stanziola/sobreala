@@ -84,7 +84,11 @@ def status(db) -> dict[str, Any]:
             "worker_key": {True: "ok", False: "mismatch"}.get(found.get("key_ok"), "unknown")}
 
 
-def campaigns_tick(db, by: str, *, stop=None, pace: float = 0.0, limit: int = 20) -> int:
+# Cuánto espera una campaña que llenó el día de Amazon antes de volver a mirar.
+DAILY_RETRY_SECONDS = 30 * 60
+
+
+def campaigns_tick(db, by: str, *, stop=None, limit: int = 20) -> int:
     """Una tanda de cada campaña que toca. Devuelve cuántos correos salieron."""
     sent = 0
     for found in campaigns.ready_to_go(db, limit=limit):
@@ -103,8 +107,11 @@ def campaigns_tick(db, by: str, *, stop=None, pace: float = 0.0, limit: int = 20
                 # El panel no la deja entrar; tampoco sale nada suyo por detrás.
                 campaigns.wait(db, account_id, found["_id"], ["suspended"])
                 continue
-            result = sender.run(db, account, fresh, lease_by=by, stop=stop, pace=pace)
-            if result["blocked"] and result["blocked"] != ["busy"]:
+            result = sender.run(db, account, fresh, lease_by=by, stop=stop)
+            if result["blocked"] == ["daily_limit"]:
+                campaigns.wait(db, account_id, found["_id"], result["blocked"],
+                               seconds=DAILY_RETRY_SECONDS)
+            elif result["blocked"] and result["blocked"] != ["busy"]:
                 campaigns.wait(db, account_id, found["_id"], result["blocked"])
             elif not result["blocked"]:
                 campaigns.clear_wait(db, account_id, found["_id"])

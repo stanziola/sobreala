@@ -158,9 +158,42 @@ tasa de quejas agregada bajo 0.1%.
 5. Enviar ahora  ó  programar fecha y hora
 ```
 
-Los envíos programados y el resto de una campaña que empezó a salir los manda
-el **proceso en segundo plano** (`backend/worker.py`, octubre de 2026; ver
-`docs/api.md`). La importación CSV todavía corre dentro de la petición.
+**Todas las campañas las manda el proceso en segundo plano** (`backend/worker.py`,
+octubre de 2026; ver `docs/api.md`): «Enviar» revisa en la misma pantalla lo que
+la frenaría (`sender.precheck()`: plan, cuota, dirección, remitente, borrador,
+condiciones viejas) y la deja en cola (`campaigns.queue_now()`), y la página
+dice «Empezó a salir». Hasta ese mes la primera tanda salía dentro de la página,
+todo lo rápido que se podía, y se pasaba del ritmo de Amazon. La importación CSV
+todavía corre dentro de la petición.
+
+### El ritmo de envío (octubre de 2026)
+
+Amazon le da a la cuenta un límite por segundo y otro por día: en el sandbox, 1 y
+200; en producción, lo que apruebe. **Todo lo que le escribe a SES pasa por
+`services/send_rate.py`**: las campañas y el individual (`sender.deliver`), la API
+(`send_one`) y los correos del sistema (`mailer._send_ses`).
+
+- **Los límites se leen de Amazon** (`GetSendQuota`) cada 5 minutos y se guardan
+  en `ses_limits`, así que suben solos el día de la producción.
+  `SES_MAX_PER_SECOND` y `SES_MAX_PER_DAY` **solo los bajan**, y van en el web y
+  en el worker. **Hace falta `ses:GetSendQuota` en la política de IAM**; sin él,
+  rigen las variables (o 1 y 200) y Administración → Clientes lo dice.
+- **Un reloj compartido** en la base (`ses_limits`, `_id: clock`) con la hora
+  del próximo turno, que cada envío corre de forma atómica. Vale entre el web,
+  el worker y los hilos de gunicorn.
+- **Prioridad**: las campañas toman turnos del 80 % del ritmo, así quedan huecos
+  para un código o un correo de la API. El sistema espera hasta 10 s, la API y
+  el individual hasta 5 (si no, `Busy`, que se trata como cuando Amazon pide
+  esperar), las campañas lo que haga falta. Un correo del sistema que aun así
+  choca reintenta dos veces.
+- **El tope del día**: lo enviado según Amazon más lo contado desde entonces.
+  Las campañas y la API se paran dejando al sistema una reserva (5 % del día,
+  mínimo 20). Una campaña sin sitio espera con `daily_limit` y se reintenta a
+  los 30 minutos, sin darse por fallada; la API responde 429 `daily_limit`.
+- **Entre clientes**: el worker manda una tanda de cada campaña por vuelta, la
+  más atrasada primero, así que ninguno acapara.
+- `/health` dice `ses_rate` y `ses_day_left`, y Clientes, el ritmo y lo que
+  queda del día.
 
 ### HTML subido por el cliente
 

@@ -25,6 +25,7 @@ from __future__ import annotations
 import re
 import smtplib
 import ssl
+import time
 from datetime import datetime, timezone
 from email.message import EmailMessage
 from email.utils import formataddr
@@ -155,8 +156,12 @@ def _send_file(to: str, subject: str, html: str, text: str) -> str:
 
 def _send_ses(to: str, subject: str, html: str, text: str) -> str:
     # Created one at a time: gunicorn serves with threads (services/aws.py).
-    from services import aws
+    from db import get_db
+    from services import aws, send_rate
 
+    # Su turno, con prioridad: un código de confirmación no espera a que salga
+    # una campaña entera (`services/send_rate.py`, octubre de 2026).
+    send_rate.take(get_db(), send_rate.SYSTEM)
     client = aws.client("ses")
     kwargs = {
         "Source": _sender(),
@@ -171,7 +176,18 @@ def _send_ses(to: str, subject: str, html: str, text: str) -> str:
     }
     if Config.SES_TRANSACTIONAL_CONFIGURATION_SET:
         kwargs["ConfigurationSetName"] = Config.SES_TRANSACTIONAL_CONFIGURATION_SET
-    return client.send_email(**kwargs)["MessageId"]
+    # Si aun así Amazon pide esperar, dos intentos más, a 1 y a 2 segundos:
+    # antes, un código que chocaba con una campaña se perdía.
+    for pause in (1, 2, None):
+        try:
+            return client.send_email(**kwargs)["MessageId"]
+        except Exception as exc:
+            code = (getattr(exc, "response", None) or {}).get("Error", {}).get("Code", "")
+            if pause is None or code not in ("Throttling", "ThrottlingException",
+                                             "MaxSendingRateExceeded"):
+                raise
+            time.sleep(pause)
+    raise RuntimeError("unreachable")
 
 
 def _send_smtp(to: str, subject: str, html: str, text: str) -> str:

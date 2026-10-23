@@ -48,6 +48,7 @@ from services import activity as happening
 from services import erase
 from services import notices
 from services import plans
+from services import send_rate
 from services import reputation
 from services import sender
 from services import stats
@@ -322,7 +323,9 @@ def clients_list(account):
         complaint_min=reputation.COMPLAINT_MIN_SENT,
         # El proceso en segundo plano (octubre de 2026): si da vueltas y con qué
         # llave. Caído, no sale nada programado.
-        worker=background.status(db))
+        worker=background.status(db),
+        # El ritmo de envío que rige y lo que queda del día (octubre de 2026).
+        pace=send_rate.status(db))
 
 
 # ------------------------------------------------------------- los eventos

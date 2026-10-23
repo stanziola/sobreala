@@ -214,7 +214,7 @@ def test_la_cuota_se_aparta_y_se_devuelve(client, database, outbox, monkeypatch)
     database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {
         f"sent_counts.{accounts.quota_month()}": 0}})
 
-    def roto(message):
+    def roto(message, **_):
         raise RuntimeError("SES caído")
 
     monkeypatch.setattr(sender, "deliver", roto)
@@ -235,7 +235,7 @@ def test_amazon_pide_esperar(client, database, outbox, monkeypatch):
     class Throttling(Exception):
         response = {"Error": {"Code": "Throttling"}}
 
-    def lleno(message):
+    def lleno(message, **_):
         raise Throttling("Maximum sending rate exceeded.")
 
     monkeypatch.setattr(sender, "deliver", lleno)

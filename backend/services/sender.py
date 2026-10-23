@@ -261,11 +261,13 @@ def build(account: dict[str, Any], campaign: dict[str, Any], piece: Piece,
     return message
 
 
-def deliver(message: EmailMessage) -> str:
+def deliver(message: EmailMessage, *, kind: str = "campaign") -> str:
     """Entregarlo. Devuelve el identificador de quien lo aceptó.
 
     En desarrollo se escribe en disco, como el correo del sistema: el flujo
     entero se puede recorrer sin credenciales de AWS y leyendo lo que salió.
+    Con SES espera su turno (`services/send_rate.py`); `kind` dice cuánto puede
+    esperar y qué parte del ritmo le toca.
     """
     if Config.MAIL_BACKEND != "ses":
         folder = Config.MAIL_OUTBOX_DIR
@@ -278,8 +280,10 @@ def deliver(message: EmailMessage) -> str:
         print(f"  [campana] {message['To']}: {path}", flush=True)
         return path
 
-    from services import aws
+    from db import get_db
+    from services import aws, send_rate
 
+    send_rate.take(get_db(), kind)
     client = aws.client("ses")
     # La dirección va explícita (octubre de 2026): aunque algo se colara en
     # una cabecera, SES no se lo entrega a nadie más.
@@ -364,9 +368,30 @@ def blocked(account: dict[str, Any]) -> list[str]:
     return why
 
 
+def precheck(db, account: dict[str, Any], campaign: dict[str, Any]) -> list[str]:
+    """Lo que frenaría esta campaña, sin mandar nada (octubre de 2026): lo dice
+    «Enviar» en la misma pantalla antes de dejársela al proceso en segundo
+    plano. Son los mismos motivos que `run()`."""
+    why = blocked(account)
+    if why:
+        return why
+    if not campaigns.written(campaign):
+        piece = designs.by_id(db, account["_id"], campaign.get("design_id"))
+        if piece is None:
+            return ["piece"]
+        if designs.is_draft(piece):
+            return ["draft"]
+    if campaign.get("kind") != campaigns.SINGLE:
+        try:
+            audience.query(campaigns.filters_of(campaign), accounts.fields_of(account))
+        except audience.Stale:
+            return ["filters"]
+    return []
+
+
 def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         limit: int | None = None, lease_by: str | None = None,
-        stop=None, pace: float = 0.0) -> dict[str, Any]:
+        stop=None) -> dict[str, Any]:
     """Mandar una tanda. Devuelve qué pasó y si queda algo pendiente.
 
     El tope se lee aquí y no en la firma: así se puede cambiar el de arriba y
@@ -385,8 +410,8 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
         de ese proceso; `stop()` corta entre un correo y otro (al apagarse), y
         si SES pide esperar la tanda para ahí sin dar a nadie por fallado.
 
-    `pace` son los segundos entre un correo y otro: el proceso de fondo no pasa
-    del ritmo que Amazon le permite a la cuenta.
+    El ritmo lo pone `deliver()` (`services/send_rate.py`): cada correo espera
+    su turno, y la tanda no pasa de lo que queda del día de Amazon.
     """
     limit = BATCH if limit is None else limit
     account_id = account["_id"]
@@ -426,6 +451,13 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     else:
         total = contacts.matching_count(db, account_id, tags=wanted,
                                         complete=fields, audience=chosen)
+    # Lo que queda del día de Amazon (octubre de 2026): sin sitio, la campaña
+    # espera y sigue sola; no se da por fallada ni arranca un envío.
+    from services import send_rate
+
+    today = send_rate.day_room(db, send_rate.SINGLE if single else send_rate.CAMPAIGN)
+    if today is not None and today <= 0:
+        return {"blocked": ["daily_limit"], "sent": 0, "left": max(1, total)}
     if campaign["status"] == campaigns.SCHEDULED:
         run_id = campaigns.start(db, account_id, campaign["_id"], total)
         if run_id is None:
@@ -444,6 +476,8 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
     testers = accounts.confirmed_test_addresses(account) if demo else set()
     room = limit if demo and accounts.demo_left(account) > 0 else (
         0 if demo else min(limit, accounts.quota_left(account)))
+    if today is not None:
+        room = min(room, today)
     if single:
         # A cualquier dirección: si está en Contactos sale con lo suyo (sus
         # columnas); si no, solo con su dirección, sin guardarla.
@@ -518,9 +552,10 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
             break
         if index in going:
             try:
-                deliver(build(account, campaign, ready, one, fields))
+                deliver(build(account, campaign, ready, one, fields),
+                        kind="single" if single else "campaign")
             except Exception as exc:  # noqa: BLE001 - se anota y se sigue
-                if _throttled(exc):
+                if _throttled(exc) or type(exc).__name__ == "Busy":
                     # Amazon pidió esperar: este y los que siguen salen en la
                     # vuelta siguiente, sin darlos por fallados.
                     throttled = True
@@ -533,8 +568,6 @@ def run(db, account: dict[str, Any], campaign: dict[str, Any], *,
                 events.record(db, account_id, kind=events.SENT,
                               campaign_id=campaign["_id"],
                               run_id=campaign.get("run_id"), email=one["email"])
-                if pace:
-                    time.sleep(pace)
         done += 1
         last_id = one.get("_id") if one.get("_id") is not None else last_id
 
@@ -625,6 +658,11 @@ def send_one(db, account: dict[str, Any], *, kind: str, to: str, design: dict[st
         return {"refused": "cannot_send", "blocked": why}
     if designs.is_draft(design):
         return {"refused": "template_draft"}
+    from services import send_rate
+
+    today = send_rate.day_room(db, send_rate.API)
+    if not simulate and today is not None and today <= 0:
+        return {"refused": "daily_limit"}
     account_id = account["_id"]
     fields = accounts.fields_of(account)
     promotional = kind == messages.PROMOTIONAL
@@ -698,10 +736,10 @@ def send_one(db, account: dict[str, Any], *, kind: str, to: str, design: dict[st
         messages.forget(db, message_id)
         return made
     try:
-        ses_id = deliver(made)
+        ses_id = deliver(made, kind="api")
     except Exception as exc:  # noqa: BLE001 - se anota y se dice
         give_back()
-        if _throttled(exc):
+        if _throttled(exc) or type(exc).__name__ == "Busy":
             messages.failed(db, message_id, error="throttled")
             messages.forget(db, message_id)
             return {"refused": "throttled"}

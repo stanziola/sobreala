@@ -94,6 +94,8 @@ ERRORS = [
     ("bad_subject", 422, "El asunto lleno trae un salto de línea de un dato del contacto."),
     ("throttled", 503, "Amazon pidió esperar. No se envió ni gastó cuota: reintenta "
                        "tras Retry-After."),
+    ("daily_limit", 429, "Se llegó al límite de correos del día. No se envió ni gastó "
+                         "cuota: reintenta tras Retry-After."),
     ("delivery_failed", 502, "No se pudo entregar a Amazon. No gastó cuota."),
     ("campaign_sending", 409, "La campaña se está enviando: no se edita, no se borra ni "
                               "se reprograma hasta que termine."),

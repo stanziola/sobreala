@@ -180,6 +180,27 @@ IAM necesita, además de enviar:
 **El último permiso va antes de desplegar**: sin él, conectar un dominio da
 error (la identidad se crea y el MAIL FROM no).
 
+**Y leer los límites de la cuenta** (octubre de 2026, `services/send_rate.py`):
+cada 5 minutos el web y el worker le preguntan a Amazon cuántos correos por
+segundo y por día pueden mandar. Va en una política insertada aparte,
+`sobreala-ses-cuota`, para no tocar la de enviar. `GetSendQuota` no admite un
+recurso concreto, así que va con `*`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "LeerLimitesDeEnvio",
+    "Effect": "Allow",
+    "Action": "ses:GetSendQuota",
+    "Resource": "*"
+  }]
+}
+```
+
+Sin él no se rompe nada: rigen `SES_MAX_PER_SECOND` y `SES_MAX_PER_DAY` (o 1 y
+200), y Administración → Clientes dice que el ritmo no viene de Amazon.
+
 ## 7. Los informes de DMARC
 
 Con `_dmarc.sobreala.com` en `v=DMARC1; p=none;` y nada más, la política está

@@ -340,7 +340,7 @@ def test_cada_uno_recibe_lo_suyo_y_el_incompleto_no_recibe(
     nada: ni con un hueco ni con un texto inventado."""
     salidos: list = []
     monkeypatch.setattr(sender, "deliver",
-                        lambda message: salidos.append(message) or "de-mentira")
+                        lambda message, **_: salidos.append(message) or "de-mentira")
     browser, cuenta = inside(client, database)
     # La dirección del pie, que sin ella no se envía.
     accounts.set_postal(database, cuenta["_id"], "Apartado 0816-00001, Santiago")
@@ -365,6 +365,9 @@ def test_cada_uno_recibe_lo_suyo_y_el_incompleto_no_recibe(
     assert "Un contacto" in pregunta
     browser.post(f"/campaigns/{una['_id']}/send",
                  data={"csrf_token": csrf(browser, "/campaigns")})
+    # Sale por el proceso en segundo plano (octubre de 2026).
+    from services import background
+    background.campaigns_tick(database, "pruebas")
 
     assert [one["To"] for one in salidos] == ["socio0@ejemplo.com"]
     assert salidos[0]["Subject"] == "Hola Santiago"

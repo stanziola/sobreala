@@ -20,7 +20,6 @@ POST sí.
 
 from __future__ import annotations
 
-import secrets
 from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
@@ -720,6 +719,15 @@ def send(raw):
     if not csrf_ok(request.form.get("csrf_token")):
         return redirect(url_for("campaigns.index"))
 
+    # Lo que la frenaría se dice aquí, en la misma pantalla (octubre de 2026).
+    why = sender.precheck(db, account, found)
+    if why == ["filters"]:
+        return redirect(url_for("campaigns.index", done="filters"))
+    if why == ["draft"]:
+        return redirect(url_for("campaigns.index", done="draft"))
+    if why:
+        return redirect(url_for("campaigns.index", done="blocked"))
+
     # Volver a mandar una que ya salió empieza por devolver a cero los
     # contadores de la vuelta. Si otra pestaña se adelantó, la consulta no
     # encuentra nada y aquí no se manda dos veces lo mismo.
@@ -727,30 +735,14 @@ def send(raw):
         if not campaigns.restart(db, account["_id"], found["_id"],
                                  when=accounts.now()):
             return redirect(url_for("campaigns.index", done="late"))
-        found = campaigns.by_id(db, account["_id"], found["_id"])
 
-    # La primera tanda sale aquí, con el turno: si lo tiene el proceso en
-    # segundo plano, es que ya está saliendo. El resto lo manda él, solo.
-    by = "web:" + secrets.token_hex(6)
-    if not campaigns.take(db, account["_id"], found["_id"], by):
+    # Sale toda por el proceso en segundo plano, que es el único que reparte el
+    # ritmo de Amazon entre todos (octubre de 2026): antes la primera tanda
+    # salía aquí, todo lo rápido que se podía. Si otro tiene su turno, ya está
+    # saliendo.
+    if not campaigns.queue_now(db, account["_id"], found["_id"]):
         return redirect(url_for("campaigns.index", done="busy"))
-    try:
-        result = sender.run(db, account, campaigns.by_id(db, account["_id"], found["_id"]),
-                            lease_by=by)
-        if result["left"] and not result["blocked"]:
-            campaigns.set_auto(db, account["_id"], found["_id"], True)
-    finally:
-        campaigns.release(db, account["_id"], found["_id"], by)
-    if result["blocked"] == ["busy"]:
-        return redirect(url_for("campaigns.index", done="busy"))
-    if result["blocked"] == ["filters"]:
-        return redirect(url_for("campaigns.index", done="filters"))
-    if result["blocked"] == ["draft"]:
-        return redirect(url_for("campaigns.index", done="draft"))
-    if result["blocked"]:
-        return redirect(url_for("campaigns.index", done="blocked"))
-    return redirect(url_for("campaigns.index",
-                            done="partial" if result["left"] else "all"))
+    return redirect(url_for("campaigns.index", done="started"))
 
 
 # --------------------------------------------------------------- remitente

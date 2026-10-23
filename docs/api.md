@@ -19,8 +19,9 @@ documentación para los clientes es otra: `sobreala.com/api/`, que sale de
      `/health` también: `worker_key: mismatch`).
    - `RAILWAY_DEPLOYMENT_DRAINING_SECONDS=30`, para que al desplegar le dé
      tiempo de terminar el correo en curso.
-   - Opcionales: `SES_MAX_PER_SECOND` (el ritmo de Amazon de la cuenta, en la
-     consola de SES; 10 si no se dice) y `WORKER_TICK_SECONDS` (5).
+   - Opcionales: `SES_MAX_PER_SECOND` y `SES_MAX_PER_DAY`, que solo bajan lo
+     que Amazon le da a la cuenta (`docs/envios.md`, «El ritmo de envío»), y
+     `WORKER_TICK_SECONDS` (5).
 2. **Cloudflare: Bot Fight Mode apagado.** En el plan gratis no se le puede
    hacer una excepción para `/api/`, y encendido, las llamadas de un servidor
    reciben un desafío en vez de JSON.

@@ -1966,6 +1966,16 @@ TEXTS = {
     "send_edit": "Editar",
     "send_delete": "Borrar",
     "send_done_all": "Se envió. Ya salieron todos.",
+    "send_done_started": "Empezó a salir. Sale por tandas, al ritmo que permite "
+                         "Amazon; lo ves en Enviados.",
+    "send_blocked_daily_limit": "Se llegó al límite de correos del día de Amazon. "
+                                "Sigue sola cuando haya sitio.",
+    "api_error_daily_limit": "Se llegó al límite de correos del día. No se envió ni "
+                             "se gastó cuota: reintenta tras Retry-After.",
+    "admin_rate_line": "Ritmo de envío: {per_second} por segundo y {per_day} al día. "
+                       "Quedan {left} hoy.",
+    "admin_rate_not_amazon": "No se pudo leer de Amazon: rigen las variables (falta "
+                             "ses:GetSendQuota en IAM).",
     "send_done_some": "Va saliendo: el resto sale solo, por tandas.",
     "send_done_blocked": "Todavía no se puede enviar. Mira lo que falta arriba.",
 

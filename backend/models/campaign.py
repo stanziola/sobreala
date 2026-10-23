@@ -387,6 +387,20 @@ def clear_wait(db, account_id, campaign_id) -> None:
                             {"$unset": {"waiting": "", "retry_at": ""}})
 
 
+def queue_now(db, account_id, campaign_id) -> bool:
+    """Dejarla para que salga ya, por el proceso en segundo plano (octubre de
+    2026: «Enviar» ya no manda desde la página). False si otro tiene su turno:
+    está saliendo."""
+    moment = now()
+    return db.campaigns.update_one(
+        {"_id": campaign_id, "account_id": account_id,
+         "status": {"$in": [SCHEDULED, SENDING]},
+         "$or": [{"lease_until": {"$exists": False}}, {"lease_until": None},
+                 {"lease_until": {"$lt": moment}}]},
+        {"$set": {"auto_send": True, "scheduled_at": moment, "updated_at": moment},
+         "$unset": {"retry_at": "", "waiting": ""}}).matched_count == 1
+
+
 def set_auto(db, account_id, campaign_id, on: bool) -> bool:
     """Encender o apagar que salga sola. Una que está saliendo sigue igual."""
     return db.campaigns.update_one(
