@@ -579,7 +579,8 @@ def pretty_json(value) -> str:
 # engines know them: each is a page that only sends the visitor on.
 REDIRECTS = [
     ("pricing/index.html", "/pricing/", "planes", content.PRICING),
-    ("how-it-works/index.html", "/how-it-works/", "como-funciona", content.HOW),
+    # «Cómo funciona» se quitó de la portada (octubre de 2026): lleva a Funciones.
+    ("how-it-works/index.html", "/how-it-works/", "funciones", content.HOW),
     # Nosotros se quitó (octubre de 2026): la dirección vieja lleva al inicio.
     ("about/index.html", "/about/", "inicio", content.ABOUT),
     ("contact/index.html", "/contact/", "contacto", content.CONTACT_PAGE),

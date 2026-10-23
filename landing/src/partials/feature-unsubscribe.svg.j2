@@ -1,6 +1,7 @@
-{#- Anular la suscripción: el pie de un correo con su enlace, y al lado lo que ve
-    quien lo pulsa. Palabras de content.py y colores de las clases .art-*, como
-    los demás dibujos de Features. -#}
+{#- Bajas, rebotes y quejas (octubre de 2026, lo que eran dos dibujos): el pie
+    de un correo con su enlace para anular la suscripción, y al lado la lista de
+    lo que ya no recibe, con las direcciones tachadas y por qué. Palabras de
+    content.py y colores de las clases .art-*, como los demás de Funciones. -#}
 {% set w = item.words %}
 <svg class="tour__art" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid slice"
      role="img" aria-label="{{ item.alt }}" focusable="false">
@@ -33,14 +34,17 @@
           stroke-width="1.6" stroke-linejoin="round"/>
   </g>
 
+  {#- lo que ya no recibe: la dirección tachada y su motivo -#}
   <g filter="url(#fu-drop)">
-    <rect class="art-card" x="254" y="98" width="204" height="84" rx="16"/>
+    <rect class="art-card" x="236" y="50" width="222" height="170" rx="16"/>
   </g>
-  <circle class="art-green" cx="282" cy="140" r="15"/>
-  <path d="m275 140 5 5 9-10" fill="none" stroke="white" stroke-width="2.6"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  {% for line in w.done %}
-  <text class="art-ink" x="306" y="{{ 136 + loop.index0 * 17 }}" font-size="12"
-        font-weight="700">{{ line }}</text>
+  <text class="art-ink" x="254" y="80" font-size="14" font-weight="700">{{ w.title }}</text>
+  {% for email, label, color, strike in w.rows %}
+  {% set top = 94 + loop.index0 * 40 %}
+  <rect class="art-card-edge" x="254" y="{{ top }}" width="186" height="1.5"/>
+  <text class="art-ink" x="254" y="{{ top + 26 }}" font-size="12" font-weight="600" opacity=".62">{{ email }}</text>
+  <rect class="art-ink" x="253" y="{{ top + 21.5 }}" width="{{ strike * 0.96 }}" height="1.6" opacity=".7"/>
+  <rect class="{{ color }}" x="380" y="{{ top + 10 }}" width="60" height="22" rx="11"/>
+  <text x="410" y="{{ top + 25 }}" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">{{ label }}</text>
   {% endfor %}
 </svg>

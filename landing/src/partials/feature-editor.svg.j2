@@ -3,18 +3,21 @@
     el lienzo al pulsarlo. Palabras de content.py y colores de las clases .art-*,
     como los demás dibujos de Features. -#}
 {% set w = item.words %}
+{#- El prefijo de los ids: el dibujo sale dos veces en la portada (Funciones y
+    el bloque del lienzo), y dos ids iguales en una página no valen. -#}
+{% set fid = fid | default("fe") %}
 <svg class="tour__art" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid slice"
      role="img" aria-label="{{ item.alt }}" focusable="false">
   <defs>
-    <filter id="fe-drop" x="-30%" y="-20%" width="160%" height="140%">
+    <filter id="{{ fid }}-drop" x="-30%" y="-20%" width="160%" height="140%">
       <feDropShadow dx="0" dy="5" stdDeviation="7" class="art-drop"/>
     </filter>
-    <clipPath id="fe-photo"><rect x="156" y="114" width="168" height="78" rx="9"/></clipPath>
+    <clipPath id="{{ fid }}-photo"><rect x="156" y="114" width="168" height="78" rx="9"/></clipPath>
   </defs>
   <rect class="art-stage" width="480" height="270"/>
 
   {#- la hoja -#}
-  <g filter="url(#fe-drop)">
+  <g filter="url(#{{ fid }}-drop)">
     <rect class="art-card" x="140" y="20" width="200" height="232" rx="14"/>
   </g>
 
@@ -33,7 +36,7 @@
   {% endfor %}
 
   {#- la foto: un sol y dos montes -#}
-  <g clip-path="url(#fe-photo)">
+  <g clip-path="url(#{{ fid }}-photo)">
     <rect class="art-blue-soft" x="156" y="114" width="168" height="78"/>
     <circle class="art-amber" cx="290" cy="136" r="10"/>
     <path class="art-blue" d="M150 196l52-48 30 28 18-16 46 36z" opacity=".75"/>

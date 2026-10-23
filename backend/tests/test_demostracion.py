@@ -454,7 +454,9 @@ def test_la_portada_trae_los_botones_de_cada_estado():
     assert 'data-label-paid="Ir al Dashboard"' in portada
     assert 'data-href-paid="https://app.sobreala.com/dashboard"' in portada
     assert "data-label-demo" not in portada and "data-cta-backup" in portada
-    assert 'data-label-demo="Ver planes"' in sitio
+    # El del bloque del lienzo (octubre de 2026; antes, el del final de los
+    # tutoriales): con la demostración ya se puede usar el lienzo.
+    assert 'data-label-demo="Ir al lienzo"' in sitio
 
 
 def test_otra_forma_dice_cual(client, database, outbox):

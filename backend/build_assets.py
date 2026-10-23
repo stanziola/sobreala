@@ -78,7 +78,9 @@ def wing_svg() -> str:
 
 # Las funciones que rotan al lado de entrar y registrarse (octubre de 2026), en
 # este orden. Cada una es un dibujo de «Funciones» del sitio, el mismo archivo.
-AUTH_ART = ("contacts", "editor", "schedule", "results")
+# El de envío programado salió de Funciones ese mismo mes, y entró quién lo vio.
+# La lista de templates/_auth.html dice las mismas cuatro.
+AUTH_ART = ("contacts", "editor", "results", "opens")
 ART_RULE = re.compile(r"^\.art-[\w-]+ \{[^}\n]*\}$", re.M)
 
 

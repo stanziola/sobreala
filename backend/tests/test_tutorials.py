@@ -1,5 +1,7 @@
-"""Los tutoriales de /how-it-works: cada paso de landing/tutorials.py tiene su
-texto en content.py, sus dos capturas y un punto dentro de la imagen."""
+"""Los tutoriales: cada paso de landing/tutorials.py tiene su texto en
+content.py, sus dos capturas y un punto dentro de la imagen. Salieron de la
+portada en octubre de 2026 (test_una_pagina.py lo fija) y vuelven cuando se
+rehagan; mientras, lo suyo sigue entero."""
 
 from __future__ import annotations
 
@@ -52,13 +54,3 @@ def test_los_textos_no_llevan_guiones_largos():
         for words in tour["steps"].values():
             assert "—" not in words["do"] + words["why"]
         assert "—" not in tour["done"] + tour["lead"]
-
-
-def test_la_pagina_trae_todos_los_pasos_sin_guion():
-    """Sin JavaScript se leen enteros: cada paso con su captura y su texto."""
-    html = (LANDING / "index.html").read_text(encoding="utf-8")
-    total = sum(len(steps) for steps in DATA.values())
-    assert html.count('class="guide-step" data-step') == total
-    assert "{n}" not in html and "{total}" not in html
-    for tour in WORDS:
-        assert f'href="#{tour}"' in html and f'id="{tour}"' in html

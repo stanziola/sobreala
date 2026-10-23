@@ -527,14 +527,16 @@ cosa está como está, y lo que ya se probó y se quitó.
 
 ### El sitio público (`docs/sitio.md`)
 
-- **Es una sola página**: Inicio, Planes, Cómo funciona y Preguntas, en ese
-  orden, y Contacto es el pie. La barra lleva las tres primeras, y solo baja a
-  su sección. Privacidad y Términos son aparte.
+- **Es una sola página** (octubre de 2026): Inicio, **la API y el lienzo** (dos
+  bloques grandes, lo principal), Planes, Funciones (siete, con el dominio
+  personalizado al final), Plantillas y Preguntas, en ese orden, y Contacto es
+  el pie. La barra lleva Inicio, API, Planes, Funciones y Plantillas, y solo
+  baja a su sección. Privacidad y Términos son aparte.
 - `/pricing/`, `/how-it-works/`, `/about/` y `/contact/` siguen existiendo como
   páginas de paso que llevan a su ancla (`REDIRECTS` en `build_site.py`).
-- Los textos viven en `landing/content.py`. Los tutoriales y las miniaturas de
-  las muestras se hacen con su comando; Features son dibujos en SVG, y las
-  fotos de los usos van a mano, con sus autores en `docs/sitio.md`.
+- Los textos viven en `landing/content.py`. Las miniaturas de las muestras se
+  hacen con su comando, y Funciones son dibujos en SVG. **Los tutoriales
+  salieron de la portada** y vuelven cuando se rehagan; lo suyo sigue entero.
 
 ---
 

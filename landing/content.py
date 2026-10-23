@@ -41,11 +41,14 @@ CONTACT = {
     "instagram_url": "https://instagram.com/sobreala",
 }
 
-# Contacto es el pie. «Nosotros» se quitó en octubre de 2026.
+# Contacto es el pie. «Nosotros» se quitó en octubre de 2026, y ese mismo mes
+# «Cómo funciona» dejó su sitio a la API, Funciones y Plantillas.
 NAV = [
     {"label": "Inicio", "url": "/#inicio"},
+    {"label": "API", "url": "/#api"},
     {"label": "Planes", "url": "/#planes"},
-    {"label": "Cómo funciona", "url": "/#como-funciona"},
+    {"label": "Funciones", "url": "/#funciones"},
+    {"label": "Plantillas", "url": "/#plantillas"},
 ]
 
 # The panel is a different service on a different host: Railway, not Cloudflare
@@ -119,168 +122,98 @@ HOME = {
         "title_lead": "Administra tu base de datos de correos",
         "title_accent": "y envía de manera organizada.",
     },
-    "problem": {
-        # Sin etiqueta de arriba ni entradilla: la pregunta lo dice todo.
-        "title": "¿Sigues enviando correos masivos desde Gmail o Outlook?",
-        # `art` nombra el archivo de la ilustración (partials/art-<art>.svg.j2),
-        # `lead` es la línea que va en el panel y `text` el párrafo que va
-        # debajo de la ilustración.
-        "items": [
-            {
-                "art": "manual",
-                "title": "Hacerlo a mano cuesta horas",
-                "lead": (
-                    "Copiar y pegar el mismo mensaje miles de veces no es una "
-                    "solución viable."
-                ),
-                "text": (
-                    "Los envíos manuales consumen tiempo y aumentan las "
-                    "posibilidades de cometer errores: contactos que reciben el "
-                    "correo más de una vez, destinatarios que quedan fuera o "
-                    "mensajes enviados con información incorrecta."
-                ),
+    # Los dos bloques grandes de debajo de la presentación (octubre de 2026):
+    # la API y el lienzo, lo principal. Donde estaban «¿Sigues enviando correos
+    # masivos desde Gmail o Outlook?» y «Haz crecer tu negocio», que se quitaron.
+    # `code` es la tarjeta del bloque de la API: una llamada de verdad, la del
+    # ejemplo de backend/api_spec.py, recortada.
+    "highlights": {
+        "api": {
+            "eyebrow": "Desde el plan Negocio",
+            "title": "Conecta tu tienda o tu sistema",
+            "text": ("Con una clave de API, el sistema de tu negocio usa Sobreala "
+                     "sin que entres a tu cuenta."),
+            "points": [
+                "Recibos, confirmaciones y avisos desde tu sistema, con tus plantillas.",
+                "Tus contactos y sus listas, siempre al día.",
+                "Campañas y estadísticas sin entrar a tu cuenta.",
+                "Webhooks cuando un correo se entrega, se abre o rebota.",
+            ],
+            "button": {"label": "Ver la documentación", "url": "/api/"},
+            "code": {
+                "label": "Una llamada a la API para enviar un correo, y su respuesta.",
+                "call": "POST /api/v1/emails",
+                "auth": "Authorization: Bearer sa_live_…",
+                "body": [
+                    '{',
+                    '  "to": "ana@ejemplo.com",',
+                    '  "type": "transactional",',
+                    '  "subject": "Tu pedido *|PEDIDO|* va en camino",',
+                    '  "template_id": "6533b1d2…",',
+                    '  "data": { "PEDIDO": "A-1043" }',
+                    '}',
+                ],
+                "status": "201",
+                "answer": '"status": "sent"',
             },
-            {
-                "art": "spam",
-                "title": "Evita problemas de spam",
-                "lead": (
-                    "Enviar correos masivos desde tu cuenta personal puede afectar "
-                    "la entregabilidad."
-                ),
-                "text": (
-                    "Gmail y Outlook tienen límites de envío y sus cuentas "
-                    "convencionales no están diseñadas para campañas masivas. Los "
-                    "envíos frecuentes o de gran volumen pueden aumentar el riesgo "
-                    "de que tus correos terminen en spam o que alcances los límites "
-                    "de tu cuenta."
-                ),
+        },
+        "canvas": {
+            "eyebrow": "Lienzo",
+            "title": "Diseña tus correos en el lienzo",
+            "text": ("Arma cada correo a tu manera, sin saber de diseño ni de "
+                     "código."),
+            "points": [
+                "Arrastra textos, imágenes, botones y formas.",
+                "Negrita, enlaces y viñetas en las palabras que elijas.",
+                "Se ve igual en Gmail, Outlook y el teléfono.",
+                "Bájalo en PDF o pásalo a otra cuenta en un ZIP.",
+            ],
+            # Como el de la presentación: sin sesión lleva a crear la cuenta, y
+            # con ella nav.js lo cambia según en qué punto está la empresa. Quien
+            # ya puede usar el lienzo (la demostración o un plan) va a él.
+            "button": {
+                "label": "Solicitar demo", "path": "/signup",
+                "states": {
+                    "closed": {"label": "Solicitar demo",
+                               "url": PANEL["base_url"] + "/welcome"},
+                    "requested": {"label": "Ver mi solicitud",
+                                  "url": PANEL["base_url"] + "/welcome"},
+                    "demo": {"label": "Ir al lienzo",
+                             "url": PANEL["base_url"] + "/templates/create"},
+                    "paid": {"label": "Ir al lienzo",
+                             "url": PANEL["base_url"] + "/templates/create"},
+                },
             },
-            {
-                "art": "privacy",
-                "title": "Protege la privacidad de tus contactos",
-                "lead": (
-                    "Tus clientes y colaboradores no deberían quedar expuestos en "
-                    "un correo."
-                ),
-                "text": (
-                    "Enviar a múltiples destinatarios desde una cuenta convencional "
-                    "puede revelar las direcciones de tus contactos. Una plataforma "
-                    "especializada permite gestionar tus destinatarios de forma "
-                    "individual, evitando exponer tu lista de contactos "
-                    "innecesariamente."
-                ),
-            },
-            {
-                "art": "tracking",
-                "title": "¿Realmente llegó tu correo?",
-                "lead": (
-                    "Sin una herramienta de seguimiento, no sabes qué pasó después "
-                    "de presionar «Enviar»."
-                ),
-                "text": (
-                    "No puedes saber con certeza qué mensajes fueron entregados, "
-                    "cuáles tuvieron interacción o qué enlaces recibieron clics. "
-                    "Tampoco puedes identificar fácilmente direcciones inactivas o "
-                    "que ya no existen, haciendo más difícil mantener una lista de "
-                    "contactos actualizada."
-                ),
-            },
-        ],
-    },
-    # «Haz crecer tu negocio», debajo de «¿Sigues enviando…?»: cuatro casos, uno
-    # a la vez, en una tarjeta grande con la foto, el rótulo y el título encima
-    # y la descripción al lado. Las fotos son de personas reales, de Pexels con
-    # su licencia libre (uso comercial sin pedir permiso ni citar al autor);
-    # quién hizo cada una está en docs/sitio.md. Nadie aparece como cliente ni
-    # dice nada, y la tarjeta no lleva cifras ni testimonios, así que no se
-    # insinúa que respalden Sobreala. La florista va primera, como se pidió.
-    "uses": {
-        "title": "Haz crecer tu negocio",
-        # Las flechas, a los lados de las barras. Solo las dibuja el guion.
-        "back": "Ver el caso anterior",
-        "next": "Ver el caso siguiente",
-        "items": [
-            {
-                "photo": "clientes",
-                "label": "Comercios",
-                "alt": "La dueña de una floristería arregla un ramo en su tienda.",
-                "title": "Llega a más clientes",
-                "text": "Ofertas, lanzamientos y novedades para quienes ya te "
-                        "conocen.",
-            },
-            {
-                "photo": "equipo",
-                "label": "Empresas",
-                "alt": "Un equipo de trabajo reunido frente a un portátil.",
-                "title": "Comunícate con tu equipo",
-                "text": "Comunicados, cambios de horario y boletines para tus "
-                        "colaboradores.",
-            },
-            {
-                "photo": "socios",
-                "label": "Cooperativas y gremios",
-                "alt": "Un hombre presenta frente a un grupo sentado en una sala "
-                       "de reuniones.",
-                "title": "Convoca a tus socios",
-                "text": "Asambleas, recordatorios y estados de cuenta.",
-            },
-            {
-                "photo": "familias",
-                "label": "Colegios",
-                "alt": "Una madre y su hija miran juntas un portátil en casa.",
-                "title": "Mantén a todos informados",
-                "text": "Circulares, eventos y el calendario del colegio para toda "
-                        "la comunidad educativa.",
-            },
-        ],
+            # El dibujo es el de Funciones (partials/feature-editor.svg.j2).
+            "art": "editor",
+        },
     },
     "features": {
-        # El único título de Cómo funciona (octubre de 2026): sin etiqueta ni
-        # entradilla. Fue «Features», en inglés.
+        # El único título de la sección: sin etiqueta ni entradilla. Fue
+        # «Features», en inglés.
         "title": "Funciones",
         # Las flechas del carrusel. Solo las dibuja el guion.
         "back": "Ver la anterior",
         "next": "Ver la siguiente",
-        # Nueve dibujos sencillos (src/partials/feature-*.svg.j2) en vez de
-        # capturas del panel, que enseñaban demasiado de golpe. Cada uno cuenta
-        # una sola cosa; las palabras que lleva dentro van en `words`, y `alt` es
-        # lo que dice a un lector de pantalla. Aquí se juntaron también «Reglas
-        # que funcionan solas» y «En todos los planes» (octubre de 2026): lo que
-        # repetían va en estos textos. Lo demás fue una lista debajo del
-        # carrusel, que se quitó ese mismo mes. Fueron cinco; en octubre de 2026
-        # contactos se hizo más general y entraron etiquetas, campos, rebotes y
-        # usuarios, todo lo que el panel ya hace.
+        # Dibujos sencillos (src/partials/feature-*.svg.j2) en vez de capturas
+        # del panel, que enseñaban demasiado de golpe. Cada uno cuenta una sola
+        # cosa; las palabras que lleva dentro van en `words`, y `alt` es lo que
+        # dice a un lector de pantalla. Fueron diez; en octubre de 2026 quedaron
+        # siete, en el orden que se pidió: salieron etiquetas (va en la base de
+        # datos), el envío programado y los usuarios, que siguen en el producto;
+        # anular la suscripción y los rebotes se juntaron, y entró el dominio
+        # personalizado, que era una sección aparte.
         "items": [
             {
-                "art": "contacts",
-                "alt": (
-                    "Un archivo CSV que entra a la lista de contactos: tres "
-                    "direcciones, 3 de 1000."
-                ),
-                "words": {"badge": "CSV", "file": "lista.csv", "title": "Contactos",
-                          "count": "3", "limit": " / 1000",
-                          "emails": ["ana@coop.com", "luis@coop.com", "sofia@coop.com"]},
-                "title": "Administra tus contactos",
+                "art": "editor",
+                "alt": "Una plantilla en el lienzo: un título elegido, una foto y un botón.",
+                "words": {"title": "Oferta de octubre", "button": "Ver oferta"},
+                "title": "Lienzo",
                 "text": (
-                    "Importa tu lista desde un archivo CSV, agrega o edita contactos "
-                    "uno por uno y descárgala cuando quieras. Cada dirección existe "
-                    "una sola vez en tu cuenta."
-                ),
-            },
-            {
-                "art": "tags",
-                "alt": (
-                    "Dos contactos con la misma dirección, uno con la etiqueta "
-                    "Socios y otro con Junta, que cuentan como uno solo: 1 de 1000."
-                ),
-                "words": {"email": "ana@coop.com", "tag_a": "Socios",
-                          "tag_b": "Junta", "count": "1", "limit": " / 1000",
-                          "unit": "contactos"},
-                "title": "Organiza con etiquetas",
-                "text": (
-                    "Agrupa tus contactos en clientes, socios o boletín, y envía a uno "
-                    "o a varios grupos. Quien está en dos recibe una sola copia y "
-                    "gasta un solo envío."
+                    "Diseña tus correos a pantalla completa: textos, imágenes, botones "
+                    "y formas donde quieras, con negrita, enlaces y viñetas en las "
+                    "palabras que elijas. También puedes cargar una plantilla que te "
+                    "pasaron y seguir editándola desde tu cuenta."
                 ),
             },
             {
@@ -299,29 +232,19 @@ HOME = {
                 ),
             },
             {
-                "art": "editor",
-                "alt": "Una plantilla en el editor: un título elegido, una foto y un botón.",
-                "words": {"title": "Oferta de octubre", "button": "Ver oferta"},
-                "title": "Campañas creadas en el editor",
-                "text": (
-                    "Diseña tus campañas directamente desde el editor, colocando "
-                    "textos, botones e imágenes donde quieras. Además, puedes "
-                    "importar una campaña creada por otra persona y continuar "
-                    "editándola desde tu propia cuenta."
-                ),
-            },
-            {
-                "art": "schedule",
+                "art": "contacts",
                 "alt": (
-                    "Las dos formas de enviar: ahora, o programado para el 15 de "
-                    "octubre a las 9:00."
+                    "Un archivo CSV que entra a la lista de contactos: tres "
+                    "direcciones, 3 de 1000."
                 ),
-                "words": {"now": "Enviar ahora", "later": "Programar",
-                          "when": "15 de octubre, 9:00"},
-                "title": "Envío inmediato o programado",
+                "words": {"badge": "CSV", "file": "lista.csv", "title": "Contactos",
+                          "count": "3", "limit": " / 1000",
+                          "emails": ["ana@coop.com", "luis@coop.com", "sofia@coop.com"]},
+                "title": "Base de datos",
                 "text": (
-                    "Elige tu lista, revisa la vista previa y decide si tu campaña "
-                    "sale de inmediato o en la fecha y hora que prefieras."
+                    "Importa tu lista desde un archivo CSV, organízala con etiquetas y "
+                    "agrega o edita contactos uno por uno. Cada dirección existe una "
+                    "sola vez en tu cuenta, y la descargas cuando quieras."
                 ),
             },
             {
@@ -335,7 +258,7 @@ HOME = {
                           "export": "CSV · PDF"},
                 "title": "Resultados de cada campaña",
                 "text": (
-                    "Entregados, aperturas, clicks, rebotes y bajas, por campaña, con "
+                    "Entregados, aperturas, clics, rebotes y bajas, por campaña, con "
                     "exportación a CSV y PDF."
                 ),
             },
@@ -351,7 +274,7 @@ HOME = {
                           "rows": [("ana@coop.com", True, True),
                                    ("luis@coop.com", True, False),
                                    ("sofia@coop.com", False, False)]},
-                "title": "Mira quién abrió y quién pulsó",
+                "title": "Actividad de tus clientes",
                 "text": (
                     "En el detalle de cada envío ves, persona por persona, si le "
                     "llegó, cuándo abrió el correo y si pulsó un enlace. Y filtras "
@@ -359,64 +282,62 @@ HOME = {
                 ),
             },
             {
-                "art": "bounces",
-                "alt": (
-                    "Un correo que rebotó, y la lista de lo que ya no recibe: una "
-                    "dirección por rebote y otra por marcar spam."
-                ),
-                # La última cifra de cada fila es lo que mide la raya que tacha la
-                # dirección, en unidades del dibujo.
-                "words": {"title": "Fuera de tus envíos",
-                          "rows": [("pepe@viejo.com", "Rebote", "art-red", 100),
-                                   ("maria@correo.com", "Spam", "art-amber", 114)]},
-                "title": "Rebotes y quejas fuera",
-                "text": (
-                    "Las direcciones que rebotan o te marcan como spam salen solas de "
-                    "tus envíos, no gastan cuota y reimportarlas no las reactiva."
-                ),
-            },
-            {
+                # Anular la suscripción y los rebotes y quejas, en uno (octubre de
+                # 2026). La última cifra de cada fila es lo que mide la raya que
+                # tacha la dirección, en unidades del dibujo.
                 "art": "unsubscribe",
                 "alt": (
-                    "El enlace para anular la suscripción al pie de un correo, y el "
-                    "aviso de que esa persona ya no recibirá más."
+                    "El enlace para anular la suscripción al pie de un correo, y la "
+                    "lista de lo que ya no recibe: una dirección por baja, otra por "
+                    "rebote y otra por marcar spam."
                 ),
                 "words": {"sender": "Enviado por Tu Empresa",
                           "link": "Anular suscripción",
-                          "done": ["Listo, ya no recibirás", "estos correos."]},
-                "title": "Cada persona puede anular su suscripción cuando quiera",
+                          "title": "Fuera de tus envíos",
+                          "rows": [("luis@coop.com", "Baja", "art-blue", 86),
+                                   ("pepe@viejo.com", "Rebote", "art-red", 100),
+                                   ("maria@correo.com", "Spam", "art-amber", 114)]},
+                "title": "Bajas, rebotes y quejas, solos",
                 "text": (
-                    "Todos los correos llevan el botón para anular la suscripción, "
-                    "único para cada persona y en todos los planes. No se puede "
-                    "quitar, y quien lo usa deja de recibir al momento."
+                    "Todos tus correos llevan el enlace para anular la suscripción, "
+                    "único para cada persona y en todos los planes. Quien lo usa, y "
+                    "las direcciones que rebotan o te marcan como spam, salen solas "
+                    "de tus envíos, no gastan cuota y reimportarlas no las reactiva."
                 ),
             },
             {
-                "art": "users",
+                # Lo que era la sección «Dominio personalizado» (antes «El
+                # envío»). Dice lo que hace el panel: el cliente lo conecta solo
+                # con tres registros y «Comprobar ahora» (docs/envios.md). La
+                # reputación propia es la del dominio; las IP siguen siendo las
+                # compartidas de SES.
+                "art": "domain",
                 "alt": (
-                    "Los usuarios de una cuenta: Ana, la dueña, y Luis, invitado, "
-                    "que puede ver estadísticas y enviar campañas, pero no tocar "
-                    "contactos ni plantillas."
+                    "Los tres registros DNS de un dominio, verificados, y un correo "
+                    "que sale de boletin@tuempresa.com. Sin dominio, saldría de "
+                    "tuempresa@envios.sobreala.com."
                 ),
-                "words": {"title": "Usuarios", "owner": "Ana", "owner_role": "Dueña",
-                          "guest": "Luis", "guest_role": "Invitado", "can": "Luis puede:",
-                          "permissions": [("Ver estadísticas", True),
-                                          ("Enviar campañas", True),
-                                          ("Contactos", False), ("Plantillas", False)]},
-                "title": "Usuarios de la cuenta",
+                "words": {"records": "Registros DNS", "kind": "CNAME",
+                          "ok": "Verificado", "from": "De:",
+                          "own": "boletin@tuempresa.com", "shared_label": "Sin dominio:",
+                          "shared": "tuempresa@envios.sobreala.com"},
+                "title": "Dominio personalizado",
                 "text": (
-                    "Invita a tu equipo, cada quien con su acceso, y elige qué puede "
-                    "hacer: ver estadísticas, enviar, manejar contactos o plantillas."
+                    "Agrega tu dominio desde tu cuenta: te damos tres registros DNS y, "
+                    "en cuanto se verifican, tus campañas salen desde él, como "
+                    "boletin@tuempresa.com, firmadas y con una reputación que depende "
+                    "solo de tus envíos. Sin dominio, salen desde envios.sobreala.com "
+                    "con el nombre de tu negocio."
                 ),
             },
         ],
     },
-    # La tira de plantillas de muestra, donde estaban los cuatro pasos. Va
-    # debajo de los tutoriales, que llevan los pasos enteros, y por eso ya no
-    # lleva botón: el tutorial se acaba de ver.
+    # Plantillas: las dos tiras de muestras, en su propia sección desde octubre
+    # de 2026 (antes iban dentro de «Cómo funciona», debajo de los tutoriales).
     "steps": {
-        "title": "¿Aún no sabes por dónde empezar?",
-        "intro": "Prueba nuestras plantillas personalizadas.",
+        "title": "Plantillas",
+        "intro": ("¿Aún no sabes por dónde empezar? Prueba nuestras plantillas "
+                  "personalizadas."),
         # La segunda tira (octubre de 2026): las que manda el sistema de un
         # comercio por la API, con sus datos en las marcas.
         "api_title": "Para tu sistema",
@@ -823,47 +744,15 @@ TUTORIALS = {
 HOW = {
     "meta_title": "Cómo funciona | sobreala",
     "meta_description": (
-        "Tutoriales de Sobreala: contactos, plantillas, envíos, "
-        "estadísticas y configuración, paso a paso y pulsando."
+        "Funciones de Sobreala: el lienzo, campos personalizados, tu base de "
+        "datos, resultados y dominio personalizado."
     ),
-    # La sección ya no lleva cabeza propia: abre con «Funciones». Este título
-    # solo es el texto del enlace de la página de paso /how-it-works/.
+    # La sección se quitó (octubre de 2026). Este título solo es el de la
+    # página de paso /how-it-works/, que lleva a Funciones.
     "hero": {
         "title": "Cómo funciona",
     },
-    # Dominio personalizado (octubre de 2026; antes «El envío»). Dice lo que
-    # hace el panel: el cliente lo conecta solo con tres registros CNAME y
-    # «Comprobar ahora» (docs/envios.md). La reputación propia es la del
-    # dominio; las IP siguen siendo las compartidas de SES.
-    "sending": {
-        "title": "Dominio personalizado",
-        # Primero quien tiene dominio, después quien no (octubre de 2026). Que
-        # envios.sobreala.com comparte reputación entre todos los que no tienen
-        # dominio propio lo dice docs/envios.md.
-        "text": (
-            "Si tienes un dominio, agrégalo desde tu cuenta: te damos tres registros "
-            "DNS para ponerlos donde lo administras y, en cuanto se verifican, tus "
-            "campañas salen desde tu dominio, como boletin@tuempresa.com."
-        ),
-        "benefits": [
-            {"title": "Reputación propia:",
-             "text": "la de tu dominio depende solo de tus envíos."},
-            {"title": "Más confianza:",
-             "text": "quien lo recibe ve tu dominio, y el correo va firmado con él."},
-        ],
-        # La tarjeta compara las dos direcciones de salida.
-        "example": {
-            "own_label": "Con tu dominio",
-            "own_value": "boletin@tuempresa.com",
-            "shared_label": "Sin dominio",
-            "shared_value": "tuempresa@envios.sobreala.com",
-        },
-        "note": (
-            "Sin dominio propio, tus correos salen desde envios.sobreala.com con el "
-            "nombre de tu negocio. Ese dominio lo comparten todos los negocios que "
-            "envían sin dominio propio, y con él su reputación."
-        ),
-    },
+    # Dominio personalizado se volvió una de las Funciones (octubre de 2026).
     # «Reglas que funcionan solas» se juntó con Features (octubre de 2026): lo
     # que decía está en sus textos.
 }
@@ -1745,7 +1634,8 @@ FOOTER = {
             "title": "Producto",
             "links": [
                 {"label": "Planes", "url": "/#planes"},
-                {"label": "Cómo funciona", "url": "/#como-funciona"},
+                {"label": "Funciones", "url": "/#funciones"},
+                {"label": "Plantillas", "url": "/#plantillas"},
                 # La documentación de la API (octubre de 2026).
                 {"label": "API", "url": "/api/"},
                 # El centro de ayuda (octubre de 2026).

@@ -1,0 +1,69 @@
+{#- Lo principal, debajo de la presentación (octubre de 2026): la API y el
+    lienzo, cada uno a lo ancho, con su texto a un lado y su dibujo al otro, que
+    cambian de lado de uno al otro. En el teléfono el dibujo va arriba. Donde
+    estaban «¿Sigues enviando correos masivos desde Gmail o Outlook?» y «Haz
+    crecer tu negocio». La API en blanco y el lienzo en gris. -#}
+{% set api = home.highlights.api %}
+{% set canvas = home.highlights.canvas %}
+
+{% macro points(items) -%}
+  <ul class="highlight__points">
+    {% for one in items %}
+    <li><span class="highlight__mark" aria-hidden="true">
+      {%- include "partials/icon-check.svg.j2" -%}</span>{{ one }}</li>
+    {% endfor %}
+  </ul>
+{%- endmacro %}
+
+<section class="section highlight" id="api" aria-labelledby="api-title">
+  <div class="shell highlight__inner">
+    <div class="highlight__text">
+      <p class="eyebrow">{{ api.eyebrow }}</p>
+      <h2 class="section__title" id="api-title">{{ api.title }}</h2>
+      <p class="section__intro">{{ api.text }}</p>
+      {{ points(api.points) }}
+      <p class="highlight__actions">
+        <a class="btn btn--primary" href="{{ api.button.url }}">{{ api.button.label }}</a>
+      </p>
+    </div>
+    {#- Una llamada de verdad (la del ejemplo de backend/api_spec.py, recortada),
+        en HTML y no en imagen: se lee, se selecciona y sigue al tema. -#}
+    <figure class="highlight__art code-card">
+      <figcaption class="visually-hidden">{{ api.code.label }}</figcaption>
+      <div class="code-card__bar" aria-hidden="true"><span></span><span></span><span></span></div>
+      <pre class="code-card__body"><code><span class="code-card__call">{{ api.code.call }}</span>
+<span class="code-card__quiet">{{ api.code.auth }}</span>
+
+{{ api.code.body | join("\n") }}</code></pre>
+      <p class="code-card__answer"><span class="code-card__status">{{ api.code.status }}</span>
+        <code>{{ api.code.answer }}</code></p>
+    </figure>
+  </div>
+</section>
+
+<section class="section section--alt highlight highlight--flip" id="lienzo"
+         aria-labelledby="lienzo-title">
+  <div class="shell highlight__inner">
+    <div class="highlight__text">
+      <p class="eyebrow">{{ canvas.eyebrow }}</p>
+      <h2 class="section__title" id="lienzo-title">{{ canvas.title }}</h2>
+      <p class="section__intro">{{ canvas.text }}</p>
+      {{ points(canvas.points) }}
+      {#- Como el de la presentación: con sesión, nav.js lo cambia según en qué
+          punto está la empresa (data-cta), y quien ya puede usar el lienzo va
+          a él. A un administrador se le esconde. -#}
+      <p class="highlight__actions">
+        <a class="btn btn--primary" data-hide-for-admin
+           href="{{ panel.base_url }}{{ canvas.button.path }}" data-cta
+           {%- for state, one in canvas.button.states.items() %} data-label-{{ state }}="{{ one.label }}" data-href-{{ state }}="{{ one.url }}"{% endfor %}>{{ canvas.button.label }}</a>
+      </p>
+    </div>
+    {#- El dibujo de Funciones, el mismo archivo. -#}
+    <div class="highlight__art highlight__drawing">
+      {% with item = home.features['items'] | selectattr("art", "equalto", canvas.art) | first,
+              fid = "hl" %}
+      {%- include "partials/feature-" ~ canvas.art ~ ".svg.j2" -%}
+      {% endwith %}
+    </div>
+  </div>
+</section>

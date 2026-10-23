@@ -1,0 +1,56 @@
+{#- Funciones (octubre de 2026): lo que fue «Features» dentro de «Cómo
+    funciona», que se quitó de la portada con sus tutoriales. Solo el título, y
+    debajo el carrusel. El último es el dominio personalizado, que fue una
+    sección aparte. En gris, entre Planes y Plantillas. -#}
+<section class="section section--alt" id="funciones" aria-labelledby="funciones-title">
+  <div class="shell">
+    <div class="section__head">
+      <h2 class="section__title" id="funciones-title">{{ home.features.title }}</h2>
+    </div>
+    {#- Siete dibujos sencillos, uno por cosa (partials/feature-*.svg.j2), en vez
+        de capturas del panel. Los botones de radio son los que abren cada uno,
+        así que esto funciona entero sin JavaScript y con el teclado;
+        carousel.js solo agrega las flechas y el paso automático. -#}
+    <div class="tour" data-tour>
+      {% for item in home.features['items'] %}
+      <input class="tour__pick" type="radio" name="tour"
+             id="tour-{{ loop.index }}"{{ " checked" if loop.first }}>
+      {% endfor %}
+      <div class="tour__strip">
+        {% for item in home.features['items'] %}
+        <label class="tour__panel" for="tour-{{ loop.index }}">
+          {%- include "partials/feature-" ~ item.art ~ ".svg.j2" -%}
+        </label>
+        {% endfor %}
+      </div>
+      <div class="tour__texts">
+        {% for item in home.features['items'] %}
+        <div class="tour__text">
+          <h3 class="tour__title">{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {#- Debajo del texto, una barra por función (las etiquetas de los radios:
+          la de la abierta se llena mientras corre el paso automático) y, a la
+          derecha, las flechas, que solo dibuja el guion. -#}
+      <div class="tour__nav">
+        <p class="tour__dots">
+          {% for item in home.features['items'] %}
+          <label class="tour__dot" for="tour-{{ loop.index }}"><span class="tour__bar" aria-hidden="true"><span class="tour__fill"></span></span><span class="visually-hidden">{{ item.title }}</span></label>
+          {% endfor %}
+        </p>
+        <span class="tour__arrows">
+          <button class="tour__arrow" type="button" data-tour-back
+                  aria-label="{{ home.features.back }}">
+            {%- include "partials/icon-caret.svg.j2" -%}</button>
+          <button class="tour__arrow" type="button" data-tour-next
+                  aria-label="{{ home.features.next }}">
+            {%- include "partials/icon-caret.svg.j2" -%}</button>
+        </span>
+      </div>
+    </div>
+    {#- Debajo iba la lista «En todos los planes, sin excepción», con lo que no
+        tenía dibujo; se quitó en octubre de 2026. -#}
+  </div>
+</section>

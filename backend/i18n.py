@@ -307,10 +307,10 @@ TEXTS = {
     "auth_feature_contacts_text": "Importa tu archivo CSV y organízala con etiquetas.",
     "auth_feature_editor_title": "Arma tu correo",
     "auth_feature_editor_text": "Textos, botones e imágenes donde quieras.",
-    "auth_feature_schedule_title": "Ahora o cuando quieras",
-    "auth_feature_schedule_text": "Envía de inmediato o programa el día y la hora.",
     "auth_feature_results_title": "Mira cómo le fue",
     "auth_feature_results_text": "Aperturas, clics, rebotes y bajas de cada envío.",
+    "auth_feature_opens_title": "Quién lo vio",
+    "auth_feature_opens_text": "Mira quién abrió y quién pulsó cada correo.",
 
     # --- devices -----------------------------------------------------------
     "devices_title": "Tus dispositivos",

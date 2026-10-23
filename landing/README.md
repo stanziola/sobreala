@@ -1,14 +1,15 @@
 # Sitio público de Sobreala
 
-Una sola página que presenta Sobreala (Inicio, Planes, Cómo funciona y las
-preguntas; Contacto es el pie), más las dos legales. Se despliegan tal cual
+Una sola página que presenta Sobreala (Inicio, la API y el lienzo, Planes,
+Funciones, Plantillas y las preguntas; Contacto es el pie), más las dos
+legales. Se despliegan tal cual
 en Cloudflare Pages, sin build remoto: esta carpeta es la raíz del sitio.
 
 | Ruta | Archivo |
 |------|---------|
 | `/` | `index.html`, la página única |
 | `/privacy/`, `/terms/` | `privacy/index.html`, `terms/index.html` |
-| `/pricing/`, `/how-it-works/`, `/about/`, `/contact/` | páginas de paso que llevan a su sección (`#planes`, `#como-funciona`, `#inicio`, `#contacto`) |
+| `/pricing/`, `/how-it-works/`, `/about/`, `/contact/` | páginas de paso que llevan a su sección (`#planes`, `#funciones`, `#inicio`, `#contacto`) |
 
 El detalle de cómo está armada está en `docs/sitio.md`.
 
@@ -31,13 +32,13 @@ landing/
 │   ├── partials/        # cta-band, faq, feature-icons, los dibujos de Features
 │   │                    # (feature-*.svg.j2), iconos de correo y chat
 │   ├── pages/           # index (la página única) y legal
-│   ├── sections/        # planes, como-funciona: partes de index
+│   ├── sections/        # destacadas (API y lienzo), planes, funciones y
+│   │                    # plantillas: partes de index
 │   ├── redirect.html.j2 # las páginas de paso de las direcciones viejas
 │   └── site.css         # estilos (sin ningún HEX: usa las variables de brand/colors.css)
 ├── assets/
 │   ├── js/nav.js        # menú móvil, cambio de tema y año del pie
 │   ├── js/carousel.js   # las flechas y el paso automático del carrusel
-│   ├── img/usos/        # a mano: las cuatro fotos de los usos (Pexels; autores en docs/sitio.md)
 │   ├── img/samples/     # GENERADO por samples.py: las miniaturas de las plantillas de muestra
 │   ├── css/site.css     # GENERADO: colors.css + colors-dark.css + @font-face + src/site.css
 │   ├── fonts/           # GENERADO: .woff2 a partir de brand/fonts/

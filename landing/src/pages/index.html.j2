@@ -3,11 +3,12 @@
 
 {% block main %}
 
-{#- Todo el sitio en una página, en este orden: Inicio (con «Haz crecer tu
-    negocio»), Planes, Cómo funciona y las preguntas. Cada parte lleva el ancla
-    a la que baja su botón de la barra o su enlace del pie; las páginas que
-    había antes llevan aquí (redirect.html.j2). Contacto es el pie
-    (#contacto). -#}
+{#- Todo el sitio en una página, en este orden (octubre de 2026): Inicio, la
+    API y el lienzo (los dos bloques grandes), Planes, Funciones, Plantillas y
+    las preguntas. Cada parte lleva el ancla a la que baja su botón de la barra
+    o su enlace del pie; las páginas que había antes llevan aquí
+    (redirect.html.j2). Contacto es el pie (#contacto). Los fondos alternan:
+    blanco, gris, blanco, gris, blanco y gris. -#}
 {% set home = page %}
 <div class="page-part" id="inicio">
 
@@ -37,114 +38,15 @@
   </div>
 </section>
 
-<section class="section section--alt" aria-labelledby="problema-title">
-  <div class="shell">
-    <div class="section__head">
-      <h2 class="section__title" id="problema-title">{{ page.problem.title }}</h2>
-    </div>
-    {#- Los cuatro puntos, con el que estás viendo marcado. Lo que abre cada uno
-        son botones de radio, como el carrusel de Features: así funciona entero
-        sin JavaScript y las flechas del teclado lo mueven solas. trouble.js
-        solo agrega el paso automático, y la barra del pie de cada tarjeta es
-        su reloj: solo se ve mientras corre. -#}
-    <div class="trouble" data-trouble>
-      {% for item in page.problem['items'] %}
-      <input class="trouble__pick" type="radio" name="trouble"
-             id="pain-{{ loop.index }}"{{ " checked" if loop.first }}>
-      {% endfor %}
-      <ol class="trouble__list">
-        {% for item in page.problem['items'] %}
-        <li>
-          <label class="trouble__step" for="pain-{{ loop.index }}">
-            <span class="trouble__mark" aria-hidden="true">
-              {%- include "partials/icon-check.svg.j2" -%}
-            </span>
-            <span class="trouble__said">
-              <span class="trouble__title">{{ item.title }}</span>
-              <span class="trouble__lead">{{ item.lead }}</span>
-            </span>
-            <span class="trouble__bar" aria-hidden="true"><span class="trouble__fill"></span></span>
-          </label>
-        </li>
-        {% endfor %}
-      </ol>
-      {#- Las cuatro ilustraciones comparten una celda y los cuatro párrafos
-          otra, así que el bloque mide siempre lo que el más largo y no salta al
-          cambiar de punto. -#}
-      <div class="trouble__art">
-        <div class="trouble__frame">
-          {% for item in page.problem['items'] %}
-          <div class="trouble__shot trouble__one">{% include "partials/art-" ~ item.art ~ ".svg.j2" %}</div>
-          {% endfor %}
-        </div>
-        <div class="trouble__notes">
-          {% for item in page.problem['items'] %}
-          <p class="trouble__note trouble__one">{{ item.text }}</p>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-{#- «Haz crecer tu negocio»: cuatro casos, uno a la vez, en una tarjeta grande
-    como la del carrusel de casos que se dio de referencia: la foto con el
-    rótulo y el título encima, y la descripción al lado. Las fotos son de Pexels,
-    con licencia libre (los autores, en docs/sitio.md), y no hay cifras ni
-    testimonios: nadie aparece como cliente.
-    Lo que abre cada uno son botones de radio, como «¿Sigues enviando…?»: así
-    funciona sin JavaScript y con las flechas del teclado. Las barras de abajo
-    son sus etiquetas, y la del abierto se llena mientras corre el paso
-    automático. stories.js agrega ese paso y las dos flechas de los lados. -#}
-<section class="section" aria-labelledby="usos-title">
-  <div class="shell">
-    <div class="section__head">
-      <h2 class="section__title" id="usos-title">{{ page.uses.title }}</h2>
-    </div>
-    <div class="stories" data-stories>
-      {% for use in page.uses['items'] %}
-      <input class="stories__pick" type="radio" name="usos"
-             id="uso-{{ loop.index }}"{{ " checked" if loop.first }}>
-      {% endfor %}
-      <div class="stories__frame">
-        {% for use in page.uses['items'] %}
-        <article class="story" aria-labelledby="uso-title-{{ loop.index }}">
-          <div class="story__media">
-            <img class="story__photo" src="/assets/img/usos/{{ use.photo }}.webp"
-                 alt="{{ use.alt }}" width="1280" height="800" loading="lazy" decoding="async">
-            <div class="story__caption">
-              <p class="story__label">{{ use.label }}</p>
-              <h3 class="story__title" id="uso-title-{{ loop.index }}">{{ use.title }}</h3>
-            </div>
-          </div>
-          <div class="story__side">
-            <p class="story__text">{{ use.text }}</p>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
-      <div class="stories__nav">
-        <button class="stories__arrow" type="button" data-stories-back
-                aria-label="{{ page.uses.back }}">
-          {%- include "partials/icon-caret.svg.j2" -%}</button>
-        <p class="stories__dots">
-          {% for use in page.uses['items'] %}
-          <label class="stories__dot" for="uso-{{ loop.index }}"><span class="stories__bar" aria-hidden="true"><span class="stories__fill"></span></span><span class="visually-hidden">{{ use.title }}</span></label>
-          {% endfor %}
-        </p>
-        <button class="stories__arrow" type="button" data-stories-next
-                aria-label="{{ page.uses.next }}">
-          {%- include "partials/icon-caret.svg.j2" -%}</button>
-      </div>
-    </div>
-  </div>
-</section>
-
 </div>
+
+{% include "sections/destacadas.html.j2" %}
 
 {% with page = pricing %}{% include "sections/planes.html.j2" %}{% endwith %}
 
-{% with page = how %}{% include "sections/como-funciona.html.j2" %}{% endwith %}
+{% include "sections/funciones.html.j2" %}
+
+{% include "sections/plantillas.html.j2" %}
 
 {#- Las preguntas frecuentes: se quitaron en octubre de 2026 y volvieron ese
     mismo mes, con seis. La barra de arriba no lleva botón para ellas. -#}
@@ -153,10 +55,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/assets/js/trouble.js" defer></script>
-<script src="/assets/js/stories.js" defer></script>
 <script src="/assets/js/carousel.js" defer></script>
 <script src="/assets/js/plans.js" defer></script>
-<script src="/assets/js/tutorial.js" defer></script>
 <script src="/assets/js/reveal.js" defer></script>
 {% endblock %}

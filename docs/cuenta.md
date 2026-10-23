@@ -709,8 +709,9 @@ cambie de cara a la mitad.
   `_auth.html` lo deja vacío. Su ala está arriba del lado izquierdo y lleva al
   sitio, como la de la barra. El modo claro u oscuro sale de lo ya elegido o
   del sistema: estas pantallas no tienen el botón para cambiarlo.
-- **A la izquierda, las funciones que rotan:** Contactos, Editor, Envío y
-  Resultados, una a la vez, con su dibujo en una tarjeta, un título y una línea
+- **A la izquierda, las funciones que rotan:** Contactos, Editor, Resultados
+  y Quién lo vio (desde octubre de 2026; el de Envío salió con el envío
+  programado de las Funciones del sitio), una a la vez, con su dibujo en una tarjeta, un título y una línea
   (`auth_feature_*` en `i18n.py`). `panel.js` (`data-auth-tour`) cambia cada
   6 s y los puntitos eligen una; se para con el ratón encima, con el foco
   dentro o con la pestaña escondida, y con «reducir movimiento» no avanza sola.

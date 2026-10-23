@@ -37,13 +37,19 @@ def test_sin_la_barra_y_con_las_funciones_a_la_izquierda(client, database):
         # Las cuatro funciones, con su dibujo; sin JavaScript, la primera.
         assert izquierda.count("data-slide") == 4, url
         assert izquierda.count('class="auth__slide is-on"') == 1, url
-        for titulo in ("Tu lista, en orden", "Arma tu correo", "Ahora o cuando quieras",
-                       "Mira cómo le fue"):
+        # El de envío programado salió de Funciones en octubre de 2026, y
+        # entró quién lo vio.
+        for titulo in ("Tu lista, en orden", "Arma tu correo", "Mira cómo le fue",
+                       "Quién lo vio"):
             assert titulo in izquierda, (url, titulo)
         assert 'class="tour__art"' in izquierda, url
+        assert "Ahora o cuando quieras" not in izquierda, url
         # Los puntitos los enseña el guion.
         assert '<div class="auth__dots" data-dots hidden>' in izquierda, url
     assert "[data-auth-tour]" in PANEL_JS.read_text(encoding="utf-8")
+    # Los colores de los dibujos, copiados del sitio: sin ellos salen negros.
+    css = (PANEL_JS.parent.parent / "css" / "panel.css").read_text(encoding="utf-8")
+    assert ".art-stage { fill: var(--art-stage); }" in css
 
 
 def test_recordarme_va_al_lado_de_olvidaste(client, database):
