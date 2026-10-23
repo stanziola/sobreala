@@ -6,8 +6,7 @@ por el contenido, no por el nombre**: un `.pdf` que por dentro es otra cosa no
 entra, como pasa con las imágenes de las plantillas.
 
 Desde octubre de 2026 no va adjunto: se guarda 30 días (`models/download.py`)
-y el correo lleva un botón para bajarlo, que es lo que deja saber si la persona
-lo bajó.
+y el correo lleva un botón para bajarlo.
 """
 
 from __future__ import annotations

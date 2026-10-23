@@ -1060,7 +1060,7 @@ PRIVACY = {
                 "correos de tu plan.",
                 "**Los archivos que mandas en un correo individual:** los "
                 "guardamos 30 días para que quien lo recibe pueda bajarlo desde "
-                "su enlace, y anotamos si lo bajó y cuándo. Después se borran "
+                "su enlace. Después se borran "
                 "solos.",
                 "**Si entras con Google:** Google nos da tu correo (ya "
                 "verificado), tu nombre y un identificador de tu cuenta de "

@@ -46,9 +46,6 @@
         <td class="table__num">
           {% if single %}
           {% if seen[key] %}<span class="mark-yes" title="{{ t(label) }}">✓</span>{% else %}<span class="table__quiet">—</span>{% endif %}
-          {% if key == 'click' and one.campaign_id in with_file %}
-          <br><span class="table__quiet">{{ t('sent_downloaded') if seen.download else t('sent_not_downloaded') }}</span>
-          {% endif %}
           {% else %}
           {{ seen[key] }}/{{ one.sent }}
           {% endif %}

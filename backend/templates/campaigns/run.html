@@ -60,7 +60,6 @@
         <th>{{ t('run_reached') }}</th>
         <th>{{ t('run_opened') }}</th>
         <th>{{ t('run_clicked') }}</th>
-        {% if has_file %}<th>{{ t('run_downloaded') }}</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -80,7 +79,6 @@
         </td>
         <td class="table__quiet">{{ one.at.open|ago if one.at.open else '—' }}</td>
         <td class="table__quiet">{{ one.at.click|ago if one.at.click else '—' }}</td>
-        {% if has_file %}<td class="table__quiet">{{ one.at.download|ago if one.at.download else '—' }}</td>{% endif %}
       </tr>
       {% endfor %}
     </tbody>

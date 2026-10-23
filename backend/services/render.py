@@ -209,8 +209,8 @@ def logo_header(url: str, *, alt: str, width: int, height: int) -> str:
 
 def download_button(*, url: str, name: str, size: str) -> str:
     """El botón «Descargar» del archivo de un correo individual, en tablas
-    como todo lo demás del correo. Lleva `ses:no-track`: el clic que importa lo
-    anota la página de la descarga, no el contador de SES."""
+    como todo lo demás del correo. Lleva `ses:no-track`: bajar el archivo no
+    cuenta como un clic del correo."""
     return _env.get_template("_download.html").render(url=url, name=name, size=size)
 
 

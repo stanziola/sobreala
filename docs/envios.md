@@ -304,8 +304,8 @@ enlaces del mismo correo es un clic. Así las cifras no se inflan y la colecció
 no crece con cada reapertura. Cada evento
 lleva el `run_id` del envío y la dirección normalizada, que es lo que permite
 contar **personas y no eventos**: quien abre tres veces cuenta una. Lo hace
-`events.counts_by_run()`, una consulta para toda la lista de Enviados (cuenta
-también `download`, para decir si bajó el archivo de un individual). `models/event.py` lee también la serie por tramo de tiempo y los
+`events.counts_by_run()`, una consulta para toda la lista de Enviados.
+`models/event.py` lee también la serie por tramo de tiempo y los
 totales del periodo que dibuja Estadísticas.
 
 ## Correos
@@ -360,7 +360,7 @@ vez que salió algo, campañas e individuales, leída de `campaign_runs`. Una
 campaña mandada seis veces es una fila en Masivo y seis en Enviados. **De una
 campaña cada cifra va sobre los que salieron** (entregados, abiertos, clics,
 rebotes y quejas, en personas: `207/210`); **de un individual, una marca** en
-cada columna, y si llevaba archivo, si lo descargó. Un envío del que Amazon
+cada columna. Un envío del que Amazon
 todavía no contó nada lo dice en vez de enseñar ceros. Las bajas no van: el
 enlace de baja firma el contacto y no el envío, así que no se pueden atribuir
 a uno (por eso Estadísticas las cuenta por cuenta).
@@ -505,8 +505,8 @@ pausa automática (`reputation.check()`, ver «La pausa automática»).
 - **Es una campaña de una persona** (`kind: single`, `to`, `contact_id` si
   está en Contactos, `body`, `download_id`), y sale ya por `sender.run()`: la
   supresión (regla 1), la cuota (cuenta uno), la dirección postal y las
-  etiquetas de SES. Por eso su detalle dice si le llegó, si lo abrió, si pulsó
-  y si bajó el archivo, y al enviarlo se aterriza ahí. No sale en «Tus
+  etiquetas de SES. Por eso su detalle dice si le llegó, si lo abrió y si
+  pulsó, y al enviarlo se aterriza ahí. No sale en «Tus
   campañas» (no se edita ni se vuelve a mandar), sí en lo que ya salió, como
   «Individual · persona».
 - **Sin baja y sin marca de agua** (octubre de 2026): no es una campaña, es un
@@ -524,8 +524,11 @@ pausa automática (`reputation.check()`, ver «La pausa automática»).
   blanco, con el mismo sobre y pie que todo (`email_from_body`).
 - **El archivo**: uno, de hasta 5 MB, PDF, JPG, PNG, Word o Excel, **reconocido
   por su contenido** (`services/attachments.py`). **No va adjunto: va como un
-  botón para bajarlo** (octubre de 2026), que es lo único que deja saber si la
-  persona lo bajó; un adjunto se abre en su buzón y nadie se entera.
+  botón para bajarlo** (octubre de 2026): el correo no pesa, y no lo frena un
+  filtro por el adjunto. **No se anota quién lo bajó**: se hizo, con el evento
+  `download` en Enviados, en el detalle y en un webhook, y se quitó el 22 de
+  octubre de 2026 porque con saber si abrió el correo basta. Al arrancar,
+  `db._forget_downloads()` borra lo que quedó.
   - Se guarda en `downloads` (`models/download.py`), con el contenido dentro y
     **TTL de 30 días**: Atlas lo borra solo. Ocupa espacio en la base mientras
     tanto.
@@ -541,12 +544,9 @@ pausa automática (`reputation.check()`, ver «La pausa automática»).
     que abrió el mismo guion, y esta la abrió el lector de correo. Antes era un
     botón que se quedaba girando, porque una descarga no cambia de página.
   - Los escáneres de correo abren los enlaces de lo que revisan pero (casi
-    todos) no ejecutan guiones, así que no cuentan como descarga; algunos, como
-    Microsoft Defender, sí los ejecutan en su caja de arena, y es el mismo
-    margen que tienen las aperturas. Sin JavaScript queda el botón «Descargar»,
-    que no gira. El POST entrega el archivo y anota el evento `download`, uno
-    por envío y persona, que sale en el detalle («Bajó el archivo»), en
-    Enviados y en Eventos.
+    todos) no ejecutan guiones, así que casi nunca se llevan el archivo. Sin
+    JavaScript queda el botón «Descargar», que no gira. El POST entrega el
+    archivo, y nada más.
   - Vencido o borrado, la página dice que ya no está (410). Con la firma mala,
     404.
   - Hasta octubre de 2026 iba adjunto y no se guardaba; antes de eso se probó

@@ -5,7 +5,7 @@ una descarga no cambia de página. Ahora es una página propia, con el logo y el
 nombre de quien lo manda, **que baja el archivo sola** y dice que ya se puede
 cerrar. Lo que se fija aquí: que no traiga la barra ni el menú, que traiga el
 guion con su `nonce` y el botón de respaldo sin giro, y que el POST siga
-bajando el archivo y anotando la descarga.
+bajando el archivo, sin anotar nada (octubre de 2026).
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ def test_la_pagina_baja_el_archivo_sola(client, database, outbox, monkeypatch):
     bajada = fuera.post(enlace, data={"csrf_token": token})
     assert bajada.status_code == 200 and bajada.get_data() == PDF
     assert database.events.count_documents(
-        {"account_id": cuenta["_id"], "kind": events.DOWNLOAD}) == 1
+        {"account_id": cuenta["_id"], "kind": "download"}) == 0
 
 
 def test_el_enlace_vencido_dice_que_ya_no_esta(client, database, outbox, monkeypatch):
@@ -64,3 +64,27 @@ def test_el_enlace_vencido_dice_que_ya_no_esta(client, database, outbox, monkeyp
     pagina = client.application.test_client().get(enlace)
     assert pagina.status_code == 410
     assert 'class="bar"' not in pagina.get_data(as_text=True)
+
+
+def test_lo_anotado_antes_se_borra_al_arrancar(database):
+    """Las descargas que se anotaron antes de quitarlas (octubre de 2026) se
+    borran al arrancar, y los webhooks dejan de pedirlas."""
+    from bson import ObjectId
+
+    from db import ensure_indexes
+
+    cuenta = ObjectId()
+    database.events.insert_many([{"account_id": cuenta, "kind": "download"},
+                                 {"account_id": cuenta, "kind": "open"}])
+    database.webhook_endpoints.insert_one(
+        {"account_id": cuenta, "events": ["email.opened", "email.downloaded"]})
+    database.webhook_deliveries.insert_one({"account_id": cuenta, "kind": "email.downloaded"})
+    ensure_indexes(database)
+    assert [one["kind"] for one in database.events.find({"account_id": cuenta})] == ["open"]
+    assert database.webhook_endpoints.find_one({"account_id": cuenta})["events"] == [
+        "email.opened"]
+    assert database.webhook_deliveries.count_documents({"account_id": cuenta}) == 0
+    # Y los registros de entrada y de correos del sistema se borran solos al año.
+    for logged in (database.auth_events, database.mail_log):
+        ttl = {one["name"]: one for one in logged.list_indexes()}["ttl_created_at"]
+        assert ttl["expireAfterSeconds"] == 365 * 86400

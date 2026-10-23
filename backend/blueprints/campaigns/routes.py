@@ -391,7 +391,7 @@ def write():
     Desde octubre de 2026 va **a cualquier dirección**, esté o no en Contactos,
     y sin guardarla; y **sin baja ni marca de agua**, porque no es una campaña.
     A quien se dio de baja o rebotó en esta cuenta igual no le sale (regla 1).
-    El archivo va como enlace de descarga, para saber si lo bajó."""
+    El archivo va como enlace de descarga, para que el correo no pese."""
     account = signed_in()
     if account is None:
         return redirect(url_for("auth.login"))
@@ -502,8 +502,8 @@ def send_single(db, account):
         contact_id=found["_id"] if found else None,
         to=found.get("email", to) if found else to,
         design_id=design["_id"] if design else None, logo=logo)
-    # El archivo se guarda 30 días y el correo lleva su enlace de descarga: es
-    # lo que deja saber si la persona lo bajó (`models/download.py`).
+    # El archivo se guarda 30 días y el correo lleva su enlace de descarga
+    # (`models/download.py`).
     if attachment:
         name, content_type, data = attachment
         campaigns.attach_download(db, account["_id"], campaign_id, downloads_model.save(
@@ -596,16 +596,11 @@ def sent_list():
         return redirect(url_for("auth.login"))
     db = get_db()
     sent_runs = runs.for_account(db, account["_id"])
-    # Qué individuales llevaban archivo, para decir si lo bajó. Una consulta.
-    singles = [one["campaign_id"] for one in sent_runs if one.get("to")]
-    with_file = {doc["_id"] for doc in db.campaigns.find(
-        {"account_id": account["_id"], "_id": {"$in": singles},
-         "download_id": {"$exists": True}}, {"_id": 1})} if singles else set()
     return render_template(
         "campaigns/sent.html", account=account, runs=sent_runs,
         run_counts=events.counts_by_run(
             db, account["_id"], [one["_id"] for one in sent_runs]),
-        with_file=with_file, everyone=t("send_all_contacts"))
+        everyone=t("send_all_contacts"))
 
 
 @bp.route("/campaigns/sent/<raw>")
@@ -656,10 +651,7 @@ def run_detail(raw):
         pages=max(1, -(-total // PER_PAGE)), tag=tag, tags=known, search=search,
         outcome=outcome, outcomes=list(events.OUTCOMES),
         seen=events.counts_by_run(db, account["_id"], [found["_id"]]).get(found["_id"]),
-        everyone=t("send_all_contacts"),
-        # El correo individual con archivo: una columna más, si lo bajó.
-        has_file=bool((campaigns.by_id(db, account["_id"], found["campaign_id"])
-                       or {}).get("download_id")))
+        everyone=t("send_all_contacts"))
 
 
 @bp.route("/campaigns/<raw>/delete", methods=["POST"])

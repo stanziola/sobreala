@@ -27,14 +27,14 @@ COMPLAINT = "complaint"
 OPEN = "open"
 CLICK = "click"
 REJECT = "reject"
-# El archivo de un correo individual, bajado desde su enlace (no viene de SES).
+# Hubo `download` (bajar el archivo de un individual), y se quitó en octubre de
+# 2026: con saber si abrió el correo basta. `db.py` borra los que quedaron.
 DOWNLOAD = "download"
-KINDS = (SENT, DELIVERED, BOUNCE, COMPLAINT, OPEN, CLICK, REJECT, DOWNLOAD)
+KINDS = (SENT, DELIVERED, BOUNCE, COMPLAINT, OPEN, CLICK, REJECT)
 
 # Lo que se cuenta de un envío, en personas y no en eventos: quien abre tres
-# veces cuenta una. La descarga es la del archivo de un individual, para que
-# Enviados diga si lo bajó.
-RUN_KINDS = (DELIVERED, BOUNCE, OPEN, CLICK, COMPLAINT, DOWNLOAD)
+# veces cuenta una.
+RUN_KINDS = (DELIVERED, BOUNCE, OPEN, CLICK, COMPLAINT)
 
 # Los periodos que ofrece la pantalla, en el orden en que se ofrecen, y en qué
 # tramos se parte cada uno. Una hora se mira cada cinco minutos, un día por

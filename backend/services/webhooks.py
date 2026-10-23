@@ -1,8 +1,8 @@
 """Los avisos a su sistema (webhooks), octubre de 2026: anotarlos, firmarlos y
 entregarlos.
 
-  * **Se anotan sin romper a quien los produce**: el aviso de SES, la baja, el
-    final de una campaña y una descarga llaman a `emit()`, que nunca lanza. Y
+  * **Se anotan sin romper a quien los produce**: el aviso de SES, la baja y el
+    final de una campaña llaman a `emit()`, que nunca lanza. Y
     solo cuando el evento es nuevo, así mil aperturas son un aviso.
   * **La firma**: `Sobreala-Signature: t=<unix>,v1=<HMAC-SHA256 de "t.cuerpo">`
     con el secreto del destino, más `Sobreala-Event-Id` y `Sobreala-Event-Type`.
@@ -37,8 +37,7 @@ log = logging.getLogger(__name__)
 # Qué evento de `events` es qué aviso.
 FROM_EVENTS = {events.DELIVERED: hooks.EMAIL_DELIVERED, events.BOUNCE: hooks.EMAIL_BOUNCED,
                events.COMPLAINT: hooks.EMAIL_COMPLAINED, events.REJECT: hooks.EMAIL_REJECTED,
-               events.OPEN: hooks.EMAIL_OPENED, events.CLICK: hooks.EMAIL_CLICKED,
-               events.DOWNLOAD: hooks.EMAIL_DOWNLOADED}
+               events.OPEN: hooks.EMAIL_OPENED, events.CLICK: hooks.EMAIL_CLICKED}
 
 
 def now() -> datetime:

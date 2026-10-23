@@ -1,8 +1,8 @@
 """El archivo del correo individual, guardado para bajarlo (octubre de 2026).
 
-Hasta ese mes el archivo iba adjunto dentro del correo y no se guardaba. Se
-cambió para poder saber **si la persona lo bajó**: un adjunto se abre en el
-buzón de quien lo recibe y nadie se entera; un enlace de descarga, sí.
+Hasta ese mes el archivo iba adjunto dentro del correo y no se guardaba. Ahora
+va como enlace: el correo no pesa ni lo frena un filtro por el adjunto. Se
+anotaba si la persona lo bajaba, y eso se quitó en octubre de 2026.
 
 Un documento por archivo, con el contenido dentro (hasta 5 MB, lejos del tope
 de 16 MB de un documento de Mongo). **Vence a los `KEEP_DAYS` días**: el índice

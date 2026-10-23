@@ -39,7 +39,7 @@ SINCE_DAYS = 7
 OVERLAP = timedelta(minutes=10)
 
 MAIL_KINDS = (events.DELIVERED, events.BOUNCE, events.COMPLAINT, events.REJECT,
-              events.OPEN, events.CLICK, events.DOWNLOAD)
+              events.OPEN, events.CLICK)
 # Lo de las cuentas, con nombres propios porque no son eventos de Amazon.
 SIGNUP, DEMO, PAYMENT, PAUSE, LIMIT_ON, LIMIT_OFF, ERASED = (
     "signup", "demo", "payment", "pause", "limit", "unlimit", "erased")

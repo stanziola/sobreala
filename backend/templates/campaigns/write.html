@@ -9,7 +9,7 @@
 {# Un correo a una persona, como uno normal, a cualquier dirección. Sale por
    el mismo camino que una campaña (la dirección postal, la cuota, la
    supresión) pero sin baja ni marca de agua, así que también se sabe si le
-   llegó, si lo abrió, si pulsó y si bajó el archivo. #}
+   llegó, si lo abrió y si pulsó. #}
 <form method="post" enctype="multipart/form-data" novalidate data-once>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

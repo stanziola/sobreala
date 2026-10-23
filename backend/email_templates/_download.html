@@ -1,7 +1,7 @@
 {#- El botón del archivo de un correo individual (octubre de 2026). Lleva al
-    enlace de descarga, que abre una página que lo baja sola: así se sabe si
-    la persona lo bajó. `ses:no-track` porque esa descarga la anota la
-    página, no el contador de clics de SES.
+    enlace de descarga, que abre una página que lo baja sola. `ses:no-track`
+    para que SES no lo cuente como un clic: bajar el archivo no es pulsar un
+    enlace del correo.
 
     Espera: url, name y size. Lo llena `render.download_button()`. -#}
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"

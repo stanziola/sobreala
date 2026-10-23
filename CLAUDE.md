@@ -411,7 +411,8 @@ cosa está como está, y lo que ya se probó y se quitó.
   de agua**, también con plantilla; si la plantilla nombra datos que esa
   dirección no tiene, no sale. Lleva la cuota, la supresión y sus cifras como
   todas. Su archivo va como enlace de descarga (`downloads`, 30 días), que
-  dice si lo bajó, a una página sin la barra de Sobreala que lo baja sola.
+  lleva a una página sin la barra de Sobreala que lo baja sola. **No se anota
+  quién lo bajó** (se quitó en octubre de 2026: con saber si abrió basta).
 
 ### La API (`docs/api.md`)
 

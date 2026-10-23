@@ -28,13 +28,14 @@ EMAIL_COMPLAINED = "email.complained"
 EMAIL_REJECTED = "email.rejected"
 EMAIL_OPENED = "email.opened"
 EMAIL_CLICKED = "email.clicked"
+# Se quitó en octubre de 2026 con el registro de descargas; `db.py` lo saca de
+# los destinos que lo tenían.
 EMAIL_DOWNLOADED = "email.downloaded"
 CONTACT_UNSUBSCRIBED = "contact.unsubscribed"
 CAMPAIGN_FINISHED = "campaign.finished"
 TEST = "test"
 EVENTS = (EMAIL_DELIVERED, EMAIL_BOUNCED, EMAIL_COMPLAINED, EMAIL_REJECTED,
-          EMAIL_OPENED, EMAIL_CLICKED, EMAIL_DOWNLOADED, CONTACT_UNSUBSCRIBED,
-          CAMPAIGN_FINISHED)
+          EMAIL_OPENED, EMAIL_CLICKED, CONTACT_UNSUBSCRIBED, CAMPAIGN_FINISHED)
 
 PENDING = "pending"
 DELIVERED = "delivered"

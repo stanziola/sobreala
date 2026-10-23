@@ -9,7 +9,8 @@ Desde octubre de 2026 cambia en tres cosas, y son las que fijan estas pruebas:
   * va **a cualquier dirección**, esté o no en Contactos, y sin guardarla;
   * el archivo **no va adjunto**: se guarda 30 días y el correo lleva un botón
     para bajarlo. Abrir el enlace no lo baja (los escáneres de correo los
-    abren); pulsar «Descargar» sí, y eso anota `download`.
+    abren); pulsar «Descargar» sí. **No se anota quién lo bajó** (octubre de
+    2026).
 """
 
 from __future__ import annotations
@@ -141,8 +142,8 @@ def test_a_quien_se_dio_de_baja_no_se_le_escribe(client, database, outbox, monke
     assert campaigns.for_account(database, cuenta["_id"]) == []
 
 
-def test_el_archivo_va_como_enlace_y_se_sabe_si_lo_bajo(client, database, outbox,
-                                                         monkeypatch):
+def test_el_archivo_va_como_enlace_y_no_se_anota_quien_lo_bajo(client, database, outbox,
+                                                                monkeypatch):
     browser, cuenta, _ = ready(client, database)
     salidos = catch(monkeypatch)
 
@@ -156,11 +157,10 @@ def test_el_archivo_va_como_enlace_y_se_sabe_si_lo_bajo(client, database, outbox
     guardado = database.downloads.find_one({"account_id": cuenta["_id"]})
     assert guardado["name"] == "estado.pdf" and bytes(guardado["data"]) == PDF
 
-    # Quien lo recibe no tiene sesión. Abrir el enlace no lo baja ni lo anota.
+    # Quien lo recibe no tiene sesión. Abrir el enlace no lo baja.
     persona = client.application.test_client()
     pagina = persona.get(enlace)
     assert pagina.status_code == 200 and "estado.pdf" in pagina.get_data(as_text=True)
-    assert database.events.count_documents({"kind": events.DOWNLOAD}) == 0
 
     # Pulsar «Descargar» sí.
     with persona.session_transaction() as sess:
@@ -168,13 +168,11 @@ def test_el_archivo_va_como_enlace_y_se_sabe_si_lo_bajo(client, database, outbox
     bajada = persona.post(enlace, data={"csrf_token": token})
     assert bajada.data == PDF and bajada.mimetype == "application/pdf"
     assert "attachment" in bajada.headers["Content-Disposition"]
-    hecho, = list(database.events.find({"kind": events.DOWNLOAD}))
-    assert hecho["account_id"] == cuenta["_id"]
-    assert hecho["email_normalized"] == "socio0@ejemplo.com"
-
-    # Y el detalle lo dice.
+    # Y no queda anotado en ningún sitio, ni el detalle lo dice.
+    assert database.events.count_documents({"kind": "download"}) == 0
+    assert database.webhook_deliveries.count_documents({}) == 0
     detalle = browser.get(respuesta.headers["Location"]).get_data(as_text=True)
-    assert "Bajó el archivo" in detalle
+    assert "Bajó el archivo" not in detalle
 
 
 def test_un_enlace_falso_o_vencido_no_baja_nada(client, database, outbox, monkeypatch):

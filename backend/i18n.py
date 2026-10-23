@@ -1858,15 +1858,14 @@ TEXTS = {
     # El correo individual (octubre de 2026).
     "single_title": "Redactar",
     "single_lead": "Un correo a una persona, con un archivo si hace falta. Sabrás si "
-                   "le llegó, si lo abrió, si hizo clic en un enlace y si bajó el "
-                   "archivo.",
+                   "le llegó, si lo abrió y si hizo clic en un enlace.",
     "single_to": "Para",
     "single_to_hint": "Cualquier dirección, esté o no en tus contactos. Si no "
                       "está, no se agrega.",
     "single_body": "Mensaje",
     "single_file": "Archivo (opcional)",
     "single_file_hint": "Uno, de hasta {mb} MB: PDF, JPG, PNG, Word o Excel. Va "
-                        "como un botón para bajarlo, así sabes si lo bajó; lo "
+                        "como un botón para bajarlo, así el correo no pesa; lo "
                         "guardamos {days} días.",
     "single_file_big": "El archivo pasa de {mb} MB.",
     "single_file_kind": "Ese tipo de archivo no se puede adjuntar. Usa PDF, JPG, "
@@ -1922,8 +1921,6 @@ TEXTS = {
     "sent_kind_bulk": "Campaña",
     "sent_kind_single": "Individual",
     "sent_waiting": "Esperando lo que cuente Amazon.",
-    "sent_downloaded": "Descargó el archivo",
-    "sent_not_downloaded": "No ha bajado el archivo",
 
     "send_subject": "Asunto",
     "send_subject_hint": "Lo primero que se lee, y muchas veces lo único. "
@@ -2196,7 +2193,6 @@ TEXTS = {
     "run_reached": "Llegó",
     "run_opened": "Abrió",
     "run_clicked": "Hizo clic",
-    "run_downloaded": "Bajó el archivo",
     "run_reached_sent": "Enviado",
     "run_reached_delivery": "Entregado",
     "run_reached_bounce": "Rebotó",
@@ -2297,7 +2293,6 @@ TEXTS = {
     "activity_kind_reject": "Rechazado",
     "activity_kind_open": "Abierto",
     "activity_kind_click": "Clic",
-    "activity_kind_download": "Bajó el archivo",
     "activity_kind_signup": "Registro",
     "activity_kind_demo": "Pidió la demostración",
     "activity_kind_payment": "Pago",
@@ -3350,7 +3345,6 @@ TEXTS = {
     "webhooks_event_email_opened": "Alguien abrió un correo (la primera vez).",
     "webhooks_event_email_clicked": "Alguien hizo clic en un enlace (nunca en un "
                                     "transaccional).",
-    "webhooks_event_email_downloaded": "Alguien bajó el archivo de un correo individual.",
     "webhooks_event_contact_unsubscribed": "Un contacto se dio de baja.",
     "webhooks_event_campaign_finished": "Una campaña terminó de salir, con sus cifras.",
     "webhooks_save": "Guardar",

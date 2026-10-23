@@ -50,6 +50,11 @@ def get_db(name: str | None = None) -> Database:
     return get_client()[name or Config.MONGODB_DB]
 
 
+# Cuánto se guardan los registros de entrada y de correos del sistema: doce
+# meses, lo que dice la política de privacidad.
+LOG_KEEP_SECONDS = 365 * 86400
+
+
 def ensure_indexes(db: Database | None = None) -> None:
     """Create every index the application relies on. Safe to call repeatedly."""
     db = db if db is not None else get_db()
@@ -141,13 +146,16 @@ def ensure_indexes(db: Database | None = None) -> None:
     db.mail_log.create_index([("provider_id", ASCENDING)], name="by_provider")
     db.mail_log.create_index([("created_at", DESCENDING)], name="by_created_at")
 
-    # Audit trail of registration and sign-in attempts. No TTL here on purpose,
-    # unlike the two collections above: the history is kept until someone
-    # decides otherwise, because that is what an abuse report is investigated
-    # with weeks after the fact.
+    # Audit trail of registration and sign-in attempts. Kept twelve months
+    # (octubre de 2026), as the privacy policy says, and the same for the
+    # system mail above: long enough for an abuse report weeks after the fact,
+    # and not forever.
     db.auth_events.create_index([("email_normalized", ASCENDING)], name="by_email")
     db.auth_events.create_index([("ip", ASCENDING)], name="by_ip")
     db.auth_events.create_index([("created_at", DESCENDING)], name="by_created_at")
+    for logged in (db.auth_events, db.mail_log):
+        logged.create_index([("created_at", ASCENDING)], expireAfterSeconds=LOG_KEEP_SECONDS,
+                            name="ttl_created_at")
 
     # One document per address per account, and the unique index is what says
     # so: rule 5 of CLAUDE.md is enforced by the database, not by remembering
@@ -334,8 +342,19 @@ def ensure_indexes(db: Database | None = None) -> None:
     # solo toca las que no tienen el campo, así que correrla otra vez no cambia nada.
     from models import campaign as campaigns
     campaigns.migrate_auto_send(db)
+    _forget_downloads(db)
     # Al final y aparte, porque puede no hacerse sin que falle nada de arriba.
     _provider_indexes(db)
+
+
+def _forget_downloads(db) -> None:
+    """Ya no se anota quién bajó el archivo de un individual (octubre de 2026):
+    se borra lo que quedó, para que la API no siga devolviéndolo. Después de la
+    primera vez no encuentra nada."""
+    db.events.delete_many({"kind": "download"})
+    db.webhook_endpoints.update_many({"events": "email.downloaded"},
+                                     {"$pull": {"events": "email.downloaded"}})
+    db.webhook_deliveries.delete_many({"kind": "email.downloaded"})
 
 
 def _provider_indexes(db) -> None:

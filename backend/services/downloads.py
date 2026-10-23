@@ -5,11 +5,9 @@ lleva el id del archivo y una firma que se vuelve a calcular para comprobarla,
 así que no hay nada que guardar por enlace. La firma va con su propio prefijo,
 para que un testigo de baja no sirva de enlace de descarga ni al revés.
 
-**Abrir el enlace no baja el archivo.** Abre una página con el botón
-«Descargar»: los antivirus y los escáneres de correo abren los enlaces de lo
-que revisan, y si bastara con abrirlo, casi todos los correos dirían «lo
-descargó» sin que nadie lo hubiera hecho. Lo que baja el archivo, y lo que se
-anota, es pulsar el botón.
+**Abrir el enlace no baja el archivo.** Abre una página que lo baja sola, con
+su botón por si no: los antivirus y los escáneres de correo abren los enlaces
+de lo que revisan, y no hace falta mandarles el archivo a ellos.
 """
 
 from __future__ import annotations

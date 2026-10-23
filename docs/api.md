@@ -170,7 +170,8 @@ plantilla vuelve a borrador dice `blocked: draft` (octubre de 2026).
   prueba.
 - Se anotan **una vez por evento** (`webhook_deliveries`, único por destino y
   clave) y solo si el evento es nuevo (`events.record_new`): el aviso de SES, la
-  baja, el final de una campaña y una descarga.
+  baja y el final de una campaña. Hubo `email.downloaded`, y se quitó en octubre
+  de 2026 con el registro de descargas.
 - **La firma**: `Sobreala-Signature: t=…,v1=HMAC-SHA256(secreto, "t.cuerpo")`.
   El secreto sale de `SECRET_KEY`, el id del destino y su `salt`; no se guarda.
   El ejemplo de Python de la documentación se prueba contra esto.

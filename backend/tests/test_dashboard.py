@@ -186,15 +186,15 @@ def test_enviados_cifras_de_campana_y_marcas_de_individual(client, database, out
         (events.DELIVERED, "c@x.com"), (events.OPEN, "a@x.com"),
         (events.OPEN, "b@x.com"), (events.OPEN, "b@x.com")])
     add_run(database, account, to="uno@x.com", sent=1, with_file=True, kinds=[
-        (events.DELIVERED, "uno@x.com"), (events.OPEN, "uno@x.com"),
-        (events.DOWNLOAD, "uno@x.com")])
+        (events.DELIVERED, "uno@x.com"), (events.OPEN, "uno@x.com")])
     add_run(database, account, to="dos@x.com", sent=1)
 
     page = browser.get("/campaigns/sent").get_data(as_text=True)
     campana = row_of(page, "Prueba de campaña")
     assert "3/3" in campana and "2/3" in campana and "0/3" in campana
     uno = row_of(page, "Prueba de uno@x.com")
-    assert uno.count("✓") == 2 and "Descargó el archivo" in uno
+    # Con archivo o sin él, solo sus marcas: no se anota quién lo bajó.
+    assert uno.count("✓") == 2 and "Descarg" not in uno
     # Sin avisos de Amazon todavía lo dice, en vez de una fila de ceros.
     assert "Esperando lo que cuente Amazon" in row_of(page, "Prueba de dos@x.com")
     # Masivo ya no enseña lo que salió.

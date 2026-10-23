@@ -315,8 +315,7 @@ GUIDES: list[dict[str, Any]] = [
          "`permanent` dice si la dirección no existe), **email.complained** (lo "
          "marcaron como spam), **email.rejected** (Amazon no lo mandó), "
          "**email.opened** y **email.clicked** (la primera vez; nunca un clic de un "
-         "transaccional), **email.downloaded** (bajaron el archivo de un correo "
-         "individual), **contact.unsubscribed** y **campaign.finished** (con sus "
+         "transaccional), **contact.unsubscribed** y **campaign.finished** (con sus "
          "cifras). Cada uno dice de dónde vino en `source`: campaign, single o api, "
          "con sus ids.",
          "Cada evento llega como un POST en JSON con `id`, `type`, `created_at` y "
@@ -1173,12 +1172,12 @@ GROUPS: list[dict[str, Any]] = [
           "query": [{"name": "campaign_id", "type": "texto", "description": "Los de esa campaña."},
                     {"name": "limit", "type": "entero", "description": "De 1 a 100."},
                     {"name": "cursor", "type": "texto", "description": "Para la página siguiente."}],
-          "response": {"data": [{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "filters_text": None, "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0, "download": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}], "next_cursor": None}},
+          "response": {"data": [{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "filters_text": None, "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}], "next_cursor": None}},
          {"method": "GET", "path": "/sends/{send_id}", "scope": "campaigns:read",
           "title": "Un envío",
           "description": "Con los primeros errores, si hubo.",
           "test": "sí",
-          "response": {**{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "filters_text": None, "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0, "download": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}, "errors": []}},
+          "response": {**{"id": "6534e1b2a1b2c3d4e5f61201", "campaign_id": "6534d0a1a1b2c3d4e5f61101", "subject": "Asamblea anual de socios", "tags": ["Socios"], "filters_text": None, "single": False, "to": None, "total": 812, "sent": 798, "skipped": 14, "failed": 0, "people": {"delivery": 790, "bounce": 6, "open": 402, "click": 77, "complaint": 0}, "started_at": "2026-10-20T13:00:02Z", "finished_at": "2026-10-20T13:09:40Z"}, "errors": []}},
          {"method": "GET", "path": "/sends/{send_id}/recipients", "scope": "campaigns:read",
           "title": "A quién le salió",
           "description": "Cada persona con lo que pasó (`reached`: complaint, bounce, reject, "
@@ -1267,7 +1266,7 @@ GROUPS: list[dict[str, Any]] = [
          {"method": "GET", "path": "/events", "scope": "stats:read",
           "title": "Los eventos",
           "description": "Uno por correo, persona y tipo, de los más nuevos: sent, delivery, "
-                         "bounce, complaint, open, click, reject o download. `campaign_id` es "
+                         "bounce, complaint, open, click o reject. `campaign_id` es "
                          "el de la campaña o, en un correo de la API, el del correo.",
           "test": "sí",
           "query": [{"name": "type", "type": "texto", "description": "Solo ese tipo."},

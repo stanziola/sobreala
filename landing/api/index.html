@@ -137,9 +137,6 @@
               <p class="usermenu__item is-on">
                 <span class="usermenu__icons"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
                 <span>Español</span></p>
-              <p class="usermenu__item is-off">
-                <span class="usermenu__icons"></span>
-                <span>Inglés (pronto)</span></p>
             </div>
           </details><a class="usermenu__item usermenu__group" data-account-only hidden
              href="https://app.sobreala.com/switch-account">
@@ -451,7 +448,7 @@ Este mes no tuviste movimientos.
 <p>Cada correo dice qué es en <code>type</code>, y eso decide sus reglas. Elegir mal no es un atajo: un promocional disfrazado de transaccional se nota en las quejas, y las quejas pausan la cuenta.</p><p><strong>transactional</strong>: lo que alguien espera porque hizo algo (su recibo, su código, el estado de su pedido). Va a cualquier dirección, esté o no en tus contactos, sin enlace de baja ni marca de agua. Solo lo frenan un rebote permanente o una queja de esa dirección en tu cuenta, o un dominio que no recibe correo: quien se dio de baja de tus promociones sigue recibiendo su recibo. Se cuentan las aperturas, pero <strong>no los clics</strong>, porque sus enlaces suelen ser privados.</p><p><strong>promotional</strong>: una oferta, una invitación, un boletín. Es una campaña de una persona: va solo a un contacto de tu cuenta con todas sus columnas y sin ninguna supresión, con su enlace de baja y la marca de agua de tu plan.</p><p>Los dos gastan un correo de la cuota de tu mes, llevan tu dirección postal al pie, salen de uno de tus remitentes y no salen si la cuenta está en pausa. En la demostración solo van a tus direcciones de prueba.</p>      </section>
       <section class="api-doc" id="webhooks">
         <h2 class="api-doc__title">Webhooks</h2>
-<p>En vez de preguntar cada rato, tu servidor puede recibir lo que pasa con tus correos en cuanto pasa. Los webhooks se crean en <strong>Dashboard → API → Webhooks</strong>: la URL https de tu endpoint y los eventos que quieres. Caben 5.</p><p>Los eventos: <strong>email.delivered</strong> (llegó), <strong>email.bounced</strong> (rebotó; <code>permanent</code> dice si la dirección no existe), <strong>email.complained</strong> (lo marcaron como spam), <strong>email.rejected</strong> (Amazon no lo mandó), <strong>email.opened</strong> y <strong>email.clicked</strong> (la primera vez; nunca un clic de un transaccional), <strong>email.downloaded</strong> (bajaron el archivo de un correo individual), <strong>contact.unsubscribed</strong> y <strong>campaign.finished</strong> (con sus cifras). Cada uno dice de dónde vino en <code>source</code>: campaign, single o api, con sus ids.</p><p>Cada evento llega como un POST en JSON con <code>id</code>, <code>type</code>, <code>created_at</code> y <code>data</code>, y tres cabeceras: <strong>Sobreala-Event-Id</strong>, <strong>Sobreala-Event-Type</strong> y <strong>Sobreala-Signature</strong> (<code>t=&lt;segundos&gt;,v1=&lt;firma&gt;</code>). La firma es un HMAC-SHA256, con el secreto de firma del webhook, de <code>t</code>, un punto y el cuerpo tal como llegó. Compruébala siempre, y rechaza las de más de 5 minutos.</p><p>Tu servidor tiene que responder un 2xx en menos de 5 segundos (las redirecciones no se siguen). Si no, se reintenta al minuto, a los 5 y 30 minutos, a las 2, 6, 12 y 24 horas, y los demás eventos de ese webhook esperan con él. Tras 72 horas fallando se desactiva y te escribimos. Un mismo evento puede llegar dos veces y en otro orden: usa Sobreala-Event-Id para no contarlo dos veces.</p><div class="api-code" data-copy-box>
+<p>En vez de preguntar cada rato, tu servidor puede recibir lo que pasa con tus correos en cuanto pasa. Los webhooks se crean en <strong>Dashboard → API → Webhooks</strong>: la URL https de tu endpoint y los eventos que quieres. Caben 5.</p><p>Los eventos: <strong>email.delivered</strong> (llegó), <strong>email.bounced</strong> (rebotó; <code>permanent</code> dice si la dirección no existe), <strong>email.complained</strong> (lo marcaron como spam), <strong>email.rejected</strong> (Amazon no lo mandó), <strong>email.opened</strong> y <strong>email.clicked</strong> (la primera vez; nunca un clic de un transaccional), <strong>contact.unsubscribed</strong> y <strong>campaign.finished</strong> (con sus cifras). Cada uno dice de dónde vino en <code>source</code>: campaign, single o api, con sus ids.</p><p>Cada evento llega como un POST en JSON con <code>id</code>, <code>type</code>, <code>created_at</code> y <code>data</code>, y tres cabeceras: <strong>Sobreala-Event-Id</strong>, <strong>Sobreala-Event-Type</strong> y <strong>Sobreala-Signature</strong> (<code>t=&lt;segundos&gt;,v1=&lt;firma&gt;</code>). La firma es un HMAC-SHA256, con el secreto de firma del webhook, de <code>t</code>, un punto y el cuerpo tal como llegó. Compruébala siempre, y rechaza las de más de 5 minutos.</p><p>Tu servidor tiene que responder un 2xx en menos de 5 segundos (las redirecciones no se siguen). Si no, se reintenta al minuto, a los 5 y 30 minutos, a las 2, 6, 12 y 24 horas, y los demás eventos de ese webhook esperan con él. Tras 72 horas fallando se desactiva y te escribimos. Un mismo evento puede llegar dos veces y en otro orden: usa Sobreala-Event-Id para no contarlo dos veces.</p><div class="api-code" data-copy-box>
   <pre><code># Python
 import hashlib, hmac, time
 
@@ -5069,8 +5066,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
         &#34;bounce&#34;: 6,
         &#34;open&#34;: 402,
         &#34;click&#34;: 77,
-        &#34;complaint&#34;: 0,
-        &#34;download&#34;: 0
+        &#34;complaint&#34;: 0
       },
       &#34;started_at&#34;: &#34;2026-10-20T13:00:02Z&#34;,
       &#34;finished_at&#34;: &#34;2026-10-20T13:09:40Z&#34;
@@ -5099,8 +5095,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
         &#34;bounce&#34;: 6,
         &#34;open&#34;: 402,
         &#34;click&#34;: 77,
-        &#34;complaint&#34;: 0,
-        &#34;download&#34;: 0
+        &#34;complaint&#34;: 0
       },
       &#34;started_at&#34;: &#34;2026-10-20T13:00:02Z&#34;,
       &#34;finished_at&#34;: &#34;2026-10-20T13:09:40Z&#34;
@@ -5151,8 +5146,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
     &#34;bounce&#34;: 6,
     &#34;open&#34;: 402,
     &#34;click&#34;: 77,
-    &#34;complaint&#34;: 0,
-    &#34;download&#34;: 0
+    &#34;complaint&#34;: 0
   },
   &#34;started_at&#34;: &#34;2026-10-20T13:00:02Z&#34;,
   &#34;finished_at&#34;: &#34;2026-10-20T13:09:40Z&#34;,
@@ -5177,8 +5171,7 @@ Permiso: <code>campaigns:read</code> · Con una llave de prueba: sí.          <
     &#34;bounce&#34;: 6,
     &#34;open&#34;: 402,
     &#34;click&#34;: 77,
-    &#34;complaint&#34;: 0,
-    &#34;download&#34;: 0
+    &#34;complaint&#34;: 0
   },
   &#34;started_at&#34;: &#34;2026-10-20T13:00:02Z&#34;,
   &#34;finished_at&#34;: &#34;2026-10-20T13:09:40Z&#34;,
@@ -5695,7 +5688,7 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
             <code>/events</code></h3>
           <p class="api-endpoint__title">Los eventos</p>
-          <p>Uno por correo, persona y tipo, de los más nuevos: sent, delivery, bounce, complaint, open, click, reject o download. <code>campaign_id</code> es el de la campaña o, en un correo de la API, el del correo.</p>
+          <p>Uno por correo, persona y tipo, de los más nuevos: sent, delivery, bounce, complaint, open, click o reject. <code>campaign_id</code> es el de la campaña o, en un correo de la API, el del correo.</p>
           <p class="api-endpoint__scope">
 Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
 <p class="api-endpoint__label">En la dirección</p>
