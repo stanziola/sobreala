@@ -94,7 +94,9 @@ def auth_art() -> dict[str, str]:
                                                   LANDING_DIR / "content.py")
     content = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(content)
+    # The canvas drawing lives in its highlight block, not among the features.
     items = {one["art"]: one for one in content.HOME["features"]["items"]}
+    items["editor"] = content.HOME["highlights"]["canvas"]
     env = Environment(loader=FileSystemLoader(str(LANDING_DIR / "src")), autoescape=True,
                       undefined=StrictUndefined, trim_blocks=True, lstrip_blocks=True)
     return {name: env.get_template(f"partials/feature-{name}.svg.j2")

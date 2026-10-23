@@ -528,7 +528,7 @@ cosa está como está, y lo que ya se probó y se quitó.
 ### El sitio público (`docs/sitio.md`)
 
 - **Es una sola página** (octubre de 2026): Inicio, **la API y el lienzo** (dos
-  bloques grandes, lo principal), Planes, Funciones (siete, con el dominio
+  bloques grandes, lo principal), Planes, Funciones (seis, con el dominio
   personalizado al final), Plantillas y Preguntas, en ese orden, y Contacto es
   el pie. La barra lleva Inicio, API, Planes, Funciones y Plantillas, y solo
   baja a su sección. Privacidad y Términos son aparte.

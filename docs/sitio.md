@@ -183,8 +183,9 @@ La API en blanco y el lienzo en gris.
   una imagen: la llamada de verdad a `POST /api/v1/emails`, la del ejemplo de
   `backend/api_spec.py` recortada, y su respuesta 201. Es oscura en los dos
   temas, como un editor, y larga se desliza de lado dentro de la tarjeta.
-- **El lienzo** usa el dibujo de su función (`feature-editor.svg.j2`), con el
-  prefijo de ids `hl-` para no repetir los del carrusel (`fid`). Su botón es
+- **El lienzo** lleva su dibujo (`feature-editor.svg.j2`, con sus palabras en
+  `HOME["highlights"]["canvas"]`): fue también una de las Funciones, y salió de
+  ahí por estar arriba. Su botón es
   como el de la presentación: sin sesión, «Solicitar demo» a crear la cuenta, y
   con sesión `nav.js` lo cambia según en qué punto está la empresa; **quien ya
   puede usar el lienzo (la demostración o un plan) va a él**
@@ -289,18 +290,19 @@ no avanza: el anillo late otra vez.
   se quitaron la etiqueta «Tutoriales» y la entradilla. «Tutoriales» sigue
   siendo lo que oye un lector de pantalla en las pestañas (`TUTORIALS["label"]`).
 
-**Funciones son siete dibujos sencillos** (octubre de 2026), en un carrusel
-que aprieta: el abierto ocupa su sitio y los otros seis quedan en listones.
+**Funciones son seis dibujos sencillos** (octubre de 2026), en un carrusel
+que aprieta: el abierto ocupa su sitio y los otros cinco quedan en listones.
 Debajo, el texto del que esté abierto, y debajo de él una barra por función con
 las flechas a la derecha. En el código sigue siendo `features`.
-- **Son, en este orden**: Lienzo, Campos personalizados, Base de datos,
+- **Son, en este orden**: Campos personalizados, Base de datos,
   Resultados de cada campaña, Actividad de tus clientes (quién abrió y quién
   pulsó), «Bajas, rebotes y quejas, solos» y Dominio personalizado.
-- **Fueron cinco, después diez y ahora siete**: en octubre de 2026 entraron
+- **Fueron cinco, después diez y ahora seis**: en octubre de 2026 entraron
   etiquetas, campos, rebotes y quejas, y usuarios; ese mismo mes salieron
   etiquetas (lo cuenta la base de datos), el envío programado y los usuarios,
-  anular la suscripción y los rebotes se juntaron en uno, y el dominio
-  personalizado, que era una sección, pasó a ser la última.
+  anular la suscripción y los rebotes se juntaron en uno, el dominio
+  personalizado, que era una sección, pasó a ser la última, y **el lienzo
+  salió**, porque tiene su bloque grande arriba.
 
 **Cada dibujo cuenta una sola cosa:**
 
@@ -339,9 +341,9 @@ las flechas a la derecha. En el código sigue siendo `features`.
   de las ilustraciones de arriba, así que el mismo dibujo sirve de día y de
   noche. Los `id` llevan el prefijo de su dibujo (`fc-`, `ff-`, `fe-`,
   `fr-`, `fu-` y `fd-`): un `id` repetido en una página hace que un dibujo use
-  el filtro de otro. El del lienzo sale dos veces (aquí y en su bloque grande),
-  y por eso su prefijo viene de fuera (`fid`, `fe` por omisión).
-- **Cuatro también salen en el panel** (octubre de 2026): contactos, editor,
+  el filtro de otro.
+- **Cuatro también salen en el panel** (octubre de 2026): contactos, editor
+  (el del bloque del lienzo, que `build_assets.py` toma de ahí),
   resultados y quién lo vio (`opens`, desde que el de envío programado salió)
   rotan al lado de entrar y registrarse. Los convierte
   `backend/build_assets.py` desde estos mismos archivos y sus palabras, así que
@@ -371,7 +373,7 @@ las flechas a la derecha. En el código sigue siendo `features`.
 debajo para que se leyeran encima de la captura; el velo tapaba justo lo que la
 sección viene a enseñar. Sin rótulo no hace falta ninguno de los dos.
 
-**Lo que abre cada dibujo son siete botones de radio**, no un guion. Por eso la
+**Lo que abre cada dibujo son seis botones de radio**, no un guion. Por eso la
 sección funciona entera sin JavaScript y las flechas del teclado la mueven
 solas, que es lo que se consigue gratis con un grupo de radios. Las barras de
 debajo del texto son sus etiquetas, así que también se ven sin guion.
@@ -390,11 +392,11 @@ automático.
 
 **En el teléfono no hay apretujón**: los dos contenedores se vuelven
 transparentes (`display: contents`) y cada dibujo queda encima de su texto, con
-los siete a la vista. El apretujón necesita ancho para significar algo, y ahí
+los seis a la vista. El apretujón necesita ancho para significar algo, y ahí
 no lo hay. Tampoco hay barras ni flechas, y como sin barra no hay reloj, ahí no
 pasa sola.
 
-Las reglas del carrusel nombran los siete por su id (`#tour-1` … `#tour-7`), que
+Las reglas del carrusel nombran los seis por su id (`#tour-1` … `#tour-6`), que
 es lo que cuesta hacer esto sin una línea de JavaScript: si algún día son otros,
 esas listas de `landing/src/site.css` crecen con ellos.
 

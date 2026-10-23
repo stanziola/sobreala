@@ -130,23 +130,24 @@ def test_la_api_y_el_lienzo_van_arriba_en_grande():
             in lienzo)
     assert "data-hide-for-admin" in lienzo
     assert '<svg class="tour__art"' in lienzo
-    # El mismo dibujo sale dos veces en la página, con sus ids distintos.
-    assert html.count('id="hl-drop"') == 1 and html.count('id="fe-drop"') == 1
+    # El dibujo del lienzo sale una sola vez: ya no está en Funciones.
+    assert html.count('id="fe-drop"') == 1
 
 
-def test_funciones_trae_sus_siete_dibujos():
-    """Siete dibujos en vez de capturas del panel, cada uno con su barra, en el
+def test_funciones_trae_sus_seis_dibujos():
+    """Seis dibujos en vez de capturas del panel, cada uno con su barra, en el
     orden que se pidió (octubre de 2026): salieron etiquetas, el envío
     programado y los usuarios; anular la suscripción y los rebotes se juntaron;
-    y el dominio personalizado entró, al final."""
+    el dominio personalizado entró, al final; y el lienzo salió, porque tiene
+    su bloque grande arriba."""
     html = portada()
     tira = html[html.index('class="tour"'):html.index('id="plantillas"')]
-    assert tira.count('<svg class="tour__art"') == 7
-    assert tira.count('name="tour"') == 7
-    assert tira.count('<span class="tour__fill"></span>') == 7
+    assert tira.count('<svg class="tour__art"') == 6
+    assert tira.count('name="tour"') == 6
+    assert tira.count('<span class="tour__fill"></span>') == 6
     titulos = re.findall(r'<h3 class="tour__title">([^<]+)</h3>', tira)
     assert titulos == [
-        "Lienzo", "Campos personalizados", "Base de datos",
+        "Campos personalizados", "Base de datos",
         "Resultados de cada campaña", "Actividad de tus clientes",
         "Bajas, rebotes y quejas, solos", "Dominio personalizado"], titulos
     for viejo in ("Organiza con etiquetas", "Envío inmediato o programado",

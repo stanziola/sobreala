@@ -184,8 +184,13 @@ HOME = {
                              "url": PANEL["base_url"] + "/templates/create"},
                 },
             },
-            # El dibujo es el de Funciones (partials/feature-editor.svg.j2).
+            # Su dibujo (partials/feature-editor.svg.j2), con lo que lleva dentro
+            # y lo que oye un lector de pantalla. Fue también una de las
+            # Funciones; la pantalla de entrar lo sigue usando
+            # (backend/build_assets.py).
             "art": "editor",
+            "alt": "Una plantilla en el lienzo: un título elegido, una foto y un botón.",
+            "words": {"title": "Oferta de octubre", "button": "Ver oferta"},
         },
     },
     "features": {
@@ -199,23 +204,12 @@ HOME = {
         # del panel, que enseñaban demasiado de golpe. Cada uno cuenta una sola
         # cosa; las palabras que lleva dentro van en `words`, y `alt` es lo que
         # dice a un lector de pantalla. Fueron diez; en octubre de 2026 quedaron
-        # siete, en el orden que se pidió: salieron etiquetas (va en la base de
+        # seis, en el orden que se pidió: salieron etiquetas (va en la base de
         # datos), el envío programado y los usuarios, que siguen en el producto;
-        # anular la suscripción y los rebotes se juntaron, y entró el dominio
-        # personalizado, que era una sección aparte.
+        # anular la suscripción y los rebotes se juntaron; entró el dominio
+        # personalizado, que era una sección aparte; y el lienzo salió, porque
+        # tiene su bloque grande arriba (`highlights`).
         "items": [
-            {
-                "art": "editor",
-                "alt": "Una plantilla en el lienzo: un título elegido, una foto y un botón.",
-                "words": {"title": "Oferta de octubre", "button": "Ver oferta"},
-                "title": "Lienzo",
-                "text": (
-                    "Diseña tus correos a pantalla completa: textos, imágenes, botones "
-                    "y formas donde quieras, con negrita, enlaces y viñetas en las "
-                    "palabras que elijas. También puedes cargar una plantilla que te "
-                    "pasaron y seguir editándola desde tu cuenta."
-                ),
-            },
             {
                 "art": "fields",
                 "alt": (

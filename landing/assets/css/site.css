@@ -717,14 +717,14 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .art-drop { flood-color: var(--art-shadow); }
 
 /* ------------------------------------------------------------------ tour (home)
-   El carrusel de Funciones: siete dibujos sencillos (fueron diez hasta
+   El carrusel de Funciones: seis dibujos sencillos (fueron diez hasta
    octubre de 2026), uno por cosa, que reemplazaron a las capturas del panel
    porque enseñaban demasiado de golpe.
-   Lo que abre cada uno son siete botones de radio, así que funciona entero
+   Lo que abre cada uno son seis botones de radio, así que funciona entero
    sin JavaScript y las flechas del teclado lo mueven solas; carousel.js solo
    agrega sus flechas y el paso automático, cuyo reloj es la barra de la
    abierta (más abajo).
-   Las reglas nombran los siete por su id: si algún día son otros, estas
+   Las reglas nombran los seis por su id: si algún día son otros, estas
    listas crecen con ellos.
    Los dibujos son SVG con las clases .art-*: el mismo sirve de día y de noche.
    En el teléfono no hay apretujón: los dos contenedores se vuelven
@@ -748,14 +748,12 @@ a.usermenu__item:hover, button.usermenu__item:hover {
 .tour__panel:nth-child(4) { order: 7; }
 .tour__panel:nth-child(5) { order: 9; }
 .tour__panel:nth-child(6) { order: 11; }
-.tour__panel:nth-child(7) { order: 13; }
 .tour__text:nth-child(1) { order: 2; }
 .tour__text:nth-child(2) { order: 4; }
 .tour__text:nth-child(3) { order: 6; }
 .tour__text:nth-child(4) { order: 8; }
 .tour__text:nth-child(5) { order: 10; }
 .tour__text:nth-child(6) { order: 12; }
-.tour__text:nth-child(7) { order: 14; }
 .tour__panel {
   position: relative; display: block; overflow: hidden; cursor: pointer;
   aspect-ratio: 16 / 9; border-radius: var(--radius);
@@ -788,8 +786,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   #tour-3:checked ~ .tour__strip .tour__panel:nth-child(3),
   #tour-4:checked ~ .tour__strip .tour__panel:nth-child(4),
   #tour-5:checked ~ .tour__strip .tour__panel:nth-child(5),
-  #tour-6:checked ~ .tour__strip .tour__panel:nth-child(6),
-  #tour-7:checked ~ .tour__strip .tour__panel:nth-child(7){
+  #tour-6:checked ~ .tour__strip .tour__panel:nth-child(6){
     flex-grow: 0; flex-basis: calc(100% * 16 / 9 / 3.2);
   }
   #tour-1:focus-visible ~ .tour__strip .tour__panel:nth-child(1),
@@ -797,8 +794,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   #tour-3:focus-visible ~ .tour__strip .tour__panel:nth-child(3),
   #tour-4:focus-visible ~ .tour__strip .tour__panel:nth-child(4),
   #tour-5:focus-visible ~ .tour__strip .tour__panel:nth-child(5),
-  #tour-6:focus-visible ~ .tour__strip .tour__panel:nth-child(6),
-  #tour-7:focus-visible ~ .tour__strip .tour__panel:nth-child(7){
+  #tour-6:focus-visible ~ .tour__strip .tour__panel:nth-child(6){
     outline: 2px solid var(--color-accent); outline-offset: 3px;
   }
   .tour__text { display: none; }
@@ -807,8 +803,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   #tour-3:checked ~ .tour__texts .tour__text:nth-child(3),
   #tour-4:checked ~ .tour__texts .tour__text:nth-child(4),
   #tour-5:checked ~ .tour__texts .tour__text:nth-child(5),
-  #tour-6:checked ~ .tour__texts .tour__text:nth-child(6),
-  #tour-7:checked ~ .tour__texts .tour__text:nth-child(7){ display: block; }
+  #tour-6:checked ~ .tour__texts .tour__text:nth-child(6){ display: block; }
 
   /* Debajo del texto, las barras a la izquierda y las flechas a la derecha. */
   .tour__nav { display: flex; align-items: center; gap: 14px; }
@@ -859,8 +854,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   #tour-3:checked ~ .tour__nav .tour__dot:nth-child(3),
   #tour-4:checked ~ .tour__nav .tour__dot:nth-child(4),
   #tour-5:checked ~ .tour__nav .tour__dot:nth-child(5),
-  #tour-6:checked ~ .tour__nav .tour__dot:nth-child(6),
-  #tour-7:checked ~ .tour__nav .tour__dot:nth-child(7){
+  #tour-6:checked ~ .tour__nav .tour__dot:nth-child(6){
     width: 64px; --run: tour-fill; --fill: none;
   }
   #tour-1:focus-visible ~ .tour__nav .tour__dot:nth-child(1),
@@ -868,8 +862,7 @@ a.usermenu__item:hover, button.usermenu__item:hover {
   #tour-3:focus-visible ~ .tour__nav .tour__dot:nth-child(3),
   #tour-4:focus-visible ~ .tour__nav .tour__dot:nth-child(4),
   #tour-5:focus-visible ~ .tour__nav .tour__dot:nth-child(5),
-  #tour-6:focus-visible ~ .tour__nav .tour__dot:nth-child(6),
-  #tour-7:focus-visible ~ .tour__nav .tour__dot:nth-child(7){
+  #tour-6:focus-visible ~ .tour__nav .tour__dot:nth-child(6){
     outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 6px;
   }
 }

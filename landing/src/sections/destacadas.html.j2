@@ -58,10 +58,9 @@
            {%- for state, one in canvas.button.states.items() %} data-label-{{ state }}="{{ one.label }}" data-href-{{ state }}="{{ one.url }}"{% endfor %}>{{ canvas.button.label }}</a>
       </p>
     </div>
-    {#- El dibujo de Funciones, el mismo archivo. -#}
+    {#- Su dibujo, del mismo estilo que los de Funciones. -#}
     <div class="highlight__art highlight__drawing">
-      {% with item = home.features['items'] | selectattr("art", "equalto", canvas.art) | first,
-              fid = "hl" %}
+      {% with item = canvas %}
       {%- include "partials/feature-" ~ canvas.art ~ ".svg.j2" -%}
       {% endwith %}
     </div>
