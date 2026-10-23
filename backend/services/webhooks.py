@@ -78,6 +78,13 @@ def emit(db, account_id, kind: str, data: dict[str, Any], *, key: str) -> int:
         targets = hooks.listening(db, account_id, kind)
         if not targets:
             return 0
+        # Los webhooks son de la API, que es desde el plan Negocio: los de una
+        # cuenta que bajó de plan se quedan guardados y callados.
+        from models import account as accounts
+        from services import plans
+
+        if not plans.has_api(accounts.current_plan(accounts.by_id(db, account_id))):
+            return 0
         payload = {"id": event_id(key), "type": kind, "created_at": iso(now()),
                    "data": data() if callable(data) else data}
         return sum(1 for one in targets

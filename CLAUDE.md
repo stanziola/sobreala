@@ -421,12 +421,16 @@ cosa está como está, y lo que ya se probó y se quitó.
   `test_api_docs.py` la compara con `api_spec.py`, de donde salen
   `openapi.json` y `sobreala.com/api/`. **Cambiar la API pide regenerar el
   sitio.**
+- **La API es desde el plan Negocio** (octubre de 2026), en la tabla y en el
+  producto (`plans.has_api()` con el plan vigente): sin él la API responde 403
+  `plan_without_api`, la rama API del Dashboard solo lo dice y los webhooks no
+  se anotan. Las claves no se borran: abren otra vez al mejorar.
 - **Las claves de API** guardan solo su hash, se enseñan una vez y se crean en
   el Dashboard (API → Claves de API) con la contraseña y el segundo factor; una
   que llega en la URL se revoca sola. Las de prueba solo leen y simulan.
 - **Dos clases de correo** (`sender.send_one`): **transaccional** (cualquier
-  dirección, sin baja ni marca, sin contar clics) y **promocional** (un contacto
-  completo, con su baja y su marca). Los dos gastan cuota, que se **aparta antes**
+  dirección, sin baja, sin contar clics) y **promocional** (un contacto
+  completo, con su baja). Ninguno lleva marca de agua: la API es desde Negocio. Los dos gastan cuota, que se **aparta antes**
   de mandar. Viven en `messages` (30 días), no en Enviados.
 - **El proceso en segundo plano** (`worker.py`) manda **todas** las campañas
   (desde octubre de 2026 «Enviar» solo la deja en cola), por tandas y
@@ -553,8 +557,10 @@ cosa está como está, y lo que ya se probó y se quitó.
    que genera `build_assets.py` desde `brand/logo/logo.png`, en PNG porque Gmail
    y Outlook no dibujan SVG). Al subir de plan desaparece sola, y Negocio y
    Empresa no llevan ninguna mención. No la exige ninguna ley: es publicidad.
-   El correo individual y el transaccional de la API no la llevan en ningún
-   plan (octubre de 2026); el promocional de la API, sí.
+   El correo individual no la lleva en ningún plan (octubre de 2026), y
+   **ningún correo de la API la lleva**: la API es desde el plan Negocio, que
+   no tiene marca (octubre de 2026; antes el promocional del Básico la
+   llevaba).
 5. **Los contactos no se duplican.** Toda importación es un upsert sobre
    `{account_id, email_normalized}`. El id de su sistema (`external_id`, único
    por cuenta) es una segunda forma de encontrar al mismo contacto, no otro.

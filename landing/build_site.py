@@ -57,6 +57,8 @@ PUBLIC_ROWS = [
     ("Etiquetas", "Etiquetas"),
     ("Columnas propias del contacto", "Columnas de datos"),
     ("Correos sin marca de agua", "Correos sin marca de agua"),
+    # Desde el plan Negocio (octubre de 2026), en la tabla y en el producto.
+    ("Acceso a la API", "API"),
     ("Usuarios", "Usuarios de la cuenta"),
 ]
 # Las filas de docs/pricing.md que el sitio ya no publica (octubre de 2026):

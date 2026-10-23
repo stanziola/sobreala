@@ -87,6 +87,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
     clean: list[bool] = []
     users: list[int | None] = []
     images: list[int | None] = []
+    api: list[bool] = []
 
     for line in text.splitlines():
         if not line.lstrip().startswith("|"):
@@ -115,6 +116,8 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             users = [_count(c) for c in cells[1:]]
         elif cells[0].strip("* ") == "Imágenes guardadas" and len(cells) - 1 == len(names):
             images = [_count(c) for c in cells[1:]]
+        elif cells[0].strip("* ") == "Acceso a la API" and len(cells) - 1 == len(names):
+            api = [c.strip() == "✅" for c in cells[1:]]
 
     if not names or MONTHLY not in prices or YEARLY not in prices:
         raise RuntimeError(f"no encontré las filas de precios en {path}")
@@ -132,6 +135,7 @@ def read(path: Path = PRICING) -> dict[str, dict[str, Any]]:
             "emails": emails[index] if index < len(emails) else None,
             "users": users[index] if index < len(users) else None,
             "images": images[index] if index < len(images) else None,
+            "api": api[index] if index < len(api) else False,
         }
     return plans
 
@@ -235,6 +239,20 @@ def has_watermark(plan: str | None) -> bool:
     """
     found = PLANS.get(plan or "")
     return not (found and found["clean"])
+
+
+def has_api(plan: str | None) -> bool:
+    """Si ese plan trae la API (octubre de 2026: desde Negocio), de la fila
+    «Acceso a la API» de docs/pricing.md. Sin plan, no: la demostración tiene
+    lo del Básico. Se pasa el plan **vigente** (`accounts.current_plan()`), así
+    que uno vencido tampoco la trae."""
+    found = PLANS.get(plan or "")
+    return bool(found and found["api"])
+
+
+def first_with_api() -> str:
+    """El nombre del plan más barato que trae la API, para decirlo en pantalla."""
+    return next((one["name"] for one in PLANS.values() if one["api"]), "")
 
 
 def rank(plan: str | None) -> int:

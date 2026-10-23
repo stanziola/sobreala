@@ -19,9 +19,18 @@ from models import api_key as api_keys
 from models import contact as contacts
 from models import lock as locks
 from models import suppression as suppressions
+from services import plans
+
+
+def con_api(database, cuenta):
+    """La API es desde el plan Negocio (octubre de 2026): una cuenta que no lo
+    tiene lo recibe, para que la clave abra. `ready()` las arma en Básico."""
+    if not plans.has_api(accounts.current_plan(accounts.by_id(database, cuenta["_id"]))):
+        accounts.set_plan(database, cuenta["_id"], "negocio")
 
 
 def llave(database, cuenta, *, mode="live", scopes=("contacts:read", "contacts:write")):
+    con_api(database, cuenta)
     raw, doc = api_keys.create(database, cuenta["_id"], name="Tienda", mode=mode,
                                scopes=list(scopes), ips=[], days=0)
     return {"Authorization": f"Bearer {raw}"}, doc
@@ -158,8 +167,8 @@ def test_lo_que_no_va_se_dice_antes_de_escribir(client, database, outbox):
 
 def test_el_tope_del_plan(client, database, outbox, monkeypatch):
     _, cuenta, _ = ready(client, database, howmany=2)
-    monkeypatch.setitem(accounts.PLAN_CONTACTS, "basico", 3)
-    auth, _ = llave(database, cuenta)
+    auth, _ = llave(database, cuenta)  # Negocio: la API es desde ahí
+    monkeypatch.setitem(accounts.PLAN_CONTACTS, "negocio", 3)
     datos = cargar(client, auth, [{"email": "nueva1@ejemplo.com"},
                                   {"email": "nueva2@ejemplo.com"},
                                   {"email": "socio0@ejemplo.com", "name": "Cambiado"}]).get_json()
@@ -241,16 +250,18 @@ def test_borrar_deja_la_supresion(client, database, outbox):
     assert client.get("/api/v1/suppressions?reason=inventado", headers=auth).status_code == 422
 
 
-def test_etiquetas(client, database, outbox):
+def test_etiquetas(client, database, outbox, monkeypatch):
     _, cuenta, _ = ready(client, database, howmany=1, tag="Socios fundadores")
     auth, _ = llave(database, cuenta)
+    # Negocio con una sola etiqueta, para llegar al tope.
+    monkeypatch.setitem(plans.PLANS["negocio"], "tags", 1)
     lista = client.get("/api/v1/tags", headers=auth).get_json()
     assert lista["data"] == [{"name": "Socios fundadores", "contacts": 1}]
     assert client.post("/api/v1/tags", json={"name": "socios FUNDADORES"},
                        headers=auth).get_json()["error"]["code"] == "tag_exists"
     llena = client.post("/api/v1/tags", json={"name": "Otra"}, headers=auth)
     assert llena.status_code == 409 and llena.get_json()["error"]["code"] == "limit_reached"
-    accounts.set_plan(database, cuenta["_id"], "negocio")
+    accounts.set_plan(database, cuenta["_id"], "empresa")
     assert client.post("/api/v1/tags", json={"name": "Otra"}, headers=auth).status_code == 201
     borrada = client.delete("/api/v1/tags/Socios%20fundadores", headers=auth)
     assert borrada.status_code == 200 and borrada.get_json()["contacts"] == 1
@@ -258,16 +269,18 @@ def test_etiquetas(client, database, outbox):
     assert client.delete("/api/v1/tags/Nada", headers=auth).status_code == 404
 
 
-def test_columnas(client, database, outbox):
+def test_columnas(client, database, outbox, monkeypatch):
     _, cuenta, _ = ready(client, database, howmany=1)
     auth, _ = llave(database, cuenta)
+    # Negocio con una sola columna, para llegar al tope.
+    monkeypatch.setitem(plans.PLANS["negocio"], "fields", 1)
     hecha = client.post("/api/v1/fields", json={"label": "Número de socio", "type": "text"},
                         headers=auth)
     assert hecha.status_code == 201 and hecha.get_json()["key"] == "NUMERO_DE_SOCIO"
     llena = client.post("/api/v1/fields", json={"label": "Ciudad", "type": "text"},
                         headers=auth)
     assert llena.get_json()["error"]["code"] == "limit_reached"
-    accounts.set_plan(database, cuenta["_id"], "negocio")
+    accounts.set_plan(database, cuenta["_id"], "empresa")
     repetida = client.post("/api/v1/fields", json={"label": "Numero de socio", "type": "text"},
                            headers=auth)
     assert repetida.get_json()["error"]["code"] == "field_exists"

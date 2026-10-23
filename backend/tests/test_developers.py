@@ -16,7 +16,8 @@ import re
 
 from conftest import code_from_outbox
 from test_admin import make_admin
-from test_campaigns import csrf, ready
+from test_campaigns import csrf
+from test_campaigns import ready as lista
 from test_settings import switch_to, two_accounts
 from test_users import as_member
 
@@ -26,6 +27,13 @@ from models import mail_log
 from services import erase
 
 CLAVE = "Contrasena-Larga1"
+
+
+def ready(client, database, **datos):
+    """Una cuenta lista, en el plan Negocio: la API es desde ahí (octubre de
+    2026)."""
+    datos.setdefault("plan", "negocio")
+    return lista(client, database, **datos)
 
 
 def formulario(browser):
@@ -103,6 +111,7 @@ def test_la_prueba_vale_diez_minutos_solo_para_esa_cuenta(client, database, outb
     browser, una, dos = two_accounts(client, database)
     for one in (una, dos):
         accounts.open_account(database, one)
+        accounts.set_plan(database, one, "negocio")
     # En uso está la segunda: se prueba ahí y se crea.
     assert llave_de(crear(browser))
     # Sin pedirla otra vez, mientras dure.

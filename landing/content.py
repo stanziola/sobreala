@@ -1555,7 +1555,7 @@ API_PAGE = {
         "title": "La API de Sobreala",
         "subtitle": "Conecta tu tienda o tu sistema: carga tus contactos, usa tus "
                     "plantillas y tus remitentes, y envía correos desde tu propio "
-                    "programa.",
+                    "programa. Desde el plan Negocio.",
     },
 }
 
@@ -1712,8 +1712,9 @@ HELP = {
                       "tu sistema de socios) cargue contactos, use tus plantillas y "
                       "envíe correos sin que entres a tu cuenta."},
                 {"q": "¿Cómo empiezo?",
-                 "a": "Crea una clave de API en Dashboard → API → Claves de API, y "
-                      "sigue la documentación en sobreala.com/api/."},
+                 "a": "La API es desde el plan Negocio. Crea una clave de API en "
+                      "Dashboard → API → Claves de API, y sigue la documentación en "
+                      "sobreala.com/api/."},
                 {"q": "¿Qué diferencia hay entre transaccional y promocional?",
                  "a": "Un transaccional es lo que alguien espera porque hizo algo: su "
                       "recibo, su código, el estado de su pedido; no lleva enlace de "

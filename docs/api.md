@@ -36,6 +36,19 @@ en su primera tanda.
 
 ## La puerta (`blueprints/api/core.py`)
 
+- **La API es desde el plan Negocio** (octubre de 2026), en la tabla de planes y
+  en el producto: lo dice la fila «Acceso a la API» de `docs/pricing.md`, que
+  leen el sitio y `plans.has_api()`. Se mira el plan **vigente**
+  (`accounts.current_plan()`), así que un Básico, la demostración y un plan
+  vencido quedan fuera:
+  - la puerta responde **403 `plan_without_api`**, después de comprobar que la
+    cuenta está abierta. Sus claves no se borran: vuelven a abrir al mejorar;
+  - la rama API del Dashboard (`developers.keep_out()`) enseña en cada pantalla
+    solo «La API es desde el plan Negocio», con «Ver planes» y la
+    documentación, y no procesa ningún formulario. Quien bajó de plan lee que
+    sus claves siguen guardadas;
+  - los webhooks de esa cuenta no se anotan (`webhooks.emit()`): se quedan
+    guardados y callados.
 - **Solo `Authorization: Bearer <llave>`.** Bajo `/api/` la sesión es una vacía
   que no se lee ni se guarda (`PanelSessions` en `app.py`), y la puerta deja
   `current_account()` en None: una galleta del navegador no cuela nada. Sin

@@ -19,6 +19,7 @@ reglas de negocio asociadas.
 | Columnas propias del contacto | 1 | 5 | 10 |
 | Crear plantillas en el editor | ✅ | ✅ | ✅ |
 | **Correos sin marca de agua** | — | ✅ | ✅ |
+| **Acceso a la API** | — | ✅ | ✅ |
 | Analytics completo | ✅ | ✅ | ✅ |
 | Exportar CSV y PDF | ✅ | ✅ | ✅ |
 | Usuarios | 1 | 2 | 3 |
@@ -49,6 +50,13 @@ nuevo debe respetarla: permite 5 campañas mensuales a la lista completa.
 - **Pendiente de confirmar con Yappy**: si soporta cobros recurrentes. Si no, a
   los clientes de Yappy se les envía un enlace de pago antes de cada
   vencimiento.
+
+### La API
+
+- **Desde el plan Negocio** (octubre de 2026): la fila «Acceso a la API» de la
+  tabla. La leen el sitio (la fila «API» de la comparación) y el producto
+  (`plans.has_api()`): el Básico y la demostración no crean claves de API, y las
+  de quien baja de plan dejan de abrir hasta que mejore. Ver `docs/api.md`.
 
 ### Mejorar de plan (prorrateo)
 

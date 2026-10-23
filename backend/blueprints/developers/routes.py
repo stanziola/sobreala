@@ -42,7 +42,7 @@ from models import event as mail_events
 from models import message as messages
 from models import webhook as hooks
 from models import token as tokens
-from services import api_auth, notices, safe_http, totp, webhooks
+from services import api_auth, notices, plans, safe_http, totp, webhooks
 from services.security import csrf_ok, rate_limit, verify_password
 
 bp = Blueprint("developers", __name__, url_prefix="/developers")
@@ -56,8 +56,19 @@ def keep_out():
     account = current_account()
     if account is None:
         return redirect(url_for("auth.login"))
-    return (not_for_admins(account) or owner_only(account)
-            or needs(account, accounts.CONTACTS))
+    answer = (not_for_admins(account) or owner_only(account)
+              or needs(account, accounts.CONTACTS))
+    if answer is not None:
+        return answer
+    # La API es desde el plan Negocio (octubre de 2026): sin él, cada pantalla
+    # de la rama dice eso y nada más, y ningún formulario de aquí se procesa.
+    # Las filas del árbol siguen, para que se sepa que existe.
+    if not plans.has_api(accounts.current_plan(account)):
+        return render_template(
+            "developers/plan.html", docs=docs_url(), plan=plans.first_with_api(),
+            old_keys=any(api_keys.is_live(one)
+                         for one in api_keys.for_account(get_db(), account["_id"])))
+    return None
 
 
 def now() -> datetime:

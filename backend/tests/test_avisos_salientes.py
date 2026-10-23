@@ -19,8 +19,9 @@ import threading
 import time
 from datetime import timedelta
 
-from test_campaigns import catch, csrf, ready
-from test_developers import CLAVE
+from test_api_contactos import con_api
+from test_campaigns import catch, csrf
+from test_developers import CLAVE, ready
 
 import api_spec
 from models import contact as contacts
@@ -33,6 +34,7 @@ URL = "https://hooks.tienda.com/sobreala"
 
 
 def destino(database, cuenta, *, kinds=hooks.EVENTS, url=URL):
+    con_api(database, cuenta)
     new_id = hooks.create(database, cuenta["_id"], url=url, host="hooks.tienda.com",
                           events=list(kinds), description="Tienda")
     return hooks.by_id(database, cuenta["_id"], new_id)

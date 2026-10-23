@@ -76,12 +76,20 @@
             Inicio
           </a>
         </li>
+        <li><a class="site-nav__link" href="/#api" data-section-link>
+            API
+          </a>
+        </li>
         <li><a class="site-nav__link" href="/#planes" data-section-link>
             Planes
           </a>
         </li>
-        <li><a class="site-nav__link" href="/#como-funciona" data-section-link>
-            Cómo funciona
+        <li><a class="site-nav__link" href="/#funciones" data-section-link>
+            Funciones
+          </a>
+        </li>
+        <li><a class="site-nav__link" href="/#plantillas" data-section-link>
+            Plantillas
           </a>
         </li>
       </ul><div class="site-nav__account" data-account>
@@ -161,7 +169,7 @@
   <div class="shell">
     <p class="eyebrow eyebrow--light">Para programadores</p>
     <h1 class="page-hero__title">La API de Sobreala</h1>
-    <p class="page-hero__subtitle">Conecta tu tienda o tu sistema: carga tus contactos, usa tus plantillas y tus remitentes, y envía correos desde tu propio programa.</p>
+    <p class="page-hero__subtitle">Conecta tu tienda o tu sistema: carga tus contactos, usa tus plantillas y tus remitentes, y envía correos desde tu propio programa. Desde el plan Negocio.</p>
   </div>
 </section>
 
@@ -339,6 +347,7 @@
               <tr><th scope="row"><code>ip_not_allowed</code></th><td>403</td><td>La clave tiene una lista de IP y esta no está.</td></tr>
               <tr><th scope="row"><code>account_suspended</code></th><td>403</td><td>La cuenta está suspendida.</td></tr>
               <tr><th scope="row"><code>account_closed</code></th><td>403</td><td>La cuenta todavía no se abrió (falta la demostración o un plan).</td></tr>
+              <tr><th scope="row"><code>plan_without_api</code></th><td>403</td><td>El plan de la cuenta no trae la API: es desde el plan Negocio. Sus claves vuelven a abrir al mejorarlo.</td></tr>
               <tr><th scope="row"><code>test_key_cannot</code></th><td>403</td><td>Una clave de prueba no puede hacer esto: solo lee y simula envíos.</td></tr>
               <tr><th scope="row"><code>missing_scope</code></th><td>403</td><td>La clave no tiene el permiso que pide esta ruta.</td></tr>
               <tr><th scope="row"><code>rate_limited</code></th><td>429</td><td>Demasiadas peticiones. Espera lo que dice Retry-After.</td></tr>
@@ -369,6 +378,7 @@
               <tr><th scope="row"><code>missing_data</code></th><td>422</td><td>Hay variables sin dato; <code>missing</code> dice cuáles.</td></tr>
               <tr><th scope="row"><code>bad_subject</code></th><td>422</td><td>El asunto lleno trae un salto de línea de un dato del contacto.</td></tr>
               <tr><th scope="row"><code>throttled</code></th><td>503</td><td>Amazon pidió esperar. No se envió ni gastó cuota: reintenta tras Retry-After.</td></tr>
+              <tr><th scope="row"><code>daily_limit</code></th><td>429</td><td>Se llegó al límite de correos del día. No se envió ni gastó cuota: reintenta tras Retry-After.</td></tr>
               <tr><th scope="row"><code>delivery_failed</code></th><td>502</td><td>No se pudo entregar a Amazon. No gastó cuota.</td></tr>
               <tr><th scope="row"><code>campaign_sending</code></th><td>409</td><td>La campaña se está enviando: no se edita, no se borra ni se reprograma hasta que termine.</td></tr>
               <tr><th scope="row"><code>unavailable</code></th><td>503</td><td>No disponible por un momento; reintenta tras Retry-After.</td></tr>
@@ -4206,7 +4216,7 @@ Permiso: <code>emails:send</code> · Con una llave de prueba: sí.          </p>
       </section>
       <section class="api-doc" id="campanas">
         <h2 class="api-doc__title">Campañas</h2>
-        <p>Las campañas de Masivo: a todos tus contactos o a los de unas etiquetas (y, si quieres, solo a los que cumplan unas condiciones sobre sus columnas), con una plantilla o un texto, y las veces que haga falta. Llevan siempre su enlace de baja (y la marca de agua del Básico), se saltan a los suprimidos sin gastar cuota y no salen a un contacto sin todas sus columnas. <strong>Las manda el proceso en segundo plano</strong>, por tandas: mandar o programar responde enseguida, y la campaña dice cómo va en <code>status</code> y <code>progress</code>. Si no puede salir (sin cuota, en pausa), <code>waiting</code> dice por qué, y se vuelve a intentar sola cada 15 minutos.</p>
+        <p>Las campañas de Masivo: a todos tus contactos o a los de unas etiquetas (y, si quieres, solo a los que cumplan unas condiciones sobre sus columnas), con una plantilla o un texto, y las veces que haga falta. Llevan siempre su enlace de baja, se saltan a los suprimidos sin gastar cuota y no salen a un contacto sin todas sus columnas. <strong>Las manda el proceso en segundo plano</strong>, por tandas: mandar o programar responde enseguida, y la campaña dice cómo va en <code>status</code> y <code>progress</code>. Si no puede salir (sin cuota, en pausa), <code>waiting</code> dice por qué, y se vuelve a intentar sola cada 15 minutos.</p>
 
         <article class="api-endpoint" id="get-campaigns">
           <h3 class="api-endpoint__route"><span class="api-method api-method--get">GET</span>
@@ -5814,7 +5824,10 @@ Permiso: <code>stats:read</code> · Con una llave de prueba: sí.          </p>
               <a href="/#planes">Planes</a>
             </li>
             <li>
-              <a href="/#como-funciona">Cómo funciona</a>
+              <a href="/#funciones">Funciones</a>
+            </li>
+            <li>
+              <a href="/#plantillas">Plantillas</a>
             </li>
             <li>
               <a href="/api/">API</a>

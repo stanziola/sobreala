@@ -41,7 +41,7 @@ from models import account as accounts
 from models import api_key as api_keys
 from models import api_log
 from models import idempotency
-from services import api_auth
+from services import api_auth, plans
 from services.security import rate_state
 
 bp = Blueprint("api", __name__, url_prefix="/api/v1")
@@ -206,6 +206,11 @@ def gate():
         return error_response("account_suspended", 403)
     if not accounts.is_open(company):
         return error_response("account_closed", 403)
+    # Desde el plan Negocio (octubre de 2026). Las claves de quien no lo tiene
+    # (un Básico, la demostración, un plan vencido) no se borran: vuelven a
+    # abrir al mejorar el plan.
+    if not plans.has_api(accounts.current_plan(company)):
+        return error_response("plan_without_api", 403)
 
     scope = meta["scope"]
     if scope != ANY:

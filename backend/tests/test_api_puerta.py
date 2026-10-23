@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+from test_api_contactos import con_api
 from test_campaigns import ready
 
 from blueprints.api import core
@@ -25,6 +26,7 @@ from models import mail_log
 
 
 def llave(database, cuenta, *, mode="live", scopes=("emails:send",), ips=(), days=0):
+    con_api(database, cuenta)
     raw, doc = api_keys.create(database, cuenta["_id"], name="Tienda", mode=mode,
                                scopes=list(scopes), ips=list(ips), days=days)
     return raw, doc

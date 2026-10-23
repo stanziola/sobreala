@@ -49,6 +49,8 @@ ERRORS = [
     ("account_suspended", 403, "La cuenta está suspendida."),
     ("account_closed", 403, "La cuenta todavía no se abrió (falta la demostración o "
                             "un plan)."),
+    ("plan_without_api", 403, "El plan de la cuenta no trae la API: es desde el plan "
+                              "Negocio. Sus claves vuelven a abrir al mejorarlo."),
     ("test_key_cannot", 403, "Una clave de prueba no puede hacer esto: solo lee y "
                              "simula envíos."),
     ("missing_scope", 403, "La clave no tiene el permiso que pide esta ruta."),
@@ -1056,7 +1058,7 @@ GROUPS: list[dict[str, Any]] = [
               "etiquetas (y, si quieres, solo a los que cumplan unas condiciones "
               "sobre sus columnas), con una plantilla o un texto, y las veces que "
               "haga falta. "
-              "Llevan siempre su enlace de baja (y la marca de agua del Básico), se "
+              "Llevan siempre su enlace de baja, se "
               "saltan a los suprimidos sin gastar cuota y no salen a un contacto sin "
               "todas sus columnas. **Las manda el proceso en segundo plano**, por "
               "tandas: mandar o programar responde enseguida, y la campaña dice cómo "

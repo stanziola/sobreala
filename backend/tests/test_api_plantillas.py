@@ -174,7 +174,7 @@ def test_leer_listar_y_por_carpeta(client, database, outbox):
 
 
 def test_la_vista_armada(client, database, outbox):
-    _, cuenta, _ = ready(client, database, howmany=1, plan="basico")
+    _, cuenta, _ = ready(client, database, howmany=1, plan="negocio")
     accounts.add_field(database, cuenta["_id"], label="Saldo", kind="text")
     socio = contacts.by_email(database, cuenta["_id"], "socio0@ejemplo.com")
     contacts.update(database, cuenta["_id"], socio["_id"], email=socio["email"],
@@ -188,7 +188,8 @@ def test_la_vista_armada(client, database, outbox):
     promo = client.post(url, headers=auth, json={"contact_id": str(socio["_id"])}).get_json()
     assert promo["type"] == "promotional"
     assert "/unsubscribe/ejemplo" in promo["html"]
-    assert "Enviado con" in promo["html"]
+    # Sin marca de agua: la API es desde Negocio (octubre de 2026).
+    assert "Enviado con" not in promo["html"]
     assert "Ana &lt;Pérez&gt;" in promo["html"] and "Ana <Pérez>" not in promo["html"]
     assert promo["missing"] == ["PEDIDO"]
     assert promo["marks"] == ["NOMBRE", "SALDO", "PEDIDO"]
@@ -385,7 +386,7 @@ def test_las_fotos(client, database, outbox):
     assert subir(client, auth, b"no soy una foto").status_code == 422
     assert subir(client, auth, foto(400, 300), otro="1").status_code == 422
     assert client.post("/api/v1/images", headers=auth, json={}).status_code == 415
-    for _ in range(pieces.photo_limit(cuenta)):
+    for _ in range(pieces.photo_limit(accounts.by_id(database, cuenta["_id"]))):
         images.save(database, cuenta["_id"], data=foto(40, 30), ext="jpg", mime="image/jpeg")
     lleno = subir(client, auth, foto(400, 300))
     assert lleno.status_code == 409 and lleno.get_json()["error"]["code"] == "limit_reached"

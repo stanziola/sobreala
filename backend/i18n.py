@@ -2906,6 +2906,16 @@ TEXTS = {
     "dash_api_docs": "Documentación",
 
     "api_keys_title": "Claves de API",
+    # La rama sin el plan (octubre de 2026: la API es desde Negocio).
+    "api_plan_title": "La API es desde el plan {plan}",
+    "api_plan_text": "Con la API, el sistema de tu negocio (tu tienda en línea, tu "
+                     "programa de socios) carga contactos, usa tus plantillas y envía "
+                     "correos sin que entres a tu cuenta. Mejora tu plan para crear "
+                     "tus claves de API y tus webhooks.",
+    "api_plan_old_keys": "Tus claves de API siguen guardadas, pero no funcionan hasta "
+                         "que mejores tu plan.",
+    "api_plan_button": "Ver planes",
+    "api_plan_docs": "Ver la documentación",
     "api_keys_lead": "Con una clave de API, el sistema de tu negocio (tu tienda en "
                      "línea, tu programa de socios) se conecta con Sobreala sin que "
                      "entres a tu cuenta: carga contactos, usa tus plantillas y tus "
@@ -3076,6 +3086,8 @@ TEXTS = {
     "api_error_account_suspended": "La cuenta está suspendida.",
     "api_error_account_closed": "La cuenta todavía no está abierta: le falta la "
                                 "demostración o un plan.",
+    "api_error_plan_without_api": "Tu plan no incluye la API. Mejora tu plan para "
+                                  "usarla.",
     "api_error_test_key_cannot": "Una clave de prueba solo puede leer y simular "
                                  "envíos.",
     "api_error_missing_scope": "Esta clave no tiene el permiso {scope}.",

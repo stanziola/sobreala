@@ -17,6 +17,7 @@ from test_api_contactos import llave
 from test_campaigns import catch, ready
 
 from models import account as accounts
+from models import api_key as api_keys
 from models import contact as contacts
 from models import design as designs
 from models import event as events
@@ -101,7 +102,7 @@ def test_la_baja_no_frena_un_transaccional_y_el_rebote_si(client, database, outb
 def test_un_promocional_va_solo_a_un_contacto_completo(client, database, outbox,
                                                        monkeypatch):
     salidos = catch(monkeypatch)
-    _, cuenta, _ = ready(client, database, howmany=1, plan="basico")
+    _, cuenta, _ = ready(client, database, howmany=1, plan="negocio")
     auth, _ = llave(database, cuenta, scopes=SEND)
     fuera = enviar(client, auth, to="nadie@ejemplo.com", type="promotional")
     assert fuera.status_code == 422 and fuera.get_json()["error"]["code"] == "not_a_contact"
@@ -121,10 +122,17 @@ def test_un_promocional_va_solo_a_un_contacto_completo(client, database, outbox,
     [salido] = salidos
     assert salido["List-Unsubscribe"] and "List-Unsubscribe-Post" in salido
     html = html_de(salido)
-    assert "Hola Socio 0 de Santiago" in html and "Enviado con" in html
-    # Los clics de un promocional sí se cuentan (la baja nunca).
-    assert '<a href="https://sobreala.com"' in html
+    # Sin marca de agua: la API es desde Negocio (octubre de 2026).
+    assert "Hola Socio 0 de Santiago" in html and "Enviado con" not in html
     assert str(salido["Subject"]) == "Para Socio 0"
+    # Los clics de un promocional sí se cuentan (la baja nunca). Se comprobaba
+    # con el enlace de la marca de agua, que ya no lleva: va con uno propio.
+    pieza = designs.save(database, cuenta["_id"], name="Oferta", html=(
+        "<html><body><p>Hola</p>"
+        "<a href='https://tienda.com/p/1'>Verla</a></body></html>"))
+    assert enviar(client, auth, to="socio0@ejemplo.com", type="promotional",
+                  template_id=str(pieza), text=None).status_code == 201
+    assert "<a href='https://tienda.com/p/1'" in html_de(salidos[-1])
 
 
 def test_una_marca_sin_dato_no_sale_y_los_datos_se_escapan(client, database, outbox,
@@ -203,7 +211,7 @@ def test_la_cuota_se_aparta_y_se_devuelve(client, database, outbox, monkeypatch)
     database.accounts.update_one({"_id": cuenta["_id"]}, {"$unset": {"sent_counts": ""}})
     assert accounts.reserve_quota(database, cuenta["_id"], 1, 1)
 
-    allowed = sender.plans.emails_a_month("basico")
+    allowed = sender.plans.emails_a_month("negocio")
     database.accounts.update_one({"_id": cuenta["_id"]}, {"$set": {
         f"sent_counts.{accounts.quota_month()}": allowed}})
     sin_cuota = enviar(client, auth)
@@ -266,22 +274,20 @@ def test_repetir_con_la_misma_clave_no_manda_dos_veces(client, database, outbox,
     assert len(salidos) == 1
 
 
-def test_la_demostracion_solo_va_a_sus_direcciones(client, database, outbox, monkeypatch):
+def test_la_demostracion_no_usa_la_api(client, database, outbox, monkeypatch):
+    """La API es desde el plan Negocio (octubre de 2026): la demostración tiene
+    lo del Básico, así que ni a sus direcciones de prueba sale nada por aquí."""
     salidos = catch(monkeypatch)
     _, cuenta, _ = ready(client, database, howmany=0, plan=None)
     assert accounts.in_demo(cuenta)
     accounts.add_test_address(database, cuenta["_id"], "yo@ejemplo.com")
     accounts.confirm_test_address(database, cuenta["_id"], "yo@ejemplo.com")
-    auth, _ = llave(database, cuenta, scopes=SEND)
-    otra = enviar(client, auth, to="cliente@ejemplo.com")
-    assert otra.status_code == 422 and otra.get_json()["error"]["code"] == "demo_address"
-    assert enviar(client, auth, to="Yo@Ejemplo.com").status_code == 201
-    fresca = accounts.by_id(database, cuenta["_id"])
-    assert accounts.demo_left(fresca) == accounts.DEMO_SENDS - 1 and len(salidos) == 1
-    database.accounts.update_one({"_id": cuenta["_id"]},
-                                 {"$set": {"demo_sent": accounts.DEMO_SENDS}})
-    gastada = enviar(client, auth, to="yo@ejemplo.com")
-    assert gastada.status_code == 409
+    raw, _ = api_keys.create(database, cuenta["_id"], name="Tienda", mode="live",
+                             scopes=list(SEND), ips=[], days=0)
+    respuesta = enviar(client, {"Authorization": f"Bearer {raw}"}, to="yo@ejemplo.com")
+    assert respuesta.status_code == 403
+    assert respuesta.get_json()["error"]["code"] == "plan_without_api"
+    assert salidos == []
 
 
 def test_en_pausa_no_sale(client, database, outbox, monkeypatch):

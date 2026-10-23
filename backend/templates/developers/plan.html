@@ -1,0 +1,15 @@
+{% extends "_dashboard.html" %}
+{% block title %}{{ t('api_plan_title', plan=plan) }}{% endblock %}
+
+{#- La rama API sin el plan (octubre de 2026: la API es desde Negocio). La ve
+    cualquier pantalla de la rama (`keep_out()`), así que ningún formulario de
+    aquí se procesa. Quien bajó de plan sabe que sus claves siguen guardadas. -#}
+{% block pane %}
+<h1 class="settings__heading">{{ t('api_plan_title', plan=plan) }}</h1>
+<p class="settings__lead">{{ t('api_plan_text') }}</p>
+{% if old_keys %}<p class="notice">{{ t('api_plan_old_keys') }}</p>{% endif %}
+<div class="row">
+  <a class="btn" href="{{ site_url }}/#planes">{{ t('api_plan_button') }}</a>
+  <a class="btn btn--outline" href="{{ docs }}">{{ t('api_plan_docs') }}</a>
+</div>
+{% endblock %}
