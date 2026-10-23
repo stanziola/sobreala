@@ -172,9 +172,11 @@ contacto no borra su supresión; volver a subirlo no lo reactiva.
 | Archivo CSV subido | Se borra tras procesarlo |
 | Imágenes de correos | Mientras exista la pieza que las usa |
 
-**Al cancelar**: se conserva todo 90 días por si reactiva, con aviso por correo
-antes del vencimiento. Después se borran contactos y eventos. Las supresiones se
-conservan siempre.
+**Al vencer el plan** no se borra nada: la cuenta queda sin poder enviar hasta
+que pague otra vez. **Al eliminar la cuenta** (Configuración → Cuenta) se borra
+al momento, salvo las supresiones, los pagos y facturas, la bitácora y una ficha
+mínima (`services/erase.py`). Hasta octubre de 2026 decía «se conserva todo 90
+días», y no era así.
 
 ### Límites técnicos de importación
 

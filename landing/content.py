@@ -72,7 +72,6 @@ PANEL = {
     "theme_light": "Modo claro",
     "language_label": "Idioma",
     "language_current": "Español",
-    "language_soon": "Inglés (pronto)",
 }
 
 # Lo que dicen los botones de /pricing cuando ya hay un plan contratado. El
@@ -456,7 +455,8 @@ HOME = {
                 "q": "¿Cómo se paga?",
                 "a": (
                     "Pagas un mes o un año por adelantado desde tu cuenta, hoy con "
-                    "PayPal, y no se renueva solo: te avisamos antes de que venza. Los "
+                    "PayPal, y no se renueva solo, salvo que actives la renovación "
+                    "automática: te avisamos antes de que venza. Los "
                     "datos de tu tarjeta los maneja el proveedor de pago, nunca "
                     "Sobreala, y los precios incluyen el ITBMS."
                 ),
@@ -889,7 +889,8 @@ PRICING = {
             "featured": False,
         },
         "Negocio": {
-            "pitch": "Para quien ya envía cada mes y quiere su propio diseño.",
+            "pitch": "Para quien ya envía cada mes y no quiere la marca de "
+                     "Sobreala en sus correos.",
             "featured": True,
             "badge": "Recomendado",
         },
@@ -982,9 +983,12 @@ def holder_line() -> str:
 # borra al revisarlo, y una cuenta puede quedar limitada hasta verificarse. La
 # privacidad, otra vez el 15: se puede entrar con GitHub; el 16: la cuenta se
 # elimina desde Configuración; el 20: de una cuenta eliminada se guarda su
-# ficha mínima; y el 21: se puede entrar con Apple.
-UPDATED = "21 de octubre de 2026"
-TERMS_UPDATED = "11 de octubre de 2026"
+# ficha mínima; y el 21: se puede entrar con Apple. Las dos, el 22: lo que dicen
+# coincide con lo que hace el producto (umbrales, cierre, bajas, pagos), la
+# política de uso completa y abuse@sobreala.com, antes de pedir la producción de
+# Amazon SES.
+UPDATED = "22 de octubre de 2026"
+TERMS_UPDATED = "22 de octubre de 2026"
 
 PRIVACY = {
     "meta_title": "Política de privacidad | sobreala",
@@ -1041,9 +1045,11 @@ PRIVACY = {
                 "o un documento legal), que nos envías después de registrarte. "
                 "Los mira una persona de Sobreala y **se borran en cuanto "
                 "decide**; de ellos solo queda si se verificaron o no.",
-                "**De tus contactos:** las direcciones de correo y las "
-                "etiquetas que subes, junto con las bajas y los rebotes de esa "
-                "lista.",
+                "**De tus contactos:** las direcciones de correo, los nombres, "
+                "las columnas propias que les pongas (por ejemplo, un saldo o "
+                "una fecha) y las etiquetas que subes, junto con **de dónde "
+                "salió cada lista** (lo que declaras al cargarla, con quién lo "
+                "declaró y cuándo) y las bajas y los rebotes de esa lista.",
                 "**Técnicos:** la dirección IP y el navegador de cada intento "
                 "de registro, entrada, confirmación, reenvío y salida. Sirven "
                 "para detectar abuso y para responder cuando alguien no puede "
@@ -1078,7 +1084,7 @@ PRIVACY = {
                 "activas la renovación automática, el identificador de tu "
                 "suscripción de PayPal. "
                 "**Nunca vemos ni guardamos datos de tarjeta:** el pago ocurre "
-                "en la página de PayPal o de Yappy, no en la nuestra.",
+                "en la página del proveedor de pago, no en la nuestra.",
             ],
         },
         {
@@ -1123,9 +1129,10 @@ PRIVACY = {
                 "**Amazon Web Services (Amazon SES)**: envío de los correos.",
                 "**MongoDB Atlas**: base de datos.",
                 "**Railway**: servidor de la aplicación.",
-                "**Cloudflare**: dominio, protección contra ataques y "
-                "almacenamiento de las imágenes de los correos.",
-                "**PayPal y Yappy**: cobro de los planes.",
+                "**Cloudflare**: dominio, protección contra ataques y copia en "
+                "caché de las imágenes de los correos.",
+                "**PayPal**: cobro de los planes; y, cuando estén disponibles, "
+                "**Paguélofácil** (tarjeta) y **Yappy**.",
             ],
             "note": (
                 "Sus servidores están fuera de Panamá, principalmente en "
@@ -1148,8 +1155,8 @@ PRIVACY = {
                 "recibir más correos, así que ni tú ni nosotros las borramos.",
                 "**Detalle de aperturas, clicks, entregas y rebotes:** 12 meses; "
                 "después quedan solo los totales por campaña.",
-                "**Bitácora de accesos y de correos del sistema:** se conserva "
-                "como registro de seguridad y soporte.",
+                "**Bitácora de accesos y de correos del sistema:** 12 meses, "
+                "como registro de seguridad y soporte; después se borra sola.",
                 "**De una cuenta eliminada** guardamos su ficha mínima (empresa, "
                 "nombre y correo del dueño, plan y fechas) como registro de "
                 "seguridad y contable.",
@@ -1174,6 +1181,11 @@ PRIVACY = {
                 "que quieres es dejar de recibir esos correos, el enlace de "
                 "baja del propio mensaje lo hace al instante, y también podemos "
                 "hacerlo nosotros a petición tuya.",
+                "**Si recibiste correo no deseado enviado con Sobreala**, "
+                "repórtalo a **abuse@sobreala.com** con el mensaje (o al menos "
+                "su asunto, la fecha y quién lo mandó). Lo revisamos, damos de "
+                "baja tu dirección de esa empresa y, si corresponde, "
+                "suspendemos su cuenta.",
             ],
         },
         {
@@ -1183,8 +1195,14 @@ PRIVACY = {
                 "plataforma al momento de enviar, más la cabecera técnica que "
                 "permite darse de baja desde el propio programa de correo. "
                 "Nuestros clientes no pueden quitarlo. Una baja es inmediata, "
-                "no caduca y solo se revierte si la persona vuelve a "
-                "suscribirse y confirma por correo.",
+                "permanente y quien te escribía no la puede revertir: tampoco "
+                "volviendo a cargar tu dirección.",
+                "Un **correo individual** (de una persona a otra, como un "
+                "estado de cuenta) y un **correo transaccional** de la API (un "
+                "recibo, una confirmación de pedido) no llevan enlace de baja, "
+                "porque no son publicidad; por eso no se pueden usar para "
+                "publicidad. Si la persona se dio de baja o marcó como spam, "
+                "tampoco le llega un individual.",
                 "Los correos del sistema (el código de confirmación, los "
                 "avisos de tu cuenta) no llevan enlace de baja porque no son "
                 "publicidad: son parte del servicio que contrataste.",
@@ -1266,9 +1284,10 @@ TERMS = {
             "title": "2. Qué es el servicio",
             "paragraphs": [
                 "Sobreala es una plataforma de email marketing: subes tus "
-                "contactos, armas una campaña y la envías desde tu cuenta.",
-                "La plataforma está en construcción. Algunas funciones no "
-                "existen todavía y otras pueden cambiar; los cambios "
+                "contactos, armas una campaña y la envías desde tu cuenta. "
+                "También puedes enviar correos individuales y, con la API, "
+                "correos transaccionales desde tu propio sistema.",
+                "El servicio cambia y mejora con el tiempo; los cambios "
                 "importantes se avisan.",
             ],
         },
@@ -1305,9 +1324,9 @@ TERMS = {
                 "que paga.",
                 "Por cada pago emitimos la factura y te la enviamos al correo "
                 "de tu cuenta.",
-                "El cobro se hace por PayPal desde tu cuenta, o por Yappy "
-                "coordinándolo con nosotros, y en ese caso activamos el plan a "
-                "mano. La tarjeta no pasa por nuestros servidores.",
+                "El cobro se hace por PayPal desde tu cuenta. La tarjeta (por "
+                "Paguélofácil) y Yappy se suman cuando estén disponibles. La "
+                "tarjeta no pasa nunca por nuestros servidores.",
                 "La renovación automática es opcional y solo es con PayPal. Si "
                 "la activas, PayPal cobra tu plan al final de cada periodo, "
                 "por el precio vigente cuando la activaste, hasta que la "
@@ -1333,10 +1352,29 @@ TERMS = {
             ],
             "items": [
                 "**Solo puedes escribirle a quien te dio su correo** sabiendo "
-                "que le ibas a escribir. Nada de listas compradas, alquiladas, "
-                "intercambiadas o recogidas de internet.",
+                "que le ibas a escribir, y su permiso tiene que seguir vigente. "
+                "Nada de listas compradas, alquiladas, intercambiadas, "
+                "recogidas de internet o de otros sitios, ni listas viejas a "
+                "las que hace años no les escribes.",
                 "Nada de correo no solicitado, cadenas, ni mensajes masivos a "
-                "direcciones que no son tuyas.",
+                "direcciones que no son tuyas. Tampoco a direcciones genéricas "
+                "(como info@ o ventas@ de otra empresa) que no te dieron su "
+                "permiso.",
+                "**Al cargar una lista declaras de dónde salió** y que esas "
+                "personas aceptaron recibir tus correos; lo guardamos con quién "
+                "lo declaró y cuándo. **Podemos pedirte que demuestres ese "
+                "permiso** y dejar la cuenta sin enviar mientras tanto.",
+                "**Contenido que no se envía**, aunque haya permiso: para "
+                "adultos; apuestas y loterías no autorizadas; medicamentos, "
+                "drogas o suplementos con promesas de salud; armas; "
+                "criptomonedas, inversiones o esquemas de dinero fácil; "
+                "préstamos o deudas engañosos; phishing o pedidos de "
+                "contraseñas y datos bancarios; contenido que incite al odio o "
+                "a la violencia; y todo lo que sea ilegal en Panamá o en el "
+                "país de quien lo recibe.",
+                "**Cumples la ley del país de quien recibe**: en Panamá, la Ley "
+                "81 de 2019; en Estados Unidos, la CAN-SPAM; en Europa, el "
+                "RGPD; y las que correspondan en cada caso.",
                 "Nada de contenido ilegal, engañoso o que suplante a otra "
                 "persona o empresa, ni de asuntos y remitentes que engañen "
                 "sobre quién envía o de qué trata el mensaje.",
@@ -1344,17 +1382,30 @@ TERMS = {
                 "inserta la plataforma al enviar y no se puede editar.",
                 "No puedes usar la plataforma para enviar programas dañinos ni "
                 "para intentar acceder a datos de otras cuentas.",
+                "Los correos salen por Amazon SES, así que también se aplican "
+                "su política de uso aceptable y sus reglas de envío.",
             ],
         },
         {
             "title": "6. Envíos, límites y pausas automáticas",
             "items": [
-                "Las primeras 48 horas de una cuenta nueva llevan un tope de "
-                "envío reducido, sea cual sea el plan.",
-                "**Si los rebotes pasan del 3% o las quejas del 0.05%, el envío "
-                "se pausa automáticamente** y te avisamos. Son los umbrales con "
-                "los que trabajan los proveedores de correo; por debajo de "
-                "ellos todo el mundo sigue recibiendo.",
+                "**Cada campaña lleva la dirección postal de tu empresa** al "
+                "pie, junto al enlace de baja, porque la ley la pide en todo "
+                "correo publicitario. Sin ella escrita en tu cuenta, no sale.",
+                "**La pausa automática**: si en los últimos 30 días **los "
+                "rebotes permanentes pasan del 3 %** (desde 100 correos "
+                "enviados) **o las quejas pasan del 0.1 %** (desde 1,000), el "
+                "envío se pausa solo y te avisamos. Son los umbrales con los "
+                "que trabajan los proveedores de correo. La pausa la quitamos "
+                "nosotros, después de revisar la cuenta contigo.",
+                "Una dirección que rebota de forma permanente o que marca tu "
+                "correo como spam deja de recibir tus envíos, para siempre, y "
+                "no gasta tu cuota.",
+                "El **correo individual** y el **transaccional** de la API no "
+                "llevan enlace de baja porque son de una persona a otra o "
+                "responden a algo que esa persona hizo (un recibo, una "
+                "confirmación). **No se pueden usar para publicidad**: lo que "
+                "promociona algo va como campaña, con su baja.",
                 "Podemos suspender un envío en curso si detectamos un abuso, "
                 "sin aviso previo cuando haga falta para proteger a los demás "
                 "clientes.",
@@ -1384,7 +1435,8 @@ TERMS = {
             "items": [
                 "Garantizas que cada persona de tu lista te dio su correo y "
                 "podía esperar recibir mensajes tuyos, y que puedes demostrarlo "
-                "si alguien lo pregunta.",
+                "si alguien lo pregunta. Lo que declaras al cargar cada lista "
+                "(de dónde salió) queda guardado en cada contacto.",
                 "Medimos por persona si cada correo se entregó, se abrió y se "
                 "pulsó un enlace, y tú lo ves en el detalle de cada envío. Tú "
                 "avisas a esas personas de que se miden las aperturas y los "
@@ -1430,13 +1482,19 @@ TERMS = {
         {
             "title": "11. Cierre de la cuenta",
             "items": [
-                "Puedes cerrarla cuando quieras escribiéndonos.",
+                "**La eliminas tú cuando quieras**, desde Configuración → "
+                "Cuenta, o escribiéndonos. Antes puedes exportar tus contactos "
+                "en un CSV desde Contactos.",
+                "Al eliminarla se borra al momento lo de tu empresa y sus "
+                "usuarios. Se conservan las supresiones (para que nadie vuelva "
+                "a escribirle a quien pidió no ser contactado), los pagos y "
+                "facturas, la bitácora de seguridad y una ficha mínima de la "
+                "cuenta, como dice la política de privacidad.",
                 "Podemos cerrarla si incumples estas reglas, si el pago no se "
                 "regulariza o si el uso pone en riesgo la entregabilidad de la "
                 "plataforma.",
-                "Tras el cierre puedes pedir una copia de tus contactos durante "
-                "30 días. Después se borran, salvo las supresiones y lo que "
-                "debamos conservar por ley.",
+                "Si tu plan vence y no lo renuevas, no se borra nada: la cuenta "
+                "queda sin poder enviar hasta que pagues otra vez.",
             ],
         },
         {
@@ -1452,17 +1510,30 @@ TERMS = {
             "paragraphs": [
                 "Estos términos se rigen por las leyes de la República de "
                 "Panamá, incluidas la Ley 81 de 2019 de protección de datos "
-                "personales y la Ley 51 de 2008 de comercio electrónico. "
+                "personales y la Ley 51 de 2008, que regula los documentos y "
+                "las firmas electrónicas. "
                 "Cualquier disputa se somete a los tribunales de la ciudad de "
                 "Panamá, sin perjuicio de intentar antes una solución "
                 "conversada.",
             ],
         },
         {
-            "title": "14. Contacto",
+            "title": "14. Reportar un abuso",
+            "paragraphs": [
+                "Si recibiste correo no deseado enviado con Sobreala, o ves que "
+                "alguien la usa para algo de lo prohibido en el punto 5, "
+                "escríbenos a **abuse@sobreala.com** con el mensaje (o al "
+                "menos su asunto, la fecha y quién lo mandó). Lo revisamos, "
+                "damos de baja a quien lo pide y, si corresponde, dejamos la "
+                "cuenta sin enviar mientras lo aclaramos o la cerramos.",
+            ],
+        },
+        {
+            "title": "15. Contacto",
             "paragraphs": [
                 "info@sobreala.com, o el WhatsApp que aparece en el pie "
-                "de esta página.",
+                "de esta página. Para reportar un abuso, "
+                "abuse@sobreala.com.",
             ],
         },
     ],

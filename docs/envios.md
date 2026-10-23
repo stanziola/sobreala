@@ -107,7 +107,6 @@ son su protección:
 |---|---|
 | Rebotes permanentes > 3 %, desde 100 enviados | Pausa de envío y aviso (AWS revisa a 5 %) |
 | Quejas > 0.1 %, desde 1,000 enviados | Pausa de envío y aviso (AWS revisa a 0.1 %) |
-| Primera campaña | Tope reducido las primeras 48h, sin importar el plan |
 
 ### La pausa automática (octubre de 2026)
 

@@ -77,7 +77,7 @@ DISABLED = "disabled"
 # fecha de su última actualización. Es copia de `TERMS_UPDATED` de
 # landing/content.py, porque el backend no lee landing/ al correr; una prueba
 # (test_registro.py) comprueba que las dos digan lo mismo.
-TERMS_VERSION = "11 de octubre de 2026"
+TERMS_VERSION = "22 de octubre de 2026"
 
 
 def normalize_email(email: str) -> str:

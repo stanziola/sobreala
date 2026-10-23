@@ -137,9 +137,6 @@
               <p class="usermenu__item is-on">
                 <span class="usermenu__icons"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg></span>
                 <span>Español</span></p>
-              <p class="usermenu__item is-off">
-                <span class="usermenu__icons"></span>
-                <span>Inglés (pronto)</span></p>
             </div>
           </details><a class="usermenu__item usermenu__group" data-account-only hidden
              href="https://app.sobreala.com/switch-account">
@@ -170,7 +167,7 @@
 
 <section class="section">
   <div class="shell shell--narrow prose">
-    <p class="legal-updated">Última actualización: 11 de octubre de 2026</p>
+    <p class="legal-updated">Última actualización: 22 de octubre de 2026</p>
 
     <section class="prose__block">
       <h2 class="prose__title">1. Quién presta el servicio</h2>
@@ -182,8 +179,8 @@
     <section class="prose__block">
       <h2 class="prose__title">2. Qué es el servicio</h2>
 
-      <p>Sobreala es una plataforma de email marketing: subes tus contactos, armas una campaña y la envías desde tu cuenta.</p>
-      <p>La plataforma está en construcción. Algunas funciones no existen todavía y otras pueden cambiar; los cambios importantes se avisan.</p>
+      <p>Sobreala es una plataforma de email marketing: subes tus contactos, armas una campaña y la envías desde tu cuenta. También puedes enviar correos individuales y, con la API, correos transaccionales desde tu propio sistema.</p>
+      <p>El servicio cambia y mejora con el tiempo; los cambios importantes se avisan.</p>
 
 
     </section>
@@ -209,7 +206,7 @@
         <li>Los precios publicados son finales e incluyen el ITBMS cuando corresponde.</li>
         <li>El precio es el mismo desde donde sea que contrates. A un cliente de fuera de Panamá se le factura como exportación de servicios, sin ITBMS: cambia el desglose de su factura, no lo que paga.</li>
         <li>Por cada pago emitimos la factura y te la enviamos al correo de tu cuenta.</li>
-        <li>El cobro se hace por PayPal desde tu cuenta, o por Yappy coordinándolo con nosotros, y en ese caso activamos el plan a mano. La tarjeta no pasa por nuestros servidores.</li>
+        <li>El cobro se hace por PayPal desde tu cuenta. La tarjeta (por Paguélofácil) y Yappy se suman cuando estén disponibles. La tarjeta no pasa nunca por nuestros servidores.</li>
         <li>La renovación automática es opcional y solo es con PayPal. Si la activas, PayPal cobra tu plan al final de cada periodo, por el precio vigente cuando la activaste, hasta que la canceles. La cancelas cuando quieras desde Facturación o desde tu cuenta de PayPal, y lo ya pagado sigue hasta su fecha.</li>
         <li>Los correos no usados en el mes pasan al siguiente y vencen ahí; se consumen primero los acumulados.</li>
         <li>El plan anual se paga por adelantado con un 20% de descuento.</li>
@@ -224,11 +221,15 @@
       <p>Esta es la parte que más importa. El dominio de envío es compartido entre todos los clientes: lo que uno haga mal lo pagan los demás en forma de correos que dejan de llegar. Por eso estas reglas se aplican sin excepciones.</p>
 
       <ul class="prose__list">
-        <li><strong>Solo puedes escribirle a quien te dio su correo</strong> sabiendo que le ibas a escribir. Nada de listas compradas, alquiladas, intercambiadas o recogidas de internet.</li>
-        <li>Nada de correo no solicitado, cadenas, ni mensajes masivos a direcciones que no son tuyas.</li>
+        <li><strong>Solo puedes escribirle a quien te dio su correo</strong> sabiendo que le ibas a escribir, y su permiso tiene que seguir vigente. Nada de listas compradas, alquiladas, intercambiadas, recogidas de internet o de otros sitios, ni listas viejas a las que hace años no les escribes.</li>
+        <li>Nada de correo no solicitado, cadenas, ni mensajes masivos a direcciones que no son tuyas. Tampoco a direcciones genéricas (como info@ o ventas@ de otra empresa) que no te dieron su permiso.</li>
+        <li><strong>Al cargar una lista declaras de dónde salió</strong> y que esas personas aceptaron recibir tus correos; lo guardamos con quién lo declaró y cuándo. <strong>Podemos pedirte que demuestres ese permiso</strong> y dejar la cuenta sin enviar mientras tanto.</li>
+        <li><strong>Contenido que no se envía</strong>, aunque haya permiso: para adultos; apuestas y loterías no autorizadas; medicamentos, drogas o suplementos con promesas de salud; armas; criptomonedas, inversiones o esquemas de dinero fácil; préstamos o deudas engañosos; phishing o pedidos de contraseñas y datos bancarios; contenido que incite al odio o a la violencia; y todo lo que sea ilegal en Panamá o en el país de quien lo recibe.</li>
+        <li><strong>Cumples la ley del país de quien recibe</strong>: en Panamá, la Ley 81 de 2019; en Estados Unidos, la CAN-SPAM; en Europa, el RGPD; y las que correspondan en cada caso.</li>
         <li>Nada de contenido ilegal, engañoso o que suplante a otra persona o empresa, ni de asuntos y remitentes que engañen sobre quién envía o de qué trata el mensaje.</li>
         <li>No puedes quitar, ocultar ni desviar el enlace de baja: lo inserta la plataforma al enviar y no se puede editar.</li>
         <li>No puedes usar la plataforma para enviar programas dañinos ni para intentar acceder a datos de otras cuentas.</li>
+        <li>Los correos salen por Amazon SES, así que también se aplican su política de uso aceptable y sus reglas de envío.</li>
       </ul>
 
     </section>
@@ -237,8 +238,10 @@
 
 
       <ul class="prose__list">
-        <li>Las primeras 48 horas de una cuenta nueva llevan un tope de envío reducido, sea cual sea el plan.</li>
-        <li><strong>Si los rebotes pasan del 3% o las quejas del 0.05%, el envío se pausa automáticamente</strong> y te avisamos. Son los umbrales con los que trabajan los proveedores de correo; por debajo de ellos todo el mundo sigue recibiendo.</li>
+        <li><strong>Cada campaña lleva la dirección postal de tu empresa</strong> al pie, junto al enlace de baja, porque la ley la pide en todo correo publicitario. Sin ella escrita en tu cuenta, no sale.</li>
+        <li><strong>La pausa automática</strong>: si en los últimos 30 días <strong>los rebotes permanentes pasan del 3 %</strong> (desde 100 correos enviados) <strong>o las quejas pasan del 0.1 %</strong> (desde 1,000), el envío se pausa solo y te avisamos. Son los umbrales con los que trabajan los proveedores de correo. La pausa la quitamos nosotros, después de revisar la cuenta contigo.</li>
+        <li>Una dirección que rebota de forma permanente o que marca tu correo como spam deja de recibir tus envíos, para siempre, y no gasta tu cuota.</li>
+        <li>El <strong>correo individual</strong> y el <strong>transaccional</strong> de la API no llevan enlace de baja porque son de una persona a otra o responden a algo que esa persona hizo (un recibo, una confirmación). <strong>No se pueden usar para publicidad</strong>: lo que promociona algo va como campaña, con su baja.</li>
         <li>Podemos suspender un envío en curso si detectamos un abuso, sin aviso previo cuando haga falta para proteger a los demás clientes.</li>
         <li>Hacemos lo posible por que los correos lleguen, pero la bandeja de entrada la decide el proveedor de cada destinatario. No podemos garantizar la entrega.</li>
       </ul>
@@ -258,7 +261,7 @@
       <p>Cuando subes una lista, esos datos personales son de las personas que están en ella y <strong>tú eres el responsable</strong> de haberlos obtenido bien. Sobreala actúa como <strong>custodio</strong>: los trata solo por instrucción tuya. En concreto:</p>
 
       <ul class="prose__list">
-        <li>Garantizas que cada persona de tu lista te dio su correo y podía esperar recibir mensajes tuyos, y que puedes demostrarlo si alguien lo pregunta.</li>
+        <li>Garantizas que cada persona de tu lista te dio su correo y podía esperar recibir mensajes tuyos, y que puedes demostrarlo si alguien lo pregunta. Lo que declaras al cargar cada lista (de dónde salió) queda guardado en cada contacto.</li>
         <li>Medimos por persona si cada correo se entregó, se abrió y se pulsó un enlace, y tú lo ves en el detalle de cada envío. Tú avisas a esas personas de que se miden las aperturas y los clics, y si alguna está en un país que pide su consentimiento para ello, lo obtienes tú.</li>
         <li>Usamos tu lista únicamente para tus envíos. No la mezclamos con la de otros clientes, no la vendemos y no le ofrecemos nada nuestro.</li>
         <li>La guardamos con las medidas de seguridad descritas en la política de privacidad, y solo la ve quien necesite verla para darte soporte.</li>
@@ -287,9 +290,10 @@
 
 
       <ul class="prose__list">
-        <li>Puedes cerrarla cuando quieras escribiéndonos.</li>
+        <li><strong>La eliminas tú cuando quieras</strong>, desde Configuración → Cuenta, o escribiéndonos. Antes puedes exportar tus contactos en un CSV desde Contactos.</li>
+        <li>Al eliminarla se borra al momento lo de tu empresa y sus usuarios. Se conservan las supresiones (para que nadie vuelva a escribirle a quien pidió no ser contactado), los pagos y facturas, la bitácora de seguridad y una ficha mínima de la cuenta, como dice la política de privacidad.</li>
         <li>Podemos cerrarla si incumples estas reglas, si el pago no se regulariza o si el uso pone en riesgo la entregabilidad de la plataforma.</li>
-        <li>Tras el cierre puedes pedir una copia de tus contactos durante 30 días. Después se borran, salvo las supresiones y lo que debamos conservar por ley.</li>
+        <li>Si tu plan vence y no lo renuevas, no se borra nada: la cuenta queda sin poder enviar hasta que pagues otra vez.</li>
       </ul>
 
     </section>
@@ -303,14 +307,21 @@
     <section class="prose__block">
       <h2 class="prose__title">13. Ley aplicable</h2>
 
-      <p>Estos términos se rigen por las leyes de la República de Panamá, incluidas la Ley 81 de 2019 de protección de datos personales y la Ley 51 de 2008 de comercio electrónico. Cualquier disputa se somete a los tribunales de la ciudad de Panamá, sin perjuicio de intentar antes una solución conversada.</p>
+      <p>Estos términos se rigen por las leyes de la República de Panamá, incluidas la Ley 81 de 2019 de protección de datos personales y la Ley 51 de 2008, que regula los documentos y las firmas electrónicas. Cualquier disputa se somete a los tribunales de la ciudad de Panamá, sin perjuicio de intentar antes una solución conversada.</p>
 
 
     </section>
     <section class="prose__block">
-      <h2 class="prose__title">14. Contacto</h2>
+      <h2 class="prose__title">14. Reportar un abuso</h2>
 
-      <p>info@sobreala.com, o el WhatsApp que aparece en el pie de esta página.</p>
+      <p>Si recibiste correo no deseado enviado con Sobreala, o ves que alguien la usa para algo de lo prohibido en el punto 5, escríbenos a <strong>abuse@sobreala.com</strong> con el mensaje (o al menos su asunto, la fecha y quién lo mandó). Lo revisamos, damos de baja a quien lo pide y, si corresponde, dejamos la cuenta sin enviar mientras lo aclaramos o la cerramos.</p>
+
+
+    </section>
+    <section class="prose__block">
+      <h2 class="prose__title">15. Contacto</h2>
+
+      <p>info@sobreala.com, o el WhatsApp que aparece en el pie de esta página. Para reportar un abuso, abuse@sobreala.com.</p>
 
 
     </section>

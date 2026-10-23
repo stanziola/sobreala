@@ -36,7 +36,6 @@ TEXTS = {
     "menu_theme_light": "Modo claro",
     "menu_language": "Idioma",
     "menu_language_current": "Español",
-    "menu_language_soon": "Inglés (pronto)",
 
     # --- the Dashboard (octubre de 2026) -------------------------------------
     # One row of the menu for everything a client works with, and its tree.
